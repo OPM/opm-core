@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "sparsetable.h"
 #include "facetopology.h"
 
 /* No checking of input arguments in this code! */
@@ -94,7 +95,7 @@ static int *computeFaceTopology(int *a1,
       each pillar (but only separately), we can use only the point indices.
 
    b) We assume no intersections occur on the first and last lines.
-      This is convenient in the identification of (unique) intersections. 
+      This is convenient in the identification of (unique) intersections.
 
 */
 
@@ -108,13 +109,12 @@ static int faceintersection(int *a1, int *a2, int *b1, int *b2)
 }
 
 /* work should be pointer to 2n ints initialised to zero . */
-void findconnections(int n, int *pts[4],  
-		     int *ptnumber, 
+void findconnections(int n, int *pts[4],
+		     int *ptnumber,
 		     int *intersectionlist,
 		     int *neighbors,
-		     int *faces, 
-		     int *fptr, 
-		     int *fpos, int *work)
+		     int *work,
+		     sparse_table_t *ftab)
 {
   /* vectors of point numbers for faces a(b) on pillar 1(2) */
   int *a1 = pts[0];
@@ -125,8 +125,9 @@ void findconnections(int n, int *pts[4],
   /* Intersection record for top line and bottomline of a */
   int *itop    = work;
   int *ibottom = work + n;
-  int *f       = faces     + fptr[*fpos];
-  int *c       = neighbors;
+/*   int *f       = (int*)ftab->data     + ftab->ptr[*fpos]; */
+  int *f       = (int*)ftab->data     + ftab->ptr[ftab->position];
+  int *c       = neighbors + 2*ftab->position;
 
   int k1  = 0;
   int k2  = 0;
@@ -174,7 +175,7 @@ void findconnections(int n, int *pts[4],
 	    *f++ = a1[i+1];
 	    *f++ = a2[i+1];
 	    *f++ = a2[i];
-	    fptr[++(*fpos)] = f-faces;
+	    ftab->ptr[++ftab->position] = f - (int*)ftab->data;
 	  }
 	}
 
@@ -206,7 +207,7 @@ void findconnections(int n, int *pts[4],
 	  /* Add face to list of faces if not any first or last points are involved. */
 	  if (!((i==0) && (j==0)) && !((i==n-2) && (j==n-2))){
 	    f = computeFaceTopology(a1+i, a2+i, b1+j, b2+j, intersect, f);
-	    fptr[++(*fpos)] = f-faces;
+	    ftab->ptr[++ftab->position] = f - (int*)ftab->data;
 	  }
 	}
       }
@@ -229,4 +230,3 @@ void findconnections(int n, int *pts[4],
     /* Now, j = min(k1, k2) and itop is all zeros */
   }
 }
-

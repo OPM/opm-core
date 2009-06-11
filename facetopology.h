@@ -2,12 +2,11 @@
 #define FACETOPOLOGY_H
 
 
-void findconnections(int n, int *pts[4],  
-		     int *ptnumber, 
+void findconnections(int n, int *pts[4],
+		     int *ptnumber,
 		     int *intersectionlist,
 		     int *neighbors,
-		     int *faces, 
-		     int *fptr, 
-		     int *fpos, int *work);
+                     int *work,
+                     sparse_table_t *ftab);
 
 #endif

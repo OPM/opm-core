@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <mex.h>
 
-
+#include "sparsetable.h"
 #include "grdecl.h"
 #include "uniquepoints.h"
 #include "mxgrdecl.h"
@@ -33,12 +33,14 @@ static void igetvectors(int dims[3], int i, int j, int *field, int *v[])
   int ip = min(dims[0], i+1) - 1;
   int jm = max(1,       j  ) - 1;
   int jp = min(dims[1], j+1) - 1;
-/*   fprintf(stderr, "%d %d %d %d\n", im,ip, jm,jp); */
+
   v[0] = field + dims[2]*(im + dims[0]* jm);
   v[1] = field + dims[2]*(im + dims[0]* jp);
   v[2] = field + dims[2]*(ip + dims[0]* jm);
   v[3] = field + dims[2]*(ip + dims[0]* jp);
 }
+
+
 
 
 /* Gateway routine for Matlab mex function.              */
@@ -59,32 +61,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   /* Set up space for return values */
 
-  /* zlist may need extra space temporarily due to simple boundary treatement  */
 
-  int    sz         = 8*(g.dims[0]+1)*(g.dims[1]+1)*g.dims[2];
-  int    numpillars = (g.dims[0]+1)*(g.dims[1]+1);
-  double *zlist     = malloc(sz*sizeof(*zlist));
-  int    *zptr      = malloc((numpillars+1)*sizeof(*zptr));
-  int    *plist     = malloc( 2*g.dims[0]*2*g.dims[1]*(2*g.dims[2]+2)*sizeof(int));
+  /* Unstructured storage of unique zcorn values for each pillar. */
+  /* ztab->data may need extra space temporarily due to simple boundary treatement  */
+  int            sz         = 8*(g.dims[0]+1)*(g.dims[1]+1)*g.dims[2]; /* Big for convenient bc */
+  int            numpillars = (g.dims[0]+1)*(g.dims[1]+1);
+  sparse_table_t *ztab      = malloc_sparse_table(numpillars, sz, sizeof(double));
+  int    *plist             = malloc( 2*g.dims[0]*2*g.dims[1]*(2*g.dims[2]+2)*sizeof(int));
 
-
-  fprintf(stderr, "Allocate %d ints for plist\n", 2*g.dims[0]*2*g.dims[1]*(2*g.dims[2]+2));
-
-  finduniquepoints(&g, zlist, zptr, plist);
-
-
-#if 0
-  for (i=0; i<numpillars  ; ++i){
-    fprintf(stderr, "pillar %d\n", i);
-    for (k=zptr[i]; k<zptr[i+1]; ++k){
-      fprintf(stderr, "%f\n", zlist[k]);
-    }
-
-    mexPrintf("\n");
-  }
-
-  for (i=0; i<8*g.n; ++i) mexPrintf("%d\n", plist[i]);
-#endif
+  finduniquepoints(&g, plist, ztab);
 
 
   /*======================================================*/
@@ -96,69 +81,109 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int k;
 
   const int BIGNUM = 100;
-  int    *faces      = malloc(BIGNUM*sz*sizeof(int));
-  int    *fptr       = malloc(BIGNUM*sz*sizeof(int));
+  /* Unstructured storage of face nodes */
+  sparse_table_t *ftab = malloc_sparse_table(BIGNUM*sz*sizeof(int),
+					     BIGNUM*sz*sizeof(int),
+					     sizeof(int));
 
 
 
   int *pts[4];
   int *neighbors     = malloc(2* n*n* sizeof(*neighbors));
   int *intersections = malloc(4* n*n* sizeof(*intersections));
+
   int *work          = calloc(2* n,   sizeof(*work));
   int  d[3] = {2*g.dims[0], 2*g.dims[1], 2+2*g.dims[2]};
 
-  int numfaces       = 0;
-  int numpts         = zptr[numpillars];
-  int startpts = numpts;
-
-  fptr[0]=0;
+  int startface;
+  int numpts         = ztab->ptr[numpillars];
+  int startpts       = numpts;
+  int isodd;
+  ftab->ptr[0]=0;
 
   for (j=0; j<g.dims[1]; ++j) {
+    /* ------------------ */
     /* Add boundary faces */
+    /* ------------------ */
     igetvectors(d, 0, 2*j+1, plist, pts);
-    findconnections(n, pts, &numpts, intersections,
-		    neighbors+2*numfaces, faces, fptr, &numfaces,
-		    work);
+    startface = ftab->position;
+    findconnections(n, pts, &numpts, intersections, neighbors, work, ftab);
 
+
+    /* odd */
+    for(k=2*startface+1; k<2*ftab->position; k+=2){
+      if (neighbors[k] != -1){
+	neighbors[k] = g.dims[0]*(j + g.dims[1]*neighbors[k]);
+      }
+    }
+
+    /* even */
+    for(k=2*startface; k<2*ftab->position; k+=2){
+      neighbors[k] = -1;
+    }
+
+
+    /* -------------- */
     /* internal faces */
+    /* -------------- */
     for (i=1; i<g.dims[0]; ++i){
 
       /* Vectors of point numbers */
       igetvectors(d, 2*i, 2*j+1, plist, pts);
-      int startfaces = numfaces;
-      findconnections(n, pts, &numpts, intersections,
-		      neighbors+2*numfaces, faces, fptr, &numfaces,
-		      work);
+      startface = ftab->position;
+      findconnections(n, pts, &numpts, intersections, neighbors, work, ftab);
 
 
 
       /* Compute cell numbers from cell k-index (stored in neighbors) */
-      for (k=startfaces; k<numfaces; ++k){
-	if (neighbors[2*k] != -1){
-	  neighbors[2*k] = i-1 + g.dims[0]*(j + g.dims[1]*neighbors[2*k]);
-	}
-	if (neighbors[2*k+1] != -1){
-
-	  neighbors[2*k+1] = i + g.dims[0]*(j + g.dims[1]*neighbors[2*k+1]);
+      /* For even k, neighbors[k] refers to stack (i-1,j),
+	 for odd  k, neighbors[k] refers to stack (i,j) of cells */
+      isodd = 1;
+      for(k=2*startface; k<2*ftab->position; ++k){
+	isodd = !isodd;
+	if (neighbors[k] != -1){
+	  neighbors[k] = i-1+isodd + g.dims[0]*(j + g.dims[1]*neighbors[k]);
 	}
       }
+
       /* compute intersections */
 
     }
 
+    /* ------------------ */
     /* Add boundary face */
+    /* ------------------ */
+    startface = ftab->position;
     igetvectors(d, 2*g.dims[0], 2*j+1, plist, pts);
-    findconnections(n, pts, &numpts, intersections,
-		    neighbors+2*numfaces, faces, fptr, &numfaces,
-		    work);
+    findconnections(n, pts, &numpts, intersections, neighbors, work, ftab);
+
+    /* even indices */
+    for(k=2*startface; k<2*ftab->position; k+=2){
+      if (neighbors[k] != -1){
+	neighbors[k] = g.dims[0]-1 + g.dims[0]*(j + g.dims[1]*neighbors[k]);
+      }
+    }
+    /* odd indices */
+    for(k=2*startface+1; k<2*ftab->position; k+=2){
+      neighbors[k] = -1;
+    }
   }
 
 
+
+  /*                                                       */
+  /*                                                       */
+  /*                                                       */
+  /*                 D E B U G    CODE                     */
+  /*                                                       */
+  /*                                                       */
+  /*                                                       */
+
 #if 1
-      fprintf(stderr, "\nfaces\nnumfaces %d\n", numfaces);
-      for (i=0; i<numfaces; ++i){
-	for (k=fptr[i]; k<fptr[i+1]; ++k){
-	  fprintf(stderr, "%d ", faces[k]);
+      fprintf(stderr, "\nfaces\nnumfaces %d\n", ftab->position);
+      for (i=0; i<ftab->position; ++i){
+	for (k=ftab->ptr[i]; k<ftab->ptr[i+1]; ++k){
+	  fprintf(stderr, "%d ", ((int*)ftab->data)[k]);
 	}
 	fprintf(stderr, "\n");
       }
@@ -166,7 +191,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
       fprintf(stderr, "\nneighbors\n");
       int *iptr = neighbors;
-      for(k=0; k<numfaces; ++k){
+      for(k=0; k<ftab->position; ++k){
 	fprintf(stderr, " (%d %d)\n",  iptr[0], iptr[1]);
 	++iptr;
 	++iptr;
@@ -198,13 +223,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
 #endif
 
+
+  free_sparse_table(ztab);
+  free_sparse_table(ftab);
+
   free (intersections);
-  free (faces);
-  free (fptr);
   free (neighbors);
-  free (zptr);
   free (plist);
-  free (zlist);
   /* Free whatever was allocated in initGrdecl. */
   freeGrdecl(&g);
 

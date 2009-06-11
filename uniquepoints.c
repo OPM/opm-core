@@ -5,10 +5,10 @@
 #include <stdio.h>
 
 
+#include "sparsetable.h"
 #include "grdecl.h"
 #include "uniquepoints.h"
 #include "matalloc.h"
-
 
 #define min(i,j) ((i)<(j) ? (i) : (j))
 #define max(i,j) ((i)>(j) ? (i) : (j))
@@ -69,13 +69,13 @@ static int uniquify(int n, double *list, double tolerance)
 
 /* Along single pillar: */
 static int* assignPointNumbers(int    begin, 
-			      int    end, 
-			      double *zlist,
-			      int    n, 
-			      double *zcorn,
-			      int    *actnum, 
-			      int    *plist,
-			      double tolerance)
+			       int    end, 
+			       double *zlist,
+			       int    n, 
+			       double *zcorn,
+			       int    *actnum, 
+			       int    *plist,
+			       double tolerance)
 {
   /* n     - number of cells */
   /* zlist - list of len unique z-values */
@@ -109,7 +109,6 @@ static int* assignPointNumbers(int    begin,
     if (k == end || z[i] - zlist[k] > tolerance){
       fprintf(stderr, "What!?\n");
     }
-
     *p++ = k;
   }
   *p++ = INT_MAX;/* Padding to ease processing of faults */
@@ -154,20 +153,24 @@ static void dgetvectors(int dims[3], int i, int j, double *field, double *v[])
 /*-------------------------------------------------------*/
 void finduniquepoints(struct Grdecl *g,
 		                            /* return values: */
-		      double        *zlist, /* list of z-values on each pillar*/
-		      int           *zptr,  /* pointer to start of each pillar*/
-		      int           *plist) /* list of point numbers on each pillar*/
+		      int           *plist, /* list of point numbers on each pillar*/
+		      sparse_table_t *ztab)
 		      
 {
+
+
+  double *zlist = ztab->data; /* casting void* to double* */
+  int     *zptr = ztab->ptr;
+
   int     i,j;
 
   int     d1[3]  = {2*g->dims[0], 2*g->dims[1], 2*g->dims[2]};
   int     len    = 0;
   double  *zout  = zlist;  
-  int     pos    = 1;
+  int     pos    = 0;
 
   zptr[0] = 0;
-
+  
   /* Loop over pillars, find unique points on each pillar */
   for (j=0; j < g->dims[1]+1; ++j){
     for (i=0; i < g->dims[0]+1; ++i){
@@ -183,9 +186,8 @@ void finduniquepoints(struct Grdecl *g,
       len = uniquify        (len, zout, 0.0);      
       
       /* Increment pointer to sparse table of unique zcorn values */
-      zout      = zout + len;
-      zptr[pos] = zptr[pos-1] + len;
-      ++pos;
+      zout        = zout + len;
+      zptr[++pos] = zout - zlist;
     }
   }
 
@@ -193,8 +195,6 @@ void finduniquepoints(struct Grdecl *g,
 
   /* Loop over all vertical sets of zcorn values, assign point numbers */
   int *p = plist;
-  int nz =  2*g->dims[2];
-
   for (j=0; j < 2*g->dims[1]; ++j){
     for (i=0; i < 2*g->dims[0]; ++i){
 
@@ -210,8 +210,10 @@ void finduniquepoints(struct Grdecl *g,
       int    *a   = g->actnum + cix; 
       double *z   = g->zcorn  + zix;
 
-      p = assignPointNumbers(zptr[pix], zptr[pix+1], zlist, 
-			     nz, z, a, p, 0.0);
+      assignPointNumbers(zptr[pix], zptr[pix+1], zlist,
+			 2*g->dims[2], z, a, p, 0.0);
+      p += 2 + 2*g->dims[2];
+
     }
   }
 }
