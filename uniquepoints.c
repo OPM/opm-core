@@ -26,7 +26,7 @@ static int compare(const void *a, const void *b)
 /* Creat sorted list of z-values in zcorn with actnum==1 */
 /*-------------------------------------------------------*/
 static int createSortedList(double *list, int n, int m, 
-			    double *z[], int *a[])
+			    const double *z[], const int *a[])
 {
   fprintf(stderr, "\n");
   int i,j;
@@ -70,10 +70,10 @@ static int uniquify(int n, double *list, double tolerance)
 /* Along single pillar: */
 static int* assignPointNumbers(int    begin, 
 			       int    end, 
-			       double *zlist,
+			       const double *zlist,
 			       int    n, 
-			       double *zcorn,
-			       int    *actnum, 
+			       const double *zcorn,
+			       const int    *actnum, 
 			       int    *plist,
 			       double tolerance)
 {
@@ -85,8 +85,8 @@ static int* assignPointNumbers(int    begin,
   /* All points should now be within tolerance of a listed point. */
 
 
-  double *z = zcorn;
-  int    *a = actnum;
+  const double *z = zcorn;
+  const int    *a = actnum;
   int    *p = plist;
 
   k = begin;
@@ -118,7 +118,8 @@ static int* assignPointNumbers(int    begin,
 
 
 /*-------------------------------------------------------*/
-static void igetvectors(int dims[3], int i, int j, int *field, int *v[])
+static void igetvectors(const int dims[3], int i, int j, 
+			const int *field, const int *v[])
 {
   
   int im = max(1,       i  ) - 1;
@@ -133,7 +134,7 @@ static void igetvectors(int dims[3], int i, int j, int *field, int *v[])
 }
 
 /*-------------------------------------------------------*/
-static void dgetvectors(int dims[3], int i, int j, double *field, double *v[])
+static void dgetvectors(const int dims[3], int i, int j, const double *field, const double *v[])
 {
   
   int im = max(1,       i  ) - 1;
@@ -151,7 +152,7 @@ static void dgetvectors(int dims[3], int i, int j, double *field, double *v[])
 /* Assume that coordinate number is arranged in a        */
 /* sequence such that the natural index is (k,i,j)       */
 /*-------------------------------------------------------*/
-void finduniquepoints(struct Grdecl *g,
+void finduniquepoints(const struct Grdecl *g,
 		                            /* return values: */
 		      int           *plist, /* list of point numbers on each pillar*/
 		      sparse_table_t *ztab)
@@ -175,8 +176,8 @@ void finduniquepoints(struct Grdecl *g,
   for (j=0; j < g->dims[1]+1; ++j){
     for (i=0; i < g->dims[0]+1; ++i){
 
-      int    *a[4];
-      double *z[4];
+      const int    *a[4];
+      const double *z[4];
       
       /* Get positioned pointers for actnum and zcorn data */
       igetvectors(g->dims,   i,   j, g->actnum, a);
@@ -207,8 +208,8 @@ void finduniquepoints(struct Grdecl *g,
       /* zcorn column position */
       int zix = 2*g->dims[2]*(i+2*g->dims[0]*j);
       
-      int    *a   = g->actnum + cix; 
-      double *z   = g->zcorn  + zix;
+      const int    *a   = g->actnum + cix; 
+      const double *z   = g->zcorn  + zix;
 
       assignPointNumbers(zptr[pix], zptr[pix+1], zlist,
 			 2*g->dims[2], z, a, p, 0.0);

@@ -2,6 +2,7 @@
 #include <math.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "sparsetable.h"
 #include "facetopology.h"

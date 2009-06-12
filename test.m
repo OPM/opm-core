@@ -1,5 +1,5 @@
 
-  g=simpleGrdecl([2, 1, 4], @(x) -0.05+0.1*x+0.01 );
+g=simpleGrdecl([4, 2, 4], @(x) -0.055+0.11*x+0.011 );
 G=processGRDECL(g);
 %clf,plotGrid(G);view(3);
 

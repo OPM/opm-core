@@ -7,10 +7,10 @@
 typedef struct{
   int m;        /* number of rows          */
   int *ptr;     /* row pointer of size m+1 */
-  int position; /* position in ptr that is not filled. */
+  int position; /* first position in ptr that is not filled. */
 
   int n;        /* size of data            */
-  void *data;    /* sparse table data       */
+  void *data;   /* sparse table data       */
   
 
 } sparse_table_t;
