@@ -2,11 +2,11 @@
 #define GRDECL_H
 
 struct Grdecl{
-  int     n;
-  int     dims[3];
-  double *coord;
-  double *zcorn;
-  int    *actnum;
+  int           n;
+  int           dims[3];
+  const double *coord;
+  const double *zcorn;
+  const int    *actnum;
 };
 
 
