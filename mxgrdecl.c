@@ -11,7 +11,7 @@
 
 /* Get COORD, ZCORN, ACTNUM and DIMS from mxArray.       */
 /*-------------------------------------------------------*/
-void mxInitGrdecl(struct Grdecl *g, const mxArray *prhs[])
+void mxInitGrdecl(struct grdecl *g, const mxArray *prhs[])
 {
   int i,j,k,n;
 
@@ -23,10 +23,10 @@ void mxInitGrdecl(struct Grdecl *g, const mxArray *prhs[])
     g->dims[i] = tmp[i];
     n      *= tmp[i];
   }
-  mexPrintf("dimensions: %d %d %d\n",
-	    g->dims[0],
-	    g->dims[1],
-	    g->dims[2]);
+/*   mexPrintf("dimensions: %d %d %d\n", */
+/* 	    g->dims[0], */
+/* 	    g->dims[1], */
+/* 	    g->dims[2]); */
 
 
 
@@ -62,7 +62,7 @@ void mxInitGrdecl(struct Grdecl *g, const mxArray *prhs[])
 
 /* Free stuff that was allocated in initgrdecl.          */
 /*-------------------------------------------------------*/
-void freeGrdecl(struct Grdecl *g)
+void freeGrdecl(struct grdecl *g)
 {
   free((double*)g->zcorn);  g->zcorn  = NULL;
   free((double*)g->actnum); g->actnum = NULL;

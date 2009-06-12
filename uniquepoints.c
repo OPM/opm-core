@@ -28,7 +28,6 @@ static int compare(const void *a, const void *b)
 static int createSortedList(double *list, int n, int m, 
 			    const double *z[], const int *a[])
 {
-  fprintf(stderr, "\n");
   int i,j;
   double *ptr = list;
   for (i=0; i<n; ++i){
@@ -152,7 +151,7 @@ static void dgetvectors(const int dims[3], int i, int j, const double *field, co
 /* Assume that coordinate number is arranged in a        */
 /* sequence such that the natural index is (k,i,j)       */
 /*-------------------------------------------------------*/
-void finduniquepoints(const struct Grdecl *g,
+void finduniquepoints(const struct grdecl *g,
 		                            /* return values: */
 		      int           *plist, /* list of point numbers on each pillar*/
 		      sparse_table_t *ztab)
