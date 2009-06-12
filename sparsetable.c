@@ -37,11 +37,7 @@ sparse_table_t *malloc_sparse_table(int m, int n, int datasz)
 }
 
 sparse_table_t *realloc_sparse_table(sparse_table_t *tab, int m, int n, int datasz)
-{
-  tab->m = m; 
-  tab->n = n;
-  
-
+{  
   void *p = realloc(tab->ptr, (m+1) * sizeof (*tab->ptr));
   if (p){
     tab->ptr = p;
@@ -59,6 +55,9 @@ sparse_table_t *realloc_sparse_table(sparse_table_t *tab, int m, int n, int data
     free_sparse_table(tab);
     return NULL;
   }
+  
+  tab->m = m; 
+  tab->n = n;
   
   return tab;
 }
