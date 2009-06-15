@@ -15,11 +15,11 @@
 
 
 
-static void interpolate_pillar(double *coord, double *x, double *y, double *z)
+static void interpolate_pillar(const double *coord, double *pt)
 {
-  double a = (*z-coord[2])/(coord[5]-coord[2]);
-  *x       = coord[0] + a*(coord[3]-coord[0]);
-  *y       = coord[1] + a*(coord[4]-coord[1]);
+  double a = (pt[2]-coord[2])/(coord[5]-coord[2]);
+  pt[0]       = coord[0] + a*(coord[3]-coord[0]);
+  pt[1]       = coord[1] + a*(coord[4]-coord[1]);
 }
 
 
@@ -125,12 +125,11 @@ void process_vertical_faces(const int dims[3], int direction, sparse_table_t *ft
   /* constant i-faces */
   for (j=0; j<dims[1]+direction; ++j) {
     for (i=0; i<dims[0]+1-direction; ++i){
-      /* fprintf(stderr, "%p %p\n  ", neighbors, intersections); */
+
       if (!checkmemeory(dims[2], ftab, neighbors, intersections)){
 	fprintf(stderr, "Could not allocat enough space\n");
 	exit(1);      
       }
-      /* fprintf(stderr, "%p %p\n\n", neighbors, intersections); */
 
       int startface = ftab->position;
       int num_intersections = *npoints - npillarpoints;
@@ -163,6 +162,7 @@ void process_vertical_faces(const int dims[3], int direction, sparse_table_t *ft
 
 
 
+/*-------------------------------------------------------*/
 void process_horizontal_faces(const struct grdecl *g, int *cell_index, 
 			      sparse_table_t *faces, int **neighbors, 
 			      int **intersections, int *plist)
@@ -205,12 +205,14 @@ void process_horizontal_faces(const struct grdecl *g, int *cell_index,
 	if (c[0][k] == c[0][k+1] &&
 	    c[1][k] == c[1][k+1] &&
 	    c[2][k] == c[2][k+1] &&
-	    c[3][k] == c[3][k+1]){
-	  if (k%2)*cell++ = -1;
-	  continue;
+	    c[3][k] == c[3][k+1] &&
+	    k%2){
+	  *cell++ = -1;
+	  kprev   = -1;
+	  
 	}else{
 
-	  /* Add face */
+	  /* Add face ### - room for some refinement here #### */
 	  *newface++ = c[0][k];
 	  *newface++ = c[1][k];
 	  *newface++ = c[2][k];
@@ -229,6 +231,78 @@ void process_horizontal_faces(const struct grdecl *g, int *cell_index,
   }
 
 }
+
+
+static void approximate_intersection_pt(int *intersection, 
+					double *coordinates, double *pt)
+{
+  double z0 = coordinates[3*intersection[0]+2];
+  double z1 = coordinates[3*intersection[1]+2];
+  double z2 = coordinates[3*intersection[2]+2];
+  double z3 = coordinates[3*intersection[3]+2];
+
+  double alpha = (z2-z0)/(z1-z0 - (z3-z2));
+
+  pt[0] = coordinates[3*intersection[0]+0]*(1.0-alpha) 
+         +coordinates[3*intersection[1]+0]*     alpha;
+  pt[1] = coordinates[3*intersection[0]+1]*(1.0-alpha) 
+         +coordinates[3*intersection[1]+1]*     alpha;
+  pt[2] = coordinates[3*intersection[0]+2]*(1.0-alpha) 
+         +coordinates[3*intersection[1]+2]*     alpha;
+
+}
+
+static void compute_node_coordinates(const struct grdecl *g, 
+				     double *coordinates, 
+				     int *intersections, 
+				     sparse_table_t *pillarz, 
+				     int npillarpoints,
+				     int npoints)
+{
+  int i,k;
+  int nx = g->dims[0];
+  int ny = g->dims[1];
+
+  double       *pt          = coordinates;
+  const double *c           = g->coord;
+
+  /* Loop over pillars */
+  int pillar = 0;
+  for (i=0; i< (nx+1)*(ny+1); ++i){
+    
+    fprintf(stderr, "pillar: %f %f %f - %f %f %f\n", 
+	    c[0], c[1], c[2], c[3],c[4],c[5]);
+
+
+    /* Loop over unique zcorn values - may be none */
+    for (k=pillarz->ptr[pillar]; k<pillarz->ptr[pillar+1]; ++k) {
+	
+      /* Assign z-coordinate */
+      pt[2] = ((double*)pillarz->data)[k];
+
+      /* Compute x- and y- coordinate */
+      interpolate_pillar(c, pt);
+	
+      fprintf(stderr, "pt : %f %f %f\n", pt[0], pt[1], pt[2]);
+      pt += 3;
+    }
+
+    ++pillar;
+    c += 6;
+  }
+
+  
+  /* Append intersections */
+  int *itsct = intersections;
+  for (k=npillarpoints; k<npoints; ++k){
+    /* Approximate intersection */
+    approximate_intersection_pt(itsct, coordinates, pt);
+    fprintf(stderr, "%f %f %f\n", pt[0], pt[1], pt[2]);
+    pt += 3;
+    itsct += 4;
+  }
+}
+
 
 /* Gateway routine.              */
 /*-------------------------------*/
@@ -306,6 +380,7 @@ void processGrdecl(const struct grdecl *g, double tol, struct processed_grid *ou
   process_horizontal_faces(g, cell_index, faces, &neighbors, &intersections, plist);
 
 
+
   /*                                                       */
   /*                                                       */
   /*                                                       */
@@ -315,44 +390,51 @@ void processGrdecl(const struct grdecl *g, double tol, struct processed_grid *ou
   /*                                                       */
 
 #if 1
-      fprintf(stderr, "\nfaces\nnumfaces %d\n", faces->position);
-      for (i=0; i<faces->position; ++i){
-	for (k=faces->ptr[i]; k<faces->ptr[i+1]; ++k){
-	  fprintf(stderr, "%d ", ((int*)faces->data)[k]);
-	}
-	fprintf(stderr, "\n");
-      }
-
-
-      fprintf(stderr, "\nneighbors\n");
-      int *iptr = neighbors;
-      for(k=0; k<faces->position; ++k){
-	fprintf(stderr, " (%d %d)\n",  iptr[0], iptr[1]);
-	++iptr;
-	++iptr;
-      }
-
-      fprintf(stderr, "\nline intersections:\n");
-      iptr = intersections;
-      int numintersections = npoints - npillarpoints;
-      for(k=0; k<numintersections; ++k){
-	fprintf(stderr, " (%d %d %d %d)\n",  iptr[0], iptr[1], iptr[2], iptr[3]);
-	iptr+=4;
-      }
-
-
-      /* fprintf(stderr, "number of cells : %d\n", nx*ny*nz); */
-      /* for (k=0; k<nx*ny*nz; ++k){ */
-      /* fprintf(stderr, "cell index %d is %d\n", k, cell_index[k]); */
-      /* } */
+  fprintf(stderr, "\nfaces\nnumfaces %d\n", faces->position);
+  for (i=0; i<faces->position; ++i){
+    for (k=faces->ptr[i]; k<faces->ptr[i+1]; ++k){
+      fprintf(stderr, "%d ", ((int*)faces->data)[k]);
+    }
+    fprintf(stderr, "\n");
+  }
+  
+  
+  fprintf(stderr, "\nneighbors\n");
+  int *iptr = neighbors;
+  for(k=0; k<faces->position; ++k){
+    fprintf(stderr, " (%d %d)\n",  iptr[0], iptr[1]);
+    ++iptr;
+    ++iptr;
+  }
+  
+  fprintf(stderr, "\nline intersections:\n");
+  iptr = intersections;
+  int numintersections = npoints - npillarpoints;
+  for(k=0; k<numintersections; ++k){
+    fprintf(stderr, " (%d %d %d %d)\n",  iptr[0], iptr[1], iptr[2], iptr[3]);
+    iptr+=4;
+  }
+  
+  
+  /* fprintf(stderr, "number of cells : %d\n", nx*ny*nz); */
+  /* for (k=0; k<nx*ny*nz; ++k){ */
+  /* fprintf(stderr, "cell index %d is %d\n", k, cell_index[k]); */
+  /* } */
 #endif
-  /* compute node coordinates */
+ 
+  /* compute node coordinates on pillars and new intersections */
+  
+  double       *coordinates = malloc(3*npoints * sizeof(*coordinates));
+
+ compute_node_coordinates(g, coordinates, intersections, pillarz, 
+			  npillarpoints, npoints);  
+
+
   free_sparse_table(pillarz);
 
   /* compute intersections */
   free (intersections);
 
-  /* compute local cell numbering */
   free (plist);
 
 
@@ -361,8 +443,8 @@ void processGrdecl(const struct grdecl *g, double tol, struct processed_grid *ou
   out->face_ptr         = faces->ptr;
   out->face_neighbors   = neighbors;
   out->number_of_nodes  = 0;
-  out->node_coordinates = NULL;
+  out->node_coordinates = coordinates;
   out->number_of_cells  = 0;
-  out->local_cell_index = NULL;
+  out->local_cell_index = cell_index;
 
 }
