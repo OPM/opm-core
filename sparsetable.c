@@ -28,7 +28,7 @@ sparse_table_t *malloc_sparse_table(int m, int n, int datasz)
   
   
   if(!(tab->data = malloc(n * datasz))){
-    fprintf(stderr, "Could not allocate space for sparse data\n");
+    fprintf(stderr, "Could not allocate space for sparse data(%d)\n", n);
     free_sparse_table(tab);
     return NULL;
   }    
@@ -51,7 +51,7 @@ sparse_table_t *realloc_sparse_table(sparse_table_t *tab, int m, int n, int data
   if(p){
     tab->data = p;
   }else{
-    fprintf(stderr, "Could not reallocate space for sparse data\n");
+    fprintf(stderr, "Could not reallocate space for sparse data(%d)\n", n);
     free_sparse_table(tab);
     return NULL;
   }

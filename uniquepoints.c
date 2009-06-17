@@ -47,9 +47,11 @@ static int createSortedList(double *list, int n, int m,
 /*-------------------------------------------------------*/
 static int uniquify(int n, double *list, double tolerance)
 {
+  if (n<1) return 0;
   int    i;
-  int    pos = 1; /* Keep first value */
-  double val = list[pos];
+  int    pos = 0; 
+  double val = list[pos++];/* Keep first value */
+  
   for (i=1; i<n; ++i){
     if (list[i] - val > tolerance){
       val         = list[i];
@@ -61,7 +63,7 @@ static int uniquify(int n, double *list, double tolerance)
   if (list[n-1] - val > tolerance){
     list[pos-1] = list[n-1];
   }
-
+  
   return pos;
 }
 
@@ -111,6 +113,7 @@ static int* assignPointNumbers(int    begin,
     *p++ = k;
   }
   *p++ = INT_MAX;/* Padding to ease processing of faults */
+
 
   return p;
 }
@@ -169,8 +172,8 @@ void finduniquepoints(const struct grdecl *g,
   double  *zout  = zlist;  
   int     pos    = 0;
 
-  zptr[0] = 0;
-  
+  zptr[pos++] = zout - zlist;
+
   /* Loop over pillars, find unique points on each pillar */
   for (j=0; j < g->dims[1]+1; ++j){
     for (i=0; i < g->dims[0]+1; ++i){
@@ -184,10 +187,10 @@ void finduniquepoints(const struct grdecl *g,
 
       len = createSortedList(     zout, d1[2], 4, z, a);
       len = uniquify        (len, zout, 0.0);      
-      
+
       /* Increment pointer to sparse table of unique zcorn values */
       zout        = zout + len;
-      zptr[++pos] = zout - zlist;
+      zptr[pos++] = zout - zlist;
     }
   }
 
@@ -197,7 +200,7 @@ void finduniquepoints(const struct grdecl *g,
   int *p = plist;
   for (j=0; j < 2*g->dims[1]; ++j){
     for (i=0; i < 2*g->dims[0]; ++i){
-
+      
       /* pillar index */
       int pix = (i+1)/2 + (g->dims[0]+1)*((j+1)/2);
       
@@ -212,8 +215,8 @@ void finduniquepoints(const struct grdecl *g,
 
       assignPointNumbers(zptr[pix], zptr[pix+1], zlist,
 			 2*g->dims[2], z, a, p, 0.0);
-      p += 2 + 2*g->dims[2];
 
+      p += 2 + 2*g->dims[2];
     }
   }
 }

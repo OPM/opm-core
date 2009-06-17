@@ -22,6 +22,7 @@ struct processed_grid{
   double *node_coordinates; /* 3 doubles per node, sequentially                   */
   
   int    number_of_cells;   /* number of active cells                             */
+  int    number_of_active_cells;   
   int    *local_cell_index; /* Global to local map                                */
 };
 
