@@ -78,22 +78,13 @@ static int *computeFaceTopology(int *a1,
       mask[3] = intersect[2];
     }
   }
-
-/*   fprintf(stderr, "intersect: %d %d %d %d\n",  */
-/* 	  intersect[0],  */
-/* 	  intersect[1],  */
-/* 	  intersect[2],  */
-/* 	  intersect[3]); */
-/*   fprintf(stderr, "face: "); */
   int k;
   int *f = faces;
   for (k=0; k<8; ++k){
     if(mask[k] != -1){
       *f++ = mask[k];
-/*       fprintf(stderr, "%d ", f[-1]); */
     }
   }
-/*   fprintf(stderr, "\n"); */
   return f;
 }
 
@@ -156,11 +147,6 @@ void findconnections(int n, int *pts[4],
 
     while(j<n-1 && (b1[j] < a1[i+1] || b2[j] < a2[i+1])){
 
-      /*debug:*/
-      /*       int k; */
-      /*       for (k=0; k<n; ++k) itop[k]=-1; */
-      /*       for (k=0; k<n; ++k) ibottom[k]=-1; */
-      
       if (b1[j] == b1[j+1] && b2[j] == b2[j+1]){
 	itop[j+1] = itop[j];
 	++j;
