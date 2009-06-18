@@ -141,17 +141,24 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   /* Set up data passed from Matlab */
   struct grdecl g;
   struct processed_grid out;
+  double tolerance = 0.0;
 
-  mxInitGrdecl(&g, prhs);
-  processGrdecl(&g, 0.0, &out);
+  mx_init_grdecl(&g, prhs[0]);
+  if (nrhs == 2){
+    
+    tolerance = mxGetScalar (prhs[1]);
+  }
+  
+  process_grdecl(&g, tolerance, &out);
 
 
   if (plhs >0){
     /* write to matlab struct */
     fill_grid(plhs, &out);
   }
+  
 
   /* Free whatever was allocated in initGrdecl. */
-  freeGrdecl(&g);
+  free_grdecl(&g);
   free_processed_grid(&out);
 }
