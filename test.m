@@ -1,8 +1,8 @@
-nx = 5;
-ny = 7;
+nx = 6;
+ny = 6;
 nz = 11;
-%g=simpleGrdecl([nx, ny, nz], @(x) -0.055+0.11*x+0.011 );
-g = makeModel3([200,220,30]);
+%g=simpleGrdecl([nx, ny, nz], @(x) 0.05+0.11*x+0.011 );
+g = makeModel3([5,5,300]);
 %G=processGRDECL(g);
 %clf,plotGrid(G);view(3);
 

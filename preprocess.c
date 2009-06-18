@@ -3,7 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-
+#include <float.h>
 #include "preprocess.h"
 #include "sparsetable.h"
 #include "uniquepoints.h"
@@ -17,7 +17,13 @@
 
 static void interpolate_pillar(const double *coord, double *pt)
 {
-  double a = (pt[2]-coord[2])/(coord[5]-coord[2]);
+  double a;
+  if (fabs(coord[5]-coord[2]) < DBL_EPSILON){
+    a = 0;
+  }
+  else{
+    a = (pt[2]-coord[2])/(coord[5]-coord[2]);
+  }
   pt[0]       = coord[0] + a*(coord[3]-coord[0]);
   pt[1]       = coord[1] + a*(coord[4]-coord[1]);
 }
@@ -124,7 +130,7 @@ void process_vertical_faces(const int dims[3], int direction, sparse_table_t *ft
 
   int i,j;
   int *cornerpts[4];
-
+  int facecount = 0;
   /* constant i- or j-faces */
   for (j=0; j<dims[1]+direction; ++j) {
     for (i=0; i<dims[0]+1-direction; ++i){
@@ -152,16 +158,16 @@ void process_vertical_faces(const int dims[3], int direction, sparse_table_t *ft
 		      *intersections+4*num_intersections, 
 		      *neighbors, work, ftab);
       
-	
- 
-
       int *ptr = *neighbors + 2*startface;
       int len  = 2*ftab->position - 2*startface;
 
       compute_cell_index(dims, i-1+direction, j-direction, ptr,   len);
       compute_cell_index(dims, i,   j, ptr+1, len);
+
+      facecount += ftab->position - startface;
     }
   }
+  fprintf(stderr, "Number of vertical faces = %d\n", facecount);
 }
 
 int global_cell(const int dims[3], int i, int j, int k)
@@ -181,7 +187,7 @@ void process_horizontal_faces(const struct grdecl *g,
   int i,j,k;
   int *cell  = cell_index;
   int cellno = 0;
-  
+  int facecount = 0;
   /* compute constant-k faces */
   for(j=0; j<g->dims[1]; ++j){
     for (i=0; i<g->dims[0]; ++i) {
@@ -225,7 +231,7 @@ void process_horizontal_faces(const struct grdecl *g,
 	    *newface++ = c[1][k];
 	    *newface++ = c[3][k];
 	    *newface++ = c[2][k];
-	    
+	    ++facecount;
 	    faces->ptr[++faces->position] = newface - f;
 	    *newneighbors++ = previous_global_cell;
 	    *newneighbors++ = previous_global_cell = global_cell(g->dims, i,j,(k-1)/2);
@@ -240,7 +246,7 @@ void process_horizontal_faces(const struct grdecl *g,
 	      *newface++ = c[1][k];
 	      *newface++ = c[3][k];
 	      *newface++ = c[2][k];
-	      
+	      ++facecount;
 	      faces->ptr[++faces->position] = newface - f;
 	      *newneighbors++ = previous_global_cell;
 	      *newneighbors++ = previous_global_cell = -1;
@@ -250,6 +256,7 @@ void process_horizontal_faces(const struct grdecl *g,
       }
     }
   }
+  fprintf(stderr, "number of horizontal face = %d\n", facecount);
   *ncells = cellno;
 }
 
@@ -273,6 +280,7 @@ static void approximate_intersection_pt(int     *intersection,
 
 }
 
+/*------------------------------------------------------------*/
 static void compute_node_coordinates(const struct grdecl *g, 
 				     double              *coordinates, 
 				     int                 *intersections, 
@@ -394,7 +402,7 @@ void processGrdecl(const struct grdecl *g, double tol, struct processed_grid *ou
   
   free(work);
   
-
+  
   int *cell_index = calloc(nx*ny*nz,sizeof(*cell_index));
   int ncells;
   
@@ -419,13 +427,15 @@ void processGrdecl(const struct grdecl *g, double tol, struct processed_grid *ou
   }
 
   /* Shrink memory allocated for cell_index */
-  p = realloc(cell_index, (ptr-cell_index)*sizeof(*cell_index));
-  if (p){
-    cell_index = p;
-  }
-  else{
-    fprintf(stderr, "Could not reallocate space for index map\n");
-    exit(1);
+  if (ptr != cell_index){   /* always !*/
+    p = realloc(cell_index, (ptr-cell_index)*sizeof(*cell_index));
+    if (p){
+      cell_index = p;
+    }
+    else{
+      fprintf(stderr, "Could not reallocate space for index map\n");
+      exit(1);
+    }
   }
 
 
@@ -436,10 +446,8 @@ void processGrdecl(const struct grdecl *g, double tol, struct processed_grid *ou
 			   npillarpoints, npoints);  
   
   
-   free_sparse_table(pillarz);
-
+  free_sparse_table(pillarz);
   free (intersections);
-
   free (plist);
 
 
