@@ -14,8 +14,9 @@
 void mxInitGrdecl(struct grdecl *g, const mxArray *prhs[])
 {
   int i,j,k,n;
-
-
+  if (mxGetClassID(mxGetField(prhs[0], 0, "ACTNUM")) != mxINT32_CLASS){
+    mexErrMsgTxt("ACTNUM field of grid declaration must be int32");
+  }
   g->coord    = mxGetPr(mxGetField(prhs[0], 0, "COORD"));
   double *tmp = mxGetPr(mxGetField(prhs[0], 0, "cartDims"));
   n = 1;
