@@ -11,28 +11,34 @@
 
 /* Get COORD, ZCORN, ACTNUM and DIMS from mxArray.       */
 /*-------------------------------------------------------*/
-void mxInitGrdecl(struct grdecl *g, const mxArray *prhs[])
+void mx_init_grdecl(struct grdecl *g, const mxArray *s)
 {
   int i,j,k,n;
-  if (mxGetClassID(mxGetField(prhs[0], 0, "ACTNUM")) != mxINT32_CLASS){
-    mexErrMsgTxt("ACTNUM field of grid declaration must be int32");
+  mxArray *field;
+  int numel;
+
+  field = mxGetField(s, 0, "cartDims");
+  numel = mxGetNumberOfElements(field);
+  double *tmp = mxGetPr(field);
+  if (numel != 3){
+    mexErrMsgTxt("cartDims field must be 3 numbers");
   }
-  g->coord    = mxGetPr(mxGetField(prhs[0], 0, "COORD"));
-  double *tmp = mxGetPr(mxGetField(prhs[0], 0, "cartDims"));
+
   n = 1;
   for (i=0; i<3; ++i){
     g->dims[i] = tmp[i];
     n      *= tmp[i];
   }
-/*   mexPrintf("dimensions: %d %d %d\n", */
-/* 	    g->dims[0], */
-/* 	    g->dims[1], */
-/* 	    g->dims[2]); */
 
 
-
+  field = mxGetField(s, 0, "ACTNUM");
+  numel = mxGetNumberOfElements(field);
+  if (mxGetClassID(field) != mxINT32_CLASS ||
+      numel != g->dims[0]*g->dims[1]*g->dims[2] ){
+    mexErrMsgTxt("ACTNUM field must be nx*ny*nz numbers int32");
+  }
   /* grdecl.actnum = permute(actnum, [3,1,2]);   */
-  int *actnum  = mxGetData(mxGetField(prhs[0], 0, "ACTNUM"));
+  int *actnum  = mxGetData(field);
   
   int *a = malloc(n*  sizeof(*g->actnum));
   int *iptr = a;
@@ -44,9 +50,26 @@ void mxInitGrdecl(struct grdecl *g, const mxArray *prhs[])
     }
   }
   g->actnum = a;
+  
+  
+  field = mxGetField(s, 0, "COORD");
+  numel = mxGetNumberOfElements(field);
+  if (mxGetClassID(field) != mxDOUBLE_CLASS || 
+      numel != 6*(g->dims[0]+1)*(g->dims[1]+1)){
+    mexErrMsgTxt("COORD field must have 6*(nx+1)*(ny+1) doubles.");
+  }
+  g->coord = mxGetPr(field);
+  
+
+  field = mxGetField(s, 0, "ZCORN");
+  numel = mxGetNumberOfElements(field);
+  if (mxGetClassID(field) != mxDOUBLE_CLASS || 
+      numel != 8*g->dims[0]*g->dims[1]*g->dims[2]){
+    mexErrMsgTxt("ZCORN field must have 8*nx*ny*nz doubles.");
+  }
+  double *zcorn = mxGetPr(field);
 
   /* grdecl.zcorn = permute(zcorn, [3,1,2]);   */
-  double *zcorn = mxGetPr(mxGetField(prhs[0], 0, "ZCORN"));
   double *z = malloc(n*8*sizeof(*g->zcorn));
   double *dptr = z;
   for (j=0; j<2*g->dims[1]; ++j){
@@ -63,7 +86,7 @@ void mxInitGrdecl(struct grdecl *g, const mxArray *prhs[])
 
 /* Free stuff that was allocated in initgrdecl.          */
 /*-------------------------------------------------------*/
-void freeGrdecl(struct grdecl *g)
+void free_grdecl(struct grdecl *g)
 {
   free((double*)g->zcorn);  g->zcorn  = NULL;
   free((double*)g->actnum); g->actnum = NULL;
