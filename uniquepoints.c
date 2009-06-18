@@ -54,14 +54,14 @@ static int uniquify(int n, double *list, double tolerance)
   double val = list[pos++];/* Keep first value */
   
   for (i=1; i<n; ++i){
-    if (list[i] - val > tolerance){
+    if (val + tolerance < list [i]){
       val         = list[i];
       list[pos++] = val;
     }
   }
 
   /* Keep last value (one way or the other...) */
-  if (list[n-1] - val > tolerance){
+  if (val + tolerance < list[n-1]){
     list[pos-1] = list[n-1];
   }
   
@@ -103,12 +103,12 @@ static int assignPointNumbers(int    begin,
     }
 
     /* Find next k such that zlist[k] < z[i] < zlist[k+1] */
-    while (k < end && zlist[k] + tolerance < z[i]){
+    while ((k < end) && (zlist[k] + tolerance < z[i])){
       k++;
     }
 
     /* assert (k < len && z[i] - zlist[k] <= tolerance) */
-    if (k == end || z[i] - zlist[k] > tolerance){
+    if ((k == end) || ( zlist[k] + tolerance < z[i])){
       fprintf(stderr, "Cannot associate  zcorn values with given list\n");
       fprintf(stderr, "of z-coordinates to given tolerance\n");      
       return 0;
@@ -161,10 +161,12 @@ static void dgetvectors(const int dims[3], int i, int j, const double *field, co
 int finduniquepoints(const struct grdecl *g,
 		                            /* return values: */
 		     int           *plist, /* list of point numbers on each pillar*/
-		     sparse_table_t *ztab)
+		     sparse_table_t *ztab, 
+		     double tolerance)
 		      
 {
 
+  tolerance = tolerance < DBL_EPSILON ? DBL_EPSILON : tolerance;
 
   double *zlist = ztab->data; /* casting void* to double* */
   int     *zptr = ztab->ptr;
@@ -190,7 +192,7 @@ int finduniquepoints(const struct grdecl *g,
       dgetvectors(d1,      2*i, 2*j, g->zcorn,  z);
 
       len = createSortedList(     zout, d1[2], 4, z, a);
-      len = uniquify        (len, zout, DBL_EPSILON);      
+      len = uniquify        (len, zout, tolerance);      
 
       /* Increment pointer to sparse table of unique zcorn values */
       zout        = zout + len;
@@ -218,7 +220,7 @@ int finduniquepoints(const struct grdecl *g,
       const double *z   = g->zcorn  + zix;
 
       if (!assignPointNumbers(zptr[pix], zptr[pix+1], zlist,
-			      2*g->dims[2], z, a, p, DBL_EPSILON)){
+			      2*g->dims[2], z, a, p, tolerance)){
 	fprintf(stderr, "Something went wrong in assignPointNumbers");
 	return 0;
       }
