@@ -22,12 +22,13 @@ struct processed_grid{
   double *node_coordinates; /* 3 doubles per node, sequentially                   */
   
   int    number_of_cells;   /* number of active cells                             */
-  int    number_of_active_cells;   
   int    *local_cell_index; /* Global to local map                                */
 };
 
 
-void processGrdecl(const struct grdecl *g, double tol, struct processed_grid *out);
+void process_grdecl     (const struct grdecl   *g, 
+			 double                tol, 
+			 struct processed_grid *out);
 void free_processed_grid(struct processed_grid *g);
 
 #endif
