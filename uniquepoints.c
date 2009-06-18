@@ -2,6 +2,7 @@
 #include <math.h>
 #include <string.h>
 #include <limits.h>
+#include <float.h>
 #include <stdio.h>
 
 
@@ -69,7 +70,7 @@ static int uniquify(int n, double *list, double tolerance)
 
 
 /* Along single pillar: */
-static int* assignPointNumbers(int    begin, 
+static int assignPointNumbers(int    begin, 
 			       int    end, 
 			       const double *zlist,
 			       int    n, 
@@ -108,14 +109,17 @@ static int* assignPointNumbers(int    begin,
 
     /* assert (k < len && z[i] - zlist[k] <= tolerance) */
     if (k == end || z[i] - zlist[k] > tolerance){
-      fprintf(stderr, "What!?\n");
+      fprintf(stderr, "Cannot associate  zcorn values with given list\n");
+      fprintf(stderr, "of z-coordinates to given tolerance\n");      
+      return 0;
     }
+
     *p++ = k;
   }
   *p++ = INT_MAX;/* Padding to ease processing of faults */
 
 
-  return p;
+  return 1;
 }
 
 
@@ -154,10 +158,10 @@ static void dgetvectors(const int dims[3], int i, int j, const double *field, co
 /* Assume that coordinate number is arranged in a        */
 /* sequence such that the natural index is (k,i,j)       */
 /*-------------------------------------------------------*/
-void finduniquepoints(const struct grdecl *g,
+int finduniquepoints(const struct grdecl *g,
 		                            /* return values: */
-		      int           *plist, /* list of point numbers on each pillar*/
-		      sparse_table_t *ztab)
+		     int           *plist, /* list of point numbers on each pillar*/
+		     sparse_table_t *ztab)
 		      
 {
 
@@ -186,7 +190,7 @@ void finduniquepoints(const struct grdecl *g,
       dgetvectors(d1,      2*i, 2*j, g->zcorn,  z);
 
       len = createSortedList(     zout, d1[2], 4, z, a);
-      len = uniquify        (len, zout, 0.0);      
+      len = uniquify        (len, zout, DBL_EPSILON);      
 
       /* Increment pointer to sparse table of unique zcorn values */
       zout        = zout + len;
@@ -213,12 +217,16 @@ void finduniquepoints(const struct grdecl *g,
       const int    *a   = g->actnum + cix; 
       const double *z   = g->zcorn  + zix;
 
-      assignPointNumbers(zptr[pix], zptr[pix+1], zlist,
-			 2*g->dims[2], z, a, p, 0.0);
+      if (!assignPointNumbers(zptr[pix], zptr[pix+1], zlist,
+			      2*g->dims[2], z, a, p, DBL_EPSILON)){
+	fprintf(stderr, "Something went wrong in assignPointNumbers");
+	return 0;
+      }
 
       p += 2 + 2*g->dims[2];
     }
   }
+  return 1;
 }
 
 
