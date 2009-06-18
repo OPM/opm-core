@@ -118,8 +118,8 @@ static int faceintersection(int *a1, int *a2, int *b1, int *b2)
 }
 
 
-#define meaningful_face !((a1[i]==INT_MIN) && (b1[j]==INT_MIN)) && \
-  !((a1[i+1]==INT_MAX) && (b1[j+1]==INT_MAX))
+#define meaningful_face !((a1[i]  ==INT_MIN) && (b1[j]  ==INT_MIN)) && \
+                        !((a1[i+1]==INT_MAX) && (b1[j+1]==INT_MAX))
 
 /* work should be pointer to 2n ints initialised to zero . */
 void findconnections(int n, int *pts[4],
@@ -180,16 +180,29 @@ void findconnections(int n, int *pts[4],
 
 	  /* Add face to list of faces if not any first or last points are involved. */
 	  if (meaningful_face){
-	    /* Add neighbors cells */
-	    *c++ = i%2 ? (i-1)/2 : -1;
-	    *c++ = j%2 ? (j-1)/2 : -1;
 
-	    /* face */
-	    *f++ = a1[i];
-	    *f++ = a1[i+1];
-	    *f++ = a2[i+1];
-	    *f++ = a2[i];
-	    ftab->ptr[++ftab->position] = f - (int*)ftab->data;
+	    int cell_a = i%2 ? (i-1)/2 : -1;
+	    int cell_b = j%2 ? (j-1)/2 : -1;
+
+	    if (cell_a != -1 || cell_b != -1){
+	      *c++ = cell_a;
+	      *c++ = cell_b;
+
+	      /* face */
+	      *f++ = a1[i];
+	      *f++ = a1[i+1];
+	      *f++ = a2[i+1];
+	      *f++ = a2[i];
+	      ftab->ptr[++ftab->position] = f - (int*)ftab->data;
+	    }
+	    else{
+	      ;
+	      /*
+		fprintf(stderr, 
+		      "Warning. For some reason we get face connecting void spaces\n");
+	      */
+	    }
+
 	  }
 	}
 
@@ -218,14 +231,32 @@ void findconnections(int n, int *pts[4],
 	  intersect[3] = itop[j+1];     /* i+1 x j+1 */
 
 
-	  /* Add face to list of faces if not any first or last points are involved. */
+	  /* Add face to list of faces if no INT_MIN or INT_MAX appear in a or b. */
 	  if (meaningful_face){
-	    /* neighbor cells */
-	    *c++ = i%2 ? (i-1)/2 : -1;
-	    *c++ = j%2 ? (j-1)/2 : -1;
 
-	    f = computeFaceTopology(a1+i, a2+i, b1+j, b2+j, intersect, f);
-	    ftab->ptr[++ftab->position] = f - (int*)ftab->data;
+	    /* 
+	       Even indices refer to space between cells, 
+	       odd indices refer to cells 
+	    */
+	    int cell_a = i%2 ? (i-1)/2 : -1;
+	    int cell_b = j%2 ? (j-1)/2 : -1;
+
+
+
+	    if (cell_a != -1 || cell_b != -1){
+	      *c++ = cell_a;
+	      *c++ = cell_b;
+	      
+	      f = computeFaceTopology(a1+i, a2+i, b1+j, b2+j, intersect, f);
+	      ftab->ptr[++ftab->position] = f - (int*)ftab->data;
+	    }
+	    else{
+	      ;
+	      /*
+		fprintf(stderr, 
+		      "Warning. For some reason we get face connecting void spaces\n");
+	      */
+	    }
 	  }
 	}
       }
@@ -240,18 +271,12 @@ void findconnections(int n, int *pts[4],
 
     
     /* Swap intersection records: top line of a[i,i+1] is bottom line of a[i+1,i+2] */
-    int *tmp;
-    tmp = itop; itop = ibottom; ibottom = tmp;
+    int *tmp; tmp = itop; itop = ibottom; ibottom = tmp;
 
-    /* Zero out the "new" itop, set j to appropriate start position for next i */
+    /* Zero out the "new" itop */
     for(j=0;j<n; ++j) itop[j]=-1;
 
-    /*     int k;for (k=0;k<n; ++k){ */
-    /*       if (itop   [k] != -1) fprintf(stderr, "itop not -1\n"); */
-    /*       if (ibottom[k] != -1) fprintf(stderr, "ibottom not -1\n"); */
-    /*     } */
-
-    /* Now, j = min(k1, k2) and itop is all zeros */
+    /* Set j to appropriate start position for next i */
     j = min(k1, k2);
   }
 }
