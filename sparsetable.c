@@ -36,7 +36,8 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <math.h>
 #include <string.h>
 #include <assert.h>
-#include <mex.h>
+#include <stdio.h>
+
 
 #include "sparsetable.h"
 
