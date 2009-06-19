@@ -53,7 +53,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
   Given a z coordinate, find x and y coordinates on line defined by
   coord.  Coord points to a vector of 6 doubles [x0,y0,z0,x1,y1,z1].
  */
-istatic void interpolate_pillar(const double *coord, double *pt)
+static void interpolate_pillar(const double *coord, double *pt)
 {
   double a = (pt[2]-coord[2])/(coord[5]-coord[2]);
   if (isinf(a) || isnan(a)){
