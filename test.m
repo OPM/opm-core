@@ -9,4 +9,4 @@ g = makeModel3([5,5,300]);
 g.ACTNUM=int32(g.ACTNUM);
 
 grdecl = readGRDECL(fullfile(ROOTDIR, 'examples','grids','GSmodel.grdecl'));
-grdecl = readGRDECL(fullfile(ROOTDIR, 'projects','co2','Sector15.grdecl'));
+%grdecl = readGRDECL(fullfile(ROOTDIR, 'projects','co2','Sector15.grdecl'));

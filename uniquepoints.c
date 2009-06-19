@@ -41,7 +41,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "sparsetable.h"
-#include "grdecl.h"
+#include "preprocess.h"
 #include "uniquepoints.h"
 #include "matalloc.h"
 
@@ -206,6 +206,22 @@ static void dgetvectors(const int dims[3], int i, int j,
   v[3] = field + dims[2]*(ip + dims[0]* jp);
 }
 
+
+/*-----------------------------------------------------------------
+  Given a z coordinate, find x and y coordinates on line defined by
+  coord.  Coord points to a vector of 6 doubles [x0,y0,z0,x1,y1,z1].
+ */
+static void interpolate_pillar(const double *coord, double *pt)
+{
+  double a = (pt[2]-coord[2])/(coord[5]-coord[2]);
+  if (isinf(a) || isnan(a)){
+    a = 0;
+  }
+
+  pt[0]       = coord[0] + a*(coord[3]-coord[0]);
+  pt[1]       = coord[1] + a*(coord[4]-coord[1]);
+}
+
 /*-----------------------------------------------------------------
  Assign point numbers p such that "zlist(p)==zcorn".
  Assume that coordinate number is arranged in a
@@ -214,15 +230,31 @@ static void dgetvectors(const int dims[3], int i, int j,
 int finduniquepoints(const struct grdecl *g,
 		                            /* return values: */
 		     int           *plist, /* list of point numbers on each pillar*/
-		     sparse_table_t *ztab, 
-		     double tolerance)
+		     double tolerance, 
+		     struct processed_grid *out)
 		      
 {
+  int nx = out->dimensions[0];
+  int ny = out->dimensions[1];
+  int nz = out->dimensions[2];
+
+
+    /* ztab->data may need extra space temporarily due to simple boundary treatement  */
+  int            npillarpoints = 8*(nx+1)*(ny+1)*nz; 
+  int            npillars      = (nx+1)*(ny+1);
+  sparse_table_t *ztab      = malloc_sparse_table(npillars, 
+						     npillarpoints, 
+						     sizeof(double));
+
+
+
+  int nc = g->dims[0]*g->dims[1]*g->dims[2];
+  out->node_coordinates = malloc (3*8*nc*sizeof(*out->node_coordinates));
 
   double *zlist = ztab->data; /* casting void* to double* */
   int     *zptr = ztab->ptr;
 
-  int     i,j;
+  int     i,j,k;
 
   int     d1[3]  = {2*g->dims[0], 2*g->dims[1], 2*g->dims[2]};
   int     len    = 0;
@@ -230,6 +262,9 @@ int finduniquepoints(const struct grdecl *g,
   int     pos    = 0;
 
   zptr[pos++] = zout - zlist;
+
+  double *coord = (double*)g->coord;
+  double *pt    = out->node_coordinates;
 
   /* Loop over pillars, find unique points on each pillar */
   for (j=0; j < g->dims[1]+1; ++j){
@@ -245,13 +280,22 @@ int finduniquepoints(const struct grdecl *g,
       len = createSortedList(     zout, d1[2], 4, z, a);
       len = uniquify        (len, zout, tolerance);      
 
+      /* Assign unique points */
+      for (k=0; k<len; ++k){
+	pt[2] = zout[k]; 
+	interpolate_pillar(coord, pt);
+	pt += 3;
+      }
+
       /* Increment pointer to sparse table of unique zcorn values */
       zout        = zout + len;
       zptr[pos++] = zout - zlist;
+
+      coord += 6;
     }
   }
-
-
+  out->number_of_nodes_on_pillars = zptr[pos-1];
+  out->number_of_nodes            = zptr[pos-1];
 
   /* Loop over all vertical sets of zcorn values, assign point numbers */
   int *p = plist;
@@ -279,6 +323,11 @@ int finduniquepoints(const struct grdecl *g,
       p += 2 + 2*g->dims[2];
     }
   }
+
+
+  free_sparse_table(ztab);
+
+
   return 1;
 }
 

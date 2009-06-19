@@ -37,11 +37,9 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 
 void findconnections(int n, int *pts[4],
-		     int *ptnumber,
 		     int *intersectionlist,
-		     int *neighbors,
                      int *work,
-                     sparse_table_t *ftab);
+		     struct processed_grid *out);
 
 #endif // OPENRS_FACETOPOLOGY_HEADER
 

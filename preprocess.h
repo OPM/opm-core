@@ -47,12 +47,16 @@ struct grdecl{
 
 /* Output structure holding grid topology */
 struct processed_grid{
+  int m;
+  int n;
+  int    dimensions[3];     /* Cartesian dimension                                */
   int    number_of_faces;
   int    *face_nodes;       /* Nodes numbers of each face sequentially.           */
   int    *face_ptr;         /* Start position for each face in face_nodes.        */
   int    *face_neighbors;   /* Global cell numbers.  2 ints per face sequentially */
   
-  int    number_of_nodes;      
+  int    number_of_nodes; 
+  int    number_of_nodes_on_pillars;
   double *node_coordinates; /* 3 doubles per node, sequentially                   */
   
   int    number_of_cells;   /* number of active cells                             */

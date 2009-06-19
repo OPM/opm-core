@@ -37,8 +37,8 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 int finduniquepoints(const struct grdecl *g,  /* input */
 		     int                 *p,  /* for each z0 in zcorn, z0 = z[p0] */
-		     sparse_table_t      *z,  /* list of uniq zcorn valules for each pillar*/
-		     double               t); /* tolerance*/
+		     double               t,  /* tolerance*/
+		     struct processed_grid *out);
 
 #endif // OPENRS_UNIQUEPOINTS_HEADER
 

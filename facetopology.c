@@ -39,6 +39,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <limits.h>
 
+#include "preprocess.h"
 #include "sparsetable.h"
 #include "facetopology.h"
 
@@ -148,11 +149,9 @@ static int faceintersection(int *a1, int *a2, int *b1, int *b2)
 
 /* work should be pointer to 2n ints initialised to zero . */
 void findconnections(int n, int *pts[4],
-		     int *ptnumber,
 		     int *intersectionlist,
-		     int *neighbors,
 		     int *work,
-		     sparse_table_t *ftab)
+		     struct processed_grid *out)
 {
   /* vectors of point numbers for faces a(b) on pillar 1(2) */
   int *a1 = pts[0];
@@ -163,8 +162,8 @@ void findconnections(int n, int *pts[4],
   /* Intersection record for top line and bottomline of a */
   int *itop    = work;
   int *ibottom = work + n;
-  int *f       = (int*)ftab->data     + ftab->ptr[ftab->position];
-  int *c       = neighbors + 2*ftab->position;
+  int *f       = out->face_nodes + out->face_ptr[out->number_of_faces];
+  int *c       = out->face_neighbors + 2*out->number_of_faces;
 
   int k1  = 0;
   int k2  = 0;
@@ -213,7 +212,9 @@ void findconnections(int n, int *pts[4],
 	      *f++ = a1[i+1];
 	      *f++ = a2[i+1];
 	      *f++ = a2[i];
-	      ftab->ptr[++ftab->position] = f - (int*)ftab->data;
+
+	      out->face_ptr[++out->number_of_faces] = f - out->face_nodes;
+
 	    }
 	    else{
 	      ;
@@ -231,7 +232,7 @@ void findconnections(int n, int *pts[4],
 
 	  /* Find new intersection */
 	  if (lineintersection(a1[i+1],a2[i+1],b1[j+1],b2[j+1])) {
-	    itop[j+1] = (*ptnumber)++;
+	    itop[j+1] = out->number_of_nodes++;
 
 	    /* store point numbers of intersecting lines */
 	    *intersectionlist++ = a1[i+1];
@@ -268,7 +269,8 @@ void findconnections(int n, int *pts[4],
 	      *c++ = cell_b;
 	      
 	      f = computeFaceTopology(a1+i, a2+i, b1+j, b2+j, intersect, f);
-	      ftab->ptr[++ftab->position] = f - (int*)ftab->data;
+
+	      out->face_ptr[++out->number_of_faces] = f - out->face_nodes;
 	    }
 	    else{
 	      ;
