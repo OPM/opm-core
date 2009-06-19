@@ -401,20 +401,57 @@ static void compute_node_coordinates(const struct grdecl *g,
 /*-----------------------------------------------------------------
   Public interface
  */
-void process_grdecl(const struct grdecl   *g, 
+void process_grdecl(const struct grdecl   *in, 
 		    double                tolerance, 
 		    struct processed_grid *out)
 {
-  int i;
+  int i,j,k;
+
+  int nx = in->dims[0]; 
+  int ny = in->dims[1];
+  int nz = in->dims[2];
+
+  int nc = nx*ny*nz;
+  struct grdecl g;
+  
+  g.dims[0] = nx;
+  g.dims[1] = ny;
+  g.dims[2] = nz;
+  int    *actnum  = malloc (nc *     sizeof( *actnum));
+  double *zcorn   = malloc (nc * 8 * sizeof (*zcorn));
+
+  /* Permute actnum */
+  int *iptr = actnum;
+  for (j=0; j<ny; ++j){
+    for (i=0; i<nx; ++i){
+      for (k=0; k<nz; ++k){
+	*iptr++ = in->actnum[i+nx*(j+ny*k)];
+      }
+    }
+  }
+  g.actnum = actnum;
+
+
+  /* Permute zcorn */
+  double *dptr = zcorn;
+  for (j=0; j<2*ny; ++j){
+    for (i=0; i<2*nx; ++i){
+      for (k=0; k<2*nz; ++k){
+	*dptr++ = in->zcorn[i+2*nx*(j+2*ny*k)];
+      }
+    }
+  }
+  g.zcorn = zcorn;
+  g.coord = in->coord;
+
 
   /* Code below assumes k index runs fastests, ie. that dimensions of
      table is permuted to (dims[2], dims[0], dims[1]) */
 
-  int nx = g->dims[0]; 
-  int ny = g->dims[1];
-  int nz = g->dims[2];
+  
 
 
+  
 
 
   int *cell_index = calloc(nx*ny*nz,sizeof(*cell_index));
@@ -436,10 +473,9 @@ void process_grdecl(const struct grdecl   *g,
   int    *plist = malloc( 4*nx*ny*(2*nz+2) * sizeof(int));
 
   /* Fill plist of cornerpoint numbers and ztab of unique zcorn values. */
-  finduniquepoints(g, plist, pillarz, tolerance);
+  finduniquepoints(&g, plist, pillarz, tolerance);
 
   npillarpoints = pillarz->ptr[npillars];
-
 
   void *p = realloc_sparse_table (pillarz, npillars, npillarpoints, sizeof(double));
   if (p) {
@@ -483,11 +519,11 @@ void process_grdecl(const struct grdecl   *g,
   faces->ptr[0]   = 0;
 
   /* faces with constant i */
-  process_vertical_faces(g->dims, 0, faces,
+  process_vertical_faces(g.dims, 0, faces,
 			 &neighbors, &intersections, &npoints,
 			 npillarpoints, plist, work);
   /* faces with constant j */
-  process_vertical_faces(g->dims, 1, faces,  
+  process_vertical_faces(g.dims, 1, faces,  
 			 &neighbors, &intersections, &npoints, 
 			 npillarpoints, plist, work);
   
@@ -495,7 +531,7 @@ void process_grdecl(const struct grdecl   *g,
   
   
 
-  process_horizontal_faces(g, cell_index, &ncells, faces, &neighbors, 
+  process_horizontal_faces(&g, cell_index, &ncells, faces, &neighbors, 
 			   &intersections, plist);
 
 
@@ -527,17 +563,18 @@ void process_grdecl(const struct grdecl   *g,
     }
   }
 
-
   /* compute node coordinates on pillars and new intersections */  
     double       *coordinates = malloc(3*npoints * sizeof(*coordinates));
   out->node_coordinates = coordinates;
-  compute_node_coordinates(g, coordinates, intersections, pillarz, 
+  compute_node_coordinates(&g, coordinates, intersections, pillarz, 
 			   npillarpoints, npoints);  
-  
   
   free_sparse_table(pillarz);
   free (intersections);
   free (plist);
+
+  free (zcorn);
+  free (actnum);
 
 
   out->number_of_faces  = faces->position;

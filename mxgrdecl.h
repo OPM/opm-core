@@ -36,7 +36,6 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #define OPENRS_MXGRDECL_HEADER
 
 void mx_init_grdecl (struct grdecl *g, const mxArray *s);
-void free_grdecl   (struct grdecl *g);
 
 #endif // OPENRS_MXGRDECL_HEADER
 

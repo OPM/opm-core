@@ -50,16 +50,18 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #define overlap(a1,a2,b1,b2) max(a1,b1) < min(a2,b2)
 
 
-/* Compar function passed to qsort                       */
-/*-------------------------------------------------------*/
+/*-----------------------------------------------------------------
+ Compare function passed to qsort                       
+*/
 static int compare(const void *a, const void *b)
 {
   if (*(double*)a < *(double*) b) return -1;
   else return 1;
 }
 
-/* Creat sorted list of z-values in zcorn with actnum==1 */
-/*-------------------------------------------------------*/
+/*-----------------------------------------------------------------
+ Creat sorted list of z-values in zcorn with actnum==1 
+*/
 static int createSortedList(double *list, int n, int m, 
 			    const double *z[], const int *a[])
 {
@@ -77,9 +79,10 @@ static int createSortedList(double *list, int n, int m,
 }
 
 
-/* Remove points that are closer than tolerance in list  */
-/* of increasing doubles                                 */
-/*-------------------------------------------------------*/
+/*-----------------------------------------------------------------
+ Remove points that are closer than tolerance in list
+ of increasing doubles
+*/
 static int uniquify(int n, double *list, double tolerance)
 {
   if (n<1) return 0;
@@ -103,7 +106,9 @@ static int uniquify(int n, double *list, double tolerance)
 }
 
 
-/* Along single pillar: */
+/*-----------------------------------------------------------------
+  Along single pillar: 
+*/
 static int assignPointNumbers(int    begin, 
 			       int    end, 
 			       const double *zlist,
@@ -157,7 +162,13 @@ static int assignPointNumbers(int    begin,
 }
 
 
-/*-------------------------------------------------------*/
+
+/*-----------------------------------------------------------------
+  Given a vector <field> with k index running faster than i running 
+  faster than j, and Cartesian dimensions <dims>, find pointers to the 
+  (i-1, j-1, 0), (i-1, j, 0), (i, j-1, 0) and (i, j, 0) elements of 
+  field.
+ */
 static void igetvectors(const int dims[3], int i, int j, 
 			const int *field, const int *v[])
 {
@@ -173,8 +184,15 @@ static void igetvectors(const int dims[3], int i, int j,
   v[3] = field + dims[2]*(ip + dims[0]* jp);
 }
 
-/*-------------------------------------------------------*/
-static void dgetvectors(const int dims[3], int i, int j, const double *field, const double *v[])
+
+/*-----------------------------------------------------------------
+  Given a vector <field> with k index running faster than i running 
+  faster than j, and Cartesian dimensions <dims>, find pointers to the 
+  (i-1, j-1, 0), (i-1, j, 0), (i, j-1, 0) and (i, j, 0) elements of 
+  field.
+ */
+static void dgetvectors(const int dims[3], int i, int j, 
+			const double *field, const double *v[])
 {
   
   int im = max(1,       i  ) - 1;
@@ -188,10 +206,11 @@ static void dgetvectors(const int dims[3], int i, int j, const double *field, co
   v[3] = field + dims[2]*(ip + dims[0]* jp);
 }
 
-/* Assign point numbers p such that "zlist(p)==zcorn".   */
-/* Assume that coordinate number is arranged in a        */
-/* sequence such that the natural index is (k,i,j)       */
-/*-------------------------------------------------------*/
+/*-----------------------------------------------------------------
+ Assign point numbers p such that "zlist(p)==zcorn".
+ Assume that coordinate number is arranged in a
+ sequence such that the natural index is (k,i,j)
+*/
 int finduniquepoints(const struct grdecl *g,
 		                            /* return values: */
 		     int           *plist, /* list of point numbers on each pillar*/
@@ -199,8 +218,6 @@ int finduniquepoints(const struct grdecl *g,
 		     double tolerance)
 		      
 {
-
-  tolerance = tolerance < DBL_EPSILON ? DBL_EPSILON : tolerance;
 
   double *zlist = ztab->data; /* casting void* to double* */
   int     *zptr = ztab->ptr;

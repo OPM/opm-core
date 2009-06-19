@@ -159,6 +159,5 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
 
   /* Free whatever was allocated in initGrdecl. */
-  free_grdecl(&g);
   free_processed_grid(&out);
 }
