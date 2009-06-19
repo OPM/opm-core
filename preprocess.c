@@ -43,27 +43,34 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include "uniquepoints.h"
 #include "facetopology.h"
 
-/* No checking of input arguments in this code! */
+
 #define min(i,j) ((i)<(j) ? (i) : (j))
 #define max(i,j) ((i)>(j) ? (i) : (j))
 
 
 
-static void interpolate_pillar(const double *coord, double *pt)
+/*-----------------------------------------------------------------
+  Given a z coordinate, find x and y coordinates on line defined by
+  coord.  Coord points to a vector of 6 doubles [x0,y0,z0,x1,y1,z1].
+ */
+istatic void interpolate_pillar(const double *coord, double *pt)
 {
-  double a;
-  if (fabs(coord[5]-coord[2]) < DBL_EPSILON){
+  double a = (pt[2]-coord[2])/(coord[5]-coord[2]);
+  if (isinf(a) || isnan(a)){
     a = 0;
   }
-  else{
-    a = (pt[2]-coord[2])/(coord[5]-coord[2]);
-  }
+
   pt[0]       = coord[0] + a*(coord[3]-coord[0]);
   pt[1]       = coord[1] + a*(coord[4]-coord[1]);
 }
 
 
-/*-------------------------------------------------------*/
+/*-----------------------------------------------------------------
+  Given a vector <field> with k index running faster than i running 
+  faster than j, and Cartesian dimensions <dims>, find pointers to the 
+  (i-1, j-1, 0), (i-1, j, 0), (i, j-1, 0) and (i, j, 0) elements of 
+  field.
+ */
 static void igetvectors(int dims[3], int i, int j, int *field, int *v[])
 {
 
@@ -79,23 +86,17 @@ static void igetvectors(int dims[3], int i, int j, int *field, int *v[])
 }
 
 
-/*-------------------------------------------------------*/
-void free_processed_grid(struct processed_grid *g)
-{
-  if( g ){
-    free ( g->face_nodes       ); 
-    free ( g->face_ptr         );
-    free ( g->face_neighbors   );
-    free ( g->node_coordinates );
-    free ( g->local_cell_index );
-  }
-}
 
 
 
 
+/*-----------------------------------------------------------------
+  Special purpose
 
-/*-------------------------------------------------------*/
+  Convert from k-index to Cartesian index i+nx*(j+ny*k) for every other 
+  element in neighbors.
+
+ */
 void compute_cell_index(const int dims[3], int i, int j, int *neighbors, int len)   
 { 
 
@@ -115,8 +116,9 @@ void compute_cell_index(const int dims[3], int i, int j, int *neighbors, int len
 }
 
 
-/* Ensure there's sufficient memory */
-/*-------------------------------------------------------*/
+/*-----------------------------------------------------------------
+  Ensure there's sufficient memory
+ */
 int checkmemeory(int nz, sparse_table_t *ftab, int **neighbors, int **intersections)
 {
 
@@ -154,18 +156,22 @@ int checkmemeory(int nz, sparse_table_t *ftab, int **neighbors, int **intersecti
   return 1;
 }
 
-/*-------------------------------------------------------*/
+/*-----------------------------------------------------------------
+  For each vertical face (i.e. i or j constant), 
+       -find point numbers for the corners and
+       -cell neighbors.  
+       -new points on faults defined by two intgersecting lines.
+
+  direction == 0 : constant-i faces.
+  direction == 1 : constant-j faces.
+ */
 void process_vertical_faces(const int dims[3], int direction, sparse_table_t *ftab,  
 			    int **neighbors, int **intersections, int *npoints, 
 			    int npillarpoints, int *plist, int *work)
 {
-  /* direction == 0 : constant i-faces
-     direction == 1 : constant j-faces */
-
   int i,j;
   int *cornerpts[4];
 
-  /* constant i- or j-faces */
   for (j=0; j<dims[1]+direction; ++j) {
     for (i=0; i<dims[0]+1-direction; ++i){
 
@@ -207,7 +213,18 @@ static int linearindex(const int dims[3], int i, int j, int k)
   return i+dims[0]*(j+dims[1]*k);
 }
 
-/*-------------------------------------------------------*/
+
+/*-----------------------------------------------------------------
+  For each horizontal face (i.e. k constant), 
+       -find point numbers for the corners and
+       -cell neighbors.  
+
+  Also define map from logically Cartesian 
+  cell index to local cell index 0, ..., #<active cells>.   Exclude 
+  cells that are have collapsed coordinates. (This includes cells with 
+  ACTNUM==0)
+
+ */
 void process_horizontal_faces(const struct grdecl *g, 
 			      int                 *cell_index,
 			      int                 *ncells,
@@ -252,10 +269,11 @@ void process_horizontal_faces(const struct grdecl *g,
 	/* Note that inactive cells (with ACTNUM==0) have all been  */
 	/* collapsed in finduniquepoints.                           */
 	if (c[0][k] == c[0][k+1] && c[1][k] == c[1][k+1] &&
-	    c[2][k] == c[2][k+1] && c[3][k] == c[3][k+1]){
-	  
-	  if (k%2) cell[linearindex(g->dims, i,j,(k-1)/2)] = -1;  
-	  
+	    c[2][k] == c[2][k+1] && c[3][k] == c[3][k+1] &&
+	    k%2){
+	
+	  int idx = linearindex(g->dims, i,j,(k-1)/2);
+	  cell[idx] = -1;  
 
 	}
 	else{
@@ -298,15 +316,29 @@ void process_horizontal_faces(const struct grdecl *g,
 }
 
 
+/*-----------------------------------------------------------------
+  On input, 
+  L points to 4 ints that indirectly refers to points in c.
+  c points to array of coordinates [x0,y0,z0,x1,y1,z1,...,xn,yn,zn].
+  pt points to array of 3 doubles.
+  
+  On output, 
+  pt holds coordinates to intersection between lines given by point 
+  numbers L[0]-L[1] and L[2]-L[3]. 
+*/
 static void approximate_intersection_pt(int *L, double *c, double *pt)
 {
+
   double z0 = c[3*L[0]+2];
   double z1 = c[3*L[1]+2];
   double z2 = c[3*L[2]+2];
   double z3 = c[3*L[3]+2];
 
   double a = (z2-z0)/(z1-z0 - (z3-z2));
-  assert(z1-z0 - (z3-z2)!=0);
+  if (isinf(a) || isnan(a)){
+    a = 0;
+  }
+
 
   pt[0] = c[3*L[0]+0]* (1.0-a) + c[3*L[1]+0]* a;
   pt[1] = c[3*L[0]+1]* (1.0-a) + c[3*L[1]+1]* a;
@@ -314,7 +346,10 @@ static void approximate_intersection_pt(int *L, double *c, double *pt)
 
 }
 
-/*------------------------------------------------------------*/
+/*-----------------------------------------------------------------
+  Compute x,y and z coordinates for points on each pillar.
+  Then, append x,y and z coordinates for extra points on faults.
+ */
 static void compute_node_coordinates(const struct grdecl *g, 
 				     double              *coordinates, 
 				     int                 *intersections, 
@@ -363,8 +398,9 @@ static void compute_node_coordinates(const struct grdecl *g,
 }
 
 
-/* Gateway routine.              */
-/*-------------------------------*/
+/*-----------------------------------------------------------------
+  Public interface
+ */
 void process_grdecl(const struct grdecl   *g, 
 		    double                tolerance, 
 		    struct processed_grid *out)
@@ -514,3 +550,16 @@ void process_grdecl(const struct grdecl   *g,
   out->number_of_cells  = ncells;
   out->local_cell_index = cell_index;
 }
+
+/*-------------------------------------------------------*/
+void free_processed_grid(struct processed_grid *g)
+{
+  if( g ){
+    free ( g->face_nodes       ); 
+    free ( g->face_ptr         );
+    free ( g->face_neighbors   );
+    free ( g->node_coordinates );
+    free ( g->local_cell_index );
+  }
+}
+
