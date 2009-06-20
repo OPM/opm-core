@@ -36,6 +36,10 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #define OPENRS_PREPROCESS_HEADER
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Input structure holding raw cornerpoint spec. */
 struct grdecl{
   int           dims[3];
@@ -68,6 +72,12 @@ void process_grdecl     (const struct grdecl   *g,
 			 double                tol, 
 			 struct processed_grid *out);
 void free_processed_grid(struct processed_grid *g);
+
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif // OPENRS_PREPROCESS_HEADER
 
