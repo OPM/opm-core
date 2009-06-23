@@ -468,7 +468,7 @@ void process_grdecl(const struct grdecl   *in,
   /* Do actual work here:*/
 
   finduniquepoints(&g, plist, tolerance, out);
-
+  
   free (zcorn);
   free (actnum);
 

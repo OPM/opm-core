@@ -47,7 +47,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #define min(i,j) ((i)<(j) ? (i) : (j))
 #define max(i,j) ((i)>(j) ? (i) : (j))
 
-
+#define DEBUG 1
 
 /*------------------------------------------------------*/
 /*                                                      */
@@ -75,6 +75,43 @@ static int *computeFaceTopology(int *a1,
   if (a2[1] > b2[1]){ mask[2] = b2[1]; } else { mask[2] = a2[1]; }
   if (a2[0] > b2[0]){ mask[4] = a2[0]; } else { mask[4] = b2[0]; }
   if (a1[0] > b1[0]){ mask[6] = a1[0]; } else { mask[6] = b1[0]; }
+
+#if DEBUG
+  /* Illegal situations */
+  if (mask [0] == mask[2] || 
+      mask [0] == mask[4] || 
+      mask [0] == mask[8] || 
+      mask [2] == mask[6] || 
+      mask [2] == mask[8] || 
+      mask [4] == mask[6] || 
+      mask [4] == mask[8] || 
+      mask [6] == mask[8]){
+    fprintf(stderr, "Illegal Partial pinch!\n");
+  }
+#endif
+
+
+  /* Partial pinch of face */
+  if (mask[0] == mask[6]){
+    mask[6] = -1;
+#if DEBUG
+    if (intersect[2] != -1){
+      fprintf(stderr, "What!\n");
+    }
+#endif
+  }
+
+
+  if (mask[2] == mask[4]){
+    mask[4] = -1;
+#if DEBUG
+    if (intersect[1] != -1){
+      fprintf(stderr, "What!\n");
+    }
+#endif
+  }
+
+            
 
   /* Get shape of face: */
   /*   each new intersection will be part of the new face, */
@@ -120,7 +157,27 @@ static int *computeFaceTopology(int *a1,
       *f++ = mask[k];
     }
   }
+
+#if DEBUG>1
+  /* Check for repeated nodes:*/
+  int i;
+  fprintf(stderr, "face: ");
+  for (i=0; i<8; ++i){
+    fprintf(stderr, "%d ", mask[i]);
+    for (k=0; k<8; ++k){
+      if (i!=k && mask[i] != -1 && mask[i] == mask[k]){
+	fprintf(stderr, "Repeated node in faulted face\n");
+      }
+    }
+  }
+  fprintf(stderr, "\n");
+#endif
+  
+
   return f;
+
+
+  
 }
 
 
@@ -170,8 +227,8 @@ void findconnections(int n, int *pts[4],
 
   int i,j=0;
   int intersect[4]= {-1};
-
-
+  /* for (i=0; i<2*n; work[i++]=-1); */
+  
   for (i = 0; i<n-1; ++i){
     if (a1[i] == a1[i+1] && a2[i] == a2[i+1]) continue;
 
@@ -210,8 +267,9 @@ void findconnections(int n, int *pts[4],
 	      /* face */
 	      *f++ = a1[i];
 	      *f++ = a2[i];
-	      *f++ = a2[i+1];
-	      *f++ = a1[i+1];
+	      /* avoid duplicating nodes in pinched faces  */
+	      if (a2[i+1] != a2[i]) *f++ = a2[i+1]; 
+	      if (a1[i+1] != a1[i]) *f++ = a1[i+1];
 
 	      out->face_ptr[++out->number_of_faces] = f - out->face_nodes;
 
