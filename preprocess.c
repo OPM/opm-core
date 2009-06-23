@@ -179,10 +179,15 @@ void process_vertical_faces(int direction,
       igetvectors(d, 2*i+direction, 2*j+1-direction, plist, cornerpts);
       
       if(direction==1){
-	/* swap */
-	int *tmp     = cornerpts[2];
-	cornerpts[2] = cornerpts[1];
-	cornerpts[1] = tmp;
+	/* 1   3       0   1    */
+	/*       --->           */
+	/* 0   2       2   3    */
+	/* rotate clockwise     */
+	int *tmp     = cornerpts[1];
+	cornerpts[1] = cornerpts[0];
+	cornerpts[0] = cornerpts[2];
+	cornerpts[2] = cornerpts[3];
+	cornerpts[3] = tmp;
       }
 
       /* int startface = ftab->position; */
@@ -262,31 +267,30 @@ void process_horizontal_faces(int **intersections,
 
       for (k = 1; k<nz*2+1; ++k){
 
-      	
 	/* Skip if space between face k and face k+1 is collapsed. */
 	/* Note that inactive cells (with ACTNUM==0) have all been  */
 	/* collapsed in finduniquepoints.                           */
 	if (c[0][k] == c[0][k+1] && c[1][k] == c[1][k+1] &&
-	    c[2][k] == c[2][k+1] && c[3][k] == c[3][k+1] &&
-	    k%2){
+	    c[2][k] == c[2][k+1] && c[3][k] == c[3][k+1]){
 	
-	  int idx = linearindex(out->dimensions, i,j,(k-1)/2);
-	  cell[idx] = -1;  
-
+	  /* If the pinch is a cell: */
+	  if (k%2){
+	    int idx = linearindex(out->dimensions, i,j,(k-1)/2);
+	    cell[idx] = -1;  
+	  }
 	}
 	else{
 
 	  if (k%2){
 	    /* Add face */
 	    *f++ = c[0][k];
-	    *f++ = c[1][k];
-	    *f++ = c[3][k];
 	    *f++ = c[2][k];
+	    *f++ = c[3][k];
+	    *f++ = c[1][k];
 
 	    out->face_ptr[++out->number_of_faces] = f - out->face_nodes;
 
 	    int thiscell = linearindex(out->dimensions, i,j,(k-1)/2);
-
 	    *n++ = prevcell;
 	    *n++ = prevcell = thiscell;
 	     
@@ -297,9 +301,9 @@ void process_horizontal_faces(int **intersections,
 	    if (prevcell != -1){
 	      /* Add face */
 	      *f++ = c[0][k];
-	      *f++ = c[1][k];
-	      *f++ = c[3][k];
 	      *f++ = c[2][k];
+	      *f++ = c[3][k];
+	      *f++ = c[1][k];
 
 	      out->face_ptr[++out->number_of_faces] = f - out->face_nodes;
 	      *n++ = prevcell;

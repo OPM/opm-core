@@ -209,9 +209,9 @@ void findconnections(int n, int *pts[4],
 
 	      /* face */
 	      *f++ = a1[i];
-	      *f++ = a1[i+1];
-	      *f++ = a2[i+1];
 	      *f++ = a2[i];
+	      *f++ = a2[i+1];
+	      *f++ = a1[i+1];
 
 	      out->face_ptr[++out->number_of_faces] = f - out->face_nodes;
 
