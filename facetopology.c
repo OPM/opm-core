@@ -94,21 +94,11 @@ static int *computeFaceTopology(int *a1,
   /* Partial pinch of face */
   if (mask[0] == mask[6]){
     mask[6] = -1;
-#if DEBUG
-    if (intersect[2] != -1){
-      fprintf(stderr, "What!\n");
-    }
-#endif
   }
 
 
   if (mask[2] == mask[4]){
     mask[4] = -1;
-#if DEBUG
-    if (intersect[1] != -1){
-      fprintf(stderr, "What!\n");
-    }
-#endif
   }
 
             
@@ -197,7 +187,8 @@ static int faceintersection(int *a1, int *a2, int *b1, int *b2)
   return
     max(a1[0],b1[0]) < min(a1[1],b1[1]) ||
     max(a2[0],b2[0]) < min(a2[1],b2[1]) ||
-    lineintersection(a1[0], a2[0], b1[0], b2[0]);
+    lineintersection(a1[0], a2[0], b1[0], b2[0]) ||
+    lineintersection(a1[1], a2[1], b1[1], b2[1]);
 }
 
 
