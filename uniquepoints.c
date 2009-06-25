@@ -43,7 +43,6 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include "sparsetable.h"
 #include "preprocess.h"
 #include "uniquepoints.h"
-#include "matalloc.h"
 
 #define min(i,j) ((i)<(j) ? (i) : (j))
 #define max(i,j) ((i)>(j) ? (i) : (j))
