@@ -10,8 +10,7 @@ preprocess_HEADERS = facetopology.h preprocess.h sparsetable.h \
 lib_LTLIBRARIES = libpreprocess.la
 
 libpreprocess_la_SOURCES = facetopology.c  uniquepoints.c \
-			   matalloc.c      preprocess.c   \
-                           sparsetable.c
+			   preprocess.c sparsetable.c
 
 
 include $(top_srcdir)/am/global-rules
