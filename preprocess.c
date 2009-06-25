@@ -493,30 +493,15 @@ void process_grdecl(const struct grdecl   *in,
   }
  
   /* Invert global-to-local map */
-  ptr = out->local_cell_index;
+  int *global_cell_index = malloc(out->number_of_cells * 
+				  sizeof (*global_cell_index));
   for (i=0; i<nx*ny*nz; ++i){
     if(out->local_cell_index[i]!=-1){
-      *ptr++ = i;
+      global_cell_index[out->local_cell_index[i]] = i;
     }
   }
-
-
-
-  /* Shrink memory allocated for cell_index */
-  if (ptr != out->local_cell_index){   /* always !*/
-    void *p = realloc(out->local_cell_index, 
-		      (ptr-out->local_cell_index)*sizeof(*out->local_cell_index));
-    if (p){
-      out->local_cell_index = p;
-    }
-    else{
-      fprintf(stderr, "Could not reallocate space for index map\n");
-      exit(1);
-    }
-  }
-
-  
-
+  free(out->local_cell_index);
+  out->local_cell_index = global_cell_index;
 }
 
 /*-------------------------------------------------------*/

@@ -142,7 +142,7 @@ static int *computeFaceTopology(int *a1,
   }
   int k;
   int *f = faces;
-  for (k=0; k<8; ++k){
+  for (k=7; k>=0; --k){
     if(mask[k] != -1){
       *f++ = mask[k];
     }
