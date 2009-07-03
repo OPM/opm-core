@@ -35,8 +35,8 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
 
 
   /* faces */
-  const char *n3[] = {"num", "neighbors", "numNodes"};
-  mxArray *faces = mxCreateStructMatrix(1,1,3,n3);
+  const char *n3[] = {"num", "neighbors", "numNodes", "tag"};
+  mxArray *faces = mxCreateStructMatrix(1,1,4,n3);
 
 
   mxSetField(faces, 0, "num", mxCreateDoubleScalar(grid->number_of_faces));
@@ -62,6 +62,13 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
     ptr[i] = grid->face_ptr[i+1]-grid->face_ptr[i];
   }
   mxSetField(faces, 0, "numNodes", numnodes);
+
+  mxArray *tags = mxCreateDoubleMatrix(grid->number_of_faces, 1, mxREAL);
+  ptr = mxGetPr(tags);
+  for (i = 0; i < grid->number_of_faces; ++i) {
+      ptr[i] = grid->face_tag[i] + 1;
+  }
+  mxSetField(faces, 0, "tag", tags);
 
   mxSetField(G, 0, "faces", faces);
   
