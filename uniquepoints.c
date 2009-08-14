@@ -13,25 +13,26 @@
 //===========================================================================
 
 /*
-Copyright 2009 SINTEF ICT, Applied Mathematics.
-Copyright 2009 Statoil ASA.
+  Copyright 2009 SINTEF ICT, Applied Mathematics.
+  Copyright 2009 Statoil ASA.
 
-This file is part of The Open Reservoir Simulator Project (OpenRS).
+  This file is part of The Open Reservoir Simulator Project (OpenRS).
 
-OpenRS is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or 
-(at your option) any later version.
+  OpenRS is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or 
+  (at your option) any later version.
 
-OpenRS is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+  OpenRS is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU General Public License
+  along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
@@ -79,11 +80,13 @@ static int createSortedList(double *list, int n, int m,
 
 
 /*-----------------------------------------------------------------
- Remove points that are closer than tolerance in list
- of increasing doubles
+ Remove points less than <tolerance> apart in <list> of increasing
+ doubles.
 */
 static int uniquify(int n, double *list, double tolerance)
 {
+  assert (!(tolerance < 0.0));
+
   if (n<1) return 0;
   int    i;
   int    pos = 0; 
@@ -96,14 +99,19 @@ static int uniquify(int n, double *list, double tolerance)
     }
   }
 
-  /* Keep last value (one way or the other...) */
-#if 0
-  if (val + tolerance < list[n-1]){
-    list[pos-1] = list[n-1];
-  }
-#else
-    list[pos-1] = list[n-1];
-#endif
+  /*
+    Preserve outer z-boundary.
+
+    This operation is a no-op in the case
+
+          list[pos-2] + tolerance < list[n-1].
+    
+    If, however, the second to last point is less than <tolerance>
+    away from the last point (list[n-1]), we remove this
+    second-to-last point as it cannot be distinguished from "final"
+    point.
+  */
+  list[pos-1] = list[n-1];
 
   return pos;
 }
