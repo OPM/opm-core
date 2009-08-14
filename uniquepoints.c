@@ -90,17 +90,15 @@ static int uniquify(int n, double *list, double tolerance)
   double val = list[pos++];/* Keep first value */
   
   for (i=1; i<n; ++i){
-    if (val + tolerance < list [i]){
+    if (list [i] - val > tolerance){
       val         = list[i];
       list[pos++] = val;
     }
   }
 
   /* Keep last value (one way or the other...) */
-  if (val + tolerance < list[n-1]){
-    list[pos-1] = list[n-1];
-  }
-  
+  list[pos-1] = list[n-1];
+
   return pos;
 }
 
@@ -141,12 +139,12 @@ static int assignPointNumbers(int    begin,
     }
 
     /* Find next k such that zlist[k] < z[i] < zlist[k+1] */
-    while ((k < end) && (zlist[k] + tolerance < z[i])){
+    while ((k < end) && (z[i] - zlist[k] > tolerance)){
       k++;
     }
 
     /* assert (k < len && z[i] - zlist[k] <= tolerance) */
-    if ((k == end) || ( zlist[k] + tolerance < z[i])){
+    if ((k == end) || ( z[i] - zlist[k] > tolerance)){
       fprintf(stderr, "Cannot associate  zcorn values with given list\n");
       fprintf(stderr, "of z-coordinates to given tolerance\n");      
       return 0;
