@@ -80,12 +80,8 @@ static int *computeFaceTopology(int *a1,
   /* Illegal situations */
   if (mask [0] == mask[2] || 
       mask [0] == mask[4] || 
-      mask [0] == mask[8] || 
       mask [2] == mask[6] || 
-      mask [2] == mask[8] || 
-      mask [4] == mask[6] || 
-      mask [4] == mask[8] || 
-      mask [6] == mask[8]){
+      mask [4] == mask[6]){
     fprintf(stderr, "Illegal Partial pinch!\n");
   }
 #endif
