@@ -51,10 +51,17 @@ void mx_init_grdecl(struct grdecl *g, const mxArray *s)
   mxArray *field;
   int numel;
 
+  if (!mxIsStruct(s))
+  {
+    char str[]="Input must be a single Matlab struct with fields\n"
+               "cartDims, ACTNUM, COORD and ZCORN\n";
+    mexErrMsgTxt(str);
+  }
+  
   field = mxGetField(s, 0, "cartDims");
   numel = mxGetNumberOfElements(field);
   double *tmp = mxGetPr(field);
-  if (numel != 3){
+  if (!mxIsNumeric(field) || numel != 3){
     mexErrMsgTxt("cartDims field must be 3 numbers");
   }
 
