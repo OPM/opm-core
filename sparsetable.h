@@ -1,4 +1,4 @@
-//===========================================================================
+/*===========================================================================
 //
 // File: sparsetable.h
 //
@@ -10,7 +10,7 @@
 //
 // $Revision$
 //
-//===========================================================================
+//===========================================================================*/
 
 /*
 Copyright 2009 SINTEF ICT, Applied Mathematics.
@@ -50,5 +50,4 @@ void             free_sparse_table     (sparse_table_t *tab);
 sparse_table_t   *malloc_sparse_table  (int m, int n, int datasz);
 sparse_table_t   *realloc_sparse_table (sparse_table_t *tab, int m, int n, int datasz);
 
-#endif // OPENRS_SPARSETABLE_HEADER
-
+#endif /* OPENRS_SPARSETABLE_HEADER */

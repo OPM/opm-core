@@ -1,4 +1,4 @@
-//===========================================================================
+/*===========================================================================
 //
 // File: facetopology.h
 //
@@ -10,7 +10,7 @@
 //
 // $Revision$
 //
-//===========================================================================
+//===========================================================================*/
 
 /*
 Copyright 2009 SINTEF ICT, Applied Mathematics.
@@ -41,5 +41,4 @@ void findconnections(int n, int *pts[4],
                      int *work,
 		     struct processed_grid *out);
 
-#endif // OPENRS_FACETOPOLOGY_HEADER
-
+#endif /* OPENRS_FACETOPOLOGY_HEADER */

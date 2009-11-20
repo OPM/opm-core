@@ -1,4 +1,4 @@
-//===========================================================================
+/*===========================================================================
 //
 // File: uniquepoints.h
 //
@@ -10,7 +10,7 @@
 //
 // $Revision$
 //
-//===========================================================================
+//==========================================================================*/
 
 /*
 Copyright 2009 SINTEF ICT, Applied Mathematics.
@@ -40,5 +40,4 @@ int finduniquepoints(const struct grdecl *g,  /* input */
 		     double               t,  /* tolerance*/
 		     struct processed_grid *out);
 
-#endif // OPENRS_UNIQUEPOINTS_HEADER
-
+#endif /* OPENRS_UNIQUEPOINTS_HEADER */
