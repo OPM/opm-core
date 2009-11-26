@@ -30,8 +30,13 @@ p  = which('processgrid');
 ix = strfind(p, filesep);
 p  = p(1:ix(end));
 cd(p);
-mex processgrid.c preprocess.c uniquepoints.c facetopology.c ...
+try
+   mex processgrid.c preprocess.c uniquepoints.c facetopology.c ...
     sparsetable.c mxgrdecl.c CFLAGS='$CFLAGS -Wall -fPIC'
+catch
+  cd(op);
+  error('Couldn''t compile processgrid.mexa64');
+end
 cd(op)
 
 
