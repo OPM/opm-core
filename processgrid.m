@@ -33,9 +33,9 @@ cd(p);
 try
    mex processgrid.c preprocess.c uniquepoints.c facetopology.c ...
     sparsetable.c mxgrdecl.c CFLAGS='$CFLAGS -Wall -fPIC'
-catch
+catch ME
   cd(op);
-  error('Couldn''t compile processgrid.mexa64');
+  error('Couldn''t compile processgrid.mex*');
 end
 cd(op)
 
