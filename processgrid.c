@@ -79,7 +79,7 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
   
 
   const char *n4[] = {"num", "numFaces", "facePos", "indexMap"};
-  mxArray *cells = mxCreateStructMatrix(1,1,3,n4);
+  mxArray *cells = mxCreateStructMatrix(1,1,4,n4);
 
   mxSetField(cells, 0, "num", mxCreateDoubleScalar(grid->number_of_cells));
   mxArray *map = mxCreateDoubleMatrix(grid->number_of_cells, 1, mxREAL);
