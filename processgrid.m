@@ -22,8 +22,8 @@ function varargout = processgrid(varargin)
 % Copyright 2009 SINTEF ICT, Applied Mathematics.
 % Mex gateway by Jostein R. Natvig, SINTEF ICT.
 
-% $Date:$
-% $Revision:$
+% $Date$
+% $Revision$
 
 % Build MEX edition of same.
 %
