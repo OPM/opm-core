@@ -8,7 +8,6 @@ function varargout = processgrid(varargin)
 %   grdecl - Raw pillar grid structure, as defined by function
 %            'readGRDECL', with fields COORDS, ZCORN and, possibly, ACTNUM.
 %
-%
 % RETURNS:
 %   G      - Valid grid definition containing connectivity, cell
 %            geometry, face geometry and unique nodes.
@@ -23,23 +22,13 @@ function varargout = processgrid(varargin)
 % Copyright 2009 SINTEF ICT, Applied Mathematics.
 % Mex gateway by Jostein R. Natvig, SINTEF ICT.
 
-% Build
-disp('building processgrid.mex*')
-op = pwd;
-p  = which('processgrid');
-ix = strfind(p, filesep);
-p  = p(1:ix(end));
-cd(p);
-try
-   mex processgrid.c preprocess.c uniquepoints.c facetopology.c ...
-    sparsetable.c mxgrdecl.c CFLAGS='$CFLAGS -Wall -fPIC'
-catch ME
-  cd(op);
-  error('Couldn''t compile processgrid.mex*');
-end
-cd(op)
+% $Date:$
+% $Revision:$
 
+% Build MEX edition of same.
+%
+buildmex CFLAGS='$CFLAGS -Wall -fPIC' processgrid.c preprocess.c ...
+         uniquepoints.c facetopology.c sparsetable.c mxgrdecl.c
 
-
-%run
+% Call MEX edition.
 [varargout{1:nargout}] = processgrid(varargin{:});
