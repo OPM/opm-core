@@ -10,8 +10,8 @@
 
 void fill_grid(mxArray **out, struct processed_grid *grid)
 {
-  const char *names[] = {"nodes", "faces", "cells", "cellFaces", "faceNodes"};
-  mxArray *G = mxCreateStructMatrix(1,1,5,names);
+  const char *names[] = {"nodes", "faces", "cells", "cellFaces", "faceNodes", "cartDims"};
+  mxArray *G = mxCreateStructMatrix(1,1,sizeof names / sizeof names[0],names);
 
   int i,j;
   double *ptr;
@@ -147,6 +147,13 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
   mxSetField(G, 0, "faceNodes", facenodes);
   free(counter);
 
+  mxArray *cartDims = mxCreateDoubleMatrix(1, 3, mxREAL);
+  ptr = mxGetPr(cartDims);
+  ptr[0] = grid->dimensions[0];
+  ptr[1] = grid->dimensions[1];
+  ptr[2] = grid->dimensions[2];
+
+  mxSetField(G, 0, "cartDims", cartDims);
 
   out[0] = G;
 
