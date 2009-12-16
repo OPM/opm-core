@@ -19,6 +19,13 @@ function varargout = processgrid(varargin)
 % SEE ALSO:
 %   processGRDECL, readGRDECL, deactivateZeroPoro, removeCells.
 
+%{
+#COPYRIGHT#
+%}
+
+% $Date$
+% $Revision$
+
 % Copyright 2009 SINTEF ICT, Applied Mathematics.
 % Mex gateway by Jostein R. Natvig, SINTEF ICT.
 
