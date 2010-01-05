@@ -48,7 +48,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 void fill_grid(mxArray **out, struct processed_grid *grid)
 {
-  const char *names[] = {"nodes", "faces", "cells", "cellFaces", "faceNodes", "cartDims"};
+  const char *names[] = {"nodes", "faces", "cells", "cartDims"};
   mxArray *G = mxCreateStructMatrix(1,1,sizeof names / sizeof names[0],names);
 
   int i,j;
@@ -57,7 +57,7 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
 
   /* nodes */
   const char *n2[] = {"num", "coords"};
-  mxArray *nodes  = mxCreateStructMatrix(1,1,2,n2);
+  mxArray *nodes  = mxCreateStructMatrix(1,1,sizeof n2 / sizeof n2[0],n2);
   mxSetField(nodes, 0, "num", mxCreateDoubleScalar(grid->number_of_nodes));
 
   mxArray *nodecoords = mxCreateDoubleMatrix(grid->number_of_nodes, 3, mxREAL);
@@ -75,8 +75,8 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
 
 
   /* faces */
-  const char *n3[] = {"num", "neighbors", "numNodes", "nodePos", "tag"};
-  mxArray *faces = mxCreateStructMatrix(1,1,5,n3);
+  const char *n3[] = {"num", "neighbors", "nodes", "numNodes", "nodePos", "tag"};
+  mxArray *faces = mxCreateStructMatrix(1,1,sizeof n3 / sizeof n3[0], n3);
 
 
   mxSetField(faces, 0, "num", mxCreateDoubleScalar(grid->number_of_faces));
@@ -130,10 +130,9 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
   }
   mxSetField(faces, 0, "tag", tags);
 
-  mxSetField(G, 0, "faces", faces);
 
-  const char *n4[] = {"num", "facePos", "indexMap"};
-  mxArray *cells = mxCreateStructMatrix(1,1,3,n4);
+  const char *n4[] = {"num", "faces", "facePos", "indexMap"};
+  mxArray *cells = mxCreateStructMatrix(1,1,sizeof n4 / sizeof n4[0], n4);
 
   mxSetField(cells, 0, "num", mxCreateDoubleScalar(grid->number_of_cells));
 
@@ -172,7 +171,6 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
   }
   mxSetField(cells, 0, "facePos",  facepos);
 
-  mxSetField(G, 0, "cells", cells);
 
 
   int *counter       = calloc(grid->number_of_cells, sizeof(*counter));
@@ -198,8 +196,9 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
       if(c2 != -1) iptr[counter[c2]++] = i+1;
     }
   }
-  mxSetField(G, 0, "cellFaces", cellfaces);
+  mxSetField(cells, 0, "faces", cellfaces);
 
+  mxSetField(G, 0, "cells", cells);
 
   int n = grid->face_ptr[grid->number_of_faces];
 
@@ -212,7 +211,11 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
       iptr[i] = grid->face_nodes[i]+1;
     }
   }
-  mxSetField(G, 0, "faceNodes", facenodes);
+  mxSetField(faces, 0, "nodes", facenodes);
+
+  mxSetField(G, 0, "faces", faces);
+
+
   free(counter);
 
   mxArray *cartDims = mxCreateDoubleMatrix(1, 3, mxREAL);
