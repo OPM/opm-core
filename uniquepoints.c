@@ -228,9 +228,13 @@ static void interpolate_pillar(const double *coord, double *pt)
   if (isinf(a) || isnan(a)){
     a = 0;
   }
-
+#if 0
   pt[0]       = coord[0] + a*(coord[3]-coord[0]);
   pt[1]       = coord[1] + a*(coord[4]-coord[1]);
+#else
+  pt[0]       = (1.0 - a)*coord[0] + a*coord[3];
+  pt[1]       = (1.0 - a)*coord[1] + a*coord[4];
+#endif
 }
 
 /*-----------------------------------------------------------------
