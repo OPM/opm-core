@@ -51,20 +51,27 @@ void mx_init_grdecl(struct grdecl *g, const mxArray *s)
   mxArray *field;
   int numel;
 
-  if (!mxIsStruct(s))
+  mxArray *cartdims=NULL, *actnum=NULL, *coord=NULL, *zcorn=NULL;
+  
+  if (!mxIsStruct(s) 
+   || !(cartdims = mxGetField(s, 0, "cartDims"))
+   || !(actnum   = mxGetField(s, 0, "ACTNUM"))
+   || !(coord    = mxGetField(s, 0, "COORD"))
+   || !(zcorn     = mxGetField(s, 0, "ZCORN"))
+   )
   {
     char str[]="Input must be a single Matlab struct with fields\n"
                "cartDims, ACTNUM, COORD and ZCORN\n";
     mexErrMsgTxt(str);
   }
   
-  field = mxGetField(s, 0, "cartDims");
-  numel = mxGetNumberOfElements(field);
-  double *tmp = mxGetPr(field);
-  if (!mxIsNumeric(field) || numel != 3){
-    mexErrMsgTxt("cartDims field must be 3 numbers");
+  
+  numel = mxGetNumberOfElements(cartdims);
+  if (!mxIsNumeric(cartdims) || numel != 3){
+     mexErrMsgTxt("cartDims field must be 3 numbers");
   }
-
+  
+  double *tmp = mxGetPr(cartdims);
   n = 1;
   for (i=0; i<3; ++i){
     g->dims[i] = tmp[i];
@@ -72,30 +79,28 @@ void mx_init_grdecl(struct grdecl *g, const mxArray *s)
   }
 
 
-  field = mxGetField(s, 0, "ACTNUM");
-  numel = mxGetNumberOfElements(field);
-  if (mxGetClassID(field) != mxINT32_CLASS ||
+  numel = mxGetNumberOfElements(actnum);
+  if (mxGetClassID(actnum) != mxINT32_CLASS ||
       numel != g->dims[0]*g->dims[1]*g->dims[2] ){
     mexErrMsgTxt("ACTNUM field must be nx*ny*nz numbers int32");
   }
-  g->actnum = mxGetData(field);
+  g->actnum = mxGetData(actnum);
 
 
   
   field = mxGetField(s, 0, "COORD");
-  numel = mxGetNumberOfElements(field);
-  if (mxGetClassID(field) != mxDOUBLE_CLASS || 
+  numel = mxGetNumberOfElements(coord);
+  if (mxGetClassID(coord) != mxDOUBLE_CLASS || 
       numel != 6*(g->dims[0]+1)*(g->dims[1]+1)){
     mexErrMsgTxt("COORD field must have 6*(nx+1)*(ny+1) doubles.");
   }
-  g->coord = mxGetPr(field);
+  g->coord = mxGetPr(coord);
   
 
-  field = mxGetField(s, 0, "ZCORN");
-  numel = mxGetNumberOfElements(field);
-  if (mxGetClassID(field) != mxDOUBLE_CLASS || 
+  numel = mxGetNumberOfElements(zcorn);
+  if (mxGetClassID(zcorn) != mxDOUBLE_CLASS || 
       numel != 8*g->dims[0]*g->dims[1]*g->dims[2]){
     mexErrMsgTxt("ZCORN field must have 8*nx*ny*nz doubles.");
   }
-  g->zcorn = mxGetPr(field);
+  g->zcorn = mxGetPr(zcorn);
 }
