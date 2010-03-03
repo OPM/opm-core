@@ -432,15 +432,53 @@ void process_grdecl(const struct grdecl   *in,
   g.actnum = actnum;
 
 
+  /* HACK */
+  /* Check that ZCORN is strictly nodecreaing along pillars.  If */
+  /* not, check if -ZCORN is strictly nondecreasing.             */
+  int sign, error;
+  for (sign = 1; sign>-2; sign = sign - 2){
+    error = 0;
+
+    /* Ensure that zcorn is strictly nondecreasing in k-direction */
+    for (j=0; j<2*ny; ++j){
+      for (i=0; i<2*nx; ++i){
+	for (k=0; k<2*nz-1; ++k){
+	  double z1 = sign*in->zcorn[i+2*nx*(j+2*ny*(k))];
+	  double z2 = sign*in->zcorn[i+2*nx*(j+2*ny*(k+1))];
+	  
+	  if (z2 < z1){
+	    fprintf(stderr, "\nZCORN should be strictly nondecreasing along pillars!\n");	 
+	    error = 1;
+	    goto end;
+	  }
+	}
+      }
+    }
+
+  end:
+    if (!error){
+      break;
+    }
+  }
+
+  if (error){
+    fprintf(stderr, "Attempt to reverse sign in ZCORN failed.\n"
+		    "Grid definition may be broken\n");
+  }
+  
   /* Permute zcorn */
   double *dptr = zcorn;
   for (j=0; j<2*ny; ++j){
     for (i=0; i<2*nx; ++i){
       for (k=0; k<2*nz; ++k){
-	*dptr++ = in->zcorn[i+2*nx*(j+2*ny*k)];
+	*dptr++ = sign*in->zcorn[i+2*nx*(j+2*ny*k)];
       }
     }
   }
+
+
+
+
   g.zcorn = zcorn;
   g.coord = in->coord;
 
@@ -517,6 +555,11 @@ void process_grdecl(const struct grdecl   *in,
   }
   free(out->local_cell_index);
   out->local_cell_index = global_cell_index;
+
+  /* HACK: undo sign reversal in ZCORN prepprocessing */
+  for (i=2; i<3*out->number_of_nodes; i = i+3)
+    out->node_coordinates[i]=sign*out->node_coordinates[i];
+
 }
 
 /*-------------------------------------------------------*/
