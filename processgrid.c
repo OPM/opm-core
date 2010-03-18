@@ -48,7 +48,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 void fill_grid(mxArray **out, struct processed_grid *grid)
 {
-  const char *names[] = {"nodes", "faces", "cells", "cartDims"};
+  const char *names[] = {"nodes", "faces", "cells", "cartDims", "type"};
   mxArray *G = mxCreateStructMatrix(1,1,sizeof names / sizeof names[0],names);
 
   int i,j;
@@ -218,6 +218,7 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
 
   free(counter);
 
+  /* cartDims */
   mxArray *cartDims = mxCreateDoubleMatrix(1, 3, mxREAL);
   ptr    = mxGetPr(cartDims);
   ptr[0] = grid->dimensions[0];
@@ -225,6 +226,12 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
   ptr[2] = grid->dimensions[2];
 
   mxSetField(G, 0, "cartDims", cartDims);
+
+  /* type */
+  mxArray *type = mxCreateCellMatrix(1, 1);
+  mxSetCell(type, 0, mxCreateString("processgrid"));
+
+  mxSetField(G, 0, "type", type);
 
   out[0] = G;
 }
