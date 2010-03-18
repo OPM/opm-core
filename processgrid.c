@@ -13,8 +13,8 @@
 //===========================================================================*/
 
 /*
-Copyright 2009 SINTEF ICT, Applied Mathematics.
-Copyright 2009 Statoil ASA.
+Copyright 2009, 2010 SINTEF ICT, Applied Mathematics.
+Copyright 2009, 2010 Statoil ASA.
 
 This file is part of The Open Reservoir Simulator Project (OpenRS).
 
@@ -32,7 +32,7 @@ You should have received a copy of the GNU General Public License
 along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* Copyright 2009 SINTEF ICT, Applied Mathematics. */
+/* Copyright 2009, 2010 SINTEF ICT, Applied Mathematics. */
 /* Mex gateway by Jostein R. Natvig, SINTEF ICT.   */
 
 
