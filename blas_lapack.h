@@ -1,19 +1,19 @@
 /* C <- a1*op(A)*op(B) + a2*C  where  op(X) in {X, X.'} */
-void dgemm_(char *transA        , char *transB         ,
+void dgemm_(const char *transA  , const char *transB   ,
             const MAT_SIZE_T*  m, const MAT_SIZE_T* n  , const MAT_SIZE_T* k  ,
             const double*     a1, const double*     A  , const MAT_SIZE_T* ldA,
             const double*      B, const MAT_SIZE_T* ldB,
             const double*     a2,       double*     C  , const MAT_SIZE_T* ldC);
 
 /* C <- a1*A*A' + a2*C   *or*   C <- a1*A'*A + a2*C */
-void dsyrk_(char             *uplo, char             *trans,
+void dsyrk_(const char       *uplo, const char       *trans,
             const MAT_SIZE_T *n   , const MAT_SIZE_T *k    ,
             const double     *a1  , const double     *A    , const MAT_SIZE_T *ldA,
             const double     *a2  ,       double     *C    , const MAT_SIZE_T *ldC);
 
 
 /* B <- a*op(A)*B  *or*  B <- a*B*op(A)  where op(X) \in {X, X.', X'} */
-void dtrmm_(char *, char *, char *, char *,
+void dtrmm_(const char *, const char *, const char *, const char *,
             const MAT_SIZE_T *m, const MAT_SIZE_T* n  ,
             const double     *a,
             const double     *A, const MAT_SIZE_T* ldA,
