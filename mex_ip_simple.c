@@ -4,6 +4,10 @@
 #include "mex.h"
 #include "matrix.h"
 
+
+#define MAT_SIZE_T mwIndex
+
+
 #include "mimetic.h"
 
 
@@ -18,10 +22,10 @@ verify_faces_structure(mxArray *faces)
     /* Shallow structural inspection only.  Assume valid fields... */
     int ok;
 
-    ok =       (mxGetFieldNumber(faces, "neighbors") > 0);
-    ok = ok && (mxGetFieldNumber(faces, "areas"    ) > 0);
-    ok = ok && (mxGetFieldNumber(faces, "normals"  ) > 0);
-    ok = ok && (mxGetFieldNumber(faces, "centroids") > 0);
+    ok =       (mxGetFieldNumber(faces, "neighbors") >= 0);
+    ok = ok && (mxGetFieldNumber(faces, "areas"    ) >= 0);
+    ok = ok && (mxGetFieldNumber(faces, "normals"  ) >= 0);
+    ok = ok && (mxGetFieldNumber(faces, "centroids") >= 0);
 
     return ok;
 }
@@ -35,10 +39,10 @@ verify_cells_structure(mxArray *cells)
     /* Shallow structural inspection only.  Assume valid fields... */
     int ok;
 
-    ok =       (mxGetFieldNumber(cells, "facePos"  ) > 0);
-    ok = ok && (mxGetFieldNumber(cells, "faces"    ) > 0);
-    ok = ok && (mxGetFieldNumber(cells, "volumes"  ) > 0);
-    ok = ok && (mxGetFieldNumber(cells, "centroids") > 0);
+    ok =       (mxGetFieldNumber(cells, "facePos"  ) >= 0);
+    ok = ok && (mxGetFieldNumber(cells, "faces"    ) >= 0);
+    ok = ok && (mxGetFieldNumber(cells, "volumes"  ) >= 0);
+    ok = ok && (mxGetFieldNumber(cells, "centroids") >= 0);
 
     return ok;
 }
@@ -54,17 +58,17 @@ verify_grid_structure(const mxArray *G)
     size_t field_no;
     mxArray *pm;
 
-    nodes_ok = mxGetFieldNumber(G, "nodes") > 0;
+    nodes_ok = mxGetFieldNumber(G, "nodes") >= 0;
 
     field_no = mxGetFieldNumber(G, "faces");
-    faces_ok = field_no > 0;
+    faces_ok = field_no >= 0;
     if (faces_ok) {
         pm = mxGetFieldByNumber(G, 0, field_no);
         faces_ok = verify_faces_structure(pm);
     }
 
     field_no = mxGetFieldNumber(G, "cells");
-    cells_ok = field_no > 0;
+    cells_ok = field_no >= 0;
     if (cells_ok) {
         pm = mxGetFieldByNumber(G, 0, field_no);
         cells_ok = verify_cells_structure(pm);
@@ -95,7 +99,7 @@ verify_structural_consistency(int nlhs, int nrhs, const mxArray *prhs[])
     grid_ok = verify_grid_structure(prhs[0]);
 
     /* rock must contain a field 'perm' */
-    rock_ok = mxGetFieldNumber(prhs[1], "perm") > 0;
+    rock_ok = mxGetFieldNumber(prhs[1], "perm") >= 0;
 
     return grid_ok && rock_ok;
 }
