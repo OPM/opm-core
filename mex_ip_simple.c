@@ -1,11 +1,12 @@
 #include <assert.h>
+#include <limits.h>
 #include <stdlib.h>
 
 #include "mex.h"
 #include "matrix.h"
 
 
-#define MAT_SIZE_T mwIndex
+#define MAT_SIZE_T mwSignedIndex
 
 
 #include "mimetic.h"
@@ -146,6 +147,50 @@ allocate_face_data(int nfaces, int d, int **fneighbour,
 
 
 /* ------------------------------------------------------------------ */
+static void
+extract_double_neighbours(const mxArray *pn, int *neighbour)
+/* ------------------------------------------------------------------ */
+{
+    int f, nf;
+    double *n;
+
+    nf = mxGetM (pn);
+    n  = mxGetPr(pn);
+
+    for (f = 0; f < nf; f++) {
+        mxAssert ((n[f + 0*nf] <= INT_MAX) &&
+                  (n[f + 1*nf] <= INT_MAX),
+                  "Neighbour cell exceeds INT_MAX");
+
+        neighbour[2*f + 0] = n[f + 0*nf] - 1;
+        neighbour[2*f + 1] = n[f + 1*nf] - 1;
+    }
+}
+
+
+/* ------------------------------------------------------------------ */
+static void
+extract_int_neighbours(const mxArray *pn, int *neighbour)
+/* ------------------------------------------------------------------ */
+{
+    int f, nf;
+    int *n;
+
+    nf = mxGetM   (pn);
+    n  = mxGetData(pn);
+
+    for (f = 0; f < nf; f++) {
+        mxAssert ((n[f + 0*nf] <= INT_MAX) &&
+                  (n[f + 1*nf] <= INT_MAX),
+                  "Neighbour cell exceeds INT_MAX");
+
+        neighbour[2*f + 0] = n[f + 0*nf] - 1;
+        neighbour[2*f + 1] = n[f + 1*nf] - 1;
+    }
+}
+
+
+/* ------------------------------------------------------------------ */
 static int
 extract_face_data(const mxArray *faces, int d, int **fneighbour,
                   double **farea, double **fnormal, double **fcentroid)
@@ -157,8 +202,8 @@ extract_face_data(const mxArray *faces, int d, int **fneighbour,
 
     int f, j;
 
-    int    *neigh;
-    double *fneigh;
+    /* int    *neigh; */
+    /* double *fneigh; */
 
     double *fn, *n;
     double *fc, *c;
@@ -169,7 +214,13 @@ extract_face_data(const mxArray *faces, int d, int **fneighbour,
     alloc_ok = allocate_face_data(nfaces, d, fneighbour,
                                   fnormal, fcentroid);
     if (alloc_ok) {
-        fneigh = mxGetPr(pm);
+        if (mxIsDouble(pm)) {
+            extract_double_neighbours(pm, *fneighbour);
+        } else {
+            mxAssert (mxIsInt32(pm),
+                      "Neighbours is neither DOUBLE nor INT32");
+            extract_int_neighbours(pm, *fneighbour);
+        }
 
         pm = mxGetField(faces, 0, "areas");
         *farea = mxGetPr(pm);
@@ -180,13 +231,13 @@ extract_face_data(const mxArray *faces, int d, int **fneighbour,
         pm = mxGetField(faces, 0, "centroids");
         fc = mxGetPr(pm);
 
-        neigh = *fneighbour;
+        /* neigh = *fneighbour; */
         n     = *fnormal;
         c     = *fcentroid;
 
         for (f = 0; f < nfaces; f++) {
-            neigh[2*f + 0] = fneigh[f + 0*nfaces] - 1;
-            neigh[2*f + 1] = fneigh[f + 1*nfaces] - 1;
+            /* neigh[2*f + 0] = fneigh[f + 0*nfaces] - 1; */
+            /* neigh[2*f + 1] = fneigh[f + 1*nfaces] - 1; */
 
             for (j = 0; j < d; j++) {
                 n[j + f*d] = fn[f + j*nfaces];
@@ -244,6 +295,93 @@ allocate_cell_data(int ncells, int d, int ncellfaces,
 
 
 /* ------------------------------------------------------------------ */
+static void
+extract_double_ncf(const mxArray *pfp, int *ncf,
+                   int *max_ncf, int *sum_ncf, int *sum_ncf2)
+/* ------------------------------------------------------------------ */
+{
+    int c, nc;
+    double *fp;
+
+    nc = mxGetNumberOfElements(pfp) - 1;
+    fp = mxGetPr(pfp);
+
+    *max_ncf = -1;  *sum_ncf = *sum_ncf2 = 0;
+    for (c = 0; c < nc; c++) {
+        ncf[c] = fp[c + 1] - fp[c];
+
+        *max_ncf = MAX(ncf[c], *max_ncf);
+
+        *sum_ncf  += ncf[c];
+        *sum_ncf2 += ncf[c] * ncf[c];
+    }
+}
+
+
+
+/* ------------------------------------------------------------------ */
+static void
+extract_int_ncf(const mxArray *pfp, int *ncf,
+                int *max_ncf, int *sum_ncf, int *sum_ncf2)
+/* ------------------------------------------------------------------ */
+{
+    int c, nc;
+    int *fp;
+
+    nc = mxGetNumberOfElements(pfp) - 1;
+    fp = mxGetData(pfp);
+
+    *max_ncf = -1;  *sum_ncf = *sum_ncf2 = 0;
+    for (c = 0; c < nc; c++) {
+        ncf[c] = fp[c + 1] - fp[c];
+
+        *max_ncf = MAX(ncf[c], *max_ncf);
+
+        *sum_ncf  += ncf[c];
+        *sum_ncf2 += ncf[c] * ncf[c];
+    }
+}
+
+
+/* ------------------------------------------------------------------ */
+static void
+extract_double_cf(const mxArray *pcf, int *cf)
+/* ------------------------------------------------------------------ */
+{
+    int p, m;
+    double *f;
+
+    m = mxGetNumberOfElements(pcf);
+    f = mxGetPr(pcf);
+
+    for (p = 0; p < m; p++) {
+        mxAssert (f[p] <= INT_MAX,
+                  "cells.faces element exceeds INT_MAX");
+        cf[p] = f[p] - 1;
+    }
+}
+
+
+/* ------------------------------------------------------------------ */
+static void
+extract_int_cf(const mxArray *pcf, int *cf)
+/* ------------------------------------------------------------------ */
+{
+    int p, m;
+    int *f;
+
+    m = mxGetNumberOfElements(pcf);
+    f = mxGetData(pcf);
+
+    for (p = 0; p < m; p++) {
+        mxAssert (f[p] <= INT_MAX,
+                  "cells.faces element exceeds INT_MAX");
+        cf[p] = f[p] - 1;
+    }
+}
+
+
+/* ------------------------------------------------------------------ */
 static int
 extract_cell_data(const mxArray *cells, int d,
                   int *max_ncf, int *sum_ncf, int *sum_ncf2,
@@ -257,9 +395,9 @@ extract_cell_data(const mxArray *cells, int d,
 
     mxArray *pfp, *pcf, *pm;
 
-    double *facePos, *faces, *centroids;
+    double *centroids;
 
-    int *ncf, *cf;
+    /* int *ncf, *cf; */
     double *cc;
 
     pfp = mxGetField(cells, 0, "facePos");
@@ -271,8 +409,23 @@ extract_cell_data(const mxArray *cells, int d,
     alloc_ok = allocate_cell_data(ncells, d, ncellfaces,
                                   ncfaces, cfaces, ccentroids);
     if (alloc_ok) {
-        facePos = mxGetPr(pfp);
-        faces   = mxGetPr(pcf);
+        if (mxIsDouble(pfp)) {
+            extract_double_ncf(pfp, *ncfaces, max_ncf, sum_ncf, sum_ncf2);
+        } else {
+            mxAssert (mxIsInt32(pfp),
+                      "facePos is neither DOUBLE nor INT32");
+            extract_int_ncf(pfp, *ncfaces, max_ncf, sum_ncf, sum_ncf2);
+        }
+
+        if (mxIsDouble(pcf)) {
+            extract_double_cf(pcf, *cfaces);
+        } else {
+            mxAssert (mxIsInt32(pcf),
+                      "cells.faces is neither DOUBLE nor INT32");
+            extract_int_cf(pcf, *cfaces);
+        }
+        /* facePos = mxGetPr(pfp); */
+        /* faces   = mxGetPr(pcf); */
 
         pm = mxGetField(cells, 0, "volumes");
         *cvolumes = mxGetPr(pm);
@@ -280,25 +433,25 @@ extract_cell_data(const mxArray *cells, int d,
         pm = mxGetField(cells, 0, "centroids");
         centroids = mxGetPr(pm);
 
-        ncf = *ncfaces;
-        cf  = *cfaces;
+        /* ncf = *ncfaces; */
+        /* cf  = *cfaces; */
         cc  = *ccentroids;
 
-        *max_ncf = -1; *sum_ncf = *sum_ncf2 = 0; pos = 0;
+        /* *max_ncf = -1; *sum_ncf = *sum_ncf2 = 0; pos = 0; */
         for (c = 0; c < ncells; c++) {
-            ncf[c] = facePos[c + 1] - facePos[c];
+            /* ncf[c] = facePos[c + 1] - facePos[c]; */
 
-            *max_ncf   = MAX(ncf[c], *max_ncf);
-            *sum_ncf  += ncf[c];
-            *sum_ncf2 += ncf[c] * ncf[c];
+            /* *max_ncf   = MAX(ncf[c], *max_ncf); */
+            /* *sum_ncf  += ncf[c]; */
+            /* *sum_ncf2 += ncf[c] * ncf[c]; */
 
             for (j = 0; j < d; j++) {
                 cc[j + c*d] = centroids[c + j*ncells];
             }
 
-            for (i = 0; i < ncf[c]; i++, pos++) {
-                cf[pos] = faces[pos] - 1;
-            }
+            /* for (i = 0; i < ncf[c]; i++, pos++) { */
+            /*     cf[pos] = faces[pos] - 1; */
+            /* } */
         }
 
         ret = ncells;
@@ -465,7 +618,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
         extract_perm_data(mxGetField(prhs[1], 0, "perm"), d, &perm);
 
         if ((ncells > 0) && (nfaces > 0)) {
-            plhs[0] = mxCreateDoubleMatrix(sum_ncf2, 0, mxREAL);
+            plhs[0] = mxCreateDoubleMatrix(sum_ncf2, 1, mxREAL);
             Binv    = mxGetPr(plhs[0]);
 
             mim_ip_simple_all(ncells, d, max_ncf, ncfaces, cfaces, fneighbour,
