@@ -5,10 +5,6 @@
 #include "mex.h"
 #include "matrix.h"
 
-
-#define MAT_SIZE_T mwSignedIndex
-
-
 #include "mimetic.h"
 
 
@@ -111,9 +107,9 @@ static void
 deallocate_face_data(int *fneighbour, double *fnormal, double *fcentroid)
 /* ------------------------------------------------------------------ */
 {
-    free(fcentroid);
-    free(fnormal);
-    free(fneighbour);
+    mxFree(fcentroid);
+    mxFree(fnormal);
+    mxFree(fneighbour);
 }
 
 
@@ -126,9 +122,9 @@ allocate_face_data(int nfaces, int d, int **fneighbour,
     int *neigh, ret;
     double *n, *c;
 
-    neigh = malloc(2 * nfaces * sizeof *neigh);
-    n     = malloc(d * nfaces * sizeof *n);
-    c     = malloc(d * nfaces * sizeof *c);
+    neigh = mxMalloc(2 * nfaces * sizeof *neigh);
+    n     = mxMalloc(d * nfaces * sizeof *n);
+    c     = mxMalloc(d * nfaces * sizeof *c);
 
     if ((neigh != NULL) && (n != NULL) && (c != NULL)) {
         *fneighbour = neigh;
@@ -259,9 +255,9 @@ static void
 deallocate_cell_data(int *ncfaces, int *cfaces, double *ccentroids)
 /* ------------------------------------------------------------------ */
 {
-    free(ccentroids);
-    free(cfaces);
-    free(ncfaces);
+    mxFree(ccentroids);
+    mxFree(cfaces);
+    mxFree(ncfaces);
 }
 
 
@@ -274,9 +270,9 @@ allocate_cell_data(int ncells, int d, int ncellfaces,
     int ret, *ncf, *cf;
     double *cc;
 
-    ncf = malloc(ncells       * sizeof *ncf);
-    cf  = malloc(ncellfaces   * sizeof *cf);
-    cc  = malloc((ncells * d) * sizeof *cc);
+    ncf = mxMalloc(ncells       * sizeof *ncf);
+    cf  = mxMalloc(ncellfaces   * sizeof *cf);
+    cc  = mxMalloc((ncells * d) * sizeof *cc);
 
     if ((ncf != NULL) && (cf != NULL) && (cc != NULL)) {
         *ncfaces    = ncf;
@@ -468,7 +464,7 @@ static void
 deallocate_perm_data(double *K)
 /* ------------------------------------------------------------------ */
 {
-    free(K);
+    mxFree(K);
 }
 
 
@@ -480,7 +476,7 @@ allocate_perm_data(int ncells, int d, double **K)
     int ret;
     double *perm;
 
-    perm = malloc(ncells * d * d * sizeof *perm);
+    perm = mxMalloc(ncells * d * d * sizeof *perm);
 
     if (perm != NULL) {
         *K = perm;
