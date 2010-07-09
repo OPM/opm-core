@@ -198,9 +198,6 @@ extract_face_data(const mxArray *faces, int d, int **fneighbour,
 
     int f, j;
 
-    /* int    *neigh; */
-    /* double *fneigh; */
-
     double *fn, *n;
     double *fc, *c;
 
@@ -227,14 +224,10 @@ extract_face_data(const mxArray *faces, int d, int **fneighbour,
         pm = mxGetField(faces, 0, "centroids");
         fc = mxGetPr(pm);
 
-        /* neigh = *fneighbour; */
-        n     = *fnormal;
-        c     = *fcentroid;
+        n  = *fnormal;
+        c  = *fcentroid;
 
         for (f = 0; f < nfaces; f++) {
-            /* neigh[2*f + 0] = fneigh[f + 0*nfaces] - 1; */
-            /* neigh[2*f + 1] = fneigh[f + 1*nfaces] - 1; */
-
             for (j = 0; j < d; j++) {
                 n[j + f*d] = fn[f + j*nfaces];
                 c[j + f*d] = fc[f + j*nfaces];
@@ -392,8 +385,6 @@ extract_cell_data(const mxArray *cells, int d,
     mxArray *pfp, *pcf, *pm;
 
     double *centroids;
-
-    /* int *ncf, *cf; */
     double *cc;
 
     pfp = mxGetField(cells, 0, "facePos");
@@ -420,8 +411,6 @@ extract_cell_data(const mxArray *cells, int d,
                       "cells.faces is neither DOUBLE nor INT32");
             extract_int_cf(pcf, *cfaces);
         }
-        /* facePos = mxGetPr(pfp); */
-        /* faces   = mxGetPr(pcf); */
 
         pm = mxGetField(cells, 0, "volumes");
         *cvolumes = mxGetPr(pm);
@@ -429,25 +418,12 @@ extract_cell_data(const mxArray *cells, int d,
         pm = mxGetField(cells, 0, "centroids");
         centroids = mxGetPr(pm);
 
-        /* ncf = *ncfaces; */
-        /* cf  = *cfaces; */
-        cc  = *ccentroids;
+        cc = *ccentroids;
 
-        /* *max_ncf = -1; *sum_ncf = *sum_ncf2 = 0; pos = 0; */
         for (c = 0; c < ncells; c++) {
-            /* ncf[c] = facePos[c + 1] - facePos[c]; */
-
-            /* *max_ncf   = MAX(ncf[c], *max_ncf); */
-            /* *sum_ncf  += ncf[c]; */
-            /* *sum_ncf2 += ncf[c] * ncf[c]; */
-
             for (j = 0; j < d; j++) {
                 cc[j + c*d] = centroids[c + j*ncells];
             }
-
-            /* for (i = 0; i < ncf[c]; i++, pos++) { */
-            /*     cf[pos] = faces[pos] - 1; */
-            /* } */
         }
 
         ret = ncells;
