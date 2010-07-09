@@ -49,6 +49,7 @@ function varargout = mex_ip_simple(varargin)
 %   computeMimeticIP, solveIncompFlow, blockDiagIndex.
 
 %{
+#COPYRIGHT#
 %}
 
 % $Date$
