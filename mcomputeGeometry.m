@@ -4,5 +4,5 @@ function G = mcomputeGeometry(G)
    G.faces.centroids = fc';
    G.faces.normals   = fn';
    G.cells.centroids = cc';
-   G.faces.volumes   = cv;
+   G.cells.volumes   = cv;
 end
