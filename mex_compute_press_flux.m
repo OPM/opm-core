@@ -63,8 +63,8 @@ function varargout = mex_compute_press_flux(varargin)
 #COPYRIGHT#
 %}
 
-% $Date: 2010-08-04 13:44:48 +0200 (Wed, 04 Aug 2010) $
-% $Revision: 4999 $
+% $Date$
+% $Revision$
 
    buildmex -O -v -largeArrayDims -DCOMPILING_FOR_MATLAB=1 ...
             mex_compute_press_flux.c hybsys.c              ...
