@@ -60,7 +60,7 @@ deallocate_aux_arrays(int *nconn, double *src, double *gflux)
 /* ---------------------------------------------------------------------- */
 {
     /* Apparently mxFree() makes no guarantee regarding NULL arguments.
-     * Institute a belts-and-suspenders approach to releasing resources.
+     * Institute a belt-and-suspenders approach to releasing resources.
      */
     if (gflux != NULL) { mxFree(gflux); }
     if (src   != NULL) { mxFree(src);   }
