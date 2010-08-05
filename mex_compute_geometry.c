@@ -29,7 +29,7 @@ static void compute_geometry(const mxArray *G, double *a, double *fc, double *fn
 
 
    /* Clean up */
-   free(coords); free(facenodes); free(nodepos); free(cellfaces); free(facepos);
+   mxFree(coords); mxFree(facenodes); mxFree(nodepos); mxFree(cellfaces); mxFree(facepos);
 }
 
 void
@@ -38,11 +38,11 @@ mexFunction(int nlhs,       mxArray *plhs[],
 {
    const mxArray *G = prhs[0];
 
-   mxArray *fa = mxCreateNumericMatrix(getNumberOfFaces(G),   1,                      mxDOUBLE_CLASS, mxREAL);
-   mxArray *fc = mxCreateNumericMatrix(getNumberOfDimensions(G), getNumberOfFaces(G), mxDOUBLE_CLASS, mxREAL);
-   mxArray *fn = mxCreateNumericMatrix(getNumberOfDimensions(G), getNumberOfFaces(G), mxDOUBLE_CLASS, mxREAL);
-   mxArray *cc = mxCreateNumericMatrix(getNumberOfDimensions(G), getNumberOfCells(G), mxDOUBLE_CLASS, mxREAL);
-   mxArray *cv = mxCreateNumericMatrix(getNumberOfCells(G),   1,                      mxDOUBLE_CLASS, mxREAL);
+   mxArray *fa = mxCreateDoubleMatrix(getNumberOfFaces(G),   1,                      mxREAL);
+   mxArray *fc = mxCreateDoubleMatrix(getNumberOfDimensions(G), getNumberOfFaces(G), mxREAL);
+   mxArray *fn = mxCreateDoubleMatrix(getNumberOfDimensions(G), getNumberOfFaces(G), mxREAL);
+   mxArray *cc = mxCreateDoubleMatrix(getNumberOfDimensions(G), getNumberOfCells(G), mxREAL);
+   mxArray *cv = mxCreateDoubleMatrix(getNumberOfCells(G),   1,                      mxREAL);
    
    compute_geometry(G, mxGetPr(fa), mxGetPr(fc), mxGetPr(fn), mxGetPr(cc), mxGetPr(cv));
 
