@@ -20,9 +20,9 @@ int    *getFaceNodes          (const mxArray *G);    /* copy */
 int    *getFaceCellNeighbors  (const mxArray *G);    /* copy */
 
 /* Face geometry */
-void    getFaceAreas          (const mxArray *G, double **v);
-void    getFaceNormals        (const mxArray *G, double **v);
-void    getFaceCentroids      (const mxArray *G, double **v);
+double *getFaceAreas          (const mxArray *G);
+double *getFaceNormals        (const mxArray *G);    /* copy */
+double *getFaceCentroids      (const mxArray *G);    /* copy */
 
 /* Cell topology */
 int     getNumberOfCells      (const mxArray *G);
@@ -31,7 +31,12 @@ int    *getCellFacePos        (const mxArray *G);    /* copy */
 int    *getCellFaces          (const mxArray *G);    /* copy */
 
 /* Cell geometry */
-void    getCellVolumes        (const mxArray *G, double **v);
-void    getCellCentroids      (const mxArray *G, double **v);
+double *getCellVolumes        (const mxArray *G);
+double *getCellCentroids      (const mxArray *G);    /* copy */
+
+
+/* Rock properties */
+double *
+getPermeability(const mxArray *perm, int d);    /* copy */
 
 #endif /* MRST_API_H_INCLUDED */
