@@ -14,7 +14,7 @@ verify_args(int nlhs, int nrhs, const mxArray *prhs[])
 {
     int ok;
 
-    ok =       (nlhs == 4) && (nrhs == 2);
+    ok =       (nlhs == 4) && (nrhs == 3);
     ok = ok && mxIsDouble(prhs[0]);
     ok = ok && (mxIsDouble(prhs[1]) || mxIsInt32(prhs[1]));
     ok = ok && (mxGetNumberOfElements(prhs[0]) >
@@ -124,6 +124,51 @@ get_nconn(const mxArray *M_nconn, int *nconn)
     }
 }
 
+/* ---------------------------------------------------------------------- */
+static void
+get_conn(const mxArray *M_conn, int *conn)
+/* ---------------------------------------------------------------------- */
+{
+    size_t nel, i;
+
+    int    *pi;
+    double *pd;
+
+    nel = mxGetNumberOfElements(M_conn);
+
+    if (mxIsDouble(M_conn)) {
+        pd = mxGetPr(M_conn);
+
+        for (i = 0; i < nel; i++) { conn[i] = pd[i] - 1; }
+    } else {
+        pi = mxGetData(M_conn);
+
+        for (i = 0; i < nel; i++) { conn[i] = pi[i] - 1; }
+    }
+}
+
+/* ---------------------------------------------------------------------- */
+static int 
+get_number_of_faces(int nc, int *nconn, int *conn)
+/* ---------------------------------------------------------------------- */
+{
+   int N = 0;
+   int i;
+
+   for (i=0; i<nc; ++i)
+   {
+      N += nconn[i];
+   }
+
+   int nf=0; 
+   for(i=0; i<N; ++i)
+   {
+      nf = MAX(nf, conn[i]+1);
+   }
+   
+   return nf;
+}
+
 
 /*
  * [S, r, F, L] = mex_schur_comp_symm(BI, nconn)
@@ -173,7 +218,14 @@ mexFunction(int nlhs,       mxArray *plhs[],
             p1 += nconn[c];
             p2 += nconn[c] * nconn[c];
         }
+        
+        int *conn= mxMalloc(mxGetNumberOfElements(prhs[2])*sizeof *conn);
+        get_conn(prhs[2], conn);
 
+        int  nf          = get_number_of_faces(nc, nconn, conn);           
+        struct Sparse *A = hybsys_assemble(nc, nf, nconn, conn, ptr, sys->r);
+        free(A->ia);  free(A->ja); free(A->sa); free(A);
+        
         ptr = mxGetPr(plhs[1]);
         memcpy(ptr, sys->r, ncf_tot * sizeof *ptr);
 
@@ -185,5 +237,6 @@ mexFunction(int nlhs,       mxArray *plhs[],
 
         hybsys_free(sys);
         deallocate_aux_arrays(nconn, src, gflux);
+        mxFree(conn);
     }
 }

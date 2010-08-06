@@ -5,7 +5,7 @@ BI = mex_ip_simple(G, rock);
 
 nconn = diff(G.cells.facePos);
 conn  = G.cells.faces(:, 1);
-[S, r, F, L] = mex_schur_comp_symm(BI, nconn);
+[S, r, F, L] = mex_schur_comp_symm(BI, nconn, conn);
 
 [i, j] = blockDiagIndex(nconn, nconn);
 

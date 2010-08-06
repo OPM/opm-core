@@ -8,7 +8,14 @@ struct hybsys {
     double *S;                  /* system matrix in single cell */
     double *one;                /* ones(max_ncf, 1) */
 };
-
+struct Sparse
+{
+   int     m;
+   int     n;
+   int    *ia;
+   int    *ja; 
+   double *sa;
+};
 struct hybsys *
 hybsys_allocate(int max_ncf, int nc, int ncf_tot);
 
@@ -38,4 +45,6 @@ hybsys_compute_press_flux(int nc, const int *nconn, const int *conn,
                           const double *pi, double *press, double *flux,
                           double *work, const int lwork);
 
+struct Sparse*
+hybsys_assemble(int nc, int nf, int *nconn, int *conn, double *S, double *R);
 #endif  /* HYBSYS_H_INCLUDED */
