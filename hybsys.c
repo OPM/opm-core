@@ -266,7 +266,7 @@ hybsys_build_ja(int nc, int nf, int *nconn, int *conn,
                 MAT_SIZE_T *ia, int *work)
 /* ---------------------------------------------------------------------- */
 {
-   MAT_SIZE_T *ja = malloc(ia[nf] * sizeof *ja);   
+   MAT_SIZE_T *ja = malloc(ia[nf] * sizeof **ja);
    int  i,j;
 
    /*
@@ -310,8 +310,8 @@ hybsys_build_sa_and_b(int nc, int nf, int *nconn, int *conn, MAT_SIZE_T *ia,
                       double *S, double *R, int *work, double **sa, double **b)
 /* ---------------------------------------------------------------------- */
 {
-   *sa = malloc(ia[nf] * sizeof *sa);   
-   *b  = malloc(nf * sizeof *b);   
+   *sa = malloc(ia[nf] * sizeof **sa);
+   *b  = malloc(nf * sizeof **b);   
    int     i,j;
 
    /*
