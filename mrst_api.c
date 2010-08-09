@@ -33,7 +33,7 @@ extractIntMatrix(const mxArray *a)
          for (i=0; i<n; ++i)
          {
             q[i] = p[i]-1;
-         }      
+         }
       }
       else if(mxIsDouble(a))
       {
@@ -44,10 +44,10 @@ extractIntMatrix(const mxArray *a)
             mxAssert ((1 <= p[i]) && (p[i] <= INT_MAX),
                       "Matrix entry exceeds INT_MAX");
             q[i] = p[i]-1;
-         }      
+         }
       }
    }
-   
+
    return q;
 }
 
@@ -59,7 +59,7 @@ extractIntMatrixTranspose(const mxArray *a)
    int *p = extractIntMatrix(a);
    int  M = mxGetM(a);
    int  N = mxGetN(a);
-   
+
    int *q = mxMalloc(M * N * sizeof *q);
    if (q != NULL)
    {
@@ -100,15 +100,15 @@ extractDoubleMatrixTranspose(const mxArray *a)
 }
 
 /* ------------------------------------------------------------------ */
-int  
+int
 getNumberOfDimensions(const mxArray *G)
 /* ------------------------------------------------------------------ */
-{   
+{
    return mxGetN(getField(G, "nodes", "coords"));
 }
 
 /* ------------------------------------------------------------------ */
-void 
+void
 getLocal2GlobalCellMap(const mxArray *G)
 /* ------------------------------------------------------------------ */
 {
@@ -116,7 +116,7 @@ getLocal2GlobalCellMap(const mxArray *G)
 }
 
 /* ------------------------------------------------------------------ */
-int 
+int
 getNumberOfNodes(const mxArray *G)
 /* ------------------------------------------------------------------ */
 {
@@ -134,7 +134,7 @@ getNodeCoordinates(const mxArray *G)
 
    p1 = mxGetField(G , 0, "nodes" );
    p2 = mxGetField(p1, 0, "coords");
-   
+
    const int n = getNumberOfNodes(G);
    const int d = getNumberOfDimensions(G);
 
@@ -157,7 +157,7 @@ getNodeCoordinates(const mxArray *G)
 }
 
 /* ------------------------------------------------------------------ */
-int  
+int
 getNumberOfFaces(const mxArray *G)
 /* ------------------------------------------------------------------ */
 {
@@ -173,7 +173,7 @@ getFaceNodePos(const mxArray *G)
 }
 
 /* ------------------------------------------------------------------ */
-int 
+int
 getNumberOfFaceNodes(const mxArray *G)
 /* ------------------------------------------------------------------ */
 {
@@ -198,7 +198,7 @@ getFaceCellNeighbors(const mxArray *G)
 }
 
 /* ------------------------------------------------------------------ */
-double * 
+double *
 getFaceAreas(const mxArray *G)
 /* ------------------------------------------------------------------ */
 {
@@ -222,11 +222,11 @@ getFaceCentroids(const mxArray *G)
 }
 
 /* ------------------------------------------------------------------ */
-int  
+int
 getNumberOfCells(const mxArray *G)
 /* ------------------------------------------------------------------ */
 {
-   return mxGetNumberOfElements(getField(G, "cells", "facePos"))-1;   
+   return mxGetNumberOfElements(getField(G, "cells", "facePos"))-1;
 }
 
 /* ------------------------------------------------------------------ */
@@ -240,7 +240,7 @@ int *getCellFacePos(const mxArray *G)
 int getNumberOfCellFaces(const mxArray *G)
 /* ------------------------------------------------------------------ */
 {
-   return mxGetNumberOfElements(getField(G, "cells", "faces"))-1;   
+   return mxGetNumberOfElements(getField(G, "cells", "faces"))-1;
 }
 
 /* ------------------------------------------------------------------ */

@@ -3,7 +3,7 @@
 #include "geometry.h"
 
 /* ------------------------------------------------------------------ */
-static void 
+static void
 cross(const double u[3], const double v[3], double w[3])
 /* ------------------------------------------------------------------ */
 {
@@ -13,7 +13,7 @@ cross(const double u[3], const double v[3], double w[3])
 }
 
 /* ------------------------------------------------------------------ */
-static double 
+static double
 norm(const double w[3])
 /* ------------------------------------------------------------------ */
 {
@@ -23,9 +23,9 @@ norm(const double w[3])
 
 
 /* ------------------------------------------------------------------ */
-void 
-compute_face_geometry(int ndims, double *coords, int nfaces, 
-                      int *nodepos, int *facenodes, double *fnormals, 
+void
+compute_face_geometry(int ndims, double *coords, int nfaces,
+                      int *nodepos, int *facenodes, double *fnormals,
                       double *fcentroids, double *fareas)
 /* ------------------------------------------------------------------ */
 {
@@ -36,7 +36,7 @@ compute_face_geometry(int ndims, double *coords, int nfaces,
    double u[3];
    double v[3];
    double w[3];
-   
+
    int i,k;
    int node;
 
@@ -44,12 +44,12 @@ compute_face_geometry(int ndims, double *coords, int nfaces,
    double n[3]  = {0};
    const double twothirds = 0.666666666666666666666666666667;
    for (f=0; f<nfaces; ++f)
-   { 
+   {
       double area = 0.0;
       for(i=0; i<ndims; ++i) x[i] = 0.0;
       for(i=0; i<ndims; ++i) n[i] = 0.0;
-      for(i=0; i<ndims; ++i) cface[i] = 0.0;         
-            
+      for(i=0; i<ndims; ++i) cface[i] = 0.0;
+
       /* average node */
       for(k=nodepos[f]; k<nodepos[f+1]; ++k)
       {
@@ -64,7 +64,7 @@ compute_face_geometry(int ndims, double *coords, int nfaces,
       /* compute first vector u (to the last node in the face) */
       node = facenodes[nodepos[f+1]-1];
       for(i=0; i<ndims; ++i) u[i] = coords[3*node+i] - x[i];
-      
+
 
       /* Compute triangular contrib. to face normal and face centroid*/
       for(k=nodepos[f]; k<nodepos[f+1]; ++k)
@@ -74,23 +74,23 @@ compute_face_geometry(int ndims, double *coords, int nfaces,
 
          cross(u,v,w);
          double a = 0.5*norm(w);
-         area += a; 
+         area += a;
          if(!(a>0))
          {
             fprintf(stderr, "Internal error in compute_face_geometry.");
          }
 
-         /* face normal */         
+         /* face normal */
          for (i=0; i<ndims; ++i) n[i] += w[i];
-         
+
          /* face centroid */
-         for (i=0; i<ndims; ++i) 
-            cface[i] += a*(x[i]+twothirds*0.5*(u[i]+v[i]));         
-         
+         for (i=0; i<ndims; ++i)
+            cface[i] += a*(x[i]+twothirds*0.5*(u[i]+v[i]));
+
          /* Store v in u for next iteration */
-         for (i=0; i<ndims; ++i) u[i] = v[i];         
+         for (i=0; i<ndims; ++i) u[i] = v[i];
       }
-         
+
       /* Store face normal and face centroid */
       for (i=0; i<ndims; ++i)
       {
@@ -104,10 +104,10 @@ compute_face_geometry(int ndims, double *coords, int nfaces,
 
 
 /* ------------------------------------------------------------------ */
-void 
-compute_cell_geometry(int ndims, double *coords, int nfaces, 
-                      int *nodepos, int *facenodes, double *fcentroids, 
-                      int ncells, int *facepos, int *cellfaces, 
+void
+compute_cell_geometry(int ndims, double *coords, int nfaces,
+                      int *nodepos, int *facenodes, double *fcentroids,
+                      int ncells, int *facepos, int *cellfaces,
                       double *ccentroids, double *cvolumes)
 /* ------------------------------------------------------------------ */
 {
@@ -127,10 +127,10 @@ compute_cell_geometry(int ndims, double *coords, int nfaces,
       double volume = 0.0;
       for(i=0; i<ndims; ++i) xcell[i] = 0.0;
       for(i=0; i<ndims; ++i) ccell[i] = 0.0;
-      
+
 
       /*
-       * Approximate cell center as average of face centroids 
+       * Approximate cell center as average of face centroids
        */
       for(f=facepos[c]; f<facepos[c+1]; ++f)
       {
@@ -142,14 +142,14 @@ compute_cell_geometry(int ndims, double *coords, int nfaces,
 
 
 
-      /* 
+      /*
        * For all faces, add tetrahedron's volume and centroid to
        * 'cvolume' and 'ccentroid'.
        */
       for(f=facepos[c]; f<facepos[c+1]; ++f)
-      { 
+      {
          for(i=0; i<ndims; ++i) x[i] = 0.0;
-         for(i=0; i<ndims; ++i) cface[i] = 0.0;         
+         for(i=0; i<ndims; ++i) cface[i] = 0.0;
 
          face = cellfaces[f];
 
@@ -167,14 +167,14 @@ compute_cell_geometry(int ndims, double *coords, int nfaces,
          /* compute first vector u (to the last node in the face) */
          node = facenodes[nodepos[face+1]-1];
          for(i=0; i<ndims; ++i) u[i] = coords[3*node+i] - x[i];
-      
+
 
          /* Compute triangular contributions to face normal and face centroid */
          for(k=nodepos[face]; k<nodepos[face+1]; ++k)
          {
             node = facenodes[k];
             for (i=0; i<ndims; ++i) v[i] = coords[3*node+i] - x[i];
-            
+
             cross(u,v,w);
             double tet_volume = 0;
             for(i=0; i<ndims; ++i) tet_volume += fabs(0.5/3 * w[i]*(x[i]-xcell[i]));
@@ -183,17 +183,17 @@ compute_cell_geometry(int ndims, double *coords, int nfaces,
             volume += tet_volume;
 
             /* face centroid of triangle  */
-            for (i=0; i<ndims; ++i) cface[i] = (x[i]+twothirds*0.5*(u[i]+v[i]));         
-            
+            for (i=0; i<ndims; ++i) cface[i] = (x[i]+twothirds*0.5*(u[i]+v[i]));
+
             /* Cell centroid */
             for (i=0; i<ndims; ++i) ccell[i] += tet_volume * 3/4.0*(cface[i] - xcell[i]);
-            
-         
+
+
             /* Store v in u for next iteration */
-            for (i=0; i<ndims; ++i) u[i] = v[i];         
+            for (i=0; i<ndims; ++i) u[i] = v[i];
          }
       }
       for (i=0; i<ndims; ++i) ccentroids[3*c+i] = xcell[i] + ccell[i]/volume;
-      cvolumes[c] = volume;     
+      cvolumes[c] = volume;
    }
 }

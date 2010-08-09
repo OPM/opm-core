@@ -100,7 +100,7 @@ verify_structural_consistency(int nlhs, int nrhs, const mxArray *prhs[])
               (mxIsDouble(prhs[3]) || mxIsInt32(prhs[3])) &&
               (mxGetNumberOfElements(prhs[2]) <
                mxGetNumberOfElements(prhs[3]));
-    
+
     return grid_ok && rock_ok && conn_ok;
 }
 
@@ -206,20 +206,20 @@ extract_cell_data(const mxArray *G,
 
    extract_connection_data(M_nconn, M_conn, ncells,
                            nconn, conn, sum_nconn, sum_nconn2);
-   
+
    *max_ncf = 0;
 
    for(i=0; i<ncells; ++i)
    {
       int n = (*ncfaces)[i+1] - (*ncfaces)[i];
       (*ncfaces)[i] = n;
-      
+
       *max_ncf   = MAX(*max_ncf, n);
    }
 
    *ccentroids = getCellCentroids(G);
    *cvolumes   = getCellVolumes(G);
-   
+
    return ncells;
 }
 

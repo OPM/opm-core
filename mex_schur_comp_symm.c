@@ -150,7 +150,7 @@ get_conn(const mxArray *M_conn, int *conn)
 }
 
 /* ---------------------------------------------------------------------- */
-static int 
+static int
 get_number_of_faces(int nc, int *nconn, int *conn)
 /* ---------------------------------------------------------------------- */
 {
@@ -162,12 +162,12 @@ get_number_of_faces(int nc, int *nconn, int *conn)
       N += nconn[i];
    }
 
-   int nf=0; 
+   int nf=0;
    for(i=0; i<N; ++i)
    {
       nf = MAX(nf, conn[i]+1);
    }
-   
+
    return nf;
 }
 
@@ -223,18 +223,18 @@ mexFunction(int nlhs,       mxArray *plhs[],
             p1 += nconn[c];
             p2 += nconn[c] * nconn[c];
         }
-        
+
         int *conn= mxMalloc(mxGetNumberOfElements(prhs[2])*sizeof *conn);
         get_conn(prhs[2], conn);
 
-        int  nf          = get_number_of_faces(nc, nconn, conn);           
+        int  nf          = get_number_of_faces(nc, nconn, conn);
         struct Sparse A;
         /* double *b = malloc(nf * sizeof *b); */
         double *b;
         hybsys_assemble(nc, nf, nconn, conn, ptr, sys->r, &A, &b);
 #if 0
         double *x = malloc(A.n * sizeof *x);
-        
+
         callMWUMFPACK(A.n, A.ia, A.ja, A.sa, b, x);
 
         int i;for(i=0; i<nf; ++i)mexPrintf("x[%d]=%f\n", i, x[i]);

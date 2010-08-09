@@ -207,7 +207,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
 
         for (i = 0; i < nc; i++)      { src[i]   = 0.0; } /* No sources */
         for (i = 0; i < ncf_tot; i++) { gflux[i] = 0.0; } /* No gravity */
-        
+
         hybsys_compute_press_flux(nc, nconn, conn, gflux, src, Binv, sys,
                                   pi, mxGetPr(plhs[1]), mxGetPr(plhs[0]),
                                   work, max_ncf);

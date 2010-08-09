@@ -43,7 +43,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
    mxArray *fn = mxCreateDoubleMatrix(getNumberOfDimensions(G), getNumberOfFaces(G), mxREAL);
    mxArray *cc = mxCreateDoubleMatrix(getNumberOfDimensions(G), getNumberOfCells(G), mxREAL);
    mxArray *cv = mxCreateDoubleMatrix(getNumberOfCells(G),   1,                      mxREAL);
-   
+
    compute_geometry(G, mxGetPr(fa), mxGetPr(fc), mxGetPr(fn), mxGetPr(cc), mxGetPr(cv));
 
    mxAssert(nlhs==5, "Requires 5 return arguments");
