@@ -7,7 +7,9 @@ function varargout = mex_schur_comp_symm(varargin)
 % PARAMETERS:
 %   BI    - Inner product values.
 %
-%   nconn - diff(G.cells.facePos)
+%   nconn - Number of connections per cell.  Often coincides with
+%           DIFF(G.cells.facePos), but may be larger if any cells are
+%           perforated by one or more wells.
 %
 % RETURNS:
 %   S - A SUM(nconn .^ 2)-by-1 array of unassembled system matrix values,
@@ -20,16 +22,6 @@ function varargout = mex_schur_comp_symm(varargin)
 %
 %   L - A G.cells.num-by-1 array of C'*inv(B)*C values, ordered by cells.
 %
-% NOTE:
-%   As the return value 'BI' is but a simple data array value, it must be
-%   subsequently assembled into the 'S.BI' sparse matrix before being used
-%   to solve a flow problem using, e.g., the 'solveIncompFlow' function.
-%
-%   Moreover, the 'solveIncompFlow' function expects its 'S' parameter to
-%   specify a 'type' field which is consistent with the kind of matrix
-%   stored within 'S'.  In the case of 'ip_simple', the 'type' must be the
-%   string value 'hybrid'.
-%
 % EXAMPLE:
 %   G = computeGeometry(processGRDECL(makeModel3([100, 60, 15])));
 %   K = logNormLayers(G.cartDims, [10, 300, 40, 0.1, 100]);
@@ -37,27 +29,24 @@ function varargout = mex_schur_comp_symm(varargin)
 %   rock.perm = convertFrom(rock.perm(G.cells.indexMap, :), ...
 %                           milli*darcy);
 %
-%   t0 = tic;
-%   BI = mex_ip_simple(G, rock);
-%   toc(t0)
-%
 %   nconn = diff(G.cells.facePos);
+%   conn  = G.cells.faces(:,1);
 %
-%   [S, r, F, L] = mex_schur_comp(BI, nconn);
-%
-%   [i, j] = blockDiagIndex(diff(G.cells.facePos), ...
-%                           diff(G.cells.facePos));
-%
-%   S = struct('BI', sparse(i, j, BI), 'type', 'hybrid', 'ip', 'ip_simple')
+%   BI = mex_ip_simple(G, rock, nconn, conn);
 %
 %   t0 = tic;
-%   S2 = computeMimeticIP(G, rock)
+%   [S, r, F, L] = mex_schur_comp_symm(BI, nconn);
 %   toc(t0)
 %
-%   norm(S.BI - S2.BI, inf) / norm(S2.BI, inf)
+%   [i, j] = blockDiagIndex(nconn, nconn);
+%
+%   SS = sparse(double(conn(i)), double(conn(j)), S);
+%   R  = accumarray(conn, r);
+%
+%   lam = SS \ R;
 %
 % SEE ALSO:
-%   computeMimeticIP, solveIncompFlow, blockDiagIndex.
+%   mex_ip_simple, mex_compute_press_flux.
 
 %{
 #COPYRIGHT#
@@ -66,7 +55,7 @@ function varargout = mex_schur_comp_symm(varargin)
 % $Date$
 % $Revision$
 
-   buildmex -g CFLAGS="\$CFLAGS -W -Wall -pedantic -W -Wformat-nonliteral ...
+   buildmex -O CFLAGS="\$CFLAGS -W -Wall -pedantic -W -Wformat-nonliteral ...
         -Wcast-align -Wpointer-arith -Wbad-function-cast ...
         -Wmissing-prototypes -Wstrict-prototypes ...
         -Wmissing-declarations -Winline -Wundef -Wnested-externs...
