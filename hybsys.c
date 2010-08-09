@@ -230,17 +230,17 @@ hybsys_build_ia(int nc, int nf, int *nconn, int *conn)
 /* ---------------------------------------------------------------------- */
 {
    MAT_SIZE_T    *ia = malloc((nf+1) * sizeof *ia);
-   
+
    int i;
    for(i=0; i<nf+1; ++i)
    {
       ia[i] = 0;
    }
-   
-   /* 
-    *   Compute rowsizes 
-    */   
-   int c, pos = 0; 
+
+   /*
+    *   Compute rowsizes
+    */
+   int c, pos = 0;
    for(c=0; c<nc; ++c)
    {
       int n = nconn[c];
@@ -251,9 +251,9 @@ hybsys_build_ia(int nc, int nf, int *nconn, int *conn)
       }
       pos += n;
    }
-   
+
    /*
-    *   cumulative sum... 
+    *   cumulative sum...
     */
    for(i=1; i<nf+1; ++i)
    {
@@ -264,7 +264,7 @@ hybsys_build_ia(int nc, int nf, int *nconn, int *conn)
 
 /* ---------------------------------------------------------------------- */
 static MAT_SIZE_T*
-hybsys_build_ja(int nc, int nf, int *nconn, int *conn, 
+hybsys_build_ja(int nc, int nf, int *nconn, int *conn,
                 MAT_SIZE_T *ia, int *work)
 /* ---------------------------------------------------------------------- */
 {
@@ -279,26 +279,26 @@ hybsys_build_ja(int nc, int nf, int *nconn, int *conn,
       work[i] = 1;
       ja[ia[i]] = i;
    }
-   
-   int c, pos = 0; 
+
+   int c, pos = 0;
    for(c=0; c<nc; ++c)
    {
       int n = nconn[c];
       for (i=pos; i<pos+n; ++i)
       {
-         int fi = conn[i]; 
+         int fi = conn[i];
          /* mxAssert(fi<nf, "fi out of bounds"); */
 
          for (j=pos; j<i; ++j)
          {
-            int fj = conn[j]; 
+            int fj = conn[j];
             /* mxAssert(fj<nf, "fj out of bounds"); */
 
             /*
              *   No conditionals since off-diagonals entries are
              *   visited only once.
              */
-            ja[ia[fi] + work[fi]++] = fj;    
+            ja[ia[fi] + work[fi]++] = fj;
             ja[ia[fj] + work[fj]++] = fi;
          }
       }
@@ -308,12 +308,12 @@ hybsys_build_ja(int nc, int nf, int *nconn, int *conn,
 }
 /* ---------------------------------------------------------------------- */
 static void
-hybsys_build_sa_and_b(int nc, int nf, int *nconn, int *conn, MAT_SIZE_T *ia, 
+hybsys_build_sa_and_b(int nc, int nf, int *nconn, int *conn, MAT_SIZE_T *ia,
                       double *S, double *R, int *work, double **sa, double **b)
 /* ---------------------------------------------------------------------- */
 {
    *sa = malloc(ia[nf] * sizeof **sa);
-   *b  = malloc(nf * sizeof **b);   
+   *b  = malloc(nf * sizeof **b);
    int     i,j;
 
    /*
@@ -325,11 +325,11 @@ hybsys_build_sa_and_b(int nc, int nf, int *nconn, int *conn, MAT_SIZE_T *ia,
       (*sa)[ia[i]] = 0;
       (*b) [i]     = 0;
    }
-   
+
    double *s = S;
    double *r = R;
 
-   int c, pos = 0; 
+   int c, pos = 0;
    for(c=0; c<nc; ++c)
    {
       int n = nconn[c];
@@ -340,9 +340,9 @@ hybsys_build_sa_and_b(int nc, int nf, int *nconn, int *conn, MAT_SIZE_T *ia,
 
          for (j=pos; j<i; ++j)
          {
-            int fj = conn[j]; 
+            int fj = conn[j];
             int jj = j-pos;
-            
+
             /*
              *   We can use assignment since off-diagonal entries are
              *   visited only once.
@@ -362,10 +362,10 @@ hybsys_build_sa_and_b(int nc, int nf, int *nconn, int *conn, MAT_SIZE_T *ia,
       r   += n;
       pos += n;
    }
-}   
+}
 
 /* ---------------------------------------------------------------------- */
-void hybsys_build_matrix_structure(int nc, int nf, int *nconn, int *conn, 
+void hybsys_build_matrix_structure(int nc, int nf, int *nconn, int *conn,
                                    MAT_SIZE_T **ia, MAT_SIZE_T **ja)
 /* ---------------------------------------------------------------------- */
 {
@@ -377,14 +377,14 @@ void hybsys_build_matrix_structure(int nc, int nf, int *nconn, int *conn,
    free(work);
 }
 /* ---------------------------------------------------------------------- */
-void hybsys_assemble_global_system(int nc, int nf, int *nconn, int *conn, 
-                                   double *S, double *R, 
+void hybsys_assemble_global_system(int nc, int nf, int *nconn, int *conn,
+                                   double *S, double *R,
                                    double **sa, double **b, MAT_SIZE_T *ia)
 /* ---------------------------------------------------------------------- */
 {
    int *work  = malloc(nf * sizeof *work);
 
-   hybsys_build_sa_and_b(nc, nf, nconn, conn, ia, S, R, work, sa, b); 
+   hybsys_build_sa_and_b(nc, nf, nconn, conn, ia, S, R, work, sa, b);
 
    free(work);
 }
