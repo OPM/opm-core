@@ -204,8 +204,10 @@ mexFunction(int nlhs,       mxArray *plhs[],
 
         for (i = 0; i < nc; i++)      { src[i]   = 0.0; } /* No sources */
         for (i = 0; i < ncf_tot; i++) { gflux[i] = 0.0; } /* No gravity */
+#if 0
         src[0] = 1;
         src[nc-1]=-1;
+#endif
         Binv = mxGetPr(prhs[0]);
         get_nconn(prhs[1], nconn);
 
@@ -230,13 +232,15 @@ mexFunction(int nlhs,       mxArray *plhs[],
         /* double *b = malloc(nf * sizeof *b); */
         double *b;
         hybsys_assemble(nc, nf, nconn, conn, ptr, sys->r, &A, &b);
+#if 0
         double *x = malloc(A.n * sizeof *x);
         
         callMWUMFPACK(A.n, A.ia, A.ja, A.sa, b, x);
 
         int i;for(i=0; i<nf; ++i)mexPrintf("x[%d]=%f\n", i, x[i]);
-        free(A.ia); free(A.ja); free(A.sa); free(x); free(b);
-        
+#endif
+        free(A.ia); free(A.ja); free(A.sa); /* free(x);  */free(b);
+
         ptr = mxGetPr(plhs[1]);
         memcpy(ptr, sys->r, ncf_tot * sizeof *ptr);
 
