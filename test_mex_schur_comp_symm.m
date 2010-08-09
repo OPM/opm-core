@@ -1,5 +1,5 @@
 run ../../startup
-G = computeGeometry(cartGrid([5, 1]));
+G = computeGeometry(cartGrid([200, 1], [1, 1]));
 rock.perm = ones(G.cells.num, 1);
 
 nconn = diff(G.cells.facePos);
