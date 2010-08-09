@@ -21,7 +21,7 @@ struct Sparse
    int        m;
    int        n;
    MAT_SIZE_T *ia;
-   MAT_SIZE_T *ja; 
+   MAT_SIZE_T *ja;
    double *sa;
 };
 
@@ -57,6 +57,6 @@ hybsys_compute_press_flux(int nc, const int *nconn, const int *conn,
                           double *work, const int lwork);
 
 void
-hybsys_assemble(int nc, int nf, int *nconn, int *conn, double *S, double *R, 
+hybsys_assemble(int nc, int nf, int *nconn, int *conn, double *S, double *R,
                 struct Sparse *A, double **b);
 #endif  /* HYBSYS_H_INCLUDED */
