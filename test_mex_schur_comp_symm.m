@@ -1,10 +1,12 @@
 run ../../startup
 G = computeGeometry(cartGrid([5, 1]));
 rock.perm = ones(G.cells.num, 1);
-BI = mex_ip_simple(G, rock);
 
 nconn = diff(G.cells.facePos);
 conn  = G.cells.faces(:, 1);
+
+BI = mex_ip_simple(G, rock, nconn, conn);
+
 [S, r, F, L] = mex_schur_comp_symm(BI, nconn, conn);
 
 [i, j] = blockDiagIndex(nconn, nconn);
