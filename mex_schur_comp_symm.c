@@ -2,7 +2,9 @@
 
 #include "mex.h"
 #include "matrix.h"
+#define MAT_SIZE_T mwSignedIndex
 
+#include "call_umfpack.h"
 #include "hybsys.h"
 
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
@@ -202,7 +204,8 @@ mexFunction(int nlhs,       mxArray *plhs[],
 
         for (i = 0; i < nc; i++)      { src[i]   = 0.0; } /* No sources */
         for (i = 0; i < ncf_tot; i++) { gflux[i] = 0.0; } /* No gravity */
-
+        src[0] = 1;
+        src[nc-1]=-1;
         Binv = mxGetPr(prhs[0]);
         get_nconn(prhs[1], nconn);
 
@@ -223,8 +226,16 @@ mexFunction(int nlhs,       mxArray *plhs[],
         get_conn(prhs[2], conn);
 
         int  nf          = get_number_of_faces(nc, nconn, conn);           
-        struct Sparse *A = hybsys_assemble(nc, nf, nconn, conn, ptr, sys->r);
-        free(A->ia);  free(A->ja); free(A->sa); free(A);
+        struct Sparse A;
+        /* double *b = malloc(nf * sizeof *b); */
+        double *b;
+        hybsys_assemble(nc, nf, nconn, conn, ptr, sys->r, &A, &b);
+        double *x = malloc(A.n * sizeof *x);
+        
+        callMWUMFPACK(A.n, A.ia, A.ja, A.sa, b, x);
+
+        int i;for(i=0; i<nf; ++i)mexPrintf("x[%d]=%f\n", i, x[i]);
+        free(A.ia); free(A.ja); free(A.sa); free(x); free(b);
         
         ptr = mxGetPr(plhs[1]);
         memcpy(ptr, sys->r, ncf_tot * sizeof *ptr);
