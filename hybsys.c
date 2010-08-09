@@ -266,7 +266,7 @@ hybsys_build_ja(int nc, int nf, int *nconn, int *conn,
                 MAT_SIZE_T *ia, int *work)
 /* ---------------------------------------------------------------------- */
 {
-   MAT_SIZE_T *ja = malloc(ia[nf] * sizeof **ja);
+   MAT_SIZE_T *ja = malloc(ia[nf] * sizeof *ja);
    int  i,j;
 
    /*
