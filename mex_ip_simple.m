@@ -2,16 +2,24 @@ function varargout = mex_ip_simple(varargin)
 %Compute 'ip_simple' inner product values using compiled C code.
 %
 % SYNOPSIS:
-%   BI = mex_ip_simple(G, rock)
+%   BI = mex_ip_simple(G, rock, nconn, conn)
 %
 % PARAMETERS:
-%   G    - Grid data structure.
+%   G     - Grid data structure.
 %
-%   rock - Rock data structure.  Must contain a valid field 'perm'.
+%   rock  - Rock data structure.  Must contain a valid field 'perm'.
+%
+%   nconn - Number of connections per cell.  Often coincides with
+%           DIFF(G.cells.facePos), but may be larger if any cells are
+%           perforated by one or more wells.
+%
+%   conn  - Connection data per cell.  Often coincides with
+%           G.cells.faces(:,1) but will contain additional data if a cell is
+%           perforated by one or more wells.
 %
 % RETURNS:
-%   BI   - A SUM(DIFF(G.cells.facePos) .^ 2)-by-1 array of inner product
-%          values, ordered by the cells of the input grid.
+%   BI   - A SUM(nconn .^ 2)-by-1 array of inner product values, ordered by
+%          the cells of the input grid.
 %
 % NOTE:
 %   As the return value 'BI' is but a simple data array value, it must be
@@ -30,12 +38,14 @@ function varargout = mex_ip_simple(varargin)
 %   rock.perm = convertFrom(rock.perm(G.cells.indexMap, :), ...
 %                           milli*darcy);
 %
+%   nconn = diff(G.cells.facePos);
+%   conn  = G.cells.faces(:,1);
+%
 %   t0 = tic;
-%   BI = mex_ip_simple(G, rock);
+%   BI = mex_ip_simple(G, rock, nconn, conn);
 %   toc(t0)
 %
-%   [i, j] = blockDiagIndex(diff(G.cells.facePos), ...
-%                           diff(G.cells.facePos));
+%   [i, j] = blockDiagIndex(nconn, nconn);
 %
 %   S = struct('BI', sparse(i, j, BI), 'type', 'hybrid', 'ip', 'ip_simple')
 %

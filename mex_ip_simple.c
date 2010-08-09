@@ -1,4 +1,6 @@
+#include <string.h>
 #include <mex.h>
+
 #include "mrst_api.h"
 #include "mimetic.h"
 
@@ -76,23 +78,30 @@ verify_structural_consistency(int nlhs, int nrhs, const mxArray *prhs[])
 {
     int rock_ok;
     int grid_ok;
+    int conn_ok;
 
-    mxAssert((nlhs == 1) && (nrhs == 2),
-             "Must be called with exactly two inputs and one output.");
+    mxAssert((nlhs == 1) && (nrhs == 4),
+             "Must be called with exactly four inputs and one output.");
 
     mxAssert(mxIsStruct(prhs[0]) && mxIsStruct(prhs[1]),
-             "Inputs must be STRUCTs.");
+             "First two inputs must be STRUCTs.");
 
     mxAssert((mxGetNumberOfElements(prhs[0]) == 1) &&
              (mxGetNumberOfElements(prhs[1]) == 1),
-             "Inputs must be 1-by-1 STRUCT arrays.");
+             "First two inputs must be 1-by-1 STRUCT arrays.");
 
     grid_ok = verify_grid_structure(prhs[0]);
 
     /* rock must contain a field 'perm' */
     rock_ok = mxGetFieldNumber(prhs[1], "perm") >= 0;
 
-    return grid_ok && rock_ok;
+    /* connection structure */
+    conn_ok = (mxIsDouble(prhs[2]) || mxIsInt32(prhs[2])) &&
+              (mxIsDouble(prhs[3]) || mxIsInt32(prhs[3])) &&
+              (mxGetNumberOfElements(prhs[2]) <
+               mxGetNumberOfElements(prhs[3]));
+    
+    return grid_ok && rock_ok && conn_ok;
 }
 
 
@@ -123,10 +132,71 @@ deallocate_face_data(int *fneighbour, double *fnormal, double *fcentroid)
 
 
 /* ------------------------------------------------------------------ */
+static void
+copy_int_vector(const mxArray *M_v, int *v)
+/* ------------------------------------------------------------------ */
+{
+    size_t n, i;
+
+    int    *pi;
+    double *pd;
+
+    n = mxGetNumberOfElements(M_v);
+
+    if (mxIsDouble(M_v)) {
+        pd = mxGetPr(M_v);
+
+        for (i = 0; i < n; i++) {
+            mxAssert ((INT_MIN <= pd[i]) && (pd[i] <= INT_MAX),
+                      "Data element outside range for INT32");
+
+            v[i] = pd[i];
+        }
+    } else {
+        pi = mxGetData(M_v);
+        memcpy(v, pi, n * sizeof *v);
+    }
+}
+
+
+/* ------------------------------------------------------------------ */
+static void
+extract_connection_data(const mxArray *M_nconn, const mxArray *M_conn,
+                        const int nc, int **nconn, int **conn,
+                        int *sum_nconn, int *sum_nconn2)
+/* ------------------------------------------------------------------ */
+{
+    size_t i, n;
+
+    n = mxGetNumberOfElements(M_conn);
+
+    *nconn = mxMalloc(nc * sizeof *nconn);
+    *conn  = mxMalloc(n  * sizeof *conn );
+
+    copy_int_vector(M_nconn, *nconn);
+    copy_int_vector(M_conn,  *conn );
+
+    /* Adjust connections for 1-based indexing. */
+    for (i = 0; i < n; i++) {
+        (*conn)[i] -= 1;
+    }
+
+    /* Count connections */
+    n = nc;
+    *sum_nconn = *sum_nconn2 = 0;
+    for (i = 0; i < n; i++) {
+        *sum_nconn  += (*nconn)[i];
+        *sum_nconn2 += (*nconn)[i] * (*nconn)[i];
+    }
+}
+
+
+/* ------------------------------------------------------------------ */
 static int
-extract_cell_data(const mxArray *G, int d,
-                  int *max_ncf, int *sum_ncf, int *sum_ncf2,
-                  int **ncfaces, int **cfaces,
+extract_cell_data(const mxArray *G,
+                  const mxArray *M_nconn, const mxArray *M_conn,
+                  int d, int *max_ncf, int *sum_nconn, int *sum_nconn2,
+                  int **ncfaces, int **nconn, int **conn,
                   double **ccentroids, double **cvolumes)
 /* ------------------------------------------------------------------ */
 {
@@ -134,7 +204,10 @@ extract_cell_data(const mxArray *G, int d,
    int ncells = getNumberOfCells(G);
    int i;
 
-   *max_ncf = *sum_ncf = *sum_ncf2 = 0;
+   extract_connection_data(M_nconn, M_conn, ncells,
+                           nconn, conn, sum_nconn, sum_nconn2);
+   
+   *max_ncf = 0;
 
    for(i=0; i<ncells; ++i)
    {
@@ -142,11 +215,8 @@ extract_cell_data(const mxArray *G, int d,
       (*ncfaces)[i] = n;
       
       *max_ncf   = MAX(*max_ncf, n);
-      *sum_ncf  += n; 
-      *sum_ncf2 += n*n;       
    }
 
-   *cfaces     = getCellFaces(G);
    *ccentroids = getCellCentroids(G);
    *cvolumes   = getCellVolumes(G);
    
@@ -156,11 +226,12 @@ extract_cell_data(const mxArray *G, int d,
 
 /* ------------------------------------------------------------------ */
 static void
-deallocate_cell_data(int *ncfaces, int *cfaces, double *ccentroids)
+deallocate_cell_data(int *ncfaces, int *nconn, int *conn, double *ccentroids)
 /* ------------------------------------------------------------------ */
 {
     mxFree(ccentroids);
-    mxFree(cfaces);
+    mxFree(conn);
+    mxFree(nconn);
     mxFree(ncfaces);
 }
 
@@ -175,7 +246,7 @@ deallocate_perm_data(double *K)
 
 
 /*
- * BI = mex_ip_simple(G, rock)
+ * BI = mex_ip_simple(G, rock, nconn, conn)
  */
 
 /* ------------------------------------------------------------------ */
@@ -189,7 +260,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
     int *fneighbour;
     double *farea, *fnormal, *fcentroid;
 
-    int *ncfaces, *cfaces;
+    int *ncfaces, *nconn, *conn;
     double *ccentroids, *cvolumes;
 
     double *perm;
@@ -203,25 +274,26 @@ mexFunction(int nlhs,       mxArray *plhs[],
         nfaces = extract_face_data(prhs[0], d,
                                    &fneighbour, &farea, &fnormal, &fcentroid);
 
-        ncells = extract_cell_data(prhs[0], d,
+        ncells = extract_cell_data(prhs[0], prhs[2], prhs[3], d,
                                    &max_ncf, &sum_ncf, &sum_ncf2, &ncfaces,
-                                   &cfaces, &ccentroids, &cvolumes);
+                                   &nconn, &conn, &ccentroids, &cvolumes);
 
         perm = getPermeability(mxGetField(prhs[1], 0, "perm"), d);
 
         if ((ncells > 0) && (nfaces > 0)) {
             plhs[0] = mxCreateDoubleMatrix(sum_ncf2, 1, mxREAL);
-            Binv    = mxGetPr(plhs[0]);
+            Binv    = mxGetPr(plhs[0]); /* mxCreateDoubleMatrix == ZEROS */
 
-            mim_ip_simple_all(ncells, d, max_ncf, ncfaces, cfaces, fneighbour,
-                              fcentroid, fnormal, farea, ccentroids, cvolumes,
-                              perm, Binv);
+            /* mim_ip_simple_all() requires zeroed target array... */
+            mim_ip_simple_all(ncells, d, max_ncf, ncfaces, nconn, conn,
+                              fneighbour, fcentroid, fnormal, farea,
+                              ccentroids, cvolumes, perm, Binv);
         } else {
             plhs[0] = mxCreateDoubleScalar(mxGetNaN());
         }
 
         deallocate_perm_data(perm);
-        deallocate_cell_data(ncfaces, cfaces, ccentroids);
+        deallocate_cell_data(ncfaces, nconn, conn, ccentroids);
         deallocate_face_data(fneighbour, fnormal, fcentroid);
     } else {
         plhs[0] = mxCreateDoubleScalar(mxGetNaN());
