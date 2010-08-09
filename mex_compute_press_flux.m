@@ -5,30 +5,33 @@ function varargout = mex_compute_press_flux(varargin)
 %   [v, p] = mex_compute_press_flux(BI, lam, nconn, conn, F, L)
 %
 % PARAMETERS:
-%   BI    - Inner product values.
+%   BI    - Inner product values.  Typically computed using function
+%           'mex_ip_simple'.
 %
-%   nconn - diff(G.cells.facePos)
+%   lam   - Interface pressure values.  One scalar value for each face in
+%           the discretised reservoir model.
+%
+%   nconn - Number of connections per cell.  Typically equals the result of
+%
+%               diff(G.cells.facePos)
+%
+%   conn  - Actual connections per cell.  Typically equals the result of
+%
+%               G.cells.faces(:,1)
+%
+%   F     - Second-to-last return value from 'mex_schur_comp_symm'.
+%
+%   L     - Last return value from 'mex_schur_comp_symm'.
 %
 % RETURNS:
-%   S - A SUM(nconn .^ 2)-by-1 array of unassembled system matrix values,
-%       ordered by cells.
+%   v - A SUM(nconn)-by-1 array of half-contact fluxes, ordered by cells.
 %
-%   r - A SUM(nconn)-by-1 array of unassemble system rhs values, ordered by
-%       cells.
-%
-%   F - A SUM(nconn)-by-1 array of C'*inv(B) values, ordered by cells.
-%
-%   L - A G.cells.num-by-1 array of C'*inv(B)*C values, ordered by cells.
+%   p - A NUMEL(nconn)-by-1 array of cell pressure values.
 %
 % NOTE:
-%   As the return value 'BI' is but a simple data array value, it must be
-%   subsequently assembled into the 'S.BI' sparse matrix before being used
-%   to solve a flow problem using, e.g., the 'solveIncompFlow' function.
-%
-%   Moreover, the 'solveIncompFlow' function expects its 'S' parameter to
-%   specify a 'type' field which is consistent with the kind of matrix
-%   stored within 'S'.  In the case of 'ip_simple', the 'type' must be the
-%   string value 'hybrid'.
+%   This function is the MEX'ed equivalent to the post-processing of
+%   function 'schurComplementSymm'.  Note furthermore that this function
+%   can only be used in conjunction with function 'mex_schur_comp_symm'.
 %
 % EXAMPLE:
 %   G = computeGeometry(processGRDECL(makeModel3([100, 60, 15])));
@@ -37,27 +40,25 @@ function varargout = mex_compute_press_flux(varargin)
 %   rock.perm = convertFrom(rock.perm(G.cells.indexMap, :), ...
 %                           milli*darcy);
 %
-%   t0 = tic;
-%   BI = mex_ip_simple(G, rock);
-%   toc(t0)
-%
 %   nconn = diff(G.cells.facePos);
+%   conn  = double(G.cells.faces(:,1));
 %
-%   [S, r, F, L] = mex_schur_comp(BI, nconn);
+%   BI = mex_ip_simple(G, rock);
 %
-%   [i, j] = blockDiagIndex(diff(G.cells.facePos), ...
-%                           diff(G.cells.facePos));
+%   [i, j] = blockDiagIndex(nconn, nconn);
+%   [S, r, F, L] = mex_schur_comp_symm(BI, nconn);
 %
-%   S = struct('BI', sparse(i, j, BI), 'type', 'hybrid', 'ip', 'ip_simple')
+%   SS = sparse(conn(i), conn(j), S);
+%   R = accumarray(conn, r);
+%
+%   lam = SS \ R;
 %
 %   t0 = tic;
-%   S2 = computeMimeticIP(G, rock)
+%   [v, p] = mex_compute_press_flux(BI, lam, nconn, conn, F, L);
 %   toc(t0)
-%
-%   norm(S.BI - S2.BI, inf) / norm(S2.BI, inf)
 %
 % SEE ALSO:
-%   computeMimeticIP, solveIncompFlow, blockDiagIndex.
+%   mex_ip_simple, mex_schur_comp_symm.
 
 %{
 #COPYRIGHT#
