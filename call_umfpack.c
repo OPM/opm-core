@@ -56,7 +56,7 @@ callMWUMFPACK(int n, mwSignedIndex* ia, mwSignedIndex* ja,
    umfpack_dl_solve (UMFPACK_A, IA,JA,SA, &X[0], &B[0], Numeric, Control, Info) ;
    umfpack_dl_free_numeric (&Numeric);
 #else
-#if 1
+#if 0
    int i;
    for(i=0; i<n+1; ++i)
    {
