@@ -27,14 +27,15 @@ hybsys_allocate(int max_ncf, int nc, int ncf_tot)
 
     new = malloc(1 * sizeof *new);
     if (new != NULL) {
-        new->one = malloc(max_ncf           * sizeof *new->one);
-        new->S   = malloc(max_ncf * max_ncf * sizeof *new->S  );
-        new->L   = malloc(nc                * sizeof *new->L  );
-        new->F   = malloc(ncf_tot           * sizeof *new->F  );
-        new->r   = malloc(ncf_tot           * sizeof *new->r  );
+        new->work = malloc(max_ncf           * sizeof *new->work);
+        new->one  = malloc(max_ncf           * sizeof *new->one );
+        new->S    = malloc(max_ncf * max_ncf * sizeof *new->S   );
+        new->L    = malloc(nc                * sizeof *new->L   );
+        new->F    = malloc(ncf_tot           * sizeof *new->F   );
+        new->r    = malloc(ncf_tot           * sizeof *new->r   );
 
-        if ((new->one == NULL) || (new->S == NULL) ||
-            (new->L   == NULL) || (new->F == NULL) || (new->r == NULL)) {
+        if ((new->work == NULL) || (new->one == NULL) || (new->S == NULL) ||
+            (new->L    == NULL) || (new->F   == NULL) || (new->r == NULL)) {
             hybsys_free(new);
 
             new = NULL;
@@ -51,11 +52,12 @@ hybsys_free(struct hybsys *sys)
 /* ---------------------------------------------------------------------- */
 {
     if (sys != NULL) {
-        free(sys->r  );
-        free(sys->F  );
-        free(sys->L  );
-        free(sys->S  );
-        free(sys->one);
+        free(sys->r   );
+        free(sys->F   );
+        free(sys->L   );
+        free(sys->S   );
+        free(sys->one );
+        free(sys->work);
     }
 
     free(sys);

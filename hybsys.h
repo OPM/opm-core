@@ -11,6 +11,7 @@ struct hybsys {
     double *r;                  /* system rhs per half face */
     double *S;                  /* system matrix in single cell */
     double *one;                /* ones(max_ncf, 1) */
+    double *work;               /* work array (SIZE [max_ncf, 1]) */
 };
 
 
@@ -23,6 +24,9 @@ struct Sparse
    MAT_SIZE_T *ja; 
    double *sa;
 };
+
+
+
 struct hybsys *
 hybsys_allocate(int max_ncf, int nc, int ncf_tot);
 
