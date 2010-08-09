@@ -24,7 +24,7 @@ BI([nconn(1)^2, end]) = 1;   % Fake production indices...
 SS = sparse(double(conn(i)), double(conn(j)), S);
 R  = accumarray(conn, r);
 
-R((end-1 : end)) = [1, -1];
+R(end-1 : end) = [1, -1];
 
 lam = SS \ R;
 
