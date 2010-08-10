@@ -4,7 +4,7 @@
 
 /* ------------------------------------------------------------------ */
 static mxArray*
-getField(const mxArray *a, char *field, char *subfield)
+getField(const mxArray *a, const char *field, const char *subfield)
 /* ------------------------------------------------------------------ */
 {
    if (subfield)
