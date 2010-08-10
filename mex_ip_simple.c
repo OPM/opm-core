@@ -46,9 +46,8 @@ static int
 verify_grid_structure(const mxArray *G)
 /* ------------------------------------------------------------------ */
 {
-    int nodes_ok, faces_ok, cells_ok;
+    int nodes_ok, faces_ok, cells_ok, field_no;
 
-    size_t field_no;
     mxArray *pm;
 
     nodes_ok = mxGetFieldNumber(G, "nodes") >= 0;
@@ -107,7 +106,7 @@ verify_structural_consistency(int nlhs, int nrhs, const mxArray *prhs[])
 
 /* ------------------------------------------------------------------ */
 static int
-extract_face_data(const mxArray *G, int d, int **fneighbour,
+extract_face_data(const mxArray *G, int **fneighbour,
                   double **farea, double **fnormal, double **fcentroid)
 /* ------------------------------------------------------------------ */
 {
@@ -195,14 +194,15 @@ extract_connection_data(const mxArray *M_nconn, const mxArray *M_conn,
 static int
 extract_cell_data(const mxArray *G,
                   const mxArray *M_nconn, const mxArray *M_conn,
-                  int d, int *max_ncf, int *sum_nconn, int *sum_nconn2,
+                  int *max_ncf, int *sum_nconn, int *sum_nconn2,
                   int **ncfaces, int **nconn, int **conn,
                   double **ccentroids, double **cvolumes)
 /* ------------------------------------------------------------------ */
 {
+   int ncells, i, n;
+
+   ncells = getNumberOfCells(G);
    *ncfaces = getCellFacePos(G);
-   int ncells = getNumberOfCells(G);
-   int i;
 
    extract_connection_data(M_nconn, M_conn, ncells,
                            nconn, conn, sum_nconn, sum_nconn2);
@@ -211,7 +211,7 @@ extract_cell_data(const mxArray *G,
 
    for(i=0; i<ncells; ++i)
    {
-      int n = (*ncfaces)[i+1] - (*ncfaces)[i];
+      n = (*ncfaces)[i+1] - (*ncfaces)[i];
       (*ncfaces)[i] = n;
 
       *max_ncf   = MAX(*max_ncf, n);
@@ -271,10 +271,10 @@ mexFunction(int nlhs,       mxArray *plhs[],
     if (structure_ok) {
         d = getNumberOfDimensions(prhs[0]);
 
-        nfaces = extract_face_data(prhs[0], d,
-                                   &fneighbour, &farea, &fnormal, &fcentroid);
+        nfaces = extract_face_data(prhs[0], &fneighbour, &farea,
+                                   &fnormal, &fcentroid);
 
-        ncells = extract_cell_data(prhs[0], prhs[2], prhs[3], d,
+        ncells = extract_cell_data(prhs[0], prhs[2], prhs[3],
                                    &max_ncf, &sum_ncf, &sum_ncf2, &ncfaces,
                                    &nconn, &conn, &ccentroids, &cvolumes);
 
