@@ -364,9 +364,11 @@ hybsys_build_sa_and_b(int nc, int nf, int *nconn, int *conn, MAT_SIZE_T *ia,
    }
 }
 
+
 /* ---------------------------------------------------------------------- */
-void hybsys_build_matrix_structure(int nc, int nf, int *nconn, int *conn,
-                                   MAT_SIZE_T **ia, MAT_SIZE_T **ja)
+static void
+hybsys_build_matrix_structure(int nc, int nf, int *nconn, int *conn,
+                              MAT_SIZE_T **ia, MAT_SIZE_T **ja)
 /* ---------------------------------------------------------------------- */
 {
    int *work = malloc(nf * sizeof *work);
@@ -376,10 +378,13 @@ void hybsys_build_matrix_structure(int nc, int nf, int *nconn, int *conn,
 
    free(work);
 }
+
+
 /* ---------------------------------------------------------------------- */
-void hybsys_assemble_global_system(int nc, int nf, int *nconn, int *conn,
-                                   double *S, double *R,
-                                   double **sa, double **b, MAT_SIZE_T *ia)
+static void
+hybsys_assemble_global_system(int nc, int nf, int *nconn, int *conn,
+                              double *S, double *R,
+                              double **sa, double **b, MAT_SIZE_T *ia)
 /* ---------------------------------------------------------------------- */
 {
    int *work  = malloc(nf * sizeof *work);
@@ -389,9 +394,11 @@ void hybsys_assemble_global_system(int nc, int nf, int *nconn, int *conn,
    free(work);
 }
 
+
 /* ---------------------------------------------------------------------- */
 void
-hybsys_assemble(int nc, int nf, int *nconn, int *conn, double *S, double *R, struct Sparse*A, double **b)
+hybsys_assemble(int nc, int nf, int *nconn, int *conn, double *S, double *R,
+                struct Sparse*A, double **b)
 /* ---------------------------------------------------------------------- */
 {
    A->m    =  A->n   = nf;
