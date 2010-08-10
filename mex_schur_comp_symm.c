@@ -1,7 +1,6 @@
 #include <string.h>
 
-#include "mex.h"
-#include "matrix.h"
+#include <mex.h>
 #define MAT_SIZE_T mwSignedIndex
 
 #include "call_umfpack.h"
@@ -126,6 +125,8 @@ get_nconn(const mxArray *M_nconn, int *nconn)
     }
 }
 
+
+#if defined(ASSEMBLE_AND_SOLVE_UMFPACK) && ASSEMBLE_AND_SOLVE_UMFPACK
 /* ---------------------------------------------------------------------- */
 static void
 get_conn(const mxArray *M_conn, int *conn)
@@ -154,15 +155,15 @@ static int
 get_number_of_faces(int nc, int *nconn, int *conn)
 /* ---------------------------------------------------------------------- */
 {
-   int N = 0;
-   int i;
+   int N, i, nf;
 
+   N = 0;
    for (i=0; i<nc; ++i)
    {
       N += nconn[i];
    }
 
-   int nf=0;
+   nf = 0;
    for(i=0; i<N; ++i)
    {
       nf = MAX(nf, conn[i]+1);
@@ -170,6 +171,7 @@ get_number_of_faces(int nc, int *nconn, int *conn)
 
    return nf;
 }
+#endif
 
 
 /*
@@ -185,6 +187,12 @@ mexFunction(int nlhs,       mxArray *plhs[],
     int ok, nc, ncf_tot, max_ncf, sum_ncf2, p1, p2, c, i, *nconn;
     double *Binv, *ptr, *src, *gflux;
     struct hybsys *sys;
+
+#if defined(ASSEMBLE_AND_SOLVE_UMFPACK) && ASSEMBLE_AND_SOLVE_UMFPACK
+    int *conn, nf;
+    double *b, *x;
+    struct Sparse A;
+#endif
 
     ok = verify_args(nlhs, nrhs, prhs);
 
@@ -224,22 +232,21 @@ mexFunction(int nlhs,       mxArray *plhs[],
             p2 += nconn[c] * nconn[c];
         }
 
-        int *conn= mxMalloc(mxGetNumberOfElements(prhs[2])*sizeof *conn);
+#if defined(ASSEMBLE_AND_SOLVE_UMFPACK) && ASSEMBLE_AND_SOLVE_UMFPACK
+        conn = mxMalloc(mxGetNumberOfElements(prhs[2]) * sizeof *conn);
         get_conn(prhs[2], conn);
 
-        int  nf          = get_number_of_faces(nc, nconn, conn);
-        struct Sparse A;
-        /* double *b = malloc(nf * sizeof *b); */
-        double *b;
+        nf          = get_number_of_faces(nc, nconn, conn);
         hybsys_assemble(nc, nf, nconn, conn, ptr, sys->r, &A, &b);
-#if 0
-        double *x = malloc(A.n * sizeof *x);
+        x = malloc(A.n * sizeof *x);
 
         callMWUMFPACK(A.n, A.ia, A.ja, A.sa, b, x);
 
-        int i;for(i=0; i<nf; ++i)mexPrintf("x[%d]=%f\n", i, x[i]);
+        for (i = 0; i < nf; ++i) mexPrintf("x[%d]=%f\n", i, x[i]);
+        free(A.ia); free(A.ja); free(A.sa); free(x);  free(b);
+
+        mxFree(conn);
 #endif
-        free(A.ia); free(A.ja); free(A.sa); /* free(x);  */free(b);
 
         ptr = mxGetPr(plhs[1]);
         memcpy(ptr, sys->r, ncf_tot * sizeof *ptr);
@@ -252,6 +259,5 @@ mexFunction(int nlhs,       mxArray *plhs[],
 
         hybsys_free(sys);
         deallocate_aux_arrays(nconn, src, gflux);
-        mxFree(conn);
     }
 }
