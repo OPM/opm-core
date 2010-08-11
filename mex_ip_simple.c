@@ -285,10 +285,11 @@ add_well_connections(const mxArray *W, int nc, int nf,
 
         tmp = mxRealloc(*conn, (pconn[nc] + neconn) * sizeof *tmp);
         if (tmp != NULL) {
-            n          = pconn[nc] - pconn[nc - 1];  /* # exisiting conns */
-            pconn[nc] += neconn;                     /* ubnd, *LAST* bin */
+            n          = pconn[nc];  /* Preserve original ubound */
+            pconn[nc] += neconn;     /* New ubound, *LAST* bin */
 
-            for (c = nc - 1; c > 0; c--) {
+            for (c = nc - 1; c >= 0; c--) {
+                n  -= pconn[c];      /* => n == # exisiting conns */
                 dst = pconn[c + 1] - (n + cwork[c]);
                 src = pconn[c + 0];
 
@@ -299,7 +300,7 @@ add_well_connections(const mxArray *W, int nc, int nf,
                 /* Set cell's pointer for new connections. */
                 cwork[c] = dst + n;
 
-                n        = pconn[c] - pconn[c - 1];
+                n        = pconn[c]; /* Preserve original ubound */
                 pconn[c] = dst;
             }
 
