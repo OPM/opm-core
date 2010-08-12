@@ -26,32 +26,21 @@ verify_args(int nlhs, int nrhs, const mxArray *prhs[])
 
 
 /* ---------------------------------------------------------------------- */
-static void
-count_cf(const mxArray *nconn, int *nc, int *max_ncf, int *ncf_tot)
+static int
+count_cellconn(int nc, const int *pconn)
 /* ---------------------------------------------------------------------- */
 {
-    int    c, *pi;
-    double    *pd;
+    int c, nconn, max_nconn;
 
-    *nc = mxGetNumberOfElements(nconn);
+    max_nconn = 0;
 
-    *max_ncf = *ncf_tot = 0;
+    for (c = 0; c < nc; c++) {
+        nconn = pconn[c + 1] - pconn[c];
 
-    if (mxIsDouble(nconn)) {
-        pd = mxGetPr(nconn);
-
-        for (c = 0; c < *nc; c++) {
-            *max_ncf  = MAX(*max_ncf, pd[c]);
-            *ncf_tot += pd[c];
-        }
-    } else {
-        pi = mxGetData(nconn);
-
-        for (c = 0; c < *nc; c++) {
-            *max_ncf  = MAX(*max_ncf, pi[c]);
-            *ncf_tot += pi[c];
-        }
+        max_nconn = MAX(max_nconn, nconn);
     }
+
+    return max_nconn;
 }
 
 
@@ -71,27 +60,24 @@ deallocate_aux_arrays(int *nconn, double *src, double *gflux)
 
 /* ---------------------------------------------------------------------- */
 static int
-allocate_aux_arrays(int nc, int ncf_tot,
-                    int **nconn, double **src, double **gflux)
+allocate_aux_arrays(int nc, int nconn_tot,
+                    double **src, double **gflux)
 /* ---------------------------------------------------------------------- */
 {
-    int    ret, *n;
+    int    ret;
     double *s, *g;
 
-    n = mxMalloc(nc      * sizeof *n);
-    s = mxMalloc(nc      * sizeof *s);
-    g = mxMalloc(ncf_tot * sizeof *g);
+    s = mxMalloc(nc        * sizeof *s);
+    g = mxMalloc(nconn_tot * sizeof *g);
 
-    if ((n == NULL) || (s == NULL) || (g == NULL)) {
-        deallocate_aux_arrays(n, s, g);
+    if ((s == NULL) || (g == NULL)) {
+        deallocate_aux_arrays(NULL, s, g);
 
-        *nconn = NULL;
         *src   = NULL;
         *gflux = NULL;
 
         ret = 0;
     } else {
-        *nconn = n;
         *src   = s;
         *gflux = g;
 
@@ -103,26 +89,38 @@ allocate_aux_arrays(int nc, int ncf_tot,
 
 
 /* ---------------------------------------------------------------------- */
-static void
-get_nconn(const mxArray *M_nconn, int *nconn)
+static int
+get_pconn(const mxArray *M_pconn, int **pconn)
 /* ---------------------------------------------------------------------- */
 {
-    size_t c, nc;
+    int ret;
+
+    size_t e, ne;
 
     int    *pi;
     double *pd;
 
-    nc = mxGetNumberOfElements(M_nconn);
+    ne = mxGetNumberOfElements(M_pconn);
 
-    if (mxIsDouble(M_nconn)) {
-        pd = mxGetPr(M_nconn);
+    *pconn = mxMalloc(ne * sizeof **pconn);
 
-        for (c = 0; c < nc; c++) { nconn[c] = pd[c]; }
+    if (*pconn != NULL) {
+        if (mxIsDouble(M_pconn)) {
+            pd = mxGetPr(M_pconn);
+
+            for (e = 0; e < ne; e++) { (*pconn)[e] = pd[e] - 1; }
+        } else {
+            pi = mxGetData(M_pconn);
+
+            for (e = 0; e < ne; e++) { (*pconn)[e] = pi[e] - 1; };
+        }
+
+        ret = ne - 1;
     } else {
-        pi = mxGetData(M_nconn);
-
-        for (c = 0; c < nc; c++) { nconn[c] = pi[c]; };
+        ret = -1;
     }
+
+    return ret;
 }
 
 
@@ -175,7 +173,7 @@ get_number_of_faces(int nc, int *nconn, int *conn)
 
 
 /*
- * [S, r, F, L] = mex_schur_comp_symm(BI, nconn)
+ * [S, r, F, L] = mex_schur_comp_symm(BI, connPos, conns)
  */
 
 /* ---------------------------------------------------------------------- */
@@ -184,7 +182,8 @@ mexFunction(int nlhs,       mxArray *plhs[],
             int nrhs, const mxArray *prhs[])
 /* ---------------------------------------------------------------------- */
 {
-    int ok, nc, ncf_tot, max_ncf, sum_ncf2, p1, p2, c, i, *nconn;
+    int ok, nc, nconn_tot, max_nconn, sum_nconn2;
+    int p2, c, i, nconn, *pconn;
     double *Binv, *ptr, *src, *gflux;
     struct hybsys *sys;
 
@@ -197,39 +196,42 @@ mexFunction(int nlhs,       mxArray *plhs[],
     ok = verify_args(nlhs, nrhs, prhs);
 
     if (ok) {
-        count_cf(prhs[1], &nc, &max_ncf, &ncf_tot);
+        nc = get_pconn(prhs[1], &pconn);
 
-        allocate_aux_arrays(nc, ncf_tot, &nconn, &src, &gflux);
+        nconn_tot = pconn[nc];
+        max_nconn = count_cellconn(nc, pconn);
 
-        sum_ncf2 = mxGetNumberOfElements(prhs[0]);
-        plhs[0]  = mxCreateDoubleMatrix(sum_ncf2, 1, mxREAL);
-        plhs[1]  = mxCreateDoubleMatrix(ncf_tot,  1, mxREAL);
-        plhs[2]  = mxCreateDoubleMatrix(ncf_tot,  1, mxREAL);
-        plhs[3]  = mxCreateDoubleMatrix(nc,       1, mxREAL);
+        allocate_aux_arrays(nc, nconn_tot, &src, &gflux);
 
-        sys = hybsys_allocate(max_ncf, nc, ncf_tot);
-        hybsys_init(max_ncf, ncf_tot, sys);
+        sum_nconn2 = mxGetNumberOfElements(prhs[0]);
+        plhs[0]    = mxCreateDoubleMatrix(sum_nconn2, 1, mxREAL);
+        plhs[1]    = mxCreateDoubleMatrix(nconn_tot,  1, mxREAL);
+        plhs[2]    = mxCreateDoubleMatrix(nconn_tot,  1, mxREAL);
+        plhs[3]    = mxCreateDoubleMatrix(nc,         1, mxREAL);
 
-        for (i = 0; i < nc; i++)      { src[i]   = 0.0; } /* No sources */
-        for (i = 0; i < ncf_tot; i++) { gflux[i] = 0.0; } /* No gravity */
+        sys = hybsys_allocate(max_nconn, nc, nconn_tot);
+        hybsys_init(max_nconn, nconn_tot, sys);
+
+        for (i = 0; i < nc; i++)        { src[i]   = 0.0; } /* No sources */
+        for (i = 0; i < nconn_tot; i++) { gflux[i] = 0.0; } /* No gravity */
 #if 0
         src[0] = 1;
         src[nc-1]=-1;
 #endif
         Binv = mxGetPr(prhs[0]);
-        get_nconn(prhs[1], nconn);
 
-        hybsys_compute_components(nc, nconn, gflux, src, Binv, sys);
+        hybsys_compute_components(nc, pconn, gflux, src, Binv, sys);
 
         ptr = mxGetPr(plhs[0]);
-        p1 = p2 = 0;
+        p2 = 0;
         for (c = 0; c < nc; c++) {
-            hybsys_compute_cellmatrix(c, nconn[c], p1, p2, Binv, sys);
+            nconn = pconn[c + 1] - pconn[c];
 
-            memcpy(ptr + p2, sys->S, nconn[c] * nconn[c] * sizeof *ptr);
+            hybsys_compute_cellmatrix(c, nconn, pconn[c], p2, Binv, sys);
 
-            p1 += nconn[c];
-            p2 += nconn[c] * nconn[c];
+            memcpy(ptr + p2, sys->S, nconn * nconn * sizeof *ptr);
+
+            p2 += nconn * nconn;
         }
 
 #if defined(ASSEMBLE_AND_SOLVE_UMFPACK) && ASSEMBLE_AND_SOLVE_UMFPACK
@@ -249,15 +251,15 @@ mexFunction(int nlhs,       mxArray *plhs[],
 #endif
 
         ptr = mxGetPr(plhs[1]);
-        memcpy(ptr, sys->r, ncf_tot * sizeof *ptr);
+        memcpy(ptr, sys->r, nconn_tot * sizeof *ptr);
 
         ptr = mxGetPr(plhs[2]);
-        memcpy(ptr, sys->F, ncf_tot * sizeof *ptr);
+        memcpy(ptr, sys->F, nconn_tot * sizeof *ptr);
 
         ptr = mxGetPr(plhs[3]);
-        memcpy(ptr, sys->L, nc      * sizeof *ptr);
+        memcpy(ptr, sys->L, nc        * sizeof *ptr);
 
         hybsys_free(sys);
-        deallocate_aux_arrays(nconn, src, gflux);
+        deallocate_aux_arrays(pconn, src, gflux);
     }
 }

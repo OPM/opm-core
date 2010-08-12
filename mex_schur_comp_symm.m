@@ -2,14 +2,23 @@ function varargout = mex_schur_comp_symm(varargin)
 %Compute hybrid system component matrices using compiled C code.
 %
 % SYNOPSIS:
-%   [S, r, F, L] = mex_schur_comp_symm(BI, nconn)
+%   [S, r, F, L] = mex_schur_comp_symm(BI, connPos, conns)
 %
 % PARAMETERS:
-%   BI    - Inner product values.
+%   BI      - Inner product values.
 %
-%   nconn - Number of connections per cell.  Often coincides with
-%           DIFF(G.cells.facePos), but may be larger if any cells are
-%           perforated by one or more wells.
+%   connPos - Indirection map of size [G.cells.num,1] into 'conns' table
+%             (i.e., the connections or DOFs).  Specifically, the DOFs
+%             connected to cell 'i' are found in the submatrix
+%
+%                  conns(connPos(i) : connPos(i + 1) - 1)
+%
+%   conns   - A (connPos(end)-1)-by-1 array of cell connections
+%             (local-to-global DOF mapping in FEM parlance).
+%
+% NOTE:
+%   The (connPos,conns) array pair is expected to be the output of function
+%   'mex_ip_simple'.
 %
 % RETURNS:
 %   S - A SUM(nconn .^ 2)-by-1 array of unassembled system matrix values,
@@ -29,19 +38,18 @@ function varargout = mex_schur_comp_symm(varargin)
 %   rock.perm = convertFrom(rock.perm(G.cells.indexMap, :), ...
 %                           milli*darcy);
 %
-%   nconn = diff(G.cells.facePos);
-%   conn  = G.cells.faces(:,1);
+%   [BI, connPos, conns] = mex_ip_simple(G, rock);
 %
-%   BI = mex_ip_simple(G, rock, nconn, conn);
+%   nconn = diff(connPos);
 %
 %   t0 = tic;
-%   [S, r, F, L] = mex_schur_comp_symm(BI, nconn);
+%   [S, r, F, L] = mex_schur_comp_symm(BI, connPos, conns);
 %   toc(t0)
 %
 %   [i, j] = blockDiagIndex(nconn, nconn);
 %
-%   SS = sparse(double(conn(i)), double(conn(j)), S);
-%   R  = accumarray(conn, r);
+%   SS = sparse(double(conns(i)), double(conns(j)), S);
+%   R  = accumarray(conns, r);
 %
 %   lam = SS \ R;
 %

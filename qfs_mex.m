@@ -4,30 +4,25 @@ g = computeGeometry(cartGrid(cartDims, physDims));
 
 rock.perm = ones(g.cells.num, 1);
 
-nconn = diff(g.cells.facePos);
-nconn([1,end]) = nconn([1, end]) + 1;
-conn = zeros(sum(nconn), 1);
+W = addWell([], g, rock, 1);
+W = addWell(W , g, rock, g.cells.num);
 
-pos = cumsum([1; double(nconn)]);
-ii  = mcolon(pos(1 : end-1), ...
-             pos(1 : end-1) - 1 + double(diff(g.cells.facePos)));
+[BI, connPos, conns] = mex_ip_simple(g, rock, W);
 
-conn(ii) = g.cells.faces(:,1);
-conn([nconn(1), end]) = g.faces.num + (1:2);
+nconn = diff(connPos);
 
-BI = mex_ip_simple(g, rock, nconn, conn);
-BI([nconn(1)^2, end]) = 1;   % Fake production indices...
+BI([nconn(1)^2, end]) = [ W.WI ];
 
-[S, r, F, L] = mex_schur_comp_symm(BI, nconn, conn);
+[S, r, F, L] = mex_schur_comp_symm(BI, connPos, conns);
 
 [i, j] = blockDiagIndex(nconn, nconn);
-SS = sparse(double(conn(i)), double(conn(j)), S);
-R  = accumarray(conn, r);
+SS = sparse(double(conns(i)), double(conns(j)), S);
+R  = accumarray(conns, r);
 
-R(end-1 : end) = [1, -1];
+R(end-1 : end) = 1000 * [1, -1];
 
 lam = SS \ R;
 
-[flux, press] = mex_compute_press_flux(BI, lam, nconn, conn, F, L);
+[flux, press] = mex_compute_press_flux(BI, lam, connPos, conns, F, L);
 
 plotCellData(g, press);

@@ -20,19 +20,19 @@
 
 /* ---------------------------------------------------------------------- */
 struct hybsys *
-hybsys_allocate(int max_ncf, int nc, int ncf_tot)
+hybsys_allocate(int max_nconn, int nc, int nconn_tot)
 /* ---------------------------------------------------------------------- */
 {
     struct hybsys *new;
 
     new = malloc(1 * sizeof *new);
     if (new != NULL) {
-        new->work = malloc(max_ncf           * sizeof *new->work);
-        new->one  = malloc(max_ncf           * sizeof *new->one );
-        new->S    = malloc(max_ncf * max_ncf * sizeof *new->S   );
-        new->L    = malloc(nc                * sizeof *new->L   );
-        new->F    = malloc(ncf_tot           * sizeof *new->F   );
-        new->r    = malloc(ncf_tot           * sizeof *new->r   );
+        new->work = malloc(max_nconn             * sizeof *new->work);
+        new->one  = malloc(max_nconn             * sizeof *new->one );
+        new->S    = malloc(max_nconn * max_nconn * sizeof *new->S   );
+        new->L    = malloc(nc                    * sizeof *new->L   );
+        new->F    = malloc(nconn_tot             * sizeof *new->F   );
+        new->r    = malloc(nconn_tot             * sizeof *new->r   );
 
         if ((new->work == NULL) || (new->one == NULL) || (new->S == NULL) ||
             (new->L    == NULL) || (new->F   == NULL) || (new->r == NULL)) {
@@ -66,16 +66,16 @@ hybsys_free(struct hybsys *sys)
 
 /* ---------------------------------------------------------------------- */
 void
-hybsys_init(int max_ncf, int ncf_tot, struct hybsys *sys)
+hybsys_init(int max_nconn, int nconn_tot, struct hybsys *sys)
 /* ---------------------------------------------------------------------- */
 {
     int i;
 
-    for (i = 0; i < max_ncf; i++) {
+    for (i = 0; i < max_nconn; i++) {
         sys->one[i] = 1.0;
     }
 
-    for (i = 0; i < ncf_tot; i++) {
+    for (i = 0; i < nconn_tot; i++) {
         sys->r[i] = 0.0;
     }
 }
@@ -83,12 +83,12 @@ hybsys_init(int max_ncf, int ncf_tot, struct hybsys *sys)
 
 /* ---------------------------------------------------------------------- */
 void
-hybsys_compute_components(int nc, const int *nconn,
+hybsys_compute_components(int nc, const int *pconn,
                           const double *gflux, const double *src,
                           const double *Binv, struct hybsys *sys)
 /* ---------------------------------------------------------------------- */
 {
-    int    c, i, p1, p2;
+    int    c, i, p1, p2, nconn;
     double csrc, a1, a2;
 
     MAT_SIZE_T incx, incy;
@@ -98,7 +98,9 @@ hybsys_compute_components(int nc, const int *nconn,
     p1 = p2 = 0;
 
     for (c = 0; c < nc; c++) {
-        nrows = ncols = lda = nconn[c];
+        p1    = pconn[c];
+        nconn = pconn[c + 1] - pconn[c];
+        nrows = ncols = lda = nconn;
 
         /* F <- C' * inv(B) == (inv(B) * ones(n,1))' in single cell */
         a1 = 1.0;  a2 = 0.0;
@@ -113,7 +115,7 @@ hybsys_compute_components(int nc, const int *nconn,
         csrc = src[c] - ddot_(&nrows, sys->one, &incx, &gflux[p1], &incy);
 
         /* r <- v_g */
-        for (i = 0; i < nconn[c]; i++) {
+        for (i = 0; i < nconn; i++) {
             sys->r[p1 + i] = gflux[p1 + i];
         }
 
@@ -121,8 +123,7 @@ hybsys_compute_components(int nc, const int *nconn,
         a1 = csrc / sys->L[c];
         daxpy_(&nrows, &a1, &sys->F[p1], &incx, &sys->r[p1], &incy);
 
-        p1 += nconn[c];
-        p2 += nconn[c] * nconn[c];
+        p2 += nconn * nconn;
     }
 }
 
@@ -170,31 +171,34 @@ hybsys_compute_cellmatrix(int c, int nconn, int p1, int p2,
 
 /* ---------------------------------------------------------------------- */
 void
-hybsys_compute_press_flux(int nc, const int *nconn, const int *conn,
+hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
                           const double *gflux, const double *src,
                           const double *Binv, const struct hybsys *sys,
                           const double *pi, double *press, double *flux,
                           double *work, const int lwork)
 /* ---------------------------------------------------------------------- */
 {
-    int c, i, p1, p2;
+    int    c, i, nconn, p1, p2;
     double a1, a2;
 
     MAT_SIZE_T incx, incy, nrows, ncols, lda;
 
     incx = incy = 1;
 
-    p1 = p2 = 0;
+    p2 = 0;
     a1 = a2 = 1.0;
     for (c = 0; c < nc; c++) {
-        assert (lwork >= nconn[c]);
+        p1    = pconn[c];
+        nconn = pconn[c + 1] - p1;
+
+        assert (lwork >= nconn);
 
         /* Serialise interface pressures for cell */
-        for (i = 0; i < nconn[c]; i++) {
+        for (i = 0; i < nconn; i++) {
             work[i] = pi[conn[p1 + i]];
         }
 
-        nrows = ncols = lda = nconn[c];
+        nrows = ncols = lda = nconn;
 
         /* Solve Lp = g - C'*v_g + F'*pi (for cell pressure) */
         press[c]  = src[c];
@@ -203,7 +207,7 @@ hybsys_compute_press_flux(int nc, const int *nconn, const int *conn,
         press[c] /= sys->L[c];
 
         /* Form rhs of system B*v = B*v_g + C*p - D*pi */
-        for (i = 0; i < nconn[c]; i++) {
+        for (i = 0; i < nconn; i++) {
             flux[p1 + i] = gflux[p1 + i];
             work[i]      = press[c] - work[i];
         }
@@ -213,8 +217,7 @@ hybsys_compute_press_flux(int nc, const int *nconn, const int *conn,
                &a1, &Binv[p2], &lda, work, &incx,
                &a2, &flux[p1],             &incy);
 
-        p1 += nconn[c];
-        p2 += nconn[c] * nconn[c];
+        p2 += nconn * nconn;
     }
 }
 
@@ -226,7 +229,8 @@ hybsys_compute_press_flux(int nc, const int *nconn, const int *conn,
 
 /* ---------------------------------------------------------------------- */
 static MAT_SIZE_T *
-hybsys_build_ia(int nc, int nf, int *nconn, int *conn)
+hybsys_build_ia(int nc, int nf,
+                const int *pconn, const int *conn)
 /* ---------------------------------------------------------------------- */
 {
    MAT_SIZE_T    *ia = malloc((nf+1) * sizeof *ia);
@@ -243,7 +247,7 @@ hybsys_build_ia(int nc, int nf, int *nconn, int *conn)
    int c, pos = 0;
    for(c=0; c<nc; ++c)
    {
-      int n = nconn[c];
+      int n = pconn[c + 1] - pconn[c];
       for (i=pos; i<pos+n; ++i)
       {
          mxAssert(conn[i]<nf, "conn out of bounds");
@@ -264,7 +268,8 @@ hybsys_build_ia(int nc, int nf, int *nconn, int *conn)
 
 /* ---------------------------------------------------------------------- */
 static MAT_SIZE_T*
-hybsys_build_ja(int nc, int nf, int *nconn, int *conn,
+hybsys_build_ja(int nc, int nf,
+                const int *pconn, const int *conn,
                 MAT_SIZE_T *ia, int *work)
 /* ---------------------------------------------------------------------- */
 {
@@ -283,7 +288,7 @@ hybsys_build_ja(int nc, int nf, int *nconn, int *conn,
    int c, pos = 0;
    for(c=0; c<nc; ++c)
    {
-      int n = nconn[c];
+      int n = pconn[c + 1] - pconn[c];
       for (i=pos; i<pos+n; ++i)
       {
          int fi = conn[i];
@@ -308,8 +313,10 @@ hybsys_build_ja(int nc, int nf, int *nconn, int *conn,
 }
 /* ---------------------------------------------------------------------- */
 static void
-hybsys_build_sa_and_b(int nc, int nf, int *nconn, int *conn, MAT_SIZE_T *ia,
-                      double *S, double *R, int *work, double **sa, double **b)
+hybsys_build_sa_and_b(int nc, int nf,
+                      const int *pconn, const int *conn, MAT_SIZE_T *ia,
+                      const double *S, const double *R,
+                      int *work, double **sa, double **b)
 /* ---------------------------------------------------------------------- */
 {
    *sa = malloc(ia[nf] * sizeof **sa);
@@ -326,13 +333,13 @@ hybsys_build_sa_and_b(int nc, int nf, int *nconn, int *conn, MAT_SIZE_T *ia,
       (*b) [i]     = 0;
    }
 
-   double *s = S;
-   double *r = R;
+   const double *s = S;
+   const double *r = R;
 
    int c, pos = 0;
    for(c=0; c<nc; ++c)
    {
-      int n = nconn[c];
+      int n = pconn[c + 1] - pconn[c];
       for (i=pos; i<pos+n; ++i)
       {
          int fi = conn[i];
@@ -367,14 +374,15 @@ hybsys_build_sa_and_b(int nc, int nf, int *nconn, int *conn, MAT_SIZE_T *ia,
 
 /* ---------------------------------------------------------------------- */
 static void
-hybsys_build_matrix_structure(int nc, int nf, int *nconn, int *conn,
+hybsys_build_matrix_structure(int nc, int nf,
+                              const int *pconn, const int *conn,
                               MAT_SIZE_T **ia, MAT_SIZE_T **ja)
 /* ---------------------------------------------------------------------- */
 {
    int *work = malloc(nf * sizeof *work);
 
-   *ia       = hybsys_build_ia(nc, nf, nconn, conn);
-   *ja       = hybsys_build_ja(nc, nf, nconn, conn, *ia, work);
+   *ia       = hybsys_build_ia(nc, nf, pconn, conn);
+   *ja       = hybsys_build_ja(nc, nf, pconn, conn, *ia, work);
 
    free(work);
 }
@@ -382,14 +390,15 @@ hybsys_build_matrix_structure(int nc, int nf, int *nconn, int *conn,
 
 /* ---------------------------------------------------------------------- */
 static void
-hybsys_assemble_global_system(int nc, int nf, int *nconn, int *conn,
-                              double *S, double *R,
+hybsys_assemble_global_system(int nc, int nf,
+                              const int *pconn, const int *conn,
+                              const double *S, const double *R,
                               double **sa, double **b, MAT_SIZE_T *ia)
 /* ---------------------------------------------------------------------- */
 {
    int *work  = malloc(nf * sizeof *work);
 
-   hybsys_build_sa_and_b(nc, nf, nconn, conn, ia, S, R, work, sa, b);
+   hybsys_build_sa_and_b(nc, nf, pconn, conn, ia, S, R, work, sa, b);
 
    free(work);
 }
@@ -397,11 +406,13 @@ hybsys_assemble_global_system(int nc, int nf, int *nconn, int *conn,
 
 /* ---------------------------------------------------------------------- */
 void
-hybsys_assemble(int nc, int nf, int *nconn, int *conn, double *S, double *R,
+hybsys_assemble(int nc, int nf,
+                const int *pconn, const int *conn,
+                const double *S, const double *R,
                 struct Sparse*A, double **b)
 /* ---------------------------------------------------------------------- */
 {
    A->m    =  A->n   = nf;
-   hybsys_build_matrix_structure(nc, nf, nconn, conn, &A->ia, &A->ja);
-   hybsys_assemble_global_system(nc, nf, nconn, conn, S, R, &A->sa, b, A->ia);
+   hybsys_build_matrix_structure(nc, nf, pconn, conn, &A->ia, &A->ja);
+   hybsys_assemble_global_system(nc, nf, pconn, conn, S, R, &A->sa, b, A->ia);
 }

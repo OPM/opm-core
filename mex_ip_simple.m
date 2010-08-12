@@ -2,24 +2,33 @@ function varargout = mex_ip_simple(varargin)
 %Compute 'ip_simple' inner product values using compiled C code.
 %
 % SYNOPSIS:
-%   BI = mex_ip_simple(G, rock, nconn, conn)
+%   [BI, connPos, conns] = mex_ip_simple(G, rock)
+%   [BI, connPos, conns] = mex_ip_simple(G, rock, W)
 %
 % PARAMETERS:
-%   G     - Grid data structure.
+%   G    - Grid data structure.
 %
-%   rock  - Rock data structure.  Must contain a valid field 'perm'.
+%   rock - Rock data structure.  Must contain a valid field 'perm'.
 %
-%   nconn - Number of connections per cell.  Often coincides with
-%           DIFF(G.cells.facePos), but may be larger if any cells are
-%           perforated by one or more wells.
-%
-%   conn  - Connection data per cell.  Often coincides with
-%           G.cells.faces(:,1) but will contain additional data if a cell is
-%           perforated by one or more wells.
+%   W    - Well data structure as defined by function 'addWell'.
+%          OPTIONAL.  Only processed if present and valid.
 %
 % RETURNS:
-%   BI   - A SUM(nconn .^ 2)-by-1 array of inner product values, ordered by
-%          the cells of the input grid.
+%   BI      - An array of inner product values, ordered by the cells of the
+%             input grid.  The array contains SUM(DIFF(connPos) .^ 2)
+%             elements.
+%
+%   connPos - Indirection map of size [G.cells.num,1] into 'conns' table
+%             (i.e., the connections or DOFs).  Specifically, the DOFs
+%             connected to cell 'i' are found in the submatrix
+%
+%                  conns(connPos(i) : connPos(i + 1) - 1)
+%
+%             In the absence of wells, connPos == G.cells.facePos.
+%
+%   conns   - A (connPos(end)-1)-by-1 array of cell connections
+%             (local-to-global DOF mapping in FEM parlance).  In the
+%             absence of wells, conns == G.cells.faces(:,1).
 %
 % NOTE:
 %   As the return value 'BI' is but a simple data array value, it must be
@@ -38,13 +47,11 @@ function varargout = mex_ip_simple(varargin)
 %   rock.perm = convertFrom(rock.perm(G.cells.indexMap, :), ...
 %                           milli*darcy);
 %
-%   nconn = diff(G.cells.facePos);
-%   conn  = G.cells.faces(:,1);
-%
 %   t0 = tic;
-%   BI = mex_ip_simple(G, rock, nconn, conn);
+%   [BI, connPos, conns] = mex_ip_simple(G, rock);
 %   toc(t0)
 %
+%   nconn = diff(connPos);
 %   [i, j] = blockDiagIndex(nconn, nconn);
 %
 %   S = struct('BI', sparse(i, j, BI), 'type', 'hybrid', 'ip', 'ip_simple')

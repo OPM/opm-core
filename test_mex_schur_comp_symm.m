@@ -2,22 +2,20 @@ run ../../startup
 G = computeGeometry(cartGrid([200, 1], [1, 1]));
 rock.perm = ones(G.cells.num, 1);
 
-nconn = diff(G.cells.facePos);
-conn  = G.cells.faces(:, 1);
+[BI, connPos, conns] = mex_ip_simple(G, rock);
 
-BI = mex_ip_simple(G, rock, nconn, conn);
+[S, r, F, L] = mex_schur_comp_symm(BI, connPos, conns);
 
-[S, r, F, L] = mex_schur_comp_symm(BI, nconn, conn);
-
+nconn  = diff(connPos);
 [i, j] = blockDiagIndex(nconn, nconn);
 
-SS = sparse(double(conn(i)), double(conn(j)), S);
-R  = accumarray(conn, r);
+SS = sparse(double(conns(i)), double(conns(j)), S);
+R  = accumarray(conns, r);
 
 SS(1) = SS(1) * 2;
 R([1, G.cells.num+1]) = [1, -1];
 
 x = SS \ R;
-[v, p] = mex_compute_press_flux(BI, x, nconn, conn, F, L);
+[v, p] = mex_compute_press_flux(BI, x, connPos, conns, F, L);
 
 plotCellData(G, p);

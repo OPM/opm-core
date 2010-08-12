@@ -2,26 +2,31 @@ function varargout = mex_compute_press_flux(varargin)
 %Derive pressure and flux from hybrid system using compiled C code.
 %
 % SYNOPSIS:
-%   [v, p] = mex_compute_press_flux(BI, lam, nconn, conn, F, L)
+%   [v, p] = mex_compute_press_flux(BI, lam, connPos, conns, F, L)
 %
 % PARAMETERS:
-%   BI    - Inner product values.  Typically computed using function
-%           'mex_ip_simple'.
+%   BI      - Inner product values.  Typically computed using function
+%             'mex_ip_simple'.
 %
-%   lam   - Interface pressure values.  One scalar value for each face in
-%           the discretised reservoir model.
+%   lam     - Interface pressure values.  One scalar value for each face in
+%             the discretised reservoir model.
 %
-%   nconn - Number of connections per cell.  Typically equals the result of
+%   connPos - Indirection map of size [G.cells.num,1] into 'conns' table
+%             (i.e., the connections or DOFs).  Specifically, the DOFs
+%             connected to cell 'i' are found in the submatrix
 %
-%               diff(G.cells.facePos)
+%                  conns(connPos(i) : connPos(i + 1) - 1)
 %
-%   conn  - Actual connections per cell.  Typically equals the result of
+%   conns   - A (connPos(end)-1)-by-1 array of cell connections
+%             (local-to-global DOF mapping in FEM parlance).
 %
-%               G.cells.faces(:,1)
+%   F       - Second-to-last return value from 'mex_schur_comp_symm'.
 %
-%   F     - Second-to-last return value from 'mex_schur_comp_symm'.
+%   L       - Last return value from 'mex_schur_comp_symm'.
 %
-%   L     - Last return value from 'mex_schur_comp_symm'.
+% NOTE:
+%   The (connPos,conns) array pair is expected to be the output of function
+%   'mex_ip_simple'.
 %
 % RETURNS:
 %   v - A SUM(nconn)-by-1 array of half-contact fluxes, ordered by cells.
@@ -40,21 +45,20 @@ function varargout = mex_compute_press_flux(varargin)
 %   rock.perm = convertFrom(rock.perm(G.cells.indexMap, :), ...
 %                           milli*darcy);
 %
-%   nconn = diff(G.cells.facePos);
-%   conn  = double(G.cells.faces(:,1));
+%   [BI, connPos, conns] = mex_ip_simple(G, rock);
 %
-%   BI = mex_ip_simple(G, rock);
+%   nconn = diff(connPos);
 %
 %   [i, j] = blockDiagIndex(nconn, nconn);
-%   [S, r, F, L] = mex_schur_comp_symm(BI, nconn);
+%   [S, r, F, L] = mex_schur_comp_symm(BI, connPos, conns);
 %
-%   SS = sparse(conn(i), conn(j), S);
+%   SS = sparse(double(conns(i)), double(conns(j)), S);
 %   R = accumarray(conn, r);
 %
 %   lam = SS \ R;
 %
 %   t0 = tic;
-%   [v, p] = mex_compute_press_flux(BI, lam, nconn, conn, F, L);
+%   [v, p] = mex_compute_press_flux(BI, lam, connPos, conns, F, L);
 %   toc(t0)
 %
 % SEE ALSO:
