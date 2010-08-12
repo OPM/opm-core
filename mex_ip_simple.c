@@ -256,7 +256,7 @@ add_well_connections(const mxArray *W, int nc, int nf,
             /* Finally, assign updated connection structure. */
             *conn = tmp;
         }
-        
+
         mxFree(w2c);  mxFree(c2w);  mxFree(cwork);
     }
 }
