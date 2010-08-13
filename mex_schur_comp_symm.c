@@ -46,7 +46,7 @@ count_cellconn(int nc, const int *pconn)
 
 /* ---------------------------------------------------------------------- */
 static void
-deallocate_aux_arrays(int *nconn, double *src, double *gflux)
+deallocate_aux_arrays(int *pconn, double *src, double *gflux)
 /* ---------------------------------------------------------------------- */
 {
     /* Apparently mxFree() makes no guarantee regarding NULL arguments.
@@ -54,7 +54,7 @@ deallocate_aux_arrays(int *nconn, double *src, double *gflux)
      */
     if (gflux != NULL) { mxFree(gflux); }
     if (src   != NULL) { mxFree(src);   }
-    if (nconn != NULL) { mxFree(nconn); }
+    if (pconn != NULL) { mxFree(pconn); }
 }
 
 
@@ -150,17 +150,12 @@ get_conn(const mxArray *M_conn, int *conn)
 
 /* ---------------------------------------------------------------------- */
 static int
-get_number_of_faces(int nc, int *nconn, int *conn)
+get_number_of_faces(int nc, int *pconn, int *conn)
 /* ---------------------------------------------------------------------- */
 {
    int N, i, nf;
 
-   N = 0;
-   for (i=0; i<nc; ++i)
-   {
-      N += nconn[i];
-   }
-
+   N = pconn[nc];
    nf = 0;
    for(i=0; i<N; ++i)
    {
@@ -238,14 +233,15 @@ mexFunction(int nlhs,       mxArray *plhs[],
         conn = mxMalloc(mxGetNumberOfElements(prhs[2]) * sizeof *conn);
         get_conn(prhs[2], conn);
 
-        nf          = get_number_of_faces(nc, nconn, conn);
-        hybsys_assemble(nc, nf, nconn, conn, ptr, sys->r, &A, &b);
-        x = malloc(A.n * sizeof *x);
+        nf          = get_number_of_faces(nc, pconn, conn);
+        hybsys_assemble(nc, nf, pconn, conn, ptr, sys->r, &A, &b);
+        x = mxMalloc(A.n * sizeof *x);
 
         callMWUMFPACK(A.n, A.ia, A.ja, A.sa, b, x);
 
-        for (i = 0; i < nf; ++i) mexPrintf("x[%d]=%f\n", i, x[i]);
-        free(A.ia); free(A.ja); free(A.sa); free(x);  free(b);
+        for (i = 0; i < nf; ++i) mexPrintf("x[%d] = %f\n", i, x[i]);
+        mxFree(x);  free(b);
+        free(A.ia); free(A.ja); free(A.sa);
 
         mxFree(conn);
 #endif
