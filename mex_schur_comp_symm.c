@@ -179,7 +179,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
 {
     int ok, nc, nconn_tot, max_nconn, sum_nconn2;
     int p2, c, i, nconn, *pconn;
-    double *Binv, *ptr, *src, *gflux;
+    double *Binv, *ptr1, *ptr2, *src, *gpress;
     struct hybsys *sys;
 
 #if defined(ASSEMBLE_AND_SOLVE_UMFPACK) && ASSEMBLE_AND_SOLVE_UMFPACK
@@ -196,7 +196,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
         nconn_tot = pconn[nc];
         max_nconn = count_cellconn(nc, pconn);
 
-        allocate_aux_arrays(nc, nconn_tot, &src, &gflux);
+        allocate_aux_arrays(nc, nconn_tot, &src, &gpress);
 
         sum_nconn2 = mxGetNumberOfElements(prhs[0]);
         plhs[0]    = mxCreateDoubleMatrix(sum_nconn2, 1, mxREAL);
@@ -204,27 +204,30 @@ mexFunction(int nlhs,       mxArray *plhs[],
         plhs[2]    = mxCreateDoubleMatrix(nconn_tot,  1, mxREAL);
         plhs[3]    = mxCreateDoubleMatrix(nc,         1, mxREAL);
 
-        sys = hybsys_allocate(max_nconn, nc, nconn_tot);
-        hybsys_init(max_nconn, nconn_tot, sys);
+        sys = hybsys_allocate_symm(max_nconn, nc, nconn_tot);
+        hybsys_init(max_nconn, sys);
 
-        for (i = 0; i < nc; i++)        { src[i]   = 0.0; } /* No sources */
-        for (i = 0; i < nconn_tot; i++) { gflux[i] = 0.0; } /* No gravity */
+        for (i = 0; i < nc; i++)        { src[i]    = 0.0; } /* No sources */
+        for (i = 0; i < nconn_tot; i++) { gpress[i] = 0.0; } /* No gravity */
 #if 0
         src[0] = 1;
         src[nc-1]=-1;
 #endif
         Binv = mxGetPr(prhs[0]);
 
-        hybsys_compute_components(nc, pconn, gflux, src, Binv, sys);
+        hybsys_schur_comp_symm(nc, pconn, Binv, sys);
 
-        ptr = mxGetPr(plhs[0]);
+        ptr1 = mxGetPr(plhs[0]);
+        ptr2 = mxGetPr(plhs[1]);
         p2 = 0;
         for (c = 0; c < nc; c++) {
             nconn = pconn[c + 1] - pconn[c];
 
-            hybsys_compute_cellmatrix(c, nconn, pconn[c], p2, Binv, sys);
+            hybsys_cellcontrib_symm(c, nconn, pconn[c], p2,
+                                    gpress, src, Binv, sys);
 
-            memcpy(ptr + p2, sys->S, nconn * nconn * sizeof *ptr);
+            memcpy(ptr1 + p2      , sys->S, nconn * nconn * sizeof *ptr1);
+            memcpy(ptr2 + pconn[c], sys->r, nconn         * sizeof *ptr2);
 
             p2 += nconn * nconn;
         }
@@ -246,16 +249,13 @@ mexFunction(int nlhs,       mxArray *plhs[],
         mxFree(conn);
 #endif
 
-        ptr = mxGetPr(plhs[1]);
-        memcpy(ptr, sys->r, nconn_tot * sizeof *ptr);
+        ptr1 = mxGetPr(plhs[2]);
+        memcpy(ptr1, sys->F1, nconn_tot * sizeof *ptr1);
 
-        ptr = mxGetPr(plhs[2]);
-        memcpy(ptr, sys->F, nconn_tot * sizeof *ptr);
-
-        ptr = mxGetPr(plhs[3]);
-        memcpy(ptr, sys->L, nc        * sizeof *ptr);
+        ptr1 = mxGetPr(plhs[3]);
+        memcpy(ptr1, sys->L , nc        * sizeof *ptr1);
 
         hybsys_free(sys);
-        deallocate_aux_arrays(pconn, src, gflux);
+        deallocate_aux_arrays(pconn, src, gpress);
     }
 }

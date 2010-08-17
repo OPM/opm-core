@@ -19,24 +19,47 @@
 
 /* ---------------------------------------------------------------------- */
 struct hybsys *
-hybsys_allocate(int max_nconn, int nc, int nconn_tot)
+hybsys_allocate_symm(int max_nconn, int nc, int nconn_tot)
 /* ---------------------------------------------------------------------- */
 {
     struct hybsys *new;
 
     new = malloc(1 * sizeof *new);
     if (new != NULL) {
-        new->work = malloc(max_nconn             * sizeof *new->work);
-        new->one  = malloc(max_nconn             * sizeof *new->one );
-        new->S    = malloc(max_nconn * max_nconn * sizeof *new->S   );
-        new->L    = malloc(nc                    * sizeof *new->L   );
-        new->F    = malloc(nconn_tot             * sizeof *new->F   );
-        new->r    = malloc(nconn_tot             * sizeof *new->r   );
+        new->one = malloc(max_nconn             * sizeof *new->one );
+        new->r   = malloc(max_nconn             * sizeof *new->r   );
+        new->S   = malloc(max_nconn * max_nconn * sizeof *new->S   );
+        new->L   = malloc(nc                    * sizeof *new->L   );
+        new->F1  = malloc(nconn_tot             * sizeof *new->F1  );
 
-        if ((new->work == NULL) || (new->one == NULL) || (new->S == NULL) ||
-            (new->L    == NULL) || (new->F   == NULL) || (new->r == NULL)) {
+        if ((new->one == NULL) || (new->S  == NULL) ||
+            (new->L   == NULL) || (new->F1 == NULL) || (new->r == NULL)) {
             hybsys_free(new);
 
+            new = NULL;
+        } else {
+            new->F2 = new->F1;
+        }
+    }
+
+    return new;
+}
+
+
+/* ---------------------------------------------------------------------- */
+struct hybsys *
+hybsys_allocate_unsymm(int max_nconn, int nc, int nconn_tot)
+/* ---------------------------------------------------------------------- */
+{
+    struct hybsys *new;
+
+    new = hybsys_allocate_symm(max_nconn, nc, nconn_tot);
+
+    if (new != NULL) {
+        new->F2 = malloc(nconn_tot * sizeof *new->F2);
+
+        if (new->F2 == NULL) {
+            hybsys_free(new);
             new = NULL;
         }
     }
@@ -51,12 +74,13 @@ hybsys_free(struct hybsys *sys)
 /* ---------------------------------------------------------------------- */
 {
     if (sys != NULL) {
-        free(sys->r   );
-        free(sys->F   );
-        free(sys->L   );
-        free(sys->S   );
-        free(sys->one );
-        free(sys->work);
+        if (sys->F2 != sys->F1) { free(sys->F2); } /* unsymmetric system */
+
+        free(sys->F1 );
+        free(sys->L  );
+        free(sys->S  );
+        free(sys->r  );
+        free(sys->one);
     }
 
     free(sys);
@@ -65,7 +89,7 @@ hybsys_free(struct hybsys *sys)
 
 /* ---------------------------------------------------------------------- */
 void
-hybsys_init(int max_nconn, int nconn_tot, struct hybsys *sys)
+hybsys_init(int max_nconn, struct hybsys *sys)
 /* ---------------------------------------------------------------------- */
 {
     int i;
@@ -73,22 +97,17 @@ hybsys_init(int max_nconn, int nconn_tot, struct hybsys *sys)
     for (i = 0; i < max_nconn; i++) {
         sys->one[i] = 1.0;
     }
-
-    for (i = 0; i < nconn_tot; i++) {
-        sys->r[i] = 0.0;
-    }
 }
 
 
 /* ---------------------------------------------------------------------- */
 void
-hybsys_compute_components(int nc, const int *pconn,
-                          const double *gflux, const double *src,
-                          const double *Binv, struct hybsys *sys)
+hybsys_schur_comp_symm(int nc, const int *pconn,
+                       const double *Binv, struct hybsys *sys)
 /* ---------------------------------------------------------------------- */
 {
     int    c, i, p1, p2, nconn;
-    double csrc, a1, a2;
+    double a1, a2;
 
     MAT_SIZE_T incx, incy;
     MAT_SIZE_T nrows, ncols, lda;
@@ -97,30 +116,18 @@ hybsys_compute_components(int nc, const int *pconn,
     p1 = p2 = 0;
 
     for (c = 0; c < nc; c++) {
-        p1    = pconn[c];
+        p1    = pconn[c + 0];
         nconn = pconn[c + 1] - pconn[c];
         nrows = ncols = lda = nconn;
 
         /* F <- C' * inv(B) == (inv(B) * ones(n,1))' in single cell */
         a1 = 1.0;  a2 = 0.0;
-        dgemv_("No Transpose", &nrows, &ncols,
-               &a1, &Binv[p2]  , &lda, sys->one, &incx,
-               &a2, &sys->F[p1],                 &incy);
+        dgemv_("No Transpose"   , &nrows, &ncols,
+               &a1, &Binv[p2]   , &lda, sys->one, &incx,
+               &a2, &sys->F1[p1],                 &incy);
 
         /* L <- C' * inv(B) * C == SUM(F) == ones(n,1)' * F */
-        sys->L[c] = ddot_(&nrows, sys->one, &incx, &sys->F[p1], &incy);
-
-        /* csrc <- g[c] - C'*v_g */
-        csrc = src[c] - ddot_(&nrows, sys->one, &incx, &gflux[p1], &incy);
-
-        /* r <- v_g */
-        for (i = 0; i < nconn; i++) {
-            sys->r[p1 + i] = gflux[p1 + i];
-        }
-
-        /* r <- r + F'*inv(L)*(g - C'*v_g) == r + (csrc / L[c])*F */
-        a1 = csrc / sys->L[c];
-        daxpy_(&nrows, &a1, &sys->F[p1], &incx, &sys->r[p1], &incy);
+        sys->L[c] = ddot_(&nrows, sys->one, &incx, &sys->F1[p1], &incy);
 
         p2 += nconn * nconn;
     }
@@ -129,12 +136,103 @@ hybsys_compute_components(int nc, const int *pconn,
 
 /* ---------------------------------------------------------------------- */
 void
-hybsys_compute_cellmatrix_core(int nconn, const double *Binv,
-                               double L, const double *F, double *S)
+hybsys_schur_comp_unsymm(int nc, const int *pconn,
+                         const double *Binv, const double *BIV,
+                         const double *P, struct hybsys *sys)
+/* ---------------------------------------------------------------------- */
+{
+    int    c, i, p1, p2, nconn;
+    double a1, a2;
+
+    MAT_SIZE_T incx, incy;
+    MAT_SIZE_T nrows, ncols, lda;
+
+    assert ((sys->F2 != sys->F1) &&
+            (sys->F2 != NULL));
+
+    incx = incy = 1;
+    p2 = 0;
+
+    for (c = 0; c < nc; c++) {
+        p1    = pconn[c + 0];
+        nconn = pconn[c + 1] - pconn[c];
+
+        nrows = ncols = lda = nconn;
+
+        /* F1 <- C' * inv(B) */
+        a1 = 1.0;  a2 = 0.0;
+        dgemv_("No Transpose"   , &nrows, &ncols,
+               &a1, &Binv[p2]   , &lda, sys->one, &incx,
+               &a2, &sys->F1[p1],                 &incy);
+
+        /* F2 <- (C - V)' * inv(B) == F1 - V'*inv(B) */
+        a1 = -1.0;
+        memcpy(&sys->F2[p1], &sys->F1[p1], nconn * sizeof sys->F2[p1]);
+        daxpy_(&nrows, &a1, &BIV[p1], &incx, &sys->F2[p1], &incy);
+
+        /* L <- (C - V)' * inv(B) * C - P */
+        sys->L[c]  = ddot_(&nrows, sys->one, &incx, &sys->F1[p1], &incy);
+        sys->L[c] -= ddot_(&nrows, sys->one, &incx, &BIV[p1]    , &incy);
+        sys->L[c] -= P[c];
+
+        p2 += nconn * nconn;
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
+void
+hybsys_schur_comp_gen(int nc, const int *pconn,
+                      const double *Binv, const double *C2,
+                      const double *P, struct hybsys *sys)
+/* ---------------------------------------------------------------------- */
+{
+    int    c, i, p1, p2, nconn;
+    double a1, a2;
+
+    MAT_SIZE_T incx, incy;
+    MAT_SIZE_T nrows, ncols, lda;
+
+    assert ((sys->F2 != sys->F1) &&
+            (sys->F2 != NULL));
+
+    incx = incy = 1;
+    p2 = 0;
+
+    for (c = 0; c < nc; c++) {
+        p1    = pconn[c + 0];
+        nconn = pconn[c + 1] - pconn[c];
+
+        nrows = ncols = lda = nconn;
+
+        /* F1 <- C' * inv(B) */
+        a1 = 1.0;  a2 = 0.0;
+        dgemv_("No Transpose"   , &nrows, &ncols,
+               &a1, &Binv[p2]   , &lda, sys->one, &incx,
+               &a2, &sys->F1[p1],                 &incy);
+
+        /* F2 <- C2' * inv(B) */
+        dgemv_("No Transpose"   , &nrows, &ncols,
+               &a1, &Binv[p2]   , &lda, &C2[p1], &incx,
+               &a2, &sys->F2[p1],                &incy);
+
+        /* L <- C2' * inv(B) * C - P == F2'*ones(n,1) - P */
+        sys->L[c]  = ddot_(&nrows, sys->one, &incx, &sys->F2[p1], &incy);
+        sys->L[c] -= P[c];
+
+        p2 += nconn * nconn;
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
+static void
+hybsys_cellmat_symm_core(int nconn, const double *Binv, double L,
+                         const double *F, double *S)
 /* ---------------------------------------------------------------------- */
 {
     int        i, j;
-    MAT_SIZE_T n, k, ldA, ldC;
+    MAT_SIZE_T n, k, ldA, ldC, incx, incy;
     double     a1, a2;
 
     /* S <- D' * inv(B) * D == inv(B) in single cell */
@@ -158,23 +256,105 @@ hybsys_compute_cellmatrix_core(int nconn, const double *Binv,
 
 
 /* ---------------------------------------------------------------------- */
+static void
+hybsys_cellmat_unsymm_core(int nconn, const double *Binv, double L,
+                           const double *F1, const double *F2,
+                           double *S)
+/* ---------------------------------------------------------------------- */
+{
+    MAT_SIZE_T m, n, k, ldF1, ldF2, ldS;
+    double     a1, a2;
+
+    /* S <- D' * inv(B) * D == inv(B) in single cell */
+    memcpy(S, Binv, nconn * nconn * sizeof *S);
+
+    /* S <- S - F1'*inv(L)*F2 */
+    a1 = -1.0 / L;
+    a2 =  1.0;
+
+    m = n = nconn;
+    k = 1;
+    ldF1 = ldF2 = 1;
+    ldS  = nconn;
+
+    dgemm_("Transpose", "No Transpose", &m, &n, &k,
+           &a1, F1, &ldF1, F2, &ldF2, &a2, S, &ldS);
+}
+
+
+/* ---------------------------------------------------------------------- */
+static void
+hybsys_cellrhs_core(int nconn, const double *gpress, double src,
+                    const double *Binv, double L, const double *F1,
+                    const double *F2, double *R)
+/* ---------------------------------------------------------------------- */
+{
+    MAT_SIZE_T n, k, ldA, incx, incy;
+    double     a1, a2;
+
+    /* r <- inv(B)*gpress + F1'*inv(L)*(src - F2*gpress)
+     *   == inv(B)*gpress + F1'*inv(L)*(src - C2'*inv(B)*gpress) */
+    k  = 1;
+    a1 = 1.0;  a2 = 0.0;
+    incx = incy = 1;
+
+    n = k = ldA = nconn;
+
+    dgemv_("No Transpose", &n, &k,
+           &a1, Binv, &ldA, gpress, &incx,
+           &a2, R   ,               &incy);
+
+    src -= ddot_(&n, F2, &incx, gpress, &incy);
+
+    a1 = src / L;
+    daxpy_(&n, &a1, F1, &incx, R, &incy);
+}
+
+
+/* ---------------------------------------------------------------------- */
 void
-hybsys_compute_cellmatrix(int c, int nconn, int p1, int p2,
+hybsys_cellcontrib_symm(int c, int nconn, int p1, int p2,
+                        const double *gpress, const double *src,
+                        const double *Binv, struct hybsys *sys)
+/* ---------------------------------------------------------------------- */
+{
+    hybsys_cellmat_symm_core(nconn, &Binv[p2],
+                             sys->L[c], &sys->F1[p1],
+                             sys->S);
+
+    hybsys_cellrhs_core(nconn, &gpress[p1], src[c], &Binv[p2],
+                        sys->L[c], &sys->F1[p1], &sys->F1[p1],
+                        sys->r);
+}
+
+
+/* ---------------------------------------------------------------------- */
+void
+hybsys_cellcontrib_unsymm(int c, int nconn, int p1, int p2,
+                          const double *gpress, const double *src,
                           const double *Binv, struct hybsys *sys)
 /* ---------------------------------------------------------------------- */
 {
-    hybsys_compute_cellmatrix_core(nconn, &Binv[p2], sys->L[c],
-                                   &sys->F[p1], sys->S);
+    assert ((sys->F2 != sys->F1) &&
+            (sys->F2 != NULL));
+
+    hybsys_cellmat_unsymm_core(nconn, &Binv[p2],
+                               sys->L[c], &sys->F1[p1], &sys->F2[p1],
+                               sys->S);
+
+    hybsys_cellrhs_core(nconn, &gpress[p1], src[c], &Binv[p2],
+                        sys->L[c], &sys->F1[p1], &sys->F2[p1],
+                        sys->r);
 }
 
 
 /* ---------------------------------------------------------------------- */
 void
 hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
-                          const double *gflux, const double *src,
+                          const double *gpress, const double *src,
                           const double *Binv, const struct hybsys *sys,
                           const double *pi, double *press, double *flux,
-                          double *work, const int lwork)
+                          double *work)
 /* ---------------------------------------------------------------------- */
 {
     int    c, i, nconn, p1, p2;
@@ -185,30 +365,27 @@ hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
     incx = incy = 1;
 
     p2 = 0;
-    a1 = a2 = 1.0;
+    a1 = 1.0;
+    a2 = 0.0;
     for (c = 0; c < nc; c++) {
-        p1    = pconn[c];
+        p1    = pconn[c + 0];
         nconn = pconn[c + 1] - p1;
-
-        assert (lwork >= nconn);
 
         /* Serialise interface pressures for cell */
         for (i = 0; i < nconn; i++) {
-            work[i] = pi[conn[p1 + i]];
+            work[i] = pi[conn[p1 + i]] - gpress[p1 + i];
         }
 
         nrows = ncols = lda = nconn;
 
-        /* Solve Lp = g - C'*v_g + F'*pi (for cell pressure) */
+        /* Solve Lp = g - F2*f + F2*pi (for cell pressure) */
         press[c]  = src[c];
-        press[c] -= ddot_(&nrows, sys->one   , &incx, &gflux[p1], &incy);
-        press[c] += ddot_(&nrows, &sys->F[p1], &incx, work      , &incy);
+        press[c] += ddot_(&nrows, &sys->F2[p1], &incx, work, &incy);
         press[c] /= sys->L[c];
 
-        /* Form rhs of system B*v = B*v_g + C*p - D*pi */
+        /* Form rhs of system B*v = f + C*p - D*pi */
         for (i = 0; i < nconn; i++) {
-            flux[p1 + i] = gflux[p1 + i];
-            work[i]      = press[c] - work[i];
+            work[i] = press[c] - work[i];
         }
 
         /* Solve resulting system (-> half face fluxes) */

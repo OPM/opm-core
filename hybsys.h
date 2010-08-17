@@ -6,12 +6,12 @@
 #endif
 
 struct hybsys {
-    double *L;                  /* C' * inv(B) * C */
-    double *F;                  /* C' * inv(B)     */
-    double *r;                  /* system rhs per half face */
+    double *L;                  /* C2' * inv(B) * C1 - P */
+    double *F1;                 /* C1' * inv(B)          */
+    double *F2;                 /* C2' * inv(B)          */
+    double *r;                  /* system rhs in single cell */
     double *S;                  /* system matrix in single cell */
     double *one;                /* ones(max_nconn, 1) */
-    double *work;               /* work array (SIZE [max_nconn, 1]) */
 };
 
 
@@ -28,33 +28,71 @@ struct Sparse
 
 
 struct hybsys *
-hybsys_allocate(int max_nconn, int nc, int nconn_tot);
+hybsys_allocate_symm(int max_nconn, int nc, int nconn_tot);
+
+struct hybsys *
+hybsys_allocate_unsymm(int max_nconn, int nc, int nconn_tot);
 
 void
 hybsys_free(struct hybsys *sys);
 
 void
-hybsys_init(int max_nconn, int nconn_tot, struct hybsys *sys);
+hybsys_init(int max_nconn, struct hybsys *sys);
+
+/*
+ * Schur complement reduction (per grid cell) of block matrix
+ *
+ *    [  B   C   D  ]
+ *    [  C'  0   0  ]
+ *    [  D'  0   0  ]
+ *
+ */
+void
+hybsys_schur_comp_symm(int nc, const int *pconn,
+                       const double *Binv, struct hybsys *sys);
+
+/*
+ * Schur complement reduction (per grid cell) of block matrix
+ *
+ *    [    B     C   D  ]
+ *    [  (C-V)'  P   0  ]
+ *    [    D'    0   0  ]
+ *
+ */
+void
+hybsys_schur_comp_unsymm(int nc, const int *pconn,
+                         const double *Binv, const double *BIV,
+                         const double *P, struct hybsys *sys);
+
+/*
+ * Schur complement reduction (per grid cell) of block matrix
+ *
+ *    [   B   C   D  ]
+ *    [  C2'  P   0  ]
+ *    [   D'  0   0  ]
+ *
+ */
+void
+hybsys_schur_comp_gen(int nc, const int *pconn,
+                      const double *Binv, const double *C2,
+                      const double *P, struct hybsys *sys);
 
 void
-hybsys_compute_components(int nc, const int *pconn,
-                          const double *gflux, const double *src,
-                          const double *Binv, struct hybsys *sys);
+hybsys_cellcontrib_symm(int c, int nconn, int p1, int p2,
+                        const double *gpress, const double *src,
+                        const double *Binv, struct hybsys *sys);
 
 void
-hybsys_compute_cellmatrix_core(int nconn, const double *Binv,
-                               double L, const double *F, double *S);
-
-void
-hybsys_compute_cellmatrix(int c, int nconn, int p1, int p2,
+hybsys_cellcontrib_unsymm(int c, int nconn, int p1, int p2,
+                          const double *gpress, const double *src,
                           const double *Binv, struct hybsys *sys);
 
 void
 hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
-                          const double *gflux, const double *src,
+                          const double *gpress, const double *src,
                           const double *Binv, const struct hybsys *sys,
                           const double *pi, double *press, double *flux,
-                          double *work, const int lwork);
+                          double *work);
 
 void
 hybsys_assemble(int nc, int nf,
