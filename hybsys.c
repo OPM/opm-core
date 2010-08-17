@@ -26,11 +26,11 @@ hybsys_allocate_symm(int max_nconn, int nc, int nconn_tot)
 
     new = malloc(1 * sizeof *new);
     if (new != NULL) {
-        new->one = malloc(max_nconn             * sizeof *new->one );
-        new->r   = malloc(max_nconn             * sizeof *new->r   );
-        new->S   = malloc(max_nconn * max_nconn * sizeof *new->S   );
-        new->L   = malloc(nc                    * sizeof *new->L   );
-        new->F1  = malloc(nconn_tot             * sizeof *new->F1  );
+        new->one = malloc(max_nconn             * sizeof *new->one);
+        new->r   = malloc(max_nconn             * sizeof *new->r  );
+        new->S   = malloc(max_nconn * max_nconn * sizeof *new->S  );
+        new->L   = malloc(nc                    * sizeof *new->L  );
+        new->F1  = malloc(nconn_tot             * sizeof *new->F1 );
 
         if ((new->one == NULL) || (new->S  == NULL) ||
             (new->L   == NULL) || (new->F1 == NULL) || (new->r == NULL)) {
