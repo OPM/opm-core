@@ -32,8 +32,8 @@ hybsys_allocate_symm(int max_nconn, int nc, int nconn_tot)
         new->L   = malloc(nc                    * sizeof *new->L  );
         new->F1  = malloc(nconn_tot             * sizeof *new->F1 );
 
-        if ((new->one == NULL) || (new->S  == NULL) ||
-            (new->L   == NULL) || (new->F1 == NULL) || (new->r == NULL)) {
+        if ((new->one == NULL) || (new->r  == NULL) || (new->S == NULL) ||
+            (new->L   == NULL) || (new->F1 == NULL)) {
             hybsys_free(new);
 
             new = NULL;
