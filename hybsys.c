@@ -106,7 +106,7 @@ hybsys_schur_comp_symm(int nc, const int *pconn,
                        const double *Binv, struct hybsys *sys)
 /* ---------------------------------------------------------------------- */
 {
-    int    c, i, p1, p2, nconn;
+    int    c, p1, p2, nconn;
     double a1, a2;
 
     MAT_SIZE_T incx, incy;
@@ -141,7 +141,7 @@ hybsys_schur_comp_unsymm(int nc, const int *pconn,
                          const double *P, struct hybsys *sys)
 /* ---------------------------------------------------------------------- */
 {
-    int    c, i, p1, p2, nconn;
+    int    c, p1, p2, nconn;
     double a1, a2;
 
     MAT_SIZE_T incx, incy;
@@ -187,7 +187,7 @@ hybsys_schur_comp_gen(int nc, const int *pconn,
                       const double *P, struct hybsys *sys)
 /* ---------------------------------------------------------------------- */
 {
-    int    c, i, p1, p2, nconn;
+    int    c, p1, p2, nconn;
     double a1, a2;
 
     MAT_SIZE_T incx, incy;
@@ -232,7 +232,7 @@ hybsys_cellmat_symm_core(int nconn, const double *Binv, double L,
 /* ---------------------------------------------------------------------- */
 {
     int        i, j;
-    MAT_SIZE_T n, k, ldA, ldC, incx, incy;
+    MAT_SIZE_T n, k, ldA, ldC;
     double     a1, a2;
 
     /* S <- D' * inv(B) * D == inv(B) in single cell */
