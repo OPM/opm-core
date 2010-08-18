@@ -21,7 +21,13 @@ function G = mcomputeGeometry(G)
 % $Date$
 % $Revision$
 
-   warn_no_type = false;
+   if ~isfield(G(1), 'type'),
+      warning(msgid('GridType:Unknown'),                         ...
+             ['Input grid has no known type. ',                  ...
+              'I''ll assume it arose from the primordial soup...']);
+
+      [ G(:).type ] = deal( {'Primordial Soup'} );
+   end
 
    for k = 1 : numel(G),
       [fa,fc,fn,cc,cv] = mex_compute_geometry(G(k));
@@ -30,17 +36,6 @@ function G = mcomputeGeometry(G)
       G(k).faces.normals   = fn';
       G(k).cells.centroids = cc';
       G(k).cells.volumes   = cv;
-
-      if ~isfield(G(k), 'type'),
-         if ~warn_no_type,
-            warning(msgid('GridType:Unknown'),                         ...
-                   ['Input grid has no known type. ',                  ...
-                    'I''ll assume it arose from the primordial soup...']);
-            warn_no_type = true;
-         end
-         
-         G(k).type = { 'Primordial Soup' };
-      end
 
       G(k).type = [ G(k).type, { mfilename } ];
    end
