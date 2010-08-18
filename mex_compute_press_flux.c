@@ -186,14 +186,14 @@ mexFunction(int nlhs,       mxArray *plhs[],
         plhs[0] = mxCreateDoubleMatrix(nconn_tot, 1, mxREAL);
         plhs[1] = mxCreateDoubleMatrix(nc,        1, mxREAL);
 
-        sys = hybsys_allocate(max_nconn, nc, nconn_tot);
-        hybsys_init(max_nconn, nconn_tot, sys);
+        sys = hybsys_allocate_symm(max_nconn, nc, nconn_tot);
+        hybsys_init(max_nconn, sys);
 
         ptr = mxGetPr(prhs[4]);
-        memcpy(sys->F, ptr, nconn_tot * sizeof *sys->F);
+        memcpy(sys->F1, ptr, nconn_tot * sizeof *sys->F1);
 
         ptr = mxGetPr(prhs[5]);
-        memcpy(sys->L, ptr, nc        * sizeof *sys->L);
+        memcpy(sys->L , ptr, nc        * sizeof *sys->L);
 
         get_pconn(prhs[2], pconn);
         get_conn (prhs[3], conn);
@@ -206,7 +206,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
 
         hybsys_compute_press_flux(nc, pconn, conn, gflux, src, Binv, sys,
                                   pi, mxGetPr(plhs[1]), mxGetPr(plhs[0]),
-                                  work, max_nconn);
+                                  work);
 
         hybsys_free(sys);
         deallocate_aux_arrays(pconn, conn, src, gflux, work);
