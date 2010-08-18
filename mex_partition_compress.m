@@ -1,5 +1,5 @@
 function varargout = mex_partition_compress(varargin)
-%Partition grid uniformly in logical space using compiled C code.
+%Remove empty blocks/bins using compiled C code.
 %
 % SYNOPSIS:
 %   p = mex_partition_compress(p)
