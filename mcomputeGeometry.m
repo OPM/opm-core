@@ -1,8 +1,47 @@
 function G = mcomputeGeometry(G)
-   [fa,fc,fn,cc,cv] = mex_compute_geometry(G);
-   G.faces.areas     = fa;
-   G.faces.centroids = fc';
-   G.faces.normals   = fn';
-   G.cells.centroids = cc';
-   G.cells.volumes   = cv;
+%Compute geometric primitves using compiled C code.
+%
+% SYNOPSIS:
+%   G = mcomputeGeometry(G)
+%
+% PARAMETERS:
+%   G - A grid_structure.
+%
+% RETURNS:
+%   G - An updated grid_structure containing areas, volumes, normals and
+%       centroids.
+%
+% SEE ALSO:
+%   computeGeometry, grid_structure.
+
+%{
+#COPYRIGHT#
+%}
+
+% $Date$
+% $Revision$
+
+   warn_no_type = false;
+
+   for k = 1 : numel(G),
+      [fa,fc,fn,cc,cv] = mex_compute_geometry(G(k));
+      G(k).faces.areas     = fa;
+      G(k).faces.centroids = fc';
+      G(k).faces.normals   = fn';
+      G(k).cells.centroids = cc';
+      G(k).cells.volumes   = cv;
+
+      if ~isfield(G(k), 'type'),
+         if ~warn_no_type,
+            warning(msgid('GridType:Unknown'),                         ...
+                   ['Input grid has no known type. ',                  ...
+                    'I''ll assume it arose from the primordial soup...']);
+            warn_no_type = true;
+         end
+         
+         G(k).type = { 'Primordial Soup' };
+      end
+
+      G(k).type = [ G(k).type, { mfilename } ];
+   end
 end
