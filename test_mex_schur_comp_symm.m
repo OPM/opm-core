@@ -1,5 +1,5 @@
 run ../../startup
-G = computeGeometry(cartGrid([200, 1], [1, 1]));
+G = computeGeometry(cartGrid([200000, 1], [1, 1]));
 rock.perm = ones(G.cells.num, 1);
 
 [BI, connPos, conns] = mex_ip_simple(G, rock);
