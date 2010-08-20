@@ -76,15 +76,15 @@ extract_neighbour(const mxArray *M_neigh, int *neigh)
         pd = mxGetPr(M_neigh);
 
         for (e = 0; e < ne; e++) {
-            neigh[2*e + 0] = pd[e + 0*ne];
-            neigh[2*e + 1] = pd[e + 1*ne];
+            neigh[2*e + 0] = pd[e + 0*ne] - 1;
+            neigh[2*e + 1] = pd[e + 1*ne] - 1;
         }
     } else {
         pi = mxGetData(M_neigh);
 
         for (e = 0; e < ne; e++) {
-            neigh[2*e + 0] = pi[e + 0*ne];
-            neigh[2*e + 1] = pi[e + 1*ne];
+            neigh[2*e + 0] = pi[e + 0*ne] - 1;
+            neigh[2*e + 1] = pi[e + 1*ne] - 1;
         }
     }
 }
@@ -164,7 +164,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
             extract_neighbour(prhs[1], neigh);
 
             nextra = partition_split_disconnected(nc, nneigh, neigh, p);
-#if 0
+
             if (nextra == 0) {
                 mexPrintf("Partition processing complete. No extra blocks.\n");
 
@@ -177,7 +177,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
             } else {
                 mexPrintf("Partition processing failed. Insufficient memory?\n");
             }
-#endif
+
             deallocate_aux_arrays(p, neigh);
         }
     } else {
