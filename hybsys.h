@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2010 SINTEF ICT, Applied Mathematics
+ */
+
 #ifndef HYBSYS_H_INCLUDED
 #define HYBSYS_H_INCLUDED
 
