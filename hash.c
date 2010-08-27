@@ -5,11 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "hash.h"
-
 #define GOLDEN_RAT (0.6180339887498949) /* (sqrt(5) - 1) / 2 */
 #define IS_POW2(x) (((x) & ((x) - 1)) == 0)
 
+struct hash_table {
+    size_t  m;
+    int    *a;
+};
 
 /* ---------------------------------------------------------------------- */
 static size_t
@@ -120,7 +122,20 @@ hash_table_expand(size_t m, struct hash_table *t)
 
 
 /* ---------------------------------------------------------------------- */
-struct hash_table *
+static void
+hash_table_deallocate(struct hash_table *t)
+/* ---------------------------------------------------------------------- */
+{
+    if (t != NULL) {
+        free(t->a);
+    }
+
+    free(t);
+}
+
+
+/* ---------------------------------------------------------------------- */
+static struct hash_table *
 hash_table_allocate(int m)
 /* ---------------------------------------------------------------------- */
 {
@@ -147,20 +162,7 @@ hash_table_allocate(int m)
 
 
 /* ---------------------------------------------------------------------- */
-void
-hash_table_deallocate(struct hash_table *t)
-/* ---------------------------------------------------------------------- */
-{
-    if (t != NULL) {
-        free(t->a);
-    }
-
-    free(t);
-}
-
-
-/* ---------------------------------------------------------------------- */
-int
+static int
 hash_table_insert(int k, struct hash_table *t)
 /* ---------------------------------------------------------------------- */
 {
