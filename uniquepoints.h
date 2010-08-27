@@ -41,3 +41,7 @@ int finduniquepoints(const struct grdecl *g,  /* input */
 		     struct processed_grid *out);
 
 #endif /* OPENRS_UNIQUEPOINTS_HEADER */
+
+/* Local Variables:    */
+/* c-basic-offset:4    */
+/* End:                */

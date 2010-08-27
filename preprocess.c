@@ -39,7 +39,6 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <float.h>
 #include "preprocess.h"
-#include "sparsetable.h"
 #include "uniquepoints.h"
 #include "facetopology.h"
 
@@ -575,3 +574,6 @@ void free_processed_grid(struct processed_grid *g)
   }
 }
 
+/* Local Variables:    */
+/* c-basic-offset:4    */
+/* End:                */

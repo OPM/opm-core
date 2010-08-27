@@ -42,3 +42,7 @@ void findconnections(int n, int *pts[4],
 		     struct processed_grid *out);
 
 #endif /* OPENRS_FACETOPOLOGY_HEADER */
+
+/* Local Variables:    */
+/* c-basic-offset:4    */
+/* End:                */

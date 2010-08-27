@@ -84,3 +84,7 @@ extern "C" {
 
 #endif /* OPENRS_PREPROCESS_HEADER */
 
+
+/* Local Variables:    */
+/* c-basic-offset:4    */
+/* End:                */

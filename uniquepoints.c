@@ -258,8 +258,8 @@ int finduniquepoints(const struct grdecl *g,
   int            npillarpoints = 8*(nx+1)*(ny+1)*nz; 
   int            npillars      = (nx+1)*(ny+1);
   sparse_table_t *ztab      = malloc_sparse_table(npillars, 
-						     npillarpoints, 
-						     sizeof(double));
+                                                  npillarpoints, 
+                                                  sizeof(double));
 
 
 
@@ -346,4 +346,7 @@ int finduniquepoints(const struct grdecl *g,
   return 1;
 }
 
+/* Local Variables:    */
+/* c-basic-offset:4    */
+/* End:                */
 

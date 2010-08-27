@@ -347,3 +347,7 @@ void findconnections(int n, int *pts[4],
     j = min(k1, k2);
   }
 }
+
+/* Local Variables:    */
+/* c-basic-offset:4    */
+/* End:                */
