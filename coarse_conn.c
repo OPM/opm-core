@@ -438,6 +438,8 @@ block_neighbours_insert_neighbour(int b, int fconn, int expct_nconn,
 
                 if (bns->neigh[i] != 0) {
                     ret = block_neighbour_insert_fconn(fconn, bns->neigh[i]);
+
+                    bns->neigh[i]->b = b;
                     bns->nneigh += 1;
                 }
             }
