@@ -5,25 +5,45 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define GOLDEN_RAT (0.6180339887498949) /* (sqrt(5) - 1) / 2 */
+/* ======================================================================
+ * Macros
+ * ====================================================================== */
+#define GOLDEN_RAT (0.6180339887498949)              /* (sqrt(5) - 1) / 2 */
 #define IS_POW2(x) (((x) & ((x) - 1)) == 0)
 
+
+/* ======================================================================
+ * Data structures
+ * ====================================================================== */
+
+/* Poor-man's unordered set (ind. key insert/all key extract only). */
 struct hash_set {
     size_t  m;                  /* Table/set capacity (1<<p for some p) */
     int    *s;                  /* Set representation */
 };
 
+
+/* Individual block connection. */
 struct block_neighbour {
     int              b;         /* Neighbouring block */
     struct hash_set *fconns;    /* Constituent connections */
 };
 
+
+/* Adjacency list of single block (directed graph) */
 struct block_neighbours {
     int                    nneigh;  /* Number of neighbours. */
     int                    cpty;    /* Neighbour capacity. */
     struct block_neighbour **neigh; /* Actual neighbours (sorted on neigh[i]->b) */
 };
 
+
+/* ======================================================================
+ * Operations
+ * ====================================================================== */
+
+
+/* Define a hash array size (1<<p) capable of holding a set of size 'm' */
 /* ---------------------------------------------------------------------- */
 static size_t
 hash_set_size(size_t m)
@@ -55,6 +75,7 @@ hash_set_size(size_t m)
 }
 
 
+/* Hash element 'k' into table of size 'm' (multiplication method) */
 /* ---------------------------------------------------------------------- */
 static size_t
 hash_set_idx(int k, size_t m)
@@ -64,6 +85,8 @@ hash_set_idx(int k, size_t m)
 }
 
 
+/* Insert element 'k' into set 's' of size 'm'
+ * (open addressing, double probing). */
 /* ---------------------------------------------------------------------- */
 static size_t
 hash_set_insert_core(int k, size_t m, int *s)
@@ -98,6 +121,8 @@ hash_set_insert_core(int k, size_t m, int *s)
 }
 
 
+/* Increase size of hash set 't' to hold 'm' elements whilst copying
+ * existing elements.  This is typically fairly expensive. */
 /* ---------------------------------------------------------------------- */
 static int
 hash_set_expand(size_t m, struct hash_set *t)
@@ -132,6 +157,7 @@ hash_set_expand(size_t m, struct hash_set *t)
 }
 
 
+/* Release dynamic memory resources for hash set 't'. */
 /* ---------------------------------------------------------------------- */
 static void
 hash_set_deallocate(struct hash_set *t)
@@ -145,6 +171,7 @@ hash_set_deallocate(struct hash_set *t)
 }
 
 
+/* Construct an emtpy hash set capable of holding 'm' elements */
 /* ---------------------------------------------------------------------- */
 static struct hash_set *
 hash_set_allocate(int m)
@@ -172,6 +199,7 @@ hash_set_allocate(int m)
 }
 
 
+/* Insert element 'k' into hash set 't'. */
 /* ---------------------------------------------------------------------- */
 static int
 hash_set_insert(int k, struct hash_set *t)
@@ -204,6 +232,7 @@ hash_set_insert(int k, struct hash_set *t)
 }
 
 
+/* Relase dynamic memory resources for single block neighbour 'bn'. */
 /* ---------------------------------------------------------------------- */
 static void
 block_neighbour_deallocate(struct block_neighbour *bn)
@@ -217,6 +246,9 @@ block_neighbour_deallocate(struct block_neighbour *bn)
 }
 
 
+/* Construct empty block neighbour connection capable of holding
+ * 'nconn' fine-scale connections (e.g., fine-scale interfaces).
+ * The fine-scale table is not allocated unless nconn > 0. */
 /* ---------------------------------------------------------------------- */
 static struct block_neighbour *
 block_neighbour_allocate(int nconn)
@@ -245,6 +277,8 @@ block_neighbour_allocate(int nconn)
 }
 
 
+/* Insert fine-scale connection 'fconn' into block neighbour
+ * connection 'bn', but only if the bn->fconns table has been allocated.  */
 /* ---------------------------------------------------------------------- */
 static int
 block_neighbour_insert_fconn(int fconn, struct block_neighbour *bn)
@@ -264,6 +298,7 @@ block_neighbour_insert_fconn(int fconn, struct block_neighbour *bn)
 }
 
 
+/* Relase dynamic memory resources for single-block adjacency list 'bns'. */
 /* ---------------------------------------------------------------------- */
 static void
 block_neighbours_deallocate(struct block_neighbours *bns)
@@ -285,6 +320,8 @@ block_neighbours_deallocate(struct block_neighbours *bns)
 }
 
 
+/* Allocate a single-block adjacency list capable of holding 'nneigh'
+ * connections. */
 /* ---------------------------------------------------------------------- */
 static struct block_neighbours *
 block_neighbours_allocate(int nneigh)
@@ -316,6 +353,8 @@ block_neighbours_allocate(int nneigh)
 }
 
 
+/* Increase size of single-block adjacency list 'bns' to hold 'nneigh'
+ * coarse-scale connections. */
 /* ---------------------------------------------------------------------- */
 static int
 block_neighbours_expand(int nneigh, struct block_neighbours *bns)
@@ -340,6 +379,8 @@ block_neighbours_expand(int nneigh, struct block_neighbours *bns)
 }
 
 
+/* Insert fine-scale connection 'fconn' into single-block adjacency
+ * list 'bns' in slot corresponding to connection 'b'. */
 /* ---------------------------------------------------------------------- */
 static int
 block_neighbours_insert_neighbour(int b, int fconn,
