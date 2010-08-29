@@ -10,6 +10,7 @@
  * ====================================================================== */
 #define GOLDEN_RAT (0.6180339887498949)              /* (sqrt(5) - 1) / 2 */
 #define IS_POW2(x) (((x) & ((x) - 1)) == 0)
+#define MAX(a,b)   (((a) > (b)) ? (a) : (b))
 
 
 /* ======================================================================
@@ -370,7 +371,10 @@ block_neighbours_expand(int nneigh, struct block_neighbours *bns)
     if (neigh != NULL) {
         bns->neigh = neigh;
         bns->cpty  = nneigh;
-        ret        = nneigh;
+
+        for (ret = bns->nneigh; ret < bns->cpty; ret++) {
+            bns->neigh[ret] = NULL;
+        }
     } else {
         ret = -1;
     }
@@ -380,14 +384,65 @@ block_neighbours_expand(int nneigh, struct block_neighbours *bns)
 
 
 /* Insert fine-scale connection 'fconn' into single-block adjacency
- * list 'bns' in slot corresponding to connection 'b'. */
+ * list 'bns' in slot corresponding to connection 'b'.
+ *
+ * New coarse-scale connections are assumed to hold 'expct_nconn'
+ * fine-scale connections.*/
 /* ---------------------------------------------------------------------- */
 static int
-block_neighbours_insert_neighbour(int b, int fconn,
+block_neighbours_insert_neighbour(int b, int fconn, int expct_nconn,
                                   struct block_neighbours *bns)
 /* ---------------------------------------------------------------------- */
 {
+    int i, j, p, t, nmove, ret;
+
     assert (bns != NULL);
 
-    
+    ret = 1;
+    if ((bns->neigh == NULL) || (bns->cpty == 0)) {
+        ret = block_neighbours_expand(1, bns);
+    }
+
+    if (ret == 1) {
+        /* bns->neigh points to table containing at least one slot. */
+        i = 0;
+        j = MAX(bns->nneigh - 1, i);
+
+        while (i < j) {
+            p = (i + j) / 2;
+
+            assert (bns->neigh[p] != NULL);
+
+            t = bns->neigh[p]->b;
+
+            if      (t < b) { i = p + 1; }
+            else if (t > b) { j = p + 0; }
+            else            { i = j = p; }
+        }
+
+        if ((bns->neigh[i] != NULL) && (bns->neigh[i]->b == b)) {
+            ret = block_neighbour_insert_fconn(fconn, bns->neigh[i]);
+        } else {
+            if (bns->nneigh == bns->cpty) {
+                assert (bns->cpty >= 1);
+                ret = block_neighbours_expand(2 * bns->cpty, bns);
+            }
+
+            if (ret >= 0) {
+                nmove = MAX(bns->nneigh - i - 1, 0);
+
+                memmove(bns->neigh + i + 1,
+                        bns->neigh + i + 0, nmove * sizeof *bns->neigh);
+
+                bns->neigh[i] = block_neighbour_allocate(expct_nconn);
+
+                if (bns->neigh[i] != 0) {
+                    ret = block_neighbour_insert_fconn(fconn, bns->neigh[i]);
+                    bns->nneigh += 1;
+                }
+            }
+        }
+    }
+
+    return ret;
 }
