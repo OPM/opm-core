@@ -5,13 +5,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "coarse_conn.h"
+
 /* ======================================================================
  * Macros
  * ====================================================================== */
 #define GOLDEN_RAT (0.6180339887498949)              /* (sqrt(5) - 1) / 2 */
 #define IS_POW2(x) (((x) & ((x) - 1)) == 0)
 #define MAX(a,b)   (((a) > (b)) ? (a) : (b))
-
+#define MIN(a,b)   (-MAX(-(a), -(b)))
 
 /* ======================================================================
  * Data structures
@@ -233,6 +235,22 @@ hash_set_insert(int k, struct hash_set *t)
 }
 
 
+/* ---------------------------------------------------------------------- */
+static size_t
+hash_set_count_elms(const struct hash_set *set)
+/* ---------------------------------------------------------------------- */
+{
+    size_t i, n;
+
+    n = 0;
+    for (i = 0; i < set->m; i++) {
+        n += set->s[i] != -1;
+    }
+
+    return n;
+}
+
+
 /* Relase dynamic memory resources for single block neighbour 'bn'. */
 /* ---------------------------------------------------------------------- */
 static void
@@ -441,10 +459,333 @@ block_neighbours_insert_neighbour(int b, int fconn, int expct_nconn,
 
                     bns->neigh[i]->b = b;
                     bns->nneigh += 1;
+                } else {
+                    ret = -1;
                 }
             }
         }
     }
 
     return ret;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static int
+count_blocks(int nc, const int *p)
+/* ---------------------------------------------------------------------- */
+{
+    int i, max_blk;
+
+    max_blk = -1;
+    for (i = 0; i < nc; i++) {
+        max_blk = MAX(max_blk, p[i]);
+    }
+
+    return max_blk + 1;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static int
+derive_block_faces(int nfinef, int nblk, int expct_nconn,
+                   const int *p, const int *neighbours,
+                   struct block_neighbours **bns)
+/* ---------------------------------------------------------------------- */
+{
+    int f, c1, b1, c2, b2, b_in, b_out;
+    int ret;
+
+    ret = 0;
+    for (f = 0; (f < nfinef) && (0 <= ret); f++) {
+        c1 = neighbours[2*f + 0];   b1 = (c1 >= 0) ? p[c1] : -1;
+        c2 = neighbours[2*f + 1];   b2 = (c2 >= 0) ? p[c2] : -1;
+
+        assert ((b1 >= 0) || (b2 >= 0));
+
+        if ((b1 >= 0) && (b2 >= 0)) {
+            b_in  = MIN(b1, b2);
+            b_out = MAX(b1, b2);
+        } else if (b1 >= 0) { /* (b2 == -1) */
+            b_in  = b1;
+            b_out = b2;
+        } else {/*(b2 >= 0) *//* (b1 == -1) */
+            b_in  = b2;
+            b_out = b1;
+        }
+
+        if (b_in != b_out) {
+            /* Block boundary */
+            if (bns[b_in] == NULL) {
+                bns[b_in] = block_neighbours_allocate(1);
+            }
+
+            if (bns[b_in] != NULL) {
+                ret = block_neighbours_insert_neighbour(b_out, f,
+                                                        expct_nconn,
+                                                        bns[b_in]);
+            } else {
+                ret = -1;
+            }
+        }
+    }
+
+    if (ret >= 0) {
+        ret = 0;
+
+        for (b1 = 0; b1 < nblk; b1++) {
+            if (bns[b1] != NULL) {
+                ret += bns[b1]->nneigh;
+            }
+        }
+    }
+
+    return ret;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static size_t
+coarse_topology_build_coarsef(int nblk, struct block_neighbours **bns,
+                              int *neighbours, int *blkfacepos)
+/* ---------------------------------------------------------------------- */
+{
+    int    b, n, coarse_f;
+    size_t nsubf;
+
+    coarse_f = 0;
+    nsubf    = 0;
+
+    for (b = 0; b < nblk; b++) {
+        if (bns[b] != NULL) {
+            for (n = 0; n < bns[b]->nneigh; n++) {
+                neighbours[2*coarse_f + 0] = b;
+                neighbours[2*coarse_f + 1] = bns[b]->neigh[n]->b;
+
+                coarse_f      += 1;
+                blkfacepos[b] += 1;
+
+                if (bns[b]->neigh[n]->b >= 0) {
+                    blkfacepos[bns[b]->neigh[n]->b] += 1;
+                }
+
+                if (bns[b]->neigh[n]->fconns != NULL) {
+                    nsubf += hash_set_count_elms(bns[b]->neigh[n]->fconns);
+                }
+            }
+        }
+    }
+
+    /* Derive end pointers */
+    for (b = 1; b < nblk; b++) {
+        blkfacepos[b] += blkfacepos[b - 1];
+    }
+    blkfacepos[nblk] = blkfacepos[nblk - 1];
+
+    return nsubf;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static void
+reverse_bins(int nbin, const int *pbin, int *elements)
+/* ---------------------------------------------------------------------- */
+{
+    int b, i, j, tmp;
+
+    for (b = 0; b < nbin; b++) {
+        i = pbin[b + 0] + 0;
+        j = pbin[b + 1] - 1;
+
+        while (i < j) {
+            /* Swap reverse (lower <-> upper) */
+            tmp         = elements[i];
+            elements[i] = elements[j];
+            elements[j] = tmp;
+
+            i += 1;             /* Increase lower bound */
+            j -= 1;             /* Decrease upper bound */
+        }
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
+static int
+coarse_topology_build_final(int ncoarse_f, int nblk,
+                            const int *neighbours,
+                            int *blkfacepos, int *blkfaces,
+                            struct block_neighbours **bns,
+                            int *subfacepos, int *subfaces)
+/* ---------------------------------------------------------------------- */
+{
+    int              coarse_f, b1, b2, n, subpos, subface_valid;
+    size_t           i;
+    struct hash_set *set;
+
+    assert ((subfacepos == NULL) == (subfaces == NULL));
+
+    for (coarse_f = 0; coarse_f < ncoarse_f; coarse_f++) {
+        b1 = neighbours[2*coarse_f + 0];
+        b2 = neighbours[2*coarse_f + 1];
+
+        assert (b1 != b2);
+
+        if (b1 >= 0) { blkfaces[-- blkfacepos[b1]] = coarse_f; }
+        if (b2 >= 0) { blkfaces[-- blkfacepos[b2]] = coarse_f; }
+    }
+    assert (blkfacepos[0] == 0); /* Basic consistency */
+
+    reverse_bins(nblk, blkfacepos, blkfaces);
+
+    if (subfacepos != NULL) {
+        coarse_f = 0;
+        subpos   = 0;
+
+        subface_valid = 1;
+
+        for (b1 = 0; (b1 < nblk) && subface_valid; b1++) {
+            for (n = 0; n < bns[b1]->nneigh; n++) {
+                set = bns[b1]->neigh[n]->fconns;
+                subface_valid = set != NULL;
+
+                if (subface_valid) {
+                    for (i = 0; i < set->m; i++) {
+                        if (set->s[i] != -1) {
+                            subfaces[subpos ++] = set->s[i];
+                        }
+                    }
+                } else {
+                    break;
+                }
+
+                subfacepos[++ coarse_f] = subpos;
+            }
+        }
+    }
+
+    return (subfacepos == NULL) || subface_valid;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static struct coarse_topology *
+coarse_topology_build(int ncoarse_f, int nblk,
+                      struct block_neighbours **bns)
+/* ---------------------------------------------------------------------- */
+{
+    int                     subface_valid;
+    size_t                  nsubf;
+    struct coarse_topology *new;
+
+    new = malloc(1 * sizeof *new);
+    if (new != NULL) {
+        new->neighbours = malloc(2 * ncoarse_f * sizeof *new->neighbours);
+        new->blkfacepos = calloc(nblk + 1      , sizeof *new->blkfacepos);
+
+        new->blkfaces   = NULL;
+        new->subfacepos = NULL;
+        new->subfaces   = NULL;
+
+        if ((new->neighbours == NULL) ||
+            (new->blkfacepos == NULL)) {
+            coarse_topology_destroy(new);
+            new = NULL;
+        } else {
+            memset(new->neighbours, -1,
+                   2 * ncoarse_f * sizeof *new->neighbours);
+
+            nsubf = coarse_topology_build_coarsef(nblk, bns,
+                                                  new->neighbours,
+                                                  new->blkfacepos);
+
+            if (nsubf > 0) {
+                new->subfacepos = calloc(ncoarse_f + 1, sizeof *new->subfacepos);
+                new->subfaces   = malloc(nsubf        * sizeof *new->subfaces);
+
+                if ((new->subfacepos == NULL) || (new->subfaces == NULL)) {
+                    free(new->subfaces);   new->subfaces   = NULL;
+                    free(new->subfacepos); new->subfacepos = NULL;
+                }
+            }
+
+            new->blkfaces = malloc(new->blkfacepos[nblk] * sizeof *new->blkfaces);
+
+            if (new->blkfaces == NULL) {
+                coarse_topology_destroy(new);
+                new = NULL;
+            } else {
+                subface_valid = coarse_topology_build_final(ncoarse_f, nblk,
+                                                            new->neighbours,
+                                                            new->blkfacepos,
+                                                            new->blkfaces,
+                                                            bns,
+                                                            new->subfacepos,
+                                                            new->subfaces);
+
+                if (!subface_valid) {
+                    free(new->subfaces);   new->subfaces   = NULL;
+                    free(new->subfacepos); new->subfacepos = NULL;
+                }
+            }
+        }
+    }
+
+    return new;
+}
+
+
+/* ---------------------------------------------------------------------- */
+struct coarse_topology *
+coarse_topology_create(int nc, int nf, int expct_nconn,
+                       const int *p, const int *neighbours)
+/* ---------------------------------------------------------------------- */
+{
+    int b, nblocks, ncoarse_f;
+
+    struct block_neighbours **bns;
+    struct coarse_topology   *topo;
+
+    nblocks = count_blocks(nc, p);
+
+    bns = malloc(nblocks * sizeof *bns);
+    if (bns != NULL) {
+        for (b = 0; b < nblocks; b++) {
+            bns[b] = NULL;
+        }
+
+        ncoarse_f = derive_block_faces(nf, nblocks, expct_nconn,
+                                       p, neighbours, bns);
+
+        topo = coarse_topology_build(ncoarse_f, nblocks, bns);
+
+        for (b = 0; b < nblocks; b++) {
+            block_neighbours_deallocate(bns[b]);
+        }
+
+        free(bns);
+    } else {
+        topo = NULL;
+    }
+
+    return topo;
+}
+
+
+/* ---------------------------------------------------------------------- */
+void
+coarse_topology_destroy(struct coarse_topology *t)
+/* ---------------------------------------------------------------------- */
+{
+    if (t != NULL) {
+        free(t->subfaces);
+        free(t->subfacepos);
+
+        free(t->blkfaces);
+        free(t->blkfacepos);
+
+        free(t->neighbours);
+    }
+
+    free(t);
 }
