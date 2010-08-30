@@ -148,8 +148,8 @@ generate_coarse_faces(struct coarse_topology *topo)
         if (fld != NULL) {
             pi = mxGetData(fld);
             for (f = 0; f < topo->nfaces; f++) {
-                pi[f + 0*topo->nfaces] = topo->neighbours[2*f + 0];
-                pi[f + 1*topo->nfaces] = topo->neighbours[2*f + 1];
+                pi[f + 0*topo->nfaces] = topo->neighbours[2*f + 0] + 1;
+                pi[f + 1*topo->nfaces] = topo->neighbours[2*f + 1] + 1;
             }
 
             mxSetField(faces, 0, "neighbors", fld);
