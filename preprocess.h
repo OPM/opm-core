@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-/* Input structure holding raw cornerpoint spec. */
+    /* Input structure holding raw cornerpoint spec. */
     struct grdecl{
         int           dims[3];
         const double *coord;
@@ -51,7 +51,7 @@ extern "C" {
     /* Constant:     I     J     K    */
     enum face_tag { LEFT, BACK, TOP };
 
-/* Output structure holding grid topology */
+    /* Output structure holding grid topology */
     struct processed_grid{
         int m;
         int n;
@@ -75,7 +75,6 @@ extern "C" {
                              double                tol, 
                              struct processed_grid *out);
     void free_processed_grid(struct processed_grid *g);
-
 
 #ifdef __cplusplus
 }
