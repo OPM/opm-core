@@ -281,13 +281,13 @@ block_neighbour_allocate(int nconn)
             new->fconns = hash_set_allocate(nconn);
 
             if (new->fconns != NULL) {
-                new->b  = -1;
+                new->b  = INT_MIN;
             } else {
                 block_neighbour_deallocate(new);
                 new     = NULL;
             }
         } else {
-            new->b      = -1;
+            new->b      = INT_MIN;
             new->fconns = NULL;
         }
     }
@@ -346,6 +346,7 @@ static struct block_neighbours *
 block_neighbours_allocate(int nneigh)
 /* ---------------------------------------------------------------------- */
 {
+    int                      i;
     struct block_neighbours *new;
 
     new = malloc(1 * sizeof *new);
@@ -355,6 +356,7 @@ block_neighbours_allocate(int nneigh)
             new->neigh = malloc(nneigh * sizeof *new->neigh);
 
             if (new->neigh != NULL) {
+                for (i = 0; i < nneigh; i++) { new->neigh[i] = NULL; }
                 new->nneigh = 0;
                 new->cpty   = nneigh;
             } else {
@@ -424,7 +426,7 @@ block_neighbours_insert_neighbour(int b, int fconn, int expct_nconn,
     if (ret == 1) {
         /* bns->neigh points to table containing at least one slot. */
         i = 0;
-        j = MAX(bns->nneigh - 1, i);
+        j = bns->nneigh;
 
         while (i < j) {
             p = (i + j) / 2;
@@ -438,7 +440,8 @@ block_neighbours_insert_neighbour(int b, int fconn, int expct_nconn,
             else            { i = j = p; }
         }
 
-        if ((bns->neigh[i] != NULL) && (bns->neigh[i]->b == b)) {
+        if ((i < bns->nneigh) &&
+            (bns->neigh[i] != NULL) && (bns->neigh[i]->b == b)) {
             ret = block_neighbour_insert_fconn(fconn, bns->neigh[i]);
         } else {
             if (bns->nneigh == bns->cpty) {
@@ -447,14 +450,16 @@ block_neighbours_insert_neighbour(int b, int fconn, int expct_nconn,
             }
 
             if (ret >= 0) {
-                nmove = MAX(bns->nneigh - i - 1, 0);
+                if (i < bns->nneigh) {
+                    nmove = bns->nneigh - i - 1;
 
-                memmove(bns->neigh + i + 1,
-                        bns->neigh + i + 0, nmove * sizeof *bns->neigh);
+                    memmove(bns->neigh + i + 1, bns->neigh + i + 0,
+                            nmove * sizeof *bns->neigh);
+                }
 
                 bns->neigh[i] = block_neighbour_allocate(expct_nconn);
 
-                if (bns->neigh[i] != 0) {
+                if (bns->neigh[i] != NULL) {
                     ret = block_neighbour_insert_fconn(fconn, bns->neigh[i]);
 
                     bns->neigh[i]->b = b;
@@ -692,7 +697,7 @@ coarse_topology_build(int ncoarse_f, int nblk,
             coarse_topology_destroy(new);
             new = NULL;
         } else {
-            memset(new->neighbours, -1,
+            memset(new->neighbours, INT_MIN,
                    2 * ncoarse_f * sizeof *new->neighbours);
 
             nsubf = coarse_topology_build_coarsef(nblk, bns,
@@ -726,6 +731,9 @@ coarse_topology_build(int ncoarse_f, int nblk,
                 if (!subface_valid) {
                     free(new->subfaces);   new->subfaces   = NULL;
                     free(new->subfacepos); new->subfacepos = NULL;
+                } else {
+                    new->nblocks = nblk;
+                    new->nfaces  = ncoarse_f;
                 }
             }
         }
