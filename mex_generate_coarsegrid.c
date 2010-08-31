@@ -280,7 +280,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
         sprintf(errmsg,
                 "Calling sequence is\n"
                 "\tCG = %s(G, p) %% or\n"
-                "\tCG = %s(G, p, expct_nconn)",
+                "\tCG = %s(G, p, expected_nconn)",
                 mexFunctionName(), mexFunctionName());
 
         mexErrMsgTxt(errmsg);
