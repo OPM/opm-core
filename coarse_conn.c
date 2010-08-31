@@ -451,7 +451,7 @@ block_neighbours_insert_neighbour(int b, int fconn, int expct_nconn,
 
             if (ret >= 0) {
                 if (i < bns->nneigh) {
-                    nmove = bns->nneigh - i - 1;
+                    nmove = bns->nneigh - i;
 
                     memmove(bns->neigh + i + 1, bns->neigh + i + 0,
                             nmove * sizeof *bns->neigh);
