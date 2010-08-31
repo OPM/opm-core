@@ -127,6 +127,7 @@ generate_coarse_faces(struct coarse_topology *topo)
     mxArray *faces;
     mxArray *fld;
 
+    int    fld_no;
     size_t f;
     int   *pi;
 
@@ -163,6 +164,30 @@ generate_coarse_faces(struct coarse_topology *topo)
             }
 
             mxSetField(faces, 0, "tag", fld);
+        }
+
+        if (topo->subfacepos != NULL) {
+            fld_no = mxAddField(faces, "subfacePos");
+            if (fld_no >= 0) {
+                fld = mxCreateNumericMatrix(topo->nfaces + 1, 1,
+                                            mxINT32_CLASS, mxREAL);
+                if (fld != NULL) {
+                    assign_int_vec(topo->subfacepos, fld);
+                    mxSetFieldByNumber(faces, 0, fld_no, fld);
+                }
+            }
+        }
+
+        if (topo->subfaces != NULL) {
+            fld_no = mxAddField(faces, "subfaces");
+            if (fld_no >= 0) {
+                fld = mxCreateNumericMatrix(topo->subfacepos[topo->nfaces], 1,
+                                            mxINT32_CLASS, mxREAL);
+                if (fld != NULL) {
+                    assign_int_vec(topo->subfaces, fld);
+                    mxSetFieldByNumber(faces, 0, fld_no, fld);
+                }
+            }
         }
     }
 
@@ -236,6 +261,10 @@ mexFunction(int nlhs,       mxArray *plhs[],
                 expct_nconn = 0;
             } else {
                 expct_nconn = mxGetScalar(prhs[2]);
+            }
+
+            if (expct_nconn < 0) {
+                expct_nconn = 0;
             }
 
             topo = coarse_topology_create(nc, nf, expct_nconn,
