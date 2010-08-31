@@ -147,7 +147,7 @@ generate_coarse_faces(struct coarse_topology *topo)
         fld = mxCreateNumericMatrix(topo->nfaces, 2, mxINT32_CLASS, mxREAL);
         if (fld != NULL) {
             pi = mxGetData(fld);
-            for (f = 0; f < topo->nfaces; f++) {
+            for (f = 0; f < (size_t)topo->nfaces; f++) {
                 pi[f + 0*topo->nfaces] = topo->neighbours[2*f + 0] + 1;
                 pi[f + 1*topo->nfaces] = topo->neighbours[2*f + 1] + 1;
             }
@@ -158,7 +158,7 @@ generate_coarse_faces(struct coarse_topology *topo)
         fld = mxCreateNumericMatrix(topo->nfaces, 1, mxINT32_CLASS, mxREAL);
         if (fld != NULL) {
             pi = mxGetData(fld);
-            for (f = 0; f < topo->nfaces; f++) {
+            for (f = 0; f < (size_t)topo->nfaces; f++) {
                 pi[f] = 0;
             }
 
