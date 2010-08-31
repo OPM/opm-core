@@ -84,7 +84,9 @@ static size_t
 hash_set_idx(int k, size_t m)
 /* ---------------------------------------------------------------------- */
 {
-    return floor(m * fmod(k * GOLDEN_RAT, 1.0));
+    double x = fmod(k * GOLDEN_RAT, 1.0);
+    double y = floor(m * x);
+    return y;
 }
 
 
@@ -107,14 +109,14 @@ hash_set_insert_core(int k, size_t m, int *s)
     if (s[j] ==  k) { return j; }
 
     /* Double hash probing.  h2 relatively prime to 'm' */
-    h2 = 2 * hash_set_idx(k, (m << 1) - 1) - 1;
+    h2 = 2 * hash_set_idx(k, MAX(m >> 1, 1)) + 1;
 
     for (i = 1; (s[j] != -1) && (s[j] != k) && (i < m); i++) {
         j += h2;
         j &= m - 1;             /* Modulo m since IS_POW2(m). */
     }
 
-    if (i < m) {
+    if ((s[j] == -1) || (s[j] == k)) {
         s[j] = k;               /* Possibly no-op. */
     } else {
         j = m + 1;              /* Invalid.  Caveat emptor. */
@@ -142,7 +144,7 @@ hash_set_expand(size_t m, struct hash_set *t)
 
         for (i = 0; i < t->m; i++) {
             ret = hash_set_insert_core(t->s[i], m, s);
-            assert (ret == t->s[i]);
+            assert (ret < m);
         }
 
         p    = t->s;
