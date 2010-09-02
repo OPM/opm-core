@@ -1,6 +1,16 @@
 #ifndef BLAS_LAPACK_H_INCLUDED
 #define BLAS_LAPACK_H_INCLUDED
 
+#if defined(MATLAB_MEX_FILE) && MATLAB_MEX_FILE
+#include <mex.h>
+#undef  MAT_SIZE_T
+#define MAT_SIZE_T mwSignedIndex
+#endif
+
+#ifndef MAT_SIZE_T
+#define MAT_SIZE_T int
+#endif
+
 /* C <- a1*op(A)*op(B) + a2*C  where  op(X) in {X, X.'} */
 void dgemm_(const char *transA  , const char *transB   ,
             const MAT_SIZE_T*  m, const MAT_SIZE_T* n  , const MAT_SIZE_T* k  ,
@@ -26,6 +36,24 @@ void dorgqr_(const MAT_SIZE_T *m   , const MAT_SIZE_T *n    , const MAT_SIZE_T *
                    double     *A   , const MAT_SIZE_T *ld   , const double     *tau,
                    double     *work, const MAT_SIZE_T *lwork,       MAT_SIZE_T *info);
 
+
+/* A <- chol(A) */
+void dpotrf_(const char *uplo, const MAT_SIZE_T *n,
+             double     *A   , const MAT_SIZE_T *lda,
+             MAT_SIZE_T *info);
+
+/* B <- (A \ (A' \ B)), when A=DPOTRF(A_orig) */
+void dpotrs_(const char *uplo, const MAT_SIZE_T *n  , const MAT_SIZE_T *nrhs,
+             double     *A   , const MAT_SIZE_T *lda,
+             double     *B   , const MAT_SIZE_T *ldb,       MAT_SIZE_T *info);
+
+/* A <- chol(A), packed format. */
+void dpptrf_(const char *uplo, const MAT_SIZE_T *n,
+             double     *Ap  ,       MAT_SIZE_T *info);
+
+/* A <- (A \ (A' \ eye(n)) when A=DPPTRF(A_orig) (packed format). */
+void dpptri_(const char *uplo, const MAT_SIZE_T *n,
+             double     *Ap  ,       MAT_SIZE_T *info);
 
 /* y <- a1*op(A)*x + a2*y */
 void dgemv_(const char       *trans,
