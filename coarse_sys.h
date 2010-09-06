@@ -13,4 +13,26 @@ struct coarse_sys {
     double *Binv;               /* Coarse-scale inverse IP per block */
 };
 
+
+/* ---------------------------------------------------------------------- */
+
+void
+coarse_sys_compute_cell_ip(int                     nc,
+                           int                     max_nconn,
+                           const int              *pconn,
+                           const double           *Binv,
+                           const int              *b2c_pos,
+                           const int              *b2c,
+                           struct coarse_topology *ct,
+                           struct coarse_sys      *sys);
+
+void
+coarse_sys_compute_Binv(int                     max_bcells,
+                        const double           *totmob,
+                        const int              *b2c_pos,
+                        const int              *b2c,
+                        struct coarse_topology *ct,
+                        struct coarse_sys      *sys,
+                        double                 *work);
+
 #endif  /* COARSE_SYS_H_INCLUDED */
