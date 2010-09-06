@@ -54,7 +54,7 @@ coarse_sys_compute_cell_ip(int                     nc,
     pconn2  = malloc((nc + 1) * sizeof *pconn2);
     work    = malloc(((max_nconn * max_nconn) + /* BI */
                       (max_nconn * max_nbf  ) + /* Psi */
-                      (max_nbf   * max_nbf  ))  /* Ip */
+                      (max_nbf   * max_nbf  ))  /* IP */
                      * sizeof *work);
 
     if ((pconn2 != NULL) && (work != NULL)) {
