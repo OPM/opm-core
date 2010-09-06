@@ -187,8 +187,8 @@ coarse_sys_compute_Binv(int                     max_bcells,
         p1 = 0;
         for (i2 = 0; i2 < nbf; i2++) {
             for (i1 = 0; i1 <= i2; i1++, p1++) {
-                sys->Binv[p2 + i1 + i2*nbf] = B[p1]; /* col i1 */
-                sys->Binv[p2 + i2 + i1*nbf] = B[p1]; /* row i1 */
+                sys->Binv[p2 + i1 + i2*nbf] = B[p1]; /* col i2 */
+                sys->Binv[p2 + i2 + i1*nbf] = B[p1]; /* row i2 */
             }
         }
 
