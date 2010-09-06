@@ -155,6 +155,7 @@ coarse_sys_compute_Binv(int                     max_bcells,
     B   = work + max_bcells;
 
     incx = incy = 1;
+    p2   = 0;
     for (b = 0; b < ct->nblocks; b++) {
         loc_nc = b2c_pos[b + 1] - b2c_pos[b];
 
