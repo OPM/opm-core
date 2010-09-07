@@ -11,16 +11,17 @@
 
 /* ---------------------------------------------------------------------- */
 static int
-max_element(int n, int *a)
+max_diff(int n, int *p)
 /* ---------------------------------------------------------------------- */
 {
-    int i, ret;
+    int i, d, ret;
 
-    assert ((n > 0) && (a != NULL));
+    assert ((n > 0) && (p != NULL));
 
-    ret = a[0];
+    ret = p[1] - p[0];               assert (ret >= 0);
     for (i = 1; i < n; i++) {
-        ret = (a[i] > ret) ? a[i] : ret;
+        d   = p[i + 1] - p[i];
+        ret = (d > ret) ? d : ret;
     }
 
     return ret;
@@ -29,18 +30,18 @@ max_element(int n, int *a)
 
 /* ---------------------------------------------------------------------- */
 void
-coarse_sys_compute_cell_ip(int                     nc,
-                           int                     max_nconn,
-                           const int              *pconn,
-                           const double           *Binv,
-                           const int              *b2c_pos,
-                           const int              *b2c,
-                           struct coarse_topology *ct,
-                           struct coarse_sys      *sys)
+coarse_sys_compute_cell_ip(int                nc,
+                           int                max_nconn,
+                           int                nb,
+                           const int         *pconn,
+                           const double      *Binv,
+                           const int         *b2c_pos,
+                           const int         *b2c,
+                           struct coarse_sys *sys)
 /* ---------------------------------------------------------------------- */
 {
     int i, i1, i2, b, c, n, bf, *pconn2;
-    int max_nbf, loc_nc;
+    int max_nbf, nbf, loc_nc;
 
     size_t p, nbf_pairs, bf_off, bf_sz;
 
@@ -49,7 +50,7 @@ coarse_sys_compute_cell_ip(int                     nc,
     double a1, a2;
     double *work, *BI, *Psi, *IP;
 
-    max_nbf = max_element(ct->nblocks, sys->num_bf);
+    max_nbf = max_diff(nb, sys->dof_pos);
 
     pconn2  = malloc((nc + 1) * sizeof *pconn2);
     work    = malloc(((max_nconn * max_nconn) + /* BI */
@@ -69,16 +70,17 @@ coarse_sys_compute_cell_ip(int                     nc,
             pconn2[i] = pconn2[i - 1] + (n * n);
         }
 
-        for (b = 0; b < ct->nblocks; b++) {
+        for (b = 0; b < nb; b++) {
             loc_nc = b2c_pos[b + 1] - b2c_pos[b];
             bf_off = 0;
+            nbf    = sys->dof_pos[b + 1] - sys->dof_pos[b];
 
             assert ((sys->bf_pos[b + 1] -
-                     sys->bf_pos[b + 0]) % sys->num_bf[b] == 0);
+                     sys->bf_pos[b + 0]) % nbf == 0);
 
-            bf_sz  = (sys->bf_pos[b + 1] - sys->bf_pos[b]) / sys->num_bf[b];
+            bf_sz  = (sys->bf_pos[b + 1] - sys->bf_pos[b]) / nbf;
 
-            nbf_pairs = sys->num_bf[b] * (sys->num_bf[b] + 1) / 2;
+            nbf_pairs = nbf * (nbf + 1) / 2;
 
             for (i = 0; i < loc_nc; i++) {
                 c = b2c[b2c_pos[b] + i];
@@ -86,7 +88,7 @@ coarse_sys_compute_cell_ip(int                     nc,
 
                 /* Linearise (collect) BF values for cell */
                 p = sys->bf_pos[b] + bf_off;
-                for (bf = 0; bf < sys->num_bf[b]; bf++, p += bf_sz) {
+                for (bf = 0; bf < nbf; bf++, p += bf_sz) {
                     memcpy(Psi + bf*n, &sys->basis[p], n * sizeof *Psi);
                 }
 
@@ -99,15 +101,15 @@ coarse_sys_compute_cell_ip(int                     nc,
                 dpotrf_("Upper Triangular", &nn, BI, &ld1, &info);
 
                 /* ...and solve BI*X = Psi (=> Psi (=X) <- B*Psi) */
-                nrhs = sys->num_bf[b];
+                nrhs = nbf;
                 ld2  = n;
                 dpotrs_("Upper Triangular", &nn, &nrhs, BI, &ld1,
                         Psi, &ld2, &info);
 
                 /* Finally, compute IP = Psi'*X = Psi'*B*Psi... */
-                mm  = nn = sys->num_bf[b];
+                mm  = nn = nbf;
                 kk  = n;
-                ld1 = bf_sz;   ld2 = n;    ld3 = sys->num_bf[b];
+                ld1 = bf_sz;   ld2 = n;    ld3 = nbf;
                 a1  = 1.0;     a2  = 0.0;
                 dgemm_("Transpose", "No Transpose", &mm, &nn, &kk,
                        &a1, &sys->basis[sys->bf_pos[b] + bf_off], &ld1,
@@ -115,7 +117,7 @@ coarse_sys_compute_cell_ip(int                     nc,
 
                 /* ...and fill results into ip-contrib for this cell... */
                 p = sys->ip_pos[b] + i*nbf_pairs;
-                for (i2 = 0; i2 < sys->num_bf[b]; i2++) {
+                for (i2 = 0; i2 < nbf; i2++) {
                     for (i1 = 0; i1 <= i2; i1++, p++) {
                         sys->cell_ip[p] = IP[i1 + i2*n];
                     }
@@ -133,13 +135,13 @@ coarse_sys_compute_cell_ip(int                     nc,
 
 /* ---------------------------------------------------------------------- */
 void
-coarse_sys_compute_Binv(int                     max_bcells,
-                        const double           *totmob,
-                        const int              *b2c_pos,
-                        const int              *b2c,
-                        struct coarse_topology *ct,
-                        struct coarse_sys      *sys,
-                        double                 *work)
+coarse_sys_compute_Binv(int                nb,
+                        int                max_bcells,
+                        const double      *totmob,
+                        const int         *b2c_pos,
+                        const int         *b2c,
+                        struct coarse_sys *sys,
+                        double            *work)
 /* ---------------------------------------------------------------------- */
 {
     int    b, i, i1, i2, nbf_pairs, loc_nc, nbf;
@@ -156,7 +158,7 @@ coarse_sys_compute_Binv(int                     max_bcells,
 
     incx = incy = 1;
     p2   = 0;
-    for (b = 0; b < ct->nblocks; b++) {
+    for (b = 0; b < nb; b++) {
         loc_nc = b2c_pos[b + 1] - b2c_pos[b];
 
         for (i = 0; i < loc_nc; i++) {
@@ -165,7 +167,7 @@ coarse_sys_compute_Binv(int                     max_bcells,
 
         /* Form coarse inner-product matrix for block 'b' as (inverse)
          * mobility weighted sum of cell contributions */
-        nbf       = sys->num_bf[b];
+        nbf       = sys->dof_pos[b + 1] - sys->dof_pos[b];
         nbf_pairs = nbf * (nbf + 1) / 2;
 
         mm = ld = nbf_pairs;
