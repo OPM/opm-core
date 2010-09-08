@@ -178,7 +178,7 @@ coarse_sys_compute_cell_ip(int                nc,
                 p = sys->ip_pos[b] + i*nbf_pairs;
                 for (i2 = 0; i2 < nbf; i2++) {
                     for (i1 = 0; i1 <= i2; i1++, p++) {
-                        sys->cell_ip[p] = IP[i1 + i2*n];
+                        sys->cell_ip[p] = IP[i1 + i2*nbf];
                     }
                 }
 
@@ -245,6 +245,7 @@ coarse_sys_compute_Binv(int                nb,
                Lti, &incx, &a2, B, &incy);
 
         /* Factor (packed) SPD inner-product matrix... */
+        mm = nbf;
         dpptrf_("Upper Triangular", &mm, B, &info);
         if (info == 0) {
             /* ...and invert it... */
