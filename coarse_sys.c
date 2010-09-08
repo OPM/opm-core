@@ -217,7 +217,6 @@ coarse_sys_compute_Binv(int                nb,
 
 #if DEBUG_OUTPUT
     FILE *fp;
-    fp = fopen("debug_out.m", "at");
 #endif
     
     Lti = work + 0;
@@ -252,6 +251,7 @@ coarse_sys_compute_Binv(int                nb,
             dpptri_("Upper Triangular", &mm, B, &info);
         } else {
 #if DEBUG_OUTPUT
+            fp = fopen("debug_out.m", "at");
             mm = ld = nbf_pairs;
             nn = loc_nc;
             a1 = 1.0;
@@ -269,15 +269,12 @@ coarse_sys_compute_Binv(int                nb,
             }
             fprintf(fp, "].';\n");
 
-            fprintf(fp, "B{%d} = [\n", b + 1);
-            for (i2 = 0; i2 < nbf; i2++) {
-                for (i1 = 0; i1 <= i2; i1++)
-                    fprintf(fp, "%18.12e ", B[i1 + i2*nbf]);
-                for (i1 = i2 + 1; i1 < nbf; i1++)
-                    fprintf(fp, "%18.12e ", B[i2 + i1*nbf]);
-                fprintf(fp, ";\n");
-            }
+            fprintf(fp, "B{%d} = [ %% info = %lu\n", b + 1,
+                    (unsigned long) info);
+            for (i1 = 0; i1 < nbf_pairs; i1++)
+                fprintf(fp, "%22.15e ", B[i1]);
             fprintf(fp, "].';\n");
+            fclose(fp);
 #endif
         }
 
@@ -293,7 +290,4 @@ coarse_sys_compute_Binv(int                nb,
 
         p2 += nbf * nbf;
     }
-#if DEBUG_OUTPUT
-    fclose(fp);
-#endif
 }
