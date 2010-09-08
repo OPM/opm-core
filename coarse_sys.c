@@ -4,6 +4,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+#ifndef DEBUG_OUTPUT
+#define DEBUG_OUTPUT 0
+#endif
+
+#if DEBUG_OUTPUT
+#include <stdio.h>
+#endif
+
+
 #include "blas_lapack.h"
 #include "coarse_conn.h"
 #include "coarse_sys.h"
@@ -50,6 +60,11 @@ coarse_sys_compute_cell_ip(int                nc,
     double a1, a2;
     double *work, *BI, *Psi, *IP;
 
+#if DEBUG_OUTPUT
+    FILE *fp;
+#endif
+    
+
     max_nbf = max_diff(nb, sys->dof_pos);
 
     pconn2  = malloc((nc + 1) * sizeof *pconn2);
@@ -70,6 +85,10 @@ coarse_sys_compute_cell_ip(int                nc,
             pconn2[i] = pconn2[i - 1] + (n * n);
         }
 
+#if DEBUG_OUTPUT
+        fp = fopen("debug_out.m", "wt");
+#endif
+        
         for (b = 0; b < nb; b++) {
             loc_nc = b2c_pos[b + 1] - b2c_pos[b];
             bf_off = 0;
@@ -91,9 +110,29 @@ coarse_sys_compute_cell_ip(int                nc,
                 for (bf = 0; bf < nbf; bf++, p += bf_sz) {
                     memcpy(Psi + bf*n, &sys->basis[p], n * sizeof *Psi);
                 }
+#if DEBUG_OUTPUT
+                fprintf(fp, "Psi{%d,%d} = [\n", b+1, i+1);
+                for (i2 = 0; i2 < nbf; i2++) {
+                    for (i1 = 0; i1 < n; i1++) {
+                        fprintf(fp, "%22.15e ", Psi[i1 + i2*n]);
+                    }
+                    fprintf(fp, ";\n");
+                }
+                fprintf(fp, "].';\n");
+#endif
 
                 /* Extract cell's inv(B) values... */
                 memcpy(BI, &Binv[pconn2[c]], n * n * sizeof *BI);
+#if DEBUG_OUTPUT
+                fprintf(fp, "BI{%d,%d} = [\n", b+1, i+1);
+                for (i2 = 0; i2 < n; i2++) {
+                    for (i1 = 0; i1 < n; i1++) {
+                        fprintf(fp, "%22.15e ", BI[i1 + i2*n]);
+                    }
+                    fprintf(fp, ";\n");
+                }
+                fprintf(fp, "].';\n");
+#endif
 
                 /* ...and (Cholesky) factor it... */
                 nn  = n;
@@ -105,6 +144,16 @@ coarse_sys_compute_cell_ip(int                nc,
                 ld2  = n;
                 dpotrs_("Upper Triangular", &nn, &nrhs, BI, &ld1,
                         Psi, &ld2, &info);
+#if DEBUG_OUTPUT
+                fprintf(fp, "BPsi{%d,%d} = [\n", b+1, i+1);
+                for (i2 = 0; i2 < nbf; i2++) {
+                    for (i1 = 0; i1 < n; i1++) {
+                        fprintf(fp, "%22.15e ", Psi[i1 + i2*n]);
+                    }
+                    fprintf(fp, ";\n");
+                }
+                fprintf(fp, "].';\n");
+#endif
 
                 /* Finally, compute IP = Psi'*X = Psi'*B*Psi... */
                 mm  = nn = nbf;
@@ -114,6 +163,16 @@ coarse_sys_compute_cell_ip(int                nc,
                 dgemm_("Transpose", "No Transpose", &mm, &nn, &kk,
                        &a1, &sys->basis[sys->bf_pos[b] + bf_off], &ld1,
                        Psi, &ld2, &a2, IP, &ld3);
+#if DEBUG_OUTPUT
+                fprintf(fp, "PsiTBPsi{%d,%d} = [\n", b+1, i+1);
+                for (i2 = 0; i2 < nbf; i2++) {
+                    for (i1 = 0; i1 < nbf; i1++) {
+                        fprintf(fp, "%22.15e ", IP[i1 + i2*nbf]);
+                    }
+                    fprintf(fp, ";\n");
+                }
+                fprintf(fp, "].';\n");
+#endif
 
                 /* ...and fill results into ip-contrib for this cell... */
                 p = sys->ip_pos[b] + i*nbf_pairs;
@@ -127,6 +186,9 @@ coarse_sys_compute_cell_ip(int                nc,
                 bf_off += n;
             }
         }
+#if DEBUG_OUTPUT
+        fclose(fp);
+#endif
     }
 
     free(work);  free(pconn2);
@@ -153,6 +215,11 @@ coarse_sys_compute_Binv(int                nb,
 
     MAT_SIZE_T mm, nn, ld, incx, incy, info;
 
+#if DEBUG_OUTPUT
+    FILE *fp;
+    fp = fopen("debug_out.m", "at");
+#endif
+    
     Lti = work + 0;
     B   = work + max_bcells;
 
@@ -180,9 +247,39 @@ coarse_sys_compute_Binv(int                nb,
 
         /* Factor (packed) SPD inner-product matrix... */
         dpptrf_("Upper Triangular", &mm, B, &info);
+        if (info == 0) {
+            /* ...and invert it... */
+            dpptri_("Upper Triangular", &mm, B, &info);
+        } else {
+#if DEBUG_OUTPUT
+            mm = ld = nbf_pairs;
+            nn = loc_nc;
+            a1 = 1.0;
+            a2 = 0.0;
+            dgemv_("No Transpose", &mm, &nn, &a1,
+                   &sys->cell_ip[sys->ip_pos[b]], &ld,
+                   Lti, &incx, &a2, B, &incy);
+            fprintf(fp, "IP{%d} = [\n", b + 1);
+            for (i2 = 0; i2 < nn; i2++) {
+                for (i1 = 0; i1 < mm; i1++) {
+                    fprintf(fp, "%18.12e ",
+                            sys->cell_ip[sys->ip_pos[b] + i1 + i2*mm]);
+                }
+                fprintf(fp, ";\n");
+            }
+            fprintf(fp, "].';\n");
 
-        /* ...and invert it... */
-        dpptri_("Upper Triangular", &mm, B, &info);
+            fprintf(fp, "B{%d} = [\n", b + 1);
+            for (i2 = 0; i2 < nbf; i2++) {
+                for (i1 = 0; i1 <= i2; i1++)
+                    fprintf(fp, "%18.12e ", B[i1 + i2*nbf]);
+                for (i1 = i2 + 1; i1 < nbf; i1++)
+                    fprintf(fp, "%18.12e ", B[i2 + i1*nbf]);
+                fprintf(fp, ";\n");
+            }
+            fprintf(fp, "].';\n");
+#endif
+        }
 
         /* ...and write result to permanent storage suitable for
          * reduction functions hybsys_schur_comp*() */
@@ -196,4 +293,7 @@ coarse_sys_compute_Binv(int                nb,
 
         p2 += nbf * nbf;
     }
+#if DEBUG_OUTPUT
+    fclose(fp);
+#endif
 }
