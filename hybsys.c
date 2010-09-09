@@ -391,6 +391,7 @@ hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
 }
 
 
+#if 0
 /*
  * Routines to assemble global matrix
  *
@@ -585,3 +586,4 @@ hybsys_assemble(int nc, int nf,
    hybsys_build_matrix_structure(nc, nf, pconn, conn, &A->ia, &A->ja);
    hybsys_assemble_global_system(nc, nf, pconn, conn, S, R, &A->sa, b, A->ia);
 }
+#endif

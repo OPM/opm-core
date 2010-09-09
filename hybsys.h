@@ -5,10 +5,6 @@
 #ifndef HYBSYS_H_INCLUDED
 #define HYBSYS_H_INCLUDED
 
-#ifndef MAT_SIZE_T
-#define MAT_SIZE_T int
-#endif
-
 struct hybsys {
     double *L;                  /* C2' * inv(B) * C1 - P */
     double *F1;                 /* C1' * inv(B)          */
@@ -17,18 +13,6 @@ struct hybsys {
     double *S;                  /* system matrix in single cell */
     double *one;                /* ones(max_nconn, 1) */
 };
-
-
-
-struct Sparse
-{
-    int        m;
-    int        n;
-    MAT_SIZE_T *ia;
-    MAT_SIZE_T *ja;
-    double     *sa;
-};
-
 
 
 struct hybsys *
@@ -97,11 +81,5 @@ hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
                           const double *Binv, const struct hybsys *sys,
                           const double *pi, double *press, double *flux,
                           double *work);
-
-void
-hybsys_assemble(int nc, int nf,
-                const int *pconn, const int *conn,
-                const double *S, const double *R,
-                struct Sparse *A, double **b);
 
 #endif  /* HYBSYS_H_INCLUDED */
