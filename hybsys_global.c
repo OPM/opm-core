@@ -6,6 +6,12 @@
 #include "hybsys_global.h"
 
 
+#if defined MAX
+#undef MAX
+#endif
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+
+
 /* ---------------------------------------------------------------------- */
 static void
 delete_cell_wells(int *cwpos, int *cwells)
@@ -212,6 +218,8 @@ fill_self_connections(struct CSRMatrix *A)
     for (r = 0; r < A->m; r++) {
         A->ja[ A->ia[r + 1] ++ ] = r;
     }
+
+    A->n = A->m;
 }
 
 
@@ -233,6 +241,10 @@ fill_grid_connections(grid_t *G, struct CSRMatrix *A)
 
         for (i = 0; i < n; i++) {
             dof1 = ja[ ia[c] + i ];
+
+            if (dof1 >= 0) {
+                A->n = MAX(A->n, (size_t) dof1);
+            }
 
             for (j = (i + 1) % n; j != i; j = (j + 1) % n) {
                 dof2 = ja[ ia[c] + j ];
@@ -259,6 +271,8 @@ fill_well_connections(int nf, int nw,
             dof = wia[w]->s[i];
 
             if (dof >= 0) {
+                A->n = MAX(A->n, (size_t)dof);
+
                 if (dof < nf) {     /* Connect face to well */
                     A->ja[ A->ia[ dof + 1 ] ++ ] = nf + w;
                 }
