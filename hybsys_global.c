@@ -344,3 +344,34 @@ hybsys_define_globconn(grid_t *G, well_t *W)
 
     return A;
 }
+
+
+/* ---------------------------------------------------------------------- */
+void
+hybsys_global_assemble_cell(int nconn, int *conn,
+                            const double     *S,
+                            const double     *r,
+                            struct CSRMatrix *A,
+                            double           *b)
+/* ---------------------------------------------------------------------- */
+{
+    int    il, jl;              /* local */
+    size_t ig, jg;              /* global */
+
+    for (il = 0; il < nconn; il++) {
+        assert ((0 <= conn[il]) && ((size_t) conn[il] < A->m));
+
+        ig = conn[il];
+
+        for (jl = 0; jl < nconn; jl++) {
+            jg = csrmatrix_elm_index(ig, conn[jl], A);
+
+            assert ((A->ia[ig] <= (MAT_SIZE_T) jg) &&
+                    ((MAT_SIZE_T) jg < A->ia[ig + 1]));
+
+            A->sa[jg] += S[il + jl*nconn]; /* Row major per cell */
+        }
+
+        b[ig] += r[il];
+    }
+}
