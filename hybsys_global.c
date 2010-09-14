@@ -12,6 +12,7 @@
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 
+/* Release memory resources for cell->well mapping (CSR representation).  */
 /* ---------------------------------------------------------------------- */
 static void
 delete_cell_wells(int *cwpos, int *cwells)
@@ -22,6 +23,11 @@ delete_cell_wells(int *cwpos, int *cwells)
 }
 
 
+/* Allocate and create cell->well mapping from well->cell mapping.
+ *
+ * Returns >0 (nnz for CSR representation) and sets CSR pointers
+ * (*cwpos,*cwells) if successful and zero (with *cwpos=*cwells=NULL)
+ * otherwise. */
 /* ---------------------------------------------------------------------- */
 static int
 build_cell_wells(size_t nc, well_t *W, int **cwpos, int **cwells)
@@ -76,6 +82,8 @@ build_cell_wells(size_t nc, well_t *W, int **cwpos, int **cwells)
 }
 
 
+/* Release memory resources for each individual well's DOF set (and
+ * the aggregate well DOF set structure). */
 /* ---------------------------------------------------------------------- */
 static void
 deallocate_well_dofset(size_t nw, struct hash_set **wia)
@@ -93,6 +101,10 @@ deallocate_well_dofset(size_t nw, struct hash_set **wia)
 }
 
 
+/* Allocate DOF set for each well.
+ *
+ * Returns fully created vector of W->number_of_wells DOF sets if
+ * successful and NULL otherwise. */
 /* ---------------------------------------------------------------------- */
 static struct hash_set **
 allocate_well_dofset(grid_t *G, well_t *W)
@@ -130,6 +142,10 @@ allocate_well_dofset(grid_t *G, well_t *W)
 }
 
 
+/* Count number of coefficient matrix connections (non-zeros) per row
+ * from grid contributions.  Add self connections for all rows.  Well
+ * connection counts will be overwritten in count_conn_per_row_well()
+ * if applicable. */
 /* ---------------------------------------------------------------------- */
 static void
 count_conn_per_row_grid(grid_t *G, struct CSRMatrix *A)
@@ -155,6 +171,13 @@ count_conn_per_row_grid(grid_t *G, struct CSRMatrix *A)
 }
 
 
+/* Count number of coefficient matrix connections per row from well
+ * contributions.  Increment connection count for other-to-well,
+ * define count for well-to-other.
+ *
+ * Fails if unable to insert a DOF into a DOF set.
+ *
+ * Returns 1 if successful, and zero otherwise. */
 /* ---------------------------------------------------------------------- */
 static int
 count_conn_per_row_well(grid_t *G, well_t *W,
@@ -208,6 +231,8 @@ count_conn_per_row_well(grid_t *G, well_t *W,
 }
 
 
+/* Fill self-connections (i.e., diagonal of coefficient matrix) for
+ * all DOFs. */
 /* ---------------------------------------------------------------------- */
 static void
 fill_self_connections(struct CSRMatrix *A)
@@ -223,6 +248,7 @@ fill_self_connections(struct CSRMatrix *A)
 }
 
 
+/* Fill self-to-other DOF connections (i.e., define 'ja') for grid. */
 /* ---------------------------------------------------------------------- */
 static void
 fill_grid_connections(grid_t *G, struct CSRMatrix *A)
@@ -244,18 +270,21 @@ fill_grid_connections(grid_t *G, struct CSRMatrix *A)
 
             if (dof1 >= 0) {
                 A->n = MAX(A->n, (size_t) dof1);
-            }
 
-            for (j = (i + 1) % n; j != i; j = (j + 1) % n) {
-                dof2 = ja[ ia[c] + j ];
+                for (j = (i + 1) % n; j != i; j = (j + 1) % n) {
+                    dof2 = ja[ ia[c] + j ];
 
-                A->ja[ A->ia[dof1 + 1] ++ ] = dof2;
+                    if (dof2 >= 0) {
+                        A->ja[ A->ia[dof1 + 1] ++ ] = dof2;
+                    }
+                }
             }
         }
     }
 }
 
 
+/* Fill self-to-other and other-to-self DOF connections ('ja') for wells. */
 /* ---------------------------------------------------------------------- */
 static void
 fill_well_connections(int nf, int nw,
@@ -286,6 +315,12 @@ fill_well_connections(int nf, int nw,
 }
 
 
+/* Define pressure system coefficient matrix sparsity structure
+ * (A->ia, A->ja) from grid and well contributions.  Allocate
+ * coefficient matrix elements (A->sa).
+ *
+ * Returns fully defined CSR matrix structure if successful or NULL
+ * otherwise. */
 /* ---------------------------------------------------------------------- */
 struct CSRMatrix *
 hybsys_define_globconn(grid_t *G, well_t *W)
@@ -346,6 +381,13 @@ hybsys_define_globconn(grid_t *G, well_t *W)
 }
 
 
+/* Assemble (hybrid) cell contributions into global system coefficient
+ * matrix and right hand side.  Traditional FEM assembly process.
+ * Boundary conditions assumed enforced outside.
+ *
+ * Local coefficient matrix contributions assumed organised in row
+ * major format (row index cycling the most rapidly--Fortran
+ * conventions).   Convention immaterial if matrix is symmetric. */
 /* ---------------------------------------------------------------------- */
 void
 hybsys_global_assemble_cell(int nconn, int *conn,
