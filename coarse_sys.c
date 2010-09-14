@@ -19,6 +19,7 @@
 #include "coarse_sys.h"
 
 
+/* max(diff(p(1:n))) */
 /* ---------------------------------------------------------------------- */
 static int
 max_diff(int n, int *p)
@@ -38,6 +39,13 @@ max_diff(int n, int *p)
 }
 
 
+/* Compute \Psi'_i * B * \Psi_j for all basis function pairs (i,j) for
+ * all cells.  Inverts inv(B) (i.e., Binv) in each cell.  Iterates
+ * over blocks (CSR representation b2c_pos, b2c).  Result store in
+ * sys->cell_ip, a packed representation of the IP pairs (one col per
+ * cell per block).
+ *
+ * Allocates work arrays and may fail.  Does currently not report failure.*/
 /* ---------------------------------------------------------------------- */
 void
 coarse_sys_compute_cell_ip(int                nc,
@@ -195,6 +203,13 @@ coarse_sys_compute_cell_ip(int                nc,
 }
 
 
+/* Compute inv(B) on coarse scale from fine-scale contributions.
+ * Specifically, this function computes the inverse of
+ * B=sum(1/lambda_c * B_c, c\in Blk_j) for all blocks, 'j'.  The
+ * fine-scale B contributions are computed in
+ * coarse_sys_compute_cell_ip() above.
+ *
+ * Does not fail. */
 /* ---------------------------------------------------------------------- */
 void
 coarse_sys_compute_Binv(int                nb,
