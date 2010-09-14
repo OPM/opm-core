@@ -3,6 +3,10 @@
 #include "flow_bc.h"
 
 
+/* Create structure to hold flow boundary conditions for 'nf' faces.
+ *
+ * Return fully allocated structure or NULL in case of allocation
+ * failure. */
 /* ---------------------------------------------------------------------- */
 flowbc_t *
 allocate_flowbc(size_t nf)
@@ -31,6 +35,8 @@ allocate_flowbc(size_t nf)
 }
 
 
+/* Release memory resources for dynamically allocated flow boundary
+ * condition structure. */
 /* ---------------------------------------------------------------------- */
 void
 deallocate_flowbc(flowbc_t *fbc)
