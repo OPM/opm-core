@@ -259,6 +259,8 @@ block_neighbours_insert_neighbour(int b, int fconn, int expct_nconn,
 }
 
 
+/* Count number of (presumably) contiguously numbered blocks
+ * represented by partition vector 'p'. */
 /* ---------------------------------------------------------------------- */
 static int
 count_blocks(int nc, const int *p)
@@ -275,6 +277,18 @@ count_blocks(int nc, const int *p)
 }
 
 
+/* Derive coarse-scale block faces from fine-scale neighbour-ship
+ * definition 'neighbours' ('nfinef' connections) and partition vector
+ * 'p' (representing 'nblk' coarse blocks).  Inter-block faces keyed
+ * off minimum block number if internal and valid block number if
+ * external.
+ *
+ * Fine-scale constituents of each coarse face are computed if
+ * 'expct_nconn' is positive, in which case 'expct_nconn' is
+ * interpreted as the expected number of constituents in each coarse
+ * face and used as an initial size of a hash_set.
+ *
+ * Return number of coarse faces if successful and -1 otherwise. */
 /* ---------------------------------------------------------------------- */
 static int
 derive_block_faces(int nfinef, int nblk, int expct_nconn,
@@ -333,6 +347,14 @@ derive_block_faces(int nfinef, int nblk, int expct_nconn,
 }
 
 
+/* Create coarse-scale neighbour-ship definition from block-to-block
+ * connectivity information ('bns') keyed off block numbers.  Set
+ * start pointers for CSR push-back build mode.
+ *
+ * Cannot fail.
+ *
+ * Returns total number of fine-scale constituent faces in all coarse
+ * faces if caller requested this information and zero otherwise. */
 /* ---------------------------------------------------------------------- */
 static size_t
 coarse_topology_build_coarsef(int nblk, struct block_neighbours **bns,
@@ -351,11 +373,11 @@ coarse_topology_build_coarsef(int nblk, struct block_neighbours **bns,
                 neighbours[2*coarse_f + 0] = b;
                 neighbours[2*coarse_f + 1] = bns[b]->neigh[n]->b;
 
-                coarse_f      += 1;
-                blkfacepos[b] += 1;
+                coarse_f          += 1;
+                blkfacepos[b + 1] += 1;
 
                 if (bns[b]->neigh[n]->b >= 0) {
-                    blkfacepos[bns[b]->neigh[n]->b] += 1;
+                    blkfacepos[bns[b]->neigh[n]->b + 1] += 1;
                 }
 
                 if (bns[b]->neigh[n]->fconns != NULL) {
@@ -365,40 +387,26 @@ coarse_topology_build_coarsef(int nblk, struct block_neighbours **bns,
         }
     }
 
-    /* Derive end pointers */
+    /* Derive start pointers */
     for (b = 1; b < nblk; b++) {
-        blkfacepos[b] += blkfacepos[b - 1];
+        blkfacepos[0] += blkfacepos[b];
+        blkfacepos[b]  = blkfacepos[0] - blkfacepos[b];
     }
-    blkfacepos[nblk] = blkfacepos[nblk - 1];
+    blkfacepos[0] = 0;
 
     return nsubf;
 }
 
 
-/* ---------------------------------------------------------------------- */
-static void
-reverse_bins(int nbin, const int *pbin, int *elements)
-/* ---------------------------------------------------------------------- */
-{
-    int b, i, j, tmp;
-
-    for (b = 0; b < nbin; b++) {
-        i = pbin[b + 0] + 0;
-        j = pbin[b + 1] - 1;
-
-        while (i < j) {
-            /* Swap reverse (lower <-> upper) */
-            tmp         = elements[i];
-            elements[i] = elements[j];
-            elements[j] = tmp;
-
-            i += 1;             /* Increase lower bound */
-            j -= 1;             /* Decrease upper bound */
-        }
-    }
-}
-
-
+/* Create coarse-scale block-to-face mapping and, if requested,
+ * coarse-scale constituent faces for each coarse face.
+ *
+ * Constituent faces requested if subfacepos and subfaces non-NULL.
+ * In this case, all coarse faces must carry sub-face information.
+ *
+ * Returns 1 if successful (i.e., no sub-face information requested or
+ * sub-face information requested and available for all coarse faces)
+ * and zero otherwise. */
 /* ---------------------------------------------------------------------- */
 static int
 coarse_topology_build_final(int ncoarse_f, int nblk,
@@ -420,12 +428,9 @@ coarse_topology_build_final(int ncoarse_f, int nblk,
 
         assert (b1 != b2);
 
-        if (b1 >= 0) { blkfaces[-- blkfacepos[b1]] = coarse_f; }
-        if (b2 >= 0) { blkfaces[-- blkfacepos[b2]] = coarse_f; }
+        if (b1 >= 0) { blkfaces[blkfacepos[b1] ++] = coarse_f; }
+        if (b2 >= 0) { blkfaces[blkfacepos[b2] ++] = coarse_f; }
     }
-    assert (blkfacepos[0] == 0); /* Basic consistency */
-
-    reverse_bins(nblk, blkfacepos, blkfaces);
 
     if (subfacepos != NULL) {
         coarse_f = 0;
@@ -457,6 +462,13 @@ coarse_topology_build_final(int ncoarse_f, int nblk,
 }
 
 
+/* Allocate and assemble coarse-grid structure from non-linear
+ * block-to-block connection information keyed off block numbers.  The
+ * final coarse grid consists of 'ncoarse_f' coarse faces numbered
+ * 0..ncoarse_f-1 and 'nblk' coarse blocks numbered 0..nblk-1.
+ *
+ * Returns fully assembled coarse-grid structure if successful or NULL
+ * otherwise. */
 /* ---------------------------------------------------------------------- */
 static struct coarse_topology *
 coarse_topology_build(int ncoarse_f, int nblk,
@@ -527,6 +539,11 @@ coarse_topology_build(int ncoarse_f, int nblk,
 }
 
 
+/* Create coarse-grid topology structure from fine-scale
+ * neighbour-ship definition 'neighbours' and partition vector 'p'.
+ *
+ * Returns fully allocated and assembled coarse-grid structure if
+ * successful and NULL otherwise. */
 /* ---------------------------------------------------------------------- */
 struct coarse_topology *
 coarse_topology_create(int nc, int nf, int expct_nconn,
@@ -564,6 +581,8 @@ coarse_topology_create(int nc, int nf, int expct_nconn,
 }
 
 
+/* Release memory resources for dynamically allocated coarse-grid
+ * topology structure 't'. */
 /* ---------------------------------------------------------------------- */
 void
 coarse_topology_destroy(struct coarse_topology *t)
