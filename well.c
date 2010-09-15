@@ -6,7 +6,7 @@
 /* Release memory resources for cell->well mapping. */
 /* ---------------------------------------------------------------------- */
 void
-deallocate_cell_wells(int *cvpos, int *cwells)
+deallocate_cell_wells(int *cwpos, int *cwells)
 /* ---------------------------------------------------------------------- */
 {
     free(cwells);
