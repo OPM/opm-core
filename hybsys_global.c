@@ -12,76 +12,6 @@
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 
-/* Release memory resources for cell->well mapping (CSR representation).  */
-/* ---------------------------------------------------------------------- */
-static void
-delete_cell_wells(int *cwpos, int *cwells)
-/* ---------------------------------------------------------------------- */
-{
-    free(cwells);
-    free(cwpos);
-}
-
-
-/* Allocate and create cell->well mapping from well->cell mapping.
- *
- * Returns >0 (nnz for CSR representation) and sets CSR pointers
- * (*cwpos,*cwells) if successful and zero (with *cwpos=*cwells=NULL)
- * otherwise. */
-/* ---------------------------------------------------------------------- */
-static int
-build_cell_wells(size_t nc, well_t *W, int **cwpos, int **cwells)
-/* ---------------------------------------------------------------------- */
-{
-    int  ret, w;
-    int *p, *cw, *c, *connpos;
-
-    size_t i;
-
-    ret = 0;
-
-    p  = calloc(nc + 1, sizeof *p);
-    cw = NULL;
-
-    if (p != NULL) {
-        connpos = W->well_connpos;
-
-        c = W->well_cells;
-        for (w = 0; w < W->number_of_wells; w++) {
-            for (; c != W->well_cells + connpos[w + 1]; c++) {
-                p[*c + 1] += 1;
-            }
-        }
-
-        for (i = 1; i <= nc; i++) {
-            p[0] += p[i];
-            p[i]  = p[0] - p[i];
-        }
-
-        cw = malloc(p[0] * sizeof *cw);
-
-        if (cw != NULL) {
-            ret  = p[0];        /* Success */
-
-            p[0] = 0;
-            c    = W->well_cells;
-            for (w = 0; w < W->number_of_wells; w++) {
-                for (; c != W->well_cells + connpos[w + 1]; c++) {
-                    cw[ p[*c + 1] ++ ] = w;
-                }
-            }
-        } else {
-            free(p);  p = NULL;
-        }
-    }
-
-    *cwpos  = p;
-    *cwells = cw;
-
-    return ret;
-}
-
-
 /* Release memory resources for each individual well's DOF set (and
  * the aggregate well DOF set structure). */
 /* ---------------------------------------------------------------------- */
@@ -338,7 +268,10 @@ hybsys_define_globconn(grid_t *G, well_t *W)
     nw = 0;
     wia = NULL;
     if (W != NULL) {
-        ok = build_cell_wells(G->number_of_cells, W, &cwell_pos, &cwells);
+        ok = allocate_cell_wells(G->number_of_cells, W, &cwell_pos, &cwells);
+        if (ok) {
+            derive_cell_wells(G->number_of_cells, W, cwell_pos, cwells);
+        }
         nw = ok && W->number_of_wells;
 
         if (nw > 0) {
@@ -375,7 +308,7 @@ hybsys_define_globconn(grid_t *G, well_t *W)
     }
 
     deallocate_well_dofset(nw, wia);
-    delete_cell_wells(cwell_pos, cwells);
+    deallocate_cell_wells(cwell_pos, cwells);
 
     return A;
 }
