@@ -38,6 +38,10 @@ ifsh_assemble(flowbc_t         *bc,
               double           *wdp,
               double           *totmob, /* \sum_i \lambda_i */
               double           *omega,  /* \sum_i \rho_i f_i */
-              struct ifsh_data *ifsh);
+              struct ifsh_data *h);
+
+void
+ifsh_press_flux(grid_t *G, struct ifsh_data *h, double *src,
+                double *cpress, double *fflux);
 
 #endif  /* IFSH_H_INCLUDED */
