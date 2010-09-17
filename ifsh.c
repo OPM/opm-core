@@ -16,8 +16,8 @@
 struct ifsh_impl {
     int nc, nf, nw;             /* Number of cells, faces, wells */
 
-    double        *S;           /* Schur complement contrib per cell */
-    double        *gpress;
+    double        *Binv;        /* Effective inverse IP */
+    double        *gpress;      /* Effective gravity pressure */
     double        *cflux;       /* Cell (half-contact) fluxes */
 
     int           *pgconn;
@@ -28,8 +28,10 @@ struct ifsh_impl {
 
     struct hybsys *sys;
 
+    double *work;
+    int    *iwork;
+
     /* Linear storage goes here... */
-    int     idata_default;
     int    *idata;
     double *ddata;
 };
@@ -79,7 +81,7 @@ ifsh_construct(grid_t *G, well_t *W)
     if (new != NULL) {
         count_grid_connections(G, &new->max_ngconn, &new->sum_ngconn2);
 
-        idata_sz = 0;
+        idata_sz = new->max_ngconn;     /* iwork */
 
         nc         = G->number_of_cells;
         ngconn_tot = G->cell_facepos[nc];
@@ -88,6 +90,7 @@ ifsh_construct(grid_t *G, well_t *W)
         if (W != NULL) {
             nnu += W->number_of_wells;
 
+            /* cwpos and cwells */
             idata_sz  = nc + 1;
             idata_sz += 2 * W->well_connpos[ W->number_of_wells ];
         }
@@ -96,14 +99,9 @@ ifsh_construct(grid_t *G, well_t *W)
         ddata_sz += new->sum_ngconn2;    /* Binv */
         ddata_sz += ngconn_tot;          /* gpress */
         ddata_sz += ngconn_tot;          /* cflux */
+        ddata_sz += new->max_ngconn;     /* work */
 
-        if (idata_sz == 0) {
-            /* malloc(0) may or may not return NULL.  Handle. */
-            new->pimpl->idata = &new->pimpl->idata_default;
-        } else {
-            new->pimpl->idata = malloc(idata_sz * sizeof *new->pimpl->idata);
-        }
-
+        new->pimpl->idata = malloc(idata_sz * sizeof *new->pimpl->idata);
         new->pimpl->ddata = malloc(ddata_sz * sizeof *new->pimpl->ddata);
         new->pimpl->sys   = hybsys_allocate_symm(new->max_ngconn,
                                                  nc, ngconn_tot);
@@ -115,15 +113,19 @@ ifsh_construct(grid_t *G, well_t *W)
         } else {
             new->b             = new->pimpl->ddata;
             new->x             = new->b             + nnu;
-            new->pimpl->S      = new->x             + nnu;
-            new->pimpl->gpress = new->pimpl->S      + new->sum_ngconn2;
+            new->pimpl->Binv   = new->x             + nnu;
+            new->pimpl->gpress = new->pimpl->Binv   + new->sum_ngconn2;
             new->pimpl->cflux  = new->pimpl->gpress + ngconn_tot;
+            new->pimpl->work   = new->pimpl->cflux  + ngconn_tot;
+
+            new->pimpl->iwork  = new->pimpl->idata;
+
+            hybsys_init(new->max_ngconn, new->pimpl->sys);
         }
     }
 
-    if ((new != NULL) &&
-        (new->pimpl->idata != &new->pimpl->idata_default)) {
-        new->pimpl->cwpos  = new->pimpl->idata;
+    if ((new != NULL) && (W != NULL)) {
+        new->pimpl->cwpos  = new->pimpl->iwork + new->max_ngconn;
         new->pimpl->cwells = new->pimpl->cwpos + nc + 1;
 
         memset(new->pimpl->cwpos, 0, (nc + 1) * sizeof *new->pimpl->cwpos);
@@ -152,10 +154,7 @@ ifsh_destroy_impl(struct ifsh_impl *pimpl)
     if (pimpl != NULL) {
         hybsys_free(pimpl->sys  );
         free       (pimpl->ddata);
-
-        if (pimpl->idata != &pimpl->idata_default) {
-            free   (pimpl->idata);
-        }
+        free       (pimpl->idata);
     }
 
     free(pimpl);
@@ -178,6 +177,65 @@ ifsh_destroy(struct ifsh_data *h)
 
 
 /* ---------------------------------------------------------------------- */
+static void
+ifsh_explicit_elimination(int n, int npp,
+                          int *locdof, double *dofval,
+                          double *S, double *r)
+/* ---------------------------------------------------------------------- */
+{
+    int i, p;
+
+    for (i = 0; i < npp; i++) {
+        for (p = (locdof[i] + 1) % n; p != locdof[i]; p = (p + 1) % n) {
+            /* Subtract known values from RHS. */
+            r[p] -= S[p + locdof[i]*n] * dofval[i];
+
+            /* Eliminate DOF (zero row/col "locdof[i]"; leave diagonal). */
+            S[p + locdof[i]*n] = 0.0;
+            S[locdof[i] + p*n] = 0.0;
+        }
+
+        /* Produce trivial equation S(i,i)*x(i) = S(i,i)*x0(i). */
+        r[p] = S[p * (n + 1)] * dofval[i];
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
+static int
+ifsh_impose_bc(int nconn, int *conn, flowbc_t *bc,
+               struct ifsh_impl *pimpl)
+/* ---------------------------------------------------------------------- */
+{
+    int i, npp, f;
+
+    npp = 0;
+    for (i = 0; i < nconn; i++) {
+        f = conn[i];
+
+        if (bc->type[f] == PRESSURE) {
+            pimpl->work [npp] = bc->bcval[f];
+            pimpl->iwork[npp] = i;
+
+            npp += 1;
+        } else if (bc->type[f] == FLUX) {
+            pimpl->sys->r[i] -= bc->bcval[f];
+        }
+    }
+
+    if (npp > 0) {
+        ifsh_explicit_elimination(nconn, npp,
+                                  pimpl->iwork,
+                                  pimpl->work,
+                                  pimpl->sys->S,
+                                  pimpl->sys->r);
+    }
+
+    return npp;
+}
+
+
+/* ---------------------------------------------------------------------- */
 void
 ifsh_assemble(flowbc_t         *bc,
               double           *src,
@@ -192,16 +250,18 @@ ifsh_assemble(flowbc_t         *bc,
 /* ---------------------------------------------------------------------- */
 {
     int     c, n, nc, p1, p2, i;
-    int    *pgconn;
-    double *S, *gp;
+    int     npp;                /* Number of prescribed pressure values */
+    int    *pgconn, *gconn;
+    double *BI, *gp;
 
     nc     = ifsh->pimpl->nc;
-    S      = ifsh->pimpl->S;
+    BI     = ifsh->pimpl->Binv;
     gp     = ifsh->pimpl->gpress;
     pgconn = ifsh->pimpl->pgconn;
+    gconn  = ifsh->pimpl->gconn;
 
-    p2 = 0;
-    for (c = 0; c < ifsh->pimpl->nc; c++) {
+    p1 = p2 = 0;
+    for (c = 0; c < nc; c++) {
         n = pgconn[c + 1] - pgconn[c];
 
         for (i = 0; i < n    ; i++) {
@@ -209,10 +269,73 @@ ifsh_assemble(flowbc_t         *bc,
         }
 
         for (i = 0; i < n * n; i++) {
-            S [p2 + i] = totmob[c] * Binv[p2 + i];
+            BI[p2 + i] = totmob[c] * Binv[p2 + i];
         }
 
-        p1 += n    ;
+        p1 += n;
         p2 += n * n;
+    }
+
+    hybsys_schur_comp_symm(nc, pgconn, BI, ifsh->pimpl->sys);
+
+    p1 = p2 = npp = 0;
+    for (c = 0; c < nc; c++) {
+        n = pgconn[c + 1] - pgconn[c];
+
+        hybsys_cellcontrib_symm(c, n, p1, p2, gp, src, BI,
+                                ifsh->pimpl->sys);
+
+        npp += ifsh_impose_bc(n, gconn + p1, bc, ifsh->pimpl);
+
+        hybsys_global_assemble_cell(n, gconn + p1,
+                                    ifsh->pimpl->sys->S,
+                                    ifsh->pimpl->sys->r,
+                                    ifsh->A, ifsh->b);
+
+        p1 += n;
+        p2 += n * n;
+    }
+
+    if (npp == 0) {
+        ifsh->A->sa[0] *= 2;        /* Remove zero eigenvalue */
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
+void
+ifsh_press_flux(grid_t *G, struct ifsh_data *h, double *src,
+                double *cpress, double *fflux)
+/* ---------------------------------------------------------------------- */
+{
+    int c, f, i;
+    double s;
+
+    hybsys_compute_press_flux(G->number_of_cells,
+                              G->cell_facepos,
+                              G->cell_faces,
+                              h->pimpl->gpress,
+                              src, h->pimpl->Binv,
+                              h->pimpl->sys,
+                              h->x, cpress, h->pimpl->cflux,
+                              h->pimpl->work);
+
+    for (f = 0; f < G->number_of_faces; f++) { fflux[f] = 0.0; }
+
+    i = 0;
+    for (c = 0; c < G->number_of_cells; c++) {
+        for (; i < G->cell_facepos[c + 1]; i++) {
+            f = G->cell_faces[i];
+            s = 2.0*(G->face_cells[2*f + 0] == c) - 1.0;
+
+            fflux[f] += s * h->pimpl->cflux[i];
+        }
+    }
+
+    for (f = 0; f < G->number_of_faces; f++) {
+        i = (G->face_cells[2*f + 0] >= 0) +
+            (G->face_cells[2*f + 1] >= 0);
+
+        fflux[f] /= i;
     }
 }
