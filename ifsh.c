@@ -205,7 +205,7 @@ ifsh_assemble(flowbc_t         *bc,
         n = pgconn[c + 1] - pgconn[c];
 
         for (i = 0; i < n    ; i++) {
-           gp[p1 + i] = omega[c] * gpress[p1 + i];
+            gp[p1 + i] = omega[c] * gpress[p1 + i];
         }
 
         for (i = 0; i < n * n; i++) {
