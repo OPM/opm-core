@@ -20,23 +20,25 @@ struct ifsh_impl {
     double        *gpress;      /* Effective gravity pressure */
     double        *cflux;       /* Cell (half-contact) fluxes */
 
-    int           *pgconn;
-    int           *gconn;
+    int           *pgconn;      /* Start pointers, grid connections */
+    int           *gconn;       /* Grid connections */
 
-    int           *cwpos;
-    int           *cwells;
+    int           *cwpos;       /* Start pointers, c->w mapping */
+    int           *cwells;      /* c->w mapping */
 
-    struct hybsys *sys;
+    struct hybsys *sys;         /* Hybrid cell contribs */
 
-    double *work;
-    int    *iwork;
+    double *work;               /* Scratch array, floating point */
+    int    *iwork;              /* Scratch array, integers */
 
     /* Linear storage goes here... */
-    int    *idata;
-    double *ddata;
+    int    *idata;              /* Actual storage array, integers */
+    double *ddata;              /* Actual storage array, floating point */
 };
 
 
+/* ---------------------------------------------------------------------- */
+/* Determine nnz (=sum(diff(facePos)^2)) and max(diff(facePos) for grid */
 /* ---------------------------------------------------------------------- */
 static void
 count_grid_connections(grid_t *G, int *max_ngconn, size_t *sum_ngconn2)
@@ -56,6 +58,11 @@ count_grid_connections(grid_t *G, int *max_ngconn, size_t *sum_ngconn2)
 }
 
 
+/* ---------------------------------------------------------------------- */
+/* Allocate and define supporting structures for assembling the global
+ * system of linear equations to couple the grid (reservoir)
+ * connections represented by 'G' and, if present (i.e., non-NULL),
+ * the well connections represented by 'W'. */
 /* ---------------------------------------------------------------------- */
 struct ifsh_data *
 ifsh_construct(grid_t *G, well_t *W)
@@ -147,6 +154,9 @@ ifsh_construct(grid_t *G, well_t *W)
 
 
 /* ---------------------------------------------------------------------- */
+/* Release dynamic memory resources associated to internal data of a
+ * particular (incompressible) flow solver instance. */
+/* ---------------------------------------------------------------------- */
 static void
 ifsh_destroy_impl(struct ifsh_impl *pimpl)
 /* ---------------------------------------------------------------------- */
@@ -161,6 +171,7 @@ ifsh_destroy_impl(struct ifsh_impl *pimpl)
 }
 
 
+/* ---------------------------------------------------------------------- */
 /* Release memory resources for ifsh data-handle 'h' */
 /* ---------------------------------------------------------------------- */
 void
@@ -176,6 +187,11 @@ ifsh_destroy(struct ifsh_data *h)
 }
 
 
+/* ---------------------------------------------------------------------- */
+/* Eliminate 'npp' prescribed (Dirichlet) conditions (locdof,dofval)
+ * from global system of linear equations.  Move known values to RHS
+ * whilst zeroing coefficient matrix contributions.  Local system of
+ * dimension 'n'. */
 /* ---------------------------------------------------------------------- */
 static void
 ifsh_explicit_elimination(int n, int npp,
@@ -201,6 +217,8 @@ ifsh_explicit_elimination(int n, int npp,
 }
 
 
+/* ---------------------------------------------------------------------- */
+/* Impose boundary conditions on local contribution to global system. */
 /* ---------------------------------------------------------------------- */
 static int
 ifsh_impose_bc(int nconn, int *conn, flowbc_t *bc,
@@ -235,6 +253,14 @@ ifsh_impose_bc(int nconn, int *conn, flowbc_t *bc,
 }
 
 
+/* ---------------------------------------------------------------------- */
+/* Assemble global system of linear equations
+ *
+ *     ifsh->A * ifhs->x = ifhs->b
+ *
+ * from local inner product matrices Binv, gravity pressure gpress,
+ * boundary conditions bc, source terms src and fluid properties
+ * totmob and omega. */
 /* ---------------------------------------------------------------------- */
 void
 ifsh_assemble(flowbc_t         *bc,
@@ -302,6 +328,10 @@ ifsh_assemble(flowbc_t         *bc,
 }
 
 
+/* ---------------------------------------------------------------------- */
+/* Compute cell pressures (cpress) and interface fluxes (fflux) from
+ * current solution of system of linear equations, h->x.  Back
+ * substitution process, projected half-contact fluxes. */
 /* ---------------------------------------------------------------------- */
 void
 ifsh_press_flux(grid_t *G, struct ifsh_data *h, double *src,
