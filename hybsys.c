@@ -10,6 +10,14 @@
 #include "blas_lapack.h"
 #include "hybsys.h"
 
+
+#if defined(MAX)
+#undef MAX
+#endif
+
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+
+
 /* ---------------------------------------------------------------------- */
 struct hybsys *
 hybsys_allocate_symm(int max_nconn, int nc, int nconn_tot)
@@ -63,6 +71,110 @@ hybsys_allocate_unsymm(int max_nconn, int nc, int nconn_tot)
 
 
 /* ---------------------------------------------------------------------- */
+static void
+hybsys_well_count_conn(int nc, const int *cwpos,
+                       int *max_nw, size_t *sum_nwc)
+/* ---------------------------------------------------------------------- */
+{
+    int c, nw;
+
+    *max_nw  = 0;
+    *sum_nwc = 0;
+
+    for (c = 0; c < nc; c++) {
+        nw = cwpos[c + 1] - cwpos[c];
+
+        assert (nw >= 0);
+
+        *max_nw  = MAX(*max_nw, nw);
+        sum_nwc += nw;
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
+struct hybsys_well *
+hybsys_well_allocate_symm(int max_nconn, int nc, int *cwpos)
+/* ---------------------------------------------------------------------- */
+{
+    int                 max_nw;
+    size_t              sum_nwc, alloc_sz;
+
+    struct hybsys_well *new;
+
+    assert (cwpos[nc] > cwpos[0]); /* Else no wells. */
+
+    new = malloc(1 * sizeof *new);
+
+    if (new != NULL) {
+        hybsys_well_count_conn(nc, cwpos, &max_nw, &sum_nwc);
+
+        alloc_sz  = sum_nwc;            /* F1 */
+        alloc_sz += max_nw * max_nconn; /* w2r */
+        alloc_sz += max_nw * max_nw;    /* w2w */
+
+        new->data = malloc(alloc_sz * sizeof *new->data);
+
+        if (new->data != NULL) {
+            new->F1  = new->data;
+            new->F2  = new->F1;
+
+            new->w2r = new->F2  + sum_nwc;
+            new->r2w = new->w2r;
+
+            new->w2w = new->r2w + (max_nw * max_nconn);
+        } else {
+            hybsys_well_free(new);
+            new = NULL;
+        }
+    }
+
+    return new;
+}
+
+
+/* ---------------------------------------------------------------------- */
+struct hybsys_well *
+hybsys_well_allocate_unsymm(int max_nconn, int nc, int *cwpos)
+/* ---------------------------------------------------------------------- */
+{
+    int                 max_nw;
+    size_t              sum_nwc, alloc_sz;
+
+    struct hybsys_well *new;
+
+    assert (cwpos[nc] > cwpos[0]); /* Else no wells. */
+
+    new = malloc(1 * sizeof *new);
+
+    if (new != NULL) {
+        hybsys_well_count_conn(nc, cwpos, &max_nw, &sum_nwc);
+
+        alloc_sz  = 2 * sum_nwc;            /* F1, F2 */
+        alloc_sz += 2 * max_nw * max_nconn; /* w2r, r2w */
+        alloc_sz +=     max_nw * max_nw;    /* w2w */
+
+        new->data = malloc(alloc_sz * sizeof *new->data);
+
+        if (new->data != NULL) {
+            new->F1  = new->data;
+            new->F2  = new->F1  + sum_nwc;
+
+            new->w2r = new->F2  + sum_nwc;
+            new->r2w = new->w2r + (max_nw * max_nconn);
+
+            new->w2w = new->r2w + (max_nw * max_nconn);
+        } else {
+            hybsys_well_free(new);
+            new = NULL;
+        }
+    }
+
+    return new;
+}
+
+
+/* ---------------------------------------------------------------------- */
 void
 hybsys_free(struct hybsys *sys)
 /* ---------------------------------------------------------------------- */
@@ -79,6 +191,19 @@ hybsys_free(struct hybsys *sys)
     }
 
     free(sys);
+}
+
+
+/* ---------------------------------------------------------------------- */
+void
+hybsys_well_free(struct hybsys_well *wsys)
+/* ---------------------------------------------------------------------- */
+{
+    if (wsys != NULL) {
+        free(wsys->data);
+    }
+
+    free(wsys);
 }
 
 
@@ -221,6 +346,27 @@ hybsys_schur_comp_gen(int nc, const int *pconn,
 
 
 /* ---------------------------------------------------------------------- */
+void
+hybsys_well_schur_comp_symm(int nc, const int *cwpos, const int *cwells,
+                            double             *WI,
+                            struct hybsys      *sys,
+                            struct hybsys_well *wsys)
+/* ---------------------------------------------------------------------- */
+{
+    int c, i;
+
+    i = 0;
+    for (c = 0; c < nc; c++) {
+        for (; i < cwpos[c + 1]; i++) {
+            ix = cwells[2*i + 1];
+
+            sys->L[c] += (wsys->F1[i] = WI[ix]);
+        }
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
 static void
 hybsys_cellmat_symm_core(int nconn, const double *Binv, double L,
                          const double *F, double *S)
@@ -342,6 +488,23 @@ hybsys_cellcontrib_unsymm(int c, int nconn, int p1, int p2,
     sys->q[c] = hybsys_cellrhs_core(nconn, &gpress[p1], src[c], &Binv[p2],
                                     sys->L[c], &sys->F1[p1], &sys->F2[p1],
                                     sys->r);
+}
+
+
+/* ---------------------------------------------------------------------- */
+void
+hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
+                             const int *cwpos, const int *cwells,
+                             const double *WI, const double *wdp,
+                             struct hybsys *sys, struct hybsys_well *wsys)
+/* ---------------------------------------------------------------------- */
+{
+    /* w2r = F1(r)'*F2(w), r2w = w2r' */
+    dgemm_("Transpose", "No Transpose", &mm, &nn, &kk,
+           &a1, &sys->F1[p1], &ldF1, &wsys->F2[wp1], &ldWF2,
+           &a2, wsys->w2r, &ld_w2r);
+
+    /* w2w = F1(w)'*F2(w) */
 }
 
 

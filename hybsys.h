@@ -16,14 +16,35 @@ struct hybsys {
 };
 
 
+struct hybsys_well {
+    double *F1;
+    double *F2;
+
+    double *w2r;
+    double *r2w;
+    double *w2w;
+
+    double *data;
+};
+
+
 struct hybsys *
 hybsys_allocate_symm(int max_nconn, int nc, int nconn_tot);
 
 struct hybsys *
 hybsys_allocate_unsymm(int max_nconn, int nc, int nconn_tot);
 
+struct hybsys_well *
+hybsys_well_allocate_symm(int max_nconn, int nc, int *cwpos);
+
+struct hybsys_well *
+hybsys_well_allocate_unsymm(int max_nconn, int nc, int *cwpos);
+
 void
 hybsys_free(struct hybsys *sys);
+
+void
+hybsys_well_free(struct hybsys_well *wsys);
 
 void
 hybsys_init(int max_nconn, struct hybsys *sys);
@@ -67,6 +88,12 @@ hybsys_schur_comp_gen(int nc, const int *pconn,
                       const double *P, struct hybsys *sys);
 
 void
+hybsys_well_schur_comp_symm(int nc, const int *cwpos, const int *cwells,
+                            double             *WI,
+                            struct hybsys      *sys,
+                            struct hybsys_well *wsys);
+
+void
 hybsys_cellcontrib_symm(int c, int nconn, int p1, int p2,
                         const double *gpress, const double *src,
                         const double *Binv, struct hybsys *sys);
@@ -75,6 +102,12 @@ void
 hybsys_cellcontrib_unsymm(int c, int nconn, int p1, int p2,
                           const double *gpress, const double *src,
                           const double *Binv, struct hybsys *sys);
+
+void
+hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
+                             const int *cwpos, const int *cwells,
+                             const double *WI, const double *wdp,
+                             struct hybsys *sys, struct hybsys_well *wsys);
 
 void
 hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
