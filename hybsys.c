@@ -23,10 +23,11 @@ hybsys_allocate_symm(int max_nconn, int nc, int nconn_tot)
         new->r   = malloc(max_nconn             * sizeof *new->r  );
         new->S   = malloc(max_nconn * max_nconn * sizeof *new->S  );
         new->L   = malloc(nc                    * sizeof *new->L  );
+        new->q   = malloc(nc                    * sizeof *new->q  );
         new->F1  = malloc(nconn_tot             * sizeof *new->F1 );
 
-        if ((new->one == NULL) || (new->r  == NULL) || (new->S == NULL) ||
-            (new->L   == NULL) || (new->F1 == NULL)) {
+        if ((new->one == NULL) || (new->r == NULL) || (new->S  == NULL) ||
+            (new->L   == NULL) || (new->q == NULL) || (new->F1 == NULL)) {
             hybsys_free(new);
 
             new = NULL;
@@ -70,6 +71,7 @@ hybsys_free(struct hybsys *sys)
         if (sys->F2 != sys->F1) { free(sys->F2); } /* unsymmetric system */
 
         free(sys->F1 );
+        free(sys->q  );
         free(sys->L  );
         free(sys->S  );
         free(sys->r  );
@@ -276,7 +278,7 @@ hybsys_cellmat_unsymm_core(int nconn, const double *Binv, double L,
 
 
 /* ---------------------------------------------------------------------- */
-static void
+static double
 hybsys_cellrhs_core(int nconn, const double *gpress, double src,
                     const double *Binv, double L, const double *F1,
                     const double *F2, double *R)
@@ -301,6 +303,8 @@ hybsys_cellrhs_core(int nconn, const double *gpress, double src,
 
     a1 = src / L;
     daxpy_(&n, &a1, F1, &incx, R, &incy);
+
+    return src;
 }
 
 
@@ -315,9 +319,9 @@ hybsys_cellcontrib_symm(int c, int nconn, int p1, int p2,
                              sys->L[c], &sys->F1[p1],
                              sys->S);
 
-    hybsys_cellrhs_core(nconn, &gpress[p1], src[c], &Binv[p2],
-                        sys->L[c], &sys->F1[p1], &sys->F1[p1],
-                        sys->r);
+    sys->q[c] = hybsys_cellrhs_core(nconn, &gpress[p1], src[c], &Binv[p2],
+                                    sys->L[c], &sys->F1[p1], &sys->F1[p1],
+                                    sys->r);
 }
 
 
@@ -335,9 +339,9 @@ hybsys_cellcontrib_unsymm(int c, int nconn, int p1, int p2,
                                sys->L[c], &sys->F1[p1], &sys->F2[p1],
                                sys->S);
 
-    hybsys_cellrhs_core(nconn, &gpress[p1], src[c], &Binv[p2],
-                        sys->L[c], &sys->F1[p1], &sys->F2[p1],
-                        sys->r);
+    sys->q[c] = hybsys_cellrhs_core(nconn, &gpress[p1], src[c], &Binv[p2],
+                                    sys->L[c], &sys->F1[p1], &sys->F2[p1],
+                                    sys->r);
 }
 
 
@@ -366,19 +370,20 @@ hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
 
         /* Serialise interface pressures for cell */
         for (i = 0; i < nconn; i++) {
-            work[i] = pi[conn[p1 + i]] - gpress[p1 + i];
+            /* work[i] = pi[conn[p1 + i]] - gpress[p1 + i]; */
+            work[i] = pi[conn[p1 + i]];
         }
 
         nrows = ncols = lda = nconn;
 
         /* Solve Lp = g - F2*f + F2*pi (for cell pressure) */
-        press[c]  = src[c];
+        press[c]  = sys->q[c]; /* src[c]; */
         press[c] += ddot_(&nrows, &sys->F2[p1], &incx, work, &incy);
         press[c] /= sys->L[c];
 
         /* Form rhs of system B*v = f + C*p - D*pi */
         for (i = 0; i < nconn; i++) {
-            work[i] = press[c] - work[i];
+            work[i] = gpress[p1 + i] + press[c] - work[i];
         }
 
         /* Solve resulting system (-> half face fluxes) */

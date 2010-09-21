@@ -7,6 +7,7 @@
 
 struct hybsys {
     double *L;                  /* C2' * inv(B) * C1 - P */
+    double *q;                  /* g - F2*G */
     double *F1;                 /* C1' * inv(B)          */
     double *F2;                 /* C2' * inv(B)          */
     double *r;                  /* system rhs in single cell */
