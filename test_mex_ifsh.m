@@ -1,0 +1,9 @@
+G = computeGeometry(cartGrid([30,30,1]));
+src = [];
+src = addSource(src, 1, 1);
+src = addSource(src, G.cells.num, -1);
+bc = [];
+rock.perm = ones(G.cells.num, 1);
+rock.poro = ones(G.cells.num, 1);
+x = initResSol(G, 0, 0);
+x = mex_ifsh(x, G, rock, bc, src)
