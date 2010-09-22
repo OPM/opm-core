@@ -526,17 +526,21 @@ hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
            &a2, wsys->w2r, &ld3);
 
     /* -------------------------------------------------------------- */
-    /* w2w = F1(w)'*F2(w) */
+    /* w2w = BI - F1(w)'*F2(w)/L */
     mm = nw;   ld1 = 1;
     nn = nw;   ld2 = 1;
     kk = 1;    ld3 = nw;
 
-    a1 = 1.0;
+    a1 = -1.0 / sys->L[c];
     a2 = 0.0;
 
     dgemm_("Transpose", "No Transpose", &mm, &nn, &kk,
            &a1, &wsys->F1[wp1], &ld1, &wsys->F2[wp1], &ld2,
            &a2, wsys->w2w, &ld3);
+
+    for (w = 0; w < nw; w++) {
+        wsys->w2w[w * (nw + 1)] += WI[wp1 + 1];
+    }
 
     /* -------------------------------------------------------------- */
     /* Global RHS contributions */
