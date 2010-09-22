@@ -19,6 +19,7 @@ struct hybsys {
 struct hybsys_well {
     double *F1;
     double *F2;
+    double *r;
 
     double *w2r;
     double *r2w;

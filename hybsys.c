@@ -110,6 +110,7 @@ hybsys_well_allocate_symm(int max_nconn, int nc, int *cwpos)
         hybsys_well_count_conn(nc, cwpos, &max_nw, &sum_nwc);
 
         alloc_sz  = sum_nwc;            /* F1 */
+        alloc_sz += max_nconn + max_nw; /* r */
         alloc_sz += max_nw * max_nconn; /* w2r */
         alloc_sz += max_nw * max_nw;    /* w2w */
 
@@ -119,7 +120,9 @@ hybsys_well_allocate_symm(int max_nconn, int nc, int *cwpos)
             new->F1  = new->data;
             new->F2  = new->F1;
 
-            new->w2r = new->F2  + sum_nwc;
+            new->r   = new->F2  + sum_nwc;
+
+            new->w2r = new->r   + max_nconn + max_nw;
             new->r2w = new->w2r;
 
             new->w2w = new->r2w + (max_nw * max_nconn);
@@ -151,6 +154,7 @@ hybsys_well_allocate_unsymm(int max_nconn, int nc, int *cwpos)
         hybsys_well_count_conn(nc, cwpos, &max_nw, &sum_nwc);
 
         alloc_sz  = 2 * sum_nwc;            /* F1, F2 */
+        alloc_sz +=     max_nconn + max_nw; /* r */
         alloc_sz += 2 * max_nw * max_nconn; /* w2r, r2w */
         alloc_sz +=     max_nw * max_nw;    /* w2w */
 
@@ -160,7 +164,9 @@ hybsys_well_allocate_unsymm(int max_nconn, int nc, int *cwpos)
             new->F1  = new->data;
             new->F2  = new->F1  + sum_nwc;
 
-            new->w2r = new->F2  + sum_nwc;
+            new->r   = new->F2  + sum_nwc;
+
+            new->w2r = new->r   + max_nconn + max_nw;
             new->r2w = new->w2r + (max_nw * max_nconn);
 
             new->w2w = new->r2w + (max_nw * max_nconn);
@@ -499,14 +505,59 @@ hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
                              struct hybsys *sys, struct hybsys_well *wsys)
 /* ---------------------------------------------------------------------- */
 {
-    #if 0
-    /* w2r = F1(r)'*F2(w), r2w = w2r' */
-    dgemm_("Transpose", "No Transpose", &mm, &nn, &kk,
-           &a1, &sys->F1[p1], &ldF1, &wsys->F2[wp1], &ldWF2,
-           &a2, wsys->w2r, &ld_w2r);
+    int        w, nw, wp1;
+    MAT_SIZE_T mm, nn, kk, ld1, ld2, ld3, incx, incy;
+    double     a1, a2, q;
 
+    nw  = cwpos[c + 1] - cwpos[c];
+    wp1 = cwpos[c];
+
+    /* -------------------------------------------------------------- */
+    /* w2r = F1(r)'*F2(w), r2w = w2r' */
+    mm = ngconn;   ld1 = 1;
+    nn = nw;       ld2 = 1;
+    kk = 1;        ld3 = ngconn;
+
+    a1 = 1.0;
+    a2 = 0.0;
+
+    dgemm_("Transpose", "No Transpose", &mm, &nn, &kk,
+           &a1, &sys->F1[p1], &ld1, &wsys->F2[wp1], &ld2,
+           &a2, wsys->w2r, &ld3);
+
+    /* -------------------------------------------------------------- */
     /* w2w = F1(w)'*F2(w) */
-    #endif
+    mm = nw;   ld1 = 1;
+    nn = nw;   ld2 = 1;
+    kk = 1;    ld3 = nw;
+
+    a1 = 1.0;
+    a2 = 0.0;
+
+    dgemm_("Transpose", "No Transpose", &mm, &nn, &kk,
+           &a1, &wsys->F1[wp1], &ld1, &wsys->F2[wp1], &ld2,
+           &a2, wsys->w2w, &ld3);
+
+    /* -------------------------------------------------------------- */
+    /* Global RHS contributions */
+    mm   = nw;
+    incx = incy = 1;
+    q    = ddot_(&mm, &wsys->F2[wp1], &incx, &wdp[wp1], &incy);
+
+    mm = ngconn;
+    a1 = -q / sys->L[c];
+    a2 = 0.0;
+    daxpy_(&mm, &a1, &sys->F1[p1], &incx, wsys->r, &incy);
+
+    sys->q[c] -= q;
+    mm = nw;
+    a1 = sys->q[c] / sys->L[c];
+    a2 = 0.0;
+    daxpy_(&mm, &a1, &wsys->F1[wp1], &incx, &wsys->r[ngconn], &incy);
+
+    for (w = 0; w < nw; w++) {
+        wsys->r[ngconn + w] += WI[wp1 + w] * wdp[wp1 + w];
+    }
 }
 
 
