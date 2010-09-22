@@ -20,13 +20,17 @@ struct ifsh_impl {
     double        *gpress;      /* Effective gravity pressure */
     double        *cflux;       /* Cell (half-contact) fluxes */
 
+    double        *WI;          /* Effective inverse IP, wells */
+    double        *wdp;         /* Effective grav. press, wells */
+
     int           *pgconn;      /* Start pointers, grid connections */
     int           *gconn;       /* Grid connections */
 
     int           *cwpos;       /* Start pointers, c->w mapping */
     int           *cwells;      /* c->w mapping */
 
-    struct hybsys *sys;         /* Hybrid cell contribs */
+    struct hybsys      *sys;    /* Hybrid cell contribs */
+    struct hybsys_well *wsys;   /* Hybrid cell contribs from wells */
 
     double *work;               /* Scratch array, floating point */
     int    *iwork;              /* Scratch array, integers */
