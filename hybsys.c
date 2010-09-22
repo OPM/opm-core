@@ -353,7 +353,7 @@ hybsys_well_schur_comp_symm(int nc, const int *cwpos, const int *cwells,
                             struct hybsys_well *wsys)
 /* ---------------------------------------------------------------------- */
 {
-    int c, i;
+    int c, i, ix;
 
     i = 0;
     for (c = 0; c < nc; c++) {
@@ -499,12 +499,14 @@ hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
                              struct hybsys *sys, struct hybsys_well *wsys)
 /* ---------------------------------------------------------------------- */
 {
+    #if 0
     /* w2r = F1(r)'*F2(w), r2w = w2r' */
     dgemm_("Transpose", "No Transpose", &mm, &nn, &kk,
            &a1, &sys->F1[p1], &ldF1, &wsys->F2[wp1], &ldWF2,
            &a2, wsys->w2r, &ld_w2r);
 
     /* w2w = F1(w)'*F2(w) */
+    #endif
 }
 
 
