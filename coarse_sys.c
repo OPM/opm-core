@@ -71,7 +71,7 @@ coarse_sys_compute_cell_ip(int                nc,
 #if DEBUG_OUTPUT
     FILE *fp;
 #endif
-    
+
 
     max_nbf = max_diff(nb, sys->dof_pos);
 
@@ -96,7 +96,7 @@ coarse_sys_compute_cell_ip(int                nc,
 #if DEBUG_OUTPUT
         fp = fopen("debug_out.m", "wt");
 #endif
-        
+
         for (b = 0; b < nb; b++) {
             loc_nc = b2c_pos[b + 1] - b2c_pos[b];
             bf_off = 0;
@@ -233,7 +233,7 @@ coarse_sys_compute_Binv(int                nb,
 #if DEBUG_OUTPUT
     FILE *fp;
 #endif
-    
+
     Lti = work + 0;
     B   = work + max_bcells;
 
