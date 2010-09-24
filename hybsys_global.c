@@ -350,3 +350,52 @@ hybsys_global_assemble_cell(int nconn, int *conn,
         b[ig] += r[il];
     }
 }
+
+
+/* ---------------------------------------------------------------------- */
+void
+hybsys_global_assemble_well_sym(int ngconn_tot,
+                                int ngconn, const int *gconn,
+                                int nwconn, const int *wconn,
+                                const double     *r2w,
+                                const double     *w2w,
+                                const double     *r,
+                                struct CSRMatrix *A,
+                                double           *b)
+/* ---------------------------------------------------------------------- */
+{
+    int    il, wl1, wl2;
+    size_t ig, wg1, wg2, jg, jw;
+
+    /* Global matrix contributions for this cell's wells */
+    for (wl1 = 0; wl1 < nwconn; wl1++) {
+        wg1 = ngconn_tot + wconn[2*wl1 + 0];
+
+        for (il = 0; il < ngconn; il++) {
+            ig = gconn[il];
+
+            jw = csrmatrix_elm_index(ig, wg1, A);
+            jg = csrmatrix_elm_index(wg1, ig, A);
+
+            A->sa[jw] += r2w[il + wl1*ngconn]; /* Row major per cell */
+            A->sa[jg] += r2w[il + wl1*ngconn]; /* Symmetry */
+        }
+
+        for (wl2 = 0; wl2 < nwconn; wl2++) {
+            wg2 = ngconn_tot + wconn[2*wl2 + 0];
+
+            jw = csrmatrix_elm_index(wg1, wg2, A);
+
+            A->sa[jw] += w2w[wl1 + wl2*nwconn]; /* Row major per well */
+        }
+    }
+
+    /* Global right-hand side contributions */
+    for (il = 0; il < ngconn; il++) {
+        b[gconn[il]] += r[il];
+    }
+
+    for (wl1 = 0; wl1 < nwconn; wl1++) {
+        b[ngconn_tot + wconn[2*wl1 + 0]] += r[ngconn + wl1];
+    }
+}
