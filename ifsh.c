@@ -258,6 +258,88 @@ ifsh_impose_bc(int nconn, int *conn, flowbc_t *bc,
 
 
 /* ---------------------------------------------------------------------- */
+static void
+ifsh_set_effective_params(const double     *Binv,
+                          const double     *gpress,
+                          const double     *totmob,
+                          const double     *omega,
+                          struct ifsh_data *ifsh)
+/* ---------------------------------------------------------------------- */
+{
+    int     c, n, nc, p1, p2, i;
+    int    *pgconn, *gconn;
+    double *BI, *gp;
+
+    nc     = ifsh->pimpl->nc;
+    pgconn = ifsh->pimpl->pgconn;
+    gconn  = ifsh->pimpl->gconn;
+
+    BI     = ifsh->pimpl->Binv;
+    gp     = ifsh->pimpl->gpress;
+
+    p1 = p2 = 0;
+    for (c = 0; c < nc; c++) {
+        n = pgconn[c + 1] - pgconn[c];
+
+        for (i = 0; i < n    ; i++) {
+            gp[p1 + i] = omega[c] * gpress[p1 + i];
+        }
+
+        for (i = 0; i < n * n; i++) {
+            BI[p2 + i] = totmob[c] * Binv[p2 + i];
+        }
+
+        p1 += n;
+        p2 += n * n;
+    }
+}
+
+
+
+/* ---------------------------------------------------------------------- */
+static int
+ifsh_assemble_grid(flowbc_t         *bc,
+                   const double     *src,
+                   struct ifsh_data *ifsh)
+/* ---------------------------------------------------------------------- */
+{
+    int     c, n, nc, p1, p2, i;
+    int     npp;
+    int    *pgconn, *gconn;
+    double *BI, *gp;
+
+    nc     = ifsh->pimpl->nc;
+    pgconn = ifsh->pimpl->pgconn;
+    gconn  = ifsh->pimpl->gconn;
+
+    BI     = ifsh->pimpl->Binv;
+    gp     = ifsh->pimpl->gpress;
+
+    hybsys_schur_comp_symm(nc, pgconn, BI, ifsh->pimpl->sys);
+
+    p1 = p2 = npp = 0;
+    for (c = 0; c < nc; c++) {
+        n = pgconn[c + 1] - pgconn[c];
+
+        hybsys_cellcontrib_symm(c, n, p1, p2, gp, src, BI,
+                                ifsh->pimpl->sys);
+
+        npp += ifsh_impose_bc(n, gconn + p1, bc, ifsh->pimpl);
+
+        hybsys_global_assemble_cell(n, gconn + p1,
+                                    ifsh->pimpl->sys->S,
+                                    ifsh->pimpl->sys->r,
+                                    ifsh->A, ifsh->b);
+
+        p1 += n;
+        p2 += n * n;
+    }
+
+    return npp;
+}
+
+
+/* ---------------------------------------------------------------------- */
 /* Assemble global system of linear equations
  *
  *     ifsh->A * ifhs->x = ifhs->b
@@ -279,52 +361,11 @@ ifsh_assemble(flowbc_t         *bc,
               struct ifsh_data *ifsh)
 /* ---------------------------------------------------------------------- */
 {
-    int     c, n, nc, p1, p2, i;
-    int     npp;                /* Number of prescribed pressure values */
-    int    *pgconn, *gconn;
-    double *BI, *gp;
+    int npp;                /* Number of prescribed pressure values */
 
-    nc     = ifsh->pimpl->nc;
-    BI     = ifsh->pimpl->Binv;
-    gp     = ifsh->pimpl->gpress;
-    pgconn = ifsh->pimpl->pgconn;
-    gconn  = ifsh->pimpl->gconn;
+    ifsh_set_effective_params(Binv, gpress, totmob, omega, ifsh);
 
-    p1 = p2 = 0;
-    for (c = 0; c < nc; c++) {
-        n = pgconn[c + 1] - pgconn[c];
-
-        for (i = 0; i < n    ; i++) {
-            gp[p1 + i] = omega[c] * gpress[p1 + i];
-        }
-
-        for (i = 0; i < n * n; i++) {
-            BI[p2 + i] = totmob[c] * Binv[p2 + i];
-        }
-
-        p1 += n;
-        p2 += n * n;
-    }
-
-    hybsys_schur_comp_symm(nc, pgconn, BI, ifsh->pimpl->sys);
-
-    p1 = p2 = npp = 0;
-    for (c = 0; c < nc; c++) {
-        n = pgconn[c + 1] - pgconn[c];
-
-        hybsys_cellcontrib_symm(c, n, p1, p2, gp, src, BI,
-                                ifsh->pimpl->sys);
-
-        npp += ifsh_impose_bc(n, gconn + p1, bc, ifsh->pimpl);
-
-        hybsys_global_assemble_cell(n, gconn + p1,
-                                    ifsh->pimpl->sys->S,
-                                    ifsh->pimpl->sys->r,
-                                    ifsh->A, ifsh->b);
-
-        p1 += n;
-        p2 += n * n;
-    }
+    npp = ifsh_assemble_grid(bc, src, ifsh);
 
     if (npp == 0) {
         ifsh->A->sa[0] *= 2;        /* Remove zero eigenvalue */
