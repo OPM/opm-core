@@ -89,7 +89,7 @@ hybsys_schur_comp_gen(int nc, const int *pconn,
                       const double *P, struct hybsys *sys);
 
 void
-hybsys_well_schur_comp_symm(int nc, const int *cwpos, const int *cwells,
+hybsys_well_schur_comp_symm(int nc, const int *cwpos,
                             double             *WI,
                             struct hybsys      *sys,
                             struct hybsys_well *wsys);

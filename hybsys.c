@@ -353,20 +353,18 @@ hybsys_schur_comp_gen(int nc, const int *pconn,
 
 /* ---------------------------------------------------------------------- */
 void
-hybsys_well_schur_comp_symm(int nc, const int *cwpos, const int *cwells,
+hybsys_well_schur_comp_symm(int nc, const int *cwpos,
                             double             *WI,
                             struct hybsys      *sys,
                             struct hybsys_well *wsys)
 /* ---------------------------------------------------------------------- */
 {
-    int c, i, ix;
+    int c, i;
 
-    i = 0;
-    for (c = 0; c < nc; c++) {
+    for (c = i = 0; c < nc; c++) {
         for (; i < cwpos[c + 1]; i++) {
-            ix = cwells[2*i + 1];
-
-            sys->L[c] += (wsys->F1[i] = WI[ix]);
+            wsys->F1[i]  = WI[i];
+            sys->L  [c] += WI[i];
         }
     }
 }
