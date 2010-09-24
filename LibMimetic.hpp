@@ -53,9 +53,7 @@ class Ifsh
     /// Destructor.
     ~Ifsh()
     {
-        if (data_) {
-            ifsh_destroy(data_);
-        }
+        ifsh_destroy(data_);
     }
 
     /// @brief
