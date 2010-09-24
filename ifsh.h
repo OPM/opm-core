@@ -6,6 +6,12 @@
 #include "flow_bc.h"
 #include "sparse_sys.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 struct ifsh_impl;
 
 struct ifsh_data {
@@ -43,5 +49,11 @@ ifsh_assemble(flowbc_t         *bc,
 void
 ifsh_press_flux(grid_t *G, struct ifsh_data *h, double *src,
                 double *cpress, double *fflux);
+
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif  /* IFSH_H_INCLUDED */

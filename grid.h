@@ -1,6 +1,12 @@
 #ifndef GRID_H_INCLUDED
 #define GRID_H_INCLUDED
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /*   GRID_TOPOLOGY and GRID_GEOMETRY must be at the beginning of every
  *   grid type.  
  *
@@ -41,5 +47,8 @@ void free_grid           (grid_t *g);
 void alloc_grid_geometry (grid_t *g);
 void print_grid_summary  (grid_t *g);
 
-
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* GRID_H_INCLUDED */
