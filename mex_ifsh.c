@@ -382,7 +382,7 @@ allocate_disc_data(grid_t *g, struct ifsh_data *h)
         ddata_sz  = ngconn2;    /* Binv */
         ddata_sz += ngconn;     /* gpress */
         ddata_sz += 2 * nc;     /* totmob + omega */
-        
+
         new->ncf   = mxMalloc(ngconn   * sizeof *new->ncf);
         new->ddata = mxMalloc(ddata_sz * sizeof *new->ddata);
 
@@ -538,7 +538,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
 
                 csrmatrix_zero(h->A);
                 vector_zero(h->A->m, h->b);
-                
+
                 ifsh_assemble(bc, src,
                               disc_data->Binv, disc_data->gpress,
                               NULL, NULL, NULL,
