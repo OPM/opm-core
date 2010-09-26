@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <limits.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -425,9 +426,10 @@ ifsh_impose_well_control(int               c,
                          struct ifsh_data *ifsh)
 /* ---------------------------------------------------------------------- */
 {
-    int  ngconn, nwconn, i, w1, w2, f;
+    int  ngconn, nwconn, i, w1, w2, wg, f;
     int *pgconn, *gconn, *pwconn, *wconn;
 
+    double bhp;
     double *r, *r2w, *w2w;
 
     /* Enforce symmetric system */
@@ -445,6 +447,52 @@ ifsh_impose_well_control(int               c,
     r2w = ifsh->pimpl->wsys->r2w;
     w2w = ifsh->pimpl->wsys->w2w;
     r   = ifsh->pimpl->wsys->r  ;
+
+    /* Adapt local system to prescribed boundary pressures (r->w) */
+    for (i = 0; i < ngconn; i++) {
+        f = gconn[i];
+
+        if (bc->type[f] == PRESSURE) {
+            for (w1 = 0; w1 < nwconn; w1++) {
+                /* Eliminate prescribed (boundary) pressure value */
+                r  [ngconn + w1]   -= r2w[i + w1*ngconn] * bc->bcval[f];
+                r2w[i + w1*ngconn]  = 0.0;
+            }
+
+            r[i] = 0.0;         /* RHS value handled in *reservoir* asm */
+        }
+    }
+
+    /* Adapt local system to prescribed well (bottom-hole) pressures;
+     * w->r and w->w. */
+    for (w1 = 0; w1 < nwconn; w1++) {
+        wg = wconn[2*w1 + 0];
+
+        if (wctrl->ctrl[wg] == BHP) {
+            bhp = wctrl->target[wg];
+
+            /* Well->reservoir */
+            for (i = 0; i < ngconn; i++) {
+                assert ((bc->type[gconn[i]] != PRESSURE) ||
+                        !(fabs(r2w[i + w1*ngconn]) > 0.0));
+
+                r  [i]             -= r2w[i + w1*ngconn] * bhp;
+                r2w[i + w1*ngconn]  = 0.0;
+            }
+
+            /* Well->well */
+            for (w2 = (w1 + 1) % nwconn; w2 != w1; w2 = (w2 + 1) % nwconn) {
+                r  [ngconn + w2]    -= w2w[w2 + w1*nwconn] * bhp;
+                w2w[w2 + w1*ngconn]  = 0.0;
+                w2w[w1 + w2*ngconn]  = 0.0;
+            }
+
+            /* Assemble final well equation of the form S*p_bh = S*p_bh^0 */
+            assert (fabs(w2w[w1 * (nwconn + 1)]) > 0.0);
+
+            r[ngconn + w1] = w2w[w1 * (nwconn + 1)] * bhp;
+        }
+    }
 }
 
 
