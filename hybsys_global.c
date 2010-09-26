@@ -128,7 +128,7 @@ count_conn_per_row_well(grid_t *G, well_t *W,
 
     ok = 1;
     for (c = 0; c < nc; c++) {
-        for (; ok && (wja != cwells + cwpos[c + 1]); wja++) {
+        for (; ok && (wja != cwells + 2*cwpos[c + 1]); wja += 2) {
             for (       ja  = G->cell_faces + ia[c + 0];
                  ok && (ja != G->cell_faces + ia[c + 1]); ja++) {
                 dof = *ja;
@@ -136,14 +136,14 @@ count_conn_per_row_well(grid_t *G, well_t *W,
             }
 
             for (i = cwpos[c]; ok && (i < cwpos[c + 1]); i++) {
-                dof = nf + cwells[i];
+                dof = nf + cwells[2*i + 0];
                 ok  = hash_set_insert(dof, wia[*wja]) == dof;
             }
         }
     }
 
     if (ok) {
-        for (w = 0; w < W->number_of_wells; i++) {
+        for (w = 0; w < W->number_of_wells; w++) {
             nwdof = 0;
 
             for (m = 0; m < wia[w]->m; m++) {
@@ -153,7 +153,7 @@ count_conn_per_row_well(grid_t *G, well_t *W,
                 }
             }
 
-            A->ia[ nf + i + 1 ] = nwdof;
+            A->ia[ nf + w + 1 ] = nwdof;
         }
     }
 
