@@ -86,8 +86,8 @@ hybsys_well_count_conn(int nc, const int *cwpos,
 
         assert (nw >= 0);
 
-        *max_nw  = MAX(*max_nw, nw);
-        sum_nwc += nw;
+        *max_nw   = MAX(*max_nw, nw);
+        *sum_nwc += nw;
     }
 }
 
@@ -503,7 +503,7 @@ hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
                              struct hybsys *sys, struct hybsys_well *wsys)
 /* ---------------------------------------------------------------------- */
 {
-    int        w, nw, wp1;
+    int        i, w, nw, wp1;
     MAT_SIZE_T mm, nn, kk, ld1, ld2, ld3, incx, incy;
     double     a1, a2, q;
 
@@ -537,7 +537,7 @@ hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
            &a2, wsys->w2w, &ld3);
 
     for (w = 0; w < nw; w++) {
-        wsys->w2w[w * (nw + 1)] += WI[wp1 + 1];
+        wsys->w2w[w * (nw + 1)] += WI[wp1 + w];
     }
 
     /* -------------------------------------------------------------- */
@@ -546,19 +546,16 @@ hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
     incx = incy = 1;
     q    = ddot_(&mm, &wsys->F2[wp1], &incx, &wdp[wp1], &incy);
 
-    mm = ngconn;
     a1 = -q / sys->L[c];
-    a2 = 0.0;
-    daxpy_(&mm, &a1, &sys->F1[p1], &incx, wsys->r, &incy);
+    for (i = 0; i < ngconn; i++) {
+        wsys->r[i] = a1 * sys->F1[p1 + i];
+    }
 
     sys->q[c] -= q;
-    mm = nw;
     a1 = sys->q[c] / sys->L[c];
-    a2 = 0.0;
-    daxpy_(&mm, &a1, &wsys->F1[wp1], &incx, &wsys->r[ngconn], &incy);
-
     for (w = 0; w < nw; w++) {
-        wsys->r[ngconn + w] += WI[wp1 + w] * wdp[wp1 + w];
+        wsys->r[ngconn + w] = a1*wsys->F1[wp1 + w] +
+                              WI[wp1 + w] * wdp[wp1 + 2];
     }
 }
 
