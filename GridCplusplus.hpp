@@ -137,7 +137,7 @@ private:
         int num_cells = grid.numCells();
         int num_nodes = grid.numVertices();
         int num_faces = grid.numFaces();
-        int dim = Grid::dimensions;
+        int dim = Grid::dimension;
         node_coordinates_.resize(dim*num_nodes);
         for (int n = 0; n < num_nodes; ++n) {
             for (int dd = 0; dd < dim; ++dd) {
@@ -153,7 +153,7 @@ private:
             face_areas_[f] = grid.faceArea(f);
             for (int dd = 0; dd < dim; ++dd) {
                 face_centroids_[dim*f + dd] = grid.faceCentroid(f)[dd];
-                face_normals_[dim*f + dd] = grid.faceNormals(f)[dd];
+                face_normals_[dim*f + dd] = grid.faceNormal(f)[dd];
             }
         }
 

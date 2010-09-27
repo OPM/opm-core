@@ -34,6 +34,7 @@
 #define SINTEF_LIBMIMETIC_HEADER
 
 #include "ifsh.h"
+#include "mimetic.h"
 #include "GridCplusplus.hpp"
 #include <stdexcept>
 
@@ -42,6 +43,7 @@
 /// Encapsulates the ifsh (= incompressible flow solver hybrid) solver modules.
 class Ifsh
 {
+public:
     /// @brief
     /// Default constructor, does nothing.
     Ifsh()
@@ -61,7 +63,7 @@ class Ifsh
     /// @tparam Grid This must conform to the SimpleGrid concept.
     /// @param grid The grid object.
     template <class Grid>
-    void init(const Grid& grid)
+    void init(const Grid& grid, const double* perm)
     {
         // Build C grid structure.
         grid_.init(grid);
@@ -74,25 +76,59 @@ class Ifsh
         if (!data_) {
             throw std::runtime_error("Failed to initialize ifsh solver.");
         }
+
+        // Compute inner products.
+        int num_cells = grid.numCells();
+        ncf_.resize(num_cells);
+        for (int cell = 0; cell < num_cells; ++cell) {
+            ncf_[cell] = grid.numCellFaces(cell);
+        }
+        // Zero gravity (for now)
+        int ngconn  = grid_.c_grid()->cell_facepos[num_cells];
+        int ngconn2 = data_->sum_ngconn2;
+        Binv_.resize(ngconn2);
+        gpress_.clear();
+        gpress_.resize(ngconn, 0.0); // Zero gravity for now!
+
+        grid_t* g = grid_.c_grid();
+        mim_ip_simple_all(g->number_of_cells, g->dimensions,
+                          data_->max_ngconn,
+                          &ncf_[0], g->cell_facepos, g->cell_faces,
+                          g->face_cells, g->face_centroids,
+                          g->face_normals, g->face_areas,
+                          g->cell_centroids, g->cell_volumes,
+                          const_cast<double*>(perm), &Binv_[0]);
     }
 
     /// @brief
     /// Assemble the sparse system.
-    void assemble(const std::vector<double>& sources)
+    void assemble(const std::vector<double>& sources,
+                  const std::vector<double>& total_mobilities,
+                  const std::vector<double>& omegas)
     {
-        flowbc_t* bc = 0; // TODO
-        double* src = 0; // &sources[0]; // TODO
-        double* Binv = 0; // TODO
-        double* gpress = 0; // TODO
+        // Noflow conditions for now.
+        int num_faces = grid_.c_grid()->number_of_faces;
+        std::vector<flowbc_type> bc_types(num_faces, FLUX);
+        std::vector<double> bc_vals(num_faces, 0);
+        flowbc_t bc = { &bc_types[0], &bc_vals[0] };
+
+        // Source terms from user.
+        double* src = const_cast<double*>(&sources[0]); // Ugly? Yes. Safe? I think so.
+
+        // Inner products are precomputed.
+        double* Binv = &Binv_[0];
+
+        // Gravity contribs are precomputed.
+        double* gpress = &gpress_[0];
 
         // All well related things are zero.
         well_control_t* wctrl = 0;
         double* WI = 0;
         double* wdp = 0;
 
-        double* totmob = 0; // TODO
-        double* omega = 0; // TODO
-        ifsh_assemble(bc, src, Binv, gpress, wctrl, WI, wdp, totmob, omega, data_);
+        double* totmob = const_cast<double*>(&total_mobilities[0]);
+        double* omega = const_cast<double*>(&omega[0]);
+        ifsh_assemble(&bc, src, Binv, gpress, wctrl, WI, wdp, totmob, omega, data_);
     }
 
 private:
@@ -104,21 +140,19 @@ private:
     ifsh_data* data_;
     // Grid.
     GridCplusplus grid_;
+    // Number of faces per cell.
+    std::vector<int> ncf_;
+    // B^{-1} storage.
+    std::vector<double> Binv_;
+    // Face pressures ???
+    std::vector<double> gpress_;
+    // Total mobilities.
+    std::vector<double> totmob_;
+    // Gravity coefficients (\omega = sum_{i = 1}^{num phases}f_i \rho_i[TODO: check this]).
+    std::vector<double> omega_;
 };
 
 #if 0
-void
-ifsh_assemble(flowbc_t         *bc,
-              double           *src,
-              double           *Binv,
-              double           *gpress,
-              well_control_t   *wctrl,
-              double           *WI,
-              double           *wdp,
-              double           *totmob, /* \sum_i \lambda_i */
-              double           *omega,  /* \sum_i \rho_i f_i */
-              struct ifsh_data *h);
-
 void
 ifsh_press_flux(grid_t *G, struct ifsh_data *h, double *src,
                 double *cpress, double *fflux);
