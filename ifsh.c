@@ -541,7 +541,12 @@ ifsh_assemble_well(flowbc_t         *bc,
 
     npp = 0;
     for (w = 0; w < ifsh->pimpl->nw; w++) {
-        npp += wctrl->ctrl[w] == BHP;
+        if (wctrl->ctrl[w] == BHP) {
+            npp += 1;
+        } else if (wctrl->ctrl[w] == RATE) {
+            /* Impose total rate constraint. */
+            ifsh->b[ifsh->pimpl->nf + w] -= wctrl->target[w];
+        }
     }
 
     return npp;
