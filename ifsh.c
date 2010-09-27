@@ -354,7 +354,7 @@ ifsh_assemble_grid(flowbc_t         *bc,
                    struct ifsh_data *ifsh)
 /* ---------------------------------------------------------------------- */
 {
-    int     c, n, nc, p1, p2, i;
+    int     c, n, nc, p1, p2;
     int     npp;
     int    *pgconn, *gconn;
     double *BI, *gp;

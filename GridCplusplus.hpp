@@ -79,7 +79,6 @@ private:
     {
         // Face topology.
         int num_cells = grid.numCells();
-        int num_nodes = grid.numVertices();
         int num_faces = grid.numFaces();
         face_nodepos_.resize(num_faces + 1);
         int facenodecount = 0;

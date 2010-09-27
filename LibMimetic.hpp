@@ -39,6 +39,7 @@
 #include <stdexcept>
 
 
+
 /// @brief
 /// Encapsulates the ifsh (= incompressible flow solver hybrid) solver modules.
 class Ifsh
@@ -131,6 +132,42 @@ public:
         ifsh_assemble(&bc, src, Binv, gpress, wctrl, WI, wdp, totmob, omega, data_);
     }
 
+    /// Encapsulate a sparse linear system in CSR format.
+    struct LinearSystem
+    {
+        int n;
+        int nnz;
+        int* ia;
+        int* ja;
+        double* sa;
+        double* b;
+        double* x;
+    };
+
+    /// Access the linear system assembled.
+    void linearSystem(LinearSystem& s)
+    {
+        s.n = data_->A->n;
+        s.nnz = data_->A->nnz;
+        s.ia = data_->A->ia;
+        s.ja = data_->A->ja;
+        s.sa = data_->A->sa;
+        s.b = data_->b;
+        s.x = data_->x;
+    }
+
+    /// Compute cell pressures and halfface fluxes.
+    void computePressuresAndFluxes(const std::vector<double>& sources,
+                                   std::vector<double>& cpress,
+                                   std::vector<double>& hfflux)
+    {
+        int num_cells = sources.size();
+        int ngconn  = grid_.c_grid()->cell_facepos[num_cells];
+        cpress.resize(num_cells);
+        hfflux.resize(ngconn);
+        ifsh_press_flux(grid_.c_grid(), data_, const_cast<double*>(&sources[0]), &cpress[0], &hfflux[0]);
+    }
+
 private:
     // Disabling copy and assigment for now.
     Ifsh(const Ifsh&);
@@ -144,7 +181,7 @@ private:
     std::vector<int> ncf_;
     // B^{-1} storage.
     std::vector<double> Binv_;
-    // Face pressures ???
+    // Gravity contributions.
     std::vector<double> gpress_;
     // Total mobilities.
     std::vector<double> totmob_;
@@ -152,11 +189,6 @@ private:
     std::vector<double> omega_;
 };
 
-#if 0
-void
-ifsh_press_flux(grid_t *G, struct ifsh_data *h, double *src,
-                double *cpress, double *fflux);
-#endif
 
 
 
