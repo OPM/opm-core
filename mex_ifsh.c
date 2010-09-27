@@ -956,6 +956,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
             deallocate_flowbc(bc);    mxFree(perm);    mxFree(src);
         }
 
+        mrst_well_deallocate(W);
         free_mrst_grid(g);
     } else {
     }
