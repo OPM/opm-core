@@ -106,13 +106,13 @@ hybsys_cellcontrib_unsymm(int c, int nconn, int p1, int p2,
 
 void
 hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
-                             const int *cwpos, const int *cwells,
+                             const int *cwpos,
                              const double *WI, const double *wdp,
                              struct hybsys *sys, struct hybsys_well *wsys);
 
 void
 hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
-                          const double *gpress, const double *src,
+                          const double *gpress,
                           const double *Binv, const struct hybsys *sys,
                           const double *pi, double *press, double *flux,
                           double *work);

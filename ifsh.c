@@ -521,7 +521,7 @@ ifsh_assemble_well(flowbc_t         *bc,
 
         if (nwconn > 0) {
             hybsys_well_cellcontrib_symm(c, ngconn, pgconn[c],
-                                         pwconn, wconn,
+                                         pwconn,
                                          ifsh->pimpl->WI,
                                          ifsh->pimpl->wdp,
                                          ifsh->pimpl->sys,
@@ -612,7 +612,7 @@ ifsh_assemble(flowbc_t         *bc,
  * substitution process, projected half-contact fluxes. */
 /* ---------------------------------------------------------------------- */
 void
-ifsh_press_flux(grid_t *G, struct ifsh_data *h, double *src,
+ifsh_press_flux(grid_t *G, struct ifsh_data *h,
                 double *cpress, double *fflux,
                 double *wpress, double *wflux)
 /* ---------------------------------------------------------------------- */
@@ -624,7 +624,7 @@ ifsh_press_flux(grid_t *G, struct ifsh_data *h, double *src,
                               G->cell_facepos,
                               G->cell_faces,
                               h->pimpl->gpress,
-                              src, h->pimpl->Binv,
+                              h->pimpl->Binv,
                               h->pimpl->sys,
                               h->x, cpress, h->pimpl->cflux,
                               h->pimpl->work);

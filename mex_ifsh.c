@@ -957,7 +957,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
                 wbhp   = mxGetPr(plhs[1]);
                 wflux  = mxGetPr(plhs[2]);
 
-                ifsh_press_flux(g, h, src, cpress, fflux, wbhp, wflux);
+                ifsh_press_flux(g, h, cpress, fflux, wbhp, wflux);
             }
 
             deallocate_disc_data(disc_data);
