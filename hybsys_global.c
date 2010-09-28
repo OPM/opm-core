@@ -272,7 +272,7 @@ hybsys_define_globconn(grid_t *G, well_t *W)
         if (ok) {
             derive_cell_wells(G->number_of_cells, W, cwell_pos, cwells);
         }
-        nw = ok && W->number_of_wells;
+        nw = ok ? W->number_of_wells : 0;
 
         if (nw > 0) {
             wia = allocate_well_dofset(G, W);
