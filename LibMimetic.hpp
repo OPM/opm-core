@@ -170,9 +170,17 @@ public:
     {
         int num_cells = sources.size();
         int ngconn  = grid_.c_grid()->cell_facepos[num_cells];
-        cpress.resize(num_cells);
-        hfflux.resize(ngconn);
+        cpress.clear();
+        cpress.resize(num_cells, 0.0);
+        hfflux.clear();
+        hfflux.resize(ngconn, 0.0);
         ifsh_press_flux(grid_.c_grid(), data_, const_cast<double*>(&sources[0]), &cpress[0], &hfflux[0]);
+    }
+
+    /// Access the number of connections (faces) per cell.
+    const std::vector<int>& numCellFaces()
+    {
+        return ncf_;
     }
 
 private:
