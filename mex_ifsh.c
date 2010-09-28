@@ -878,7 +878,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
     flowbc_t  *bc;
     double    *src, *perm;
 
-    double *cpress, *fflux, *fpress;
+    double *cpress, *fflux;
 
     struct mrst_well *W;
     well_t           *wdesc;
