@@ -530,8 +530,8 @@ ifsh_assemble_well(flowbc_t         *bc,
             ifsh_impose_well_control(c, bc, wctrl, ifsh);
 
             hybsys_global_assemble_well_sym(ifsh->pimpl->nf,
-                                            ngconn, ifsh->pimpl->gconn,
-                                            nwconn, ifsh->pimpl->cwells,
+                                            ngconn, gconn +   pgconn[c],
+                                            nwconn, wconn + 2*pwconn[c] + 0,
                                             ifsh->pimpl->wsys->r2w,
                                             ifsh->pimpl->wsys->w2w,
                                             ifsh->pimpl->wsys->r,
