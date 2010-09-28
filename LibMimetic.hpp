@@ -163,18 +163,17 @@ public:
         s.x = data_->x;
     }
 
-    /// Compute cell pressures and halfface fluxes.
-    void computePressuresAndFluxes(const std::vector<double>& sources,
-                                   std::vector<double>& cpress,
-                                   std::vector<double>& hfflux)
+    /// Compute cell pressures and face fluxes.
+    void computePressuresAndFluxes(std::vector<double>& cell_pressures,
+                                   std::vector<double>& face_fluxes)
     {
-        int num_cells = sources.size();
-        int ngconn  = grid_.c_grid()->cell_facepos[num_cells];
-        cpress.clear();
-        cpress.resize(num_cells, 0.0);
-        hfflux.clear();
-        hfflux.resize(ngconn, 0.0);
-        ifsh_press_flux(grid_.c_grid(), data_, const_cast<double*>(&sources[0]), &cpress[0], &hfflux[0]);
+        int num_cells = grid_.c_grid()->number_of_cells;
+        int num_faces = grid_.c_grid()->number_of_faces;
+        cell_pressures.clear();
+        cell_pressures.resize(num_cells, 0.0);
+        face_fluxes.clear();
+        face_fluxes.resize(num_faces, 0.0);
+        ifsh_press_flux(grid_.c_grid(), data_, &cell_pressures[0], &face_fluxes[0], 0, 0);
     }
 
     /// Access the number of connections (faces) per cell.
