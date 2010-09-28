@@ -48,7 +48,8 @@ ifsh_assemble(flowbc_t         *bc,
 
 void
 ifsh_press_flux(grid_t *G, struct ifsh_data *h, double *src,
-                double *cpress, double *fflux);
+                double *cpress, double *fflux,
+                double *wpress, double *wflux);
 
 
 #ifdef __cplusplus

@@ -613,7 +613,8 @@ ifsh_assemble(flowbc_t         *bc,
 /* ---------------------------------------------------------------------- */
 void
 ifsh_press_flux(grid_t *G, struct ifsh_data *h, double *src,
-                double *cpress, double *fflux)
+                double *cpress, double *fflux,
+                double *wpress, double *wflux)
 /* ---------------------------------------------------------------------- */
 {
     int c, f, i;
@@ -627,6 +628,18 @@ ifsh_press_flux(grid_t *G, struct ifsh_data *h, double *src,
                               h->pimpl->sys,
                               h->x, cpress, h->pimpl->cflux,
                               h->pimpl->work);
+
+    if (h->pimpl->nw > 0) {
+        assert ((wpress != NULL) && (wflux != NULL));
+        hybsys_compute_press_flux_well(G->number_of_cells, G->cell_facepos,
+                                       G->number_of_faces, h->pimpl->nw,
+                                       h->pimpl->cwpos, h->pimpl->cwells,
+                                       h->pimpl->Binv, h->pimpl->WI,
+                                       h->pimpl->wdp, h->pimpl->sys,
+                                       h->pimpl->wsys, h->x, cpress,
+                                       h->pimpl->cflux, wpress, wflux,
+                                       h->pimpl->work);
+    }
 
     for (f = 0; f < G->number_of_faces; f++) { fflux[f] = 0.0; }
 

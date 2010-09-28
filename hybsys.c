@@ -611,6 +611,73 @@ hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
 }
 
 
+/* ---------------------------------------------------------------------- */
+void
+hybsys_compute_press_flux_well(int nc, const int *pgconn, int nf,
+                               int nw, const int *pwconn, const int *wconn,
+                               const double *Binv,
+                               const double *WI,
+                               const double *wdp,
+                               const struct hybsys      *sys,
+                               const struct hybsys_well *wsys,
+                               const double             *pi,
+                               double *cpress, double *cflux,
+                               double *wpress, double *wflux,
+                               double *work)
+/* ---------------------------------------------------------------------- */
+{
+    int    c, w, wg, perf;
+    int    ngconn, nwconn;
+    size_t gp1, gp2, wp1;
+
+    MAT_SIZE_T mm, nn, incx, incy, ld;
+
+    double dcp, one;
+
+    gp2 = 0;
+    for (c = 0; c < nc; c++) {
+        ngconn = pgconn[c + 1] - pgconn[c];
+        nwconn = pwconn[c + 1] - pwconn[c];
+
+        if (nwconn > 0) {
+            dcp = 0.0;
+            
+            gp1 = pgconn[c];
+            wp1 = pwconn[c];
+
+            for (w = 0; w < nwconn; w++) {
+                wg      = wconn[2*(wp1 + w) + 0];
+                work[w] = pi[nf + wg];
+            }
+
+            mm   = nwconn;  incx = incy = 1;
+            dcp  = ddot_(&mm, &wsys->F2[wp1], &incx, work, &incy);
+            dcp /= sys->L[c];
+
+            cpress[c] += dcp;
+
+            mm  = nn = ld = ngconn;
+            one = 1.0;
+            dgemv_("No Transpose", &mm, &nn,
+                   &dcp, &Binv[gp2], &ld, sys->one  , &incx,
+                   &one,                 &cflux[gp1], &incy);
+
+            for (w = 0; w < nwconn; w++) {
+                perf         = wconn[2*(wp1 + w) + 1];
+
+                wflux[perf]  = wdp[wp1 + w] + cpress[c] - work[w];
+                wflux[perf] *= - WI [wp1 + w]; /* Sign => positive inj. */
+            }
+        }
+
+        gp2 += ngconn + ngconn;
+    }
+
+    /* Assign well BHP from linsolve output */
+    memcpy(wpress, pi + nf, nw * sizeof *wpress);
+}
+
+
 #if 0
 /*
  * Routines to assemble global matrix

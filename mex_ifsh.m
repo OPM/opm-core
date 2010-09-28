@@ -2,21 +2,25 @@ function varargout = mex_ifsh(varargin)
 %Discretise and solve flow equation using compiled C code.
 %
 % SYNOPSIS:
-%   state = mex_ifsh(state, G, rock, bc, src)
+%   [state, wbhp, wflux] = mex_ifsh(state, G, rock, W, bc, src)
 %
 % DESCRIPTION:
 %   Equivalent to the standard MRST call sequence
 %
 %   fluid = initSingleFluid('mu', 1, 'rho', 1)
 %   S     = computeMimeticIP(G, rock)
-%   state = solveIncompFlow(state, G, S, fluid, 'src', src, 'bc', bc)
+%   state = solveIncompFlow(state, G, S, fluid, ...
+%                           'wells', W, 'src', src, 'bc', bc)
 %
 %   Note in particular that the inner products are computed at each call.
 %
 % PARAMETERS:
 %   state   - Reservori state.
 %
-%   G, rock - Grid and rock data structures, respectivelly
+%   G, rock - Grid and rock data structures, respectively.
+%
+%   W       - Well data structure as defined by 'addWell'.  May be an empty
+%             array (interpreted as no wells).
 %
 %   bc, src - Boundary condition and source data structures as defined by
 %             'addBC' and 'addSource', respectively.  Either may be empty.
@@ -24,6 +28,13 @@ function varargout = mex_ifsh(varargin)
 % RETURNS:
 %   state   - Updated reservoir state.  Contains new values for
 %             'state.pressure' and 'state.flux'.
+%
+%   wbhp    - Well bottom-hole pressures.  One scalar for each well.  Empty
+%             in case of no wells.
+%
+%   wflux   - Well perforation fluxes.  One scalar value, positive for
+%             injection, for each perforation for each flux.  Empty in case
+%             of no wells.
 %
 % SEE ALSO:
 %   mex_ip_simple, mex_schur_comp_symm, test_mex_schur_comp_symm.

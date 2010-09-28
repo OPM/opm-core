@@ -117,4 +117,16 @@ hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
                           const double *pi, double *press, double *flux,
                           double *work);
 
+void
+hybsys_compute_press_flux_well(int nc, const int *pgconn, int nf,
+                               int nw, const int *pwconn, const int *wconn,
+                               const double *Binv,
+                               const double *WI,
+                               const double *wdp,
+                               const struct hybsys      *sys,
+                               const struct hybsys_well *wsys,
+                               const double             *pi,
+                               double *cpress, double *cflux,
+                               double *wpress, double *wflux,
+                               double *work);
 #endif  /* HYBSYS_H_INCLUDED */

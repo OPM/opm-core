@@ -159,7 +159,7 @@ verify_src(const mxArray *src)
 }
 
 
-/* x = mex_ifsh(x, G, rock, W, bc, src) */
+/* [x, wbhp, wflux] = mex_ifsh(x, G, rock, W, bc, src) */
 /* ---------------------------------------------------------------------- */
 static int
 args_ok(int nlhs, int nrhs, const mxArray *prhs[])
@@ -167,7 +167,7 @@ args_ok(int nlhs, int nrhs, const mxArray *prhs[])
 {
     int ok;
 
-    ok = (nlhs == 1) && (nrhs == 6);
+    ok = (nlhs == 3) && (nrhs == 6);
 
     ok = ok && verify_state(prhs[0]);
     ok = ok && verify_grid (prhs[1]);
@@ -864,7 +864,7 @@ vector_zero(size_t n, double *v)
 
 
 /*
- * x = mex_ifsh(x, G, rock, W, bc, src)
+ * [x, wbhp, wflux] = mex_ifsh(x, G, rock, W, bc, src)
  */
 /* ---------------------------------------------------------------------- */
 void
@@ -884,7 +884,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
     well_t           *wdesc;
     well_control_t   *wctrl;
 
-    double *WI, *wdp;
+    double *WI, *wdp, *wbhp, *wflux;
 
     struct ifsh_data *h;
     struct disc_data *disc_data;
@@ -904,11 +904,17 @@ mexFunction(int nlhs,       mxArray *plhs[],
 
         if (W == NULL) {
             wdesc = NULL;  wctrl = NULL;  WI = NULL;  wdp = NULL;
+
+            plhs[1] = mxCreateDoubleMatrix(0, 1, mxREAL);
+            plhs[2] = mxCreateDoubleMatrix(0, 1, mxREAL);
         } else {
             wdesc = W->wdesc;
             wctrl = W->wctrl;
             WI    = W->wdata->WI;
             wdp   = W->wdata->wdp;
+
+            plhs[1] = mxCreateDoubleMatrix(W->wdesc->number_of_wells, 1, mxREAL);
+            plhs[2] = mxCreateDoubleMatrix(mrst_well_count_totperf(prhs[3]), 1, mxREAL);
         }
 
         if ((g != NULL) && (bc != NULL) &&
@@ -948,7 +954,10 @@ mexFunction(int nlhs,       mxArray *plhs[],
                 cpress = mxGetPr(mxGetField(plhs[0], 0, "pressure"));
                 fflux  = mxGetPr(mxGetField(plhs[0], 0, "flux"));
 
-                ifsh_press_flux(g, h, src, cpress, fflux);
+                wbhp   = mxGetPr(plhs[1]);
+                wflux  = mxGetPr(plhs[2]);
+
+                ifsh_press_flux(g, h, src, cpress, fflux, wbhp, wflux);
             }
 
             deallocate_disc_data(disc_data);
