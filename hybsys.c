@@ -511,12 +511,12 @@ hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
     wp1 = cwpos[c];
 
     /* -------------------------------------------------------------- */
-    /* w2r = F1(r)'*F2(w), r2w = w2r' */
+    /* w2r = - F1(r)'*F2(w)/L, r2w = w2r' */
     mm = ngconn;   ld1 = 1;
     nn = nw;       ld2 = 1;
     kk = 1;        ld3 = ngconn;
 
-    a1 = 1.0;
+    a1 = -1.0 / sys->L[c];
     a2 = 0.0;
 
     dgemm_("Transpose", "No Transpose", &mm, &nn, &kk,
@@ -555,7 +555,7 @@ hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
     a1 = sys->q[c] / sys->L[c];
     for (w = 0; w < nw; w++) {
         wsys->r[ngconn + w] = a1*wsys->F1[wp1 + w] +
-                              WI[wp1 + w] * wdp[wp1 + 2];
+                              WI[wp1 + w] * wdp[wp1 + w];
     }
 }
 
