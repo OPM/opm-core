@@ -129,6 +129,13 @@ public:
 
         double* totmob = const_cast<double*>(&total_mobilities[0]);
         double* omega = const_cast<double*>(&omega[0]);
+
+        // Zero the linalg structures.
+        csrmatrix_zero(data_->A);
+        for (std::size_t i = 0; i < data_->A->m; i++) {
+            data_->b[i] = 0.0;
+        }
+
         ifsh_assemble(&bc, src, Binv, gpress, wctrl, WI, wdp, totmob, omega, data_);
     }
 
