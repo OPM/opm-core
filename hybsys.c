@@ -641,7 +641,7 @@ hybsys_compute_press_flux_well(int nc, const int *pgconn, int nf,
 
         if (nwconn > 0) {
             dcp = 0.0;
-            
+
             gp1 = pgconn[c];
             wp1 = pwconn[c];
 
