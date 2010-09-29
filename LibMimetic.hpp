@@ -176,6 +176,22 @@ public:
         ifsh_press_flux(grid_.c_grid(), data_, &cell_pressures[0], &face_fluxes[0], 0, 0);
     }
 
+    /// Compute cell fluxes from face fluxes.
+    void faceFluxToCellFlux(const std::vector<double>& face_fluxes,
+                            std::vector<double>& cell_fluxes)
+    {
+        const grid_t& g = *(grid_.c_grid());
+        int num_cells = g.number_of_cells;
+        cell_fluxes.resize(g.cell_facepos[num_cells]);
+        for (int cell = 0; cell < num_cells; ++cell) {
+            for (int hface = g.cell_facepos[cell]; hface < g.cell_facepos[cell + 1]; ++hface) {
+                int face = g.cell_faces[hface];
+                bool pos = (g.face_cells[2*face] == cell);
+                cell_fluxes[hface] = pos ? face_fluxes[face] : -face_fluxes[face];
+            }
+        }
+    }
+
     /// Access the number of connections (faces) per cell.
     const std::vector<int>& numCellFaces()
     {
