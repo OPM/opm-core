@@ -438,8 +438,8 @@ ifsh_impose_well_control(int               c,
     pgconn = ifsh->pimpl->pgconn;
     pwconn = ifsh->pimpl->cwpos;
 
-    gconn  = ifsh->pimpl->gconn  + pgconn[c];
-    wconn  = ifsh->pimpl->cwells + pwconn[c];
+    gconn  = ifsh->pimpl->gconn  +   pgconn[c];
+    wconn  = ifsh->pimpl->cwells + 2*pwconn[c];
 
     ngconn = pgconn[c + 1] - pgconn[c];
     nwconn = pwconn[c + 1] - pwconn[c];
@@ -544,8 +544,11 @@ ifsh_assemble_well(flowbc_t         *bc,
         if (wctrl->ctrl[w] == BHP) {
             npp += 1;
         } else if (wctrl->ctrl[w] == RATE) {
-            /* Impose total rate constraint. */
-            ifsh->b[ifsh->pimpl->nf + w] -= wctrl->target[w];
+            /* Impose total rate constraint.
+             *
+             * Note sign resulting from ->target[w] denoting
+             * *injection* flux. */
+            ifsh->b[ifsh->pimpl->nf + w] -= - wctrl->target[w];
         }
     }
 
