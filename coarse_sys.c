@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <limits.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +20,166 @@
 #include "coarse_sys.h"
 
 
+#if defined(MAX)
+#undef MAX
+#endif
+#define MAX(a,b)  (((a) > (b)) ? (a) : (b))
+
+
+struct coarse_sys_meta {
+    size_t max_ngconn;
+    size_t sum_ngconn2;
+
+    size_t max_blk_nhf;
+    size_t max_blk_nintf;
+    size_t max_cf_nf;
+
+    int *blk_nhf;
+    int *blk_nintf;
+
+    int *loc_fno;
+    int *ncf;
+    int *pconn2;
+
+    int *pb2c, *b2c;
+    
+    int *data;
+};
+
+
+/* ---------------------------------------------------------------------- */
+static void
+coarse_sys_meta_destroy(struct coarse_sys_meta *m)
+/* ---------------------------------------------------------------------- */
+{
+    if (m != NULL) {
+        free(m->data);
+    }
+
+    free(m);
+}
+
+
+/* ---------------------------------------------------------------------- */
+struct coarse_sys_meta *
+coarse_sys_meta_allocate(size_t nblocks, size_t nfaces, size_t nc)
+/* ---------------------------------------------------------------------- */
+{
+    size_t                  alloc_sz;
+    struct coarse_sys_meta *new;
+
+    new = malloc(1 * sizeof *new);
+
+    if (new != NULL) {
+        alloc_sz  = nblocks;     /* blk_nhf */
+        alloc_sz += nblocks;     /* blk_nintf */
+        alloc_sz += nc;          /* ncf */
+        alloc_sz += nc + 1;      /* pconn2 */
+        alloc_sz += nfaces;      /* loc_fno */
+        alloc_sz += nblocks + 1; /* pb2c */
+        alloc_sz += nc;          /* b2c */
+
+        new->data = calloc(alloc_sz, sizeof *new->data);
+
+        if (new->data == NULL) {
+            coarse_sys_meta_destroy(new);
+
+            new = NULL;
+        } else {
+            new->blk_nhf   = new->data;
+            new->blk_nintf = new->blk_nhf   + nblocks;
+            new->ncf       = new->blk_nintf + nblocks;
+            new->pconn2    = new->ncf       + nc;
+            new->loc_fno   = new->pconn2    + nc + 1;
+
+            new->pb2c      = new->loc_fno   + nfaces;
+            new->b2c       = new->pb2c      + nblocks + 1;
+        }
+    }
+
+    return new;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static void
+coarse_sys_meta_fill(int nc, const int *pgconn,
+                     size_t nneigh, const int *neigh,
+                     const int *p,
+                     struct coarse_topology *ct,
+                     struct coarse_sys_meta *m)
+/* ---------------------------------------------------------------------- */
+{
+    int    c1, b1, c2, b2, n;
+    size_t f;
+
+    m->max_blk_nhf = m->max_blk_nintf = 0;
+
+    for (f = 0; f < nneigh; f++) {
+        c1 = neigh[2*f + 0];   b1 = (c1 >= 0) ? p[c1] : -1;
+        c2 = neigh[2*f + 1];   b2 = (c2 >= 0) ? p[c2] : -1;
+
+        assert ((b1 >= 0) || (b2 >= 0));
+
+        if (b1 == b2) {
+            m->blk_nintf[b1] += 1;
+            m->max_blk_nintf  = MAX(m->max_blk_nintf, m->blk_nintf[b1]);
+        }
+
+        if (b1 >= 0) {
+            m->blk_nhf[b1] += 1;
+            m->max_blk_nhf  = MAX(m->max_blk_nhf, m->blk_nhf[b1]);
+        }
+
+        if (b2 >= 0) {
+            m->blk_nhf[b2] += 1;
+            m->max_blk_nhf  = MAX(m->max_blk_nhf, m->blk_nhf[b2]);
+        }
+    }
+
+    memset(m->loc_fno, -1, nneigh * sizeof *m->loc_fno);
+
+    m->max_cf_nf = 0;
+
+    for (f = 0; f < (size_t) ct->nfaces; f++) {
+        m->max_cf_nf = MAX(m->max_cf_nf,
+                           ct->subfacepos[f + 1] - ct->subfacepos[f]);
+    }
+
+    m->max_ngconn = m->sum_ngconn2 = 0;
+    for (c1 = 0; c1 < nc; c1++) {
+        n = pgconn[c1 + 1] - pgconn[c1];
+
+        m->max_ngconn   = MAX(m->max_ngconn, (size_t) n);
+        m->sum_ngconn2 += n * n;
+
+        m->ncf[c1]        = n;
+        m->pconn2[c1 + 1] = m->pconn2[c1] + (n * n);
+    }
+
+    partition_invert(nc, p, m->pb2c, m->b2c);
+}
+
+
+/* ---------------------------------------------------------------------- */
+static struct coarse_sys_meta *
+coarse_sys_meta_construct(size_t nc, const int *pgconn,
+                          size_t nneigh, const int *neigh,
+                          const int *p, struct coarse_topology *ct)
+/* ---------------------------------------------------------------------- */
+{
+    struct coarse_sys_meta *m;
+
+    m = coarse_sys_meta_allocate(ct->nblocks, ct->nfaces, nc);
+
+    if (m != NULL) {
+        coarse_sys_meta_fill(nc, pgconn, nneigh, neigh, p, ct, m);
+    }
+
+    return m;
+}
+
+
 /* max(diff(p(1:n))) */
 /* ---------------------------------------------------------------------- */
 static int
@@ -36,6 +197,215 @@ max_diff(int n, int *p)
     }
 
     return ret;
+}
+
+
+/* ---------------------------------------------------------------------- */
+void
+coarse_sys_destroy(struct coarse_sys *sys)
+/* ---------------------------------------------------------------------- */
+{
+    if (sys != NULL) {
+        free(sys->Binv);
+        free(sys->cell_ip);
+        free(sys->basis);
+        free(sys->blkdof);
+
+        free(sys->ip_pos);
+        free(sys->bf_pos);
+        free(sys->dof_pos);
+    }
+
+    free(sys);
+}
+
+
+/* ---------------------------------------------------------------------- */
+static double *
+compute_fs_ip(grid_t *g, const double *perm,
+              const struct coarse_sys_meta *m)
+/* ---------------------------------------------------------------------- */
+{
+    double *Binv;
+
+    Binv = malloc(m->sum_ngconn2 * sizeof *Binv);
+
+    if (Binv != NULL) {
+        mim_ip_simple_all(g->number_of_cells, g->dimensions, m->max_ngconn,
+                          m->ncf, g->cell_facepos, g->cell_faces,
+                          g->face_cells, g->face_centroids, g->face_normals,
+                          g->face_areas, g->cell_centroids, g->cell_volumes,
+                          perm, Binv);
+    }
+    
+    return Binv;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static double *
+perm_weighting(size_t nc, size_t nd,
+               const double *perm,
+               const double *cvol)
+/* ---------------------------------------------------------------------- */
+{
+    size_t c, d, off;
+    double t;
+    double *w;
+
+    w = malloc(nc * sizeof *w);
+
+    if (w != NULL) {
+        for (c = off = 0; c < nc; c++, off += nd*nd) {
+            t = 0.0;
+
+            for (d = 0; d < nd; d++) {
+                t += perm[off + d*(nd + 1)];
+            }
+
+            w[c] = t * cvol[c];
+        }
+    }
+
+    return w;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static int
+enforce_explicit_source(size_t nc, size_t nb, const int *p,
+                        const double *src, struct coarse_sys_meta *m,
+                        double *w)
+/* ---------------------------------------------------------------------- */
+{
+    int     i, ret;
+    size_t  c, b;
+    int    *has_src;
+
+    ret     = 0;
+    has_src = calloc(nb, sizeof *has_src);
+
+    if (has_src != NULL) {
+        for (c = 0; c < nc; c++) {
+            has_src[p[c]] += fabs(src[c]) > 0.0;
+        }
+
+        for (b = 0; b < nb; b++) {
+            if (has_src[b]) {
+                for (i = m->pb2c[b]; i < m->pb2c[b + 1]; i++) {
+                    w[m->b2c[i]] = 0.0;
+                }
+            }
+        }
+
+        for (c = 0; c < nc; c++) {
+            if (fabs(src[c]) > 0.0) {
+                w[c] = src[c];
+            }
+        }
+
+        ret = 1;
+    }
+
+    free(has_src);
+
+    return ret;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static int
+normalize_weighting(size_t nc, size_t nb, const int *p, double *w)
+/* ---------------------------------------------------------------------- */
+{
+    int     ret;
+    size_t  c, b;
+    double *bw;
+
+    ret = 0;
+    bw  = malloc(nb * sizeof *bw);
+
+    if (bw != NULL) {
+        for (b = 0; b < nb; b++) { bw[ b  ]  =  0.0; }
+        for (c = 0; c < nc; c++) { bw[p[c]] += w[c]; }
+
+        for (c = 0; c < nc; c++) {
+            assert (fabs(bw[p[c]]) > 0.0);
+
+            w[c] /= bw[p[c]];
+        }
+
+        ret = 1;
+    }
+
+    free(bw);
+
+    return ret;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static double *
+coarse_weight(grid_t *g, size_t nb,
+              const int              *p,
+              struct coarse_sys_meta *m,
+              const double           *perm, const double *src)
+/* ---------------------------------------------------------------------- */
+{
+    int     ok;
+    double *w;
+
+    ok = 0;
+    w  = perm_weighting(nb, g->dimensions, perm, g->cell_volumes);
+
+    if (w != NULL) {
+        ok = enforce_explicit_source(g->number_of_cells,
+                                     nb, p, src, m, w);
+    }
+
+    if (ok) {
+        ok = normalize_weighting(g->number_of_cells, nb, p, w);
+    }
+
+    if (!ok) { free(w);  w = NULL; }
+
+    return w;
+}
+
+
+/* ---------------------------------------------------------------------- */
+struct coarse_sys *
+coarse_sys_construct(grid_t *g, const int   *p,
+                     struct coarse_topology *ct,
+                     const double           *perm,
+                     const double           *src,
+                     const double           *totmob)
+/* ---------------------------------------------------------------------- */
+{
+    double                 *Binv, *w;
+    struct coarse_sys_meta *m;
+    struct coarse_sys      *sys;
+
+    sys = NULL;  Binv = NULL;
+    m   = coarse_sys_meta_construct(g->number_of_cells, g->cell_facepos,
+                                    g->number_of_faces, g->face_cells,
+                                    p, ct);
+
+    if (m != NULL) {
+        Binv = compute_fs_ip(g, perm, m);
+        w    = coarse_weight(g, ct->nblocks, p, m, perm, src);
+    }
+#if 0
+    if (Binv != NULL) {
+        sys = coarse_sys_define();
+    }
+#endif
+
+    free(w);
+    free(Binv);
+    coarse_sys_meta_destroy(m);
+
+    return sys;
 }
 
 

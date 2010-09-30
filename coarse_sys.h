@@ -1,5 +1,11 @@
+/*
+ * Copyright (c) 2010 SINTEF ICT, Applied Mathematics
+ */
+
 #ifndef COARSE_SYS_H_INCLUDED
 #define COARSE_SYS_H_INCLUDED
+
+#include "grid.h"
 
 /* ---------------------------------------------------------------------- */
 
@@ -16,6 +22,16 @@ struct coarse_sys {
 
 
 /* ---------------------------------------------------------------------- */
+
+struct coarse_sys *
+coarse_sys_construct(grid_t *g, const int   *p,
+                     struct coarse_topology *ct,
+                     const double           *perm,
+                     const double           *src,
+                     const double           *totmob);
+
+void
+coarse_sys_destroy(struct coarse_sys *sys);
 
 void
 coarse_sys_compute_cell_ip(int                nc,
