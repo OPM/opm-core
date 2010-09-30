@@ -122,6 +122,10 @@ public:
             throw std::runtime_error("Error in Ifsh::assemble(): You must call init() prior to calling assemble().");
         }
         // Noflow conditions for now.
+        //
+        // Caution: These following statements only work by accident.
+        // Caused by poor implementation in ifsh_assemble().
+        //
         int num_faces = grid_.c_grid()->number_of_faces;
         std::vector<flowbc_type> bc_types(num_faces, FLUX);
         std::vector<double> bc_vals(num_faces, 0);
