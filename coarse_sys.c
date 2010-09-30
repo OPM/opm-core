@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2010 SINTEF ICT, Applied Mathemathics
+ */
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
