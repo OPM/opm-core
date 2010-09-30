@@ -21,6 +21,11 @@
 #include "blas_lapack.h"
 #include "coarse_conn.h"
 #include "coarse_sys.h"
+#include "hybsys.h"
+#include "hybsys_global.h"
+#include "mimetic.h"
+#include "partition.h"
+#include "sparse_sys.h"
 
 
 #if defined(MAX)
@@ -33,8 +38,10 @@ struct coarse_sys_meta {
     size_t max_ngconn;
     size_t sum_ngconn2;
 
+    size_t max_blk_cells;
     size_t max_blk_nhf;
     size_t max_blk_nintf;
+    size_t max_blk_sum_nhf2;
     size_t max_cf_nf;
 
     int *blk_nhf;
@@ -47,6 +54,20 @@ struct coarse_sys_meta {
     int *pb2c, *b2c;
     
     int *data;
+};
+
+
+struct bf_asm_data {
+    struct hybsys *fsys;
+
+    struct CSRMatrix *A;
+    double           *b;
+    double           *x;
+
+    double           *v;
+    double           *p;
+
+    double *store;
 };
 
 
@@ -113,8 +134,8 @@ coarse_sys_meta_fill(int nc, const int *pgconn,
                      struct coarse_sys_meta *m)
 /* ---------------------------------------------------------------------- */
 {
-    int    c1, b1, c2, b2, n;
-    size_t f;
+    int    c1, b1, c2, b2, i, n;
+    size_t f, blk_sum_nhf2;
 
     m->max_blk_nhf = m->max_blk_nintf = 0;
 
@@ -126,17 +147,20 @@ coarse_sys_meta_fill(int nc, const int *pgconn,
 
         if (b1 == b2) {
             m->blk_nintf[b1] += 1;
-            m->max_blk_nintf  = MAX(m->max_blk_nintf, m->blk_nintf[b1]);
+            m->max_blk_nintf  = MAX(m->max_blk_nintf,
+                                    (size_t) m->blk_nintf[b1]);
         }
 
         if (b1 >= 0) {
             m->blk_nhf[b1] += 1;
-            m->max_blk_nhf  = MAX(m->max_blk_nhf, m->blk_nhf[b1]);
+            m->max_blk_nhf  = MAX(m->max_blk_nhf,
+                                  (size_t) m->blk_nhf[b1]);
         }
 
         if (b2 >= 0) {
             m->blk_nhf[b2] += 1;
-            m->max_blk_nhf  = MAX(m->max_blk_nhf, m->blk_nhf[b2]);
+            m->max_blk_nhf  = MAX(m->max_blk_nhf,
+                                  (size_t) m->blk_nhf[b2]);
         }
     }
 
@@ -146,7 +170,8 @@ coarse_sys_meta_fill(int nc, const int *pgconn,
 
     for (f = 0; f < (size_t) ct->nfaces; f++) {
         m->max_cf_nf = MAX(m->max_cf_nf,
-                           ct->subfacepos[f + 1] - ct->subfacepos[f]);
+                           (size_t) (ct->subfacepos[f + 1] -
+                                     ct->subfacepos[f]));
     }
 
     m->max_ngconn = m->sum_ngconn2 = 0;
@@ -161,6 +186,25 @@ coarse_sys_meta_fill(int nc, const int *pgconn,
     }
 
     partition_invert(nc, p, m->pb2c, m->b2c);
+
+    m->max_blk_cells = 0;
+    for (b1 = 0; b1 < ct->nblocks; b1++) {
+        m->max_blk_cells = MAX(m->max_blk_cells,
+                               (size_t) (m->pb2c[b1 + 1] -
+                                         m->pb2c[b1]));
+    }
+
+    m->max_blk_sum_nhf2 = 0;
+    for (b1 = 0; b1 < ct->nblocks; b1++) {
+        blk_sum_nhf2 = 0;
+
+        for (i = m->pb2c[b1]; i < m->pb2c[b1 + 1]; i++) {
+            c1 = m->b2c[i];
+            blk_sum_nhf2 += m->pconn2[c1 + 1] - m->pconn2[c1];
+        }
+
+        m->max_blk_sum_nhf2 = MAX(m->max_blk_sum_nhf2, blk_sum_nhf2);
+    }
 }
 
 
@@ -225,8 +269,7 @@ coarse_sys_destroy(struct coarse_sys *sys)
 
 /* ---------------------------------------------------------------------- */
 static double *
-compute_fs_ip(grid_t *g, const double *perm,
-              const struct coarse_sys_meta *m)
+compute_fs_ip(grid_t *g, double *perm, const struct coarse_sys_meta *m)
 /* ---------------------------------------------------------------------- */
 {
     double *Binv;
@@ -377,6 +420,68 @@ coarse_weight(grid_t *g, size_t nb,
 
 
 /* ---------------------------------------------------------------------- */
+static void
+bf_asm_data_deallocate(struct bf_asm_data *data)
+/* ---------------------------------------------------------------------- */
+{
+    if (data != NULL) {
+        free            (data->store);
+        csrmatrix_delete(data->A);
+        hybsys_free     (data->fsys);
+    }
+
+    free(data);
+}
+
+
+/* ---------------------------------------------------------------------- */
+static struct bf_asm_data *
+bf_asm_data_allocate(struct coarse_topology *ct,
+                     struct coarse_sys_meta *m)
+/* ---------------------------------------------------------------------- */
+{
+    size_t              max_nhf, max_cells, max_faces;
+    struct bf_asm_data *new;
+
+    new = malloc(1 * sizeof *new);
+
+    if (new != NULL) {
+        max_nhf   = 2 * m->max_blk_nhf;
+        max_cells = 2 * m->max_blk_cells;
+        max_faces = 2 * m->max_blk_nintf + m->max_cf_nf;
+    }
+
+    return new;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static struct coarse_sys *
+coarse_sys_allocate(struct coarse_topology *ct,
+                    struct coarse_sys_meta *m)
+/* ---------------------------------------------------------------------- */
+{
+}
+
+
+/* ---------------------------------------------------------------------- */
+static struct coarse_sys *
+coarse_sys_define(grid_t *g, const double *Binv, const double *w,
+                  struct coarse_topology *ct, struct coarse_sys_meta *m)
+/* ---------------------------------------------------------------------- */
+{
+    struct coarse_sys *sys;
+
+    sys = coarse_sys_allocate(ct, m);
+
+    if (sys != NULL) {
+    }
+
+    return sys;
+}
+
+
+/* ---------------------------------------------------------------------- */
 struct coarse_sys *
 coarse_sys_construct(grid_t *g, const int   *p,
                      struct coarse_topology *ct,
@@ -389,17 +494,19 @@ coarse_sys_construct(grid_t *g, const int   *p,
     struct coarse_sys_meta *m;
     struct coarse_sys      *sys;
 
-    sys = NULL;  Binv = NULL;
-    m   = coarse_sys_meta_construct(g->number_of_cells, g->cell_facepos,
-                                    g->number_of_faces, g->face_cells,
-                                    p, ct);
+    sys = NULL;  Binv = NULL;  w = NULL;
+
+    m = coarse_sys_meta_construct(g->number_of_cells, g->cell_facepos,
+                                  g->number_of_faces, g->face_cells,
+                                  p, ct);
 
     if (m != NULL) {
         Binv = compute_fs_ip(g, perm, m);
         w    = coarse_weight(g, ct->nblocks, p, m, perm, src);
     }
+
 #if 0
-    if (Binv != NULL) {
+    if ((Binv != NULL) && (w != NULL)) {
         sys = coarse_sys_define();
     }
 #endif
