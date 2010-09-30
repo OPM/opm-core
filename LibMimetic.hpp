@@ -48,7 +48,7 @@ public:
     /// @brief
     /// Default constructor, does nothing.
     Ifsh()
-        : data_(0)
+        :  state_(Uninitialized), data_(0)
     {
     }
 
@@ -63,6 +63,7 @@ public:
     /// Initialize the solver's structures for a given grid (at some point also well pattern).
     /// @tparam Grid This must conform to the SimpleGrid concept.
     /// @param grid The grid object.
+    /// @param perm Permeability. It should contain dim*dim entries (a full tensor) for each cell.
     template <class Grid>
     void init(const Grid& grid, const double* perm)
     {
@@ -99,14 +100,27 @@ public:
                           g->face_normals, g->face_areas,
                           g->cell_centroids, g->cell_volumes,
                           const_cast<double*>(perm), &Binv_[0]);
+        state_ = Initialized;
     }
 
     /// @brief
     /// Assemble the sparse system.
+    /// You must call init() prior to calling assemble().
+    /// @param sources Source terms, one per cell. Positive numbers
+    /// are sources, negative are sinks.
+    /// @param total_mobilities Scalar total mobilities, one per cell.
+    /// @param omegas Gravity term, one per cell. In a multi-phase
+    /// flow setting this is equal to
+    /// \f[ \omega = \sum_{p} \frac{\lambda_p}{\lambda_t} \rho_p \f]
+    /// where \f$\lambda_p\f$ is a phase mobility, \f$\rho_p\f$ is a
+    /// phase density and \f$\lambda_t\f$ is the total mobility.
     void assemble(const std::vector<double>& sources,
                   const std::vector<double>& total_mobilities,
                   const std::vector<double>& omegas)
     {
+        if (state_ == Uninitialized) {
+            throw std::runtime_error("Error in Ifsh::assemble(): You must call init() prior to calling assemble().");
+        }
         // Noflow conditions for now.
         int num_faces = grid_.c_grid()->number_of_faces;
         std::vector<flowbc_type> bc_types(num_faces, FLUX);
@@ -128,7 +142,7 @@ public:
         double* wdp = 0;
 
         double* totmob = const_cast<double*>(&total_mobilities[0]);
-        double* omega = const_cast<double*>(&omega[0]);
+        double* omega = const_cast<double*>(&omegas[0]);
 
         // Zero the linalg structures.
         csrmatrix_zero(data_->A);
@@ -137,6 +151,8 @@ public:
         }
 
         ifsh_assemble(&bc, src, Binv, gpress, wctrl, WI, wdp, totmob, omega, data_);
+
+        state_ = Assembled;
     }
 
     /// Encapsulate a sparse linear system in CSR format.
@@ -151,9 +167,19 @@ public:
         double* x;
     };
 
+    /// @brief
     /// Access the linear system assembled.
+    /// You must call assemble() prior to calling linearSystem().
+    /// @param[out] s The linear system encapsulation to modify.
+    /// After this call, s will point to linear system structures
+    /// that are owned and allocated internally.
     void linearSystem(LinearSystem& s)
+
     {
+        if (state_ != Assembled) {
+            throw std::runtime_error("Error in Ifsh::linearSystem(): "
+                                     "You must call assemble() prior to calling linearSystem().");
+        }
         s.n = data_->A->n;
         s.nnz = data_->A->nnz;
         s.ia = data_->A->ia;
@@ -163,10 +189,21 @@ public:
         s.x = data_->x;
     }
 
+    /// @brief
     /// Compute cell pressures and face fluxes.
+    /// You must call assemble() (and solve the linear system accessed
+    /// by calling linearSystem()) prior to calling
+    /// computePressuresAndFluxes().
+    /// @param[out] cell_pressures Cell pressure values.
+    /// @param[out] face_areas Face flux values.
     void computePressuresAndFluxes(std::vector<double>& cell_pressures,
                                    std::vector<double>& face_fluxes)
     {
+        if (state_ != Assembled) {
+            throw std::runtime_error("Error in Ifsh::computePressuresAndFluxes(): "
+                                     "You must call assemble() (and solve the linear system) "
+                                     "prior to calling computePressuresAndFluxes().");
+        }
         int num_cells = grid_.c_grid()->number_of_cells;
         int num_faces = grid_.c_grid()->number_of_faces;
         cell_pressures.clear();
@@ -176,10 +213,26 @@ public:
         ifsh_press_flux(grid_.c_grid(), data_, &cell_pressures[0], &face_fluxes[0], 0, 0);
     }
 
+    /// @brief
     /// Compute cell fluxes from face fluxes.
+    /// You must call assemble() (and solve the linear system accessed
+    /// by calling linearSystem()) prior to calling
+    /// faceFluxToCellFlux().
+    /// @param face_fluxes 
+    /// @param face_areas Face flux values (usually output from computePressuresAndFluxes()).
+    /// @param[out] cell_fluxes Cell-wise flux values.
+    /// They are given in cell order, and for each cell there is
+    /// one value for each adjacent face (in the same order as the
+    /// cell-face topology of the grid). Positive values represent
+    /// fluxes out of the cell.
     void faceFluxToCellFlux(const std::vector<double>& face_fluxes,
                             std::vector<double>& cell_fluxes)
     {
+        if (state_ != Assembled) {
+            throw std::runtime_error("Error in Ifsh::faceFluxToCellFlux(): "
+                                     "You must call assemble() (and solve the linear system) "
+                                     "prior to calling faceFluxToCellFlux().");
+        }
         const grid_t& g = *(grid_.c_grid());
         int num_cells = g.number_of_cells;
         cell_fluxes.resize(g.cell_facepos[num_cells]);
@@ -192,7 +245,8 @@ public:
         }
     }
 
-    /// Access the number of connections (faces) per cell.
+    /// @brief
+    /// Access the number of connections (faces) per cell. Deprecated, will be removed.
     const std::vector<int>& numCellFaces()
     {
         return ncf_;
@@ -202,6 +256,9 @@ private:
     // Disabling copy and assigment for now.
     Ifsh(const Ifsh&);
     Ifsh& operator=(const Ifsh&);
+
+    enum State { Uninitialized, Initialized, Assembled };
+    State state_;
 
     // Solver data.
     ifsh_data* data_;
