@@ -64,8 +64,9 @@ public:
     /// @tparam Grid This must conform to the SimpleGrid concept.
     /// @param grid The grid object.
     /// @param perm Permeability. It should contain dim*dim entries (a full tensor) for each cell.
+    /// @param gravity Array containing gravity acceleration vector. It should contain dim entries.
     template <class Grid>
-    void init(const Grid& grid, const double* perm)
+    void init(const Grid& grid, const double* perm, const double* gravity)
     {
         // Build C grid structure.
         grid_.init(grid);
@@ -79,18 +80,28 @@ public:
             throw std::runtime_error("Failed to initialize ifsh solver.");
         }
 
-        // Compute inner products.
+        // Compute inner products, gravity contributions.
         int num_cells = grid.numCells();
-        ncf_.resize(num_cells);
-        for (int cell = 0; cell < num_cells; ++cell) {
-            ncf_[cell] = grid.numCellFaces(cell);
-        }
-        // Zero gravity (for now)
         int ngconn  = grid_.c_grid()->cell_facepos[num_cells];
+        gpress_.clear();
+        gpress_.resize(ngconn, 0.0);
         int ngconn2 = data_->sum_ngconn2;
         Binv_.resize(ngconn2);
-        gpress_.clear();
-        gpress_.resize(ngconn, 0.0); // Zero gravity for now!
+        ncf_.resize(num_cells);
+        typename Grid::Vector grav;
+        std::copy(gravity, gravity + Grid::dimension, &grav[0]);
+        int count = 0;
+        for (int cell = 0; cell < num_cells; ++cell) {
+            int num_local_faces = grid.numCellFaces(cell);
+            ncf_[cell] = num_local_faces;
+            typename Grid::Vector cc = grid.cellCentroid(cell);
+            for (int local_ix = 0; local_ix < num_local_faces; ++local_ix) {
+                int face = grid.cellFace(cell, local_ix);
+                typename Grid::Vector fc = grid.faceCentroid(face);
+                gpress_[count++] = grav*(fc - cc);
+            }
+        }
+        assert(count == ngconn);
 
         grid_t* g = grid_.c_grid();
         mim_ip_simple_all(g->number_of_cells, g->dimensions,
@@ -102,6 +113,9 @@ public:
                           const_cast<double*>(perm), &Binv_[0]);
         state_ = Initialized;
     }
+
+
+    enum FlowBCTypes { FBC_UNSET, FBC_PRESSURE, FBC_FLUX };
 
     /// @brief
     /// Assemble the sparse system.
@@ -116,20 +130,27 @@ public:
     /// phase density and \f$\lambda_t\f$ is the total mobility.
     void assemble(const std::vector<double>& sources,
                   const std::vector<double>& total_mobilities,
-                  const std::vector<double>& omegas)
+                  const std::vector<double>& omegas,
+                  const std::vector<FlowBCTypes>& bctypes,
+                  const std::vector<double> bcvalues)
     {
         if (state_ == Uninitialized) {
             throw std::runtime_error("Error in Ifsh::assemble(): You must call init() prior to calling assemble().");
         }
-        // Noflow conditions for now.
-        //
-        // Caution: These following statements only work by accident.
-        // Caused by poor implementation in ifsh_assemble().
-        //
+
+        // Boundary conditions.
+        assert (FBC_UNSET == UNSET && FBC_PRESSURE == PRESSURE && FBC_FLUX == FLUX);
         int num_faces = grid_.c_grid()->number_of_faces;
-        std::vector<flowbc_type> bc_types(num_faces, FLUX);
-        std::vector<double> bc_vals(num_faces, 0);
-        flowbc_t bc = { &bc_types[0], &bc_vals[0] };
+        assert(num_faces == int(bctypes.size()));
+        std::vector<flowbc_type> bctypes2(num_faces, UNSET);
+        for (int face = 0; face < num_faces; ++face) {
+            if (bctypes[face] == FBC_PRESSURE) {
+                bctypes2[face] = PRESSURE;
+            } else if (bctypes[face] == FBC_FLUX) {
+                bctypes2[face] = FLUX;
+            }
+        }
+        flowbc_t bc = { &bctypes2[0], const_cast<double*>(&bcvalues[0]) };
 
         // Source terms from user.
         double* src = const_cast<double*>(&sources[0]); // Ugly? Yes. Safe? I think so.
