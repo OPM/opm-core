@@ -269,7 +269,8 @@ coarse_sys_destroy(struct coarse_sys *sys)
 
 /* ---------------------------------------------------------------------- */
 static double *
-compute_fs_ip(grid_t *g, double *perm, const struct coarse_sys_meta *m)
+compute_fs_ip(grid_t *g, const double *perm,
+              const struct coarse_sys_meta *m)
 /* ---------------------------------------------------------------------- */
 {
     double *Binv;
@@ -281,7 +282,7 @@ compute_fs_ip(grid_t *g, double *perm, const struct coarse_sys_meta *m)
                           m->ncf, g->cell_facepos, g->cell_faces,
                           g->face_cells, g->face_centroids, g->face_normals,
                           g->face_areas, g->cell_centroids, g->cell_volumes,
-                          perm, Binv);
+                          (double *) perm, Binv); /* const_cast<>() */
     }
     
     return Binv;
