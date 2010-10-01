@@ -10,14 +10,14 @@
 /* ---------------------------------------------------------------------- */
 
 struct coarse_sys {
-    int *dof_pos;              /* Start pointers to each block's dofs */
-    int *bf_pos;               /* Start pointers to each block's bf's */
-    int *ip_pos;               /* Start pointers to each block's IP */
+    int *blkdof_pos;         /* Start pointers to each block's dofs */
+    int *basis_pos;          /* Start pointers to each block's bf's */
+    int *cell_ip_pos;        /* Start pointers to each block's IP */
 
-    int    *blkdof;            /* Each block's dofs */
-    double *basis;             /* All basis functions */
-    double *cell_ip;           /* Fine-scale IP contributions */
-    double *Binv;              /* Coarse-scale inverse IP per block */
+    int    *blkdof;          /* Each block's dofs */
+    double *basis;           /* All basis functions */
+    double *cell_ip;         /* Fine-scale IP contributions */
+    double *Binv;            /* Coarse-scale inverse IP per block */
 };
 
 
