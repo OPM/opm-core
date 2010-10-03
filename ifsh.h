@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2010 SINTEF ICT, Applied Mathematics
+ */
+
 #ifndef IFSH_H_INCLUDED
 #define IFHS_H_INCLUDED
 
