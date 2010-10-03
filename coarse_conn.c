@@ -351,21 +351,18 @@ derive_block_faces(int nfinef, int nblk, int expct_nconn,
  * connectivity information ('bns') keyed off block numbers.  Set
  * start pointers for CSR push-back build mode.
  *
- * Cannot fail.
- *
- * Returns total number of fine-scale constituent faces in all coarse
- * faces if caller requested this information and zero otherwise. */
+ * Cannot fail. */
 /* ---------------------------------------------------------------------- */
-static size_t
+static void
 coarse_topology_build_coarsef(int nblk, struct block_neighbours **bns,
-                              int *neighbours, int *blkfacepos)
+                              int *neighbours, int *blkfacepos,
+                              size_t *nblkf, size_t *nsubf)
 /* ---------------------------------------------------------------------- */
 {
     int    b, n, coarse_f;
-    size_t nsubf;
 
     coarse_f = 0;
-    nsubf    = 0;
+    *nsubf   = 0;
 
     for (b = 0; b < nblk; b++) {
         if (bns[b] != NULL) {
@@ -381,20 +378,19 @@ coarse_topology_build_coarsef(int nblk, struct block_neighbours **bns,
                 }
 
                 if (bns[b]->neigh[n]->fconns != NULL) {
-                    nsubf += hash_set_count_elms(bns[b]->neigh[n]->fconns);
+                    *nsubf += hash_set_count_elms(bns[b]->neigh[n]->fconns);
                 }
             }
         }
     }
 
     /* Derive start pointers */
-    for (b = 1; b < nblk; b++) {
+    for (b = 1; b <= nblk; b++) {
         blkfacepos[0] += blkfacepos[b];
         blkfacepos[b]  = blkfacepos[0] - blkfacepos[b];
     }
+    *nblkf = blkfacepos[0];
     blkfacepos[0] = 0;
-
-    return nsubf;
 }
 
 
@@ -428,8 +424,8 @@ coarse_topology_build_final(int ncoarse_f, int nblk,
 
         assert (b1 != b2);
 
-        if (b1 >= 0) { blkfaces[blkfacepos[b1] ++] = coarse_f; }
-        if (b2 >= 0) { blkfaces[blkfacepos[b2] ++] = coarse_f; }
+        if (b1 >= 0) { blkfaces[blkfacepos[b1 + 1] ++] = coarse_f; }
+        if (b2 >= 0) { blkfaces[blkfacepos[b2 + 1] ++] = coarse_f; }
     }
 
     if (subfacepos != NULL) {
@@ -476,7 +472,7 @@ coarse_topology_build(int ncoarse_f, int nblk,
 /* ---------------------------------------------------------------------- */
 {
     int                     subface_valid;
-    size_t                  nsubf;
+    size_t                  nblkf, nsubf;
     struct coarse_topology *new;
 
     new = malloc(1 * sizeof *new);
@@ -496,9 +492,8 @@ coarse_topology_build(int ncoarse_f, int nblk,
             memset(new->neighbours, INT_MIN,
                    2 * ncoarse_f * sizeof *new->neighbours);
 
-            nsubf = coarse_topology_build_coarsef(nblk, bns,
-                                                  new->neighbours,
-                                                  new->blkfacepos);
+            coarse_topology_build_coarsef(nblk, bns, new->neighbours,
+                                          new->blkfacepos, &nblkf, &nsubf);
 
             if (nsubf > 0) {
                 new->subfacepos = calloc(ncoarse_f + 1, sizeof *new->subfacepos);
@@ -510,7 +505,7 @@ coarse_topology_build(int ncoarse_f, int nblk,
                 }
             }
 
-            new->blkfaces = malloc(new->blkfacepos[nblk] * sizeof *new->blkfaces);
+            new->blkfaces = malloc(nblkf * sizeof *new->blkfaces);
 
             if (new->blkfaces == NULL) {
                 coarse_topology_destroy(new);
