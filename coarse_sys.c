@@ -39,45 +39,51 @@
  * ====================================================================== */
 
 struct coarse_sys_meta {
-    size_t max_ngconn;
-    size_t sum_ngconn2;
+    size_t max_ngconn;          /* max(diff(face_pos)) */
+    size_t sum_ngconn2;         /* sum(diff(face_pos)^2) */
 
-    size_t max_blk_cells;
-    size_t max_blk_nhf;
-    size_t max_blk_nintf;
-    size_t max_blk_sum_nhf2;
-    size_t max_cf_nf;
+    size_t max_blk_cells;       /* max(accumarray(p,1)) */
+    size_t max_blk_nhf;         /* max(accumarray(p,diff(face_pos))) */
+    size_t max_blk_nintf;       /* Maximum # block internal faces */
+    size_t max_blk_sum_nhf2;    /* max_i \sum_{j\in\Omega_i} ncf(j)^2 */
+    size_t max_cf_nf;           /* Maximum # fs faces in a coarse face */
+    size_t n_act_bf;            /* Number of active coarse connections */
 
-    int *blk_nhf;
-    int *blk_nintf;
+    int *blk_nhf;               /* Number of fs hfaces per block */
+    int *blk_nintf;             /* Number of internal fs faces per block */
 
-    int *loc_fno;
-    int *ncf;
-    int *pconn2;
+    int *loc_fno;               /* Local (fs) face numbering */
+    int *ncf;                   /* diff(face_pos) */
+    int *pconn2;                /* cumsum([0; diff(face_pos).^2]) */
 
-    int *pb2c, *b2c;
+    int *pb2c, *b2c;            /* Block->cell mapping (CSR packed) */
 
-    int *data;
+    int *bfno;                  /* Active basis function numbering */
+    int *loc_dofno;             /* Block-local DOF number of a CF */
+
+    /* -------------------------------------------------------------- */
+    int *data;                  /* Linear storage.  Don't touch. */
 };
 
 
 struct bf_asm_data {
-    struct hybsys *fsys;
+    struct hybsys *fsys;        /* Fine-scale hybrid system contributions */
 
-    struct CSRMatrix *A;
-    double           *b;
-    double           *x;
+    struct CSRMatrix *A;        /* BF coefficient matrix */
+    double           *b;        /* BF system RHS */
+    double           *x;        /* BF system solution */
 
-    double           *v;
-    double           *p;
+    double           *v;        /* BF (hf) flux.  Symmetrised */
+    double           *p;        /* BF pressure. */
 
-    double           *gpress;
+    double           *gpress;   /* BF gravity contrib. (== 0) */
 
-    int              *pdof;
-    int              *dof;
+    int              *pdof;     /* Indirection pointer to linearised DOF */
+    int              *dof;      /* Linearised DOFs per BF */
 
-    int    *idata;
-    double *ddata;
+    /* -------------------------------------------------------------- */
+    int    *idata;              /* Linear (integer) storage */
+    double *ddata;              /* Linear (double) storage */
 };
 
 
@@ -101,7 +107,8 @@ coarse_sys_meta_destroy(struct coarse_sys_meta *m)
 
 /* ---------------------------------------------------------------------- */
 struct coarse_sys_meta *
-coarse_sys_meta_allocate(size_t nblocks, size_t nfaces, size_t nc)
+coarse_sys_meta_allocate(size_t nblocks, size_t nfaces_c,
+                         size_t nc     , size_t nfaces_f)
 /* ---------------------------------------------------------------------- */
 {
     size_t                  alloc_sz;
@@ -114,9 +121,11 @@ coarse_sys_meta_allocate(size_t nblocks, size_t nfaces, size_t nc)
         alloc_sz += nblocks;     /* blk_nintf */
         alloc_sz += nc;          /* ncf */
         alloc_sz += nc + 1;      /* pconn2 */
-        alloc_sz += nfaces;      /* loc_fno */
+        alloc_sz += nfaces_f;    /* loc_fno */
         alloc_sz += nblocks + 1; /* pb2c */
         alloc_sz += nc;          /* b2c */
+        alloc_sz += nfaces_c;    /* bfno */
+        alloc_sz += 2*nfaces_c;  /* loc_dofno */
 
         new->data = calloc(alloc_sz, sizeof *new->data);
 
@@ -131,8 +140,11 @@ coarse_sys_meta_allocate(size_t nblocks, size_t nfaces, size_t nc)
             new->pconn2    = new->ncf       + nc;
             new->loc_fno   = new->pconn2    + nc + 1;
 
-            new->pb2c      = new->loc_fno   + nfaces;
+            new->pb2c      = new->loc_fno   + nfaces_f;
             new->b2c       = new->pb2c      + nblocks + 1;
+
+            new->bfno      = new->b2c       + nc;
+            new->loc_dofno = new->bfno      + nfaces_c;
         }
     }
 
@@ -242,6 +254,75 @@ max_diff(int n, int *p)
 }
 
 
+/* Enumerate active basis functions/coarse connetions according to
+ * block proximity.
+ *
+ * Returns number of active connections. */
+/* ---------------------------------------------------------------------- */
+static int
+enumerate_active_bf(struct coarse_topology *ct,
+                    struct coarse_sys_meta *m)
+/* ---------------------------------------------------------------------- */
+{
+    int act, cf, b_in, b_out, b1, b2, p;
+
+    memset(m->bfno, -1, ct->nfaces * sizeof *m->bfno);
+
+    act = 0;
+
+    for (b_in = p = 0; b_in < ct->nblocks; b_in++) {
+        for (; p < ct->blkfacepos[b_in + 1]; p++) {
+            cf = ct->blkfaces[p];
+
+            if (m->bfno[cf] < 0) { /* Previously undiscovered */
+                b1 = ct->neighbours[2*cf + 0];
+                b2 = ct->neighbours[2*cf + 1];
+
+                assert (b1 != b2);
+
+                b_out = (b1 == b_in) ? b2 : b1;
+
+                if (b_out >= 0) {
+                    m->bfno[cf] = act++;
+                }
+            }
+        }
+    }
+
+    return act;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static void
+compute_loc_dofno(struct coarse_topology *ct,
+                  struct coarse_sys_meta *m)
+/* ---------------------------------------------------------------------- */
+{
+    int b, nb, p, cf, locno, col_off;
+
+    memset(m->loc_dofno, -1, 2 * ct->nfaces * sizeof *m->loc_dofno);
+
+    nb = ct->nblocks;
+
+    for (b = p = 0; b < nb; b++) {
+        locno = 0;
+
+        for (; p < ct->blkfacepos[b + 1]; p++) {
+            cf = ct->blkfaces[p];
+
+            if (m->bfno[cf] >= 0) {
+                col_off = 1 - (ct->neighbours[2*cf + 0] == b);
+
+                assert (m->loc_dofno[2*cf + col_off] == -1);
+                
+                m->loc_dofno[2*cf + col_off] = locno++;
+            }
+        }
+    }
+}
+
+
 /* ---------------------------------------------------------------------- */
 static void
 coarse_sys_meta_fill(int nc, const int *pgconn,
@@ -322,6 +403,10 @@ coarse_sys_meta_fill(int nc, const int *pgconn,
 
         m->max_blk_sum_nhf2 = MAX(m->max_blk_sum_nhf2, blk_sum_nhf2);
     }
+
+    m->n_act_bf = enumerate_active_bf(ct, m);
+
+    compute_loc_dofno(ct, m);
 }
 
 
@@ -334,7 +419,7 @@ coarse_sys_meta_construct(grid_t *g, const int *p,
     struct coarse_sys_meta *m;
 
     m = coarse_sys_meta_allocate(ct->nblocks, ct->nfaces,
-                                 g->number_of_cells);
+                                 g->number_of_cells, g->number_of_faces);
 
     if (m != NULL) {
         coarse_sys_meta_fill(g->number_of_cells,
@@ -520,13 +605,91 @@ coarse_weight(grid_t *g, size_t nb,
 
 
 /* ---------------------------------------------------------------------- */
+static int
+blkdof_fill(struct coarse_topology *ct,
+            struct coarse_sys_meta *m,
+            struct coarse_sys      *sys)
+/* ---------------------------------------------------------------------- */
+{
+    int    p, ret, dof;
+    size_t b, nb;
+
+    nb = ct->nblocks;
+
+    sys->blkdof_pos = calloc(nb + 1, sizeof *sys->blkdof_pos);
+
+    if (sys->blkdof_pos != NULL) {
+        for (b = 0, p = 0; b < nb; b++) {
+            for (; p < ct->blkfacepos[b + 1]; p++) {
+                dof = m->bfno[ ct->blkfaces[p] ];
+
+                sys->blkdof_pos[b + 1] += dof >= 0;
+            }
+        }
+
+        for (b = 1; b <= nb; b++) {
+            sys->blkdof_pos[0] += sys->blkdof_pos[b];
+            sys->blkdof_pos[b]  = sys->blkdof_pos[0] - sys->blkdof_pos[b];
+        }
+
+        sys->blkdof = malloc(sys->blkdof_pos[0] * sizeof *sys->blkdof);
+
+        if (sys->blkdof == NULL) {
+            free(sys->blkdof_pos);
+            sys->blkdof_pos = NULL;
+            ret = 0;
+        } else {
+            sys->blkdof_pos[0] = 0;
+
+            for (b = 0, p = 0; b < nb; b++) {
+                for (; p < ct->blkfacepos[b + 1]; p++) {
+                    dof = m->bfno[ ct->blkfaces[p] ];
+
+                    if (dof >= 0) {
+                        sys->blkdof[ sys->blkdof_pos[b + 1] ++ ] = dof;
+                    }
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static void
+compute_alloc_sizes(size_t                  nb,
+                    struct coarse_sys_meta *m,
+                    struct coarse_sys      *sys,
+                    size_t *bf_asz, size_t *ip_asz, size_t *Binv_asz)
+/* ---------------------------------------------------------------------- */
+{
+    size_t nf, nc, b;
+
+    *bf_asz = *ip_asz = *Binv_asz = 0;
+
+    for (b = 0; b < nb; b++) {
+        nf = sys->blkdof_pos[b + 1] - sys->blkdof_pos[b]; /* # coarse dof */
+        nc = m  ->pb2c      [b + 1] - m  ->pb2c      [b]; /* # block c */
+
+        *bf_asz   += nf                * m->blk_nhf[b];
+        *ip_asz   += nf * (nf + 1) / 2 * nc;
+        *Binv_asz += nf * nf;
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
 static struct coarse_sys *
 coarse_sys_allocate(struct coarse_topology *ct,
                     struct coarse_sys_meta *m)
 /* ---------------------------------------------------------------------- */
 {
-    size_t            b, nb, nc, nf;
+    int               alloc_ok;
+    size_t            nb;
     size_t            bf_asz, ip_asz, Binv_asz; /* Allocation sizes */
+
     struct coarse_sys *new;
 
     new = malloc(1 * sizeof *new);
@@ -534,26 +697,58 @@ coarse_sys_allocate(struct coarse_topology *ct,
     if (new != NULL) {
         nb = ct->nblocks;
 
-        new->blkdof_pos  = calloc(nb + 1, sizeof *new->blkdof_pos );
-        new->basis_pos   = calloc(nb + 1, sizeof *new->basis_pos  );
-        new->cell_ip_pos = calloc(nb + 1, sizeof *new->cell_ip_pos);
+        alloc_ok = blkdof_fill(ct, m, new);
 
-        bf_asz = ip_asz = Binv_asz = 0;
-        for (b = 0; b < nb; b++) {
-            nf = ct->blkfacepos[b + 1] - ct->blkfacepos[b]; /* # coarse f */
-            nc = m ->pb2c      [b + 1] - m ->pb2c      [b]; /* # block c */
+        if (alloc_ok) {
+            compute_alloc_sizes(nb, m, new, &bf_asz, &ip_asz, &Binv_asz);
 
-            bf_asz   += nf                * m->blk_nhf[b];
-            ip_asz   += nf * (nf + 1) / 2 * nc;
-            Binv_asz += nf * nf;
+            new->basis_pos   = calloc(nb + 1, sizeof *new->basis_pos  );
+            new->cell_ip_pos = calloc(nb + 1, sizeof *new->cell_ip_pos);
+
+            new->basis       = malloc(bf_asz   * sizeof *new->basis  );
+            new->cell_ip     = malloc(ip_asz   * sizeof *new->cell_ip);
+            new->Binv        = malloc(Binv_asz * sizeof *new->Binv   );
+
+            alloc_ok += new->basis_pos   != NULL;
+            alloc_ok += new->cell_ip_pos != NULL;
+            alloc_ok += new->basis       != NULL;
+            alloc_ok += new->cell_ip     != NULL;
+            alloc_ok += new->Binv        != NULL;
         }
 
-        new->basis   = malloc(bf_asz   * sizeof *new->basis  );
-        new->cell_ip = malloc(ip_asz   * sizeof *new->cell_ip);
-        new->Binv    = malloc(Binv_asz * sizeof *new->Binv   );
+        if (alloc_ok < 6) {
+            coarse_sys_destroy(new);
+            new = NULL;
+        }
     }
 
     return new;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static void
+set_csys_block_pointers(struct coarse_topology *ct,
+                        struct coarse_sys_meta *m ,
+                        struct coarse_sys      *sys)
+/* ---------------------------------------------------------------------- */
+{
+    int b, nb, nc, ndof, npairs;
+
+    nb = ct->nblocks;
+
+    sys->basis_pos[0] = sys->cell_ip_pos[0] = 0;
+
+    for (b = 0; b < nb; b++) {
+        ndof = sys->blkdof_pos[b + 1] - sys->blkdof_pos[b];
+        nc   = m  ->pb2c      [b + 1] - m  ->pb2c      [b];
+
+        npairs = ndof * (ndof + 1) / 2;
+
+        sys->basis_pos[b + 1] = sys->basis_pos[b] + ndof*m->blk_nhf[b];
+
+        sys->cell_ip_pos[b + 1] = sys->cell_ip_pos[b] + npairs*nc;
+    }
 }
 
 
@@ -846,6 +1041,8 @@ coarse_sys_construct(grid_t *g, const int   *p,
                      const double           *totmob)
 /* ---------------------------------------------------------------------- */
 {
+    int                     cf;
+    size_t                  nlocf;
     double                 *Binv, *w;
     struct coarse_sys_meta *m;
     struct bf_asm_data     *bf_asm;
@@ -865,20 +1062,39 @@ coarse_sys_construct(grid_t *g, const int   *p,
     if ((Binv != NULL) && (w != NULL) &&
         (bf_asm != NULL) && (sys != NULL)) {
 
+        /* Prepare storage tables */
+        set_csys_block_pointers(ct, m, sys);
+
         /* Exclude effects of gravity */
         vector_zero(g->cell_facepos[ g->number_of_cells ], bf_asm->gpress);
 
+        /* Include mobility effects (multiple phases) */
         Binv_scale_mobility(g->number_of_cells, m, totmob, Binv);
 
+        /* Discretise flow equation on fine scale */
         hybsys_schur_comp_symm(g->number_of_cells, g->cell_facepos,
                                Binv, bf_asm->fsys);
 
-        /* for bf = active_basis_funcs
-         *    enumerate_local_dof()
-         *    assemble_local_sys()
-         *    solve_local_sys()
-         *    store_bf()
-         * compute_cell_ip() */
+        for (cf = 0; cf < ct->nfaces; cf++) {
+            if (m->bfno[cf] >= 0) {
+                nlocf = enumerate_local_dofs(cf, g, ct, m);
+
+                assemble_local_system(cf, nlocf, g, Binv, w,
+                                      ct, m, bf_asm);
+                /* solve_local_sys() */
+                /* store_bf() */
+
+                unenumerate_local_dofs(cf, g, ct, m);
+            }
+        }
+
+        coarse_sys_compute_cell_ip(g->number_of_cells,
+                                   m->max_ngconn,
+                                   ct->nblocks,
+                                   g->cell_facepos,
+                                   Binv,
+                                   m->pb2c, m->b2c,
+                                   sys);
     }
 
     bf_asm_data_deallocate(bf_asm);
@@ -900,10 +1116,11 @@ coarse_sys_destroy(struct coarse_sys *sys)
         free(sys->Binv);
         free(sys->cell_ip);
         free(sys->basis);
-        free(sys->blkdof);
 
         free(sys->cell_ip_pos);
         free(sys->basis_pos);
+
+        free(sys->blkdof);
         free(sys->blkdof_pos);
     }
 
