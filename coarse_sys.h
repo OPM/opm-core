@@ -23,12 +23,18 @@ struct coarse_sys {
 
 /* ---------------------------------------------------------------------- */
 
+struct CSRMatrix;
+typedef void (*LocalSolver)(struct CSRMatrix *A,
+                            double           *b,
+                            double           *x);
+
 struct coarse_sys *
 coarse_sys_construct(grid_t *g, const int   *p,
                      struct coarse_topology *ct,
                      const double           *perm,
                      const double           *src,
-                     const double           *totmob);
+                     const double           *totmob,
+                     LocalSolver             linsolve);
 
 void
 coarse_sys_destroy(struct coarse_sys *sys);

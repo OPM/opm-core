@@ -73,13 +73,17 @@ struct bf_asm_data {
     double           *b;        /* BF system RHS */
     double           *x;        /* BF system solution */
 
-    double           *v;        /* BF (hf) flux.  Symmetrised */
+    double           *v;        /* BF (hf) flux. */
     double           *p;        /* BF pressure. */
+    double           *flux;     /* BF flux.  Symmetrised. */
 
     double           *gpress;   /* BF gravity contrib. (== 0) */
 
+    double           *work;     /* Back-substitution work array */
+
     int              *pdof;     /* Indirection pointer to linearised DOF */
     int              *dof;      /* Linearised DOFs per BF */
+    int              *fcount;   /* Flux symmetrisation face count. */
 
     /* -------------------------------------------------------------- */
     int    *idata;              /* Linear (integer) storage */
@@ -174,6 +178,7 @@ bf_asm_data_allocate(grid_t                 *g,
                      struct coarse_sys_meta *m)
 /* ---------------------------------------------------------------------- */
 {
+    int                 tot_ngconn;
     size_t              max_nhf, max_cells, max_faces, nnz;
     size_t              alloc_sz;
     struct bf_asm_data *new;
@@ -186,23 +191,26 @@ bf_asm_data_allocate(grid_t                 *g,
         max_faces = 2 * m->max_blk_nfsf;
         nnz       = 2 * m->max_blk_sum_nhf2;
 
+        tot_ngconn = g->cell_facepos[ g->number_of_cells ];
+
         new->fsys = hybsys_allocate_symm((int) m->max_ngconn,
                                          g->number_of_cells,
-                                         g->cell_facepos[g->number_of_cells]);
+                                         tot_ngconn);
 
         new->A = csrmatrix_new_known_nnz(max_faces, nnz);
 
         alloc_sz   = max_cells + 1; /* pdof */
         alloc_sz  += max_nhf;       /* dof */
+        alloc_sz  += max_faces;     /* fcount */
 
         new->idata = malloc(alloc_sz * sizeof *new->idata);
 
         alloc_sz   = 2 * max_faces; /* b, x */
         alloc_sz  += 1 * max_nhf;   /* v */
         alloc_sz  += 1 * max_cells; /* p */
-
-        /* gpress */
-        alloc_sz  += g->cell_facepos[ g->number_of_cells ];
+        alloc_sz  += 1 * max_faces; /* flux */
+        alloc_sz  += tot_ngconn;    /* gpress */
+        alloc_sz  += m->max_ngconn; /* work */
 
         new->ddata = malloc(alloc_sz * sizeof *new->ddata);
 
@@ -211,15 +219,19 @@ bf_asm_data_allocate(grid_t                 *g,
             bf_asm_data_deallocate(new);
             new = NULL;
         } else {
-            new->pdof = new->idata;
-            new->dof  = new->pdof   + max_cells + 1;
+            new->pdof   = new->idata;
+            new->dof    = new->pdof   + max_cells + 1;
+            new->fcount = new->dof    + max_nhf;
 
-            new->b    = new->ddata;
-            new->x    = new->b      + max_faces;
-            new->v    = new->x      + max_faces;
-            new->p    = new->v      + max_nhf;
+            new->b      = new->ddata;
+            new->x      = new->b      + max_faces;
+            new->v      = new->x      + max_faces;
+            new->p      = new->v      + max_nhf;
 
-            new->gpress = new->p    + max_cells;
+            new->flux   = new->p      + max_cells;
+
+            new->gpress = new->flux   + max_faces;
+            new->work   = new->gpress + tot_ngconn;
 
             hybsys_init((int) m->max_ngconn, new->fsys);
         }
@@ -315,7 +327,7 @@ compute_loc_dofno(struct coarse_topology *ct,
                 col_off = 1 - (ct->neighbours[2*cf + 0] == b);
 
                 assert (m->loc_dofno[2*cf + col_off] == -1);
-                
+
                 m->loc_dofno[2*cf + col_off] = locno++;
             }
         }
@@ -353,7 +365,7 @@ coarse_sys_meta_fill(int nc, const int *pgconn,
             m->blk_nhf[b2] += 1;
             m->max_blk_nhf  = MAX(m->max_blk_nhf,
                                   (size_t) m->blk_nhf[b2]);
-        } 
+        }
 
         if (b1 >= 0) {
             m->blk_nfsf[b1] += 1;
@@ -1025,6 +1037,9 @@ assemble_local_system(size_t                  cf   ,
             sgn = -sgn;
         }
     }
+
+    /* Account for zero eigenvalue of pure Neumann problem */
+    bf_asm->A->sa[0] *= 2;
 }
 
 
@@ -1045,12 +1060,148 @@ Binv_scale_mobility(int nc, struct coarse_sys_meta *m,
 
 
 /* ---------------------------------------------------------------------- */
+static void
+symmetrise_flux(size_t cf, grid_t *g, struct coarse_topology *ct,
+                struct coarse_sys_meta *m, struct bf_asm_data *bf_asm)
+/* ---------------------------------------------------------------------- */
+{
+    int    i, j, ndof, p1l, p1g, *b, *c, *dof, *cnt;
+    size_t f;
+    double s, *flux;
+
+    dof  = bf_asm->dof;
+    flux = bf_asm->flux;
+    cnt  = bf_asm->fcount;
+
+    vector_zero(bf_asm->A->m, flux);
+    memset(cnt, 0, bf_asm->A->m * sizeof *bf_asm->fcount);
+
+    i = 0;
+    for (b  = ct->neighbours + 2*(cf + 0);
+         b != ct->neighbours + 2*(cf + 1); b++) {
+
+        if (*b >= 0) {
+            for (c  = m->b2c + m->pb2c[*b + 0];
+                 c != m->b2c + m->pb2c[*b + 1]; c++, i++) {
+
+                p1l  = bf_asm->pdof   [ i];
+                p1g  = g->cell_facepos[*c];
+
+                ndof = bf_asm->pdof[i + 1] - p1l;
+
+                assert (g->cell_facepos[*c + 1] - p1g == ndof);
+
+                for (j = 0; j < ndof; j++) {
+                    f = g->cell_faces[p1g + j];
+                    s = 2.0*(g->face_cells[2*f + 0] == *c) - 1.0;
+
+                    flux[dof[p1l + j]] += s * bf_asm->v[p1l + j];
+                    cnt [dof[p1l + j]] += 1;
+                }
+            }
+        }
+    }
+
+    for (f = 0; f < bf_asm->A->m; f++) {
+        flux[f] /= cnt[f];
+    }
+
+    i = 0;
+    for (b  = ct->neighbours + 2*(cf + 0);
+         b != ct->neighbours + 2*(cf + 1); b++) {
+
+        if (*b >= 0) {
+            for (c  = m->b2c + m->pb2c[*b + 0];
+                 c != m->b2c + m->pb2c[*b + 1]; c++, i++) {
+
+                p1l  = bf_asm->pdof   [ i];
+                p1g  = g->cell_facepos[*c];
+
+                ndof = bf_asm->pdof[i + 1] - p1l;
+
+                for (j = 0; j < ndof; j++) {
+                    f = g->cell_faces[p1g + j];
+                    s = 2.0*(g->face_cells[2*f + 0] == *c) - 1.0;
+
+                    bf_asm->v[p1l + j] = s * flux[dof[p1l + j]];
+                }
+            }
+        }
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
+static void
+solve_local_system(size_t                  cf    ,
+                   grid_t                 *g     ,
+                   const  double          *Binv  ,
+                   struct coarse_topology *ct    ,
+                   struct coarse_sys_meta *m     ,
+                   struct bf_asm_data     *bf_asm,
+                   LocalSolver            linsolve)
+/* ---------------------------------------------------------------------- */
+{
+    int    i, j, ndof, p1l, p1g, *b, *c;
+    double a1, a2;
+
+    MAT_SIZE_T incx, incy, nrows, ncols, lda;
+
+    /* Compute interface pressures (solve system of lin. eqns.) */
+    (*linsolve)(bf_asm->A, bf_asm->b, bf_asm->x);
+
+    /* Back substitution to derive cell pressure/interface fluxes */
+    incx = incy = 1;
+
+    a1 = 1.0;
+    a2 = 0.0;
+
+    i = p1l = p1g = 0;
+    for (b  = ct->neighbours + 2*(cf + 0);
+         b != ct->neighbours + 2*(cf + 1); b++) {
+
+        if (*b >= 0) {
+            for (c  = m->b2c + m->pb2c[*b + 0];
+                 c != m->b2c + m->pb2c[*b + 1]; c++, i++) {
+                p1l  = bf_asm->pdof[i + 0];
+                ndof = bf_asm->pdof[i + 1] - p1l;
+
+                nrows = ncols = lda = ndof;
+
+                for (j = 0; j < ndof; j++) {
+                    bf_asm->work[j] = bf_asm->x[ bf_asm->dof[ p1l + j ] ];
+                }
+
+                p1g = g->cell_facepos[*c];
+
+                bf_asm->p[i]  = bf_asm->fsys->q[*c];
+                bf_asm->p[i] += ddot_(&nrows, &bf_asm->fsys->F2[p1g],
+                                      &incx, bf_asm->work, &incy);
+                bf_asm->p[i] /= bf_asm->fsys->L[*c];
+
+                for (j = 0; j < ndof; j++) {
+                    bf_asm->work[j] = bf_asm->p[i] - bf_asm->work[j];
+                }
+
+                dgemv_("No Transpose", &nrows, &ncols,
+                       &a1, &Binv[m->pconn2[*c]], &lda, bf_asm->work, &incx,
+                       &a2, &bf_asm->v[p1l]                         , &incy);
+            }
+        }
+    }
+
+    symmetrise_flux(cf, g, ct, m, bf_asm);
+}
+
+
+/* ---------------------------------------------------------------------- */
 struct coarse_sys *
 coarse_sys_construct(grid_t *g, const int   *p,
                      struct coarse_topology *ct,
                      const double           *perm,
                      const double           *src,
-                     const double           *totmob)
+                     const double           *totmob,
+                     LocalSolver             linsolve)
 /* ---------------------------------------------------------------------- */
 {
     int                     cf;
@@ -1093,7 +1244,9 @@ coarse_sys_construct(grid_t *g, const int   *p,
 
                 assemble_local_system(cf, nlocf, g, Binv, w,
                                       ct, m, bf_asm);
-                /* solve_local_sys() */
+
+                solve_local_system(cf, g, Binv, ct, m,
+                                   bf_asm, linsolve);
                 /* store_bf() */
 
                 unenumerate_local_dofs(cf, g, ct, m);
