@@ -609,7 +609,8 @@ coarse_weight(grid_t *g, size_t nb,
     double *w;
 
     ok = 0;
-    w  = perm_weighting(nb, g->dimensions, perm, g->cell_volumes);
+    w  = perm_weighting(g->number_of_cells,
+                        g->dimensions, perm, g->cell_volumes);
 
     if (w != NULL) {
         ok = enforce_explicit_source(g->number_of_cells,
@@ -1067,7 +1068,7 @@ symmetrise_flux(size_t cf, grid_t *g, struct coarse_topology *ct,
 {
     int    i, j, ndof, p1l, p1g, *b, *c, *dof, *cnt;
     size_t f;
-    double s, *flux;
+    double s, blk_sgn, *flux;
 
     dof  = bf_asm->dof;
     flux = bf_asm->flux;
@@ -1106,7 +1107,7 @@ symmetrise_flux(size_t cf, grid_t *g, struct coarse_topology *ct,
         flux[f] /= cnt[f];
     }
 
-    i = 0;
+    i = 0;  blk_sgn = 1.0;
     for (b  = ct->neighbours + 2*(cf + 0);
          b != ct->neighbours + 2*(cf + 1); b++) {
 
@@ -1123,9 +1124,13 @@ symmetrise_flux(size_t cf, grid_t *g, struct coarse_topology *ct,
                     f = g->cell_faces[p1g + j];
                     s = 2.0*(g->face_cells[2*f + 0] == *c) - 1.0;
 
+                    s *= blk_sgn;
+
                     bf_asm->v[p1l + j] = s * flux[dof[p1l + j]];
                 }
             }
+
+            blk_sgn = -blk_sgn;
         }
     }
 }
@@ -1195,6 +1200,39 @@ solve_local_system(size_t                  cf    ,
 
 
 /* ---------------------------------------------------------------------- */
+static void
+store_basis_function(size_t                  cf    ,
+                     struct coarse_topology *ct    ,
+                     struct coarse_sys_meta *m     ,
+                     struct bf_asm_data     *bf_asm,
+                     struct coarse_sys      *sys)
+/* ---------------------------------------------------------------------- */
+{
+    int       i, loc_dofno, *b, *loc_dof;
+    ptrdiff_t sstart, dstart, nhf;
+
+    loc_dof = m->loc_dofno + 2*(cf + 0);
+
+    i      = 0;
+    sstart = 0;
+    for (b  = ct->neighbours + 2*(cf + 0);
+         b != ct->neighbours + 2*(cf + 1); b++, i++) {
+
+        if (*b >= 0) {
+            loc_dofno = loc_dof[i];
+            nhf       = m->blk_nhf[*b];
+            dstart    = sys->basis_pos[*b] + loc_dofno*nhf;
+
+            memcpy(sys->basis + dstart,
+                   bf_asm->v  + sstart, nhf * sizeof *sys->basis);
+
+            sstart += nhf;
+        }
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
 struct coarse_sys *
 coarse_sys_construct(grid_t *g, const int   *p,
                      struct coarse_topology *ct,
@@ -1247,7 +1285,8 @@ coarse_sys_construct(grid_t *g, const int   *p,
 
                 solve_local_system(cf, g, Binv, ct, m,
                                    bf_asm, linsolve);
-                /* store_bf() */
+
+                store_basis_function(cf, ct, m, bf_asm, sys);
 
                 unenumerate_local_dofs(cf, g, ct, m);
             }
