@@ -44,13 +44,13 @@ struct coarse_sys_meta {
 
     size_t max_blk_cells;       /* max(accumarray(p,1)) */
     size_t max_blk_nhf;         /* max(accumarray(p,diff(face_pos))) */
-    size_t max_blk_nintf;       /* Maximum # block internal faces */
+    size_t max_blk_nfsf;        /* Maximum # block fine-scale faces */
     size_t max_blk_sum_nhf2;    /* max_i \sum_{j\in\Omega_i} ncf(j)^2 */
     size_t max_cf_nf;           /* Maximum # fs faces in a coarse face */
     size_t n_act_bf;            /* Number of active coarse connections */
 
     int *blk_nhf;               /* Number of fs hfaces per block */
-    int *blk_nintf;             /* Number of internal fs faces per block */
+    int *blk_nfsf;              /* Number of fs faces per block */
 
     int *loc_fno;               /* Local (fs) face numbering */
     int *ncf;                   /* diff(face_pos) */
@@ -118,7 +118,7 @@ coarse_sys_meta_allocate(size_t nblocks, size_t nfaces_c,
 
     if (new != NULL) {
         alloc_sz  = nblocks;     /* blk_nhf */
-        alloc_sz += nblocks;     /* blk_nintf */
+        alloc_sz += nblocks;     /* blk_nfsf */
         alloc_sz += nc;          /* ncf */
         alloc_sz += nc + 1;      /* pconn2 */
         alloc_sz += nfaces_f;    /* loc_fno */
@@ -135,8 +135,8 @@ coarse_sys_meta_allocate(size_t nblocks, size_t nfaces_c,
             new = NULL;
         } else {
             new->blk_nhf   = new->data;
-            new->blk_nintf = new->blk_nhf   + nblocks;
-            new->ncf       = new->blk_nintf + nblocks;
+            new->blk_nfsf  = new->blk_nhf   + nblocks;
+            new->ncf       = new->blk_nfsf  + nblocks;
             new->pconn2    = new->ncf       + nc;
             new->loc_fno   = new->pconn2    + nc + 1;
 
@@ -183,7 +183,7 @@ bf_asm_data_allocate(grid_t                 *g,
     if (new != NULL) {
         max_nhf   = 2 * m->max_blk_nhf;
         max_cells = 2 * m->max_blk_cells;
-        max_faces = 2 * m->max_blk_nintf + m->max_cf_nf;
+        max_faces = 2 * m->max_blk_nfsf;
         nnz       = 2 * m->max_blk_sum_nhf2;
 
         new->fsys = hybsys_allocate_symm((int) m->max_ngconn,
@@ -335,19 +335,13 @@ coarse_sys_meta_fill(int nc, const int *pgconn,
     int    c1, b1, c2, b2, i, n;
     size_t f, blk_sum_nhf2;
 
-    m->max_blk_nhf = m->max_blk_nintf = 0;
+    m->max_blk_nhf = m->max_blk_nfsf = 0;
 
     for (f = 0; f < nneigh; f++) {
         c1 = neigh[2*f + 0];   b1 = (c1 >= 0) ? p[c1] : -1;
         c2 = neigh[2*f + 1];   b2 = (c2 >= 0) ? p[c2] : -1;
 
         assert ((b1 >= 0) || (b2 >= 0));
-
-        if (b1 == b2) {
-            m->blk_nintf[b1] += 1;
-            m->max_blk_nintf  = MAX(m->max_blk_nintf,
-                                    (size_t) m->blk_nintf[b1]);
-        }
 
         if (b1 >= 0) {
             m->blk_nhf[b1] += 1;
@@ -359,6 +353,22 @@ coarse_sys_meta_fill(int nc, const int *pgconn,
             m->blk_nhf[b2] += 1;
             m->max_blk_nhf  = MAX(m->max_blk_nhf,
                                   (size_t) m->blk_nhf[b2]);
+        } 
+
+        if (b1 >= 0) {
+            m->blk_nfsf[b1] += 1;
+            m->max_blk_nfsf  = MAX(m->max_blk_nfsf,
+                                   (size_t) m->blk_nfsf[b1]);
+
+            if ((b2 >= 0) && (b2 != b1)) {
+                m->blk_nfsf[b2] += 1;
+                m->max_blk_nfsf  = MAX(m->max_blk_nfsf,
+                                       (size_t) m->blk_nfsf[b2]);
+            }
+        } else {
+            m->blk_nfsf[b2] += 1;
+            m->max_blk_nfsf  = MAX(m->max_blk_nfsf,
+                                   (size_t) m->blk_nfsf[b2]);
         }
     }
 
@@ -650,6 +660,8 @@ blkdof_fill(struct coarse_topology *ct,
                     }
                 }
             }
+
+            ret = 1;
         }
     }
 
@@ -902,7 +914,7 @@ define_csr_sparsity(size_t nc, size_t m, struct bf_asm_data *bf_asm)
      * Define start pointers (O(m))
      * ------------------------------------------------------------------ */
     A->ia[0] = 0;
-    for (i = 0; i < m; i++) {
+    for (i = 1; i <= m; i++) {
         A->ia[0] += A->ia[i];
         A->ia[i]  = A->ia[0] - A->ia[i];
     }
