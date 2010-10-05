@@ -19,6 +19,7 @@ hash_set.h                                      \
 hybsys_global.h                                 \
 hybsys.h                                        \
 ifsh.h                                          \
+ifsh_ms.h                                       \
 mimetic.h                                       \
 partition.h                                     \
 sparse_sys.h                                    \
@@ -34,6 +35,7 @@ hash_set.c                                      \
 hybsys.c                                        \
 hybsys_global.c                                 \
 ifsh.c                                          \
+ifsh_ms.c                                       \
 mimetic.c                                       \
 partition.c                                     \
 sparse_sys.c                                    \
