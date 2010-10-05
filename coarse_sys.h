@@ -10,6 +10,7 @@
 /* ---------------------------------------------------------------------- */
 
 struct coarse_sys {
+    int *dof2conn;           /* Map dof->connection (coarse interface) */
     int *blkdof_pos;         /* Start pointers to each block's dofs */
     int *basis_pos;          /* Start pointers to each block's bf's */
     int *cell_ip_pos;        /* Start pointers to each block's IP */

@@ -727,6 +727,8 @@ coarse_sys_allocate(struct coarse_topology *ct,
         if (alloc_ok) {
             compute_alloc_sizes(nb, m, new, &bf_asz, &ip_asz, &Binv_asz);
 
+            new->dof2conn = malloc(m->n_act_bf * sizeof *new->dof2conn);
+
             new->basis_pos   = calloc(nb + 1, sizeof *new->basis_pos  );
             new->cell_ip_pos = calloc(nb + 1, sizeof *new->cell_ip_pos);
 
@@ -734,6 +736,7 @@ coarse_sys_allocate(struct coarse_topology *ct,
             new->cell_ip     = malloc(ip_asz   * sizeof *new->cell_ip);
             new->Binv        = malloc(Binv_asz * sizeof *new->Binv   );
 
+            alloc_ok += new->dof2conn    != NULL;
             alloc_ok += new->basis_pos   != NULL;
             alloc_ok += new->cell_ip_pos != NULL;
             alloc_ok += new->basis       != NULL;
@@ -741,13 +744,32 @@ coarse_sys_allocate(struct coarse_topology *ct,
             alloc_ok += new->Binv        != NULL;
         }
 
-        if (alloc_ok < 6) {
+        if (alloc_ok < 7) {
             coarse_sys_destroy(new);
             new = NULL;
         }
     }
 
     return new;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static void
+map_dof_to_conn(struct coarse_topology *ct,
+                struct coarse_sys_meta *m ,
+                struct coarse_sys      *sys)
+/* ---------------------------------------------------------------------- */
+{
+    int f, dof;
+
+    for (f = 0; f < ct->nfaces; f++) {
+        dof = m->bfno[f];
+
+        if (dof >= 0) {
+            sys->dof2conn[ dof ] = f;
+        }
+    }
 }
 
 
@@ -1262,6 +1284,9 @@ coarse_sys_construct(grid_t *g, const int   *p,
 
     if ((Binv != NULL) && (w != NULL) &&
         (bf_asm != NULL) && (sys != NULL)) {
+
+        /* Provide reverse BF->face mapping for fs flux reconstruction */
+        map_dof_to_conn(ct, m, sys);
 
         /* Prepare storage tables */
         set_csys_block_pointers(ct, m, sys);
