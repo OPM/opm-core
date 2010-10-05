@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "blas_lapack.h"
 #include "coarse_conn.h"
 #include "coarse_sys.h"
 #include "hybsys.h"
@@ -341,6 +342,19 @@ vector_zero(size_t m, double *v)
 }
 
 
+/* ---------------------------------------------------------------------- */
+static void
+average_flux(size_t nf, const int *N, double *flux)          /* Poor name */
+/* ---------------------------------------------------------------------- */
+{
+    size_t f;
+
+    for (f = 0; f < nf; f++) {
+        flux[f] /= ((N[2*f + 0] >= 0) + (N[2*f + 1] >= 0));
+    }
+}
+
+
 /* ====================================================================== *
  * Public routines below.                                                 *
  * ====================================================================== */
@@ -463,27 +477,83 @@ ifsh_ms_press_flux(grid_t *G, struct ifsh_ms_data *h,
                    double *cpress, double *fflux)
 /* ---------------------------------------------------------------------- */
 {
+    int    b, f, i, j, n, dof, *c;
+    double s;
+
+    MAT_SIZE_T nrows, ncols, lda, incx, incy;
+    double a1, a2;
+
     hybsys_compute_press_flux(h->pimpl->ct->nblocks,
                               h->pimpl->sys->blkdof_pos,
                               h->pimpl->sys->blkdof,
                               h->pimpl->gpress, h->pimpl->sys->Binv,
                               h->pimpl->hsys, h->x, h->pimpl->bpress,
                               h->pimpl->hflux, h->pimpl->work);
-#if 0
-    ifsh_ms_project_fluxes(h->pimpl->ct->nblocks, h->pimpl->ct->nfaces,
-                           h->pimpl->sys->blkdof_pos,
-                           h->pimpl->sys->blkdof,
-                           h->pimpl->hflux, h->pimpl->flux);
 
-    ifsh_ms_flux_to_hflux(h->pimpl->ct->nblocks, h->pimpl->ct->nfaces,
-                          h->pimpl->sys->blkdof_pos,
-                          h->pimpl->sys->blkdof,
-                          h->pimpl->flux, h->pimpl->hflux);
+    vector_zero(h->pimpl->ct->nfaces, h->pimpl->flux);
 
-    ifsh_ms_reconstruct_fs(h->pimpl, cpress);
+    for (b = i = 0; b < h->pimpl->ct->nblocks; b++) {
+        for (; i < h->pimpl->sys->blkdof_pos[b + 1]; i++) {
+            dof = h->pimpl->sys->blkdof[ i ];
 
-    ifsh_ms_project_fluxes(G->number_of_cells, G->number_of_faces,
-                           G->cell_facepos, G->cell_faces,
-                           h->pimpl->fs_hflux, fflux);
-#endif
+            f = h->pimpl->sys->dof2conn[ dof ];
+            s = 2.0*(h->pimpl->ct->neighbours[2*f + 0] == b) - 1.0;
+
+            assert (f < h->pimpl->ct->nfaces);
+
+            h->pimpl->flux[ f ] += s * h->pimpl->hflux[ i ];
+        }
+    }
+
+    average_flux(h->pimpl->ct->nfaces,
+                 h->pimpl->ct->neighbours, h->pimpl->flux);
+
+    vector_zero(G->number_of_faces, fflux);
+
+    incx = incy = 1;
+    a1   = 1.0;
+    a2   = 0.0;
+
+    for (b = i = 0; b < h->pimpl->ct->nblocks; b++) {
+        /* Derive coarse-scale (projected) hc fluxes for block */
+        for (; i < h->pimpl->sys->blkdof_pos[b + 1]; i++) {
+            dof = h->pimpl->sys->blkdof[ i ];
+
+            f = h->pimpl->sys->dof2conn[ dof ];
+            s = 2.0*(h->pimpl->ct->neighbours[2*f + 0] == b) - 1.0;
+
+            h->pimpl->hflux[ i ] = s * h->pimpl->flux[ f ];
+        }
+
+        /* Construct fs hc fluxes in block (\Psi_b * v_c) */
+        ncols  = i - h->pimpl->sys->blkdof_pos[b]; /* ndof in block */
+        nrows  = h->pimpl->sys->basis_pos[b + 1] -
+                 h->pimpl->sys->basis_pos[b + 0];  /* NUMEL(Psi(:)) */
+        nrows /= ncols;
+
+        lda = nrows;
+        dgemv_("No Transpose", &nrows, &ncols, &a1,
+               h->pimpl->sys->basis + h->pimpl->sys->basis_pos[b],
+               &lda, h->pimpl->hflux + h->pimpl->sys->blkdof_pos[b],
+               &incx, &a2, h->pimpl->fs_hflux, &incy);
+
+        /* Derive cell pressure (constant per block) and accumulate fs
+         * interface fluxes (internal interfaces visited twice). */
+        n = 0;
+        for (c  = h->pimpl->b2c + h->pimpl->pb2c[b + 0];
+             c != h->pimpl->b2c + h->pimpl->pb2c[b + 1]; c++) {
+
+            cpress[*c] = h->pimpl->bpress[b];
+
+            for (j = G->cell_facepos[*c + 0];
+                 j < G->cell_facepos[*c + 1]; j++, n++) {
+                f = G->cell_faces[j];
+                s = 2.0*(G->face_cells[2*f + 0] == *c) - 1.0;
+
+                fflux[ f ] += s * h->pimpl->fs_hflux[ n ];
+            }
+        }
+    }
+
+    average_flux(G->number_of_faces, G->face_cells, fflux);
 }
