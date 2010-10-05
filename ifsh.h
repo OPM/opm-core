@@ -35,7 +35,7 @@ struct ifsh_data {
      * number \f$i\f$. Then max_ngconn = \f$\max_i n_i\f$
      */
     int               max_ngconn;
-    /* With n_i as above, sum_ngconn2 = \f$\sum_i n_i^2\f$ */ 
+    /* With n_i as above, sum_ngconn2 = \f$\sum_i n_i^2\f$ */
     size_t            sum_ngconn2;
 
     /* Linear system */
@@ -65,7 +65,7 @@ ifsh_destroy(struct ifsh_data *h);
 
 
 
-/** Assembles the hybridized linear system for face pressures. 
+/** Assembles the hybridized linear system for face pressures.
  *
  * This routine produces no output, other than changing the linear
  * system embedded in the ifsh_data object.
