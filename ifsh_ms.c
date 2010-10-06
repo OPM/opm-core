@@ -118,6 +118,8 @@ count_blkdof(struct ifsh_ms_impl *pimpl)
         pimpl->max_nblkdof   = MAX(pimpl->max_nblkdof, (size_t) ndof);
         pimpl->sum_nblkdof2 += ndof * ndof;
     }
+
+    pimpl->ntotdof += 1;        /* Account for zero-based numbering */
 }
 
 
@@ -255,7 +257,7 @@ ifsh_ms_matrix_construct(size_t m, size_t nnz, size_t nb,
             }
         }
 
-        assert (new->ia[m] == (MAT_SIZE_T) nnz);
+        assert (new->ia[m] <= (MAT_SIZE_T) nnz);
 
         new->ia[0] = 0;
         csrmatrix_sortrows(new);
@@ -306,6 +308,8 @@ ifsh_ms_impl_construct(grid_t       *G     ,
         }
 
         if ((new->sys != NULL) && (new->max_bcells > 0)) {
+            count_blkdof(new);
+
             max_nconn = new->max_nblkdof;
             nb        = new->ct->nblocks;
             nconn_tot = new->sys->blkdof_pos[ nb ];
@@ -314,8 +318,6 @@ ifsh_ms_impl_construct(grid_t       *G     ,
         }
 
         if (new->hsys != NULL) {
-            count_blkdof(new);
-
             alloc_ok = ifsh_ms_vectors_construct(G, new);
         }
 
@@ -453,6 +455,10 @@ ifsh_ms_assemble(const double        *src   ,
     csrmatrix_zero(         h->A);
     vector_zero   (h->A->m, h->b);
 
+    /* Exclude gravity */
+    vector_zero(h->pimpl->sys->blkdof_pos[ h->pimpl->ct->nblocks ],
+                h->pimpl->gpress);
+
     p2 = 0;
     for (b = 0; b < h->pimpl->ct->nblocks; b++) {
         p1    = h->pimpl->sys->blkdof_pos[b + 0]     ;
@@ -468,6 +474,9 @@ ifsh_ms_assemble(const double        *src   ,
 
         p2 += nconn * nconn;
     }
+
+    /* Remove zero eigenvalue */
+    h->A->sa[0] *= 2;
 }
 
 
