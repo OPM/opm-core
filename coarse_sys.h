@@ -24,7 +24,9 @@ struct coarse_sys {
 
 /* ---------------------------------------------------------------------- */
 
+struct coarse_topology;
 struct CSRMatrix;
+
 typedef void (*LocalSolver)(struct CSRMatrix *A,
                             double           *b,
                             double           *x);
