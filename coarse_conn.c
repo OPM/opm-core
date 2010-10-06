@@ -435,6 +435,7 @@ coarse_topology_build_final(int ncoarse_f, int nblk,
         subface_valid = 1;
 
         for (b1 = 0; (b1 < nblk) && subface_valid; b1++) {
+            if (bns[b1] != NULL) {
             for (n = 0; n < bns[b1]->nneigh; n++) {
                 set = bns[b1]->neigh[n]->fconns;
                 subface_valid = set != NULL;
@@ -450,6 +451,7 @@ coarse_topology_build_final(int ncoarse_f, int nblk,
                 }
 
                 subfacepos[++ coarse_f] = subpos;
+            }
             }
         }
     }
