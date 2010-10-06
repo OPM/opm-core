@@ -436,22 +436,22 @@ coarse_topology_build_final(int ncoarse_f, int nblk,
 
         for (b1 = 0; (b1 < nblk) && subface_valid; b1++) {
             if (bns[b1] != NULL) {
-            for (n = 0; n < bns[b1]->nneigh; n++) {
-                set = bns[b1]->neigh[n]->fconns;
-                subface_valid = set != NULL;
+                for (n = 0; n < bns[b1]->nneigh; n++) {
+                    set = bns[b1]->neigh[n]->fconns;
+                    subface_valid = set != NULL;
 
-                if (subface_valid) {
-                    for (i = 0; i < set->m; i++) {
-                        if (set->s[i] != -1) {
-                            subfaces[subpos ++] = set->s[i];
+                    if (subface_valid) {
+                        for (i = 0; i < set->m; i++) {
+                            if (set->s[i] != -1) {
+                                subfaces[subpos ++] = set->s[i];
+                            }
                         }
+                    } else {
+                        break;
                     }
-                } else {
-                    break;
-                }
 
-                subfacepos[++ coarse_f] = subpos;
-            }
+                    subfacepos[++ coarse_f] = subpos;
+                }
             }
         }
     }
