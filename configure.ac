@@ -12,6 +12,9 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([mimetic.h])
 AC_CONFIG_HEADERS([config.h])
 
+# Neat trick.  Do we want it on by default?
+AM_SILENT_RULES
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_LIBTOOL
