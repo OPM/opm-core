@@ -628,6 +628,15 @@ coarse_weight(grid_t *g, size_t nb,
 
 
 /* ---------------------------------------------------------------------- */
+/* Determine which, and how many, degrees of freedom (i.e., active
+ * basis functions) are connected to every coarse block.  Allocates
+ * and fills the CSR array pair (sys->blkdof_pos,sys->blkdof).
+ *
+ * Returns 1, and sets ->blkdof_pos,->blkdof to valid arrays if successful.
+ * Returns 0, and sets ->blkdof_pos,->blkdof to NULL if not.
+ *
+ * Uses the standard two-pass CSR push-back building strategy. */
+/* ---------------------------------------------------------------------- */
 static int
 blkdof_fill(struct coarse_topology *ct,
             struct coarse_sys_meta *m,
@@ -642,6 +651,7 @@ blkdof_fill(struct coarse_topology *ct,
     sys->blkdof_pos = calloc(nb + 1, sizeof *sys->blkdof_pos);
 
     if (sys->blkdof_pos != NULL) {
+        /* Count number of active BFs per block */
         for (b = 0, p = 0; b < nb; b++) {
             for (; p < ct->blkfacepos[b + 1]; p++) {
                 dof = m->bfno[ ct->blkfaces[p] ];
@@ -650,6 +660,7 @@ blkdof_fill(struct coarse_topology *ct,
             }
         }
 
+        /* Derive CSR start pointers */
         for (b = 1; b <= nb; b++) {
             sys->blkdof_pos[0] += sys->blkdof_pos[b];
             sys->blkdof_pos[b]  = sys->blkdof_pos[0] - sys->blkdof_pos[b];
@@ -657,6 +668,7 @@ blkdof_fill(struct coarse_topology *ct,
 
         sys->blkdof = malloc(sys->blkdof_pos[0] * sizeof *sys->blkdof);
 
+        /* Fill each block's active BFs if we can allocate ->blkdof */
         if (sys->blkdof == NULL) {
             free(sys->blkdof_pos);
             sys->blkdof_pos = NULL;
@@ -683,6 +695,14 @@ blkdof_fill(struct coarse_topology *ct,
 
 
 /* ---------------------------------------------------------------------- */
+/* Compute aggregate allocation sizes for ->basis, ->cell_ip, and ->Binv.
+ *
+ * sizeof(->basis)   == \sum_i nbf(i)*nhf(i)
+ * sizeof(->cell_ip) == \sum_i npairs(i)*ncells(i)
+ * sizeof(->Binv)    == \sum_i nbf(i)^2
+ *
+ * Does not fail. */
+/* ---------------------------------------------------------------------- */
 static void
 compute_alloc_sizes(size_t                  nb,
                     struct coarse_sys_meta *m,
@@ -705,6 +725,12 @@ compute_alloc_sizes(size_t                  nb,
 }
 
 
+/* ---------------------------------------------------------------------- */
+/* Allocate a coarse sys structure as well as suitably sized
+ * individual data arrays within this structure.
+ *
+ * Returns fully allocated structure, with ->blkdof_pos and ->blkdof
+ * fully constructed if successful, and NULL if not. */
 /* ---------------------------------------------------------------------- */
 static struct coarse_sys *
 coarse_sys_allocate(struct coarse_topology *ct,
@@ -755,6 +781,11 @@ coarse_sys_allocate(struct coarse_topology *ct,
 
 
 /* ---------------------------------------------------------------------- */
+/* Map degree of freedom back to global grid connection (coarse face).
+ * In other words, fills previously allocated ->dof2conn array.
+ *
+ * Does not fail. */
+/* ---------------------------------------------------------------------- */
 static void
 map_dof_to_conn(struct coarse_topology *ct,
                 struct coarse_sys_meta *m ,
@@ -773,6 +804,11 @@ map_dof_to_conn(struct coarse_topology *ct,
 }
 
 
+/* ---------------------------------------------------------------------- */
+/* Fill previously allocated ->basis_pos and ->cell_ip_pos arrays.
+ * See compute_alloc_sizes().
+ *
+ * Does not fail. */
 /* ---------------------------------------------------------------------- */
 static void
 set_csys_block_pointers(struct coarse_topology *ct,
@@ -884,6 +920,13 @@ unenumerate_local_dofs(size_t                  cf,
 
 
 /* ---------------------------------------------------------------------- */
+/* Define local (to a single BF) pdof/dof CSR table.
+ *
+ * Precondition: m->loc_fno valid for BF (i.e., called after
+ * enumerate_local_dofs()).
+ *
+ * Does not fail. */
+/* ---------------------------------------------------------------------- */
 static void
 linearise_local_dof(size_t                  cf,
                     grid_t                 *g ,
@@ -918,6 +961,13 @@ linearise_local_dof(size_t                  cf,
 }
 
 
+/* ---------------------------------------------------------------------- */
+/* Construct coefficient matrix sparsity structure for single BF.
+ *
+ * Precondition: bf_asm->pdof and bf_asm->dof valid (i.e., called
+ * after linearise_local_dof()).
+ *
+ * Does not fail. */
 /* ---------------------------------------------------------------------- */
 static void
 define_csr_sparsity(size_t nc, size_t m, struct bf_asm_data *bf_asm)
@@ -988,6 +1038,8 @@ define_csr_sparsity(size_t nc, size_t m, struct bf_asm_data *bf_asm)
 
 
 /* ---------------------------------------------------------------------- */
+/* v = zeros([n, 1]) */
+/* ---------------------------------------------------------------------- */
 static void
 vector_zero(size_t n, double *v)
 /* ---------------------------------------------------------------------- */
@@ -998,6 +1050,14 @@ vector_zero(size_t n, double *v)
 }
 
 
+/* ---------------------------------------------------------------------- */
+/* Assemble system of linear equations corresponding to local
+ * discretisation of flow problem on domain connected to coarse face
+ * 'cf'.  The domain has a total of 'nlocf' fine-scale interfaces, and
+ * the BF weighting function 'w' is pre-calculated using function
+ * coarse_weight().
+ *
+ * Does not fail. */
 /* ---------------------------------------------------------------------- */
 static void
 assemble_local_system(size_t                  cf   ,
@@ -1067,6 +1127,10 @@ assemble_local_system(size_t                  cf   ,
 
 
 /* ---------------------------------------------------------------------- */
+/* Scale the fine-scale (inverse) inner product 'Binv' by the
+ * corresponding cell's total mobility.  This includes mobility
+ * effects in the resulting BFs. */
+/* ---------------------------------------------------------------------- */
 static void
 Binv_scale_mobility(int nc, struct coarse_sys_meta *m,
                     const double *totmob, double *Binv)
@@ -1082,6 +1146,9 @@ Binv_scale_mobility(int nc, struct coarse_sys_meta *m,
 }
 
 
+/* ---------------------------------------------------------------------- */
+/* Project BF flux values for coarse face 'cf' onto continuous flux
+ * field. */
 /* ---------------------------------------------------------------------- */
 static void
 symmetrise_flux(size_t cf, grid_t *g, struct coarse_topology *ct,
@@ -1099,6 +1166,8 @@ symmetrise_flux(size_t cf, grid_t *g, struct coarse_topology *ct,
     vector_zero(bf_asm->A->m, flux);
     memset(cnt, 0, bf_asm->A->m * sizeof *bf_asm->fcount);
 
+    /* Accumulate (and count) number of fine-scale flux contributions
+     * from this particular BF. */
     i = 0;
     for (b  = ct->neighbours + 2*(cf + 0);
          b != ct->neighbours + 2*(cf + 1); b++) {
@@ -1125,10 +1194,13 @@ symmetrise_flux(size_t cf, grid_t *g, struct coarse_topology *ct,
         }
     }
 
+    /* Arithmetic average. */
     for (f = 0; f < bf_asm->A->m; f++) {
         flux[f] /= cnt[f];
     }
 
+    /* Store symmetrised flux values back to bf_asm->v, with
+     * additional block outflow flux sign. */
     i = 0;  blk_sgn = 1.0;
     for (b  = ct->neighbours + 2*(cf + 0);
          b != ct->neighbours + 2*(cf + 1); b++) {
@@ -1158,6 +1230,13 @@ symmetrise_flux(size_t cf, grid_t *g, struct coarse_topology *ct,
 }
 
 
+/* ---------------------------------------------------------------------- */
+/* Solve local system of linear equations to derive interface
+ * pressures (Lagrange multipliers), then perform back-substitution to
+ * derive cell pressures and interface fluxes.  The fluxes are the BF
+ * values on the coarse face denoted by 'cf'.
+ *
+ * Does not fail. */
 /* ---------------------------------------------------------------------- */
 static void
 solve_local_system(size_t                  cf    ,
@@ -1222,6 +1301,12 @@ solve_local_system(size_t                  cf    ,
 
 
 /* ---------------------------------------------------------------------- */
+/* Store BF values at appropriate offsets into sys->basis.
+ *
+ * Must be called after solve_local_system().
+ *
+ * Does not fail. */
+/* ---------------------------------------------------------------------- */
 static void
 store_basis_function(size_t                  cf    ,
                      struct coarse_topology *ct    ,
@@ -1254,6 +1339,22 @@ store_basis_function(size_t                  cf    ,
 }
 
 
+/* ======================================================================
+ * Public interfaces below.
+ * ====================================================================== */
+
+
+/* ---------------------------------------------------------------------- */
+/* Construct coarse system from fine-scale grid (g), partition vector
+ * (p), coarse topology (ct), fine-scale permeability tensor (perm),
+ * fine-scale source terms (src), and fine-scale (total) mobility
+ * field (totmob).
+ *
+ * Uses 'linsolve' to resolve local systems of linear equations.
+ *
+ * Returns fully constructed coarse system if successful (i.e., if all
+ * internal allocations succeed and all BFs can be constructed), and
+ * NULL if not. */
 /* ---------------------------------------------------------------------- */
 struct coarse_sys *
 coarse_sys_construct(grid_t *g, const int   *p,
@@ -1335,6 +1436,7 @@ coarse_sys_construct(grid_t *g, const int   *p,
 }
 
 
+/* ---------------------------------------------------------------------- */
 /* Release dynamic memory resources for coarse system data structure. */
 /* ---------------------------------------------------------------------- */
 void
@@ -1357,6 +1459,7 @@ coarse_sys_destroy(struct coarse_sys *sys)
 }
 
 
+/* ---------------------------------------------------------------------- */
 /* Compute \Psi'_i * B * \Psi_j for all basis function pairs (i,j) for
  * all cells.  Inverts inv(B) (i.e., Binv) in each cell.  Iterates
  * over blocks (CSR representation b2c_pos, b2c).  Result store in
@@ -1521,6 +1624,7 @@ coarse_sys_compute_cell_ip(int                nc,
 }
 
 
+/* ---------------------------------------------------------------------- */
 /* Compute inv(B) on coarse scale from fine-scale contributions.
  * Specifically, this function computes the inverse of
  * B=sum(1/lambda_c * B_c, c\in Blk_j) for all blocks, 'j'.  The
