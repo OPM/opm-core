@@ -112,7 +112,7 @@ hash_set_expand(size_t m, struct hash_set *t)
 
         for (i = 0; i < t->m; i++) {
             ret = hash_set_insert_core(t->s[i], m, s);
-            assert (ret < m);
+            assert ((size_t) ret < m);
         }
 
         p    = t->s;
