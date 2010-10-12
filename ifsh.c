@@ -578,7 +578,7 @@ ifsh_assemble_well(flowbc_t         *bc,
 /* ---------------------------------------------------------------------- */
 /* Assemble global system of linear equations
  *
- *     ifsh->A * ifhs->x = ifhs->b
+ *     ifsh->A * ifsh->x = ifsh->b
  *
  * from local inner product matrices Binv, gravity pressure gpress,
  * boundary conditions bc, source terms src and fluid properties
