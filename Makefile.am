@@ -4,11 +4,11 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-libmimeticdir = $(includedir)/mimetic
+libopmpressuredir = $(includedir)/opm/pressure
 
-lib_LTLIBRARIES = libmimetic.la
+lib_LTLIBRARIES = libopmpressure.la
 
-libmimetic_HEADERS =                            \
+libopmpressure_HEADERS =                            \
 blas_lapack.h                                   \
 coarse_conn.h                                   \
 coarse_sys.h                                    \
@@ -26,7 +26,7 @@ sparse_sys.h                                    \
 well.h
 
 
-libmimetic_la_SOURCES =                         \
+libopmpressure_la_SOURCES =                         \
 coarse_conn.c                                   \
 coarse_sys.c                                    \
 dfs.c                                           \

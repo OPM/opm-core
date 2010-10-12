@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.50])
 
-AC_INIT([libmimetic], [0.1], [Bard.Skaflestad@sintef.no])
+AC_INIT([opmpressure], [0.1], [Bard.Skaflestad@sintef.no])
 
 AM_INIT_AUTOMAKE([foreign])
 
