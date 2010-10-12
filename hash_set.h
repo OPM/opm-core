@@ -20,6 +20,10 @@
 #ifndef HASH_SET_H_INCLUDED
 #define HASH_SET_H_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 
 
@@ -59,5 +63,8 @@ hash_set_insert(int k, struct hash_set *s);
 size_t
 hash_set_count_elms(const struct hash_set *set);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* HASH_SET_H_INCLUDED */

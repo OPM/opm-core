@@ -20,6 +20,10 @@
 #ifndef COARSE_SYS_H_INCLUDED
 #define COARSE_SYS_H_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "grid.h"
 
 /* ---------------------------------------------------------------------- */
@@ -75,5 +79,10 @@ coarse_sys_compute_Binv(int                nb,
                         const int         *b2c,
                         struct coarse_sys *sys,
                         double            *work);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* COARSE_SYS_H_INCLUDED */

@@ -20,6 +20,10 @@
 #ifndef IFSH_MS_H_INCLUDED
 #define IFSH_MS_H_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 
 #include "grid.h"
@@ -58,5 +62,10 @@ ifsh_ms_assemble(const double        *src,
 void
 ifsh_ms_press_flux(grid_t *G, struct ifsh_ms_data *h,
                    double *cpress, double *fflux);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* IFSH_MS_H_INCLUDED */

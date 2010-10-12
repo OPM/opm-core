@@ -20,6 +20,10 @@
 #ifndef COARSE_CONN_H_INCLUDED
 #define COARSE_CONN_H_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct coarse_topology {
     int nblocks;
     int nfaces;
@@ -41,5 +45,10 @@ coarse_topology_create(int nc, int nf, int expct_nconn,
 
 void
 coarse_topology_destroy(struct coarse_topology *t);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* COARSE_CONN_H_INCLUDED */

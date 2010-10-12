@@ -20,6 +20,10 @@
 #ifndef BLAS_LAPACK_H_INCLUDED
 #define BLAS_LAPACK_H_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(MATLAB_MEX_FILE) && MATLAB_MEX_FILE
 #include <mex.h>
 #undef  MAT_SIZE_T
@@ -91,5 +95,10 @@ void daxpy_(const MAT_SIZE_T *n, const double *a,
 double ddot_(const MAT_SIZE_T *n, const double *x, const MAT_SIZE_T *incx,
                                   const double *y, const MAT_SIZE_T *incy);
 
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BLAS_LAPACK_H_INCLUDED */

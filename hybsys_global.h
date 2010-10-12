@@ -20,6 +20,10 @@
 #ifndef HYBSYS_GLOBAL_H_INCLUDED
 #define HYBSYS_GLOBAL_H_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "grid.h"
 #include "well.h"
 #include "sparse_sys.h"
@@ -44,5 +48,11 @@ hybsys_global_assemble_well_sym(int ngconn_tot,
                                 const double     *r,
                                 struct CSRMatrix *A,
                                 double           *b);
+
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* HYBSYS_GLOBAL_H_INCLUDED */

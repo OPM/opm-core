@@ -20,6 +20,10 @@
 #ifndef HYBSYS_H_INCLUDED
 #define HYBSYS_H_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct hybsys {
     double *L;                  /* C2' * inv(B) * C1 - P */
     double *q;                  /* g - F2*G */
@@ -144,4 +148,10 @@ hybsys_compute_press_flux_well(int nc, const int *pgconn, int nf,
                                double *cpress, double *cflux,
                                double *wpress, double *wflux,
                                double *work);
+
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* HYBSYS_H_INCLUDED */
