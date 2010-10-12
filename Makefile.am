@@ -23,7 +23,9 @@ ifsh_ms.h                                       \
 mimetic.h                                       \
 partition.h                                     \
 sparse_sys.h                                    \
-well.h
+well.h                                          \
+GridAdapter.hpp                                 \
+HybridPressureSolver.hpp
 
 
 libopmpressure_la_SOURCES =                         \
