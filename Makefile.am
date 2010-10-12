@@ -2,6 +2,8 @@
 
 #SUBDIRS = test
 
+ACLOCAL_AMFLAGS = -I m4
+
 preprocessdir = $(includedir)/dune/grid/preprocess
 
 preprocess_HEADERS = facetopology.h preprocess.h sparsetable.h \
@@ -13,5 +15,4 @@ libpreprocess_la_SOURCES = facetopology.c  uniquepoints.c \
 			   preprocess.c sparsetable.c
 
 
-include $(top_srcdir)/am/global-rules
-
+## include $(top_srcdir)/am/global-rules
