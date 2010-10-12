@@ -8,7 +8,7 @@ libopmpressuredir = $(includedir)/opm/pressure
 
 lib_LTLIBRARIES = libopmpressure.la
 
-libopmpressure_HEADERS =                            \
+libopmpressure_HEADERS =                        \
 blas_lapack.h                                   \
 coarse_conn.h                                   \
 coarse_sys.h                                    \
@@ -28,7 +28,7 @@ GridAdapter.hpp                                 \
 HybridPressureSolver.hpp
 
 
-libopmpressure_la_SOURCES =                         \
+libopmpressure_la_SOURCES =                     \
 coarse_conn.c                                   \
 coarse_sys.c                                    \
 dfs.c                                           \
