@@ -17,14 +17,14 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SINTEF_GRIDCPLUSPLUS_HEADER
-#define SINTEF_GRIDCPLUSPLUS_HEADER
+#ifndef OPM_GRIDADAPTER_HEADER_INCLUDED
+#define OPM_GRIDADAPTER_HEADER_INCLUDED
 
 
 #include "grid.h"
 #include <stdexcept>
 
-class GridCplusplus
+class GridAdapter
 {
 public:
     /// @brief
@@ -164,4 +164,4 @@ private:
 };
 
 
-#endif // SINTEF_GRIDCPLUSPLUS_HEADER
+#endif // OPM_GRIDADAPTER_HEADER_INCLUDED

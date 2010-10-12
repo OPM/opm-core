@@ -18,31 +18,31 @@
 */
 
 
-#ifndef SINTEF_LIBMIMETIC_HEADER
-#define SINTEF_LIBMIMETIC_HEADER
+#ifndef OPM_HYBRIDPRESSURESOLVER_HEADER_INCLUDED
+#define OPM_HYBRIDPRESSURESOLVER_HEADER_INCLUDED
 
 #include "ifsh.h"
 #include "mimetic.h"
-#include "GridCplusplus.hpp"
+#include "GridAdapter.hpp"
 #include <stdexcept>
 
 
 
 /// @brief
 /// Encapsulates the ifsh (= incompressible flow solver hybrid) solver modules.
-class Ifsh
+class HybridPressureSolver
 {
 public:
     /// @brief
     /// Default constructor, does nothing.
-    Ifsh()
+    HybridPressureSolver()
         :  state_(Uninitialized), data_(0)
     {
     }
 
     /// @brief
     /// Destructor.
-    ~Ifsh()
+    ~HybridPressureSolver()
     {
         ifsh_destroy(data_);
     }
@@ -123,7 +123,7 @@ public:
                   const std::vector<double> bcvalues)
     {
         if (state_ == Uninitialized) {
-            throw std::runtime_error("Error in Ifsh::assemble(): You must call init() prior to calling assemble().");
+            throw std::runtime_error("Error in HybridPressureSolver::assemble(): You must call init() prior to calling assemble().");
         }
 
         // Boundary conditions.
@@ -190,7 +190,7 @@ public:
 
     {
         if (state_ != Assembled) {
-            throw std::runtime_error("Error in Ifsh::linearSystem(): "
+            throw std::runtime_error("Error in HybridPressureSolver::linearSystem(): "
                                      "You must call assemble() prior to calling linearSystem().");
         }
         s.n = data_->A->n;
@@ -213,7 +213,7 @@ public:
                                    std::vector<double>& face_fluxes)
     {
         if (state_ != Assembled) {
-            throw std::runtime_error("Error in Ifsh::computePressuresAndFluxes(): "
+            throw std::runtime_error("Error in HybridPressureSolver::computePressuresAndFluxes(): "
                                      "You must call assemble() (and solve the linear system) "
                                      "prior to calling computePressuresAndFluxes().");
         }
@@ -242,7 +242,7 @@ public:
                             std::vector<double>& cell_fluxes)
     {
         if (state_ != Assembled) {
-            throw std::runtime_error("Error in Ifsh::faceFluxToCellFlux(): "
+            throw std::runtime_error("Error in HybridPressureSolver::faceFluxToCellFlux(): "
                                      "You must call assemble() (and solve the linear system) "
                                      "prior to calling faceFluxToCellFlux().");
         }
@@ -267,8 +267,8 @@ public:
 
 private:
     // Disabling copy and assigment for now.
-    Ifsh(const Ifsh&);
-    Ifsh& operator=(const Ifsh&);
+    HybridPressureSolver(const HybridPressureSolver&);
+    HybridPressureSolver& operator=(const HybridPressureSolver&);
 
     enum State { Uninitialized, Initialized, Assembled };
     State state_;
@@ -276,7 +276,7 @@ private:
     // Solver data.
     ifsh_data* data_;
     // Grid.
-    GridCplusplus grid_;
+    GridAdapter grid_;
     // Number of faces per cell.
     std::vector<int> ncf_;
     // B^{-1} storage.
@@ -290,6 +290,4 @@ private:
 };
 
 
-
-
-#endif // SINTEF_LIBMIMETIC_HEADER
+#endif // OPM_HYBRIDPRESSURESOLVER_HEADER_INCLUDED
