@@ -127,7 +127,6 @@ public:
         }
 
         // Boundary conditions.
-        assert (FBC_UNSET == UNSET && FBC_PRESSURE == PRESSURE && FBC_FLUX == FLUX);
         int num_faces = grid_.c_grid()->number_of_faces;
         assert(num_faces == int(bctypes.size()));
         std::vector<flowbc_type> bctypes2(num_faces, UNSET);
@@ -163,8 +162,8 @@ public:
             data_->b[i] = 0.0;
         }
 
+        // Assemble the embedded linear system.
         ifsh_assemble(&bc, src, Binv, gpress, wctrl, WI, wdp, totmob, omega, data_);
-
         state_ = Assembled;
     }
 
