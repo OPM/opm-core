@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef GRID_H_INCLUDED
-#define GRID_H_INCLUDED
+#ifndef OPM_GRID_H_INCLUDED
+#define OPM_GRID_H_INCLUDED
 
 
 #ifdef __cplusplus
@@ -62,12 +62,8 @@ typedef struct {
 } grid_t;
 
 
-void free_grid           (grid_t *g);
-void alloc_grid_geometry (grid_t *g);
-void print_grid_summary  (grid_t *g);
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRID_H_INCLUDED */
+#endif /* OPM_GRID_H_INCLUDED */
