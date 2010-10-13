@@ -311,6 +311,7 @@ enumerate_active_bf(struct coarse_topology *ct,
                 b_out = (b1 == b_in) ? b2 : b1;
 
                 if (b_out >= 0) {
+                    /* Restricted to internal cf's for now. */
                     m->bfno[cf] = act++;
                 }
             }
