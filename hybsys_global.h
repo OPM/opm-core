@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef HYBSYS_GLOBAL_H_INCLUDED
-#define HYBSYS_GLOBAL_H_INCLUDED
+#ifndef OPM_HYBSYS_GLOBAL_HEADER_INCLUDED
+#define OPM_HYBSYS_GLOBAL_HEADER_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,4 +55,4 @@ hybsys_global_assemble_well_sym(int ngconn_tot,
 }
 #endif
 
-#endif  /* HYBSYS_GLOBAL_H_INCLUDED */
+#endif  /* OPM_HYBSYS_GLOBAL_HEADER_INCLUDED */

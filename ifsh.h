@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IFSH_H_INCLUDED
-#define IFHS_H_INCLUDED
+#ifndef OPM_IFSH_HEADER_INCLUDED
+#define OPM_IFHS_HEADER_INCLUDED
 
 #include "grid.h"
 #include "well.h"
@@ -141,4 +141,4 @@ ifsh_press_flux(grid_t *G, struct ifsh_data *h,
 #endif
 
 
-#endif  /* IFSH_H_INCLUDED */
+#endif  /* OPM_IFSH_HEADER_INCLUDED */

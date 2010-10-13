@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IFSH_MS_H_INCLUDED
-#define IFSH_MS_H_INCLUDED
+#ifndef OPM_IFSH_MS_HEADER_INCLUDED
+#define OPM_IFSH_MS_HEADER_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,4 +68,4 @@ ifsh_ms_press_flux(grid_t *G, struct ifsh_ms_data *h,
 }
 #endif
 
-#endif /* IFSH_MS_H_INCLUDED */
+#endif /* OPM_IFSH_MS_HEADER_INCLUDED */

@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef COARSE_CONN_H_INCLUDED
-#define COARSE_CONN_H_INCLUDED
+#ifndef OPM_COARSE_CONN_HEADER_INCLUDED
+#define OPM_COARSE_CONN_HEADER_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,4 +51,4 @@ coarse_topology_destroy(struct coarse_topology *t);
 }
 #endif
 
-#endif  /* COARSE_CONN_H_INCLUDED */
+#endif  /* OPM_COARSE_CONN_HEADER_INCLUDED */
