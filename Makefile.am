@@ -4,14 +4,14 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-preprocessdir = $(includedir)/dune/grid/preprocess
+cpgpreprocessdir = $(includedir)/dune/grid/cpgpreprocess
 
-preprocess_HEADERS = facetopology.h preprocess.h sparsetable.h \
+cpgpreprocess_HEADERS = facetopology.h preprocess.h sparsetable.h \
                      uniquepoints.h
 
-lib_LTLIBRARIES = libpreprocess.la
+lib_LTLIBRARIES = libcpgpreprocess.la
 
-libpreprocess_la_SOURCES = facetopology.c  uniquepoints.c \
+libcpgpreprocess_la_SOURCES = facetopology.c  uniquepoints.c \
 			   preprocess.c sparsetable.c
 
 

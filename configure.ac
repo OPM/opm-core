@@ -1,8 +1,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.65])
-AC_INIT([FULL-PACKAGE-NAME], [VERSION], [BUG-REPORT-ADDRESS])
+AC_PREREQ([2.59])
+AC_INIT([cpgpreprocess], [1.0], [Jostein.R.Natvig@sintef.no])
 AC_CONFIG_SRCDIR([preprocess.c])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
