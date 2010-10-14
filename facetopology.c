@@ -59,7 +59,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 /*------------------------------------------------------*/
 
 
-/* Determine face geometry first, then compute intersections. */
+/* Determine face topology first, then compute intersection. */
 /* All intersections that occur are present in the final face geometry.*/
 static int *computeFaceTopology(int *a1,
 				int *a2,
@@ -169,11 +169,14 @@ static int *computeFaceTopology(int *a1,
 
 
 
-/* a) If we assume that the index increase when z increase for
-      each pillar (but only separately), we can use only the point indices.
+/* a) If we assume that the index increase when z increase for each
+      pillar (but only separately), we can use only the point indices,
+      since we only need to compare z-values on one pillar at a time.
 
-   b) We assume no intersections occur on the first and last lines.
-      This is convenient in the identification of (unique) intersections.
+   b) We assume input is preprocessed such that no intersections occur
+      on the first and last lines, for instance by padding the grid
+      with extra cells.  This is convenient in the identification of
+      (unique) intersections.
 
 */
 
