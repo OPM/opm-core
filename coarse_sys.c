@@ -1055,19 +1055,6 @@ define_csr_sparsity(size_t nc, size_t m, struct bf_asm_data *bf_asm)
 
 
 /* ---------------------------------------------------------------------- */
-/* v = zeros([n, 1]) */
-/* ---------------------------------------------------------------------- */
-static void
-vector_zero(size_t n, double *v)
-/* ---------------------------------------------------------------------- */
-{
-    size_t i;
-
-    for (i = 0; i < n; i++) { v[i] = 0.0; }
-}
-
-
-/* ---------------------------------------------------------------------- */
 /* Assemble system of linear equations corresponding to local
  * discretisation of flow problem on domain connected to coarse face
  * 'cf'.  The domain has a total of 'nlocf' fine-scale interfaces, and
