@@ -23,8 +23,6 @@
 #include "grid.h"
 #include "well.h"
 #include "flow_bc.h"
-#include "sparse_sys.h"
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,45 +36,16 @@ extern "C" {
  *  and face fluxes is also included.
  */
 
+struct fsh_data;
 
-
-struct ifsh_impl;
-
-/** Contains the linear system for assembly, as well as internal data
- *  for the assembly routines.
- */
-struct ifsh_data {
-    /* Let \f$n_i\f$ be the number of connections/faces of grid cell
-     * number \f$i\f$. Then max_ngconn = \f$\max_i n_i\f$
-     */
-    int               max_ngconn;
-    /* With n_i as above, sum_ngconn2 = \f$\sum_i n_i^2\f$ */
-    size_t            sum_ngconn2;
-
-    /* Linear system */
-    struct CSRMatrix *A;        /* Coefficient matrix */
-    double           *b;        /* System RHS */
-    double           *x;        /* Solution */
-
-    /* Private implementational details. */
-    struct ifsh_impl *pimpl;
-};
-
-
-
-/** Constructs the ifsh_data object for a given grid and well
- *  pattern.
+/** Constructs incompressible hybrid flow-solver data object for a
+ *  given grid and well pattern.
+ *
  *  @param G The grid
  *  @param W The wells
  */
-struct ifsh_data *
+struct fsh_data *
 ifsh_construct(grid_t *G, well_t *W);
-
-
-
-/** Destroys the ifsh_data object */
-void
-ifsh_destroy(struct ifsh_data *h);
 
 
 
@@ -107,16 +76,14 @@ ifsh_destroy(struct ifsh_data *h);
  *          be modified). Must already be constructed.
  */
 void
-ifsh_assemble(flowbc_t         *bc,
-              double           *src,
-              double           *Binv,
-              double           *gpress,
-              well_control_t   *wctrl,
-              double           *WI,
-              double           *wdp,
-              double           *totmob, /* \sum_i \lambda_i */
-              double           *omega,  /* \sum_i \rho_i f_i */
-              struct ifsh_data *h);
+ifsh_assemble(flowbc_t        *bc,
+              const double    *src,
+              const double    *Binv,
+              const double    *gpress,
+              well_control_t  *wctrl,
+              const double    *WI,
+              const double    *wdp,
+              struct fsh_data *h);
 
 /** Computes cell pressures, face fluxes, well pressures and well
  * fluxes from face pressures.
@@ -131,7 +98,9 @@ ifsh_assemble(flowbc_t         *bc,
  * @param wflux[out] \TODO
  */
 void
-ifsh_press_flux(grid_t *G, struct ifsh_data *h,
+ifsh_press_flux(grid_t *G,
+                const double *Binv, const double *gpress,
+                struct fsh_data *h,
                 double *cpress, double *fflux,
                 double *wpress, double *wflux);
 

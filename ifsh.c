@@ -24,7 +24,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "fsh_common.h"
 #include "ifsh.h"
+#include "fsh_common_impl.h"
 #include "hybsys.h"
 #include "hybsys_global.h"
 
@@ -33,59 +35,10 @@
 #endif
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
-struct ifsh_impl {
-    int nc, nf, nw;             /* Number of cells, faces, wells */
-
-    double        *Binv;        /* Effective inverse IP */
-    double        *gpress;      /* Effective gravity pressure */
-    double        *cflux;       /* Cell (half-contact) fluxes */
-
-    double        *WI;          /* Effective inverse IP, wells */
-    double        *wdp;         /* Effective grav. press, wells */
-
-    int           *pgconn;      /* Start pointers, grid connections */
-    int           *gconn;       /* Grid connections */
-
-    int           *cwpos;       /* Start pointers, c->w mapping */
-    int           *cwells;      /* c->w mapping */
-
-    struct hybsys      *sys;    /* Hybrid cell contribs */
-    struct hybsys_well *wsys;   /* Hybrid cell contribs from wells */
-
-    double *work;               /* Scratch array, floating point */
-    int    *iwork;              /* Scratch array, integers */
-
-    /* Linear storage goes here... */
-    int    *idata;              /* Actual storage array, integers */
-    double *ddata;              /* Actual storage array, floating point */
-};
-
-
-/* ---------------------------------------------------------------------- */
-/* Determine nnz (=sum(diff(facePos)^2)) and max(diff(facePos) for grid */
-/* ---------------------------------------------------------------------- */
-static void
-count_grid_connections(grid_t *G, int *max_ngconn, size_t *sum_ngconn2)
-/* ---------------------------------------------------------------------- */
-{
-    int c, n;
-
-    *max_ngconn  = INT_MIN;
-    *sum_ngconn2 = 0;
-
-    for (c = 0; c < G->number_of_cells; c++) {
-        n = G->cell_facepos[c + 1] - G->cell_facepos[c];
-
-        *max_ngconn   = MAX(*max_ngconn, n);
-        *sum_ngconn2 += n * n;
-    }
-}
-
 
 /* ---------------------------------------------------------------------- */
 static void
-ifsh_compute_table_sz(grid_t *G, well_t *W,
-                      int max_ngconn, size_t sum_ngconn2,
+ifsh_compute_table_sz(grid_t *G, well_t *W, int max_ngconn,
                       size_t *nnu, size_t *idata_sz, size_t *ddata_sz)
 /* ---------------------------------------------------------------------- */
 {
@@ -96,18 +49,18 @@ ifsh_compute_table_sz(grid_t *G, well_t *W,
     nc         = G->number_of_cells;
     ngconn_tot = G->cell_facepos[nc];
 
-    *idata_sz  = max_ngconn;    /* iwork */
+    *idata_sz  = nc + 1;        /* gdof_pos */
+    *idata_sz += ngconn_tot;    /* gdof */
+    *idata_sz += max_ngconn;    /* iwork */
 
     *ddata_sz  = 2 * (*nnu);    /* rhs + soln */
-    *ddata_sz += sum_ngconn2;   /* Binv */
-    *ddata_sz += ngconn_tot;    /* gpress */
     *ddata_sz += ngconn_tot;    /* cflux */
     *ddata_sz += max_ngconn;    /* work */
 
     if (W != NULL) {
         *nnu += W->number_of_wells;
 
-        /* cwpos */
+        /* cwell_pos */
         *idata_sz += nc + 1;
 
         /* cwells */
@@ -123,276 +76,58 @@ ifsh_compute_table_sz(grid_t *G, well_t *W,
 
 
 /* ---------------------------------------------------------------------- */
-/* Allocate and define supporting structures for assembling the global
- * system of linear equations to couple the grid (reservoir)
- * connections represented by 'G' and, if present (i.e., non-NULL),
- * the well connections represented by 'W'. */
-/* ---------------------------------------------------------------------- */
-struct ifsh_data *
-ifsh_construct(grid_t *G, well_t *W)
-/* ---------------------------------------------------------------------- */
-{
-    int               nc, ngconn_tot;
-    size_t            idata_sz, ddata_sz, nnu;
-    struct ifsh_data *new;
-
-    assert (G != NULL);
-
-    new = malloc(1 * sizeof *new);
-    if (new != NULL) {
-        new->A     = hybsys_define_globconn(G, W);
-        new->pimpl = NULL;
-
-        if (new->A == NULL) {
-            ifsh_destroy(new);
-            new = NULL;
-        }
-    }
-
-    if (new != NULL) {
-        new->pimpl = malloc(1 * sizeof *new->pimpl);
-
-        if (new->pimpl == NULL) {
-            ifsh_destroy(new);
-            new = NULL;
-        } else {
-            new->pimpl->sys   = NULL;     new->pimpl->wsys  = NULL;
-            new->pimpl->idata = NULL;     new->pimpl->ddata = NULL;
-        }
-    }
-
-    if (new != NULL) {
-        count_grid_connections(G, &new->max_ngconn, &new->sum_ngconn2);
-
-        ifsh_compute_table_sz(G, W, new->max_ngconn, new->sum_ngconn2,
-                              &nnu, &idata_sz, &ddata_sz);
-
-        nc         = G->number_of_cells;
-        ngconn_tot = G->cell_facepos[nc];
-
-        new->pimpl->idata = malloc(idata_sz * sizeof *new->pimpl->idata);
-        new->pimpl->ddata = malloc(ddata_sz * sizeof *new->pimpl->ddata);
-        new->pimpl->sys   = hybsys_allocate_symm(new->max_ngconn,
-                                                 nc, ngconn_tot);
-        if ((new->pimpl->idata == NULL) ||
-            (new->pimpl->ddata == NULL) || (new->pimpl->sys == NULL)) {
-            ifsh_destroy(new);
-            new = NULL;
-        } else {
-            new->b             = new->pimpl->ddata;
-            new->x             = new->b             + nnu;
-            new->pimpl->Binv   = new->x             + nnu;
-            new->pimpl->gpress = new->pimpl->Binv   + new->sum_ngconn2;
-            new->pimpl->cflux  = new->pimpl->gpress + ngconn_tot;
-            new->pimpl->work   = new->pimpl->cflux  + ngconn_tot;
-
-            new->pimpl->iwork  = new->pimpl->idata;
-
-            hybsys_init(new->max_ngconn, new->pimpl->sys);
-        }
-    }
-
-    if ((new != NULL) && (W != NULL)) {
-        new->pimpl->cwpos  = new->pimpl->iwork + new->max_ngconn;
-        new->pimpl->cwells = new->pimpl->cwpos + nc + 1;
-
-        memset(new->pimpl->cwpos, 0, (nc + 1) * sizeof *new->pimpl->cwpos);
-
-        derive_cell_wells(nc, W, new->pimpl->cwpos, new->pimpl->cwells);
-
-        new->pimpl->wsys = hybsys_well_allocate_symm(new->max_ngconn, nc,
-                                                     new->pimpl->cwpos);
-
-        if (new->pimpl->wsys == NULL) {
-            ifsh_destroy(new);
-            new = NULL;
-        } else {
-            new->pimpl->WI  = new->pimpl->work + new->max_ngconn;
-            new->pimpl->wdp = new->pimpl->WI + W->well_connpos[ W->number_of_wells ];
-        }
-    }
-
-    if (new != NULL) {
-        new->pimpl->nc = nc;
-        new->pimpl->nf = G->number_of_faces;
-        new->pimpl->nw = (W != NULL) ? W->number_of_wells : 0;
-
-        /* Contentious.  Imposes severe restrictions on lifetime(G). */
-        new->pimpl->pgconn = G->cell_facepos;
-        new->pimpl->gconn  = G->cell_faces;
-    }
-
-    return new;
-}
-
-
-/* ---------------------------------------------------------------------- */
-/* Release dynamic memory resources associated to internal data of a
- * particular (incompressible) flow solver instance. */
-/* ---------------------------------------------------------------------- */
 static void
-ifsh_destroy_impl(struct ifsh_impl *pimpl)
+ifsh_set_effective_well_params(const double    *WI,
+                               const double    *wdp,
+                               struct fsh_data *ifsh)
 /* ---------------------------------------------------------------------- */
 {
-    if (pimpl != NULL) {
-        hybsys_well_free(pimpl->wsys );
-        hybsys_free     (pimpl->sys  );
-        free            (pimpl->ddata);
-        free            (pimpl->idata);
-    }
+    int     c, nc, i, perf;
+    int    *cwpos, *cwells;
+    double *wsys_WI, *wsys_wdp;
 
-    free(pimpl);
-}
+    nc       = ifsh->pimpl->nc;
+    cwpos    = ifsh->pimpl->cwell_pos;
+    cwells   = ifsh->pimpl->cwells;
+    wsys_WI  = ifsh->pimpl->WI;
+    wsys_wdp = ifsh->pimpl->wdp;
 
+    for (c = i = 0; c < nc; c++) {
+        for (; i < cwpos[c + 1]; i++) {
+            perf = cwells[2*i + 1];
 
-/* ---------------------------------------------------------------------- */
-/* Release memory resources for ifsh data-handle 'h' */
-/* ---------------------------------------------------------------------- */
-void
-ifsh_destroy(struct ifsh_data *h)
-/* ---------------------------------------------------------------------- */
-{
-    if (h != NULL) {
-        ifsh_destroy_impl(h->pimpl);
-        csrmatrix_delete (h->A    );
-    }
-
-    free(h);
-}
-
-
-/* ---------------------------------------------------------------------- */
-/* Eliminate 'npp' prescribed (Dirichlet) conditions (locdof,dofval)
- * from global system of linear equations.  Move known values to RHS
- * whilst zeroing coefficient matrix contributions.  Local system of
- * dimension 'n'. */
-/* ---------------------------------------------------------------------- */
-static void
-ifsh_explicit_elimination(int n, int npp,
-                          int *locdof, double *dofval,
-                          double *S, double *r)
-/* ---------------------------------------------------------------------- */
-{
-    int i, p;
-
-    for (i = 0; i < npp; i++) {
-        for (p = (locdof[i] + 1) % n; p != locdof[i]; p = (p + 1) % n) {
-            /* Subtract known values from RHS. */
-            r[p] -= S[p + locdof[i]*n] * dofval[i];
-
-            /* Eliminate DOF (zero row/col "locdof[i]"; leave diagonal). */
-            S[p + locdof[i]*n] = 0.0;
-            S[locdof[i] + p*n] = 0.0;
-        }
-
-        /* Produce trivial equation S(i,i)*x(i) = S(i,i)*x0(i). */
-        r[p] = S[p * (n + 1)] * dofval[i];
-    }
-}
-
-
-/* ---------------------------------------------------------------------- */
-/* Impose boundary conditions on local contribution to global system. */
-/* ---------------------------------------------------------------------- */
-static int
-ifsh_impose_bc(int nconn, int *conn, flowbc_t *bc,
-               struct ifsh_impl *pimpl)
-/* ---------------------------------------------------------------------- */
-{
-    int i, npp, f;
-
-    npp = 0;
-    for (i = 0; i < nconn; i++) {
-        f = conn[i];
-
-        if (bc->type[f] == PRESSURE) {
-            pimpl->work [npp] = bc->bcval[f];
-            pimpl->iwork[npp] = i;
-
-            npp += 1;
-        } else if (bc->type[f] == FLUX) {
-            pimpl->sys->r[i] -= bc->bcval[f];
+            wsys_WI [i] = WI [perf];
+            wsys_wdp[i] = wdp[perf];
         }
     }
-
-    if (npp > 0) {
-        ifsh_explicit_elimination(nconn, npp,
-                                  pimpl->iwork,
-                                  pimpl->work,
-                                  pimpl->sys->S,
-                                  pimpl->sys->r);
-    }
-
-    return npp;
 }
-
-
-/* ---------------------------------------------------------------------- */
-static void
-ifsh_set_effective_params(const double     *Binv,
-                          const double     *gpress,
-                          const double     *totmob,
-                          const double     *omega,
-                          struct ifsh_data *ifsh)
-/* ---------------------------------------------------------------------- */
-{
-    int     c, n, nc, p1, p2, i;
-    int    *pgconn, *gconn;
-    double *BI, *gp;
-
-    nc     = ifsh->pimpl->nc;
-    pgconn = ifsh->pimpl->pgconn;
-    gconn  = ifsh->pimpl->gconn;
-
-    BI     = ifsh->pimpl->Binv;
-    gp     = ifsh->pimpl->gpress;
-
-    p1 = p2 = 0;
-    for (c = 0; c < nc; c++) {
-        n = pgconn[c + 1] - pgconn[c];
-
-        for (i = 0; i < n    ; i++) {
-            gp[p1 + i] = omega[c] * gpress[p1 + i];
-        }
-
-        for (i = 0; i < n * n; i++) {
-            BI[p2 + i] = totmob[c] * Binv[p2 + i];
-        }
-
-        p1 += n;
-        p2 += n * n;
-    }
-}
-
 
 
 /* ---------------------------------------------------------------------- */
 static int
-ifsh_assemble_grid(flowbc_t         *bc,
-                   const double     *src,
-                   struct ifsh_data *ifsh)
+ifsh_assemble_grid(flowbc_t        *bc,
+                   const double    *Binv,
+                   const double    *gpress,
+                   const double    *src,
+                   struct fsh_data *ifsh)
 /* ---------------------------------------------------------------------- */
 {
     int     c, n, nc, p1, p2;
     int     npp;
     int    *pgconn, *gconn;
-    double *BI, *gp;
 
     nc     = ifsh->pimpl->nc;
-    pgconn = ifsh->pimpl->pgconn;
-    gconn  = ifsh->pimpl->gconn;
-
-    BI     = ifsh->pimpl->Binv;
-    gp     = ifsh->pimpl->gpress;
+    pgconn = ifsh->pimpl->gdof_pos;
+    gconn  = ifsh->pimpl->gdof;
 
     p1 = p2 = npp = 0;
     for (c = 0; c < nc; c++) {
         n = pgconn[c + 1] - pgconn[c];
 
-        hybsys_cellcontrib_symm(c, n, p1, p2, gp, src, BI,
+        hybsys_cellcontrib_symm(c, n, p1, p2, gpress, src, Binv,
                                 ifsh->pimpl->sys);
 
-        npp += ifsh_impose_bc(n, gconn + p1, bc, ifsh->pimpl);
+        npp += fsh_impose_bc(n, gconn + p1, bc, ifsh->pimpl);
 
         hybsys_global_assemble_cell(n, gconn + p1,
                                     ifsh->pimpl->sys->S,
@@ -409,40 +144,10 @@ ifsh_assemble_grid(flowbc_t         *bc,
 
 /* ---------------------------------------------------------------------- */
 static void
-ifsh_set_effective_well_params(const double     *WI,
-                               const double     *wdp,
-                               const double     *totmob,
-                               const double     *omega,
-                               struct ifsh_data *ifsh)
-/* ---------------------------------------------------------------------- */
-{
-    int     c, nc, i, perf;
-    int    *cwpos, *cwells;
-    double *wsys_WI, *wsys_wdp;
-
-    nc       = ifsh->pimpl->nc;
-    cwpos    = ifsh->pimpl->cwpos;
-    cwells   = ifsh->pimpl->cwells;
-    wsys_WI  = ifsh->pimpl->WI;
-    wsys_wdp = ifsh->pimpl->wdp;
-
-    for (c = i = 0; c < nc; c++) {
-        for (; i < cwpos[c + 1]; i++) {
-            perf = cwells[2*i + 1];
-
-            wsys_WI [i] = totmob[c] * WI [perf];
-            wsys_wdp[i] = omega [c] * wdp[perf];
-        }
-    }
-}
-
-
-/* ---------------------------------------------------------------------- */
-static void
-ifsh_impose_well_control(int               c,
-                         flowbc_t         *bc,
-                         well_control_t   *wctrl,
-                         struct ifsh_data *ifsh)
+ifsh_impose_well_control(int              c,
+                         flowbc_t        *bc,
+                         well_control_t  *wctrl,
+                         struct fsh_data *ifsh)
 /* ---------------------------------------------------------------------- */
 {
     int  ngconn, nwconn, i, w1, w2, wg, f;
@@ -454,10 +159,10 @@ ifsh_impose_well_control(int               c,
     /* Enforce symmetric system */
     assert (ifsh->pimpl->wsys->r2w == ifsh->pimpl->wsys->w2r);
 
-    pgconn = ifsh->pimpl->pgconn;
-    pwconn = ifsh->pimpl->cwpos;
+    pgconn = ifsh->pimpl->gdof_pos;
+    pwconn = ifsh->pimpl->cwell_pos;
 
-    gconn  = ifsh->pimpl->gconn  +   pgconn[c];
+    gconn  = ifsh->pimpl->gdof   +   pgconn[c];
     wconn  = ifsh->pimpl->cwells + 2*pwconn[c];
 
     ngconn = pgconn[c + 1] - pgconn[c];
@@ -517,9 +222,9 @@ ifsh_impose_well_control(int               c,
 
 /* ---------------------------------------------------------------------- */
 static int
-ifsh_assemble_well(flowbc_t         *bc,
-                   well_control_t   *wctrl,
-                   struct ifsh_data *ifsh)
+ifsh_assemble_well(flowbc_t        *bc,
+                   well_control_t  *wctrl,
+                   struct fsh_data *ifsh)
 /* ---------------------------------------------------------------------- */
 {
     int npp;
@@ -529,9 +234,9 @@ ifsh_assemble_well(flowbc_t         *bc,
 
     nc = ifsh->pimpl->nc;
 
-    pgconn = ifsh->pimpl->pgconn;
-    gconn  = ifsh->pimpl->gconn;
-    pwconn = ifsh->pimpl->cwpos;
+    pgconn = ifsh->pimpl->gdof_pos;
+    gconn  = ifsh->pimpl->gdof;
+    pwconn = ifsh->pimpl->cwell_pos;
     wconn  = ifsh->pimpl->cwells;
 
     for (c = 0; c < nc; c++) {
@@ -575,6 +280,105 @@ ifsh_assemble_well(flowbc_t         *bc,
 }
 
 
+/* ======================================================================
+ * Public routines follow.
+ * ====================================================================== */
+
+
+/* ---------------------------------------------------------------------- */
+/* Allocate and define supporting structures for assembling the global
+ * system of linear equations to couple the grid (reservoir)
+ * connections represented by 'G' and, if present (i.e., non-NULL),
+ * the well connections represented by 'W'. */
+/* ---------------------------------------------------------------------- */
+struct fsh_data *
+ifsh_construct(grid_t *G, well_t *W)
+/* ---------------------------------------------------------------------- */
+{
+    int              nc, ngconn_tot;
+    size_t           idata_sz, ddata_sz, nnu;
+    struct fsh_data *new;
+
+    assert (G != NULL);
+
+    /* Allocate master structure, define system matrix sparsity */
+    new = malloc(1 * sizeof *new);
+    if (new != NULL) {
+        new->A     = hybsys_define_globconn(G, W);
+        new->pimpl = NULL;
+
+        if (new->A == NULL) {
+            fsh_destroy(new);
+            new = NULL;
+        }
+    }
+
+
+    /* Allocate implementation structure */
+    if (new != NULL) {
+        fsh_count_grid_dof(G, &new->max_ngconn, &new->sum_ngconn2);
+
+        ifsh_compute_table_sz(G, W, new->max_ngconn,
+                              &nnu, &idata_sz, &ddata_sz);
+
+        new->pimpl = fsh_impl_allocate_basic(idata_sz, ddata_sz);
+
+        if (new->pimpl == NULL) {
+            fsh_destroy(new);
+            new = NULL;
+        }
+    }
+
+
+    /* Allocate Schur complement contributions.  Symmetric system. */
+    if (new != NULL) {
+        nc         = G->number_of_cells;
+        ngconn_tot = G->cell_facepos[nc];
+
+        fsh_define_linsys_arrays(new);
+        fsh_define_impl_arrays(nc, nnu, ngconn_tot, new->max_ngconn,
+                               W, new->pimpl);
+
+        new->pimpl->sys = hybsys_allocate_symm(new->max_ngconn,
+                                               nc, ngconn_tot);
+        
+        if (W != NULL) {
+            fsh_define_cell_wells(nc, W, new->pimpl);
+
+            new->pimpl->wsys = hybsys_well_allocate_symm(new->max_ngconn, nc,
+                                                         new->pimpl->cwell_pos);
+        }
+
+        if ((new->pimpl->sys == NULL) ||
+            ((W != NULL) && (new->pimpl->wsys == NULL))) {
+            /* Failed to allocate ->sys or ->wsys (if W != NULL) */
+            fsh_destroy(new);
+            new = NULL;
+        }
+    }
+
+
+    if (new != NULL) {
+        /* All allocations succeded.  Fill metadata and return. */
+        new->pimpl->nc = nc;
+        new->pimpl->nf = G->number_of_faces;
+        new->pimpl->nw = (W != NULL) ? W->number_of_wells : 0;
+
+        memcpy(new->pimpl->gdof_pos,
+               G->cell_facepos     ,
+               (nc + 1)   * sizeof *new->pimpl->gdof_pos);
+
+        memcpy(new->pimpl->gdof    ,
+               G->cell_faces       ,
+               ngconn_tot * sizeof *new->pimpl->gdof);
+
+        hybsys_init(new->max_ngconn, new->pimpl->sys);
+    }
+
+    return new;
+}
+
+
 /* ---------------------------------------------------------------------- */
 /* Assemble global system of linear equations
  *
@@ -586,37 +390,32 @@ ifsh_assemble_well(flowbc_t         *bc,
 /* ---------------------------------------------------------------------- */
 void
 ifsh_assemble(flowbc_t         *bc,
-              double           *src,
-              double           *Binv,
-              double           *gpress,
+              const double     *src,
+              const double     *Binv,
+              const double     *gpress,
               well_control_t   *wctrl,
-              double           *WI,
-              double           *wdp,
-              double           *totmob, /* \sum_i \lambda_i */
-              double           *omega,  /* \sum_i \rho_i f_i */
-              struct ifsh_data *ifsh)
+              const double     *WI,
+              const double     *wdp,
+              struct fsh_data  *ifsh)
 /* ---------------------------------------------------------------------- */
 {
     int npp;                /* Number of prescribed pressure values */
 
-    ifsh_set_effective_params(Binv, gpress, totmob, omega, ifsh);
-
     hybsys_schur_comp_symm(ifsh->pimpl->nc,
-                           ifsh->pimpl->pgconn,
-                           ifsh->pimpl->Binv,
-                           ifsh->pimpl->sys);
+                           ifsh->pimpl->gdof_pos,
+                           Binv, ifsh->pimpl->sys);
 
     if (ifsh->pimpl->nw > 0) {
-        ifsh_set_effective_well_params(WI, wdp, totmob, omega, ifsh);
+        ifsh_set_effective_well_params(WI, wdp, ifsh);
 
         hybsys_well_schur_comp_symm(ifsh->pimpl->nc,
-                                    ifsh->pimpl->cwpos,
+                                    ifsh->pimpl->cwell_pos,
                                     ifsh->pimpl->WI,
                                     ifsh->pimpl->sys,
                                     ifsh->pimpl->wsys);
     }
 
-    npp = ifsh_assemble_grid(bc, src, ifsh);
+    npp = ifsh_assemble_grid(bc, Binv, gpress, src, ifsh);
 
     if (ifsh->pimpl->nw > 0) {
         npp += ifsh_assemble_well(bc, wctrl, ifsh);
@@ -634,7 +433,9 @@ ifsh_assemble(flowbc_t         *bc,
  * substitution process, projected half-contact fluxes. */
 /* ---------------------------------------------------------------------- */
 void
-ifsh_press_flux(grid_t *G, struct ifsh_data *h,
+ifsh_press_flux(grid_t *G,
+                const double *Binv, const double *gpress,
+                struct fsh_data *h,
                 double *cpress, double *fflux,
                 double *wpress, double *wflux)
 /* ---------------------------------------------------------------------- */
@@ -645,8 +446,7 @@ ifsh_press_flux(grid_t *G, struct ifsh_data *h,
     hybsys_compute_press_flux(G->number_of_cells,
                               G->cell_facepos,
                               G->cell_faces,
-                              h->pimpl->gpress,
-                              h->pimpl->Binv,
+                              gpress, Binv,
                               h->pimpl->sys,
                               h->x, cpress, h->pimpl->cflux,
                               h->pimpl->work);
@@ -655,8 +455,8 @@ ifsh_press_flux(grid_t *G, struct ifsh_data *h,
         assert ((wpress != NULL) && (wflux != NULL));
         hybsys_compute_press_flux_well(G->number_of_cells, G->cell_facepos,
                                        G->number_of_faces, h->pimpl->nw,
-                                       h->pimpl->cwpos, h->pimpl->cwells,
-                                       h->pimpl->Binv, h->pimpl->WI,
+                                       h->pimpl->cwell_pos, h->pimpl->cwells,
+                                       Binv, h->pimpl->WI,
                                        h->pimpl->wdp, h->pimpl->sys,
                                        h->pimpl->wsys, h->x, cpress,
                                        h->pimpl->cflux, wpress, wflux,
