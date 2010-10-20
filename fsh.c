@@ -163,7 +163,7 @@ fsh_construct(grid_t *G, well_t *W)
     }
 
 
-    /* Allocate Schur complement contributions.  Symmetric system. */
+    /* Allocate Schur complement contributions.  Unsymmetric system. */
     if (new != NULL) {
         nc         = G->number_of_cells;
         ngconn_tot = G->cell_facepos[nc];
@@ -178,8 +178,9 @@ fsh_construct(grid_t *G, well_t *W)
         if (W != NULL) {
             fsh_define_cell_wells(nc, W, new->pimpl);
 
-            new->pimpl->wsys = hybsys_well_allocate_symm(new->max_ngconn, nc,
-                                                         new->pimpl->cwell_pos);
+            new->pimpl->wsys =
+                hybsys_well_allocate_unsymm(new->max_ngconn, nc,
+                                            new->pimpl->cwell_pos);
         }
 
         if ((new->pimpl->sys == NULL) ||
