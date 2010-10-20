@@ -215,11 +215,8 @@ fsh_construct(grid_t *G, well_t *W)
 /* ---------------------------------------------------------------------- */
 /* Assemble global system of linear equations
  *
- *     ifsh->A * ifsh->x = ifsh->b
- *
- * from local inner product matrices Binv, gravity pressure gpress,
- * boundary conditions bc, source terms src and fluid properties
- * totmob and omega. */
+ *     fsh->A * fsh->x = fsh->b
+ */
 /* ---------------------------------------------------------------------- */
 void
 fsh_assemble(flowbc_t        *bc,
