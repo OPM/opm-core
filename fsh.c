@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include "fsh_common.h"
-#include "ifsh.h"
+#include "fsh.h"
 #include "fsh_common_impl.h"
 #include "hybsys.h"
 #include "hybsys_global.h"
@@ -75,36 +75,6 @@ fsh_compute_table_sz(grid_t *G, well_t *W, int max_ngconn,
 }
 
 
-#if 0
-/* ---------------------------------------------------------------------- */
-static void
-fsh_set_effective_well_params(const double    *WI,
-                              const double    *wdp,
-                              struct fsh_data *h)
-/* ---------------------------------------------------------------------- */
-{
-    int     c, nc, i, perf;
-    int    *cwpos, *cwells;
-    double *wsys_WI, *wsys_wdp;
-
-    nc       = h->pimpl->nc;
-    cwpos    = h->pimpl->cwell_pos;
-    cwells   = h->pimpl->cwells;
-    wsys_WI  = h->pimpl->WI;
-    wsys_wdp = h->pimpl->wdp;
-
-    for (c = i = 0; c < nc; c++) {
-        for (; i < cwpos[c + 1]; i++) {
-            perf = cwells[2*i + 1];
-
-            wsys_WI [i] = WI [perf];
-            wsys_wdp[i] = wdp[perf];
-        }
-    }
-}
-#endif
-
-
 /* ---------------------------------------------------------------------- */
 static int
 fsh_assemble_grid(flowbc_t        *bc,
@@ -141,148 +111,6 @@ fsh_assemble_grid(flowbc_t        *bc,
 
     return npp;
 }
-
-
-#if 0
-/* ---------------------------------------------------------------------- */
-static void
-fsh_impose_well_control(int              c,
-                        flowbc_t        *bc,
-                        well_control_t  *wctrl,
-                        struct fsh_data *ifsh)
-/* ---------------------------------------------------------------------- */
-{
-    int  ngconn, nwconn, i, w1, w2, wg, f;
-    int *pgconn, *gconn, *pwconn, *wconn;
-
-    double bhp;
-    double *r, *r2w, *w2w;
-
-    /* Enforce symmetric system */
-    assert (ifsh->pimpl->wsys->r2w == ifsh->pimpl->wsys->w2r);
-
-    pgconn = ifsh->pimpl->gdof_pos;
-    pwconn = ifsh->pimpl->cwell_pos;
-
-    gconn  = ifsh->pimpl->gdof   +   pgconn[c];
-    wconn  = ifsh->pimpl->cwells + 2*pwconn[c];
-
-    ngconn = pgconn[c + 1] - pgconn[c];
-    nwconn = pwconn[c + 1] - pwconn[c];
-
-    r2w = ifsh->pimpl->wsys->r2w;
-    w2w = ifsh->pimpl->wsys->w2w;
-    r   = ifsh->pimpl->wsys->r  ;
-
-    /* Adapt local system to prescribed boundary pressures (r->w) */
-    for (i = 0; i < ngconn; i++) {
-        f = gconn[i];
-
-        if (bc->type[f] == PRESSURE) {
-            for (w1 = 0; w1 < nwconn; w1++) {
-                /* Eliminate prescribed (boundary) pressure value */
-                r  [ngconn + w1]   -= r2w[i + w1*ngconn] * bc->bcval[f];
-                r2w[i + w1*ngconn]  = 0.0;
-            }
-
-            r[i] = 0.0;         /* RHS value handled in *reservoir* asm */
-        }
-    }
-
-    /* Adapt local system to prescribed well (bottom-hole) pressures;
-     * w->r and w->w. */
-    for (w1 = 0; w1 < nwconn; w1++) {
-        wg = wconn[2*w1 + 0];
-
-        if (wctrl->ctrl[wg] == BHP) {
-            bhp = wctrl->target[wg];
-
-            /* Well->reservoir */
-            for (i = 0; i < ngconn; i++) {
-                assert ((bc->type[gconn[i]] != PRESSURE) ||
-                        !(fabs(r2w[i + w1*ngconn]) > 0.0));
-
-                r  [i]             -= r2w[i + w1*ngconn] * bhp;
-                r2w[i + w1*ngconn]  = 0.0;
-            }
-
-            /* Well->well */
-            for (w2 = (w1 + 1) % nwconn; w2 != w1; w2 = (w2 + 1) % nwconn) {
-                r  [ngconn + w2]    -= w2w[w2 + w1*nwconn] * bhp;
-                w2w[w2 + w1*ngconn]  = 0.0;
-                w2w[w1 + w2*ngconn]  = 0.0;
-            }
-
-            /* Assemble final well equation of the form S*p_bh = S*p_bh^0 */
-            assert (fabs(w2w[w1 * (nwconn + 1)]) > 0.0);
-
-            r[ngconn + w1] = w2w[w1 * (nwconn + 1)] * bhp;
-        }
-    }
-}
-#endif
-
-
-#if 0
-/* ---------------------------------------------------------------------- */
-static int
-fsh_assemble_well(flowbc_t        *bc,
-                  well_control_t  *wctrl,
-                  struct fsh_data *ifsh)
-/* ---------------------------------------------------------------------- */
-{
-    int npp;
-    int ngconn, nwconn, c, nc, w;
-
-    int *pgconn, *gconn, *pwconn, *wconn;
-
-    nc = ifsh->pimpl->nc;
-
-    pgconn = ifsh->pimpl->gdof_pos;
-    gconn  = ifsh->pimpl->gdof;
-    pwconn = ifsh->pimpl->cwell_pos;
-    wconn  = ifsh->pimpl->cwells;
-
-    for (c = 0; c < nc; c++) {
-        ngconn = pgconn[c + 1] - pgconn[c];
-        nwconn = pwconn[c + 1] - pwconn[c];
-
-        if (nwconn > 0) {
-            hybsys_well_cellcontrib_symm(c, ngconn, pgconn[c],
-                                         pwconn,
-                                         ifsh->pimpl->WI,
-                                         ifsh->pimpl->wdp,
-                                         ifsh->pimpl->sys,
-                                         ifsh->pimpl->wsys);
-
-            ifsh_impose_well_control(c, bc, wctrl, ifsh);
-
-            hybsys_global_assemble_well_sym(ifsh->pimpl->nf,
-                                            ngconn, gconn +   pgconn[c],
-                                            nwconn, wconn + 2*pwconn[c] + 0,
-                                            ifsh->pimpl->wsys->r2w,
-                                            ifsh->pimpl->wsys->w2w,
-                                            ifsh->pimpl->wsys->r,
-                                            ifsh->A, ifsh->b);
-        }
-    }
-
-    npp = 0;
-    for (w = 0; w < ifsh->pimpl->nw; w++) {
-        if (wctrl->ctrl[w] == BHP) {
-            npp += 1;
-        } else if (wctrl->ctrl[w] == RATE) {
-            /* Impose total rate constraint.
-             *
-             * Note sign resulting from ->target[w] denoting
-             * *injection* flux. */
-            ifsh->b[ifsh->pimpl->nf + w] -= - wctrl->target[w];
-        }
-    }
-
-    return npp;
-}
-#endif
 
 
 /* ======================================================================
@@ -413,25 +241,7 @@ fsh_assemble(flowbc_t        *bc,
                              h->pimpl->gdof_pos,
                              Binv, Biv, P, h->pimpl->sys);
 
-#if 0
-    if (ifsh->pimpl->nw > 0) {
-        ifsh_set_effective_well_params(WI, wdp, ifsh);
-
-        hybsys_well_schur_comp_symm(ifsh->pimpl->nc,
-                                    ifsh->pimpl->cwell_pos,
-                                    ifsh->pimpl->WI,
-                                    ifsh->pimpl->sys,
-                                    ifsh->pimpl->wsys);
-    }
-#endif
-
     npp = fsh_assemble_grid(bc, Binv, gpress, src, h);
-
-#if 0
-    if (ifsh->pimpl->nw > 0) {
-        npp += ifsh_assemble_well(bc, wctrl, ifsh);
-    }
-#endif
 
     if (npp == 0) {
         h->A->sa[0] *= 2;        /* Remove zero eigenvalue */
@@ -445,11 +255,11 @@ fsh_assemble(flowbc_t        *bc,
  * substitution process, projected half-contact fluxes. */
 /* ---------------------------------------------------------------------- */
 void
-ifsh_press_flux(grid_t *G,
-                const double *Binv, const double *gpress,
-                struct fsh_data *h,
-                double *cpress, double *fflux,
-                double *wpress, double *wflux)
+fsh_press_flux(grid_t *G,
+               const double *Binv, const double *gpress,
+               struct fsh_data *h,
+               double *cpress, double *fflux,
+               double *wpress, double *wflux)
 /* ---------------------------------------------------------------------- */
 {
     int c, f, i;
