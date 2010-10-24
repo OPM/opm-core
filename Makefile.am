@@ -21,6 +21,7 @@ grid.h                                          \
 hash_set.h                                      \
 hybsys_global.h                                 \
 hybsys.h                                        \
+ifs_tpfa.h                                      \
 ifsh.h                                          \
 ifsh_ms.h                                       \
 mimetic.h                                       \
@@ -43,6 +44,7 @@ fsh_common.c                                    \
 hash_set.c                                      \
 hybsys.c                                        \
 hybsys_global.c                                 \
+ifs_tpfa.c                                      \
 ifsh.c                                          \
 ifsh_ms.c                                       \
 mimetic.c                                       \
