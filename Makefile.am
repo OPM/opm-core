@@ -26,6 +26,7 @@ ifsh_ms.h                                       \
 mimetic.h                                       \
 partition.h                                     \
 sparse_sys.h                                    \
+trans_tpfa.h                                    \
 well.h                                          \
 GridAdapter.hpp                                 \
 HybridPressureSolver.hpp
@@ -47,6 +48,7 @@ ifsh_ms.c                                       \
 mimetic.c                                       \
 partition.c                                     \
 sparse_sys.c                                    \
+trans_tpfa.c                                    \
 well.c
 
 
