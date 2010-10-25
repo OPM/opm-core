@@ -28,4 +28,10 @@ tpfa_htrans_compute(grid_t *G, const double *perm, double *htrans);
 void
 tpfa_trans_compute(grid_t *G, const double *htrans, double *trans);
 
+void
+tpfa_eff_trans_compute(grid_t       *G,
+                       const double *totmob,
+                       const double *htrans,
+                       double       *trans);
+
 #endif  /* OPM_TRANS_TPFA_HEADER_INCLUDED */

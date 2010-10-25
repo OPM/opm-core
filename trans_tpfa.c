@@ -80,3 +80,31 @@ tpfa_trans_compute(grid_t *G, const double *htrans, double *trans)
         trans[f] = 1.0 / trans[f];
     }
 }
+
+
+/* ---------------------------------------------------------------------- */
+void
+tpfa_eff_trans_compute(grid_t       *G,
+                       const double *totmob,
+                       const double *htrans,
+                       double       *trans)
+/* ---------------------------------------------------------------------- */
+{
+    int c, i, f;
+
+    for (f = 0; f < G->number_of_faces; f++) {
+        trans[f] = 0.0;
+    }
+
+    for (c = i = 0; c < G->number_of_cells; c++) {
+        for (; i < G->cell_facepos[c + 1]; i++) {
+            f = G->cell_faces[i];
+
+            trans[f] += 1.0 / (totmob[c] * htrans[i]);
+        }
+    }
+
+    for (f = 0; f < G->number_of_faces; f++) {
+        trans[f] = 1.0 / trans[f];
+    }
+}
