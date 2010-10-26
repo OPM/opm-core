@@ -22,6 +22,7 @@
 #define OPM_HYBRIDPRESSURESOLVER_HEADER_INCLUDED
 
 #include "ifsh.h"
+#include "sparse_sys.h"
 #include "mimetic.h"
 #include "GridAdapter.hpp"
 #include <stdexcept>
@@ -44,7 +45,7 @@ public:
     /// Destructor.
     ~HybridPressureSolver()
     {
-        ifsh_destroy(data_);
+        fsh_destroy(data_);
     }
 
     /// @brief
@@ -216,13 +217,15 @@ public:
                                      "You must call assemble() (and solve the linear system) "
                                      "prior to calling computePressuresAndFluxes().");
         }
+        const double* Binv = &Binv_[0];
+        const double* gpress = &gpress_[0];
         int num_cells = grid_.c_grid()->number_of_cells;
         int num_faces = grid_.c_grid()->number_of_faces;
         cell_pressures.clear();
         cell_pressures.resize(num_cells, 0.0);
         face_fluxes.clear();
         face_fluxes.resize(num_faces, 0.0);
-        ifsh_press_flux(grid_.c_grid(), data_, &cell_pressures[0], &face_fluxes[0], 0, 0);
+        ifsh_press_flux(grid_.c_grid(), Binv, gpress, data_, &cell_pressures[0], &face_fluxes[0], 0, 0);
     }
 
     /// @brief
@@ -273,7 +276,7 @@ private:
     State state_;
 
     // Solver data.
-    ifsh_data* data_;
+    fsh_data* data_;
     // Grid.
     GridAdapter grid_;
     // Number of faces per cell.
