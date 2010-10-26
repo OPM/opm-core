@@ -16,13 +16,11 @@ compr_quant.h                                   \
 dfs.h                                           \
 flow_bc.h                                       \
 fsh.h                                           \
-fsh_common.h                                    \
 grid.h                                          \
 hash_set.h                                      \
 hybsys_global.h                                 \
 hybsys.h                                        \
 ifs_tpfa.h                                      \
-ifsh.h                                          \
 ifsh_ms.h                                       \
 mimetic.h                                       \
 partition.h                                     \
@@ -41,7 +39,7 @@ compr_quant.c                                   \
 dfs.c                                           \
 flow_bc.c                                       \
 fsh.c                                           \
-fsh_common.c                                    \
+fsh_common_impl.c                               \
 hash_set.c                                      \
 hybsys.c                                        \
 hybsys_global.c                                 \
