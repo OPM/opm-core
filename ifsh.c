@@ -379,4 +379,3 @@ ifsh_assemble(flowbc_t         *bc,
         ifsh->A->sa[0] *= 2;        /* Remove zero eigenvalue */
     }
 }
-
