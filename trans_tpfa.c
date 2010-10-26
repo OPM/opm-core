@@ -16,7 +16,7 @@ tpfa_htrans_compute(grid_t *G, const double *perm, double *htrans)
 
     double Kn[3];
     double *cc, *fc, *n;
-    double *K;
+    const double *K;
 
     MAT_SIZE_T nrows, ncols, ldA, incx, incy;
     double a1, a2;
