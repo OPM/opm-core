@@ -296,7 +296,7 @@ ifsh_construct(grid_t *G, well_t *W)
 
         new->pimpl->sys = hybsys_allocate_symm(new->max_ngconn,
                                                nc, ngconn_tot);
-        
+
         if (W != NULL) {
             fsh_define_cell_wells(nc, W, new->pimpl);
 
