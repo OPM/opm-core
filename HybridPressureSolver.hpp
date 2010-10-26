@@ -21,7 +21,7 @@
 #ifndef OPM_HYBRIDPRESSURESOLVER_HEADER_INCLUDED
 #define OPM_HYBRIDPRESSURESOLVER_HEADER_INCLUDED
 
-#include "ifsh.h"
+#include "fsh.h"
 #include "sparse_sys.h"
 #include "mimetic.h"
 #include "GridAdapter.hpp"
@@ -225,8 +225,8 @@ public:
         cell_pressures.resize(num_cells, 0.0);
         face_fluxes.clear();
         face_fluxes.resize(num_faces, 0.0);
-        ifsh_press_flux(grid_.c_grid(), &Binv_mobilityweighted_[0], &gpress_omegaweighted_[0],
-                        data_, &cell_pressures[0], &face_fluxes[0], 0, 0);
+        fsh_press_flux(grid_.c_grid(), &Binv_mobilityweighted_[0], &gpress_omegaweighted_[0],
+                       data_, &cell_pressures[0], &face_fluxes[0], 0, 0);
     }
 
     /// @brief
