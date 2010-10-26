@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef HASH_SET_H_INCLUDED
-#define HASH_SET_H_INCLUDED
+#ifndef OPM_HASH_SET_HEADER_INCLUDED
+#define OPM_HASH_SET_HEADER_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,4 +67,4 @@ hash_set_count_elms(const struct hash_set *set);
 }
 #endif
 
-#endif  /* HASH_SET_H_INCLUDED */
+#endif  /* OPM_HASH_SET_HEADER_INCLUDED */

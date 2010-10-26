@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef COARSE_SYS_H_INCLUDED
-#define COARSE_SYS_H_INCLUDED
+#ifndef OPM_COARSE_SYS_HEADER_INCLUDED
+#define OPM_COARSE_SYS_HEADER_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,4 +85,4 @@ coarse_sys_compute_Binv(int                nb,
 }
 #endif
 
-#endif  /* COARSE_SYS_H_INCLUDED */
+#endif  /* OPM_COARSE_SYS_HEADER_INCLUDED */

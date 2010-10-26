@@ -17,19 +17,21 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_DFS_HEADER_INCLUDED
-#define OPM_DFS_HEADER_INCLUDED
+#ifndef OPM_TRANS_TPFA_HEADER_INCLUDED
+#define OPM_TRANS_TPFA_HEADER_INCLUDED
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "grid.h"
 
+void
+tpfa_htrans_compute(grid_t *G, const double *perm, double *htrans);
 
-void dfs (int size, int *ia, int *ja, int *ncolors, int *color, int* work);
+void
+tpfa_trans_compute(grid_t *G, const double *htrans, double *trans);
 
+void
+tpfa_eff_trans_compute(grid_t       *G,
+                       const double *totmob,
+                       const double *htrans,
+                       double       *trans);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+#endif  /* OPM_TRANS_TPFA_HEADER_INCLUDED */

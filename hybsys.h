@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef HYBSYS_H_INCLUDED
-#define HYBSYS_H_INCLUDED
+#ifndef OPM_HYBSYS_HEADER_INCLUDED
+#define OPM_HYBSYS_HEADER_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
@@ -154,4 +154,4 @@ hybsys_compute_press_flux_well(int nc, const int *pgconn, int nf,
 }
 #endif
 
-#endif  /* HYBSYS_H_INCLUDED */
+#endif  /* OPM_HYBSYS_HEADER_INCLUDED */

@@ -17,19 +17,30 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_DFS_HEADER_INCLUDED
-#define OPM_DFS_HEADER_INCLUDED
+#ifndef OPM_COMPR_QUANT_HEADER_INCLUDED
+#define OPM_COMPR_QUANT_HEADER_INCLUDED
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stddef.h>
 
+#include "grid.h"
 
-void dfs (int size, int *ia, int *ja, int *ncolors, int *color, int* work);
+void
+compr_flux_term(grid_t       *G,
+                const double *fflux,
+                const double *zeta,
+                double       *Biv);
 
+void
+compr_accum_term(size_t        nc,
+                 double        dt,
+                 const double *porevol,
+                 const double *totcompr,
+                 double       *P);
 
-#ifdef __cplusplus
-}
-#endif
+void
+compr_src_add_press_accum(size_t        nc,
+                          const double *p0,
+                          const double *P,
+                          double       *src);
 
-#endif
+#endif  /* OPM_COMPR_QUANT_HEADER_INCLUDED */

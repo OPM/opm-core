@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef BLAS_LAPACK_H_INCLUDED
-#define BLAS_LAPACK_H_INCLUDED
+#ifndef OPM_BLAS_LAPACK_HEADER_INCLUDED
+#define OPM_BLAS_LAPACK_HEADER_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,4 +101,4 @@ double ddot_(const MAT_SIZE_T *n, const double *x, const MAT_SIZE_T *incx,
 }
 #endif
 
-#endif /* BLAS_LAPACK_H_INCLUDED */
+#endif /* OPM_BLAS_LAPACK_HEADER_INCLUDED */

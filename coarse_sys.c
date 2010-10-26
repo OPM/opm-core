@@ -311,6 +311,7 @@ enumerate_active_bf(struct coarse_topology *ct,
                 b_out = (b1 == b_in) ? b2 : b1;
 
                 if (b_out >= 0) {
+                    /* Restricted to internal cf's for now. */
                     m->bfno[cf] = act++;
                 }
             }
@@ -1050,19 +1051,6 @@ define_csr_sparsity(size_t nc, size_t m, struct bf_asm_data *bf_asm)
 
     /* Enforce sorted connection structure per row */
     csrmatrix_sortrows(A);
-}
-
-
-/* ---------------------------------------------------------------------- */
-/* v = zeros([n, 1]) */
-/* ---------------------------------------------------------------------- */
-static void
-vector_zero(size_t n, double *v)
-/* ---------------------------------------------------------------------- */
-{
-    size_t i;
-
-    for (i = 0; i < n; i++) { v[i] = 0.0; }
 }
 
 

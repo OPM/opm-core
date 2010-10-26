@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_GRID_H_INCLUDED
-#define OPM_GRID_H_INCLUDED
+#ifndef OPM_GRID_HEADER_INCLUDED
+#define OPM_GRID_HEADER_INCLUDED
 
 
 #ifdef __cplusplus
@@ -66,4 +66,4 @@ typedef struct {
 }
 #endif
 
-#endif /* OPM_GRID_H_INCLUDED */
+#endif /* OPM_GRID_HEADER_INCLUDED */
