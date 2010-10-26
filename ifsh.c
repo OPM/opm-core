@@ -24,55 +24,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "fsh_common.h"
-#include "ifsh.h"
+#include "fsh.h"
 #include "fsh_common_impl.h"
 #include "hybsys.h"
 #include "hybsys_global.h"
-
-#if defined MAX
-#undef MAX
-#endif
-#define MAX(a,b) (((a) > (b)) ? (a) : (b))
-
-
-/* ---------------------------------------------------------------------- */
-static void
-ifsh_compute_table_sz(grid_t *G, well_t *W, int max_ngconn,
-                      size_t *nnu, size_t *idata_sz, size_t *ddata_sz)
-/* ---------------------------------------------------------------------- */
-{
-    int nc, ngconn_tot;
-
-    *nnu = G->number_of_faces;
-
-    nc         = G->number_of_cells;
-    ngconn_tot = G->cell_facepos[nc];
-
-    *idata_sz  = nc + 1;        /* gdof_pos */
-    *idata_sz += ngconn_tot;    /* gdof */
-    *idata_sz += max_ngconn;    /* iwork */
-
-    *ddata_sz  = 2 * (*nnu);    /* rhs + soln */
-    *ddata_sz += ngconn_tot;    /* cflux */
-    *ddata_sz += max_ngconn;    /* work */
-
-    if (W != NULL) {
-        *nnu += W->number_of_wells;
-
-        /* cwell_pos */
-        *idata_sz += nc + 1;
-
-        /* cwells */
-        *idata_sz += 2 * W->well_connpos[ W->number_of_wells ];
-
-        /* rhs + soln */
-        *ddata_sz += 2 * W->number_of_wells;
-
-        /* WI, wdp */
-        *ddata_sz += 2 * W->well_connpos[ W->number_of_wells ];
-    }
-}
 
 
 /* ---------------------------------------------------------------------- */
@@ -318,8 +273,8 @@ ifsh_construct(grid_t *G, well_t *W)
     if (new != NULL) {
         fsh_count_grid_dof(G, &new->max_ngconn, &new->sum_ngconn2);
 
-        ifsh_compute_table_sz(G, W, new->max_ngconn,
-                              &nnu, &idata_sz, &ddata_sz);
+        fsh_compute_table_sz(G, W, new->max_ngconn,
+                             &nnu, &idata_sz, &ddata_sz);
 
         new->pimpl = fsh_impl_allocate_basic(idata_sz, ddata_sz);
 
@@ -426,59 +381,3 @@ ifsh_assemble(flowbc_t         *bc,
     }
 }
 
-
-/* ---------------------------------------------------------------------- */
-/* Compute cell pressures (cpress) and interface fluxes (fflux) from
- * current solution of system of linear equations, h->x.  Back
- * substitution process, projected half-contact fluxes. */
-/* ---------------------------------------------------------------------- */
-void
-ifsh_press_flux(grid_t *G,
-                const double *Binv, const double *gpress,
-                struct fsh_data *h,
-                double *cpress, double *fflux,
-                double *wpress, double *wflux)
-/* ---------------------------------------------------------------------- */
-{
-    int c, f, i;
-    double s;
-
-    hybsys_compute_press_flux(G->number_of_cells,
-                              G->cell_facepos,
-                              G->cell_faces,
-                              gpress, Binv,
-                              h->pimpl->sys,
-                              h->x, cpress, h->pimpl->cflux,
-                              h->pimpl->work);
-
-    if (h->pimpl->nw > 0) {
-        assert ((wpress != NULL) && (wflux != NULL));
-        hybsys_compute_press_flux_well(G->number_of_cells, G->cell_facepos,
-                                       G->number_of_faces, h->pimpl->nw,
-                                       h->pimpl->cwell_pos, h->pimpl->cwells,
-                                       Binv, h->pimpl->WI,
-                                       h->pimpl->wdp, h->pimpl->sys,
-                                       h->pimpl->wsys, h->x, cpress,
-                                       h->pimpl->cflux, wpress, wflux,
-                                       h->pimpl->work);
-    }
-
-    for (f = 0; f < G->number_of_faces; f++) { fflux[f] = 0.0; }
-
-    i = 0;
-    for (c = 0; c < G->number_of_cells; c++) {
-        for (; i < G->cell_facepos[c + 1]; i++) {
-            f = G->cell_faces[i];
-            s = 2.0*(G->face_cells[2*f + 0] == c) - 1.0;
-
-            fflux[f] += s * h->pimpl->cflux[i];
-        }
-    }
-
-    for (f = 0; f < G->number_of_faces; f++) {
-        i = (G->face_cells[2*f + 0] >= 0) +
-            (G->face_cells[2*f + 1] >= 0);
-
-        fflux[f] /= i;
-    }
-}

@@ -76,4 +76,8 @@ fsh_define_cell_wells(size_t nc, well_t *W, struct fsh_impl *pimpl);
 void
 fsh_define_linsys_arrays(struct fsh_data *h);
 
+void
+fsh_compute_table_sz(grid_t *G, well_t *W, int max_ngconn,
+                     size_t *nnu, size_t *idata_sz, size_t *ddata_sz);
+
 #endif /* OPM_FSH_COMMON_IMPL_HEADER_INCLUDED */

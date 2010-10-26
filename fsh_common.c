@@ -28,7 +28,7 @@
 #include "flow_bc.h"
 #include "well.h"
 
-#include "fsh_common.h"
+#include "fsh.h"
 #include "fsh_common_impl.h"
 
 #include "hybsys.h"
@@ -234,4 +234,43 @@ fsh_define_linsys_arrays(struct fsh_data *h)
 {
     h->b = h->pimpl->ddata;
     h->x = h->b + h->A->m;
+}
+
+
+/* ---------------------------------------------------------------------- */
+void
+fsh_compute_table_sz(grid_t *G, well_t *W, int max_ngconn,
+                     size_t *nnu, size_t *idata_sz, size_t *ddata_sz)
+/* ---------------------------------------------------------------------- */
+{
+    int nc, ngconn_tot;
+
+    *nnu = G->number_of_faces;
+
+    nc         = G->number_of_cells;
+    ngconn_tot = G->cell_facepos[nc];
+
+    *idata_sz  = nc + 1;        /* gdof_pos */
+    *idata_sz += ngconn_tot;    /* gdof */
+    *idata_sz += max_ngconn;    /* iwork */
+
+    *ddata_sz  = 2 * (*nnu);    /* rhs + soln */
+    *ddata_sz += ngconn_tot;    /* cflux */
+    *ddata_sz += max_ngconn;    /* work */
+
+    if (W != NULL) {
+        *nnu += W->number_of_wells;
+
+        /* cwell_pos */
+        *idata_sz += nc + 1;
+
+        /* cwells */
+        *idata_sz += 2 * W->well_connpos[ W->number_of_wells ];
+
+        /* rhs + soln */
+        *ddata_sz += 2 * W->number_of_wells;
+
+        /* WI, wdp */
+        *ddata_sz += 2 * W->well_connpos[ W->number_of_wells ];
+    }
 }

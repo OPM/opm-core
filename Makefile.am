@@ -34,6 +34,7 @@ HybridPressureSolver.hpp
 
 
 libopmpressure_la_SOURCES =                     \
+cfsh.c                                          \
 coarse_conn.c                                   \
 coarse_sys.c                                    \
 compr_quant.c                                   \

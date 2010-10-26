@@ -20,7 +20,6 @@
 #ifndef OPM_FSH_HEADER_INCLUDED
 #define OPM_FHS_HEADER_INCLUDED
 
-#include "fsh_common.h"
 #include "grid.h"
 #include "well.h"
 #include "flow_bc.h"
@@ -29,33 +28,137 @@
 extern "C" {
 #endif
 
-struct fsh_data;
 
-/** Constructs incompressible hybrid flow-solver data object for a
+/***************************************************************/
+/* Data type common to compressible and incompressible solver. */
+/***************************************************************/
+
+struct CSRMatrix;
+struct fsh_impl;
+
+/** Contains the linear system for assembly, as well as internal data
+ *  for the assembly routines.
+ */
+struct fsh_data {
+    /* Let \f$n_i\f$ be the number of connections/faces of grid cell
+     * number \f$i\f$. Then max_ngconn = \f$\max_i n_i\f$
+     */
+    int               max_ngconn;
+    /* With n_i as above, sum_ngconn2 = \f$\sum_i n_i^2\f$ */
+    size_t            sum_ngconn2;
+
+    /* Linear system */
+    struct CSRMatrix *A;        /* Coefficient matrix */
+    double           *b;        /* System RHS */
+    double           *x;        /* Solution */
+
+    /* Private implementational details. */
+    struct fsh_impl  *pimpl;
+};
+
+
+
+/** Destroys the fsh data object */
+void
+fsh_destroy(struct fsh_data *h);
+
+
+/*********************************/
+/* Compressible solver routines. */
+/*********************************/
+
+
+/** Constructs compressible hybrid flow-solver data object for a
  *  given grid and well pattern.
  */
 struct fsh_data *
-fsh_construct(grid_t *G, well_t *W);
+cfsh_construct(grid_t *G, well_t *W);
 
 
 
 /** Assembles the hybridized linear system for face pressures.
  */
 void
-fsh_assemble(flowbc_t        *bc,
-             const double    *src,
-             const double    *Binv,
-             const double    *Biv,
-             const double    *P,
-             const double    *gpress,
-             well_control_t  *wctrl,
-             const double    *WI,
-             const double    *BivW,
-             const double    *wdp,
-             struct fsh_data *h);
+cfsh_assemble(flowbc_t        *bc,
+              const double    *src,
+              const double    *Binv,
+              const double    *Biv,
+              const double    *P,
+              const double    *gpress,
+              well_control_t  *wctrl,
+              const double    *WI,
+              const double    *BivW,
+              const double    *wdp,
+              struct fsh_data *h);
+
+
+/***********************************/
+/* Incompressible solver routines. */
+/***********************************/
+/** Constructs incompressible hybrid flow-solver data object for a
+ *  given grid and well pattern.
+ *
+ *  @param G The grid
+ *  @param W The wells
+ */
+struct fsh_data *
+ifsh_construct(grid_t *G, well_t *W);
+
+
+
+/** Assembles the hybridized linear system for face pressures.
+ *
+ * This routine produces no output, other than changing the linear
+ * system embedded in the ifsh_data object.
+ * @param bc Boundary conditions.
+ * @param src Per-cell source terms (volume per second). Positive
+ *            values flow are sources, negative values are sinks.
+ * @param Binv The cell-wise effective inner products to employ in
+ *             assembly. This should be an array of length equal to
+ *             sum_ngconn2 of the ifsh_data object. For each cell i,
+ *             there are \f$n_i^2\f$ entries, giving the inner product for
+ *             that cell. The inner products may for example be
+ *             computed by the functions of mimetic.h.
+ * @param gpress Effective gravity terms. This should be an array of length
+ *               \f$\sum_i n_i\f$. For each cell, the \f$n_i\f$ elements
+ *               corresponding to cell \f$i\f$ should be given by
+ *               \f$\omega g \cdot (f_c - c_c)\f$ where the symbols
+ *               represent the fractional-flow-weighted densities,
+ *               the gravity vector, face centroid and cell centroid.
+ * @param wctrl \TODO
+ * @param WI \TODO
+ * @param wdp \TODO
+ * @param h The fsh_data object to use (and whose linear system will
+ *          be modified). Must already be constructed.
+ */
+void
+ifsh_assemble(flowbc_t        *bc,
+              const double    *src,
+              const double    *Binv,
+              const double    *gpress,
+              well_control_t  *wctrl,
+              const double    *WI,
+              const double    *wdp,
+              struct fsh_data *h);
+
+
+
+
+/**********************************/
+/* Common postprocessing routine. */
+/**********************************/
 
 /** Computes cell pressures, face fluxes, well pressures and well
  * fluxes from face pressures.
+ *
+ * @param G The grid.
+ * @param h The fsh_data object. You must have called [ic]fsh_assemble()
+ *          prior to this, and solved the embedded linear system of
+ *          this object before you call fsh_press_flux().
+ * @param cpress[out] Cell pressures.
+ * @param fflux[out] Oriented face fluxes.
+ * @param wpress[out] \TODO
+ * @param wflux[out] \TODO
  */
 void
 fsh_press_flux(grid_t *G,
