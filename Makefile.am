@@ -39,6 +39,7 @@ compr_quant.c                                   \
 dfs.c                                           \
 flow_bc.c                                       \
 fsh.c                                           \
+fsh_common_impl.h                               \
 fsh_common_impl.c                               \
 hash_set.c                                      \
 hybsys.c                                        \
