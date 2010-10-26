@@ -23,6 +23,7 @@
 #include "grid.h"
 #include "well.h"
 #include "flow_bc.h"
+#include "fsh_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,7 +73,7 @@ ifsh_construct(grid_t *G, well_t *W);
  * @param wdp \TODO
  * @param totmob Cell-wise total mobilities to use for this assembly.
  * @param omega Cell-wise phase densities weighted by fractional flow.
- * @param h The ifsh_data object to use (and whose linear system will
+ * @param h The fsh_data object to use (and whose linear system will
  *          be modified). Must already be constructed.
  */
 void
@@ -89,7 +90,7 @@ ifsh_assemble(flowbc_t        *bc,
  * fluxes from face pressures.
  *
  * @param G The grid.
- * @param h The ifsh_data object. You must have called ifsh_assemble()
+ * @param h The fsh_data object. You must have called ifsh_assemble()
  *          prior to this, and solved the embedded linear system of
  *          this object before you call ifsh_press_flux().
  * @param cpress[out] Cell pressures.

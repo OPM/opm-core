@@ -14,6 +14,7 @@ Makefile.in
 Doxyfile
 Doxyfile.in
 aclocal.m4
+am
 autom4te.cache
 config.*
 configure

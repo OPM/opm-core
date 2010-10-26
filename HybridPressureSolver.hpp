@@ -22,6 +22,7 @@
 #define OPM_HYBRIDPRESSURESOLVER_HEADER_INCLUDED
 
 #include "ifsh.h"
+#include "sparse_sys.h"
 #include "mimetic.h"
 #include "GridAdapter.hpp"
 #include <stdexcept>
@@ -44,7 +45,7 @@ public:
     /// Destructor.
     ~HybridPressureSolver()
     {
-        ifsh_destroy(data_);
+        fsh_destroy(data_);
     }
 
     /// @brief
@@ -142,19 +143,20 @@ public:
         // Source terms from user.
         double* src = const_cast<double*>(&sources[0]); // Ugly? Yes. Safe? I think so.
 
-        // Inner products are precomputed.
-        double* Binv = &Binv_[0];
-
-        // Gravity contribs are precomputed.
-        double* gpress = &gpress_[0];
-
         // All well related things are zero.
         well_control_t* wctrl = 0;
         double* WI = 0;
         double* wdp = 0;
 
-        double* totmob = const_cast<double*>(&total_mobilities[0]);
-        double* omega = const_cast<double*>(&omegas[0]);
+        // Scale inner products and gravity terms by saturation-dependent factors.
+        grid_t* g = grid_.c_grid();
+        Binv_mobilityweighted_.resize(Binv_.size());
+        mim_ip_mobility_update(g->number_of_cells, g->cell_facepos, &total_mobilities[0],
+                               &Binv_[0], &Binv_mobilityweighted_[0]);
+        gpress_omegaweighted_.resize(gpress_.size());
+        mim_ip_density_update(g->number_of_cells, g->cell_facepos, &omegas[0],
+                              &gpress_[0], &gpress_omegaweighted_[0]);
+
 
         // Zero the linalg structures.
         csrmatrix_zero(data_->A);
@@ -163,7 +165,8 @@ public:
         }
 
         // Assemble the embedded linear system.
-        ifsh_assemble(&bc, src, Binv, gpress, wctrl, WI, wdp, totmob, omega, data_);
+        ifsh_assemble(&bc, src, &Binv_mobilityweighted_[0], &gpress_omegaweighted_[0],
+                      wctrl, WI, wdp, data_);
         state_ = Assembled;
     }
 
@@ -222,7 +225,8 @@ public:
         cell_pressures.resize(num_cells, 0.0);
         face_fluxes.clear();
         face_fluxes.resize(num_faces, 0.0);
-        ifsh_press_flux(grid_.c_grid(), data_, &cell_pressures[0], &face_fluxes[0], 0, 0);
+        ifsh_press_flux(grid_.c_grid(), &Binv_mobilityweighted_[0], &gpress_omegaweighted_[0],
+                        data_, &cell_pressures[0], &face_fluxes[0], 0, 0);
     }
 
     /// @brief
@@ -273,15 +277,17 @@ private:
     State state_;
 
     // Solver data.
-    ifsh_data* data_;
+    fsh_data* data_;
     // Grid.
     GridAdapter grid_;
     // Number of faces per cell.
     std::vector<int> ncf_;
     // B^{-1} storage.
     std::vector<double> Binv_;
+    std::vector<double> Binv_mobilityweighted_;
     // Gravity contributions.
     std::vector<double> gpress_;
+    std::vector<double> gpress_omegaweighted_;
     // Total mobilities.
     std::vector<double> totmob_;
     // Gravity coefficients (\omega = sum_{i = 1}^{num phases}f_i \rho_i[TODO: check this]).

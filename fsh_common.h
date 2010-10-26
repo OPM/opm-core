@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_IFSH_HEADER_INCLUDED
-#define OPM_IFHS_HEADER_INCLUDED
+#ifndef OPM_FSH_COMMON_HEADER_INCLUDED
+#define OPM_FSH_COMMON_HEADER_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,4 +58,4 @@ fsh_destroy(struct fsh_data *h);
 #endif
 
 
-#endif  /* OPM_IFSH_HEADER_INCLUDED */
+#endif  /* OPM_FSH_COMMON_HEADER_INCLUDED */

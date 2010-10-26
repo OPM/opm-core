@@ -20,6 +20,7 @@
 #ifndef OPM_FSH_HEADER_INCLUDED
 #define OPM_FHS_HEADER_INCLUDED
 
+#include "fsh_common.h"
 #include "grid.h"
 #include "well.h"
 #include "flow_bc.h"
@@ -68,4 +69,4 @@ fsh_press_flux(grid_t *G,
 #endif
 
 
-#endif  /* OPM_IFSH_HEADER_INCLUDED */
+#endif  /* OPM_FSH_HEADER_INCLUDED */
