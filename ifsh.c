@@ -339,9 +339,8 @@ ifsh_construct(grid_t *G, well_t *W)
  *
  *     ifsh->A * ifsh->x = ifsh->b
  *
- * from local inner product matrices Binv, gravity pressure gpress,
- * boundary conditions bc, source terms src and fluid properties
- * totmob and omega. */
+ * from effective local inner product matrices Binv, effective gravity
+ * pressure gpress, boundary conditions bc, and source terms src. */
 /* ---------------------------------------------------------------------- */
 void
 ifsh_assemble(flowbc_t         *bc,
