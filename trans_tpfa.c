@@ -231,5 +231,5 @@ tpfa_compr_htran_mult(grid_t       *G ,
 
     free(ipiv);
     free(v);
-    free(invAc);
+    free(luAc);
 }
