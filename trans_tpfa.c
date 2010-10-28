@@ -108,3 +108,29 @@ tpfa_eff_trans_compute(grid_t       *G,
         trans[f] = 1.0 / trans[f];
     }
 }
+
+
+/* ---------------------------------------------------------------------- */
+void
+small_matvec(size_t n, int sz, const double *A, const double *X, double *Y)
+/* ---------------------------------------------------------------------- */
+{
+    size_t i, p1, p2;
+
+    MAT_SIZE_T nrows, ncols, ld, incx, incy;
+    double     a1, a2;
+
+    nrows = ncols = ld = sz;
+    incx  = incy  = 1;
+
+    a1 = 1.0;
+    a2 = 0.0;
+    for (i = p1 = p2 = 0; i < n; i++) {
+        dgemv_("No Transpose", &nrows, &ncols,
+               &a1, A + p2, &ld, X + p1, &incx,
+               &a2,              Y + p1, &incy);
+
+        p1 += sz;
+        p2 += sz * sz;
+    }
+}

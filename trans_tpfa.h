@@ -34,4 +34,10 @@ tpfa_eff_trans_compute(grid_t       *G,
                        const double *htrans,
                        double       *trans);
 
+void
+small_matvec(size_t n, int sz,
+             const double *A,
+             const double *X,
+             double       *Y);
+
 #endif  /* OPM_TRANS_TPFA_HEADER_INCLUDED */
