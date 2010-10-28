@@ -163,7 +163,6 @@ compr_htran_mult_core(grid_t       *G,
     for (c = 0, p2; c < G->number_of_cells; c++, p2 += np2) {
         /* Factor Ac */
         memcpy(luAc, Ac + p2, np2 * sizeof *luAc);
-        for (p = 0; p < np; p++) { ipiv[p] = p + 1; } /* 1-based indexing */
         dgetrf_(&nrows, &ncols, luAc, &ldA, ipiv, &info);
 
         /* Define right-hand sides for local tran-mult systems */
