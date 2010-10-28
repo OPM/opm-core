@@ -32,7 +32,8 @@
 
 
 /// @brief
-/// Encapsulates the ifsh (= incompressible flow solver hybrid) solver modules.
+/// Encapsulates the ifs_tpfa (= incompressible flow solver
+/// two-point flux approximation) solver modules.
 class TPFAPressureSolver
 {
 public:
@@ -65,13 +66,13 @@ public:
         // Build (empty for now) C well structure.
         // well_t* w = 0;
 
-        // Initialize ifsh data.
+        // Initialize data.
         data_ = ifs_tpfa_construct(grid_.c_grid());
         if (!data_) {
             throw std::runtime_error("Failed to initialize ifs_tpfa solver.");
         }
 
-        // Compute inner products, gravity contributions.
+        // Compute half-transmissibilities, gravity contributions.
         int num_cells = grid.numCells();
         int ngconn  = grid_.c_grid()->cell_facepos[num_cells];
         gpress_.clear();
@@ -91,7 +92,6 @@ public:
             }
         }
         assert(count == ngconn);
-
         htrans_.resize(ngconn);
         tpfa_htrans_compute(grid_.c_grid(), perm, &htrans_[0]);
         state_ = Initialized;
