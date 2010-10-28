@@ -59,7 +59,18 @@ void dorgqr_(const MAT_SIZE_T *m   , const MAT_SIZE_T *n    , const MAT_SIZE_T *
                    double     *A   , const MAT_SIZE_T *ld   , const double     *tau,
                    double     *work, const MAT_SIZE_T *lwork,       MAT_SIZE_T *info);
 
+/* A <- LU(A) */
+void dgetrf_(const MAT_SIZE_T *m   , const MAT_SIZE_T *n ,
+             double           *A   , const MAT_SIZE_T *ld,
+             MAT_SIZE_T       *ipiv, MAT_SIZE_T       *info);
 
+/* B <- A \ B, when A is LU(A) from dgetrf() */
+void dgetrs_(const char       *trans, const MAT_SIZE_T *n,
+             const MAT_SIZE_T *nrhs ,
+             const double     *A    , const MAT_SIZE_T *lda,
+             const MAT_SIZE_T *ipiv , double           *B,
+             const MAT_SIZE_T *ldb  , MAT_SIZE_T       *info);
+    
 /* A <- chol(A) */
 void dpotrf_(const char *uplo, const MAT_SIZE_T *n,
              double     *A   , const MAT_SIZE_T *lda,
