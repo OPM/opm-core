@@ -224,7 +224,7 @@ tpfa_compr_htran_mult(grid_t       *G ,
     v    = malloc(np * max_ngconn * sizeof *v);
     ipiv = malloc(np              * sizeof *ipiv);
 
-    if ((invAc != NULL) && (v != NULL) && (ipiv != NULL)) {
+    if ((luAc != NULL) && (v != NULL) && (ipiv != NULL)) {
         compr_htran_mult_core(G, np, Ac, xf, ht_mult,
                               luAc, v, ipiv);
     }
