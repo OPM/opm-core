@@ -40,4 +40,12 @@ small_matvec(size_t n, int sz,
              const double *X,
              double       *Y);
 
+void
+tpfa_compr_htran_mult(grid_t       *G         ,
+                      int           np        ,
+                      size_t        max_ngconn,
+                      const double *Ac        ,
+                      const double *xf        ,
+                      double       *ht_mult);
+
 #endif  /* OPM_TRANS_TPFA_HEADER_INCLUDED */

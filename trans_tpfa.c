@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "blas_lapack.h"
 #include "trans_tpfa.h"
@@ -133,4 +135,101 @@ small_matvec(size_t n, int sz, const double *A, const double *X, double *Y)
         p1 += sz;
         p2 += sz * sz;
     }
+}
+
+
+/* ---------------------------------------------------------------------- */
+static void
+compr_htran_mult_core(grid_t       *G,
+                      int           np,
+                      const double *Ac,
+                      const double *xf,
+                      double       *ht_mult,
+                      double       *luAc,
+                      double       *v,
+                      MAT_SIZE_T   *ipiv)
+/* ---------------------------------------------------------------------- */
+{
+    int c, i, f, p, np2;
+
+    size_t p2;
+
+    MAT_SIZE_T nrows, ncols, ldA, ldX, nrhs, info;
+
+    np2   = np * np;
+    nrows = ncols = ldA = ldX = np;
+    info  = 0;
+
+    for (c = 0, p2; c < G->number_of_cells; c++, p2 += np2) {
+        /* Factor Ac */
+        memcpy(luAc, Ac + p2, np2 * sizeof *luAc);
+        for (p = 0; p < np; p++) { ipiv[p] = p + 1; } /* 1-based indexing */
+        dgetrf_(&nrows, &ncols, luAc, &ldA, ipiv, &info);
+
+        /* Define right-hand sides for local tran-mult systems */
+        for (i = G->cell_facepos[c + 0], nrhs = 0;
+             i < G->cell_facepos[c + 1]; i++, nrhs++) {
+            f = G->cell_faces[i];
+
+            for (p = 0; p < np; p++) {
+                v[nrhs*np + p] = xf[f*np + p];
+            }
+        }
+
+        /* Solve local tran-mult systems */
+        dgetrs_("No Transpose", &nrows, &nrhs,
+                luAc, &ldA, ipiv, v, &ldX, &info);
+
+        /* Compute local tran-multipliers by summing over phases */
+        for (i = G->cell_facepos[c + 0], nrhs = 0;
+             i < G->cell_facepos[c + 1]; i++, nrhs++) {
+            ht_mult[i] = 0.0;
+            for (p = 0; p < np; p++) {
+                ht_mult[i] += v[nrhs*np + p];
+            }
+        }
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
+/* ht_mult <- Ac \ xf
+ *
+ * np is number of phases.
+ * Ac is R/B per cell.
+ * xf is (R/B)*{\lambda_\alpha}_f, pre-computed in small_matvec().
+ *
+ * Result, ht_mult, is a scalar per half-face.
+ *
+ * Algorithm:
+ *   for each cell,
+ *      Ac <- LU(Ac)
+ *      for each face(cell),
+ *         Solve Ac*v = xf(f)
+ *         ht_mult[c,f] = sum(v) over phases */
+/* ---------------------------------------------------------------------- */
+void
+tpfa_compr_htran_mult(grid_t       *G ,
+                      int           np,
+                      size_t        max_ngconn,
+                      const double *Ac,
+                      const double *xf,
+                      double       *ht_mult)
+/* ---------------------------------------------------------------------- */
+{
+    double     *luAc, *v;
+    MAT_SIZE_T *ipiv;
+
+    luAc = malloc(np * np         * sizeof *luAc);
+    v    = malloc(np * max_ngconn * sizeof *v);
+    ipiv = malloc(np              * sizeof *ipiv);
+
+    if ((invAc != NULL) && (v != NULL) && (ipiv != NULL)) {
+        compr_htran_mult_core(G, np, Ac, xf, ht_mult,
+                              luAc, v, ipiv);
+    }
+
+    free(ipiv);
+    free(v);
+    free(invAc);
 }
