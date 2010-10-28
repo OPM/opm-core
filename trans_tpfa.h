@@ -22,6 +22,10 @@
 
 #include "grid.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void
 tpfa_htrans_compute(grid_t *G, const double *perm, double *htrans);
 
@@ -47,5 +51,9 @@ tpfa_compr_htran_mult(grid_t       *G         ,
                       const double *Ac        ,
                       const double *xf        ,
                       double       *ht_mult);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* OPM_TRANS_TPFA_HEADER_INCLUDED */
