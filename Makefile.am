@@ -6,7 +6,8 @@ ACLOCAL_AMFLAGS = -I m4
 
 libopmpressuredir = $(includedir)/opm/pressure
 
-lib_LTLIBRARIES = libopmpressure.la
+lib_LTLIBRARIES    = libopmpressure.la
+noinst_LTLIBRARIES = libopmpressure_noinst.la
 
 libopmpressure_HEADERS =                        \
 blas_lapack.h                                   \
@@ -52,6 +53,8 @@ partition.c                                     \
 sparse_sys.c                                    \
 trans_tpfa.c                                    \
 well.c
+
+libopmpressure_noinst_la_SOURCES = $(libopmpressure_la_SOURCES)
 
 
 ## include $(top_srcdir)/am/global-rules
