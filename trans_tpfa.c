@@ -231,3 +231,39 @@ tpfa_compr_htran(grid_t       *G         ,
     free(v);
     free(luAc);
 }
+
+
+/* ---------------------------------------------------------------------- */
+void
+tpfa_compr_accum(grid_t       *G         ,
+                 int           np        ,
+                 size_t        max_ngconn,
+                 const double *Ac        ,
+                 const double *xf        ,
+                 double       *src)
+/* ---------------------------------------------------------------------- */
+{
+    int         c, i;
+    size_t      ngconn_tot;
+    double     *luAc, *v, *qf;
+    MAT_SIZE_T *ipiv;
+
+    ngconn_tot = G->cell_facepos[ G->number_of_cells ];
+
+    qf   = malloc(ngconn_tot      * sizeof *qf);
+    luAc = malloc(np * np         * sizeof *luAc);
+    v    = malloc(np * max_ngconn * sizeof *v);
+    ipiv = malloc(np              * sizeof *ipiv);
+
+    if ((qf != NULL) && (luAc != NULL) && (v != NULL) && (ipiv != NULL)) {
+        compr_htran_core(G, np, Ac, xf, qf, luAc, v, ipiv);
+
+        for (c = i = 0; c < G->number_of_cells; c++) {
+            for (; i < G->cell_facepos[c + 1]; i++) {
+                src[c] -= qf[i];
+            }
+        }
+    }
+
+    free(ipiv);   free(v);   free(luAc);   free(qf);
+}

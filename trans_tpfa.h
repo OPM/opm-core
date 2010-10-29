@@ -52,6 +52,14 @@ tpfa_compr_htran(grid_t       *G         ,
                  const double *xf        ,
                  double       *htrans);
 
+void
+tpfa_compr_accum(grid_t       *G         ,
+                 int           np        ,
+                 size_t        max_ngconn,
+                 const double *Ac        ,
+                 const double *xf        ,
+                 double       *src);
+
 #ifdef __cplusplus
 }
 #endif
