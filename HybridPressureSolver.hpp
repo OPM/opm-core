@@ -288,10 +288,6 @@ private:
     // Gravity contributions.
     std::vector<double> gpress_;
     std::vector<double> gpress_omegaweighted_;
-    // Total mobilities.
-    std::vector<double> totmob_;
-    // Gravity coefficients (\omega = sum_{i = 1}^{num phases}f_i \rho_i[TODO: check this]).
-    std::vector<double> omega_;
 };
 
 
