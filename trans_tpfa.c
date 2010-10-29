@@ -161,10 +161,6 @@ compr_htran_core(grid_t       *G     ,
     info  = 0;
 
     for (c = 0, p2; c < G->number_of_cells; c++, p2 += np2) {
-        /* Factor Ac */
-        memcpy(luAc, Ac + p2, np2 * sizeof *luAc);
-        dgetrf_(&nrows, &ncols, luAc, &ldA, ipiv, &info);
-
         /* Define right-hand sides for local tran-mult systems */
         for (i = G->cell_facepos[c + 0], nrhs = 0;
              i < G->cell_facepos[c + 1]; i++, nrhs++) {
@@ -174,6 +170,10 @@ compr_htran_core(grid_t       *G     ,
                 v[nrhs*np + p] = xf[f*np + p];
             }
         }
+
+        /* Factor Ac */
+        memcpy(luAc, Ac + p2, np2 * sizeof *luAc);
+        dgetrf_(&nrows, &ncols, luAc, &ldA, ipiv, &info);
 
         /* Solve local tran-mult systems */
         dgetrs_("No Transpose", &nrows, &nrhs,
