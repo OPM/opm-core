@@ -140,14 +140,14 @@ small_matvec(size_t n, int sz, const double *A, const double *X, double *Y)
 
 /* ---------------------------------------------------------------------- */
 static void
-compr_htran_mult_core(grid_t       *G,
-                      int           np,
-                      const double *Ac,
-                      const double *xf,
-                      double       *ht_mult,
-                      double       *luAc,
-                      double       *v,
-                      MAT_SIZE_T   *ipiv)
+compr_htran_core(grid_t       *G     ,
+                 int           np    ,
+                 const double *Ac    ,
+                 const double *xf    ,
+                 double       *htrans,
+                 double       *luAc  ,
+                 double       *v     ,
+                 MAT_SIZE_T   *ipiv)
 /* ---------------------------------------------------------------------- */
 {
     int c, i, f, p, np2;
@@ -179,12 +179,12 @@ compr_htran_mult_core(grid_t       *G,
         dgetrs_("No Transpose", &nrows, &nrhs,
                 luAc, &ldA, ipiv, v, &ldX, &info);
 
-        /* Compute local tran-multipliers by summing over phases */
+        /* Compute half-trans by summing over phases */
         for (i = G->cell_facepos[c + 0], nrhs = 0;
              i < G->cell_facepos[c + 1]; i++, nrhs++) {
-            ht_mult[i] = 0.0;
+            htrans[i] = 0.0;
             for (p = 0; p < np; p++) {
-                ht_mult[i] += v[nrhs*np + p];
+                htrans[i] += v[nrhs*np + p];
             }
         }
     }
@@ -192,11 +192,11 @@ compr_htran_mult_core(grid_t       *G,
 
 
 /* ---------------------------------------------------------------------- */
-/* ht_mult <- Ac \ xf
+/* htrans <- Ac \ xf
  *
  * np is number of phases.
  * Ac is R/B per cell.
- * xf is (R/B)*{\lambda_\alpha}_f, pre-computed in small_matvec().
+ * xf is (R/B)*T_f*{\lambda_\alpha}_f, pre-computed in small_matvec().
  *
  * Result, ht_mult, is a scalar per half-face.
  *
@@ -205,15 +205,15 @@ compr_htran_mult_core(grid_t       *G,
  *      Ac <- LU(Ac)
  *      for each face(cell),
  *         Solve Ac*v = xf(f)
- *         ht_mult[c,f] = sum(v) over phases */
+ *         htrans[c,f] = sum(v) over phases */
 /* ---------------------------------------------------------------------- */
 void
-tpfa_compr_htran_mult(grid_t       *G ,
-                      int           np,
-                      size_t        max_ngconn,
-                      const double *Ac,
-                      const double *xf,
-                      double       *ht_mult)
+tpfa_compr_htran(grid_t       *G         ,
+                 int           np        ,
+                 size_t        max_ngconn,
+                 const double *Ac        ,
+                 const double *xf        ,
+                 double       *htrans)
 /* ---------------------------------------------------------------------- */
 {
     double     *luAc, *v;
@@ -224,8 +224,7 @@ tpfa_compr_htran_mult(grid_t       *G ,
     ipiv = malloc(np              * sizeof *ipiv);
 
     if ((luAc != NULL) && (v != NULL) && (ipiv != NULL)) {
-        compr_htran_mult_core(G, np, Ac, xf, ht_mult,
-                              luAc, v, ipiv);
+        compr_htran_core(G, np, Ac, xf, htrans, luAc, v, ipiv);
     }
 
     free(ipiv);

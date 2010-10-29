@@ -45,12 +45,12 @@ small_matvec(size_t n, int sz,
              double       *Y);
 
 void
-tpfa_compr_htran_mult(grid_t       *G         ,
-                      int           np        ,
-                      size_t        max_ngconn,
-                      const double *Ac        ,
-                      const double *xf        ,
-                      double       *ht_mult);
+tpfa_compr_htran(grid_t       *G         ,
+                 int           np        ,
+                 size_t        max_ngconn,
+                 const double *Ac        ,
+                 const double *xf        ,
+                 double       *htrans);
 
 #ifdef __cplusplus
 }
