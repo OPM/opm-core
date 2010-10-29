@@ -9,7 +9,7 @@ AM_INIT_AUTOMAKE([foreign])
 LT_INIT
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([mimetic.h])
+AC_CONFIG_SRCDIR([src/mimetic.h])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
@@ -35,6 +35,7 @@ AX_LAPACK
 
 AC_CONFIG_FILES([
   Makefile
+  src/Makefile
 ])
 
 AC_OUTPUT
