@@ -23,7 +23,8 @@ sparse_sys.h                                    \
 trans_tpfa.h                                    \
 well.h                                          \
 GridAdapter.hpp                                 \
-HybridPressureSolver.hpp
+HybridPressureSolver.hpp                        \
+TPFAPressureSolver.hpp
 
 
 libopmpressure_la_SOURCES =                     \
