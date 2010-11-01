@@ -1,5 +1,3 @@
-# $Id:  $
-
 libopmpressuredir = $(includedir)/opm/pressure
 
 lib_LTLIBRARIES    = libopmpressure.la
