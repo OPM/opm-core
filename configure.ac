@@ -14,6 +14,7 @@ AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_F77
 AC_PROG_LIBTOOL
 
 # Checks for libraries.
