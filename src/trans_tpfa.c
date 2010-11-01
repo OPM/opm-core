@@ -160,7 +160,7 @@ compr_htran_core(grid_t       *G     ,
     nrows = ncols = ldA = ldX = np;
     info  = 0;
 
-    for (c = 0, p2; c < G->number_of_cells; c++, p2 += np2) {
+    for (c = 0, p2 = 0; c < G->number_of_cells; c++, p2 += np2) {
         /* Define right-hand sides for local tran-mult systems */
         for (i = G->cell_facepos[c + 0], nrhs = 0;
              i < G->cell_facepos[c + 1]; i++, nrhs++) {
