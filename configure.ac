@@ -4,7 +4,7 @@ AC_PREREQ([2.50])
 
 AC_INIT([opmpressure], [0.1], [Bard.Skaflestad@sintef.no])
 
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign -Wall])
 
 LT_INIT
 
