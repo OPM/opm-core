@@ -60,6 +60,15 @@ public:
         // Build C grid structure.
         grid_.init(grid);
 
+        // Checking if grids are properly initialized. Move this code to a test somewhere.
+//         GridAdapter grid2;
+//         grid2.init(grid_);
+//         if (grid2 == grid_) {
+//             std::cout << "Grids are equal." << std::endl;
+//         } else {
+//             std::cout << "Grids are NOT equal." << std::endl;
+//         }
+
         // Build (empty for now) C well structure.
         well_t* w = 0;
 
