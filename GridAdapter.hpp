@@ -44,6 +44,115 @@ public:
         return &g_;
     }
 
+    // ------ Forwarding the same interface that init() expects ------
+    //
+    // This is only done in order to verify that init() works correctly.
+    //
+
+    enum { dimension = 3 }; // This is actually a hack used for testing (dim is a runtime parameter).
+
+    struct Vector
+    {
+        explicit Vector(const double* source)
+        {
+            for (int i = 0; i < dimension; ++i) {
+                data[i] = source[i];
+            }
+        }
+        double& operator[] (const int ix)
+        {
+            return data[ix];
+        }
+        double operator[] (const int ix) const
+        {
+            return data[ix];
+        }
+        double data[dimension];
+    };
+
+    // Topology
+    int numCells() const
+    {
+        return g_.number_of_cells;
+    }
+    int numFaces() const
+    {
+        return g_.number_of_faces;
+    }
+    int numVertices() const
+    {
+        return g_.number_of_nodes;
+    }
+
+    int numCellFaces(int cell) const
+    {
+        return cell_facepos_[cell + 1] - cell_facepos_[cell];
+    }
+    int cellFace(int cell, int local_index) const
+    {
+        return cell_faces_[cell_facepos_[cell] + local_index];
+    }
+    int faceCell(int face, int local_index) const
+    {
+        return face_cells_[2*face + local_index];
+    }
+    int numFaceVertices(int face) const
+    {
+        return face_nodepos_[face + 1] - face_nodepos_[face];
+    }
+    int faceVertex(int face, int local_index) const
+    {
+        return face_nodes_[face_nodepos_[face] + local_index];
+    }
+
+    // Geometry
+    Vector vertexPosition(int vertex) const
+    {
+        return Vector(&node_coordinates_[g_.dimensions*vertex]);
+    }
+    double faceArea(int face) const
+    {
+        return face_areas_[face];
+    }
+    Vector faceCentroid(int face) const
+    {
+        return Vector(&face_centroids_[g_.dimensions*face]);
+    }
+    Vector faceNormal(int face) const
+    {
+        Vector fn(&face_normals_[g_.dimensions*face]);
+        // We must renormalize since the stored normals are
+        // 'unit normal * face area'.
+        double invfa = 1.0 / faceArea(face);
+        for (int i = 0; i < dimension; ++i) {
+            fn[i] *= invfa;
+        }
+        return fn;
+    }
+    double cellVolume(int cell) const
+    {
+        return cell_volumes_[cell];
+    }
+    Vector cellCentroid(int cell) const
+    {
+        return Vector(&cell_centroids_[g_.dimensions*cell]);
+    }
+
+    bool operator==(const GridAdapter& other)
+    {
+        return face_nodes_ == other.face_nodes_
+            && face_nodepos_ == other.face_nodepos_
+            && face_cells_ == other.face_cells_
+            && cell_faces_ == other.cell_faces_
+            && cell_facepos_ == other.cell_facepos_
+            && node_coordinates_ == other.node_coordinates_
+            && face_centroids_ == other.face_centroids_
+            && face_areas_ == other.face_areas_
+            && face_normals_ == other.face_normals_
+            && cell_centroids_ == other.cell_centroids_
+            && cell_volumes_ == other.cell_volumes_;
+    }
+
 private:
     grid_t g_;
     // Topology storage.
@@ -139,7 +248,7 @@ private:
             face_areas_[f] = grid.faceArea(f);
             for (int dd = 0; dd < dim; ++dd) {
                 face_centroids_[dim*f + dd] = grid.faceCentroid(f)[dd];
-                face_normals_[dim*f + dd] = grid.faceNormal(f)[dd];
+                face_normals_[dim*f + dd] = grid.faceNormal(f)[dd]*face_areas_[f];
             }
         }
 
