@@ -58,7 +58,7 @@ compr_accum_term(size_t        nc,
     size_t c;
 
     for (c = 0; c < nc; c++) {
-        P[c] = -totcompr[c] * porevol[c] / dt;
+        P[c] = totcompr[c] * porevol[c] / dt;
     }
 }
 
@@ -76,6 +76,6 @@ compr_src_add_press_accum(size_t        nc,
     size_t c;
 
     for (c = 0; c < nc; c++) {
-        src[c] -= P[c] * p0[c];
+        src[c] = P[c] * p0[c];
     }
 }
