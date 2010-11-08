@@ -483,7 +483,7 @@ compute_fs_ip(grid_t *g, const double *perm,
 
     if (Binv != NULL) {
         mim_ip_simple_all(g->number_of_cells, g->dimensions, m->max_ngconn,
-                          m->ncf, g->cell_facepos, g->cell_faces,
+                          g->cell_facepos, g->cell_faces,
                           g->face_cells, g->face_centroids, g->face_normals,
                           g->face_areas, g->cell_centroids, g->cell_volumes,
                           (double *) perm, Binv); /* const_cast<>() */
