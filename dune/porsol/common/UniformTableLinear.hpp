@@ -46,13 +46,23 @@ namespace Dune {
 	    /// @brief Default constructor.
 	    UniformTableLinear();
 
-	    /// @brief Useful constructor.
+	    /// @brief Construct from vector of y-values.
 	    /// @param xmin the x value corresponding to the first y value.
 	    /// @param xmax the x value corresponding to the last y value.
 	    /// @param y_values vector of range values.
 	    UniformTableLinear(double xmin,
                                double xmax,
                                const std::vector<T>& y_values);
+
+	    /// @brief Construct from array of y-values.
+	    /// @param xmin the x value corresponding to the first y value.
+	    /// @param xmax the x value corresponding to the last y value.
+	    /// @param y_values array of range values.
+            /// @param num_y_values the number of values in y_values.
+	    UniformTableLinear(double xmin,
+                               double xmax,
+                               const T* y_values,
+                               int num_y_values);
 
 	    /// @brief Get the domain.
 	    /// @return the domain as a pair of doubles.
@@ -120,6 +130,22 @@ namespace Dune {
             ASSERT(xmax > xmin);
             ASSERT(y_values.size() > 1);
             xdelta_ = (xmax - xmin)/(y_values.size() - 1);
+	}
+
+	template<typename T>
+	inline
+	UniformTableLinear<T>
+	::UniformTableLinear(double xmin,
+                             double xmax,
+                             const T* y_values,
+                             int num_y_values)
+	    : xmin_(xmin), xmax_(xmax),
+              y_values_(y_values, y_values + num_y_values),
+	      left_(ClosestValue), right_(ClosestValue)
+	{
+            ASSERT(xmax > xmin);
+            ASSERT(y_values_.size() > 1);
+            xdelta_ = (xmax - xmin)/(y_values_.size() - 1);
 	}
 
 	template<typename T>
