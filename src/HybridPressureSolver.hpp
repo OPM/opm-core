@@ -104,7 +104,7 @@ public:
         grid_t* g = grid_.c_grid();
         mim_ip_simple_all(g->number_of_cells, g->dimensions,
                           data_->max_ngconn,
-                          &ncf_[0], g->cell_facepos, g->cell_faces,
+                          g->cell_facepos, g->cell_faces,
                           g->face_cells, g->face_centroids,
                           g->face_normals, g->face_areas,
                           g->cell_centroids, g->cell_volumes,
