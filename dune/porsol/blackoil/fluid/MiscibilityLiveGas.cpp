@@ -19,7 +19,7 @@
 using namespace std;
 using namespace Dune;
 
-namespace samcode
+namespace Opm
 {
 
     //------------------------------------------------------------------------
@@ -197,4 +197,4 @@ namespace samcode
     }
 
 
-} // namespace samcode
+} // namespace Opm

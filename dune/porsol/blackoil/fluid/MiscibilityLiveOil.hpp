@@ -19,7 +19,7 @@
 
 #include "MiscibilityProps.hpp"
 
-namespace samcode
+namespace Opm
 {
     class MiscibilityLiveOil : public MiscibilityProps
     {

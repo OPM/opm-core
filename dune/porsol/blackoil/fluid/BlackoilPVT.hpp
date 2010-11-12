@@ -21,9 +21,11 @@
 #define OPM_BLACKOILPVT_HEADER_INCLUDED
 
 
-#include <string>
-#include <boost/scoped_ptr.hpp>
 #include "MiscibilityProps.hpp"
+#include <dune/common/EclipseGridParser.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <string>
+
 
 namespace Opm
 {
@@ -37,22 +39,22 @@ namespace Opm
 	void init(const Dune::EclipseGridParser& ep);
 
         double getViscosity(double press, const surfvol_t& surfvol,
-			    PhaseNames phase) const;
+			    PhaseIndex phase) const;
         surfvol_t getMobilities(double press, const surfvol_t& sat, const surfvol_t& surfvol) const;
 	surfvol_t surfaceDensities() const;
         double B   (double press, const surfvol_t& surfvol,
-		    PhaseNames phase) const;
+		    PhaseIndex phase) const;
         double dBdp(double press, const surfvol_t& surfvol,
-		    PhaseNames phase) const;
+		    PhaseIndex phase) const;
         double R   (double press, const surfvol_t& surfvol,
-		    PhaseNames phase) const;
+		    PhaseIndex phase) const;
         double dRdp(double press, const surfvol_t& surfvol,
-		    PhaseNames phase) const;
+		    PhaseIndex phase) const;
 
 
     private:
 	int region_number_;
-        const MiscibilityProps& propsForPhase(PhaseNames phase) const;
+        const MiscibilityProps& propsForPhase(PhaseIndex phase) const;
 
 	boost::scoped_ptr<MiscibilityProps> water_props_;
 	boost::scoped_ptr<MiscibilityProps> oil_props_;

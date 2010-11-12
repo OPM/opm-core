@@ -22,7 +22,7 @@
 // Forward declaration.
 class PVTW;
 
-namespace samcode
+namespace Opm
 {
     class MiscibilityWater : public MiscibilityProps
     {

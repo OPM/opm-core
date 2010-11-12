@@ -17,3 +17,108 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+#include "BlackoilPVT.hpp"
+#include <dune/common/EclipseGridParser.hpp>
+#include "MiscibilityDead.hpp"
+#include "MiscibilityLiveOil.hpp"
+#include "MiscibilityLiveGas.hpp"
+#include "MiscibilityWater.hpp"
+#include <dune/common/ErrorMacros.hpp>
+#include <dune/common/linInt.hpp>
+
+using namespace Dune;
+
+namespace Opm
+{
+
+
+    void BlackoilPVT::init(const Dune::EclipseGridParser& parser)
+    {
+        typedef std::vector<std::vector<std::vector<double> > > table_t;
+	region_number_ = 0;
+
+	// Surface densities. Accounting for different orders in eclipse and our code.
+	if (parser.hasField("DENSITY")) {
+	    const int region_number = 0;
+	    enum { ECL_oil = 0, ECL_water = 1, ECL_gas = 2 };
+	    const std::vector<std::vector<double> > d_tmp = 
+		parser.getDENSITY().densities_;
+	    densities_[Aqua] = d_tmp[region_number][ECL_water];
+	    densities_[Liquid] = d_tmp[region_number][ECL_oil];
+	    densities_[Vapour] = d_tmp[region_number][ECL_gas];
+	} else {
+	    THROW("Input is missing DENSITY\n");
+	}
+
+        // Water PVT
+        if (parser.hasField("PVTW")) {
+            water_props_.reset(new MiscibilityWater(parser.getPVTW().pvtw_));
+        } else {
+            water_props_.reset(new MiscibilityWater(3e-4)); // Default is 0.3 cP.
+        }
+
+        // Oil PVT
+        if (parser.hasField("PVDO")) {
+            oil_props_.reset(new MiscibilityDead(parser.getPVDO().pvdo_));
+        } else if (parser.hasField("PVTO")) {
+            oil_props_.reset(new MiscibilityLiveOil(parser.getPVTO().pvto_));
+        } else {
+            THROW("Input is missing PVDO and PVTO\n");
+        }
+
+	// Gas PVT
+        if (parser.hasField("PVDG")) {
+            gas_props_.reset(new MiscibilityDead(parser.getPVDG().pvdg_));
+        } else if (parser.hasField("PVTG")) {
+            gas_props_.reset(new MiscibilityLiveGas(parser.getPVTG().pvtg_));
+        } else {
+            THROW("Input is missing PVDG and PVTG\n");
+        }
+    }
+
+    BlackoilPVT::surfvol_t BlackoilPVT::surfaceDensities() const
+    {
+        return densities_;
+    }
+
+    double BlackoilPVT::getViscosity(double press, const surfvol_t& surfvol, PhaseIndex phase) const
+    {
+        return propsForPhase(phase).getViscosity(region_number_, press, surfvol);
+    }
+
+    double BlackoilPVT::B(double press, const surfvol_t& surfvol, PhaseIndex phase) const
+    {
+        return propsForPhase(phase).B(region_number_, press, surfvol);
+    }
+
+    double BlackoilPVT::dBdp(double press, const surfvol_t& surfvol, PhaseIndex phase) const
+    {
+        return propsForPhase(phase).dBdp(region_number_, press, surfvol);
+    }
+
+    double BlackoilPVT::R(double press, const surfvol_t& surfvol, PhaseIndex phase) const
+    {
+        return propsForPhase(phase).R(region_number_, press, surfvol);
+    }
+
+    double BlackoilPVT::dRdp(double press, const surfvol_t& surfvol, PhaseIndex phase) const
+    {
+        return propsForPhase(phase).dRdp(region_number_, press, surfvol);
+    }
+
+    const MiscibilityProps& BlackoilPVT::propsForPhase(PhaseIndex phase) const
+    {
+        switch (phase) {
+        case Aqua:
+            return *water_props_;
+        case Liquid:
+            return *oil_props_;
+        case Vapour:
+            return *gas_props_;
+        default:
+            THROW("Unknown phase accessed: " << phase);
+        }
+    }
+
+} // namespace Opm

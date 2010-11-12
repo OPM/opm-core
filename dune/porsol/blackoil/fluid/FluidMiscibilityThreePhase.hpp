@@ -20,7 +20,7 @@
 #include <boost/scoped_ptr.hpp>
 #include "MiscibilityProps.hpp"
 
-namespace samcode
+namespace Opm
 {
     class FluidMiscibilityThreePhase
     {

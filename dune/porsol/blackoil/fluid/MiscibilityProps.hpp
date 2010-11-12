@@ -20,7 +20,7 @@
 #include <vector>
 #include <tr1/array>
 
-namespace samcode
+namespace Opm
 {
 
 
@@ -40,7 +40,7 @@ namespace samcode
 	virtual double dRdp(int region, double press, const surfvol_t& surfvol) const = 0;
     };
 
-} // namespace samcode
+} // namespace Opm
 
 #endif // SINTEF_MISCIBILITYPROPS_HEADER
 

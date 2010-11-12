@@ -18,7 +18,7 @@
 using namespace std;
 using namespace Dune;
 
-namespace samcode
+namespace Opm
 {
 
     //------------------------------------------------------------------------
