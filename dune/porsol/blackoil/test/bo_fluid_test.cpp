@@ -18,8 +18,8 @@
 */
 
 
-#include <dune/porsol/blackoil/FluidMatrixInteractionBlackoil.hpp>
-#include <dune/porsol/blackoil/FluidSystemBlackoil.hpp>
+#include <dune/porsol/blackoil/fluid/FluidMatrixInteractionBlackoil.hpp>
+#include <dune/porsol/blackoil/fluid/FluidSystemBlackoil.hpp>
 #include <dune/common/param/ParameterGroup.hpp>
 #include <dune/common/fvector.hh>
 
