@@ -20,6 +20,7 @@
 #ifndef OPM_FLUIDSYSTEMBLACKOIL_HEADER_INCLUDED
 #define OPM_FLUIDSYSTEMBLACKOIL_HEADER_INCLUDED
 
+#include "BlackoilPVT.hpp"
 #include <dune/common/EclipseGridParser.hpp>
 #include <stdexcept>
 
@@ -36,15 +37,10 @@ class FluidSystemBlackoilParametersNonmiscible
 public:
     void init(const Dune::EclipseGridParser& ep)
     {
-        const std::vector<std::vector<double> >& pvtw_table = ep.getPVTW().pvtw_;
-        const Dune::PVDG::table_t& pvdg_table = ep.getPVDG().pvdg_;
-        const Dune::PVDO::table_t& pvdo_table = ep.getPVDO().pvdo_;
-        if (pvtw_table.size() != 1 || pvdg_table.size() != 1 || pvdo_table.size() != 1) {
-            std::cerr << "We must have exactly one PVT table per phase (at the moment).\n";
-            throw std::logic_error("Not implemented");
-        }
+        pvt_.init(ep);
     }
 private:
+    BlackoilPVT pvt_;
 };
 
 
