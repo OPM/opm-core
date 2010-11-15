@@ -32,6 +32,7 @@
 #include "MiscibilityDead.hpp"
 #include <dune/common/ErrorMacros.hpp>
 #include <dune/common/linInt.hpp>
+#include <dune/common/Units.hpp>
 
 using namespace std;
 using namespace Dune;
@@ -44,7 +45,7 @@ namespace Opm
     //-------------------------------------------------------------------------
 
     /// Constructor
-    MiscibilityDead::MiscibilityDead(const table_t& pvd_table)
+    MiscibilityDead::MiscibilityDead(const table_t& pvd_table, const Dune::EclipseUnits& units)
 	: pvdx_(pvd_table)
     {
 	const int region_number = 0;
@@ -52,12 +53,11 @@ namespace Opm
 	    THROW("More than one PVT-region");
 	}
 	// Convert units
-	const double bar = 1e5;
-	const double VISCOSITY_UNIT = 1e-3;
 	const int sz =  pvdx_[region_number][0].size();
+        using namespace Dune::unit;
 	for (int i=0; i<sz; ++i) {
-	    pvdx_[region_number][0][i] *= bar;  // Pressure
-	    pvdx_[region_number][2][i] *= VISCOSITY_UNIT;
+	    pvdx_[region_number][0][i] = convert::from(pvdx_[region_number][0][i], units.pressure);
+	    pvdx_[region_number][2][i] = convert::from(pvdx_[region_number][2][i], units.viscosity);
 	}
 
 	// Interpolate 1/B 

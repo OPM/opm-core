@@ -37,6 +37,7 @@
 #include "MiscibilityProps.hpp"
 #include <dune/common/ErrorMacros.hpp>
 #include <dune/common/Units.hpp>
+#include <dune/common/EclipseUnits.hpp>
 
 // Forward declaration.
 class PVTW;
@@ -77,13 +78,23 @@ namespace Opm
         {
             return viscosity_;
         }
-        virtual double B(int /*region*/, double /*press*/, const surfvol_t& /*surfvol*/) const
+        virtual double B(int /*region*/, double press, const surfvol_t& /*surfvol*/) const
         {
-            return 1.0;
+            if (comp_) {
+                // Computing a polynomial approximation to the exponential.
+                double x = comp_*(press - ref_press_);
+                return ref_B_/(1.0 + x + 0.5*x*x);
+            } else {
+                return ref_B_;
+            }
         }
-	virtual double dBdp(int /*region*/, double /*press*/, const surfvol_t& /*surfvol*/) const
+	virtual double dBdp(int region, double press, const surfvol_t& surfvol) const
         {
-            return 0.0;
+            if (comp_) {
+                return comp_*B(region, press, surfvol);
+            } else {
+                return 0.0;
+            }
         }
 	virtual double R(int /*region*/, double /*press*/, const surfvol_t& /*surfvol*/) const
         {

@@ -36,6 +36,7 @@
      */
 
 #include "MiscibilityProps.hpp"
+#include <dune/common/EclipseUnits.hpp>
 
 namespace Opm
 {
@@ -44,7 +45,7 @@ namespace Opm
     public:
 	typedef std::vector<std::vector<std::vector<double> > > table_t;
 
-	MiscibilityLiveOil(const table_t& pvto);
+	MiscibilityLiveOil(const table_t& pvto, const Dune::EclipseUnits& units);
 	virtual ~MiscibilityLiveOil();
 
         virtual double getViscosity(int region, double press, const surfvol_t& surfvol) const;

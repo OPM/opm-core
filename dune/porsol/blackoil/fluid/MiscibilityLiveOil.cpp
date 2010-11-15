@@ -45,7 +45,7 @@ namespace Opm
     //-------------------------------------------------------------------------
 
     /// Constructor
-    MiscibilityLiveOil::MiscibilityLiveOil(const table_t& pvto)
+    MiscibilityLiveOil::MiscibilityLiveOil(const table_t& pvto, const EclipseUnits& units)
     {
 	// OIL, PVTO
 	const double bar = 1e5;
