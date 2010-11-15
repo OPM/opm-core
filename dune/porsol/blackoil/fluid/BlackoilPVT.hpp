@@ -40,7 +40,6 @@ namespace Opm
 
         double getViscosity(double press, const surfvol_t& surfvol,
 			    PhaseIndex phase) const;
-        surfvol_t getMobilities(double press, const surfvol_t& sat, const surfvol_t& surfvol) const;
 	surfvol_t surfaceDensities() const;
         double B   (double press, const surfvol_t& surfvol,
 		    PhaseIndex phase) const;

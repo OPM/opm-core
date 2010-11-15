@@ -38,6 +38,12 @@ namespace Opm
         typedef std::vector<std::vector<std::vector<double> > > table_t;
 	region_number_ = 0;
 
+
+
+
+
+
+
 	// Surface densities. Accounting for different orders in eclipse and our code.
 	if (parser.hasField("DENSITY")) {
 	    const int region_number = 0;
