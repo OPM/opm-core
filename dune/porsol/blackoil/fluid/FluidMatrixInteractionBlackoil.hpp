@@ -72,21 +72,7 @@ public:
 
         // Create tables for pcow and pcog.
         // We must convert the pressures depending on units.
-        double pressure_unit = 0.0;
-        switch (unitsInParser(ep)) {
-        case Metric:
-            pressure_unit = Dune::unit::barsa;
-            break;
-        case Field:
-            pressure_unit = Dune::unit::psia;
-            break;
-        case Lab:
-        case Pvtm:
-            pressure_unit = Dune::unit::atm;
-            break;
-        default:
-            throw std::logic_error("Unknown unit system.");
-        }
+        double pressure_unit = ep.units().pressure;
         int numw = sw.size();
         std::vector<double> pcow(numw);
         for (int i = 0; i < numw; ++i) {
@@ -112,15 +98,6 @@ private:
     Dune::utils::UniformTableLinear<Scalar> krog_;
     Dune::utils::UniformTableLinear<Scalar> pcog_;
     Scalar krocw_; // = krow_(s_wc)
-
-    enum EclipseUnitFamily { Metric = 0, Field = 1, Lab = 2, Pvtm = 3 };
-    EclipseUnitFamily unitsInParser(const Dune::EclipseGridParser& ep)
-    {
-        if (ep.hasField("FIELD")) return Field;
-        if (ep.hasField("LAB")) return Lab;
-        if (ep.hasField("PVT-M")) return Pvtm;
-        return Metric; // The default.
-    }
 };
 
 

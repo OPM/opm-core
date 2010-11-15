@@ -32,6 +32,7 @@
 #include "MiscibilityLiveOil.hpp"
 #include <dune/common/ErrorMacros.hpp>
 #include <dune/common/linInt.hpp>
+#include <dune/common/Units.hpp>
 
 using namespace std;
 using namespace Dune;
@@ -48,8 +49,6 @@ namespace Opm
     MiscibilityLiveOil::MiscibilityLiveOil(const table_t& pvto, const EclipseUnits& units)
     {
 	// OIL, PVTO
-	const double bar = 1e5;
-	const double VISCOSITY_UNIT = 1e-3;
 	const int region_number = 0;
 	if (pvto.size() != 1) {
 	    THROW("More than one PVD-region");
@@ -59,11 +58,14 @@ namespace Opm
 	for (int k=0; k<4; ++k) {
 	    saturated_oil_table_[k].resize(sz);
 	}
+        using namespace Dune::unit;
+        const double bunit = units.liqvol_r/units.liqvol_s;
+        const double runit = units.gasvol_s/units.liqvol_s;
 	for (int i=0; i<sz; ++i) {
-	    saturated_oil_table_[0][i] = pvto[region_number][i][1]*bar; // p
-	    saturated_oil_table_[1][i] = 1.0/pvto[region_number][i][2]; // 1/Bo
-	    saturated_oil_table_[2][i] = pvto[region_number][i][3]*VISCOSITY_UNIT;   // mu_o
-	    saturated_oil_table_[3][i] = pvto[region_number][i][0];     // Rs
+	    saturated_oil_table_[0][i] = convert::from(pvto[region_number][i][1], units.pressure); // p
+	    saturated_oil_table_[1][i] = 1.0/convert::from(pvto[region_number][i][2], bunit); // 1/Bo
+	    saturated_oil_table_[2][i] = convert::from(pvto[region_number][i][3], units.viscosity);   // mu_o
+	    saturated_oil_table_[3][i] = convert::from(pvto[region_number][i][0], runit);     // Rs
 	}
 	
 	undersat_oil_tables_.resize(sz);
@@ -74,9 +76,9 @@ namespace Opm
 	    undersat_oil_tables_[i][1].resize(tsize);
 	    undersat_oil_tables_[i][2].resize(tsize);
 	    for (int j=0, k=0; j<tsize; ++j) {
-		undersat_oil_tables_[i][0][j] = pvto[region_number][i][++k]*bar;  // p
-		undersat_oil_tables_[i][1][j] = 1.0/pvto[region_number][i][++k];  // 1/Bo
-		undersat_oil_tables_[i][2][j] = pvto[region_number][i][++k]*VISCOSITY_UNIT;  // mu_o
+		undersat_oil_tables_[i][0][j] = convert::from(pvto[region_number][i][++k], units.pressure);  // p
+		undersat_oil_tables_[i][1][j] = 1.0/convert::from(pvto[region_number][i][++k], bunit);  // 1/Bo
+		undersat_oil_tables_[i][2][j] = convert::from(pvto[region_number][i][++k], units.viscosity);  // mu_o
 	    }
 	}
     }
