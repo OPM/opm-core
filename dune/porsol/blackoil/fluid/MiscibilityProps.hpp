@@ -35,6 +35,7 @@
      *  Detailed description.
      */
 
+#include "BlackoilDefs.hpp"
 #include <vector>
 #include <tr1/array>
 
@@ -42,11 +43,10 @@ namespace Opm
 {
 
 
-    class MiscibilityProps
+    class MiscibilityProps : public BlackoilDefs
     {
     public:
 	typedef std::tr1::array<double, 3> surfvol_t;
-        enum PhaseNames { Aqua = 0, Liquid = 1, Vapour = 2 };
 
 	MiscibilityProps();
 	virtual ~MiscibilityProps();

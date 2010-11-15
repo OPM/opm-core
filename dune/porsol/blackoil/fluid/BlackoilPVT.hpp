@@ -22,6 +22,7 @@
 
 
 #include "MiscibilityProps.hpp"
+#include "BlackoilDefs.hpp"
 #include <dune/common/EclipseGridParser.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <string>
@@ -29,12 +30,10 @@
 
 namespace Opm
 {
-    class BlackoilPVT
+    class BlackoilPVT : public BlackoilDefs
     {
     public:
         typedef MiscibilityProps::surfvol_t surfvol_t;
-
-        enum PhaseIndex { Aqua = 0, Vapour = 1, Liquid = 2 };
 
 	void init(const Dune::EclipseGridParser& ep);
 

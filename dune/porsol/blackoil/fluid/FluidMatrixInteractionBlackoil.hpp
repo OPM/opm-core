@@ -24,6 +24,7 @@
 #include <dune/common/Units.hpp>
 #include <dune/porsol/common/UniformTableLinear.hpp>
 #include <dune/porsol/common/buildUniformMonotoneTable.hpp>
+#include "BlackoilDefs.hpp"
 #include <iostream>
 #include <stdexcept>
 
@@ -107,13 +108,11 @@ private:
  * \brief Capillary pressures and relative permeabilities for a black oil system.
  */
 template <class ScalarT, class ParamsT = FluidMatrixInteractionBlackoilParams<ScalarT> >
-class FluidMatrixInteractionBlackoil
+class FluidMatrixInteractionBlackoil : public BlackoilDefs
 {
 public:
     typedef ParamsT Params;
     typedef typename Params::Scalar Scalar;
-    enum { numPhases = 3 };
-    enum PhaseIndex { Aqua = 0, Vapour = 1, Liquid = 2 };
 
     /*!
      * \brief The linear capillary pressure-saturation curve.
