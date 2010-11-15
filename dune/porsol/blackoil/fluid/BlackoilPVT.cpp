@@ -38,30 +38,25 @@ namespace Opm
         typedef std::vector<std::vector<std::vector<double> > > table_t;
 	region_number_ = 0;
 
-
-
-
-
-
-
 	// Surface densities. Accounting for different orders in eclipse and our code.
 	if (parser.hasField("DENSITY")) {
 	    const int region_number = 0;
 	    enum { ECL_oil = 0, ECL_water = 1, ECL_gas = 2 };
-	    const std::vector<std::vector<double> > d_tmp = 
-		parser.getDENSITY().densities_;
-	    densities_[Aqua] = d_tmp[region_number][ECL_water];
-	    densities_[Liquid] = d_tmp[region_number][ECL_oil];
-	    densities_[Vapour] = d_tmp[region_number][ECL_gas];
+	    const std::vector<double>& d = parser.getDENSITY().densities_[region_number];
+            const double du = parser.units().density;
+            using namespace Dune::unit;
+	    densities_[Aqua] = convert::from(d[ECL_water], du);
+	    densities_[Vapour] = convert::from(d[ECL_gas], du);
+	    densities_[Liquid] = convert::from(d[ECL_oil], du);
 	} else {
 	    THROW("Input is missing DENSITY\n");
 	}
 
         // Water PVT
         if (parser.hasField("PVTW")) {
-            water_props_.reset(new MiscibilityWater(parser.getPVTW().pvtw_));
+            water_props_.reset(new MiscibilityWater(parser.getPVTW().pvtw_, parser.units()));
         } else {
-            water_props_.reset(new MiscibilityWater(3e-4)); // Default is 0.3 cP.
+            water_props_.reset(new MiscibilityWater(0.5*Dune::prefix::centi*Dune::unit::Poise)); // Eclipse 100 default 
         }
 
         // Oil PVT

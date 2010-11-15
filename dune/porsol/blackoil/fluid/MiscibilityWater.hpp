@@ -36,6 +36,7 @@
 
 #include "MiscibilityProps.hpp"
 #include <dune/common/ErrorMacros.hpp>
+#include <dune/common/Units.hpp>
 
 // Forward declaration.
 class PVTW;
@@ -46,24 +47,26 @@ namespace Opm
     {
     public:
         typedef std::vector<std::vector<double> > table_t;
-	MiscibilityWater(const table_t& pvtw)
+	MiscibilityWater(const table_t& pvtw, const Dune::EclipseUnits& units)
         {
 	    const int region_number = 0;
 	    if (pvtw.size() != 1) {
 		THROW("More than one PVD-region");
 	    }
-            double b = pvtw[region_number][1];
-            double comp = pvtw[region_number][2];
-            double visc = pvtw[region_number][3];
-            const double VISCOSITY_UNIT = 1e-3;
-            if (b == 1.0 && comp == 0) {
-                viscosity_ = visc*VISCOSITY_UNIT;
-            } else {
-                THROW("Compressible water not implemented.");
+            using namespace Dune::unit;
+            ref_press_ = convert::from(pvtw[region_number][0], units.pressure);
+            ref_B_ = convert::from(pvtw[region_number][1], units.liqvol_r/units.liqvol_s);
+            comp_ = convert::from(pvtw[region_number][2], units.compressibility);
+            viscosity_ = convert::from(pvtw[region_number][3], units.viscosity);
+            if (pvtw[region_number].size() > 4 && pvtw[region_number][4] != 0.0) {
+                THROW("MiscibilityWater does not support 'viscosibility'.");
             }
         }
 	MiscibilityWater(double visc)
-            : viscosity_(visc)
+            : ref_press_(0.0),
+              ref_B_(1.0),
+              comp_(0.0),
+              viscosity_(visc)
         {
         }
 	virtual ~MiscibilityWater()
@@ -91,6 +94,9 @@ namespace Opm
             return 0.0;
         }
     private:
+        double ref_press_;
+        double ref_B_;
+        double comp_;
         double viscosity_;
     };
 

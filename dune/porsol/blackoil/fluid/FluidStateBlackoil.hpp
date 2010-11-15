@@ -233,13 +233,11 @@ public:
     { return temperature_; };
 
 public:
-    Scalar fugacity_[numComponents];
-    Scalar moleFrac_[numPhases][numComponents];
-    Scalar phaseConcentration_[numPhases];
-    Scalar meanMolarMass_[numPhases];
-    Scalar phasePressure_[numPhases];
-    Scalar saturation_[numPhases];
     Scalar temperature_;
+    Scalar surface_volume_[numComponents];
+    Scalar phase_pressure_[numPhases];
+    Scalar phase_volume_[numPhases];
+    Scalar saturation_[numPhases];
 };
 
 } // end namespace Opm
