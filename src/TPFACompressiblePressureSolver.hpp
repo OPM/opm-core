@@ -133,9 +133,6 @@ public:
         bctypes_.clear();
         bctypes_.resize(num_faces, UNSET);
         for (int face = 0; face < num_faces; ++face) {
-            if (bctypes[face] != FBC_FLUX || bcvalues[face] != 0.0) {
-                throw std::logic_error("TPFACompressiblePressureSolver currently only supports noflow bcs.");
-            }
             if (bctypes[face] == FBC_PRESSURE) {
                 bctypes_[face] = PRESSURE;
             } else if (bctypes[face] == FBC_FLUX) {
