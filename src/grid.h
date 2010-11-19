@@ -41,7 +41,7 @@ struct Grid {
    int    *cell_faces;
    int    *cell_facepos;
 
-   double *node_coordinates
+   double *node_coordinates;
 
    double *face_centroids;
    double *face_areas;
