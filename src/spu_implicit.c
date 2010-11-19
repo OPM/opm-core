@@ -16,7 +16,8 @@
 
 
 /* Assume uniformly spaced table. */
-double interpolate(int n, double h, double x0, double *tab, double x)
+double static
+interpolate(int n, double h, double x0, double *tab, double x)
 {
     int           i;
     double        a;
@@ -43,7 +44,8 @@ double interpolate(int n, double h, double x0, double *tab, double x)
 }
 
 /* Assume uniformly spaced table. */
-double differentiate(int n, double h, double x0, double *tab, double x)
+static double 
+differentiate(int n, double h, double x0, double *tab, double x)
 {
     int           i;
     double        a;
@@ -70,7 +72,8 @@ double differentiate(int n, double h, double x0, double *tab, double x)
     return (tab[i+1]-tab[i])/h;
 }
 
-void compute_mobilities(int n, double *s, double *mob, double *dmob, int ntab, double h, double x0, double *tab)
+static void 
+compute_mobilities(int n, double *s, double *mob, double *dmob, int ntab, double h, double x0, double *tab)
 {
     double *tabw=tab;
     double *tabo=tab+ntab;
@@ -128,7 +131,7 @@ void compute_mobilities(int n, double *s, double *mob, double *dmob, int ntab, d
  *
 */ 
 double 
-spu_implicit(grid_t *g, double *s0, double *s, double *mob, double *dmob,
+spu_implicit(grid_t *g, double *s0, double *s, double h, double x0, int ntab, double *tab,
               double *dflux, double *gflux, double *src, double dt, 
               void (*linear_solver)(int, int*, int*, double *, double *, double *))
 {
@@ -138,7 +141,10 @@ spu_implicit(grid_t *g, double *s0, double *s, double *mob, double *dmob,
     double infnorm;
     double *b; 
     double *x;
+    char *work;
+    double *mob, *dmob;
     int i;
+    int it;
 
     /* Allocate space for linear system etc.*/
     sparse_t      *S = malloc(sizeof *S);
@@ -154,26 +160,38 @@ spu_implicit(grid_t *g, double *s0, double *s, double *mob, double *dmob,
     }
 
     b = malloc(nc * sizeof *b);
-    x = malloc(nc * sizeof *x);
+    x = malloc(nc * sizeof *x);    
 
-
-    spu_implicit_assemble(g, s0, s, mob, dmob, dflux, gflux, src, dt, S, b);
-
-    /* Compute inf-norm of residual */
-    infnorm = 0.0;
-    for(i=0; i<nc; ++i) {
-        infnorm = (infnorm > fabs(b[i]) ? infnorm : fabs(b[i]));
-    }
-
-    /* Solve system */
-    (*linear_solver)(S->m, S->ia, S->ja, S->sa, b, x);
-
-
-    /* Return x. */
-    for(i=0; i<nc; ++i) {
-        s[i] = s[i] - x[i];
-    }
+    work  = malloc(6*sizeof (double));
+    mob   = malloc(g->number_of_cells *2* sizeof *mob);
+    dmob  = malloc(g->number_of_cells *2* sizeof *dmob);
+    
+    infnorm = 1.0;
+    it      = 0;
+    while (infnorm > 1e-9 && it++ < 20) {
+        compute_mobilities(g->number_of_cells, s, mob, dmob, ntab, h, x0, tab);
+        spu_implicit_assemble(g, s0, s, mob, dmob, dflux, gflux, src, dt, S, b, work);
         
+        /* Compute inf-norm of residual */
+        infnorm = 0.0;
+        for(i=0; i<nc; ++i) {
+            infnorm = (infnorm > fabs(b[i]) ? infnorm : fabs(b[i]));
+        }
+        fprintf(stderr, "  Max norm of residual: %e\n", infnorm);
+        
+        /* Solve system */
+        (*linear_solver)(S->m, S->ia, S->ja, S->sa, b, x);
+        
+        /* Return x. */
+        for(i=0; i<nc; ++i) {
+            s[i] = s[i] - x[i];
+            s[i] = s[i]>1.0 ? 1.0 : (s[i] < 0.0 ? 0.0 : s[i]);
+        }
+    }
+
+    free(work);
+    free(mob);
+    free(dmob);
 
     free(b); 
     free(x);
@@ -261,26 +279,21 @@ phase_upwind_mobility(double darcyflux, double gravityflux,  int i, int c,
 void 
 spu_implicit_assemble(grid_t *g, double *s0, double *s, double *mob, double *dmob,
                       double *dflux, double *gflux, double *src, double dt, sparse_t *S, 
-                      double *b)
+                      double *b, char *work)
 {
     int     i, k, f, c1, c2, c;
     int     nc   = g->number_of_cells;
 
-    double *m   = malloc(2*sizeof *m);
-    double *dm  = malloc(2*sizeof *dm);
-    int    *cix = malloc(2*sizeof *cix);
-    double  m1,  m2;
-    double  dm1, dm2;
-    double  mt2;
+    double *m   = (double*)work;
+    double *dm  =  m + 2;
+    int    *cix = (int*)(dm + 2);
+    double  m1,  m2, dm1, dm2, mt2;
     
     int    *pja;
     double *psa;
     double *d;
-    double *p1, *p2;
-    double  flux;
     double  sgn;
-    double  darcyflux;
-    double  gravityflux;
+    double  df, gf;
 
     pja = S->ja;
     psa = S->sa;
@@ -308,43 +321,38 @@ spu_implicit_assemble(grid_t *g, double *s0, double *s, double *mob, double *dmo
             if (c1 == -1 || c2 == -1) { continue; } 
 
             /* Set cell index of other cell, set correct sign of fluxes. */
-            c            = (i==c1 ? c2 : c1);
-            sgn          = (i==c1)*2.0 - 1.0;
-            darcyflux    = sgn * dt*dflux[f];
-            gravityflux  = sgn * dt*gflux[f];
+            c   = (i==c1 ? c2 : c1);
+            sgn = (i==c1)*2.0 - 1.0;
+            df  = sgn * dt*dflux[f];
+            gf  = sgn * dt*gflux[f];
 
-            phase_upwind_mobility(darcyflux, gravityflux,  i, c, 
-                                  mob, dmob, m, dm, cix);
-            b[i]  += m[0]/(m[0]+m[1])*(darcyflux + m[1]*gravityflux);
+            phase_upwind_mobility(df, gf,  i, c, mob, dmob, m, dm, cix);
 
-            /* Add contribitions from dFw/dmw·dmw/dsw and dFw/dmo·dmo/dsw */
-            mt2  = (m[0]+m[1])*(m[0]+m[1]);
-            *psa = 0.0;
-            *pja = c;
-            /* dFw/dmw·dmw/dsw */
-            if (cix[0] == c ) {
-                *psa +=  m[1]/mt2*(darcyflux + m[1]*gravityflux)*dm[0];
-            }
-            else {
-                *d   +=  m[1]/mt2*(darcyflux + m[1]*gravityflux)*dm[0];
-            }
+            /* Ensure we do not divide by zero. */
+            if (m[0] + m[1] > 0.0) {
 
-            if (cix[1] == c) {
+                b[i]  += m[0]/(m[0]+m[1])*(df + m[1]*gf);
+
+                mt2  = (m[0]+m[1])*(m[0]+m[1]);
+                *psa = 0.0;
+                *pja = c;
+                
+                /* dFw/dmw·dmw/dsw */
+                if (cix[0] == c ) { *psa +=  m[1]/mt2*(df + m[1]*gf)*dm[0]; }
+                else              { *d   +=  m[1]/mt2*(df + m[1]*gf)*dm[0]; }
+                
                 /* dFw/dmo·dmo/dsw */
-                *psa += -m[0]/mt2*(darcyflux - m[0]*gravityflux)*dm[1];
-            }
-            else {
-                *d   += -m[0]/mt2*(darcyflux - m[0]*gravityflux)*dm[1];
-            }
-
-
-            if (cix[0] == c || cix[1] == c) {
-                ++psa;
-                ++pja;
-            }
-            
-            
+                if (cix[1] == c) { *psa += -m[0]/mt2*(df - m[0]*gf)*dm[1];  }
+                else             { *d   += -m[0]/mt2*(df - m[0]*gf)*dm[1];  }
+                
+                
+                if (cix[0] == c || cix[1] == c) {
+                    ++psa;
+                    ++pja;
+                }
+            }            
         }
+
         /* Injection */
         if (src[i] > 0.0) {
             /* Assume sat==1.0 in source, and f(1.0)=1.0; */
@@ -366,7 +374,4 @@ spu_implicit_assemble(grid_t *g, double *s0, double *s, double *mob, double *dmo
         }
         S->ia[i+1] = pja - S->ja;
     }
-    free(m);
-    free(dm);
-    free(cix);
 }   
