@@ -26,39 +26,28 @@ extern "C" {
 #endif
 
 
-/*   GRID_TOPOLOGY and GRID_GEOMETRY must be at the beginning of every
- *   grid type.  
- *
- *
- */
-#define GRID_TOPOLOGY                           \
-   int    dimensions;                           \
-                                                \
-   int    number_of_cells;                      \
-   int    number_of_faces;                      \
-   int    number_of_nodes;                      \
-                                                \
-   int    *face_nodes;                          \
-   int    *face_nodepos;                        \
-   int    *face_cells;                          \
-                                                \
-   int    *cell_faces;                          \
-   int    *cell_facepos;                        \
-   
-#define GRID_GEOMETRY                           \
-   double *node_coordinates;                    \
-                                                \
-   double *face_centroids;                      \
-   double *face_areas;                          \
-   double *face_normals;                        \
-                                                \
-   double *cell_centroids;                      \
-   double *cell_volumes;                        \
-   
-   
 typedef struct {
-   GRID_TOPOLOGY
-   GRID_GEOMETRY
+    int    dimensions;
+
+    int    number_of_cells;
+    int    number_of_faces;
+    int    number_of_nodes;
+
+    int    *face_nodes;
+    int    *face_nodepos;
+    int    *face_cells;
+
+    int    *cell_faces;
+    int    *cell_facepos;
+
+    double *node_coordinates;
+
+    double *face_centroids;
+    double *face_areas;
+    double *face_normals;
+
+    double *cell_centroids;
+    double *cell_volumes;
 } grid_t;
 
 
