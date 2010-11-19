@@ -77,12 +77,10 @@ public:
         int num_cells = grid.numCells();
         int ngconn  = grid_.c_grid()->cell_facepos[num_cells];
         ncf_.resize(num_cells);
-        int count = 0;
         for (int cell = 0; cell < num_cells; ++cell) {
             int num_local_faces = grid.numCellFaces(cell);
             ncf_[cell] = num_local_faces;
         }
-        assert(count == ngconn);
         htrans_.resize(ngconn);
         tpfa_htrans_compute(grid_.c_grid(), perm, &htrans_[0]);
 
