@@ -360,8 +360,8 @@ hybsys_global_assemble_cell(int nconn, int *conn,
         for (jl = 0; jl < nconn; jl++) {
             jg = csrmatrix_elm_index(ig, conn[jl], A);
 
-            assert ((A->ia[ig] <= (MAT_SIZE_T) jg) &&
-                    ((MAT_SIZE_T) jg < A->ia[ig + 1]));
+            assert ((A->ia[ig] <= jg) &&
+                    (jg < A->ia[ig + 1]));
 
             A->sa[jg] += S[il + jl*nconn]; /* Row major per cell */
         }
