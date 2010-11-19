@@ -7,9 +7,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <math.h>
 #include "grid.h"
-#include "call_umfpack.h"
 #include "spu_implicit.h"
 
 
@@ -85,15 +85,7 @@ void compute_mobilities(int n, double *s, double *mob, double *dmob, int ntab, d
 }
 
 
-typedef struct Sparse {
-    int     m;
-    int     n;
-    int    *ia;
-    int    *ja;
-    double *sa;
-} sparse_t;
 
-#if 0
 
 /*
  * To compute the derivative of the (mobility-weighted) upwind flux in
@@ -137,232 +129,8 @@ typedef struct Sparse {
 */ 
 double 
 spu_implicit(grid_t *g, double *s0, double *s, double *mob, double *dmob,
-             double *dflux, double *gflux, double *src, double dt)
-{
-    int    i, k, f, c1, c2, c;
-    int    nc   = g->number_of_cells;
-    int    nf   = g->number_of_faces;
-    int    nhf  = g->cell_facepos[nc]; /* Too much */
-
-    double m1,  m2;
-    double dm1, dm2;
-    double mt2;
-    
-    double *b;
-    double *x;
-    double infnorm;
-    
-    int           *pja;
-    double        *psa;
-    double        *d;
-    double        *p1, *p2;
-    double         flux;
-    double         sgn;
-    double         darcyflux;
-    double         gravityflux;
-    sparse_t      *S = malloc(sizeof *S);
-    if (S) {
-        S->ia = malloc((nc+1) * sizeof *S->ia);
-        S->ja = malloc( nhf   * sizeof *S->ja);
-        S->sa = malloc( nhf   * sizeof *S->sa);
-    }
-    else {
-        assert(0);
-    }
-    S->n = nc;
-
-    b = malloc(nc * sizeof *b);
-    x = malloc(nc * sizeof *x);
-
-    pja = S->ja;
-    psa = S->sa;
-    
-    /* Assemble system */
-    S->ia[0] = 0;    
-    for (i=0; i<nc; ++i) {
-
-        /* Store position of diagonal element */
-        d      = psa++;
-        *pja++ = i;
-        *d     = 0.0;
-
-        /* Accumulation term */
-        b[i]   = (s[i] - s0[i]);        
-        *d    += 1.0;
-        
-        /* Flux terms follows*/
-        for (k=g->cell_facepos[i]; k<g->cell_facepos[i+1]; ++k) {
-            f   = g->cell_faces[k];
-            c1  = g->face_cells[2*f+0];
-            c2  = g->face_cells[2*f+1];
-
-            /* Skip all boundary terms (for now). */
-            if (c1 == -1 || c2 == -1) { continue; } 
-
-            /* Set cell index of other cell, set correct sign of fluxes. */
-            c            = (i==c1 ? c2 : c1);
-            sgn          = (i==c1)*2.0 - 1.0;
-            darcyflux    = sgn * dt*dflux[f];
-            gravityflux  = sgn * dt*gflux[f];
-
-            /* ====================================================== */
-            /* If darcy flux and gravity flux have same sign...       */
-            if ( (darcyflux>0.0 && gravityflux>0.0) ||
-                 (darcyflux<0.0 && gravityflux<0.0) ) {
-
-                /* Set water mobility */
-                if (darcyflux>0) {
-                    /* Positive water phase flux */
-                    m1  =  mob[2*i];
-                    dm1 = dmob[2*i];
-                    p1  = d;
-                }
-                else {
-                    /* Negative water phase flux */
-                    m1  =  mob[2*c];
-                    dm1 = dmob[2*c];
-                    p1  = psa;
-                }
-
-                /* Set oil mobility */
-                if (darcyflux - m1*gravityflux>0) {
-                    /* Positive oil phase flux */
-                    m2  =  mob[2*i+1];
-                    dm2 = dmob[2*i+1];
-                    p2  = d;
-                }
-                else {
-                    /* Negative oil phase flux */
-                    m2  =  mob[2*c+1];
-                    dm2 = dmob[2*c+1];
-                    p2  = psa;
-                }
-            }
-            
-            /* ====================================================== */
-            /* If Darcy flux and gravity flux have opposite sign...   */
-            else {
-                /* Set oil mobility */
-                if (darcyflux>0) {
-                    /* Positive oil phase flux */
-                    m2  =  mob[2*i+1];
-                    dm2 = dmob[2*i+1];
-                    p2  = d;
-                }
-                else {
-                    /* Negative oil phase flux */
-                    m2  =  mob[2*c+1];
-                    dm2 = dmob[2*c+1];
-                    p2  = psa;
-                }
-                /* Set water mobility */
-                if (darcyflux+m2*gravityflux>0) {
-                    /* Positive water phase flux */
-                    m1  =  mob[2*i];
-                    dm1 = dmob[2*i];
-                    p1  = d;
-                }
-                else {
-                    /* Negative water phase flux */
-                    m1  =  mob[2*c];
-                    dm1 = dmob[2*c];
-                    p1  = psa;
-                }
-            }
-            
-            b[i]  += m1/(m1+m2)*(darcyflux + m2*gravityflux);
-            if (p1 == psa || p2 == psa) {
-                *psa++ = 0.0;
-                *pja++ = c;
-            }
-            
-            /* Add contribitions from dFw/dmw·dmw/dsw and dFw/dmo·dmo/dsw */
-            mt2  = (m1+m2)*(m1+m2);
-
-            /* dFw/dmw·dmw/dsw */
-            *p1 +=  m2/mt2*(darcyflux + m2*gravityflux)*dm1;
-
-            /* dFw/dmo·dmo/dsw */
-            *p2 += -m1/mt2*(darcyflux - m1*gravityflux)*dm2;
-            
-            
-        }
-        /* Injection */
-        if (src[i] > 0.0) {
-            /* Assume sat==1.0 in source, and f(1.0)=1.0; */
-            m1    = 1.0;
-            m2    = 0.0;
-            b[i] -= dt*src[i] * m1/(m1+m2);
-        }
-        
-        /* Production */
-        else {
-            m1  = mob [2*i+0];
-            m2  = mob [2*i+1];
-            dm1 = dmob[2*i+0];
-            dm2 = dmob[2*i+1];
-            
-            *d   -= dt*src[i] *(m2*dm1-m1*dm2)/(m1+m2)/(m1+m2);
-            b[i] -= dt*src[i] *m1/(m1+m2);
-            
-        }
-        S->ia[i+1] = pja - S->ja;
-    }
-
-    d = malloc(nc * sizeof *d);
-    
-    
-    infnorm = 0.0;
-    for(i=0; i<nc; ++i) {infnorm = (infnorm > fabs(b[i]) ? infnorm : fabs(b[i]));}
-    /* fprintf(stderr, "norm %e\n", infnorm); */
-    
-    
-#if 0
-    for(i=0; i<nc; ++i) {
-        for(f=0; f<nc; ++f) {d[f] = 0.0;}
-        for(k=S->ia[i]; k<S->ia[i+1]; ++k) {
-            d[S->ja[k]] = S->sa[k];
-        }
-        for(f=0; f<nc; ++f) {if (d[f]==0.0) fprintf(stderr, "    .   ");else fprintf(stderr, "%+6.3e ", d[f]);}
-        fprintf(stderr, "\n");
-    }
-#endif
-#if 0
-    fprintf(stderr, "b: ");
-    for(i=0; i<nc; ++i) {fprintf(stderr, "%+6.3e ", b[i]);}
-    fprintf(stderr, "\n");
-
-#endif
-#if 1
-    /* Solve system */
-    callMWUMFPACK(S->n, S->ia, S->ja, S->sa, b, x);
-
-
-    /* Return x. */
-    for(i=0; i<nc; ++i) {
-        s[i] = s[i] - x[i];
-        /* fprintf(stderr, "%e %e\n", s[i], x[i]); */
-    }
-    /* fprintf(stderr, "\n"); */
-        
-#endif    
-    
-
-
-    free(b); 
-    free(x);
-    free(S->ia);
-    free(S->ja);
-    free(S->sa);
-    free(S);
-
-    return infnorm;
-}   
-#endif
-
-double 
-spu_implicit2(grid_t *g, double *s0, double *s, double *mob, double *dmob,
-              double *dflux, double *gflux, double *src, double dt)
+              double *dflux, double *gflux, double *src, double dt, 
+              void (*linear_solver)(int, int*, int*, double *, double *, double *))
 {
     int    nc   = g->number_of_cells;
     int    nf   = g->number_of_faces;
@@ -379,6 +147,7 @@ spu_implicit2(grid_t *g, double *s0, double *s, double *mob, double *dmob,
         S->ja = malloc( nhf   * sizeof *S->ja);
         S->sa = malloc( nhf   * sizeof *S->sa);
         S->n  = nc;
+        S->m  = nc;
     }
     else {
         assert(0);
@@ -397,7 +166,7 @@ spu_implicit2(grid_t *g, double *s0, double *s, double *mob, double *dmob,
     }
 
     /* Solve system */
-    callMWUMFPACK(S->n, S->ia, S->ja, S->sa, b, x);
+    (*linear_solver)(S->m, S->ia, S->ja, S->sa, b, x);
 
 
     /* Return x. */
@@ -417,15 +186,89 @@ spu_implicit2(grid_t *g, double *s0, double *s, double *mob, double *dmob,
 }
 
 
+static void
+phase_upwind_mobility(double darcyflux, double gravityflux,  int i, int c, 
+                      double *mob, double *dmob, double *m, double *dm, int *cix)
+{
+    /* ====================================================== */
+    /* If darcy flux and gravity flux have same sign...       */
+    if ( (darcyflux>0.0 && gravityflux>0.0) ||
+         (darcyflux<0.0 && gravityflux<0.0) ) {
+
+        /* Positive water phase flux */
+        if (darcyflux>0) {
+            m [0]  = mob [2*i+0];
+            dm[0]  = dmob[2*i+0];
+            cix[0] = i;
+        }
+        
+        /* Negative water phase flux */
+        else {
+            m [0]  = mob [2*c+0];
+            dm[0]  = dmob[2*c+0];
+            cix[0] = c;
+        }
+
+        /* Positive oil phase flux */
+        if (darcyflux - m[0]*gravityflux>0) {
+            m [1]  =  mob[2*i+1];
+            dm[1]  = dmob[2*i+1];
+            cix[1] = i;
+        }
+
+        /* Negative oil phase flux */
+        else {
+            m [1]  =  mob[2*c+1];
+            dm[1]  = dmob[2*c+1];
+            cix[1] = c;
+        }
+    }
+            
+    /* ====================================================== */
+    /* If Darcy flux and gravity flux have opposite sign...   */
+    else {
+        
+        /* Positive oil phase flux */
+        if (darcyflux>0) {
+            m [1]  =  mob[2*i+1];
+            dm[1]  = dmob[2*i+1];
+            cix[1] = i;
+        }
+
+        /* Negative oil phase flux */
+        else {
+            m [1]  =  mob[2*c+1];
+            dm[1]  = dmob[2*c+1];
+            cix[1] = c;
+        }
+
+        /* Positive water phase flux */
+        if (darcyflux+m[1]*gravityflux>0) {
+            m [0]  =  mob[2*i+0];
+            dm[0]  = dmob[2*i+0];
+            cix[0] = i;
+        }
+
+        /* Negative water phase flux */
+        else {
+            m [0]  =  mob[2*c+0];
+            dm[0]  = dmob[2*c+0];
+            cix[0] = c;
+        }
+    }
+}
+
 void 
 spu_implicit_assemble(grid_t *g, double *s0, double *s, double *mob, double *dmob,
-                      double *dflux, double *gflux, double *src, double dt, sparse_t *S, double *b)
+                      double *dflux, double *gflux, double *src, double dt, sparse_t *S, 
+                      double *b)
 {
     int     i, k, f, c1, c2, c;
     int     nc   = g->number_of_cells;
-    /* int    nf   = g->number_of_faces; */
-    /* int    nhf  = g->cell_facepos[nc]; /\* Too much *\/ */
 
+    double *m   = malloc(2*sizeof *m);
+    double *dm  = malloc(2*sizeof *dm);
+    int    *cix = malloc(2*sizeof *cix);
     double  m1,  m2;
     double  dm1, dm2;
     double  mt2;
@@ -470,85 +313,35 @@ spu_implicit_assemble(grid_t *g, double *s0, double *s, double *mob, double *dmo
             darcyflux    = sgn * dt*dflux[f];
             gravityflux  = sgn * dt*gflux[f];
 
-            /* ====================================================== */
-            /* If darcy flux and gravity flux have same sign...       */
-            if ( (darcyflux>0.0 && gravityflux>0.0) ||
-                 (darcyflux<0.0 && gravityflux<0.0) ) {
+            phase_upwind_mobility(darcyflux, gravityflux,  i, c, 
+                                  mob, dmob, m, dm, cix);
+            b[i]  += m[0]/(m[0]+m[1])*(darcyflux + m[1]*gravityflux);
 
-                /* Set water mobility */
-                if (darcyflux>0) {
-                    /* Positive water phase flux */
-                    m1  =  mob[2*i];
-                    dm1 = dmob[2*i];
-                    p1  = d;
-                }
-                else {
-                    /* Negative water phase flux */
-                    m1  =  mob[2*c];
-                    dm1 = dmob[2*c];
-                    p1  = psa;
-                }
-
-                /* Set oil mobility */
-                if (darcyflux - m1*gravityflux>0) {
-                    /* Positive oil phase flux */
-                    m2  =  mob[2*i+1];
-                    dm2 = dmob[2*i+1];
-                    p2  = d;
-                }
-                else {
-                    /* Negative oil phase flux */
-                    m2  =  mob[2*c+1];
-                    dm2 = dmob[2*c+1];
-                    p2  = psa;
-                }
-            }
-            
-            /* ====================================================== */
-            /* If Darcy flux and gravity flux have opposite sign...   */
-            else {
-                /* Set oil mobility */
-                if (darcyflux>0) {
-                    /* Positive oil phase flux */
-                    m2  =  mob[2*i+1];
-                    dm2 = dmob[2*i+1];
-                    p2  = d;
-                }
-                else {
-                    /* Negative oil phase flux */
-                    m2  =  mob[2*c+1];
-                    dm2 = dmob[2*c+1];
-                    p2  = psa;
-                }
-                /* Set water mobility */
-                if (darcyflux+m2*gravityflux>0) {
-                    /* Positive water phase flux */
-                    m1  =  mob[2*i];
-                    dm1 = dmob[2*i];
-                    p1  = d;
-                }
-                else {
-                    /* Negative water phase flux */
-                    m1  =  mob[2*c];
-                    dm1 = dmob[2*c];
-                    p1  = psa;
-                }
-            }
-            
-            b[i]  += m1/(m1+m2)*(darcyflux + m2*gravityflux);
-            if (p1 == psa || p2 == psa) {
-                *psa++ = 0.0;
-                *pja++ = c;
-            }
-            
             /* Add contribitions from dFw/dmw·dmw/dsw and dFw/dmo·dmo/dsw */
-            mt2  = (m1+m2)*(m1+m2);
-
+            mt2  = (m[0]+m[1])*(m[0]+m[1]);
+            *psa = 0.0;
+            *pja = c;
             /* dFw/dmw·dmw/dsw */
-            *p1 +=  m2/mt2*(darcyflux + m2*gravityflux)*dm1;
+            if (cix[0] == c ) {
+                *psa +=  m[1]/mt2*(darcyflux + m[1]*gravityflux)*dm[0];
+            }
+            else {
+                *d   +=  m[1]/mt2*(darcyflux + m[1]*gravityflux)*dm[0];
+            }
 
-            /* dFw/dmo·dmo/dsw */
-            *p2 += -m1/mt2*(darcyflux - m1*gravityflux)*dm2;
+            if (cix[1] == c) {
+                /* dFw/dmo·dmo/dsw */
+                *psa += -m[0]/mt2*(darcyflux - m[0]*gravityflux)*dm[1];
+            }
+            else {
+                *d   += -m[0]/mt2*(darcyflux - m[0]*gravityflux)*dm[1];
+            }
+
+
+            if (cix[0] == c || cix[1] == c) {
+                ++psa;
+                ++pja;
+            }
             
             
         }
@@ -573,4 +366,7 @@ spu_implicit_assemble(grid_t *g, double *s0, double *s, double *mob, double *dmo
         }
         S->ia[i+1] = pja - S->ja;
     }
+    free(m);
+    free(dm);
+    free(cix);
 }   
