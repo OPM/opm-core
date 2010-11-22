@@ -226,7 +226,7 @@ public:
                             &bc, np, &trans_[0], &phasemobf_[0],
                             data_, &cell_pressures[0], &face_fluxes[0]);
         cfs_tpfa_fpress(grid_.c_grid(), &bc, np, &htrans_[0],
-                        &phasemob_f[0], &cell_pressures[0],
+                        &phasemobf_[0], &cell_pressures[0],
                         &face_fluxes[0], &face_pressures[0]);
     }
 
