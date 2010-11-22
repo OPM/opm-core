@@ -35,6 +35,8 @@
 #define OPM_FLUIDSYSTEMBLACKOIL_HEADER_INCLUDED
 
 #include "BlackoilPVT.hpp"
+#include "BlackoilDefs.hpp"
+#include <dune/porsol/common/Matrix.hpp>
 #include <dune/common/EclipseGridParser.hpp>
 #include <stdexcept>
 
@@ -64,19 +66,10 @@ private:
  * \brief A black oil fluid system.
  */
 template <class ParamsT = FluidSystemBlackoilParameters>
-class FluidSystemBlackoil
+class FluidSystemBlackoil : public BlackoilDefs
 {
 public:
     typedef ParamsT Params;
-    typedef double Scalar;
-
-    enum { numComponents = 3 };
-    enum { numPhases = 3 };
-
-    enum ComponentIndex { Water = 0, Gas = 1, Oil = 2 };
-    enum PhaseIndex { Aqua = 0, Vapour = 1, Liquid = 2 };
-
-    typedef BlackoilPVT::surfvol_t FluidVec;
 
     /*!
      * \brief Initialize system from input.
@@ -151,16 +144,16 @@ public:
 
 
     /*!
-     * \brief Assuming the surface volumes and the pressure of all
-     *        phases are known, compute the phase volumes and
-     *        saturations.
+     * \brief Assuming the surface volumes and the pressures of all
+     *        phases are known, compute everything except relperm and
+     *        mobility.
      */
     template <class FluidState>
     static void computeEquilibrium(FluidState& fluid_state)
     {
         // Get B and R factors.
-        const double* p = fluid_state.phase_pressure_;
-        const double* z = fluid_state.surface_volume_;
+        const PhaseVec& p = fluid_state.phase_pressure_;
+        const CompVec& z = fluid_state.surface_volume_;
         double B[3];
         B[Aqua]   = params().pvt_.B(p[Aqua],   z, Aqua);
         B[Vapour] = params().pvt_.B(p[Vapour], z, Vapour);
@@ -168,9 +161,17 @@ public:
         double R[3]; // Only using 2 of them, though.
         R[Vapour] = params().pvt_.B(p[Vapour], z, Vapour);
         R[Liquid] = params().pvt_.B(p[Liquid], z, Liquid);
+        // Set the A matrix (A = RB^{-1})
+        Dune::SharedFortranMatrix A(numComponents, numPhases, fluid_state.phase_to_comp_);
+        zero(A);
+        A(Water, Aqua) = 1.0/B[Aqua];
+        A(Gas, Vapour) = 1.0/B[Vapour];
+        A(Gas, Liquid) = R[Liquid]/B[Liquid];
+        A(Oil, Vapour) = R[Vapour]/B[Vapour];
+        A(Oil, Liquid) = 1.0/B[Liquid];
 
-        // Update phase volumes.
-        double* u = fluid_state.phase_volume_;
+        // Update phase volumes. This is the same as multiplying with A^{-1}
+        PhaseVec& u = fluid_state.phase_volume_;
         double detR = 1.0 - R[Vapour]*R[Liquid];
         u[Aqua] = B[Aqua]*z[Water];
         u[Vapour] = B[Vapour]*(z[Gas] - R[Liquid]*z[Oil])/detR;
@@ -178,10 +179,16 @@ public:
 
         // Update saturations.
         double sumu = u[Aqua] + u[Vapour] + u[Liquid];
-        double* s = fluid_state.saturation_;
+        PhaseVec& s = fluid_state.saturation_;
         for (int i = 0; i < 3; ++i) {
             s[i] = u[i]/sumu;
         }
+
+        // Compute viscosities.
+        PhaseVec& mu = fluid_state.viscosity_;
+        mu[Aqua]   = params().pvt_.getViscosity(p[Aqua],   z, Aqua);
+        mu[Vapour] = params().pvt_.getViscosity(p[Vapour], z, Vapour);
+        mu[Liquid] = params().pvt_.getViscosity(p[Liquid], z, Liquid);
     }
 
     /*!

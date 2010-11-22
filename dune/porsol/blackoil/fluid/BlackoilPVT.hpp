@@ -33,20 +33,23 @@ namespace Opm
     class BlackoilPVT : public BlackoilDefs
     {
     public:
-        typedef MiscibilityProps::surfvol_t surfvol_t;
-
 	void init(const Dune::EclipseGridParser& ep);
 
-        double getViscosity(double press, const surfvol_t& surfvol,
+        double getViscosity(double press,
+                            const CompVec& surfvol,
 			    PhaseIndex phase) const;
-	surfvol_t surfaceDensities() const;
-        double B   (double press, const surfvol_t& surfvol,
+	CompVec surfaceDensities() const;
+        double B   (double press,
+                    const CompVec& surfvol,
 		    PhaseIndex phase) const;
-        double dBdp(double press, const surfvol_t& surfvol,
+        double dBdp(double press,
+                    const CompVec& surfvol,
 		    PhaseIndex phase) const;
-        double R   (double press, const surfvol_t& surfvol,
+        double R   (double press,
+                    const CompVec& surfvol,
 		    PhaseIndex phase) const;
-        double dRdp(double press, const surfvol_t& surfvol,
+        double dRdp(double press,
+                    const CompVec& surfvol,
 		    PhaseIndex phase) const;
 
 
@@ -57,7 +60,7 @@ namespace Opm
 	boost::scoped_ptr<MiscibilityProps> water_props_;
 	boost::scoped_ptr<MiscibilityProps> oil_props_;
 	boost::scoped_ptr<MiscibilityProps> gas_props_;
-	surfvol_t densities_;
+	CompVec densities_;
     };
 
 }

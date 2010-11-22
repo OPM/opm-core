@@ -78,32 +78,32 @@ namespace Opm
         }
     }
 
-    BlackoilPVT::surfvol_t BlackoilPVT::surfaceDensities() const
+    BlackoilPVT::CompVec BlackoilPVT::surfaceDensities() const
     {
         return densities_;
     }
 
-    double BlackoilPVT::getViscosity(double press, const surfvol_t& surfvol, PhaseIndex phase) const
+    double BlackoilPVT::getViscosity(double press, const CompVec& surfvol, PhaseIndex phase) const
     {
         return propsForPhase(phase).getViscosity(region_number_, press, surfvol);
     }
 
-    double BlackoilPVT::B(double press, const surfvol_t& surfvol, PhaseIndex phase) const
+    double BlackoilPVT::B(double press, const CompVec& surfvol, PhaseIndex phase) const
     {
         return propsForPhase(phase).B(region_number_, press, surfvol);
     }
 
-    double BlackoilPVT::dBdp(double press, const surfvol_t& surfvol, PhaseIndex phase) const
+    double BlackoilPVT::dBdp(double press, const CompVec& surfvol, PhaseIndex phase) const
     {
         return propsForPhase(phase).dBdp(region_number_, press, surfvol);
     }
 
-    double BlackoilPVT::R(double press, const surfvol_t& surfvol, PhaseIndex phase) const
+    double BlackoilPVT::R(double press, const CompVec& surfvol, PhaseIndex phase) const
     {
         return propsForPhase(phase).R(region_number_, press, surfvol);
     }
 
-    double BlackoilPVT::dRdp(double press, const surfvol_t& surfvol, PhaseIndex phase) const
+    double BlackoilPVT::dRdp(double press, const CompVec& surfvol, PhaseIndex phase) const
     {
         return propsForPhase(phase).dRdp(region_number_, press, surfvol);
     }

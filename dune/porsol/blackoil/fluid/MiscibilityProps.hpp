@@ -46,7 +46,7 @@ namespace Opm
     class MiscibilityProps : public BlackoilDefs
     {
     public:
-	typedef std::tr1::array<double, 3> surfvol_t;
+	typedef CompVec surfvol_t;
 
 	MiscibilityProps();
 	virtual ~MiscibilityProps();

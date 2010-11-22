@@ -21,53 +21,25 @@
 #define OPM_FLUIDSTATEBLACKOIL_HEADER_INCLUDED
 
 
-#include "FluidSystemBlackoil.hpp"
+#include "BlackoilDefs.hpp"
 
 
 namespace Opm
 {
     /*!
-     * \brief Calculates the phase state from the primary variables in the
-     *        blackoil model.
+     * \brief Fluid states for a black oil model.
      */
     struct FluidStateBlackoil : public BlackoilDefs
     {
-        typedef FluidSystemBlackoil FluidSystem;
-        typedef double Scalar;
-        typedef std::tr1::array<Scalar, numComponents + numPhases> PrimaryVariables; // Surface volumes and phase pressures.
-        typedef FluidMatrixInteractionBlackoil<Scalar> MaterialLaw;
-        typedef typename MaterialLaw::Params MaterialLawParams;
-
         Scalar temperature_;
-        Scalar surface_volume_[numComponents];
-        Scalar phase_pressure_[numPhases];
-        Scalar phase_volume_[numPhases];
-        Scalar saturation_[numPhases];
-
-
-        /*!
-         * \brief Update the phase state from the primary variables.
-         */
-        void update(const PrimaryVariables& primary_vars,
-                    const MaterialLawParams& material_params,
-                    Scalar temperature)
-        {
-            // Set the temperature.
-            temperature_ = temperature;
-
-            // Set the surface volumes.
-            for (int i = 0; i < numComponents; ++i) {
-                surface_volume_[i] = primary_vars[i];
-            }
-
-            // Set the phase pressures.
-            for (int i = 0; i < numPhases; ++i) {
-                phase_pressure_[i] = primary_vars[numComponents + i];
-            }
-
-            // Compute phase volumes by the fluid system rules.
-            FluidSystem::computeEquilibrium(*this);
-        }
+        CompVec surface_volume_;
+        PhaseVec phase_pressure_;
+        PhaseVec phase_volume_;
+        Scalar phase_to_comp_[numPhases*numComponents];
+        PhaseVec saturation_;
+        PhaseVec viscosity_;
+        PhaseVec relperm_;
+        PhaseVec mobility_;
     };
 
 } // end namespace Opm
