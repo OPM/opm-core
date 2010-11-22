@@ -32,10 +32,6 @@ namespace Dune {
     namespace utils {
 
 
-	/// @brief Exception used for domain errors.
-	struct OutsideDomainException : public std::exception {};
-
-
 	/// @brief This class uses linear interpolation to compute the value
 	///        (and its derivative) of a function f sampled at uniform points.
 	/// @tparam T the range type of the function (should be an algebraic ring type)
