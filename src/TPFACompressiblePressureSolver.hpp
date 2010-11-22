@@ -223,9 +223,10 @@ public:
         flowbc_t bc = { &bctypes_[0], const_cast<double*>(&bcvalues_[0]) };
         int np = 3; // Number of phases.
         cfs_tpfa_press_flux(grid_.c_grid(),
-                            &bc, np, &trans_[0], &htrans_[0], &phasemobf_[0],
+                            &bc, np, &trans_[0], &phasemobf_[0],
                             data_, &cell_pressures[0], &face_fluxes[0]);
-        cfs_tpfa_fpress(grid_.c_grid(), data_, &face_pressures[0]);
+        cfs_tpfa_fpress(grid_.c_grid(), &bc, np, &htrans_[0],
+                        &phasemob_f[0], &face_pressures[0]);
     }
 
     /// @brief
