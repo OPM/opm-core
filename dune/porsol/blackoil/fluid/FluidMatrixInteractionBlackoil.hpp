@@ -64,12 +64,7 @@ public:
         buildUniformMonotoneTable(sw, krow, samples, krow_);
         buildUniformMonotoneTable(sg, krg,  samples, krg_);
         buildUniformMonotoneTable(sg, krog, samples, krog_);
-        for (int i = 0; i < int(krw.size()); ++i) {
-            if (krw[i] > 0.0) {
-                krocw_ = krow[i];
-                break;
-            }
-        }
+        krocw_ = krow[0]; // At connate water -> ecl. SWOF
 
         // Create tables for pcow and pcog.
         // We must convert the pressures depending on units.
@@ -174,7 +169,7 @@ public:
         Scalar so = saturations[Liquid];
         Scalar krw = params.krw_(sw);
         Scalar krg = params.krg_(sg);
-        Scalar krow = params.krow_(so);
+        Scalar krow = params.krow_(sw);
         Scalar krog = params.krog_(sg);
         Scalar krocw = params.krocw_;
         kr[Aqua] = krw;
