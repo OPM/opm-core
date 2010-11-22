@@ -202,6 +202,7 @@ public:
     /// @param[out] cell_pressures Cell pressure values.
     /// @param[out] face_areas Face flux values.
     void computePressuresAndFluxes(std::vector<double>& cell_pressures,
+                                   std::vector<double>& face_pressures,
                                    std::vector<double>& face_fluxes)
     {
         if (state_ != Assembled) {
@@ -213,6 +214,8 @@ public:
         int num_faces = grid_.c_grid()->number_of_faces;
         cell_pressures.clear();
         cell_pressures.resize(num_cells, 0.0);
+        face_pressures.clear();
+        face_pressures.resize(num_faces, 0.0);
         face_fluxes.clear();
         face_fluxes.resize(num_faces, 0.0);
 //         ifs_tpfa_press_flux(grid_.c_grid(), &eff_trans_[0],
@@ -222,6 +225,7 @@ public:
         cfs_tpfa_press_flux(grid_.c_grid(),
                             &bc, np, &trans_[0], &htrans_[0], &phasemobf_[0],
                             data_, &cell_pressures[0], &face_fluxes[0]);
+        cfs_tpfa_fpress(grid_.c_grid(), data_, &face_pressures[0]);
     }
 
     /// @brief
