@@ -31,13 +31,10 @@
 namespace Opm
 {
 
-    class BlackoilFluid
+    class BlackoilFluid : public BlackoilDefs
     {
     public:
-        enum { numPhases = 3 };
-        enum { numComponents = 3 };
-        typedef Dune::FieldVector<double, numPhases> PhaseVec;
-        typedef Dune::FieldVector<double, numComponents> CompVec;
+        typedef FluidStateBlackoil FluidState;
 
         void init(const Dune::EclipseGridParser& parser)
         {
@@ -45,9 +42,9 @@ namespace Opm
             FluidSystemBlackoil<>::init(parser);
         }
 
-        FluidStateBlackoil computeState(PhaseVec phase_pressure, CompVec z)
+        FluidState computeState(PhaseVec phase_pressure, CompVec z) const
         {
-            FluidStateBlackoil state;
+            FluidState state;
             state.temperature_ = 300;
             state.phase_pressure_ = phase_pressure;
             state.surface_volume_ = z;
