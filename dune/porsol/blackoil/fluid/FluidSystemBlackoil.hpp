@@ -176,9 +176,10 @@ public:
         u[Aqua] = B[Aqua]*z[Water];
         u[Vapour] = B[Vapour]*(z[Gas] - R[Liquid]*z[Oil])/detR;
         u[Liquid] = B[Aqua]*(z[Oil] - R[Vapour]*z[Gas])/detR;
+        fluid_state.total_phase_volume_ = u[Aqua] + u[Vapour] + u[Liquid];
 
         // Update saturations.
-        double sumu = u[Aqua] + u[Vapour] + u[Liquid];
+        double sumu = fluid_state.total_phase_volume_;
         PhaseVec& s = fluid_state.saturation_;
         for (int i = 0; i < 3; ++i) {
             s[i] = u[i]/sumu;
@@ -189,6 +190,35 @@ public:
         mu[Aqua]   = params().pvt_.getViscosity(p[Aqua],   z, Aqua);
         mu[Vapour] = params().pvt_.getViscosity(p[Vapour], z, Vapour);
         mu[Liquid] = params().pvt_.getViscosity(p[Liquid], z, Liquid);
+
+        // Phase compressibilities.
+        PhaseVec& cp = fluid_state.phase_compressibility_;
+        double dB[3];
+        dB[Aqua]   = params().pvt_.dBdp(p[Aqua],   z, Aqua);
+        dB[Vapour] = params().pvt_.dBdp(p[Vapour], z, Vapour);
+        dB[Liquid] = params().pvt_.dBdp(p[Liquid], z, Liquid);
+        double dR[3]; // Only using 2 of them, though.
+        dR[Vapour] = params().pvt_.dRdp(p[Vapour], z, Vapour);
+        dR[Liquid] = params().pvt_.dRdp(p[Liquid], z, Liquid);
+        // Set the derivative of the A matrix (A = RB^{-1})
+        double data_for_dA[numComponents*numPhases];
+        Dune::SharedFortranMatrix dA(numComponents, numPhases, data_for_dA);
+        zero(dA);
+        dA(Water, Aqua) = -dB[Aqua]/(B[Aqua]*B[Aqua]);
+        dA(Gas, Vapour) = -dB[Vapour]/(B[Vapour]*B[Vapour]);
+        dA(Oil, Liquid) = -dB[Liquid]/(B[Liquid]*B[Liquid]); // Different order than above.
+        dA(Gas, Liquid) = dA(Oil, Liquid)*R[Liquid] + dR[Liquid]/B[Liquid];
+        dA(Oil, Vapour) = dA(Gas, Vapour)*R[Vapour] + dR[Vapour]/B[Vapour];
+        double data_for_Ai[numComponents*numPhases];
+        Dune::SharedFortranMatrix Ai(numComponents, numPhases, data_for_Ai);
+        Ai = A;
+        Dune::invert(Ai);
+        double data_for_C[numComponents*numPhases];
+        Dune::SharedFortranMatrix C(numComponents, numPhases, data_for_C);
+        Dune::prod(Ai, dA, C);
+        CompVec ones(1.0);
+        cp = Dune::prod(C, ones);
+        fluid_state.total_compressibility_ = cp*s;
     }
 
     /*!

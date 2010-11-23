@@ -35,8 +35,11 @@ namespace Opm
         CompVec surface_volume_;
         PhaseVec phase_pressure_;
         PhaseVec phase_volume_;
+        Scalar total_phase_volume_;
         Scalar phase_to_comp_[numPhases*numComponents];
         PhaseVec saturation_;
+        PhaseVec phase_compressibility_;
+        Scalar total_compressibility_;
         PhaseVec viscosity_;
         PhaseVec relperm_;
         PhaseVec mobility_;
