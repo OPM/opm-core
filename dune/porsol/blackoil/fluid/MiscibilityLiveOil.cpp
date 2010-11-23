@@ -125,13 +125,13 @@ namespace Opm
 
     double MiscibilityLiveOil::B(int /*region*/, double press, const surfvol_t& surfvol) const
     {
-        if (surfvol[Liquid] == 0.0) return 1.0; // To handle no-oil case.
+        // if (surfvol[Liquid] == 0.0) return 1.0; // To handle no-oil case.
 	return 1.0/miscible_oil(press, surfvol, 1, false);
     }
 
     double MiscibilityLiveOil::dBdp(int region, double press, const surfvol_t& surfvol) const
     {	
-        if (surfvol[Liquid] == 0.0) return 0.0; // To handle no-oil case.
+        // if (surfvol[Liquid] == 0.0) return 0.0; // To handle no-oil case.
 	double Bo = B(region, press, surfvol);
 	return -Bo*Bo*miscible_oil(press, surfvol, 1, true);
     }
@@ -143,7 +143,7 @@ namespace Opm
 	double R = linearInterpolationExtrap(saturated_oil_table_[0],
 					     saturated_oil_table_[3],
 					     press, section);
-	double maxR = surfvol[Vapour]/surfvol[Liquid];
+	double maxR = (surfvol[Liquid] == 0.0) ? 0.0 : surfvol[Vapour]/surfvol[Liquid];
 	if (deriv) {
 	    if (R < maxR ) {  // Saturated case
 		return linearInterpolDerivative(saturated_oil_table_[0],

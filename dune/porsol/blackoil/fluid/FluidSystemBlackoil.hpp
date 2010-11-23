@@ -159,8 +159,8 @@ public:
         B[Vapour] = params().pvt_.B(p[Vapour], z, Vapour);
         B[Liquid] = params().pvt_.B(p[Liquid], z, Liquid);
         double R[3]; // Only using 2 of them, though.
-        R[Vapour] = params().pvt_.B(p[Vapour], z, Vapour);
-        R[Liquid] = params().pvt_.B(p[Liquid], z, Liquid);
+        R[Vapour] = params().pvt_.R(p[Vapour], z, Vapour);
+        R[Liquid] = params().pvt_.R(p[Liquid], z, Liquid);
         // Set the A matrix (A = RB^{-1})
         Dune::SharedFortranMatrix A(numComponents, numPhases, fluid_state.phase_to_comp_);
         zero(A);
