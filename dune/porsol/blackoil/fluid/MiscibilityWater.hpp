@@ -91,7 +91,7 @@ namespace Opm
 	virtual double dBdp(int region, double press, const surfvol_t& surfvol) const
         {
             if (comp_) {
-                return comp_*B(region, press, surfvol);
+                return -comp_*B(region, press, surfvol);
             } else {
                 return 0.0;
             }
