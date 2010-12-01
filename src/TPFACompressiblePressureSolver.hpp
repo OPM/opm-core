@@ -230,6 +230,21 @@ public:
                         &face_fluxes[0], &face_pressures[0]);
     }
 
+
+    void explicitTransport(const double dt,
+                           const double* cell_pressures,
+                           double* cell_surfvols)
+    {
+        int np = 3; // Number of phases.
+        std::vector<double> masstrans_f(np*grid_.c_grid()->number_of_faces);
+        std::vector<double> gravtrans_f(np*grid_.c_grid()->number_of_faces);
+        cfs_tpfa_retrieve_masstrans(grid_.c_grid(), np, data_, &masstrans_f[0]);
+        cfs_tpfa_retrieve_gravtrans(grid_.c_grid(), np, data_, &gravtrans_f[0]);
+        cfs_tpfa_expl_mass_transport(grid_.c_grid(), np, dt, &porevol_[0],
+                                     &masstrans_f[0], &gravtrans_f[0],
+                                     cell_pressures, cell_surfvols);
+    }
+
     /// @brief
     /// Compute cell fluxes from face fluxes.
     /// You must call assemble() (and solve the linear system accessed
