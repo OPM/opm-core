@@ -211,7 +211,8 @@ public:
         dA(Oil, Vapour) = dA(Gas, Vapour)*R[Vapour] + dR[Vapour]/B[Vapour];
         double data_for_Ai[numComponents*numPhases];
         Dune::SharedFortranMatrix Ai(numComponents, numPhases, data_for_Ai);
-        Ai = A;
+        // Ai = A; // This does not make a deep copy.
+        std::copy(A.data(), A.data() + numComponents*numPhases, Ai.data());
         Dune::invert(Ai);
         double data_for_C[numComponents*numPhases];
         Dune::SharedFortranMatrix C(numComponents, numPhases, data_for_C);
