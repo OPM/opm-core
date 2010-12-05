@@ -16,7 +16,7 @@
 
 
 /* Assume uniformly spaced table. */
-double static
+static double
 interpolate(int n, double h, double x0, double *tab, double x)
 {
     int           i;
