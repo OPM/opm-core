@@ -73,13 +73,19 @@ namespace Opm
     /// Container for all fluid data needed by solvers.
     struct BlackoilFluidData : public BlackoilDefs
     {
-        std::vector<double> totcompr;
-        std::vector<double> totphasevol;
-        std::vector<double> cellA;
-        std::vector<double> faceA;
-        std::vector<double> phasemobf;
+        // Per-cell data.
+        std::vector<double> totcompr;     // Total compressibility.
+        std::vector<double> totphasevol;  // Total volume filled by fluid phases.
+        std::vector<double> cellA;        // A = RB^{-1}. Fortran ordering, flat storage.
+        std::vector<PhaseVec> saturation; // Saturation.
+        std::vector<PhaseVec> frac_flow;  // Fractional flow.
+        std::vector<PhaseVec> rel_perm;   // Relative permeability.
+        std::vector<PhaseVec> viscosity;  // Viscosity.
+        // Per-face data.
+        std::vector<double> faceA;        // A = RB^{-1}. Fortran ordering, flat storage.
+        std::vector<double> phasemobf;    // Phase mobilities. Flat storage (numPhases per face).
     private:
-        std::vector<PhaseVec> phasemobc; // Just a helper.
+        std::vector<PhaseVec> phasemobc;  // Just a helper. Mobilities per cell.
 
     public:
         template <class Grid>
@@ -99,6 +105,10 @@ namespace Opm
             BOOST_STATIC_ASSERT(np == nc);
             totcompr.resize(num_cells);
             totphasevol.resize(num_cells);
+            saturation.resize(num_cells);
+            frac_flow.resize(num_cells);
+            rel_perm.resize(num_cells);
+            viscosity.resize(num_cells);
             cellA.resize(num_cells*nc*np);
             faceA.resize(num_faces*nc*np);
             phasemobf.resize(np*num_faces);
@@ -109,8 +119,18 @@ namespace Opm
                 FluidStateBlackoil state = fluid.computeState(phase_pressure[cell], z[cell]);
                 totcompr[cell] = state.total_compressibility_;
                 totphasevol[cell] = state.total_phase_volume_;
+                saturation[cell] = state.saturation_;
+                rel_perm[cell] = state.relperm_;
+                viscosity[cell] = state.viscosity_;
                 phasemobc[cell] = state.mobility_;
                 std::copy(state.phase_to_comp_, state.phase_to_comp_ + nc*np, &cellA[cell*nc*np]);
+                // Fractional flow must be calculated.
+                double total_mobility = 0.0;
+                for (int phase = 0; phase < numPhases; ++phase) {
+                    total_mobility += state.mobility_[phase];
+                }
+                frac_flow[cell] = state.mobility_;
+                frac_flow[cell] /= total_mobility;
             }
             // Set phasemobf to average of cells' phase mobs, if pressures are equal, else use upwinding.
             // Set faceA by using average of cells' z and face pressures.
