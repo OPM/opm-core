@@ -26,22 +26,30 @@
 #include <dune/porsol/blackoil/fluid/FluidStateBlackoil.hpp>
 #include <dune/common/EclipseGridParser.hpp>
 #include <dune/common/fvector.hh>
+#include <vector>
 
 
 namespace Opm
 {
 
+
+    /// Forward declaration for typedef i BlackoilFluid.
+    class BlackoilFluidData;
+
+
+    /// Class responsible for computing all fluid properties from
+    /// face pressures and composition.
     class BlackoilFluid : public BlackoilDefs
     {
     public:
         typedef FluidStateBlackoil FluidState;
+        typedef BlackoilFluidData FluidData;
 
         void init(const Dune::EclipseGridParser& parser)
         {
             fmi_params_.init(parser);
             FluidSystemBlackoil<>::init(parser);
         }
-
         FluidState computeState(PhaseVec phase_pressure, CompVec z) const
         {
             FluidState state;
@@ -55,10 +63,96 @@ namespace Opm
             }
             return state;
         }
-
     private:
         FluidMatrixInteractionBlackoilParams<double> fmi_params_;
     };
+
+
+
+
+    /// Container for all fluid data needed by solvers.
+    struct BlackoilFluidData : public BlackoilDefs
+    {
+        std::vector<double> totcompr;
+        std::vector<double> totphasevol;
+        std::vector<double> cellA;
+        std::vector<double> faceA;
+        std::vector<double> phasemobf;
+    private:
+        std::vector<PhaseVec> phasemobc; // Just a helper.
+
+    public:
+        template <class Grid>
+        void compute(const Grid& grid,
+                     const BlackoilFluid& fluid,
+                     const std::vector<PhaseVec>& phase_pressure,
+                     const std::vector<PhaseVec>& phase_pressure_face,
+                     const std::vector<CompVec>& z,
+                     const CompVec& bdy_z)
+        {
+            int num_cells = z.size();
+            ASSERT(num_cells == grid.numCells());
+            int num_faces = phase_pressure_face.size();
+            ASSERT(num_faces == grid.numFaces());
+            const int np = numPhases;
+            const int nc = numComponents;
+            BOOST_STATIC_ASSERT(np == nc);
+            totcompr.resize(num_cells);
+            totphasevol.resize(num_cells);
+            cellA.resize(num_cells*nc*np);
+            faceA.resize(num_faces*nc*np);
+            phasemobf.resize(np*num_faces);
+            phasemobc.resize(num_cells);
+            PhaseVec mob;
+            BOOST_STATIC_ASSERT(np == 3);
+            for (int cell = 0; cell < num_cells; ++cell) {
+                FluidStateBlackoil state = fluid.computeState(phase_pressure[cell], z[cell]);
+                totcompr[cell] = state.total_compressibility_;
+                totphasevol[cell] = state.total_phase_volume_;
+                phasemobc[cell] = state.mobility_;
+                std::copy(state.phase_to_comp_, state.phase_to_comp_ + nc*np, &cellA[cell*nc*np]);
+            }
+            // Set phasemobf to average of cells' phase mobs, if pressures are equal, else use upwinding.
+            // Set faceA by using average of cells' z and face pressures.
+            for (int face = 0; face < num_faces; ++face) {
+                int c[2] = { grid.faceCell(face, 0), grid.faceCell(face, 1) };
+                PhaseVec phase_p[2];
+                CompVec z_face(0.0);
+                int num = 0;
+                for (int j = 0; j < 2; ++j) {
+                    if (c[j] >= 0) {
+                        phase_p[j] = phase_pressure[c[j]];
+                        z_face += z[c[j]];
+                        ++num;
+                    } else {
+                        // Boundaries get essentially -inf pressure for upwinding purpose. \TODO handle BCs.
+                        phase_p[j] = PhaseVec(-1e100);
+                        // \TODO The two lines below are wrong for outflow faces.
+                        z_face += bdy_z;
+                        ++num;
+                    }
+                }
+                z_face /= double(num);
+                for (int phase = 0; phase < np; ++phase) {
+                    if (phase_p[0][phase] == phase_p[1][phase]) {
+                        // Average mobilities.
+                        double aver = 0.5*(phasemobc[c[0]][phase] + phasemobc[c[1]][phase]);
+                        phasemobf[np*face + phase] = aver;
+                    } else {
+                        // Upwind mobilities.
+                        int upwind = (phase_p[0][phase] > phase_p[1][phase]) ? 0 : 1;
+                        phasemobf[np*face + phase] = phasemobc[c[upwind]][phase];
+                    }
+                }
+                FluidStateBlackoil face_state = fluid.computeState(phase_pressure_face[face], z_face);
+                std::copy(face_state.phase_to_comp_, face_state.phase_to_comp_ + nc*np, &faceA[face*nc*np]);
+            }
+
+        }
+    };
+
+
+
 
 } // namespace Opm
 
