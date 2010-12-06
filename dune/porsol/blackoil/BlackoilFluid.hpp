@@ -93,10 +93,10 @@ namespace Opm
                      const BlackoilFluid& fluid,
                      const std::vector<PhaseVec>& cell_pressure,
                      const std::vector<PhaseVec>& face_pressure,
-                     const std::vector<CompVec>& z,
+                     const std::vector<CompVec>& cell_z,
                      const CompVec& bdy_z)
         {
-            int num_cells = z.size();
+            int num_cells = cell_z.size();
             ASSERT(num_cells == grid.numCells());
             int num_faces = face_pressure.size();
             ASSERT(num_faces == grid.numFaces());
@@ -113,10 +113,9 @@ namespace Opm
             faceA.resize(num_faces*nc*np);
             phasemobf.resize(np*num_faces);
             phasemobc.resize(num_cells);
-            PhaseVec mob;
             BOOST_STATIC_ASSERT(np == 3);
             for (int cell = 0; cell < num_cells; ++cell) {
-                FluidStateBlackoil state = fluid.computeState(cell_pressure[cell], z[cell]);
+                FluidStateBlackoil state = fluid.computeState(cell_pressure[cell], cell_z[cell]);
                 totcompr[cell] = state.total_compressibility_;
                 totphasevol[cell] = state.total_phase_volume_;
                 saturation[cell] = state.saturation_;
@@ -132,39 +131,53 @@ namespace Opm
                 frac_flow[cell] = state.mobility_;
                 frac_flow[cell] /= total_mobility;
             }
+
             // Set phasemobf to average of cells' phase mobs, if pressures are equal, else use upwinding.
             // Set faceA by using average of cells' z and face pressures.
             for (int face = 0; face < num_faces; ++face) {
                 int c[2] = { grid.faceCell(face, 0), grid.faceCell(face, 1) };
                 PhaseVec phase_p[2];
-                CompVec z_face(0.0);
-                int num = 0;
+                PhaseVec phase_mob[2];
+                CompVec face_z(0.0);
+                bool bdy = false;
+                bool inflow_bdy = false;
                 for (int j = 0; j < 2; ++j) {
                     if (c[j] >= 0) {
                         phase_p[j] = cell_pressure[c[j]];
-                        z_face += z[c[j]];
-                        ++num;
+                        phase_mob[j] = phasemobc[c[j]];
+                        face_z += cell_z[c[j]];
                     } else {
-                        // Boundaries get essentially -inf pressure for upwinding purpose. \TODO handle BCs.
-                        phase_p[j] = PhaseVec(-1e100);
-                        // \TODO The two lines below are wrong for outflow faces.
-                        z_face += bdy_z;
-                        ++num;
+                        bdy = true;
+                        phase_p[j] = face_pressure[face];
+                        /// \TODO with capillary pressures etc., what is an inflow bdy.
+                        /// Using Liquid phase pressure here.
+                        inflow_bdy = face_pressure[face][Liquid]
+                            > cell_pressure[c[(j+1)%2]][Liquid];
+                        if (inflow_bdy) {
+                            FluidStateBlackoil bdy_state = fluid.computeState(face_pressure[face], bdy_z);
+                            phase_mob[j] = bdy_state.mobility_;
+                            face_z += bdy_z;
+                        } else {
+                            phase_p[j] = -1e100; // To ensure correct upwinding.
+                            // No need to set phase_mob[j].
+                        }
                     }
                 }
-                z_face /= double(num);
+                if (!bdy || inflow_bdy) {
+                    face_z *= 0.5;
+                }
                 for (int phase = 0; phase < np; ++phase) {
                     if (phase_p[0][phase] == phase_p[1][phase]) {
                         // Average mobilities.
-                        double aver = 0.5*(phasemobc[c[0]][phase] + phasemobc[c[1]][phase]);
+                        double aver = 0.5*(phase_mob[0][phase] + phase_mob[1][phase]);
                         phasemobf[np*face + phase] = aver;
                     } else {
                         // Upwind mobilities.
                         int upwind = (phase_p[0][phase] > phase_p[1][phase]) ? 0 : 1;
-                        phasemobf[np*face + phase] = phasemobc[c[upwind]][phase];
+                        phasemobf[np*face + phase] = phase_mob[upwind][phase];
                     }
                 }
-                FluidStateBlackoil face_state = fluid.computeState(face_pressure[face], z_face);
+                FluidStateBlackoil face_state = fluid.computeState(face_pressure[face], face_z);
                 std::copy(face_state.phase_to_comp_, face_state.phase_to_comp_ + nc*np, &faceA[face*nc*np]);
             }
 
