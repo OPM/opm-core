@@ -97,7 +97,7 @@ public:
         state_ = Initialized;
     }
 
-    /// Bounday condition types.
+    /// Boundary condition types.
     enum FlowBCTypes { FBC_UNSET = UNSET, FBC_PRESSURE = PRESSURE, FBC_FLUX = FLUX};
 
     /// @brief
