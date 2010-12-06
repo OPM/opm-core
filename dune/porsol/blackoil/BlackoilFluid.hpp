@@ -91,14 +91,14 @@ namespace Opm
         template <class Grid>
         void compute(const Grid& grid,
                      const BlackoilFluid& fluid,
-                     const std::vector<PhaseVec>& phase_pressure,
-                     const std::vector<PhaseVec>& phase_pressure_face,
+                     const std::vector<PhaseVec>& cell_pressure,
+                     const std::vector<PhaseVec>& face_pressure,
                      const std::vector<CompVec>& z,
                      const CompVec& bdy_z)
         {
             int num_cells = z.size();
             ASSERT(num_cells == grid.numCells());
-            int num_faces = phase_pressure_face.size();
+            int num_faces = face_pressure.size();
             ASSERT(num_faces == grid.numFaces());
             const int np = numPhases;
             const int nc = numComponents;
@@ -116,7 +116,7 @@ namespace Opm
             PhaseVec mob;
             BOOST_STATIC_ASSERT(np == 3);
             for (int cell = 0; cell < num_cells; ++cell) {
-                FluidStateBlackoil state = fluid.computeState(phase_pressure[cell], z[cell]);
+                FluidStateBlackoil state = fluid.computeState(cell_pressure[cell], z[cell]);
                 totcompr[cell] = state.total_compressibility_;
                 totphasevol[cell] = state.total_phase_volume_;
                 saturation[cell] = state.saturation_;
@@ -141,7 +141,7 @@ namespace Opm
                 int num = 0;
                 for (int j = 0; j < 2; ++j) {
                     if (c[j] >= 0) {
-                        phase_p[j] = phase_pressure[c[j]];
+                        phase_p[j] = cell_pressure[c[j]];
                         z_face += z[c[j]];
                         ++num;
                     } else {
@@ -164,7 +164,7 @@ namespace Opm
                         phasemobf[np*face + phase] = phasemobc[c[upwind]][phase];
                     }
                 }
-                FluidStateBlackoil face_state = fluid.computeState(phase_pressure_face[face], z_face);
+                FluidStateBlackoil face_state = fluid.computeState(face_pressure[face], z_face);
                 std::copy(face_state.phase_to_comp_, face_state.phase_to_comp_ + nc*np, &faceA[face*nc*np]);
             }
 
