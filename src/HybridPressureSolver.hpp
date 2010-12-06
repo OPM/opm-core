@@ -204,7 +204,7 @@ public:
             throw std::runtime_error("Error in HybridPressureSolver::linearSystem(): "
                                      "You must call assemble() prior to calling linearSystem().");
         }
-        s.n = data_->A->n;
+        s.n = data_->A->m;
         s.nnz = data_->A->nnz;
         s.ia = data_->A->ia;
         s.ja = data_->A->ja;

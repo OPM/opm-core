@@ -1046,7 +1046,6 @@ define_csr_sparsity(size_t nc, size_t m, struct bf_asm_data *bf_asm)
     }
 
     A->m   = m;
-    A->n   = m;
     A->nnz = A->ia[m];
 
     /* Enforce sorted connection structure per row */
