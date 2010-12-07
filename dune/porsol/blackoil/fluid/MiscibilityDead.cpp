@@ -33,6 +33,7 @@
 #include <dune/common/ErrorMacros.hpp>
 #include <dune/common/linInt.hpp>
 #include <dune/common/Units.hpp>
+#include <dune/porsol/common/buildUniformMonotoneTable.hpp>
 
 using namespace std;
 using namespace Dune;
@@ -46,24 +47,27 @@ namespace Opm
 
     /// Constructor
     MiscibilityDead::MiscibilityDead(const table_t& pvd_table, const Dune::EclipseUnits& units)
-	: pvdx_(pvd_table)
     {
 	const int region_number = 0;
 	if (pvd_table.size() != 1) {
 	    THROW("More than one PVT-region");
 	}
-	// Convert units
-	const int sz =  pvdx_[region_number][0].size();
-        using namespace Dune::unit;
-	for (int i=0; i<sz; ++i) {
-	    pvdx_[region_number][0][i] = convert::from(pvdx_[region_number][0][i], units.pressure);
-	    pvdx_[region_number][2][i] = convert::from(pvdx_[region_number][2][i], units.viscosity);
-	}
 
-	// Interpolate 1/B 
-	for (int i=0; i<sz; ++i) {
-	    pvdx_[region_number][1][i] = 1.0/pvdx_[region_number][1][i];
+	// Convert units
+	const int sz = pvd_table[region_number][0].size();
+        std::vector<double> press(sz);
+        std::vector<double> B_inv(sz);
+        std::vector<double> visc(sz);
+        using namespace Dune::unit;
+        const double bunit = units.liqvol_r/units.liqvol_s;
+	for (int i = 0; i < sz; ++i) {
+            press[i] = convert::from(pvd_table[region_number][0][i], units.pressure);
+            B_inv[i] = 1.0 / convert::from(pvd_table[region_number][1][i], bunit);
+            visc[i] = convert::from(pvd_table[region_number][2][i], units.viscosity);
 	}
+        int samples = 200;
+        buildUniformMonotoneTable(press, B_inv, samples, one_over_B_);
+        buildUniformMonotoneTable(press, visc, samples, viscosity_);
     }
 
     // Destructor
@@ -73,19 +77,14 @@ namespace Opm
 
     double MiscibilityDead::getViscosity(int region, double press, const surfvol_t& /*surfvol*/) const
     {
-	return linearInterpolationExtrap(pvdx_[region][0],
-					 pvdx_[region][2], press);
+	return viscosity_(press);
     }
 
 
     double MiscibilityDead::B(int region, double press, const surfvol_t& /*surfvol*/) const
     {
 	// Interpolate 1/B 
-	return 1.0/linearInterpolationExtrap(pvdx_[region][0],
-					     pvdx_[region][1], press);
-
-	//return linearInterpolationExtrap(pvdx_[region][0],
-	//pvdx_[region_number_][1], press);
+	return 1.0/one_over_B_(press);
     }
 
     double MiscibilityDead::dBdp(int region, double press, const surfvol_t& /*surfvol*/) const
@@ -93,12 +92,7 @@ namespace Opm
 	// Interpolate 1/B
 	surfvol_t dummy_surfvol;
 	double Bg = B(region, press, dummy_surfvol);
-	return -Bg*Bg*
-	    linearInterpolDerivative(pvdx_[region][0],
-				     pvdx_[region][1], press);
-
-	//return linearInterpolDerivative(pvdx_[region][0],
-	//			pvdx_[region][1], press);
+	return -Bg*Bg*one_over_B_.derivative(press);
     }
 
     double MiscibilityDead::R(int /*region*/, double /*press*/, const surfvol_t& /*surfvol*/) const

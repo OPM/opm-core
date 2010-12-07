@@ -36,6 +36,7 @@
  */
 
 #include "MiscibilityProps.hpp"
+#include <dune/porsol/common/UniformTableLinear.hpp>
 #include <dune/common/EclipseUnits.hpp>
 
 
@@ -58,7 +59,8 @@ namespace Opm
 
     private:
 	// PVT properties of dry gas or dead oil
-	table_t pvdx_;
+        Dune::utils::UniformTableLinear<double> one_over_B_;
+        Dune::utils::UniformTableLinear<double> viscosity_;
     };
 
 }
