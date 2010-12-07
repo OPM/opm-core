@@ -156,7 +156,7 @@ public:
         // Assemble the embedded linear system.
         compr_quantities cq = { 3, &totcompr[0], &voldiscr[0], &cellA[0], &faceA[0], &phasemobf[0] };
         std::vector<double> gravcap_f(3*num_faces, 0.0);
-        cfs_tpfa_assemble(g, dt, &bc, static_cast<well_t *>(0), src,
+        cfs_tpfa_assemble(g, dt, static_cast<well_t *>(0), &bc, src,
                           &cq, &trans_[0], &gravcap_f[0],
                           static_cast<well_control_t *>(0), // wctrl
                           static_cast<const double *>(0),   // WI
@@ -234,9 +234,9 @@ public:
                             np, &trans_[0], &phasemobf_[0],
                             static_cast<const double *>(0), // WI
                             static_cast<const double *>(0), // wdp
-                            data_, &cell_pressures[0], &face_fluxes[0]
-                            static_cast<double *>(0), // wpress
-                            static_cast<double *>(0)); // wflux
+                            data_, &cell_pressures[0], &face_fluxes[0],
+                            static_cast<double *>(0),       // wpress
+                            static_cast<double *>(0));      // wflux
         cfs_tpfa_fpress(grid_.c_grid(), &bc, np, &htrans_[0],
                         &phasemobf_[0], &cell_pressures[0],
                         &face_fluxes[0], &face_pressures[0]);
