@@ -25,6 +25,7 @@
 #include "trans_tpfa.h"
 #include "sparse_sys.h"
 #include "flow_bc.h"
+#include "well.h"
 #include "compr_quant.h"
 #include "GridAdapter.hpp"
 #include <stdexcept>
@@ -68,7 +69,9 @@ public:
 
         // Initialize data.
         int num_phases = 3;
-        data_ = cfs_tpfa_construct(grid_.c_grid(), num_phases);
+        data_ = cfs_tpfa_construct(grid_.c_grid(),
+                                   static_cast<well_t *>(0),
+                                   num_phases);
         if (!data_) {
             throw std::runtime_error("Failed to initialize cfs_tpfa solver.");
         }
@@ -153,8 +156,12 @@ public:
         // Assemble the embedded linear system.
         compr_quantities cq = { 3, &totcompr[0], &voldiscr[0], &cellA[0], &faceA[0], &phasemobf[0] };
         std::vector<double> gravcap_f(3*num_faces, 0.0);
-        cfs_tpfa_assemble(g, dt, &bc, src,
-                          &cq, &trans_[0], &gravcap_f[0], &cell_pressure[0], &porevol_[0],
+        cfs_tpfa_assemble(g, dt, &bc, static_cast<well_t *>(0), src,
+                          &cq, &trans_[0], &gravcap_f[0],
+                          static_cast<well_control_t *>(0), // wctrl
+                          static_cast<const double *>(0),   // WI
+                          static_cast<const double *>(0),   // wdp
+                          &cell_pressure[0], &porevol_[0],
                           data_);
         phasemobf_ = phasemobf;
         state_ = Assembled;
@@ -223,8 +230,13 @@ public:
         flowbc_t bc = { &bctypes_[0], const_cast<double*>(&bcvalues_[0]) };
         int np = 3; // Number of phases.
         cfs_tpfa_press_flux(grid_.c_grid(),
-                            &bc, np, &trans_[0], &phasemobf_[0],
-                            data_, &cell_pressures[0], &face_fluxes[0]);
+                            &bc, static_cast<well_t *>(0),
+                            np, &trans_[0], &phasemobf_[0],
+                            static_cast<const double *>(0), // WI
+                            static_cast<const double *>(0), // wdp
+                            data_, &cell_pressures[0], &face_fluxes[0]
+                            static_cast<double *>(0), // wpress
+                            static_cast<double *>(0)); // wflux
         cfs_tpfa_fpress(grid_.c_grid(), &bc, np, &htrans_[0],
                         &phasemobf_[0], &cell_pressures[0],
                         &face_fluxes[0], &face_pressures[0]);
