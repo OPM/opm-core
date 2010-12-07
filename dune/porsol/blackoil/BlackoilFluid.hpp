@@ -76,6 +76,8 @@ namespace Opm
         // Per-cell data.
         std::vector<double> totcompr;     // Total compressibility.
         std::vector<double> totphasevol;  // Total volume filled by fluid phases.
+        std::vector<double> voldiscr;     // Volume discrepancy = (totphasevol - porevol)/dt
+        std::vector<double> relvoldiscr;  // Relative volume discrepancy = (totphasevol - porevol)/porevol
         std::vector<double> cellA;        // A = RB^{-1}. Fortran ordering, flat storage.
         std::vector<PhaseVec> saturation; // Saturation.
         std::vector<PhaseVec> frac_flow;  // Fractional flow.
@@ -88,13 +90,15 @@ namespace Opm
         std::vector<PhaseVec> phasemobc;  // Just a helper. Mobilities per cell.
 
     public:
-        template <class Grid>
+        template <class Grid, class Rock>
         void compute(const Grid& grid,
+                     const Rock& rock,
                      const BlackoilFluid& fluid,
                      const std::vector<PhaseVec>& cell_pressure,
                      const std::vector<PhaseVec>& face_pressure,
                      const std::vector<CompVec>& cell_z,
-                     const CompVec& bdy_z)
+                     const CompVec& bdy_z,
+                     const double dt)
         {
             int num_cells = cell_z.size();
             ASSERT(num_cells == grid.numCells());
@@ -105,6 +109,8 @@ namespace Opm
             BOOST_STATIC_ASSERT(np == nc);
             totcompr.resize(num_cells);
             totphasevol.resize(num_cells);
+            voldiscr.resize(num_cells);
+            relvoldiscr.resize(num_cells);
             saturation.resize(num_cells);
             frac_flow.resize(num_cells);
             rel_perm.resize(num_cells);
@@ -118,6 +124,9 @@ namespace Opm
                 FluidStateBlackoil state = fluid.computeState(cell_pressure[cell], cell_z[cell]);
                 totcompr[cell] = state.total_compressibility_;
                 totphasevol[cell] = state.total_phase_volume_;
+                double pv = rock.porosity(cell)*grid.cellVolume(cell);
+                voldiscr[cell] = (totphasevol[cell] - pv)/dt;
+                relvoldiscr[cell] = (totphasevol[cell] - pv)/pv;
                 saturation[cell] = state.saturation_;
                 rel_perm[cell] = state.relperm_;
                 viscosity[cell] = state.viscosity_;
