@@ -100,8 +100,8 @@ public:
         state_ = Initialized;
     }
 
-
-    enum FlowBCTypes { FBC_UNSET, FBC_PRESSURE, FBC_FLUX };
+    /// Boundary condition types.
+    enum FlowBCTypes { FBC_UNSET = UNSET, FBC_PRESSURE = PRESSURE, FBC_FLUX = FLUX};
 
     /// @brief
     /// Assemble the sparse system.
