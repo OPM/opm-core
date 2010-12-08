@@ -65,7 +65,7 @@ namespace Opm
             B_inv[i] = 1.0 / convert::from(pvd_table[region_number][1][i], bunit);
             visc[i] = convert::from(pvd_table[region_number][2][i], units.viscosity);
 	}
-        int samples = 200;
+        int samples = 1025;
         buildUniformMonotoneTable(press, B_inv, samples, one_over_B_);
         buildUniformMonotoneTable(press, visc, samples, viscosity_);
     }
