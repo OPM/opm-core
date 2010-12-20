@@ -184,16 +184,26 @@ void fill_grid(mxArray **out, struct processed_grid *grid)
     }
   }
 
-  mxArray *cellfaces = mxCreateNumericMatrix(num_half_faces, 1,
+  mxArray *cellfaces = mxCreateNumericMatrix(num_half_faces, 2,
 					     mxINT32_CLASS, mxREAL);
   {
     int *iptr = mxGetData(cellfaces);
+    int  c1, c2, cf_tag;
     for (i=0; i<grid->number_of_faces; ++i)
     {
-      int c1 = grid->face_neighbors[2*i];
-      int c2 = grid->face_neighbors[2*i+1];
-      if(c1 != -1) iptr[counter[c1]++] = i+1;
-      if(c2 != -1) iptr[counter[c2]++] = i+1;
+      cf_tag = 2 * grid->face_tag[i] + 1; /* [1, 3, 5] */
+      c1     = grid->face_neighbors[2*i+0];
+      c2     = grid->face_neighbors[2*i+1];
+      if(c1 != -1) {
+        iptr[counter[c1] + 0*num_half_faces] = i+1;
+        iptr[counter[c1] + 1*num_half_faces] = cf_tag + 1; /* out */
+        counter[c1] += 1;
+      }
+      if(c2 != -1) {
+        iptr[counter[c2] + 0*num_half_faces] = i+1;
+        iptr[counter[c2] + 1*num_half_faces] = cf_tag + 0; /* in */
+        counter[c2] += 1;
+      }
     }
   }
   mxSetField(cells, 0, "faces", cellfaces);
