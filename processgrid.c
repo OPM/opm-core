@@ -306,13 +306,13 @@ fill_cells(mxArray *cells, struct processed_grid *grid)
 
 /* ---------------------------------------------------------------------- */
 static mxArray *
-allocate_grid(struct processed_grid *grid)
+allocate_grid(struct processed_grid *grid, const char *func)
 /* ---------------------------------------------------------------------- */
 {
   size_t nflds, nhf;
   const char *fields[] = { "nodes", "faces", "cells", "type", "cartDims" };
 
-  mxArray *G, *nodes, *faces, *cells, *type, *cartDims;
+  mxArray *G, *nodes, *faces, *cells, *type, *typestr, *cartDims;
 
   nflds    = sizeof(fields) / sizeof(fields[0]);
   nhf      = count_halffaces(grid->number_of_faces, grid->face_neighbors);
@@ -323,11 +323,15 @@ allocate_grid(struct processed_grid *grid)
   faces    = allocate_faces(grid->number_of_faces,
                             grid->face_ptr[ grid->number_of_faces ]);
   cells    = allocate_cells(grid->number_of_cells, nhf);
-  type     = mxCreateString("processgrid");
+  type     = mxCreateCellMatrix(1, 1);
+  typestr  = mxCreateString(func);
   cartDims = mxCreateDoubleMatrix(1, 3, mxREAL);
 
-  if ((G     != NULL) && (nodes != NULL) && (faces    != NULL) &&
-      (cells != NULL) && (type  != NULL) && (cartDims != NULL)) {
+  if ((G        != NULL) && (nodes != NULL) && (faces   != NULL) &&
+      (cells    != NULL) && (type  != NULL) && (typestr != NULL) &&
+      (cartDims != NULL)) {
+    mxSetCell(type, 0, typestr);
+
     mxSetField(G, 0, "nodes"   , nodes   );
     mxSetField(G, 0, "faces"   , faces   );
     mxSetField(G, 0, "cells"   , cells   );
@@ -335,6 +339,7 @@ allocate_grid(struct processed_grid *grid)
     mxSetField(G, 0, "cartDims", cartDims);
   } else {
     if (cartDims != NULL) { mxDestroyArray(cartDims); }
+    if (typestr  != NULL) { mxDestroyArray(typestr);  }
     if (type     != NULL) { mxDestroyArray(type);     }
     if (cells    != NULL) { mxDestroyArray(cells);    }
     if (faces    != NULL) { mxDestroyArray(faces);    }
@@ -428,7 +433,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
 
     process_grdecl(&grdecl, tolerance, &g);
 
-    plhs[0] = allocate_grid(&g);
+    plhs[0] = allocate_grid(&g, mexFunctionName());
 
     if (plhs[0] != NULL) {
       fill_grid(plhs[0], &g);
