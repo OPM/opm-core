@@ -388,7 +388,7 @@ args_ok(int nlhs, int nrhs, const mxArray *prhs[])
   ok = ok && (mxGetFieldNumber(prhs[0], "ZCORN"   ) >= 0);
   ok = ok && (mxGetFieldNumber(prhs[0], "ACTNUM"  ) >= 0);
 
-  if (nrhs == 2) {
+  if (ok && (nrhs == 2)) {
     ok = mxIsDouble(prhs[1]) && (mxGetNumberOfElements(prhs[1]) == 1);
   }
 
