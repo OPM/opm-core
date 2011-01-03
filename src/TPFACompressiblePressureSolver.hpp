@@ -33,27 +33,27 @@
 
 
 /// @brief
-/// Encapsulates the cfs_tpfa (= compressible flow solver
-/// two-point flux approximation) solver modules.
+///     Encapsulates the cfs_tpfa (= compressible flow solver
+///     two-point flux approximation) solver modules.
 class TPFACompressiblePressureSolver
 {
 public:
     /// @brief
-    /// Default constructor, does nothing.
+    ///     Default constructor, does nothing.
     TPFACompressiblePressureSolver()
         :  state_(Uninitialized), data_(0)
     {
     }
 
     /// @brief
-    /// Destructor.
+    ///     Destructor.
     ~TPFACompressiblePressureSolver()
     {
         cfs_tpfa_destroy(data_);
     }
 
     /// @brief
-    /// Initialize the solver's structures for a given grid (at some point also well pattern).
+    ///     Initialize the solver's structures for a given grid, for well setup also call initWells().
     /// @tparam Grid This must conform to the SimpleGrid concept.
     /// @param grid The grid object.
     /// @param perm Permeability. It should contain dim*dim entries (a full tensor) for each cell.
@@ -99,6 +99,13 @@ public:
 
         state_ = Initialized;
     }
+
+    /// @brief
+    ///     Initialize wells in solver structure.
+    void initWells()
+    {
+    }
+
 
     /// Boundary condition types.
     enum FlowBCTypes { FBC_UNSET = UNSET, FBC_PRESSURE = PRESSURE, FBC_FLUX = FLUX};
@@ -148,19 +155,22 @@ public:
         // Source terms from user.
         double* src = const_cast<double*>(&sources[0]); // Ugly? Yes. Safe? I think so.
 
-        // All well related things are zero.
-//         well_control_t* wctrl = 0;
-//         double* WI = 0;
-//         double* wdp = 0;
+        // Wells.
+        well_control_t* wctrl = 0;
+        double* WI = 0;
+        double* wdp = 0;
+        if (!wctrl_.empty()) {
+            wctrl = &wctrl_[0];
+            WI = &well_indices_[0];
+            wdp = &wdp_[0];
+        }
 
         // Assemble the embedded linear system.
         compr_quantities cq = { 3, &totcompr[0], &voldiscr[0], &cellA[0], &faceA[0], &phasemobf[0] };
         std::vector<double> gravcap_f(3*num_faces, 0.0);
         cfs_tpfa_assemble(g, dt, static_cast<well_t *>(0), &bc, src,
                           &cq, &trans_[0], &gravcap_f[0],
-                          static_cast<well_control_t *>(0), // wctrl
-                          static_cast<const double *>(0),   // WI
-                          static_cast<const double *>(0),   // wdp
+                          wctrl, WI, wdp,
                           &cell_pressure[0], &porevol_[0],
                           data_);
         phasemobf_ = phasemobf;
@@ -210,7 +220,9 @@ public:
     /// @param[out] face_areas Face flux values.
     void computePressuresAndFluxes(std::vector<double>& cell_pressures,
                                    std::vector<double>& face_pressures,
-                                   std::vector<double>& face_fluxes)
+                                   std::vector<double>& face_fluxes,
+                                   std::vector<double>& well_pressures,
+                                   std::vector<double>& well_fluxes)
     {
         if (state_ != Assembled) {
             throw std::runtime_error("Error in TPFACompressiblePressureSolver::computePressuresAndFluxes(): "
@@ -229,14 +241,27 @@ public:
 //                             data_, &cell_pressures[0], &face_fluxes[0]);
         flowbc_t bc = { &bctypes_[0], const_cast<double*>(&bcvalues_[0]) };
         int np = 3; // Number of phases.
+
+        // Wells.
+        double* WI = 0;
+        double* wdp = 0;
+        double* wpress = 0;
+        double* wflux = 0;
+        if (!wctrl_.empty()) {
+            WI = &well_indices_[0];
+            wdp = &wdp_[0];
+            well_pressures.resize(-1);
+            well_fluxes.resize(-1);
+            wpress = &well_pressures[0];
+            wflux = &well_fluxes[0];
+        }
+
         cfs_tpfa_press_flux(grid_.c_grid(),
                             &bc, static_cast<well_t *>(0),
                             np, &trans_[0], &phasemobf_[0],
-                            static_cast<const double *>(0), // WI
-                            static_cast<const double *>(0), // wdp
+                            WI, wdp,
                             data_, &cell_pressures[0], &face_fluxes[0],
-                            static_cast<double *>(0),       // wpress
-                            static_cast<double *>(0));      // wflux
+                            wpress, wflux);
         cfs_tpfa_fpress(grid_.c_grid(), &bc, np, &htrans_[0],
                         &phasemobf_[0], &cell_pressures[0],
                         &face_fluxes[0], &face_pressures[0]);
@@ -321,6 +346,12 @@ private:
     // Boundary conditions.
     std::vector<flowbc_type> bctypes_;
     std::vector<double> bcvalues_;
+
+    // Well data
+    std::vector<well_control_t> wctrl_;
+    std::vector<double> well_indices_;
+    std::vector<double> wdp_;
+
 };
 
 
