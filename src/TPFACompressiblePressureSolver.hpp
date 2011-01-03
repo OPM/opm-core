@@ -156,10 +156,12 @@ public:
         double* src = const_cast<double*>(&sources[0]); // Ugly? Yes. Safe? I think so.
 
         // Wells.
+        well_t* wells = 0;
         well_control_t* wctrl = 0;
         double* WI = 0;
         double* wdp = 0;
         if (!wctrl_.empty()) {
+            wells = &wells_;
             wctrl = &wctrl_[0];
             WI = &well_indices_[0];
             wdp = &wdp_[0];
@@ -168,7 +170,7 @@ public:
         // Assemble the embedded linear system.
         compr_quantities cq = { 3, &totcompr[0], &voldiscr[0], &cellA[0], &faceA[0], &phasemobf[0] };
         std::vector<double> gravcap_f(3*num_faces, 0.0);
-        cfs_tpfa_assemble(g, dt, static_cast<well_t *>(0), &bc, src,
+        cfs_tpfa_assemble(g, dt, wells, &bc, src,
                           &cq, &trans_[0], &gravcap_f[0],
                           wctrl, WI, wdp,
                           &cell_pressure[0], &porevol_[0],
@@ -250,8 +252,8 @@ public:
         if (!wctrl_.empty()) {
             WI = &well_indices_[0];
             wdp = &wdp_[0];
-            well_pressures.resize(-1);
-            well_fluxes.resize(-1);
+            well_pressures.resize(wells_.number_of_wells);
+            well_fluxes.resize(well_cells_storage_.size());
             wpress = &well_pressures[0];
             wflux = &well_fluxes[0];
         }
@@ -348,6 +350,9 @@ private:
     std::vector<double> bcvalues_;
 
     // Well data
+    well_t wells_;
+    std::vector<int> well_connpos_storage_;
+    std::vector<int> well_cells_storage_;
     std::vector<well_control_t> wctrl_;
     std::vector<double> well_indices_;
     std::vector<double> wdp_;
