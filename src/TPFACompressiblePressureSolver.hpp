@@ -43,6 +43,7 @@ public:
     TPFACompressiblePressureSolver()
         :  state_(Uninitialized), data_(0)
     {
+        wells_.number_of_wells = 0;
     }
 
 
@@ -64,6 +65,19 @@ public:
     /// @param grid The grid object.
     /// @param perm Permeability. It should contain dim*dim entries (a full tensor) for each cell.
     /// @param gravity Array containing gravity acceleration vector. It should contain dim entries.
+    template <class Grid, class Wells>
+    void init(const Grid& grid, const Wells& wells, const double* perm, const double* porosity)
+    {
+        initWells(wells);
+        init(grid, perm, porosity);
+    }
+
+    /// @brief
+    ///     Initialize the solver's structures for a given grid, for well setup also call initWells().
+    /// @tparam Grid This must conform to the SimpleGrid concept.
+    /// @param grid The grid object.
+    /// @param perm Permeability. It should contain dim*dim entries (a full tensor) for each cell.
+    /// @param gravity Array containing gravity acceleration vector. It should contain dim entries.
     template <class Grid>
     void init(const Grid& grid, const double* perm, const double* porosity)
     {
@@ -75,9 +89,11 @@ public:
 
         // Initialize data.
         int num_phases = 3;
-        data_ = cfs_tpfa_construct(grid_.c_grid(),
-                                   static_cast<well_t *>(0),
-                                   num_phases);
+        well_t* w = 0;
+        if (wells_.number_of_wells != 0) {
+            w = &wells_;
+        }
+        data_ = cfs_tpfa_construct(grid_.c_grid(), w, num_phases);
         if (!data_) {
             throw std::runtime_error("Failed to initialize cfs_tpfa solver.");
         }
@@ -104,50 +120,7 @@ public:
         }
 
         state_ = Initialized;
-
-        // This will be changed if initWells() is called.
-        wells_.number_of_wells = 0;
     }
-
-
-
-
-    /// @brief
-    ///     Initialize wells in solver structure.
-    /// @tparam Wells
-    ///     This must conform to the SimpleWells concept.
-    /// @param w
-    ///     The well object.
-    template <class Wells>
-    void initWells(const Wells& w)
-    {
-        int num_wells = w.numWells();
-        wctrl_type_storage_.resize(num_wells);
-        wctrl_ctrl_storage_.resize(num_wells);
-        wctrl_target_storage_.resize(num_wells);
-        for (int i = 0; i < num_wells; ++i) {
-            wctrl_type_storage_[i] = (w.type(i) == Wells::Injector) ? INJECTOR : PRODUCER;
-            wctrl_ctrl_storage_[i] = (w.control(i) == Wells::Rate) ? RATE : BHP;
-            wctrl_target_storage_[i] = w.target(i);
-            int num_perf = w.numPerforations(i);
-            well_connpos_storage_.push_back(well_cells_storage_.size());
-            for (int j = 0; j < num_perf; ++j) {
-                well_cells_storage_.push_back(w.wellCell(i, j));
-                well_indices_.push_back(w.wellIndex(i, j));
-                wdp_.push_back(w.pressureDelta(i, j));
-            }
-        }
-        well_connpos_storage_.push_back(well_connpos_storage_.size());
-        // Setup 'wells_'
-        wells_.number_of_wells = num_wells;
-        wells_.well_connpos = &well_connpos_storage_[0];
-        wells_.well_cells = &well_cells_storage_[0];
-        // Setup 'wctrl_'
-        wctrl_.type = &wctrl_type_storage_[0];
-        wctrl_.ctrl = &wctrl_ctrl_storage_[0];
-        wctrl_.target = &wctrl_target_storage_[0];
-    }
-
 
 
 
@@ -419,6 +392,43 @@ private:
     std::vector<double> wctrl_target_storage_;
     std::vector<double> well_indices_;
     std::vector<double> wdp_;
+
+
+    /// @brief
+    ///     Initialize wells in solver structure.
+    /// @tparam Wells
+    ///     This must conform to the SimpleWells concept.
+    /// @param w
+    ///     The well object.
+    template <class Wells>
+    void initWells(const Wells& w)
+    {
+        int num_wells = w.numWells();
+        wctrl_type_storage_.resize(num_wells);
+        wctrl_ctrl_storage_.resize(num_wells);
+        wctrl_target_storage_.resize(num_wells);
+        for (int i = 0; i < num_wells; ++i) {
+            wctrl_type_storage_[i] = (w.type(i) == Wells::Injector) ? INJECTOR : PRODUCER;
+            wctrl_ctrl_storage_[i] = (w.control(i) == Wells::Rate) ? RATE : BHP;
+            wctrl_target_storage_[i] = w.target(i);
+            int num_perf = w.numPerforations(i);
+            well_connpos_storage_.push_back(well_cells_storage_.size());
+            for (int j = 0; j < num_perf; ++j) {
+                well_cells_storage_.push_back(w.wellCell(i, j));
+                well_indices_.push_back(w.wellIndex(i, j));
+                wdp_.push_back(w.pressureDelta(i, j));
+            }
+        }
+        well_connpos_storage_.push_back(well_connpos_storage_.size());
+        // Setup 'wells_'
+        wells_.number_of_wells = num_wells;
+        wells_.well_connpos = &well_connpos_storage_[0];
+        wells_.well_cells = &well_cells_storage_[0];
+        // Setup 'wctrl_'
+        wctrl_.type = &wctrl_type_storage_[0];
+        wctrl_.ctrl = &wctrl_ctrl_storage_[0];
+        wctrl_.target = &wctrl_target_storage_[0];
+    }
 
 };
 
