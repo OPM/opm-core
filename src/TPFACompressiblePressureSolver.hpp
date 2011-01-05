@@ -45,12 +45,18 @@ public:
     {
     }
 
+
+
+
     /// @brief
     ///     Destructor.
     ~TPFACompressiblePressureSolver()
     {
         cfs_tpfa_destroy(data_);
     }
+
+
+
 
     /// @brief
     ///     Initialize the solver's structures for a given grid, for well setup also call initWells().
@@ -100,11 +106,37 @@ public:
         state_ = Initialized;
     }
 
+
+
+
     /// @brief
     ///     Initialize wells in solver structure.
-    void initWells()
+    /// @tparam Wells
+    ///     This must conform to the SimpleWells concept.
+    /// @param w
+    ///     The well object.
+    template <class Wells>
+    void initWells(const Wells& w)
     {
+        int num_wells = w.numWells();
+        wells_.number_of_wells = num_wells;
+        wctrl_.resize(num_wells);
+        for (int i = 0; i < num_wells; ++i) {
+            wctrl_[i] = (w.control(i) == Wells::Rate) ? RATE : BHP;
+            int num_perf = w.numPerforations(i);
+            well_connpos_storage_.push_back(well_cells_storage_.size());
+            for (int j = 0; j < num_perf; ++j) {
+                well_cells_storage_.push_back(w.wellCell(i, j));
+                well_indices_.push_back(w.wellIndex(i, j));
+                wdp_.push_back(w.pressureDelta(i, j));
+            }
+        }
+        well_connpos_storage_.push_back(well_connpos_storage_.size());
+        wells_.well_connpos = &well_connpos_storage_[0];
+        wells_.well_cells = &well_cells_storage_[0];
     }
+
+
 
 
     /// Boundary condition types.
@@ -179,6 +211,9 @@ public:
         state_ = Assembled;
     }
 
+
+
+
     /// Encapsulate a sparse linear system in CSR format.
     struct LinearSystem
     {
@@ -212,6 +247,9 @@ public:
         s.b = data_->b;
         s.x = data_->x;
     }
+
+
+
 
     /// @brief
     /// Compute cell pressures and face fluxes.
@@ -270,6 +308,10 @@ public:
     }
 
 
+
+
+    /// @brief
+    ///     Explicit IMPES transport.
     void explicitTransport(const double dt,
                            const double* cell_pressures,
                            double* cell_surfvols)
@@ -283,6 +325,9 @@ public:
                                      &masstrans_f[0], &gravtrans_f[0],
                                      cell_pressures, cell_surfvols);
     }
+
+
+
 
     /// @brief
     /// Compute cell fluxes from face fluxes.
@@ -315,6 +360,9 @@ public:
             }
         }
     }
+
+
+
 
     /// @brief
     /// Access the number of connections (faces) per cell. Deprecated, will be removed.
