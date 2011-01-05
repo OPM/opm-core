@@ -104,6 +104,9 @@ public:
         }
 
         state_ = Initialized;
+
+        // This will be changed if initWells() is called.
+        wells_.number_of_wells = 0;
     }
 
 
@@ -119,10 +122,13 @@ public:
     void initWells(const Wells& w)
     {
         int num_wells = w.numWells();
-        wells_.number_of_wells = num_wells;
-        wctrl_.resize(num_wells);
+        wctrl_type_storage_.resize(num_wells);
+        wctrl_ctrl_storage_.resize(num_wells);
+        wctrl_target_storage_.resize(num_wells);
         for (int i = 0; i < num_wells; ++i) {
-            wctrl_[i] = (w.control(i) == Wells::Rate) ? RATE : BHP;
+            wctrl_type_storage_[i] = (w.type(i) == Wells::Injector) ? INJECTOR : PRODUCER;
+            wctrl_ctrl_storage_[i] = (w.control(i) == Wells::Rate) ? RATE : BHP;
+            wctrl_target_storage_[i] = w.target(i);
             int num_perf = w.numPerforations(i);
             well_connpos_storage_.push_back(well_cells_storage_.size());
             for (int j = 0; j < num_perf; ++j) {
@@ -132,8 +138,14 @@ public:
             }
         }
         well_connpos_storage_.push_back(well_connpos_storage_.size());
+        // Setup 'wells_'
+        wells_.number_of_wells = num_wells;
         wells_.well_connpos = &well_connpos_storage_[0];
         wells_.well_cells = &well_cells_storage_[0];
+        // Setup 'wctrl_'
+        wctrl_.type = &wctrl_type_storage_[0];
+        wctrl_.ctrl = &wctrl_ctrl_storage_[0];
+        wctrl_.target = &wctrl_target_storage_[0];
     }
 
 
@@ -192,9 +204,9 @@ public:
         well_control_t* wctrl = 0;
         double* WI = 0;
         double* wdp = 0;
-        if (!wctrl_.empty()) {
+        if (wells_.number_of_wells != 0) {
             wells = &wells_;
-            wctrl = &wctrl_[0];
+            wctrl = &wctrl_;
             WI = &well_indices_[0];
             wdp = &wdp_[0];
         }
@@ -287,7 +299,7 @@ public:
         double* wdp = 0;
         double* wpress = 0;
         double* wflux = 0;
-        if (!wctrl_.empty()) {
+        if (wells_.number_of_wells != 0) {
             WI = &well_indices_[0];
             wdp = &wdp_[0];
             well_pressures.resize(wells_.number_of_wells);
@@ -401,7 +413,10 @@ private:
     well_t wells_;
     std::vector<int> well_connpos_storage_;
     std::vector<int> well_cells_storage_;
-    std::vector<well_control_t> wctrl_;
+    well_control_t wctrl_;
+    std::vector<well_type> wctrl_type_storage_;
+    std::vector<well_control> wctrl_ctrl_storage_;
+    std::vector<double> wctrl_target_storage_;
     std::vector<double> well_indices_;
     std::vector<double> wdp_;
 
