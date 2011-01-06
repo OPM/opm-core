@@ -266,7 +266,7 @@ public:
     {
         throw std::logic_error("diffCoeff() not implemented.");
         return 0.0;
-    };
+    }
 
     /*!
      * \brief Given a phase's composition, temperature and pressure,
