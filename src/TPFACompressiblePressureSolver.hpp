@@ -268,11 +268,13 @@ public:
         int np = 3; // Number of phases.
 
         // Wells.
+        well_t* w = 0;
         double* WI = 0;
         double* wdp = 0;
         double* wpress = 0;
         double* wflux = 0;
         if (wells_.number_of_wells != 0) {
+            w = &wells_;
             WI = &well_indices_[0];
             wdp = &wdp_[0];
             well_pressures.resize(wells_.number_of_wells);
@@ -282,7 +284,7 @@ public:
         }
 
         cfs_tpfa_press_flux(grid_.c_grid(),
-                            &bc, static_cast<well_t *>(0),
+                            &bc, w,
                             np, &trans_[0], &phasemobf_[0],
                             WI, wdp,
                             data_, &cell_pressures[0], &face_fluxes[0],
