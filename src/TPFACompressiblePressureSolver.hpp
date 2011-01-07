@@ -410,6 +410,10 @@ private:
     void initWells(const Wells& w)
     {
         int num_wells = w.numWells();
+        if (num_wells == 0) {
+            wells_.number_of_wells = 0;
+            return;
+        }
         wctrl_type_storage_.resize(num_wells);
         wctrl_ctrl_storage_.resize(num_wells);
         wctrl_target_storage_.resize(num_wells);
