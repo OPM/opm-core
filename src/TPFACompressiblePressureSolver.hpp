@@ -62,14 +62,18 @@ public:
     /// @brief
     ///     Initialize the solver's structures for a given grid, for well setup also call initWells().
     /// @tparam Grid This must conform to the SimpleGrid concept.
+    /// @tparam Wells This must conform to the SimpleWells concept.
     /// @param grid The grid object.
+    /// @param wells Well specifications.
     /// @param perm Permeability. It should contain dim*dim entries (a full tensor) for each cell.
+    /// @param perm Porosity by cell.
     /// @param gravity Array containing gravity acceleration vector. It should contain dim entries.
     template <class Grid, class Wells>
-    void init(const Grid& grid, const Wells& wells, const double* perm, const double* porosity)
+    void init(const Grid& grid, const Wells& wells, const double* perm, const double* porosity,
+              const typename Grid::Vector& gravity)
     {
         initWells(wells);
-        init(grid, perm, porosity);
+        init(grid, perm, porosity, gravity);
     }
 
     /// @brief
@@ -79,13 +83,10 @@ public:
     /// @param perm Permeability. It should contain dim*dim entries (a full tensor) for each cell.
     /// @param gravity Array containing gravity acceleration vector. It should contain dim entries.
     template <class Grid>
-    void init(const Grid& grid, const double* perm, const double* porosity)
+    void init(const Grid& grid, const double* perm, const double* porosity, const typename Grid::Vector& gravity)
     {
         // Build C grid structure.
         grid_.init(grid);
-
-        // Build (empty for now) C well structure.
-        // well_t* w = 0;
 
         // Initialize data.
         int num_phases = 3;
@@ -119,6 +120,12 @@ public:
             porevol_[i] = porosity[i]*grid.cellVolume(i);
         }
 
+        // Set gravity.
+        if (Grid::dimension != 3) {
+            throw std::logic_error("Only 3 dimensions supported currently.");
+        }
+        std::copy(gravity.begin(), gravity.end(), gravity_);
+
         state_ = Initialized;
     }
 
@@ -147,7 +154,8 @@ public:
                   const std::vector<double>& cellA,  // num phases^2 * num cells, fortran ordering!
                   const std::vector<double>& faceA,  // num phases^2 * num faces, fortran ordering!
                   const std::vector<double>& phasemobf,
-                  const std::vector<double>& cell_pressure)
+                  const std::vector<double>& cell_pressure,
+                  const double* surf_dens)
     {
         if (state_ == Uninitialized) {
             throw std::runtime_error("Error in TPFACompressiblePressureSolver::assemble(): You must call init() prior to calling assemble().");
@@ -187,6 +195,37 @@ public:
         // Assemble the embedded linear system.
         compr_quantities cq = { 3, &totcompr[0], &voldiscr[0], &cellA[0], &faceA[0], &phasemobf[0] };
         std::vector<double> gravcap_f(3*num_faces, 0.0);
+        typedef GridAdapter::Vector Vec;
+        for (int face = 0; face < num_faces; ++face) {
+            Vec fc = grid_.faceCentroid(face);
+            double grav_contrib[3] = { 0.0, 0.0, 0.0 };
+            for (int local_cell = 0; local_cell < 2; ++local_cell) {
+                // Total contribution is sum over neighbouring cells.
+                int cell = grid_.faceCell(face, local_cell);
+                if (cell == -1) {
+                    // \TODO check that a zero contribution is correct on boundary.
+                    continue;
+                }
+                // Compute phase densities in cell.
+                double phase_dens[3] = { 0.0, 0.0, 0.0 };
+                for (int phase = 0; phase < 3; ++phase) {
+                    const double* At = &cellA[9*cell]; // Already transposed since in Fortran order...
+                    for (int comp = 0; comp < 3; ++comp) {
+                        phase_dens[phase] += At[3*phase + comp]*surf_dens[comp];
+                    }
+                }
+                // Compute geometric part.
+                double gdz = 0.0;
+                Vec cc = grid_.cellCentroid(cell);
+                for (int dd = 0; dd < 3; ++dd) {
+                    gdz += (cc[dd] - fc[dd])*gravity_[dd];
+                }
+                // Add contribution from this cell.
+                for (int phase = 0; phase < 3; ++phase) {
+                    gravcap_f[3*face + phase] += gdz*phase_dens[phase];
+                }
+            }
+        }
         cfs_tpfa_assemble(g, dt, wells, &bc, src,
                           &cq, &trans_[0], &gravcap_f[0],
                           wctrl, WI, wdp,
@@ -383,6 +422,8 @@ private:
     std::vector<double> porevol_;
     // Phase mobilities per face.
     std::vector<double> phasemobf_;
+    // Gravity
+    double gravity_[3];
 
     // Boundary conditions.
     std::vector<flowbc_type> bctypes_;
