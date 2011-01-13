@@ -219,6 +219,9 @@ public:
                 for (int dd = 0; dd < 3; ++dd) {
                     gdz += (cc[dd] - fc[dd])*gravity_[dd];
                 }
+                if (local_cell == 1) {
+                    gdz *= -1.0;
+                }
                 // Add contribution from this cell.
                 for (int phase = 0; phase < 3; ++phase) {
                     gravcap_f[3*face + phase] += gdz*phase_dens[phase];
@@ -395,9 +398,15 @@ public:
 
     /// @brief
     /// Access the number of connections (faces) per cell. Deprecated, will be removed.
-    const std::vector<int>& numCellFaces()
+    const std::vector<int>& numCellFaces() const
     {
         return ncf_;
+    }
+
+
+    const std::vector<double>& faceTransmissibilities() const
+    {
+        return trans_;
     }
 
 private:
