@@ -97,8 +97,7 @@ namespace Opm
         // Per-face data.
         std::vector<double> faceA;        // A = RB^{-1}. Fortran ordering, flat storage.
         std::vector<double> phasemobf;    // Phase mobilities. Flat storage (numPhases per face).
-    private:
-        std::vector<PhaseVec> phasemobc;  // Just a helper. Mobilities per cell.
+        std::vector<PhaseVec> phasemobc;  // Phase mobilities per cell.
 
     public:
         template <class Grid, class Rock>
