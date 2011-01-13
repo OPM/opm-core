@@ -198,7 +198,6 @@ public:
         typedef GridAdapter::Vector Vec;
         for (int face = 0; face < num_faces; ++face) {
             Vec fc = grid_.faceCentroid(face);
-            double grav_contrib[3] = { 0.0, 0.0, 0.0 };
             for (int local_cell = 0; local_cell < 2; ++local_cell) {
                 // Total contribution is sum over neighbouring cells.
                 int cell = grid_.faceCell(face, local_cell);
