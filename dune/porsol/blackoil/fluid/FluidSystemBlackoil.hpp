@@ -175,7 +175,7 @@ public:
         double detR = 1.0 - R[Vapour]*R[Liquid];
         u[Aqua] = B[Aqua]*z[Water];
         u[Vapour] = B[Vapour]*(z[Gas] - R[Liquid]*z[Oil])/detR;
-        u[Liquid] = B[Aqua]*(z[Oil] - R[Vapour]*z[Gas])/detR;
+        u[Liquid] = B[Liquid]*(z[Oil] - R[Vapour]*z[Gas])/detR;
         fluid_state.total_phase_volume_ = u[Aqua] + u[Vapour] + u[Liquid];
 
         // Update saturations.
