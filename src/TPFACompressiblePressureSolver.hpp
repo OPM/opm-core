@@ -234,6 +234,7 @@ public:
                           &cell_pressure[0], &porevol_[0],
                           data_);
         phasemobf_ = phasemobf;
+        gravcapf_  = gravcap_f;
         state_ = Assembled;
     }
 
@@ -326,12 +327,12 @@ public:
 
         cfs_tpfa_press_flux(grid_.c_grid(),
                             &bc, w,
-                            np, &trans_[0], &phasemobf_[0],
+                            np, &trans_[0], &phasemobf_[0], &gravcapf_[0],
                             WI, wdp,
                             data_, &cell_pressures[0], &face_fluxes[0],
                             wpress, wflux);
         cfs_tpfa_fpress(grid_.c_grid(), &bc, np, &htrans_[0],
-                        &phasemobf_[0], &cell_pressures[0],
+                        &phasemobf_[0], &gravcapf_[0], &cell_pressures[0],
                         &face_fluxes[0], &face_pressures[0]);
     }
 
@@ -430,6 +431,8 @@ private:
     std::vector<double> porevol_;
     // Phase mobilities per face.
     std::vector<double> phasemobf_;
+    // Gravity and capillary contributions (per face).
+    std::vector<double> gravcapf_;
     // Gravity
     double gravity_[3];
 
