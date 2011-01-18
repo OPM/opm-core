@@ -179,21 +179,23 @@ namespace Opm
 						 saturated_oil_table_[item],
 						 press);
 	    } else {  // Undersaturated case
+	      std::cerr << "###\n###  MiscibilityLiveOil::miscible_oil, undersaturated case, cannot be trusted ...\n###" << std::endl;
+	      exit(-1);
 		int is = tableIndex(saturated_oil_table_[3], maxR);
 
 		// Extrapolate from first table section
 		if (is == 0 && press < saturated_oil_table_[0][0]) {
-		    return linearInterpolationExtrap(undersat_oil_tables_[0][0],
+		    return linearInterpolationExtrap(undersat_oil_tables_[0][0], // pressure ... // Dimensions?
 						     undersat_oil_tables_[0][item],
-						     maxR);
+						     maxR); // NOT pressure ...
 		}
 
 		// Extrapolate from last table section
 		int ltp = saturated_oil_table_[0].size() - 1;
 		if (is+1 == ltp && press > saturated_oil_table_[0][ltp]) {
-		    return linearInterpolationExtrap(undersat_oil_tables_[ltp][0],
+		    return linearInterpolationExtrap(undersat_oil_tables_[ltp][0], // pressure ... // Dimension ok -> eclipse PVTO
 						     undersat_oil_tables_[ltp][item],
-						     maxR);
+						     maxR); // NOT pressure ...
 		}
 
 		// Interpolate between table sections
@@ -211,7 +213,7 @@ namespace Opm
 					      undersat_oil_tables_[is][item],
 					      press);
 		double val2 = 
-		    linearInterpolationExtrap(undersat_oil_tables_[is+1][0],
+		    linearInterpolationExtrap(undersat_oil_tables_[is+1][0], // Dimensions?
 					      undersat_oil_tables_[is+1][item],
 					      press);
 		double val = val1 + w*(val2 - val1);
