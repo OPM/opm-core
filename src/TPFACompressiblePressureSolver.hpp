@@ -153,8 +153,11 @@ public:
                   const std::vector<double>& voldiscr,
                   const std::vector<double>& cellA,  // num phases^2 * num cells, fortran ordering!
                   const std::vector<double>& faceA,  // num phases^2 * num faces, fortran ordering!
+                  const std::vector<double>& wellperfA,
                   const std::vector<double>& phasemobf,
+                  const std::vector<double>& phasemobwellperf,
                   const std::vector<double>& cell_pressure,
+                  const std::vector<double>& wellperf_gpot,
                   const double* surf_dens)
     {
         if (state_ == Uninitialized) {
@@ -181,15 +184,16 @@ public:
         double* src = const_cast<double*>(&sources[0]); // Ugly? Yes. Safe? I think so.
 
         // Wells.
-        well_t* wells = 0;
-        well_control_t* wctrl = 0;
-        double* WI = 0;
-        double* wdp = 0;
+        well_t* wells = NULL;
+        well_control_t* wctrl = NULL;
+        struct completion_data* wcompl = NULL;
         if (wells_.number_of_wells != 0) {
             wells = &wells_;
             wctrl = &wctrl_;
-            WI = &well_indices_[0];
-            wdp = &wdp_[0];
+            wcompl = &wcompl_;
+            well_gpot_storage_ = wellperf_gpot;
+            well_A_storage_ = wellperfA;
+            well_phasemob_storage_ = phasemobwellperf;
         }
 
         // Assemble the embedded linear system.
@@ -230,7 +234,7 @@ public:
         }
         cfs_tpfa_assemble(g, dt, wells, &bc, src,
                           &cq, &trans_[0], &gravcap_f[0],
-                          wctrl, WI, wdp,
+                          wctrl, wcompl,
                           &cell_pressure[0], &porevol_[0],
                           data_);
         phasemobf_ = phasemobf;
@@ -310,15 +314,13 @@ public:
         int np = 3; // Number of phases.
 
         // Wells.
-        well_t* w = 0;
-        double* WI = 0;
-        double* wdp = 0;
+        well_t* wells = NULL;
+        struct completion_data* wcompl = NULL;
         double* wpress = 0;
         double* wflux = 0;
         if (wells_.number_of_wells != 0) {
-            w = &wells_;
-            WI = &well_indices_[0];
-            wdp = &wdp_[0];
+            wells = &wells_;
+            wcompl = &wcompl_;
             well_pressures.resize(wells_.number_of_wells);
             well_fluxes.resize(well_cells_storage_.size());
             wpress = &well_pressures[0];
@@ -326,9 +328,9 @@ public:
         }
 
         cfs_tpfa_press_flux(grid_.c_grid(),
-                            &bc, w,
+                            &bc, wells,
                             np, &trans_[0], &phasemobf_[0], &gravcapf_[0],
-                            WI, wdp,
+                            wcompl,
                             data_, &cell_pressures[0], &face_fluxes[0],
                             wpress, wflux);
         cfs_tpfa_fpress(grid_.c_grid(), &bc, np, &htrans_[0],
@@ -448,8 +450,11 @@ private:
     std::vector<well_type> wctrl_type_storage_;
     std::vector<well_control> wctrl_ctrl_storage_;
     std::vector<double> wctrl_target_storage_;
-    std::vector<double> well_indices_;
-    std::vector<double> wdp_;
+    struct completion_data wcompl_;
+    std::vector<double> well_prodind_storage_;
+    std::vector<double> well_gpot_storage_;
+    std::vector<double> well_A_storage_;
+    std::vector<double> well_phasemob_storage_;
 
 
     /// @brief
@@ -477,11 +482,14 @@ private:
             well_connpos_storage_.push_back(well_cells_storage_.size());
             for (int j = 0; j < num_perf; ++j) {
                 well_cells_storage_.push_back(w.wellCell(i, j));
-                well_indices_.push_back(w.wellIndex(i, j));
-                wdp_.push_back(w.pressureDelta(i, j));
+                well_prodind_storage_.push_back(w.wellIndex(i, j));
             }
         }
         well_connpos_storage_.push_back(well_connpos_storage_.size());
+        int tot_num_perf = well_prodind_storage_.size();
+        well_gpot_storage_.resize(tot_num_perf);
+        well_A_storage_.resize(3*3*tot_num_perf);
+        well_phasemob_storage_.resize(3*tot_num_perf);
         // Setup 'wells_'
         wells_.number_of_wells = num_wells;
         wells_.well_connpos = &well_connpos_storage_[0];
@@ -490,6 +498,11 @@ private:
         wctrl_.type = &wctrl_type_storage_[0];
         wctrl_.ctrl = &wctrl_ctrl_storage_[0];
         wctrl_.target = &wctrl_target_storage_[0];
+        // Setup 'wcompl_'
+        wcompl_.WI = &well_prodind_storage_[0];
+        wcompl_.gpot = &well_gpot_storage_[0];
+        wcompl_.A = &well_A_storage_[0];
+        wcompl_.phasemob = &well_phasemob_storage_[0];
     }
 
 };
