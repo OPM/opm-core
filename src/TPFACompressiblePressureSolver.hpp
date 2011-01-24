@@ -228,7 +228,7 @@ public:
                 }
                 // Add contribution from this cell.
                 for (int phase = 0; phase < 3; ++phase) {
-                    gravcap_f[3*face + phase] += gdz*phase_dens[phase];
+                    gravcap_f[3*face + phase] -= gdz*phase_dens[phase];
                 }
             }
         }
