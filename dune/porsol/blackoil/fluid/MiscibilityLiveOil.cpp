@@ -81,6 +81,92 @@ namespace Opm
 		undersat_oil_tables_[i][2][j] = convert::from(pvto[region_number][i][++k], units.viscosity);  // mu_o
 	    }
 	}
+	
+	
+	// Fill in additional entries in undersaturated tables by interpolating/extrapolating 1/Bo and mu_o ...
+	int iPrev = -1;
+	int iNext = 1;
+	while (undersat_oil_tables_[iNext][0].size() < 2) {
+		++iNext;
+	}
+	assert(iNext < sz); 
+	for (int i=0; i<sz; ++i) {
+		if (undersat_oil_tables_[i][0].size() > 1) {
+			iPrev = i;
+			continue;
+		}
+		
+		bool flagPrev = (iPrev >= 0); 
+		bool flagNext = true;			
+		if (iNext < i) {
+			iPrev = iNext;
+			flagPrev = true;
+			iNext = i+1;
+			while (undersat_oil_tables_[iNext][0].size() < 2) {
+				++iNext;
+			}
+		}				
+		double slopePrevBinv = 0.0;
+		double slopePrevVisc = 0.0;
+		double slopeNextBinv = 0.0;
+		double slopeNextVisc = 0.0;
+		while (flagPrev || flagNext) {
+			double pressure0 = undersat_oil_tables_[i][0].back();
+			double pressure = 1.0e47;
+			if (flagPrev) {
+				std::vector<double>::iterator itPrev = upper_bound(undersat_oil_tables_[iPrev][0].begin(),
+				                                                   undersat_oil_tables_[iPrev][0].end(),pressure0+1.);
+				if (itPrev == undersat_oil_tables_[iPrev][0].end()) {
+					--itPrev; // Extrapolation ...
+				} else if (itPrev == undersat_oil_tables_[iPrev][0].begin()) {
+					++itPrev;
+				}
+				if (itPrev == undersat_oil_tables_[iPrev][0].end()-1) {
+					flagPrev = false; // Last data set for "prev" ...
+				}
+				double dPPrev = *itPrev - *(itPrev-1);
+				pressure = *itPrev;
+				int index = int(itPrev - undersat_oil_tables_[iPrev][0].begin());
+				slopePrevBinv = (undersat_oil_tables_[iPrev][1][index] - undersat_oil_tables_[iPrev][1][index-1])/dPPrev;
+				slopePrevVisc = (undersat_oil_tables_[iPrev][2][index] - undersat_oil_tables_[iPrev][2][index-1])/dPPrev;
+			}
+			if (flagNext) {
+				std::vector<double>::iterator itNext = upper_bound(undersat_oil_tables_[iNext][0].begin(),
+				                                                   undersat_oil_tables_[iNext][0].end(),pressure0+1.);
+				if (itNext == undersat_oil_tables_[iNext][0].end()) {
+					--itNext; // Extrapolation ...
+				} else if (itNext == undersat_oil_tables_[iNext][0].begin()) {
+					++itNext;
+				}
+				if (itNext == undersat_oil_tables_[iNext][0].end()-1) {
+					flagNext = false; // Last data set for "next" ...
+				}
+				double dPNext = *itNext - *(itNext-1);
+				if (flagPrev) {
+					pressure = std::min(pressure,*itNext);
+				} else {
+					pressure = *itNext;
+				}			
+				int index = int(itNext - undersat_oil_tables_[iNext][0].begin());
+				slopeNextBinv = (undersat_oil_tables_[iNext][1][index] - undersat_oil_tables_[iNext][1][index-1])/dPNext;
+				slopeNextVisc = (undersat_oil_tables_[iNext][2][index] - undersat_oil_tables_[iNext][2][index-1])/dPNext;
+			}	
+			double dP = pressure - pressure0;
+			if (iPrev >= 0) {
+				double w = (saturated_oil_table_[3][i] - saturated_oil_table_[3][iPrev]) /
+				           (saturated_oil_table_[3][iNext] - saturated_oil_table_[3][iPrev]);
+				undersat_oil_tables_[i][0].push_back(pressure0+dP);
+				undersat_oil_tables_[i][1].push_back(undersat_oil_tables_[i][1].back() +
+				                                     dP*(slopePrevBinv+w*(slopeNextBinv-slopePrevBinv)));
+				undersat_oil_tables_[i][2].push_back(undersat_oil_tables_[i][2].back() +
+				                                     dP*(slopePrevVisc+w*(slopeNextVisc-slopePrevVisc)));
+			} else {
+				undersat_oil_tables_[i][0].push_back(pressure0+dP);
+				undersat_oil_tables_[i][1].push_back(undersat_oil_tables_[i][1].back()+dP*slopeNextBinv);
+				undersat_oil_tables_[i][2].push_back(undersat_oil_tables_[i][2].back()+dP*slopeNextVisc);
+			} 
+		}
+	}
     }
     // Destructor
      MiscibilityLiveOil::~MiscibilityLiveOil()
@@ -151,7 +237,7 @@ namespace Opm
 						press);
 	    } else {  // Undersaturated case
 		int is = tableIndex(saturated_oil_table_[3], maxR);
-		if (undersat_oil_tables_[is][0].size() < 2) {
+		if (undersat_oil_tables_[is][0].size() < 2) {  // Not anymore ...
 		    double val = (saturated_oil_table_[item][is+1]
 				  - saturated_oil_table_[item][is]) /
 			(saturated_oil_table_[0][is+1] -
@@ -179,30 +265,28 @@ namespace Opm
 						 saturated_oil_table_[item],
 						 press);
 	    } else {  // Undersaturated case
-	      std::cerr << "###\n###  MiscibilityLiveOil::miscible_oil, undersaturated case, cannot be trusted ...\n###" << std::endl;
-	      exit(-1);
-		int is = tableIndex(saturated_oil_table_[3], maxR);
+	      int is = tableIndex(saturated_oil_table_[3], maxR);
 
 		// Extrapolate from first table section
 		if (is == 0 && press < saturated_oil_table_[0][0]) {
-		    return linearInterpolationExtrap(undersat_oil_tables_[0][0], // pressure ... // Dimensions?
+		    return linearInterpolationExtrap(undersat_oil_tables_[0][0],
 						     undersat_oil_tables_[0][item],
-						     maxR); // NOT pressure ...
+						     press);
 		}
 
 		// Extrapolate from last table section
 		int ltp = saturated_oil_table_[0].size() - 1;
 		if (is+1 == ltp && press > saturated_oil_table_[0][ltp]) {
-		    return linearInterpolationExtrap(undersat_oil_tables_[ltp][0], // pressure ... // Dimension ok -> eclipse PVTO
+		    return linearInterpolationExtrap(undersat_oil_tables_[ltp][0],
 						     undersat_oil_tables_[ltp][item],
-						     maxR); // NOT pressure ...
+						     press);
 		}
 
 		// Interpolate between table sections
 		double w = (maxR - saturated_oil_table_[3][is]) /
 		    (saturated_oil_table_[3][is+1] - 
 		     saturated_oil_table_[3][is]);
-		if (undersat_oil_tables_[is][0].size() < 2) {
+		if (undersat_oil_tables_[is][0].size() < 2) {  // Not anymore ...
 		    double val = saturated_oil_table_[item][is] +
 			w*(saturated_oil_table_[item][is+1] -
 			   saturated_oil_table_[item][is]);
@@ -213,7 +297,7 @@ namespace Opm
 					      undersat_oil_tables_[is][item],
 					      press);
 		double val2 = 
-		    linearInterpolationExtrap(undersat_oil_tables_[is+1][0], // Dimensions?
+		    linearInterpolationExtrap(undersat_oil_tables_[is+1][0],
 					      undersat_oil_tables_[is+1][item],
 					      press);
 		double val = val1 + w*(val2 - val1);
