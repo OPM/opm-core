@@ -487,7 +487,7 @@ private:
         }
         well_connpos_storage_.push_back(well_connpos_storage_.size());
         int tot_num_perf = well_prodind_storage_.size();
-        well_gpot_storage_.resize(tot_num_perf);
+        well_gpot_storage_.resize(tot_num_perf*3);
         well_A_storage_.resize(3*3*tot_num_perf);
         well_phasemob_storage_.resize(3*tot_num_perf);
         // Setup 'wells_'
