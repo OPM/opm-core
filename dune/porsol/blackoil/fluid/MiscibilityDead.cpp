@@ -34,6 +34,9 @@
 #include <dune/common/linInt.hpp>
 #include <dune/common/Units.hpp>
 #include <dune/porsol/common/buildUniformMonotoneTable.hpp>
+#include <boost/lexical_cast.hpp>
+#include <string>
+#include <fstream>
 
 using namespace std;
 using namespace Dune;
@@ -68,6 +71,13 @@ namespace Opm
         int samples = 1025;
         buildUniformMonotoneTable(press, B_inv, samples, one_over_B_);
         buildUniformMonotoneTable(press, visc, samples, viscosity_);
+
+        // Dumping the created tables.
+//         static int count = 0;
+//         std::ofstream os((std::string("dump-") + boost::lexical_cast<std::string>(count++)).c_str());
+//         os.precision(15);
+//         os << "1/B\n\n" << one_over_B_
+//            << "\n\nvisc\n\n" << viscosity_ << std::endl;
     }
 
     // Destructor
