@@ -24,6 +24,7 @@
 #include <exception>
 #include <vector>
 #include <utility>
+#include <iostream>
 
 #include <dune/common/ErrorMacros.hpp>
 #include <dune/porsol/common/linearInterpolation.hpp>
@@ -101,6 +102,8 @@ namespace Dune {
 	    std::vector<T> y_values_;
 	    RangePolicy left_;
 	    RangePolicy right_;
+            template <typename U>
+            friend std::ostream& operator<<(std::ostream& os, const UniformTableLinear<U>& t);
 	};
 
 
@@ -237,6 +240,19 @@ namespace Dune {
 	    }
 	    right_ = rp;
 	}
+
+
+        template <typename T>
+        inline std::ostream& operator<<(std::ostream& os, const UniformTableLinear<T>& t)
+        {
+            int n = t.y_values_.size();
+            for (int i = 0; i < n; ++i) {
+                double f = double(i)/double(n - 1);
+                os << (1.0 - f)*t.xmin_ + f*t.xmax_
+                   << "   " << t.y_values_[i] << '\n';
+            }
+            return os;
+        }
 
     } // namespace utils
 } // namespace Dune
