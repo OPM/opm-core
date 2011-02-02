@@ -136,7 +136,7 @@ namespace Opm
                 totphasevol[cell] = state.total_phase_volume_;
                 double pv = rock.porosity(cell)*grid.cellVolume(cell);
                 voldiscr[cell] = (totphasevol[cell] - pv)/dt;
-                relvoldiscr[cell] = (totphasevol[cell] - pv)/pv;
+                relvoldiscr[cell] = std::fabs(totphasevol[cell] - pv)/pv;
                 saturation[cell] = state.saturation_;
                 rel_perm[cell] = state.relperm_;
                 viscosity[cell] = state.viscosity_;
