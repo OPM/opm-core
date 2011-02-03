@@ -346,10 +346,6 @@ public:
     void explicitTransport(const double dt,
                            double* cell_surfvols)
     {
-        if (wells_.number_of_wells != 0) {
-            throw std::runtime_error("Error in TPFACompressiblePressureSolver::explicitTransport(): "
-                                     "This function does not work with wells yet.");
-        }
         int np = 3; // Number of phases.
 
         well_t* wells = NULL;
