@@ -26,7 +26,6 @@
 #include <dune/porsol/blackoil/fluid/FluidStateBlackoil.hpp>
 #include <dune/common/EclipseGridParser.hpp>
 #include <dune/common/fvector.hh>
-#include <dune/common/Units.hpp>
 #include <vector>
 
 
@@ -50,11 +49,10 @@ namespace Opm
         {
             fmi_params_.init(parser);
             FluidSystemBlackoil<>::init(parser);
-            const double density_unit = parser.units().density;
             const std::vector<double>& dens = parser.getDENSITY().densities_[0];
-            surface_densities_[Oil] = Dune::unit::convert::from(dens[0], density_unit);
-            surface_densities_[Water] = Dune::unit::convert::from(dens[1], density_unit);
-            surface_densities_[Gas] = Dune::unit::convert::from(dens[2], density_unit);
+            surface_densities_[Oil] = dens[0];
+            surface_densities_[Water] = dens[1];
+            surface_densities_[Gas] = dens[2];
         }
         FluidState computeState(PhaseVec phase_pressure, CompVec z) const
         {
