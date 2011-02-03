@@ -344,7 +344,6 @@ public:
     /// @brief
     ///     Explicit IMPES transport.
     void explicitTransport(const double dt,
-                           const double* cell_pressures,
                            double* cell_surfvols)
     {
         if (wells_.number_of_wells != 0) {
@@ -352,13 +351,13 @@ public:
                                      "This function does not work with wells yet.");
         }
         int np = 3; // Number of phases.
-        std::vector<double> masstrans_f(np*grid_.c_grid()->number_of_faces);
-        std::vector<double> gravtrans_f(np*grid_.c_grid()->number_of_faces);
-        cfs_tpfa_retrieve_masstrans(grid_.c_grid(), np, data_, &masstrans_f[0]);
-        cfs_tpfa_retrieve_gravtrans(grid_.c_grid(), np, data_, &gravtrans_f[0]);
-        cfs_tpfa_expl_mass_transport(grid_.c_grid(), np, dt, &porevol_[0],
-                                     &masstrans_f[0], &gravtrans_f[0],
-                                     cell_pressures, cell_surfvols);
+
+        well_t* wells = NULL;
+        if (wells_.number_of_wells != 0) {
+            wells = &wells_;
+        }
+        cfs_tpfa_expl_mass_transport(grid_.c_grid(), wells, np, dt, &porevol_[0],
+                                     data_, cell_surfvols);
     }
 
 
