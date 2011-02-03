@@ -37,8 +37,6 @@
 
 #include "MiscibilityProps.hpp"
 #include <dune/porsol/common/UniformTableLinear.hpp>
-#include <dune/common/EclipseUnits.hpp>
-
 
 namespace Opm
 {
@@ -47,7 +45,7 @@ namespace Opm
     public:
 	typedef std::vector<std::vector<std::vector<double> > > table_t;
 
-	MiscibilityDead(const table_t& pvd_table, const Dune::EclipseUnits& units);
+	MiscibilityDead(const table_t& pvd_table);
 	virtual ~MiscibilityDead();
 
         virtual double getViscosity(int region, double press, const surfvol_t& surfvol) const;

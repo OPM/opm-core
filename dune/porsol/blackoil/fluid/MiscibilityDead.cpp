@@ -32,7 +32,6 @@
 #include "MiscibilityDead.hpp"
 #include <dune/common/ErrorMacros.hpp>
 #include <dune/common/linInt.hpp>
-#include <dune/common/Units.hpp>
 #include <dune/porsol/common/buildUniformMonotoneTable.hpp>
 #include <boost/lexical_cast.hpp>
 #include <string>
@@ -49,24 +48,22 @@ namespace Opm
     //-------------------------------------------------------------------------
 
     /// Constructor
-    MiscibilityDead::MiscibilityDead(const table_t& pvd_table, const Dune::EclipseUnits& units)
+    MiscibilityDead::MiscibilityDead(const table_t& pvd_table)
     {
 	const int region_number = 0;
 	if (pvd_table.size() != 1) {
 	    THROW("More than one PVT-region");
 	}
 
-	// Convert units
+	// Copy data
 	const int sz = pvd_table[region_number][0].size();
         std::vector<double> press(sz);
         std::vector<double> B_inv(sz);
         std::vector<double> visc(sz);
-        using namespace Dune::unit;
-        const double bunit = units.liqvol_r/units.liqvol_s;
 	for (int i = 0; i < sz; ++i) {
-            press[i] = convert::from(pvd_table[region_number][0][i], units.pressure);
-            B_inv[i] = 1.0 / convert::from(pvd_table[region_number][1][i], bunit);
-            visc[i] = convert::from(pvd_table[region_number][2][i], units.viscosity);
+            press[i] = pvd_table[region_number][0][i];
+            B_inv[i] = 1.0 / pvd_table[region_number][1][i];
+            visc[i]  = pvd_table[region_number][2][i];
 	}
         int samples = 1025;
         buildUniformMonotoneTable(press, B_inv, samples, one_over_B_);

@@ -21,7 +21,6 @@
 #define OPM_FLUIDMATRIXINTERACTIONBLACKOIL_HEADER_INCLUDED
 
 #include <dune/common/EclipseGridParser.hpp>
-#include <dune/common/Units.hpp>
 #include <dune/porsol/common/UniformTableLinear.hpp>
 #include <dune/porsol/common/buildUniformMonotoneTable.hpp>
 #include "BlackoilDefs.hpp"
@@ -52,11 +51,11 @@ public:
         const std::vector<double>& sw = swof_table[0][0];
         const std::vector<double>& krw = swof_table[0][1];
         const std::vector<double>& krow = swof_table[0][2];
-        const std::vector<double>& pcow_raw = swof_table[0][3];
+        const std::vector<double>& pcow = swof_table[0][3];
         const std::vector<double>& sg = sgof_table[0][0];
         const std::vector<double>& krg = sgof_table[0][1];
         const std::vector<double>& krog = sgof_table[0][2];
-        const std::vector<double>& pcog_raw = sgof_table[0][3];
+        const std::vector<double>& pcog = sgof_table[0][3];
 
         // Create tables for krw, krow, krg and krog.
         int samples = 200;
@@ -67,18 +66,6 @@ public:
         krocw_ = krow[0]; // At connate water -> ecl. SWOF
 
         // Create tables for pcow and pcog.
-        // We must convert the pressures depending on units.
-        double pressure_unit = ep.units().pressure;
-        int numw = sw.size();
-        std::vector<double> pcow(numw);
-        for (int i = 0; i < numw; ++i) {
-            pcow[i] = Dune::unit::convert::from(pcow_raw[i], pressure_unit);
-        }
-        int numg = sg.size();
-        std::vector<double> pcog(numg);
-        for (int i = 0; i < numg; ++i) {
-            pcog[i] = Dune::unit::convert::from(pcog_raw[i], pressure_unit);
-        }
         buildUniformMonotoneTable(sw, pcow, samples, pcow_);
         buildUniformMonotoneTable(sg, pcog, samples, pcog_);
     }

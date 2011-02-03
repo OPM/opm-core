@@ -33,7 +33,6 @@
 #include "MiscibilityLiveGas.hpp"
 #include <dune/common/ErrorMacros.hpp>
 #include <dune/common/linInt.hpp>
-#include <dune/common/Units.hpp>
 
 using namespace std;
 using namespace Dune;
@@ -46,7 +45,7 @@ namespace Opm
     //-------------------------------------------------------------------------
 
     /// Constructor
-    MiscibilityLiveGas::MiscibilityLiveGas(const table_t& pvtg, const EclipseUnits& units)
+    MiscibilityLiveGas::MiscibilityLiveGas(const table_t& pvtg)
     {
 	// GAS, PVTG
 	const int region_number = 0;
@@ -58,14 +57,12 @@ namespace Opm
 	for (int k=0; k<4; ++k) {
 	    saturated_gas_table_[k].resize(sz);
 	}
-        using namespace Dune::unit;
-        const double bunit = units.gasvol_r/units.gasvol_s;
-        const double runit = units.liqvol_s/units.gasvol_s;
+
 	for (int i=0; i<sz; ++i) {
-	    saturated_gas_table_[0][i] = convert::from(pvtg[region_number][i][0], units.pressure); // p
-	    saturated_gas_table_[1][i] = convert::from(pvtg[region_number][i][2], bunit); // Bg
-	    saturated_gas_table_[2][i] = convert::from(pvtg[region_number][i][3], units.viscosity);  // mu_g
-	    saturated_gas_table_[3][i] = convert::from(pvtg[region_number][i][1], runit); // Rv
+	    saturated_gas_table_[0][i] = pvtg[region_number][i][0];  // p
+	    saturated_gas_table_[1][i] = pvtg[region_number][i][2];  // Bg
+	    saturated_gas_table_[2][i] = pvtg[region_number][i][3];  // mu_g
+	    saturated_gas_table_[3][i] = pvtg[region_number][i][1]; // Rv
 	}
 
 	undersat_gas_tables_.resize(sz);
@@ -76,9 +73,9 @@ namespace Opm
 	    undersat_gas_tables_[i][1].resize(tsize);
 	    undersat_gas_tables_[i][2].resize(tsize);
 	    for (int j=0, k=0; j<tsize; ++j) {
-		undersat_gas_tables_[i][0][j] = convert::from(pvtg[region_number][i][++k], runit); // Rv
-		undersat_gas_tables_[i][1][j] = convert::from(pvtg[region_number][i][++k], bunit); // Bg
-		undersat_gas_tables_[i][2][j] = convert::from(pvtg[region_number][i][++k], units.viscosity); // mu_g
+		undersat_gas_tables_[i][0][j] = pvtg[region_number][i][++k]; // Rv
+		undersat_gas_tables_[i][1][j] = pvtg[region_number][i][++k]; // Bg
+		undersat_gas_tables_[i][2][j] = pvtg[region_number][i][++k]; // mu_g
 	    }
 	}
     }

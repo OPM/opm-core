@@ -20,6 +20,7 @@
 
 #include "BlackoilPVT.hpp"
 #include <dune/common/EclipseGridParser.hpp>
+#include <dune/common/Units.hpp>
 #include "MiscibilityDead.hpp"
 #include "MiscibilityLiveOil.hpp"
 #include "MiscibilityLiveGas.hpp"
@@ -43,36 +44,34 @@ namespace Opm
 	    const int region_number = 0;
 	    enum { ECL_oil = 0, ECL_water = 1, ECL_gas = 2 };
 	    const std::vector<double>& d = parser.getDENSITY().densities_[region_number];
-            const double du = parser.units().density;
-            using namespace Dune::unit;
-	    densities_[Aqua] = convert::from(d[ECL_water], du);
-	    densities_[Vapour] = convert::from(d[ECL_gas], du);
-	    densities_[Liquid] = convert::from(d[ECL_oil], du);
+	    densities_[Aqua]   = d[ECL_water];
+	    densities_[Vapour] = d[ECL_gas];
+	    densities_[Liquid] = d[ECL_oil];
 	} else {
 	    THROW("Input is missing DENSITY\n");
 	}
 
         // Water PVT
         if (parser.hasField("PVTW")) {
-            water_props_.reset(new MiscibilityWater(parser.getPVTW().pvtw_, parser.units()));
+            water_props_.reset(new MiscibilityWater(parser.getPVTW().pvtw_));
         } else {
             water_props_.reset(new MiscibilityWater(0.5*Dune::prefix::centi*Dune::unit::Poise)); // Eclipse 100 default 
         }
 
         // Oil PVT
         if (parser.hasField("PVDO")) {
-            oil_props_.reset(new MiscibilityDead(parser.getPVDO().pvdo_, parser.units()));
+            oil_props_.reset(new MiscibilityDead(parser.getPVDO().pvdo_));
         } else if (parser.hasField("PVTO")) {
-            oil_props_.reset(new MiscibilityLiveOil(parser.getPVTO().pvto_, parser.units()));
+            oil_props_.reset(new MiscibilityLiveOil(parser.getPVTO().pvto_));
         } else {
             THROW("Input is missing PVDO and PVTO\n");
         }
 
 	// Gas PVT
         if (parser.hasField("PVDG")) {
-            gas_props_.reset(new MiscibilityDead(parser.getPVDG().pvdg_, parser.units()));
+            gas_props_.reset(new MiscibilityDead(parser.getPVDG().pvdg_));
         } else if (parser.hasField("PVTG")) {
-            gas_props_.reset(new MiscibilityLiveGas(parser.getPVTG().pvtg_, parser.units()));
+            gas_props_.reset(new MiscibilityLiveGas(parser.getPVTG().pvtg_));
         } else {
             THROW("Input is missing PVDG and PVTG\n");
         }

@@ -36,8 +36,6 @@
 
 #include "MiscibilityProps.hpp"
 #include <dune/common/ErrorMacros.hpp>
-#include <dune/common/Units.hpp>
-#include <dune/common/EclipseUnits.hpp>
 
 // Forward declaration.
 class PVTW;
@@ -48,17 +46,16 @@ namespace Opm
     {
     public:
         typedef std::vector<std::vector<double> > table_t;
-	MiscibilityWater(const table_t& pvtw, const Dune::EclipseUnits& units)
+	MiscibilityWater(const table_t& pvtw)
         {
 	    const int region_number = 0;
 	    if (pvtw.size() != 1) {
 		THROW("More than one PVD-region");
 	    }
-            using namespace Dune::unit;
-            ref_press_ = convert::from(pvtw[region_number][0], units.pressure);
-            ref_B_ = convert::from(pvtw[region_number][1], units.liqvol_r/units.liqvol_s);
-            comp_ = convert::from(pvtw[region_number][2], units.compressibility);
-            viscosity_ = convert::from(pvtw[region_number][3], units.viscosity);
+            ref_press_ = pvtw[region_number][0];
+            ref_B_     = pvtw[region_number][1];
+            comp_      = pvtw[region_number][2];
+            viscosity_ = pvtw[region_number][3];
             if (pvtw[region_number].size() > 4 && pvtw[region_number][4] != 0.0) {
                 THROW("MiscibilityWater does not support 'viscosibility'.");
             }
