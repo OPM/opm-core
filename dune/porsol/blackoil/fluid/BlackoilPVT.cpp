@@ -63,6 +63,8 @@ namespace Opm
             oil_props_.reset(new MiscibilityDead(parser.getPVDO().pvdo_));
         } else if (parser.hasField("PVTO")) {
             oil_props_.reset(new MiscibilityLiveOil(parser.getPVTO().pvto_));
+        } else if (parser.hasField("PVCDO")) {
+            oil_props_.reset(new MiscibilityWater(parser.getPVCDO().pvcdo_));
         } else {
             THROW("Input is missing PVDO and PVTO\n");
         }
@@ -73,7 +75,7 @@ namespace Opm
         } else if (parser.hasField("PVTG")) {
             gas_props_.reset(new MiscibilityLiveGas(parser.getPVTG().pvtg_));
         } else {
-            THROW("Input is missing PVDG and PVTG\n");
+	    THROW("Input is missing PVDG and PVTG\n");
         }
     }
 
