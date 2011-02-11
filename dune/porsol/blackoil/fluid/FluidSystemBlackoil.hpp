@@ -217,8 +217,11 @@ public:
         double data_for_C[numComponents*numPhases];
         Dune::SharedFortranMatrix C(numComponents, numPhases, data_for_C);
         Dune::prod(Ai, dA, C);
-        CompVec ones(1.0);
-        cp = Dune::prod(C, ones);
+        //CompVec ones(1.0);
+        //cp = Dune::prod(C, ones); // Probably C' and not C; we want phasewise compressibilities:
+        cp[Aqua] = C(Water, Aqua);
+        cp[Liquid] = C(Oil, Liquid) + C(Gas, Liquid);
+        cp[Vapour] = C(Gas, Vapour) + C(Oil, Vapour);  
         fluid_state.total_compressibility_ = cp*s;
     }
 
