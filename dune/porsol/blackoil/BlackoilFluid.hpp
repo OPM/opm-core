@@ -128,6 +128,7 @@ namespace Opm
             phasemobf.resize(np*num_faces);
             phasemobc.resize(num_cells);
             BOOST_STATIC_ASSERT(np == 3);
+#pragma omp parallel for
             for (int cell = 0; cell < num_cells; ++cell) {
                 FluidStateBlackoil state = fluid.computeState(cell_pressure[cell], cell_z[cell]);
                 totcompr[cell] = state.total_compressibility_;
@@ -151,6 +152,7 @@ namespace Opm
 
             // Set phasemobf to average of cells' phase mobs, if pressures are equal, else use upwinding.
             // Set faceA by using average of cells' z and face pressures.
+#pragma omp parallel for
             for (int face = 0; face < num_faces; ++face) {
                 int c[2] = { grid.faceCell(face, 0), grid.faceCell(face, 1) };
                 PhaseVec phase_p[2];
