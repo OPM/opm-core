@@ -92,6 +92,10 @@ namespace Opm
         std::vector<PhaseVec> frac_flow;  // Fractional flow.
         std::vector<PhaseVec> rel_perm;   // Relative permeability.
         std::vector<PhaseVec> viscosity;  // Viscosity.
+
+        // Extra data.
+        std::vector<double> expjacterm;
+
         // Per-face data.
         std::vector<double> faceA;        // A = RB^{-1}. Fortran ordering, flat storage.
         std::vector<double> phasemobf;    // Phase mobilities. Flat storage (numPhases per face).
@@ -123,6 +127,7 @@ namespace Opm
             frac_flow.resize(num_cells);
             rel_perm.resize(num_cells);
             viscosity.resize(num_cells);
+            expjacterm.resize(num_cells);
             cellA.resize(num_cells*nc*np);
             faceA.resize(num_faces*nc*np);
             phasemobf.resize(np*num_faces);
@@ -148,6 +153,9 @@ namespace Opm
                 }
                 frac_flow[cell] = state.mobility_;
                 frac_flow[cell] /= total_mobility;
+
+                // Experimental
+                expjacterm[cell] = state.experimental_term_;
             }
 
             // Set phasemobf to average of cells' phase mobs, if pressures are equal, else use upwinding.

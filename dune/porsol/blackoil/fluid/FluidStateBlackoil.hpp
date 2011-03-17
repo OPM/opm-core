@@ -40,6 +40,7 @@ namespace Opm
         PhaseVec saturation_;
         PhaseVec phase_compressibility_;
         Scalar total_compressibility_;
+        Scalar experimental_term_;
         PhaseVec viscosity_;
         PhaseVec relperm_;
         PhaseVec mobility_;

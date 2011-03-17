@@ -221,8 +221,12 @@ public:
         //cp = Dune::prod(C, ones); // Probably C' and not C; we want phasewise compressibilities:
         cp[Aqua] = C(Water, Aqua);
         cp[Liquid] = C(Oil, Liquid) + C(Gas, Liquid);
-        cp[Vapour] = C(Gas, Vapour) + C(Oil, Vapour);  
+        cp[Vapour] = C(Gas, Vapour) + C(Oil, Vapour);
         fluid_state.total_compressibility_ = cp*s;
+
+        // Experimental term.
+        PhaseVec tmp = prod(Ai, prod(dA, prod(Ai, z)));
+        fluid_state.experimental_term_ = tmp[Aqua] + tmp[Liquid] + tmp[Gas];
     }
 
     /*!
