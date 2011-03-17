@@ -59,6 +59,12 @@ int main(int argc, char** argv)
         std::cout << state.total_compressibility_ << "  ";
         std::cout.width(15);
         std::cout.fill(' ');
-        std::cout << totmob << '\n';
+        std::cout << totmob << "  ";
+        std::cout.width(15);
+        std::cout.fill(' ');
+        std::cout << state.total_phase_volume_ << "  ";
+        std::cout.width(15);
+        std::cout.fill(' ');
+        std::cout << state.experimental_term_ << '\n';
     }
 }
