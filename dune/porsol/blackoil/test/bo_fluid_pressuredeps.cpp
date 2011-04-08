@@ -42,6 +42,7 @@ int main(int argc, char** argv)
     int num_pts = param.getDefault("num_pts", 41);
     double min_press = param.getDefault("min_press", 1e7);
     double max_press = param.getDefault("max_press", 3e7);
+    bool print_compr = param.getDefault("print_compr", true);
     for (int i = 0; i < num_pts; ++i) {
         double factor = double(i)/double(num_pts - 1);
         double p = (1.0 - factor)*min_press + factor*max_press;
@@ -50,21 +51,40 @@ int main(int argc, char** argv)
         for (int phase = 0; phase < Opm::BlackoilFluid::numPhases; ++phase) {
             totmob += state.mobility_[phase];
         }
-        std::cout.precision(6);
-        std::cout.width(15);
-        std::cout.fill(' ');
-        std::cout << p << "  ";
-        std::cout.width(15);
-        std::cout.fill(' ');
-        std::cout << state.total_compressibility_ << "  ";
-        std::cout.width(15);
-        std::cout.fill(' ');
-        std::cout << totmob << "  ";
-        std::cout.width(15);
-        std::cout.fill(' ');
-        std::cout << state.total_phase_volume_ << "  ";
-        std::cout.width(15);
-        std::cout.fill(' ');
-        std::cout << state.experimental_term_ << '\n';
+        if (print_compr) {
+            std::cout.precision(6);
+            std::cout.width(15);
+            std::cout.fill(' ');
+            std::cout << p << "  ";
+            std::cout.width(15);
+            std::cout.fill(' ');
+            std::cout << state.total_compressibility_ << "  ";
+            std::cout.width(15);
+            std::cout.fill(' ');
+            std::cout << totmob << "  ";
+            std::cout.width(15);
+            std::cout.fill(' ');
+            std::cout << state.total_phase_volume_ << "  ";
+            std::cout.width(15);
+            std::cout.fill(' ');
+            std::cout << state.experimental_term_ << '\n';
+        } else {
+            std::cout.precision(6);
+            std::cout.width(15);
+            std::cout.fill(' ');
+            std::cout << p << "  ";
+            std::cout.width(15);
+            std::cout.fill(' ');
+            std::cout << state.saturation_[0] << "  ";
+            std::cout.width(15);
+            std::cout.fill(' ');
+            std::cout << state.saturation_[1] << "  ";
+            std::cout.width(15);
+            std::cout.fill(' ');
+            std::cout << state.saturation_[2] << "  ";
+            std::cout.width(15);
+            std::cout.fill(' ');
+            std::cout << state.total_phase_volume_ << '\n';
+        }
     }
 }
