@@ -169,7 +169,7 @@ fill_faces(mxArray *faces, struct processed_grid *grid)
 
   /* Fill faces.tag */
   pi = mxGetData(mxGetField(faces, 0, "tag"));
-  for (f = 0; f < nf; f++) { pi[f] = grid->face_tag[i] + 1; }
+  for (f = 0; f < nf; f++) { pi[f] = grid->face_tag[f] + 1; }
 }
 
 
