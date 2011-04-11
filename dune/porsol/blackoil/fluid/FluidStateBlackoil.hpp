@@ -43,7 +43,9 @@ namespace Opm
         Scalar experimental_term_;
         PhaseVec viscosity_;
         PhaseVec relperm_;
+        Dune::FieldVector<Dune::FieldVector<Scalar, numPhases>, numPhases> drelperm_;
         PhaseVec mobility_;
+        Dune::FieldVector<Dune::FieldVector<Scalar, numPhases>, numPhases> dmobility_;
     };
 
 } // end namespace Opm
