@@ -165,6 +165,39 @@ public:
             kr[Liquid] = 0.0;
         }
     }
+
+
+    /*!
+     * \brief The saturation derivatives of relative permeability of all phases.
+     */
+    template <class krContainerT, class SatContainerT>
+    static void dkr(krContainerT &dkr,
+                    const Params &params, 
+                    const SatContainerT &saturations,
+                    Scalar /*temperature*/)
+    {
+        for (int p1 = 0; p1 < numPhases; ++p1) {
+            for (int p2 = 0; p2 < numPhases; ++p2) {
+                dkr[p1][p2] = 0.0;
+            }
+        }
+        // Stone-II relative permeability model.
+        Scalar sw = saturations[Aqua];
+        Scalar sg = saturations[Vapour];
+        Scalar krw = params.krw_(sw);
+        Scalar dkrww = params.krw_.derivative(sw);
+        Scalar krg = params.krg_(sg);
+        Scalar dkrgg = params.krg_.derivative(sg);
+        Scalar krow = params.krow_(sw);
+        Scalar dkrow = params.krow_.derivative(sw);
+        Scalar krog = params.krog_(sg);
+        Scalar dkrog = params.krog_.derivative(sg);
+        Scalar krocw = params.krocw_;
+        dkr[Aqua][Aqua] = dkrww;
+        dkr[Vapour][Vapour] = dkrgg;
+        dkr[Liquid][Aqua] = krocw*((dkrow/krocw + dkrww)*(krog/krocw + krg) - dkrww);
+        dkr[Liquid][Vapour] = krocw*((krow/krocw + krw)*(dkrog/krocw + dkrgg) - dkrgg);
+    }
 };
 
 } // namespace Opm
