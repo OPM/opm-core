@@ -343,15 +343,12 @@ public:
 
     /// @brief
     ///     Explicit IMPES time step limit.
-    double explicitTimestepLimit(const std::vector<double>& totcompr,
-                                 const std::vector<double>& voldiscr,
-                                 const std::vector<double>& cellA,  // num phases^2 * num cells, fortran ordering!
-                                 const std::vector<double>& faceA,  // num phases^2 * num faces, fortran ordering!
+    double explicitTimestepLimit(const std::vector<double>& faceA,  // num phases^2 * num faces, fortran ordering!
                                  const std::vector<double>& phasemobf,
                                  const std::vector<double>& phasemobf_deriv,
                                  const double* surf_dens)
     {
-        compr_quantities cq = { 3, &totcompr[0], &voldiscr[0], &cellA[0], &faceA[0], &phasemobf[0] };
+        compr_quantities cq = { 3, 0, 0, 0, &faceA[0], &phasemobf[0] };
         return cfs_tpfa_impes_maxtime(grid_.c_grid(), &cq, &trans_[0], &porevol_[0], data_,
                                       &phasemobf_deriv[0], surf_dens, gravity_);
     }
