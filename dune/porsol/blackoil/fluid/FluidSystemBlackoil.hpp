@@ -171,7 +171,7 @@ public:
         A(Oil, Liquid) = 1.0/B[Liquid];
 
         // Update phase volumes. This is the same as multiplying with A^{-1}
-        PhaseVec& u = fluid_state.phase_volume_;
+        PhaseVec& u = fluid_state.phase_volume_density_;
         double detR = 1.0 - R[Vapour]*R[Liquid];
         u[Aqua] = B[Aqua]*z[Water];
         u[Vapour] = B[Vapour]*(z[Gas] - R[Liquid]*z[Oil])/detR;
