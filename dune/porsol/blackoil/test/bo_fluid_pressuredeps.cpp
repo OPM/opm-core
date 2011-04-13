@@ -64,7 +64,7 @@ int main(int argc, char** argv)
             std::cout << totmob << "  ";
             std::cout.width(15);
             std::cout.fill(' ');
-            std::cout << state.total_phase_volume_ << "  ";
+            std::cout << state.total_phase_volume_density_ << "  ";
             std::cout.width(15);
             std::cout.fill(' ');
             std::cout << state.experimental_term_ << '\n';
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
             std::cout << state.saturation_[2] << "  ";
             std::cout.width(15);
             std::cout.fill(' ');
-            std::cout << state.total_phase_volume_ << '\n';
+            std::cout << state.total_phase_volume_density_ << '\n';
         }
     }
 }
