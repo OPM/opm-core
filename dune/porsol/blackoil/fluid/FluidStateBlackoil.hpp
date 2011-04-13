@@ -35,7 +35,7 @@ namespace Opm
         CompVec surface_volume_;
         PhaseVec phase_pressure_;
         PhaseVec phase_volume_;
-        Scalar total_phase_volume_;
+        Scalar total_phase_volume_density_;
         Scalar phase_to_comp_[numPhases*numComponents]; // RB^{-1} in Fortran ordering
         PhaseVec saturation_;
         PhaseVec phase_compressibility_;

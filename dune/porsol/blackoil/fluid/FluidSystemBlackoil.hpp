@@ -176,10 +176,10 @@ public:
         u[Aqua] = B[Aqua]*z[Water];
         u[Vapour] = B[Vapour]*(z[Gas] - R[Liquid]*z[Oil])/detR;
         u[Liquid] = B[Liquid]*(z[Oil] - R[Vapour]*z[Gas])/detR;
-        fluid_state.total_phase_volume_ = u[Aqua] + u[Vapour] + u[Liquid];
+        fluid_state.total_phase_volume_density_ = u[Aqua] + u[Vapour] + u[Liquid];
 
         // Update saturations.
-        double sumu = fluid_state.total_phase_volume_;
+        double sumu = fluid_state.total_phase_volume_density_;
         PhaseVec& s = fluid_state.saturation_;
         for (int i = 0; i < 3; ++i) {
             s[i] = u[i]/sumu;

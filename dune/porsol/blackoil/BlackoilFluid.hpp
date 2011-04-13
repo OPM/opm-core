@@ -88,9 +88,10 @@ namespace Opm
     {
         // Per-cell data.
         std::vector<double> totcompr;     // Total compressibility.
-        std::vector<double> totphasevol;  // Total volume filled by fluid phases.
-        std::vector<double> voldiscr;     // Volume discrepancy = (totphasevol - porevol)/dt
-        std::vector<double> relvoldiscr;  // Relative volume discrepancy = (totphasevol - porevol)/porevol
+        std::vector<double> totphasevol_density;  // Total volume filled by fluid phases
+                                                  // per pore volume.
+        std::vector<double> voldiscr;     // Volume discrepancy = (totphasevol_dens - 1)*pv/dt
+        std::vector<double> relvoldiscr;  // Relative volume discrepancy = |totphasevol_dens - 1|
         std::vector<double> cellA;        // A = RB^{-1}. Fortran ordering, flat storage.
         std::vector<PhaseVec> saturation; // Saturation.
         std::vector<PhaseVec> frac_flow;  // Fractional flow.
@@ -127,7 +128,7 @@ namespace Opm
             const int nc = numComponents;
             BOOST_STATIC_ASSERT(np == nc);
             totcompr.resize(num_cells);
-            totphasevol.resize(num_cells);
+            totphasevol_density.resize(num_cells);
             voldiscr.resize(num_cells);
             relvoldiscr.resize(num_cells);
             saturation.resize(num_cells);
@@ -146,10 +147,10 @@ namespace Opm
             for (int cell = 0; cell < num_cells; ++cell) {
                 FluidStateBlackoil state = fluid.computeState(cell_pressure[cell], cell_z[cell]);
                 totcompr[cell] = state.total_compressibility_;
-                totphasevol[cell] = state.total_phase_volume_;
+                totphasevol_density[cell] = state.total_phase_volume_density_;
                 double pv = rock.porosity(cell)*grid.cellVolume(cell);
-                voldiscr[cell] = (totphasevol[cell] - pv)/dt;
-                relvoldiscr[cell] = std::fabs(totphasevol[cell] - pv)/pv;
+                voldiscr[cell] = (totphasevol_density[cell] - 1.0)*pv/dt;
+                relvoldiscr[cell] = std::fabs(totphasevol_density[cell] - 1.0);
                 saturation[cell] = state.saturation_;
                 rel_perm[cell] = state.relperm_;
                 viscosity[cell] = state.viscosity_;
