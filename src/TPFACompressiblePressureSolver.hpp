@@ -366,7 +366,8 @@ public:
         if (wells_.number_of_wells != 0) {
             wells = &wells_;
         }
-        cfs_tpfa_expl_mass_transport(grid_.c_grid(), wells, np, dt, &porevol_[0],
+        cfs_tpfa_expl_mass_transport(grid_.c_grid(), wells, &wcompl_,
+                                     np, dt, &porevol_[0],
                                      data_, cell_surfvols);
     }
 
