@@ -233,29 +233,23 @@ namespace Opm
                 // Now we can easily find the upwind direction for every phase,
                 // we can also tell which boundary faces are inflow bdys.
 
+                // Compute face_z, which is averaged from the cells, unless on outflow or noflow bdy.
                 // Get mobilities and derivatives.
+                CompVec face_z(0.0);
+                double face_z_factor = 0.5;
                 PhaseVec phase_mob[2];
                 PhaseMat phasemob_deriv[2];
                 for (int j = 0; j < 2; ++j) {
                     if (c[j] >= 0) {
+                        face_z += cell_z[c[j]];
                         phase_mob[j] = phasemobc[c[j]];
                         phasemob_deriv[j] = phasemobc_deriv[c[j]];
-                    } else {
-                        FluidStateBlackoil bdy_state = fluid.computeState(face_pressure[face], bdy_z);
-                        phase_mob[j] = bdy_state.mobility_;
-                        phasemob_deriv[j] = bdy_state.dmobility_;
-                    }
-                }
-
-                // Compute face_z, which is averaged from the cells, unless on outflow or noflow bdy.
-                CompVec face_z(0.0);
-                double face_z_factor = 0.5;
-                for (int j = 0; j < 2; ++j) {
-                    if (c[j] >= 0) {
-                        face_z += cell_z[c[j]];
                     } else if (pot[j][Liquid] > pot[(j+1)%2][Liquid]) {
                         // Inflow boundary.
                         face_z += bdy_z;
+                        FluidStateBlackoil bdy_state = fluid.computeState(face_pressure[face], bdy_z);
+                        phase_mob[j] = bdy_state.mobility_;
+                        phasemob_deriv[j] = bdy_state.dmobility_;
                     } else {
                         // For outflow or noflow boundaries, only cell z is used.
                         face_z_factor = 1.0;
