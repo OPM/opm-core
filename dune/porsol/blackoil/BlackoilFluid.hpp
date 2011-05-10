@@ -226,8 +226,8 @@ namespace Opm
                 PhaseVec pot[2];
                 for (int phase = 0; phase < np; ++phase) {
                     gravcapf[np*face + phase] = gravcontrib[0][phase] - gravcontrib[1][phase];
-                    pot[0][phase] = phase_p[0][phase];
-                    pot[1][phase] = phase_p[1][phase] + gravcapf[np*face + phase];
+                    pot[0][phase] = phase_p[0][phase] + gravcapf[np*face + phase];
+                    pot[1][phase] = phase_p[1][phase];
                 }
 
                 // Now we can easily find the upwind direction for every phase,
