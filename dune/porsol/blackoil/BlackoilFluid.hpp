@@ -218,69 +218,56 @@ namespace Opm
                     }
                 }
 
-                // Gravity contribution.
+                // Gravity contribution:
                 //    gravcapf = rho_1*g*(z_1 - z_12) - rho_2*g*(z_2 - z_12)
                 // where _1 and _2 refers to two neigbour cells, z is the
                 // z coordinate of the centroid, and z_12 is the face centroid.
+                // Also compute the potentials.
+                PhaseVec pot[2];
                 for (int phase = 0; phase < np; ++phase) {
                     gravcapf[np*face + phase] = gravcontrib[0][phase] - gravcontrib[1][phase];
+                    pot[0][phase] = phase_p[0][phase] + gravcapf[np*face + phase];
+                    pot[1][phase] = phase_p[1][phase];
                 }
 
                 // Now we can easily find the upwind direction for every phase,
                 // we can also tell which boundary faces are inflow bdys.
 
-
+                // Get mobilities and derivatives.
                 PhaseVec phase_mob[2];
                 PhaseMat phasemob_deriv[2];
                 for (int j = 0; j < 2; ++j) {
                     if (c[j] >= 0) {
-                        // Pressures, mobilities.
-                        phase_p[j] = cell_pressure[c[j]];
                         phase_mob[j] = phasemobc[c[j]];
                         phasemob_deriv[j] = phasemobc_deriv[c[j]];
-                        // Gravity contribution.
-                        if (nonzero_gravity) {
-                            Vec cc = grid.cellCentroid(c[j]);
-                            cc -= fc;
-                            gravcontrib[j] = fluid.phaseDensities(&cellA[np*nc*c[j]]);;
-                            gravcontrib[j] *= (cc*gravity);
-                        } else {
-                            gravcontrib[j] = 0.0;
-                        }
                     } else {
-                        // Pressures, mobilities.
-                        phase_p[j] = face_pressure[face];
                         FluidStateBlackoil bdy_state = fluid.computeState(face_pressure[face], bdy_z);
                         phase_mob[j] = bdy_state.mobility_;
                         phasemob_deriv[j] = bdy_state.dmobility_;
-                        // Gravity contribution.
-                        gravcontrib[j] = 0.0;
                     }
                 }
 
                 // Compute face_z, which is averaged from the cells, unless on outflow or noflow bdy.
                 CompVec face_z(0.0);
                 double face_z_factor = 0.5;
-                double pot_l[2] = { phase_p[0][Liquid], phase_p[1][Liquid] + gravcapf[np*face + Liquid] };
                 for (int j = 0; j < 2; ++j) {
                     if (c[j] >= 0) {
                         face_z += cell_z[c[j]];
-                    } else if (pot_l[j] > pot_l[(j + 1)%2]) {
+                    } else if (pot[j][Liquid] > pot[(j+1)%2][Liquid]) {
                         // Inflow boundary.
                         face_z += bdy_z;
                     } else {
                         // For outflow or noflow boundaries, only cell z is used.
                         face_z_factor = 1.0;
                         // Also, make sure the boundary data are not used for mobilities.
-                        phase_p[j] = -1e100;
+                        pot[j] = -1e100;
                     }
                 }
                 face_z *= face_z_factor;
 
                 // Computing upwind mobilities and derivatives
                 for (int phase = 0; phase < np; ++phase) {
-                    double pot[2] = { phase_p[0][phase], phase_p[1][phase] + gravcapf[np*face + phase] };
-                    if (pot[0] == pot[1]) {
+                    if (pot[0][phase] == pot[1][phase]) {
                         // Average.
                         double aver = 0.5*(phase_mob[0][phase] + phase_mob[1][phase]);
                         phasemobf[np*face + phase] = aver;
@@ -290,7 +277,7 @@ namespace Opm
                         }
                     } else {
                         // Upwind.
-                        int upwind = pot[0] > pot[1] ? 0 : 1;
+                        int upwind = pot[0][phase] > pot[1][phase] ? 0 : 1;
                         phasemobf[np*face + phase] = phase_mob[upwind][phase];
                         for (int p2 = 0; p2 < numPhases; ++p2) {
                             phasemobf_deriv[np*np*face + np*phase + p2] = phasemob_deriv[upwind][phase][p2];
