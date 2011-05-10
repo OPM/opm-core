@@ -75,6 +75,19 @@ namespace Opm
         {
             return surface_densities_;
         }
+
+        /// \param[in] A state matrix in fortran ordering
+        PhaseVec phaseDensities(const double* A) const
+        {
+            PhaseVec phase_dens(0.0);
+            for (int phase = 0; phase < numPhases; ++phase) {
+                for (int comp = 0; comp < numComponents; ++comp) {
+                    phase_dens[phase] += A[numComponents*phase + comp]*surface_densities_[comp];
+                }
+            }
+            return phase_dens;
+       }
+
     private:
         FluidMatrixInteractionBlackoilParams<double> fmi_params_;
         CompVec surface_densities_;
@@ -108,12 +121,14 @@ namespace Opm
         std::vector<double> phasemobf_deriv; // Phase mobility derivatives. Flat storage (numPhases^2 per face).
         typedef Dune::FieldVector<Dune::FieldVector<Scalar, numPhases>, numPhases> PhaseMat;
         std::vector<PhaseMat> phasemobc_deriv; // Phase mobilities derivatives per cell.
+        std::vector<double> gravcapf;      // Gravity (\rho g \delta z-ish) contribution per face, flat storage.
 
     public:
         template <class Grid, class Rock>
         void compute(const Grid& grid,
                      const Rock& rock,
                      const BlackoilFluid& fluid,
+                     const typename Grid::Vector gravity,
                      const std::vector<PhaseVec>& cell_pressure,
                      const std::vector<PhaseVec>& face_pressure,
                      const std::vector<CompVec>& cell_z,
@@ -126,6 +141,7 @@ namespace Opm
             ASSERT(num_faces == grid.numFaces());
             const int np = numPhases;
             const int nc = numComponents;
+            bool nonzero_gravity = gravity.two_norm() > 0.0;
             BOOST_STATIC_ASSERT(np == nc);
             totcompr.resize(num_cells);
             totphasevol_density.resize(num_cells);
@@ -142,6 +158,7 @@ namespace Opm
             phasemobc.resize(num_cells);
             phasemobf_deriv.resize(np*np*num_faces);
             phasemobc_deriv.resize(np*np*num_cells);
+            gravcapf.resize(np*num_faces);
             BOOST_STATIC_ASSERT(np == 3);
 #pragma omp parallel for
             for (int cell = 0; cell < num_cells; ++cell) {
@@ -169,47 +186,102 @@ namespace Opm
                 expjacterm[cell] = state.experimental_term_;
             }
 
-            // Set phasemobf to average of cells' phase mobs, if pressures are equal, else use upwinding.
-            // Set faceA by using average of cells' z and face pressures.
+            // Obtain properties from both sides of the face.
 #pragma omp parallel for
             for (int face = 0; face < num_faces; ++face) {
+                typedef typename Grid::Vector Vec;
+                Vec fc = grid.faceCentroid(face);
                 int c[2] = { grid.faceCell(face, 0), grid.faceCell(face, 1) };
+
+                // Get pressures and compute gravity contributions,
+                // to decide upwind directions.
                 PhaseVec phase_p[2];
-                PhaseVec phase_mob[2];
-                PhaseMat phasemob_deriv[2];
-                CompVec face_z(0.0);
-                bool bdy = false;
-                bool inflow_bdy = false;
+                PhaseVec gravcontrib[2];
                 for (int j = 0; j < 2; ++j) {
                     if (c[j] >= 0) {
+                        // Pressures
+                        phase_p[j] = cell_pressure[c[j]];
+                        // Gravity contribution.
+                        if (nonzero_gravity) {
+                            Vec cc = grid.cellCentroid(c[j]);
+                            cc -= fc;
+                            gravcontrib[j] = fluid.phaseDensities(&cellA[np*nc*c[j]]);;
+                            gravcontrib[j] *= (cc*gravity);
+                        } else {
+                            gravcontrib[j] = 0.0;
+                        }
+                    } else {
+                        // Pressures
+                        phase_p[j] = face_pressure[face];
+                        // Gravity contribution.
+                        gravcontrib[j] = 0.0;
+                    }
+                }
+
+                // Gravity contribution.
+                //    gravcapf = rho_1*g*(z_1 - z_12) - rho_2*g*(z_2 - z_12)
+                // where _1 and _2 refers to two neigbour cells, z is the
+                // z coordinate of the centroid, and z_12 is the face centroid.
+                for (int phase = 0; phase < np; ++phase) {
+                    gravcapf[np*face + phase] = gravcontrib[0][phase] - gravcontrib[1][phase];
+                }
+
+                // Now we can easily find the upwind direction for every phase,
+                // we can also tell which boundary faces are inflow bdys.
+
+
+                PhaseVec phase_mob[2];
+                PhaseMat phasemob_deriv[2];
+                for (int j = 0; j < 2; ++j) {
+                    if (c[j] >= 0) {
+                        // Pressures, mobilities.
                         phase_p[j] = cell_pressure[c[j]];
                         phase_mob[j] = phasemobc[c[j]];
                         phasemob_deriv[j] = phasemobc_deriv[c[j]];
-                        face_z += cell_z[c[j]];
-                    } else {
-                        bdy = true;
-                        phase_p[j] = face_pressure[face];
-                        /// \TODO with capillary pressures etc., what is an inflow bdy.
-                        /// Using Liquid phase pressure here.
-                        inflow_bdy = face_pressure[face][Liquid]
-                            > cell_pressure[c[(j+1)%2]][Liquid];
-                        if (inflow_bdy) {
-                            FluidStateBlackoil bdy_state = fluid.computeState(face_pressure[face], bdy_z);
-                            phase_mob[j] = bdy_state.mobility_;
-                            phasemob_deriv[j] = bdy_state.dmobility_;
-                            face_z += bdy_z;
+                        // Gravity contribution.
+                        if (nonzero_gravity) {
+                            Vec cc = grid.cellCentroid(c[j]);
+                            cc -= fc;
+                            gravcontrib[j] = fluid.phaseDensities(&cellA[np*nc*c[j]]);;
+                            gravcontrib[j] *= (cc*gravity);
                         } else {
-                            phase_p[j] = -1e100; // To ensure correct upwinding.
-                            // No need to set phase_mob[j].
+                            gravcontrib[j] = 0.0;
                         }
+                    } else {
+                        // Pressures, mobilities.
+                        phase_p[j] = face_pressure[face];
+                        FluidStateBlackoil bdy_state = fluid.computeState(face_pressure[face], bdy_z);
+                        phase_mob[j] = bdy_state.mobility_;
+                        phasemob_deriv[j] = bdy_state.dmobility_;
+                        // Gravity contribution.
+                        gravcontrib[j] = 0.0;
                     }
                 }
-                if (!bdy || inflow_bdy) {
-                    face_z *= 0.5;
+
+                // Compute face_z, which is averaged from the cells, unless on outflow or noflow bdy.
+                CompVec face_z(0.0);
+                double face_z_factor = 0.5;
+                double pot_l[2] = { phase_p[0][Liquid], phase_p[1][Liquid] + gravcapf[np*face + Liquid] };
+                for (int j = 0; j < 2; ++j) {
+                    if (c[j] >= 0) {
+                        face_z += cell_z[c[j]];
+                    } else if (pot_l[j] > pot_l[(j + 1)%2]) {
+                        // Inflow boundary.
+                        face_z += bdy_z;
+                    } else {
+                        // For outflow or noflow boundaries, only cell z is used.
+                        face_z_factor = 1.0;
+                        // Also, make sure the boundary data are not used for mobilities.
+                        phase_p[j] = -1e100;
+                    }
                 }
+                face_z *= face_z_factor;
+
+                // Computing upwind mobilities and derivatives
                 for (int phase = 0; phase < np; ++phase) {
-                    if (phase_p[0][phase] == phase_p[1][phase]) {
-                        // Average mobilities.
+                    double pot[2] = { phase_p[0][phase], phase_p[1][phase] + gravcapf[np*face + phase] };
+                    if (pot[0] == pot[1]) {
+                        // Average.
                         double aver = 0.5*(phase_mob[0][phase] + phase_mob[1][phase]);
                         phasemobf[np*face + phase] = aver;
                         for (int p2 = 0; p2 < numPhases; ++p2) {
@@ -217,22 +289,21 @@ namespace Opm
                                 + phasemob_deriv[1][phase][p2];
                         }
                     } else {
-                        // Upwind mobilities.
-                        int upwind = (phase_p[0][phase] > phase_p[1][phase]) ? 0 : 1;
+                        // Upwind.
+                        int upwind = pot[0] > pot[1] ? 0 : 1;
                         phasemobf[np*face + phase] = phase_mob[upwind][phase];
                         for (int p2 = 0; p2 < numPhases; ++p2) {
                             phasemobf_deriv[np*np*face + np*phase + p2] = phasemob_deriv[upwind][phase][p2];
                         }
                     }
                 }
+
+                // Find faceA.
                 FluidStateBlackoil face_state = fluid.computeState(face_pressure[face], face_z);
                 std::copy(face_state.phase_to_comp_, face_state.phase_to_comp_ + nc*np, &faceA[face*nc*np]);
             }
-
         }
     };
-
-
 
 
 } // namespace Opm
