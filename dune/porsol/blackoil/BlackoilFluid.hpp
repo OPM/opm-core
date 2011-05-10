@@ -203,10 +203,10 @@ namespace Opm
                         phase_p[j] = cell_pressure[c[j]];
                         // Gravity contribution.
                         if (nonzero_gravity) {
-                            Vec cc = grid.cellCentroid(c[j]);
-                            cc -= fc;
+                            Vec cdiff = fc;
+                            cdiff -= grid.cellCentroid(c[j]);
                             gravcontrib[j] = fluid.phaseDensities(&cellA[np*nc*c[j]]);;
-                            gravcontrib[j] *= (cc*gravity);
+                            gravcontrib[j] *= (cdiff*gravity);
                         } else {
                             gravcontrib[j] = 0.0;
                         }
@@ -219,15 +219,15 @@ namespace Opm
                 }
 
                 // Gravity contribution:
-                //    gravcapf = rho_1*g*(z_1 - z_12) - rho_2*g*(z_2 - z_12)
+                //    gravcapf = rho_1*g*(z_12 - z_1) - rho_2*g*(z_12 - z_2)
                 // where _1 and _2 refers to two neigbour cells, z is the
                 // z coordinate of the centroid, and z_12 is the face centroid.
                 // Also compute the potentials.
                 PhaseVec pot[2];
                 for (int phase = 0; phase < np; ++phase) {
                     gravcapf[np*face + phase] = gravcontrib[0][phase] - gravcontrib[1][phase];
-                    pot[0][phase] = phase_p[0][phase] + gravcapf[np*face + phase];
-                    pot[1][phase] = phase_p[1][phase];
+                    pot[0][phase] = phase_p[0][phase];
+                    pot[1][phase] = phase_p[1][phase] + gravcapf[np*face + phase];
                 }
 
                 // Now we can easily find the upwind direction for every phase,
