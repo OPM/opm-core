@@ -157,6 +157,7 @@ public:
                   const std::vector<double>& phasemobf,
                   const std::vector<double>& phasemobwellperf,
                   const std::vector<double>& cell_pressure,
+                  const std::vector<double>& gravcapf,
                   const std::vector<double>& wellperf_gpot,
                   const double* surf_dens)
     {
@@ -198,47 +199,15 @@ public:
 
         // Assemble the embedded linear system.
         compr_quantities cq = { 3, &totcompr[0], &voldiscr[0], &cellA[0], &faceA[0], &phasemobf[0] };
-        std::vector<double> gravcap_f(3*num_faces, 0.0);
-        typedef GridAdapter::Vector Vec;
-        for (int face = 0; face < num_faces; ++face) {
-            Vec fc = grid_.faceCentroid(face);
-            for (int local_cell = 0; local_cell < 2; ++local_cell) {
-                // Total contribution is sum over neighbouring cells.
-                int cell = grid_.faceCell(face, local_cell);
-                if (cell == -1) {
-                    // \TODO check that a zero contribution is correct on boundary.
-                    continue;
-                }
-                // Compute phase densities in cell.
-                double phase_dens[3] = { 0.0, 0.0, 0.0 };
-                for (int phase = 0; phase < 3; ++phase) {
-                    const double* At = &cellA[9*cell]; // Already transposed since in Fortran order...
-                    for (int comp = 0; comp < 3; ++comp) {
-                        phase_dens[phase] += At[3*phase + comp]*surf_dens[comp];
-                    }
-                }
-                // Compute geometric part.
-                double gdz = 0.0;
-                Vec cc = grid_.cellCentroid(cell);
-                for (int dd = 0; dd < 3; ++dd) {
-                    gdz += (cc[dd] - fc[dd])*gravity_[dd];
-                }
-                if (local_cell == 1) {
-                    gdz *= -1.0;
-                }
-                // Add contribution from this cell.
-                for (int phase = 0; phase < 3; ++phase) {
-                    gravcap_f[3*face + phase] -= gdz*phase_dens[phase];
-                }
-            }
-        }
+
+        // Call the assembly routine. After this, linearSystem() may be called.
         cfs_tpfa_assemble(g, dt, wells, &bc, src,
-                          &cq, &trans_[0], &gravcap_f[0],
+                          &cq, &trans_[0], &gravcapf[0],
                           wctrl, wcompl,
                           &cell_pressure[0], &porevol_[0],
                           data_);
         phasemobf_ = phasemobf;
-        gravcapf_  = gravcap_f;
+        gravcapf_  = gravcapf;
         state_ = Assembled;
     }
 
@@ -334,7 +303,7 @@ public:
                             data_, &cell_pressures[0], &face_fluxes[0],
                             wpress, wflux);
         cfs_tpfa_fpress(grid_.c_grid(), &bc, np, &htrans_[0],
-                        &phasemobf_[0], &gravcapf_[0], &cell_pressures[0],
+                        &phasemobf_[0], &gravcapf_[0], data_, &cell_pressures[0],
                         &face_fluxes[0], &face_pressures[0]);
     }
 
