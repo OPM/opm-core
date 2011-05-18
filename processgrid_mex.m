@@ -1,4 +1,4 @@
-function varargout = processgrid(varargin)
+function varargout = processgrid_mex(varargin)
 %Compute grid topology and geometry from pillar grid description.
 %
 % SYNOPSIS:
@@ -32,5 +32,11 @@ function varargout = processgrid(varargin)
 % $Date$
 % $Revision$
 
+% Build MEX edition of same.
+%
+buildmex CFLAGS='$CFLAGS -Wall -fPIC' processgrid.c preprocess.c ...
+         uniquepoints.c facetopology.c sparsetable.c mxgrdecl.c  ...
+         -output processgrid_mex.mexa64
+
+% Call MEX edition.
 [varargout{1:nargout}] = processgrid_mex(varargin{:});
-varargout{1}.griddim = 3;
