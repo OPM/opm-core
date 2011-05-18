@@ -309,9 +309,11 @@ allocate_grid(struct processed_grid *grid, const char *func)
 /* ---------------------------------------------------------------------- */
 {
   size_t nflds, nhf;
-  const char *fields[] = { "nodes", "faces", "cells", "type", "cartDims" };
+  const char *fields[] = { "nodes", "faces", "cells",
+                           "type", "cartDims", "griddim" };
 
-  mxArray *G, *nodes, *faces, *cells, *type, *typestr, *cartDims;
+  mxArray *G, *nodes, *faces, *cells;
+  mxArray *type, *typestr, *cartDims, *griddim;
 
   nflds    = sizeof(fields) / sizeof(fields[0]);
   nhf      = count_halffaces(grid->number_of_faces, grid->face_neighbors);
@@ -325,10 +327,11 @@ allocate_grid(struct processed_grid *grid, const char *func)
   type     = mxCreateCellMatrix(1, 1);
   typestr  = mxCreateString(func);
   cartDims = mxCreateDoubleMatrix(1, 3, mxREAL);
+  griddim  = mxCreateDoubleScalar(3);
 
-  if ((G        != NULL) && (nodes != NULL) && (faces   != NULL) &&
-      (cells    != NULL) && (type  != NULL) && (typestr != NULL) &&
-      (cartDims != NULL)) {
+  if ((G        != NULL) && (nodes   != NULL) && (faces   != NULL) &&
+      (cells    != NULL) && (type    != NULL) && (typestr != NULL) &&
+      (cartDims != NULL) && (griddim != NULL)) {
     mxSetCell(type, 0, typestr);
 
     mxSetField(G, 0, "nodes"   , nodes   );
@@ -336,7 +339,9 @@ allocate_grid(struct processed_grid *grid, const char *func)
     mxSetField(G, 0, "cells"   , cells   );
     mxSetField(G, 0, "type"    , type    );
     mxSetField(G, 0, "cartDims", cartDims);
+    mxSetField(G, 0, "griddim" , griddim );
   } else {
+    if (griddim  != NULL) { mxDestroyArray(griddim);  }
     if (cartDims != NULL) { mxDestroyArray(cartDims); }
     if (typestr  != NULL) { mxDestroyArray(typestr);  }
     if (type     != NULL) { mxDestroyArray(type);     }
