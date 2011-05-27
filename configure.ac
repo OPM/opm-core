@@ -9,6 +9,16 @@ AC_CONFIG_HEADERS([config.h])
 
 AM_INIT_AUTOMAKE([foreign])
 
+# Use "silent" rules by default if available in the Automake being used to
+# process this setup.  See, e.g.,
+#
+#   http://www.flameeyes.eu/autotools-mythbuster/automake/silent.html
+#
+# for details, particularly concerning the backwards compatibility.
+#
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
+
 LT_INIT
 
 # Checks for programs.
