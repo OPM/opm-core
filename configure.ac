@@ -6,6 +6,15 @@ AC_INIT([opmtransport], [0.1], [Jostein.R.Natvig@sintef.no])
 
 AM_INIT_AUTOMAKE([foreign -Wall])
 
+# Use "silent" rules by default if available in the Automake being used to
+# process this setup.  See, e.g.,
+#
+#   http://www.flameeyes.eu/autotools-mythbuster/automake/silent.html
+#
+# for details, particularly concerning the backwards compatibility.
+#
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
 LT_INIT
 
 AC_CONFIG_MACRO_DIR([m4])
