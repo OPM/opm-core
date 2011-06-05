@@ -25,16 +25,16 @@ extern "C" {
 #endif
 
 struct coarse_topology {
-    int nblocks;
-    int nfaces;
+    int nblocks;                /* Number of blocks */
+    int nfaces;                 /* Number of faces */
 
-    int *neighbours;
+    int *neighbours;            /* Neighbourship definition */
 
-    int *blkfacepos;
-    int *blkfaces;
+    int *blkfacepos;            /* Index into blkfaces */
+    int *blkfaces;              /* Faces per block */
 
-    int *subfacepos;
-    int *subfaces;
+    int *subfacepos;            /* Index into subfaces */
+    int *subfaces;              /* FS faces per coarse face */
 };
 
 
