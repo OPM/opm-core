@@ -17,6 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 
 #include <dune/common/param/ParameterGroup.hpp>
 #include <dune/common/EclipseGridParser.hpp>
