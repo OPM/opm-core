@@ -1698,13 +1698,13 @@ coarse_sys_compute_Binv(int                nb,
             a1 = 1.0;
             a2 = 0.0;
             dgemv_("No Transpose", &mm, &nn, &a1,
-                   &sys->cell_ip[sys->ip_pos[b]], &ld,
+                   &sys->cell_ip[sys->cell_ip_pos[b]], &ld,
                    Lti, &incx, &a2, B, &incy);
             fprintf(fp, "IP{%d} = [\n", b + 1);
             for (i2 = 0; i2 < nn; i2++) {
                 for (i1 = 0; i1 < mm; i1++) {
                     fprintf(fp, "%18.12e ",
-                            sys->cell_ip[sys->ip_pos[b] + i1 + i2*mm]);
+                            sys->cell_ip[sys->cell_ip_pos[b] + i1 + i2*mm]);
                 }
                 fprintf(fp, ";\n");
             }
