@@ -87,11 +87,34 @@ namespace Opm
 	return viscosity_(press);
     }
 
+    void MiscibilityDead::getViscosity(const std::vector<PhaseVec>& pressures,
+                                       const std::vector<CompVec>&,
+                                       int phase,
+                                       std::vector<double>& output) const
+    {
+        int num = pressures.size();
+        output.resize(num);
+        for (int i = 0; i < num; ++i) {
+            output[i] = viscosity_(pressures[i][phase]);
+        }
+    }
 
     double MiscibilityDead::B(int region, double press, const surfvol_t& /*surfvol*/) const
     {
 	// Interpolate 1/B 
 	return 1.0/one_over_B_(press);
+    }
+
+    void MiscibilityDead::B(const std::vector<PhaseVec>& pressures,
+                            const std::vector<CompVec>&,
+                            int phase,
+                            std::vector<double>& output) const
+    {
+        int num = pressures.size();
+        output.resize(num);
+        for (int i = 0; i < num; ++i) {
+            output[i] = 1.0/one_over_B_(pressures[i][phase]);
+        }
     }
 
     double MiscibilityDead::dBdp(int region, double press, const surfvol_t& /*surfvol*/) const
@@ -102,14 +125,52 @@ namespace Opm
 	return -Bg*Bg*one_over_B_.derivative(press);
     }
 
+    void MiscibilityDead::dBdp(const std::vector<PhaseVec>& pressures,
+                               const std::vector<CompVec>& surfvols,
+                               int phase,
+                               std::vector<double>& output_B,
+                               std::vector<double>& output_dBdp) const
+    {
+        B(pressures, surfvols, phase, output_B);
+        int num = pressures.size();
+        output_dBdp.resize(num);
+        for (int i = 0; i < num; ++i) {
+            double Bg = output_B[i];
+            output_dBdp[i] = -Bg*Bg*one_over_B_.derivative(pressures[i][phase]);
+        }
+    }
+
     double MiscibilityDead::R(int /*region*/, double /*press*/, const surfvol_t& /*surfvol*/) const
     {
         return 0.0;
     }
 
+    void MiscibilityDead::R(const std::vector<PhaseVec>& pressures,
+                            const std::vector<CompVec>&,
+                            int,
+                            std::vector<double>& output) const
+    {
+        int num = pressures.size();
+        output.clear();
+        output.resize(num, 0.0);
+    }
+
     double MiscibilityDead::dRdp(int /*region*/, double /*press*/, const surfvol_t& /*surfvol*/) const
     {
         return 0.0;
+    }
+
+    void MiscibilityDead::dRdp(const std::vector<PhaseVec>& pressures,
+                               const std::vector<CompVec>&,
+                               int,
+                               std::vector<double>& output_R,
+                               std::vector<double>& output_dRdp) const
+    {
+        int num = pressures.size();
+        output_R.clear();
+        output_R.resize(num, 0.0);
+        output_dRdp.clear();
+        output_dRdp.resize(num, 0.0);
     }
 
 }
