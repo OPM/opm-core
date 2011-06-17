@@ -56,6 +56,29 @@ namespace Opm
 	virtual double dBdp(int region, double press, const surfvol_t& surfvol) const = 0;
 	virtual double R   (int region, double press, const surfvol_t& surfvol) const = 0;
 	virtual double dRdp(int region, double press, const surfvol_t& surfvol) const = 0;
+
+        virtual void getViscosity(const std::vector<PhaseVec>& pressures,
+                                  const std::vector<CompVec>& surfvol,
+                                  int phase,
+                                  std::vector<double>& output) const = 0;
+        virtual void B(const std::vector<PhaseVec>& pressures,
+                       const std::vector<CompVec>& surfvol,
+                       int phase,
+                       std::vector<double>& output) const = 0;
+        virtual void dBdp(const std::vector<PhaseVec>& pressures,
+                          const std::vector<CompVec>& surfvol,
+                          int phase,
+                          std::vector<double>& output_B,
+                          std::vector<double>& output_dBdp) const = 0;
+        virtual void R(const std::vector<PhaseVec>& pressures,
+                       const std::vector<CompVec>& surfvol,
+                       int phase,
+                       std::vector<double>& output) const = 0;
+        virtual void dRdp(const std::vector<PhaseVec>& pressures,
+                          const std::vector<CompVec>& surfvol,
+                          int phase,
+                          std::vector<double>& output_R,
+                          std::vector<double>& output_dRdp) const = 0;
     };
 
 } // namespace Opm
