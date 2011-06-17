@@ -46,6 +46,7 @@ namespace Opm
     {
     public:
         typedef std::vector<std::vector<double> > table_t;
+
 	MiscibilityWater(const table_t& pvtw)
         {
 	    const int region_number = 0;
@@ -60,6 +61,7 @@ namespace Opm
                 THROW("MiscibilityWater does not support 'viscosibility'.");
             }
         }
+
 	MiscibilityWater(double visc)
             : ref_press_(0.0),
               ref_B_(1.0),
@@ -67,6 +69,7 @@ namespace Opm
               viscosity_(visc)
         {
         }
+
 	virtual ~MiscibilityWater()
         {
         }
@@ -75,6 +78,17 @@ namespace Opm
         {
             return viscosity_;
         }
+
+        virtual void getViscosity(const std::vector<PhaseVec>& pressures,
+                                  const std::vector<CompVec>&,
+                                  int,
+                                  std::vector<double>& output) const
+        {
+            int num = pressures.size();
+            output.clear();
+            output.resize(num, viscosity_);
+        }
+
         virtual double B(int /*region*/, double press, const surfvol_t& /*surfvol*/) const
         {
             if (comp_) {
@@ -85,6 +99,26 @@ namespace Opm
                 return ref_B_;
             }
         }
+
+        virtual void B(const std::vector<PhaseVec>& pressures,
+                       const std::vector<CompVec>&,
+                       int phase,
+                       std::vector<double>& output) const
+        {
+            int num = pressures.size();
+            if (comp_) {
+                output.resize(num);
+                for (int i = 0; i < num; ++i) {
+                    // Computing a polynomial approximation to the exponential.
+                    double x = comp_*(pressures[i][phase] - ref_press_);
+                    output[i] = ref_B_/(1.0 + x + 0.5*x*x);
+                }
+            } else {
+                output.clear();
+                output.resize(num, ref_B_);
+            }
+        }
+
 	virtual double dBdp(int region, double press, const surfvol_t& surfvol) const
         {
             if (comp_) {
@@ -93,14 +127,59 @@ namespace Opm
                 return 0.0;
             }
         }
+
+        virtual void dBdp(const std::vector<PhaseVec>& pressures,
+                          const std::vector<CompVec>& surfvols,
+                          int phase,
+                          std::vector<double>& output_B,
+                          std::vector<double>& output_dBdp) const
+        {
+            B(pressures, surfvols, phase, output_B);
+            int num = pressures.size();
+            if (comp_) {
+                output_dBdp.resize(num);
+                for (int i = 0; i < num; ++i) {
+                    output_dBdp[i] = -comp_*output_B[i];
+                }
+            } else {
+                output_dBdp.clear();
+                output_dBdp.resize(num, 0.0);
+            }
+        }
+
 	virtual double R(int /*region*/, double /*press*/, const surfvol_t& /*surfvol*/) const
         {
             return 0.0;
         }
+
+        virtual void R(const std::vector<PhaseVec>& pressures,
+                       const std::vector<CompVec>&,
+                       int,
+                       std::vector<double>& output) const
+        {
+            int num = pressures.size();
+            output.clear();
+            output.resize(num, 0.0);
+        }
+
 	virtual double dRdp(int /*region*/, double /*press*/, const surfvol_t& /*surfvol*/) const
         {
             return 0.0;
         }
+
+        virtual void dRdp(const std::vector<PhaseVec>& pressures,
+                          const std::vector<CompVec>&,
+                          int, 
+                          std::vector<double>& output_R,
+                          std::vector<double>& output_dRdp) const
+        {
+            int num = pressures.size();
+            output_R.clear();
+            output_R.resize(num, 0.0);
+            output_dRdp.clear();
+            output_dRdp.resize(num, 0.0);
+        }
+
     private:
         double ref_press_;
         double ref_B_;
