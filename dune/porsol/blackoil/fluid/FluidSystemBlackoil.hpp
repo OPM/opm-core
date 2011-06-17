@@ -154,11 +154,11 @@ public:
         // Get B and R factors.
         const PhaseVec& p = fluid_state.phase_pressure_;
         const CompVec& z = fluid_state.surface_volume_;
-        double B[3];
+        PhaseVec& B = fluid_state.volume_formation_factor_;
         B[Aqua]   = params().pvt_.B(p[Aqua],   z, Aqua);
         B[Vapour] = params().pvt_.B(p[Vapour], z, Vapour);
         B[Liquid] = params().pvt_.B(p[Liquid], z, Liquid);
-        double R[3]; // Only using 2 of them, though.
+        PhaseVec& R = fluid_state.solution_factor_; 
         R[Vapour] = params().pvt_.R(p[Vapour], z, Vapour);
         R[Liquid] = params().pvt_.R(p[Liquid], z, Liquid);
         // Set the A matrix (A = RB^{-1})
