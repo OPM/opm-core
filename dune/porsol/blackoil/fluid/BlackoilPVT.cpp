@@ -123,4 +123,80 @@ namespace Opm
         }
     }
 
+    void BlackoilPVT::getViscosity(const std::vector<PhaseVec>& pressures,
+                                   const std::vector<CompVec>& surfvol,
+                                   std::vector<PhaseVec>& output) const
+    {
+        int num = pressures.size();
+        output.resize(num);
+        for (int phase = 0; phase < numPhases; ++phase) {
+            propsForPhase(PhaseIndex(phase)).getViscosity(pressures, surfvol, phase, data1_);
+            for (int i = 0; i < num; ++i) {
+                output[i][phase] = data1_[i];
+            }
+        }
+    }
+
+    void BlackoilPVT::B(const std::vector<PhaseVec>& pressures,
+                        const std::vector<CompVec>& surfvol,
+                        std::vector<PhaseVec>& output) const
+    {
+        int num = pressures.size();
+        output.resize(num);
+        for (int phase = 0; phase < numPhases; ++phase) {
+            propsForPhase(PhaseIndex(phase)).B(pressures, surfvol, phase, data1_);
+            for (int i = 0; i < num; ++i) {
+                output[i][phase] = data1_[i];
+            }
+        }
+    }
+
+    void BlackoilPVT::dBdp(const std::vector<PhaseVec>& pressures,
+                           const std::vector<CompVec>& surfvol,
+                           std::vector<PhaseVec>& output_B,
+                           std::vector<PhaseVec>& output_dBdp) const
+    {
+        int num = pressures.size();
+        output_B.resize(num);
+        output_dBdp.resize(num);
+        for (int phase = 0; phase < numPhases; ++phase) {
+            propsForPhase(PhaseIndex(phase)).dBdp(pressures, surfvol, phase, data1_, data2_);
+            for (int i = 0; i < num; ++i) {
+                output_B[i][phase] = data1_[i];
+                output_dBdp[i][phase] = data2_[i];
+            }
+        }
+    }
+
+    void BlackoilPVT::R(const std::vector<PhaseVec>& pressures,
+                        const std::vector<CompVec>& surfvol,
+                        std::vector<PhaseVec>& output) const
+    {
+        int num = pressures.size();
+        output.resize(num);
+        for (int phase = 0; phase < numPhases; ++phase) {
+            propsForPhase(PhaseIndex(phase)).R(pressures, surfvol, phase, data1_);
+            for (int i = 0; i < num; ++i) {
+                output[i][phase] = data1_[i];
+            }
+        }
+    }
+
+    void BlackoilPVT::dRdp(const std::vector<PhaseVec>& pressures,
+                           const std::vector<CompVec>& surfvol,
+                           std::vector<PhaseVec>& output_R,
+                           std::vector<PhaseVec>& output_dRdp) const
+    {
+        int num = pressures.size();
+        output_R.resize(num);
+        output_dRdp.resize(num);
+        for (int phase = 0; phase < numPhases; ++phase) {
+            propsForPhase(PhaseIndex(phase)).dRdp(pressures, surfvol, phase, data1_, data2_);
+            for (int i = 0; i < num; ++i) {
+                output_R[i][phase] = data1_[i];
+                output_dRdp[i][phase] = data2_[i];
+            }
+        }
+    }
+
 } // namespace Opm

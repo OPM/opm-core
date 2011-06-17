@@ -52,6 +52,23 @@ namespace Opm
                     const CompVec& surfvol,
 		    PhaseIndex phase) const;
 
+        void getViscosity(const std::vector<PhaseVec>& pressures,
+                          const std::vector<CompVec>& surfvol,
+                          std::vector<PhaseVec>& output) const;
+        void B(const std::vector<PhaseVec>& pressures,
+               const std::vector<CompVec>& surfvol,
+               std::vector<PhaseVec>& output) const;
+        void dBdp(const std::vector<PhaseVec>& pressures,
+                  const std::vector<CompVec>& surfvol,
+                  std::vector<PhaseVec>& output_B,
+                  std::vector<PhaseVec>& output_dBdp) const;
+        void R(const std::vector<PhaseVec>& pressures,
+               const std::vector<CompVec>& surfvol,
+               std::vector<PhaseVec>& output) const;
+        void dRdp(const std::vector<PhaseVec>& pressures,
+                  const std::vector<CompVec>& surfvol,
+                  std::vector<PhaseVec>& output_R,
+                  std::vector<PhaseVec>& output_dRdp) const;
 
     private:
 	int region_number_;
@@ -61,6 +78,8 @@ namespace Opm
 	boost::scoped_ptr<MiscibilityProps> oil_props_;
 	boost::scoped_ptr<MiscibilityProps> gas_props_;
 	CompVec densities_;
+        mutable std::vector<double> data1_;
+        mutable std::vector<double> data2_;
     };
 
 }
