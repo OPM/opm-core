@@ -174,6 +174,19 @@ namespace Opm
 	return miscible_oil(press, surfvol, 2, false);
     }
 
+    void MiscibilityLiveOil::getViscosity(const std::vector<PhaseVec>& pressures,
+                                          const std::vector<CompVec>& surfvol,
+                                          int phase,
+                                          std::vector<double>& output) const
+    {
+        ASSERT(pressures.size() == surfvol.size());
+        int num = pressures.size();
+        output.resize(num);
+        for (int i = 0; i < num; ++i) {
+            output[i] = miscible_oil(pressures[i][phase], surfvol[i], 2, false);
+        }
+    }
+
     // Dissolved gas-oil ratio   
     double MiscibilityLiveOil::R(int /*region*/, double press, const surfvol_t& surfvol) const
     {
@@ -188,6 +201,19 @@ namespace Opm
 	} else {
 	    return maxR;  // Undersaturated case
 	}
+    }
+
+    void MiscibilityLiveOil::R(const std::vector<PhaseVec>& pressures,
+                               const std::vector<CompVec>& surfvol,
+                               int phase,
+                               std::vector<double>& output) const
+    {
+        ASSERT(pressures.size() == surfvol.size());
+        int num = pressures.size();
+        output.resize(num);
+        for (int i = 0; i < num; ++i) {
+            output[i] = R(0, pressures[i][phase], surfvol[i]);
+        }
     }
 
     //  Dissolved gas-oil ratio derivative
@@ -205,10 +231,38 @@ namespace Opm
 	}	
     }
 
+    void MiscibilityLiveOil::dRdp(const std::vector<PhaseVec>& pressures,
+                                  const std::vector<CompVec>& surfvol,
+                                  int phase,
+                                  std::vector<double>& output_R,
+                                  std::vector<double>& output_dRdp) const
+    {
+        ASSERT(pressures.size() == surfvol.size());
+        R(pressures, surfvol, phase, output_R);
+        int num = pressures.size();
+        output_dRdp.resize(num);
+        for (int i = 0; i < num; ++i) {
+            output_dRdp[i] = dRdp(0, pressures[i][phase], surfvol[i]); // \TODO Speedup here by using already evaluated R.
+        }
+    }
+
     double MiscibilityLiveOil::B(int /*region*/, double press, const surfvol_t& surfvol) const
     {
         // if (surfvol[Liquid] == 0.0) return 1.0; // To handle no-oil case.
 	return 1.0/miscible_oil(press, surfvol, 1, false);
+    }
+
+    void MiscibilityLiveOil::B(const std::vector<PhaseVec>& pressures,
+                               const std::vector<CompVec>& surfvol,
+                               int phase,
+                               std::vector<double>& output) const
+    {
+        ASSERT(pressures.size() == surfvol.size());
+        int num = pressures.size();
+        output.resize(num);
+        for (int i = 0; i < num; ++i) {
+            output[i] = B(0, pressures[i][phase], surfvol[i]);
+        }
     }
 
     double MiscibilityLiveOil::dBdp(int region, double press, const surfvol_t& surfvol) const
@@ -216,6 +270,21 @@ namespace Opm
         // if (surfvol[Liquid] == 0.0) return 0.0; // To handle no-oil case.
 	double Bo = B(region, press, surfvol);
 	return -Bo*Bo*miscible_oil(press, surfvol, 1, true);
+    }
+
+    void MiscibilityLiveOil::dBdp(const std::vector<PhaseVec>& pressures,
+                                  const std::vector<CompVec>& surfvol,
+                                  int phase,
+                                  std::vector<double>& output_B,
+                                  std::vector<double>& output_dBdp) const
+    {
+        ASSERT(pressures.size() == surfvol.size());
+        B(pressures, surfvol, phase, output_B);
+        int num = pressures.size();
+        output_dBdp.resize(num);
+        for (int i = 0; i < num; ++i) {
+            output_dBdp[i] = dBdp(0, pressures[i][phase], surfvol[i]); // \TODO Speedup here by using already evaluated R.
+        }
     }
 
     double MiscibilityLiveOil::miscible_oil(double press, const surfvol_t& surfvol,

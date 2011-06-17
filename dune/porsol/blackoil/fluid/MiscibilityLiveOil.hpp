@@ -53,6 +53,29 @@ namespace Opm
         virtual double B   (int region, double press, const surfvol_t& surfvol) const;
 	virtual double dBdp(int region, double press, const surfvol_t& surfvol) const;
 
+        virtual void getViscosity(const std::vector<PhaseVec>& pressures,
+                                  const std::vector<CompVec>& surfvol,
+                                  int phase,
+                                  std::vector<double>& output) const;
+        virtual void B(const std::vector<PhaseVec>& pressures,
+                       const std::vector<CompVec>& surfvol,
+                       int phase,
+                       std::vector<double>& output) const;
+        virtual void dBdp(const std::vector<PhaseVec>& pressures,
+                          const std::vector<CompVec>& surfvol,
+                          int phase,
+                          std::vector<double>& output_B,
+                          std::vector<double>& output_dBdp) const;
+        virtual void R(const std::vector<PhaseVec>& pressures,
+                       const std::vector<CompVec>& surfvol,
+                       int phase,
+                       std::vector<double>& output) const;
+        virtual void dRdp(const std::vector<PhaseVec>& pressures,
+                          const std::vector<CompVec>& surfvol,
+                          int phase,
+                          std::vector<double>& output_R,
+                          std::vector<double>& output_dRdp) const;
+
     protected:
 	// item:  1=B  2=mu;
 	double miscible_oil(double press, const surfvol_t& surfvol, int item,
