@@ -268,7 +268,7 @@ namespace Opm
     double MiscibilityLiveOil::dBdp(int region, double press, const surfvol_t& surfvol) const
     {	
         // if (surfvol[Liquid] == 0.0) return 0.0; // To handle no-oil case.
-	double Bo = B(region, press, surfvol);
+	double Bo = B(region, press, surfvol); // \TODO check if we incur virtual call overhead here.
 	return -Bo*Bo*miscible_oil(press, surfvol, 1, true);
     }
 
@@ -283,7 +283,7 @@ namespace Opm
         int num = pressures.size();
         output_dBdp.resize(num);
         for (int i = 0; i < num; ++i) {
-            output_dBdp[i] = dBdp(0, pressures[i][phase], surfvol[i]); // \TODO Speedup here by using already evaluated R.
+            output_dBdp[i] = dBdp(0, pressures[i][phase], surfvol[i]); // \TODO Speedup here by using already evaluated B.
         }
     }
 
