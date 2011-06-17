@@ -233,17 +233,10 @@ namespace Opm
 						press);
 	    } else {  // Undersaturated case
 		int is = tableIndex(saturated_oil_table_[3], maxR);
-		if (undersat_oil_tables_[is][0].size() < 2) {  // Not anymore ...
-		    double val = (saturated_oil_table_[item][is+1]
-				  - saturated_oil_table_[item][is]) /
-			(saturated_oil_table_[0][is+1] -
-			 saturated_oil_table_[0][is]);
-
-		    return val;
-		}
 		double w = (maxR - saturated_oil_table_[3][is]) /
 		    (saturated_oil_table_[3][is+1] - saturated_oil_table_[3][is]);
-
+                ASSERT(undersat_oil_tables_[is][0].size() >= 2);
+                ASSERT(undersat_oil_tables_[is+1][0].size() >= 2);
 		double val1 =
 		    linearInterpolDerivative(undersat_oil_tables_[is][0],
 					     undersat_oil_tables_[is][item],
@@ -261,33 +254,12 @@ namespace Opm
 						 saturated_oil_table_[item],
 						 press);
 	    } else {  // Undersaturated case
-	      int is = tableIndex(saturated_oil_table_[3], maxR);
-
-		// Extrapolate from first table section
-		if (is == 0 && press < saturated_oil_table_[0][0]) {
-		    return linearInterpolationExtrap(undersat_oil_tables_[0][0],
-						     undersat_oil_tables_[0][item],
-						     press);
-		}
-
-		// Extrapolate from last table section
-		int ltp = saturated_oil_table_[0].size() - 1;
-		if (is+1 == ltp && press > saturated_oil_table_[0][ltp]) {
-		    return linearInterpolationExtrap(undersat_oil_tables_[ltp][0],
-						     undersat_oil_tables_[ltp][item],
-						     press);
-		}
-
 		// Interpolate between table sections
+                int is = tableIndex(saturated_oil_table_[3], maxR);
 		double w = (maxR - saturated_oil_table_[3][is]) /
-		    (saturated_oil_table_[3][is+1] - 
-		     saturated_oil_table_[3][is]);
-		if (undersat_oil_tables_[is][0].size() < 2) {  // Not anymore ...
-		    double val = saturated_oil_table_[item][is] +
-			w*(saturated_oil_table_[item][is+1] -
-			   saturated_oil_table_[item][is]);
-		    return val;
-		}
+		    (saturated_oil_table_[3][is+1] - saturated_oil_table_[3][is]);
+                ASSERT(undersat_oil_tables_[is][0].size() >= 2);
+                ASSERT(undersat_oil_tables_[is+1][0].size() >= 2);
 		double val1 =
 		    linearInterpolationExtrap(undersat_oil_tables_[is][0],
 					      undersat_oil_tables_[is][item],
