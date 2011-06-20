@@ -182,6 +182,7 @@ namespace Opm
         ASSERT(pressures.size() == surfvol.size());
         int num = pressures.size();
         output.resize(num);
+#pragma omp parallel for
         for (int i = 0; i < num; ++i) {
             output[i] = miscible_oil(pressures[i][phase], surfvol[i], 2, false);
         }
@@ -201,6 +202,7 @@ namespace Opm
         ASSERT(pressures.size() == surfvol.size());
         int num = pressures.size();
         output.resize(num);
+#pragma omp parallel for
         for (int i = 0; i < num; ++i) {
             output[i] = evalR(pressures[i][phase], surfvol[i]);
         }
@@ -231,6 +233,7 @@ namespace Opm
         int num = pressures.size();
         output_R.resize(num);
         output_dRdp.resize(num);
+#pragma omp parallel for
         for (int i = 0; i < num; ++i) {
             evalRDeriv(pressures[i][phase], surfvol[i], output_R[i], output_dRdp[i]);
         }
@@ -249,6 +252,7 @@ namespace Opm
         ASSERT(pressures.size() == surfvol.size());
         int num = pressures.size();
         output.resize(num);
+#pragma omp parallel for
         for (int i = 0; i < num; ++i) {
             output[i] = evalB(pressures[i][phase], surfvol[i]);
         }
@@ -271,6 +275,7 @@ namespace Opm
         B(pressures, surfvol, phase, output_B);
         int num = pressures.size();
         output_dBdp.resize(num);
+#pragma omp parallel for
         for (int i = 0; i < num; ++i) {
             output_dBdp[i] = dBdp(0, pressures[i][phase], surfvol[i]); // \TODO Speedup here by using already evaluated B.
         }

@@ -108,6 +108,7 @@ namespace Opm
             int num = pressures.size();
             if (comp_) {
                 output.resize(num);
+#pragma omp parallel for
                 for (int i = 0; i < num; ++i) {
                     // Computing a polynomial approximation to the exponential.
                     double x = comp_*(pressures[i][phase] - ref_press_);
@@ -138,6 +139,7 @@ namespace Opm
             int num = pressures.size();
             if (comp_) {
                 output_dBdp.resize(num);
+#pragma omp parallel for
                 for (int i = 0; i < num; ++i) {
                     output_dBdp[i] = -comp_*output_B[i];
                 }

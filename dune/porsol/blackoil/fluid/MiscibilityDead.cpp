@@ -94,6 +94,7 @@ namespace Opm
     {
         int num = pressures.size();
         output.resize(num);
+#pragma omp parallel for
         for (int i = 0; i < num; ++i) {
             output[i] = viscosity_(pressures[i][phase]);
         }
@@ -112,6 +113,7 @@ namespace Opm
     {
         int num = pressures.size();
         output.resize(num);
+#pragma omp parallel for
         for (int i = 0; i < num; ++i) {
             output[i] = 1.0/one_over_B_(pressures[i][phase]);
         }
@@ -134,6 +136,7 @@ namespace Opm
         B(pressures, surfvols, phase, output_B);
         int num = pressures.size();
         output_dBdp.resize(num);
+#pragma omp parallel for
         for (int i = 0; i < num; ++i) {
             double Bg = output_B[i];
             output_dBdp[i] = -Bg*Bg*one_over_B_.derivative(pressures[i][phase]);

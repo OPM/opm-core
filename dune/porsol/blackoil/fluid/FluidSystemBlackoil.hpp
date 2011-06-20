@@ -259,6 +259,7 @@ public:
         fluid_state.phase_compressibility_.resize(num);
         fluid_state.total_compressibility_.resize(num);
         fluid_state.experimental_term_.resize(num);
+#pragma omp parallel for
         for (int i = 0; i < num; ++i) {
             // Convenience vars.
             const PhaseVec& B = Bv[i];
