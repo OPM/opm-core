@@ -38,16 +38,16 @@ namespace Opm
         Scalar total_phase_volume_density_;
         PhaseVec formation_volume_factor_;
         PhaseVec solution_factor_;
-        Scalar phase_to_comp_[numPhases*numComponents]; // RB^{-1} in Fortran ordering
+        PhaseToCompMatrix phase_to_comp_; // RB^{-1} in Fortran ordering
         PhaseVec saturation_;
         PhaseVec phase_compressibility_;
         Scalar total_compressibility_;
         Scalar experimental_term_;
         PhaseVec viscosity_;
         PhaseVec relperm_;
-        Dune::FieldVector<Dune::FieldVector<Scalar, numPhases>, numPhases> drelperm_;
+        PhaseJacobian drelperm_;
         PhaseVec mobility_;
-        Dune::FieldVector<Dune::FieldVector<Scalar, numPhases>, numPhases> dmobility_;
+        PhaseJacobian dmobility_;
     };
 
     /*!
