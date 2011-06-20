@@ -154,7 +154,7 @@ public:
         // Get B and R factors.
         const PhaseVec& p = fluid_state.phase_pressure_;
         const CompVec& z = fluid_state.surface_volume_;
-        PhaseVec& B = fluid_state.volume_formation_factor_;
+        PhaseVec& B = fluid_state.formation_volume_factor_;
         B[Aqua]   = params().pvt_.B(p[Aqua],   z, Aqua);
         B[Vapour] = params().pvt_.B(p[Vapour], z, Vapour);
         B[Liquid] = params().pvt_.B(p[Liquid], z, Liquid);
@@ -181,8 +181,8 @@ public:
         // Update saturations.
         double sumu = fluid_state.total_phase_volume_density_;
         PhaseVec& s = fluid_state.saturation_;
-        for (int i = 0; i < 3; ++i) {
-            s[i] = u[i]/sumu;
+        for (int phase = 0; phase < numPhases; ++phase) {
+            s[phase] = u[phase]/sumu;
         }
 
         // Compute viscosities.
@@ -227,6 +227,93 @@ public:
         // Experimental term.
         PhaseVec tmp = prod(Ai, prod(dA, prod(Ai, z)));
         fluid_state.experimental_term_ = tmp[Aqua] + tmp[Liquid] + tmp[Gas];
+    }
+
+    /*!
+     * \brief Assuming the surface volumes and the pressures of all
+     *        phases are known, compute everything except relperm and
+     *        mobility.
+     */
+    template <class ManyFluidStates>
+    static void computeManyEquilibria(ManyFluidStates& fluid_state)
+    {
+        // Get B and R factors, viscosities Vectorized at lower level.
+        const std::vector<PhaseVec>& pv = fluid_state.phase_pressure_;
+        const std::vector<CompVec>& zv = fluid_state.surface_volume_;
+        std::vector<PhaseVec>& Bv = fluid_state.volume_formation_factor_;
+        std::vector<PhaseVec> dBv;
+        params().pvt_.dBdp(pv, zv, Bv, dBv);
+        std::vector<PhaseVec>& Rv = fluid_state.solution_factor_;
+        std::vector<PhaseVec> dRv;
+        params().pvt_.dRdp(pv, zv, Rv, dRv);
+        std::vector<PhaseVec>& muv = fluid_state.viscosity_;
+        params().pvt_.getViscosity(pv, zv, muv);
+
+        // The rest is vectorized in this function.
+        int num = pv.size();
+        fluid_state.phase_to_comp.resize(num);
+        for (int i = 0; i < num; ++i) {
+            // Convenience vars.
+            const PhaseVec& B = Bv[i];
+            const PhaseVec& dB = dBv[i];
+            const PhaseVec& R = Rv[i];
+            const PhaseVec& dR = dRv[i];
+            const CompVec& z = zv[i];
+
+            // Set the A matrix (A = RB^{-1})
+            Dune::SharedFortranMatrix A(numComponents, numPhases, &fluid_state.phase_to_comp_[i][0][0]);
+            zero(A);
+            A(Water, Aqua) = 1.0/B[Aqua];
+            A(Gas, Vapour) = 1.0/B[Vapour];
+            A(Gas, Liquid) = R[Liquid]/B[Liquid];
+            A(Oil, Vapour) = R[Vapour]/B[Vapour];
+            A(Oil, Liquid) = 1.0/B[Liquid];
+
+            // Update phase volumes. This is the same as multiplying with A^{-1}
+            PhaseVec& u = fluid_state.phase_volume_density_[i];
+            double detR = 1.0 - R[Vapour]*R[Liquid];
+            u[Aqua] = B[Aqua]*z[Water];
+            u[Vapour] = B[Vapour]*(z[Gas] - R[Liquid]*z[Oil])/detR;
+            u[Liquid] = B[Liquid]*(z[Oil] - R[Vapour]*z[Gas])/detR;
+            fluid_state.total_phase_volume_density_[i] = u[Aqua] + u[Vapour] + u[Liquid];
+
+            // Update saturations.
+            double sumu = fluid_state.total_phase_volume_density_[i];
+            PhaseVec& s = fluid_state.saturation_[i];
+            for (int phase = 0; phase < numPhases; ++phase) {
+                s[phase] = u[phase]/sumu;
+            }
+
+            // Phase compressibilities.
+            PhaseVec& cp = fluid_state.phase_compressibility_[i];
+            // Set the derivative of the A matrix (A = RB^{-1})
+            double data_for_dA[numComponents*numPhases];
+            Dune::SharedFortranMatrix dA(numComponents, numPhases, data_for_dA);
+            zero(dA);
+            dA(Water, Aqua) = -dB[Aqua]/(B[Aqua]*B[Aqua]);
+            dA(Gas, Vapour) = -dB[Vapour]/(B[Vapour]*B[Vapour]);
+            dA(Oil, Liquid) = -dB[Liquid]/(B[Liquid]*B[Liquid]); // Different order than above.
+            dA(Gas, Liquid) = dA(Oil, Liquid)*R[Liquid] + dR[Liquid]/B[Liquid];
+            dA(Oil, Vapour) = dA(Gas, Vapour)*R[Vapour] + dR[Vapour]/B[Vapour];
+            double data_for_Ai[numComponents*numPhases];
+            Dune::SharedFortranMatrix Ai(numComponents, numPhases, data_for_Ai);
+            // Ai = A; // This does not make a deep copy.
+            std::copy(A.data(), A.data() + numComponents*numPhases, Ai.data());
+            Dune::invert(Ai);
+            double data_for_C[numComponents*numPhases];
+            Dune::SharedFortranMatrix C(numComponents, numPhases, data_for_C);
+            Dune::prod(Ai, dA, C);
+            //CompVec ones(1.0);
+            //cp = Dune::prod(C, ones); // Probably C' and not C; we want phasewise compressibilities:
+            cp[Aqua] = C(Water, Aqua);
+            cp[Liquid] = C(Oil, Liquid) + C(Gas, Liquid);
+            cp[Vapour] = C(Gas, Vapour) + C(Oil, Vapour);
+            fluid_state.total_compressibility_[i] = cp*s;
+
+            // Experimental term.
+            PhaseVec tmp = prod(Ai, prod(dA, prod(Ai, z)));
+            fluid_state.experimental_term_[i] = tmp[Aqua] + tmp[Liquid] + tmp[Gas];
+        }
     }
 
     /*!
@@ -307,7 +394,7 @@ private:
 
     static Params& params()
     {
-        static Params params;
+        static Params params; // \TODO: Replace singleton here by something more thread-robust?
         return params;
     }
 };
