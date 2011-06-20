@@ -77,6 +77,11 @@ namespace Opm
                           std::vector<double>& output_dRdp) const;
 
     protected:
+        double evalR(double press, const surfvol_t& surfvol) const;
+        void evalRDeriv(double press, const surfvol_t& surfvol, double& R, double& dRdp) const;
+        double evalB(double press, const surfvol_t& surfvol) const;
+        void evalBDeriv(double press, const surfvol_t& surfvol, double& B, double& dBdp) const;
+
 	// item:  1=B  2=mu;
 	double miscible_oil(double press, const surfvol_t& surfvol, int item,
 			    bool deriv = false) const;

@@ -190,17 +190,7 @@ namespace Opm
     // Dissolved gas-oil ratio   
     double MiscibilityLiveOil::R(int /*region*/, double press, const surfvol_t& surfvol) const
     {
-        if (surfvol[Vapour] == 0.0) {
-            return 0.0;
-        }	
-	double R = linearInterpolationExtrap(saturated_oil_table_[0],
-					     saturated_oil_table_[3], press);
-	double maxR = surfvol[Vapour]/surfvol[Liquid];
-	if (R < maxR ) {  // Saturated case
-	    return R;
-	} else {
-	    return maxR;  // Undersaturated case
-	}
+        return evalR(press, surfvol);
     }
 
     void MiscibilityLiveOil::R(const std::vector<PhaseVec>& pressures,
@@ -212,7 +202,7 @@ namespace Opm
         int num = pressures.size();
         output.resize(num);
         for (int i = 0; i < num; ++i) {
-            output[i] = R(0, pressures[i][phase], surfvol[i]);
+            output[i] = evalR(pressures[i][phase], surfvol[i]);
         }
     }
 
@@ -238,18 +228,17 @@ namespace Opm
                                   std::vector<double>& output_dRdp) const
     {
         ASSERT(pressures.size() == surfvol.size());
-        R(pressures, surfvol, phase, output_R);
         int num = pressures.size();
+        output_R.resize(num);
         output_dRdp.resize(num);
         for (int i = 0; i < num; ++i) {
-            output_dRdp[i] = dRdp(0, pressures[i][phase], surfvol[i]); // \TODO Speedup here by using already evaluated R.
+            evalRDeriv(pressures[i][phase], surfvol[i], output_R[i], output_dRdp[i]);
         }
     }
 
     double MiscibilityLiveOil::B(int /*region*/, double press, const surfvol_t& surfvol) const
     {
-        // if (surfvol[Liquid] == 0.0) return 1.0; // To handle no-oil case.
-	return 1.0/miscible_oil(press, surfvol, 1, false);
+        return evalB(press, surfvol);
     }
 
     void MiscibilityLiveOil::B(const std::vector<PhaseVec>& pressures,
@@ -261,14 +250,14 @@ namespace Opm
         int num = pressures.size();
         output.resize(num);
         for (int i = 0; i < num; ++i) {
-            output[i] = B(0, pressures[i][phase], surfvol[i]);
+            output[i] = evalB(pressures[i][phase], surfvol[i]);
         }
     }
 
-    double MiscibilityLiveOil::dBdp(int region, double press, const surfvol_t& surfvol) const
+    double MiscibilityLiveOil::dBdp(int /*region*/, double press, const surfvol_t& surfvol) const
     {	
         // if (surfvol[Liquid] == 0.0) return 0.0; // To handle no-oil case.
-	double Bo = B(region, press, surfvol); // \TODO check if we incur virtual call overhead here.
+	double Bo = evalB(press, surfvol); // \TODO check if we incur virtual call overhead here.
 	return -Bo*Bo*miscible_oil(press, surfvol, 1, true);
     }
 
@@ -286,6 +275,61 @@ namespace Opm
             output_dBdp[i] = dBdp(0, pressures[i][phase], surfvol[i]); // \TODO Speedup here by using already evaluated B.
         }
     }
+
+
+    double MiscibilityLiveOil::evalR(double press, const surfvol_t& surfvol) const
+    {
+        if (surfvol[Vapour] == 0.0) {
+            return 0.0;
+        }	
+	double R = linearInterpolationExtrap(saturated_oil_table_[0],
+					     saturated_oil_table_[3], press);
+	double maxR = surfvol[Vapour]/surfvol[Liquid];
+	if (R < maxR ) {  // Saturated case
+	    return R;
+	} else {
+	    return maxR;  // Undersaturated case
+	}
+    }
+
+    void MiscibilityLiveOil::evalRDeriv(const double press, const surfvol_t& surfvol,
+                                        double& R, double& dRdp) const
+    {
+        if (surfvol[Vapour] == 0.0) {
+            R = 0.0;
+            dRdp = 0.0;
+            return;
+        }
+	R = linearInterpolationExtrap(saturated_oil_table_[0],
+                                      saturated_oil_table_[3], press);
+	double maxR = surfvol[Vapour]/surfvol[Liquid];
+	if (R < maxR ) {
+            // Saturated case
+	    dRdp = linearInterpolDerivative(saturated_oil_table_[0],
+					    saturated_oil_table_[3],
+					    press);
+	} else {
+            // Undersaturated case
+            R = maxR;
+	    dRdp = 0.0;
+	}
+    }
+
+
+    double MiscibilityLiveOil::evalB(double press, const surfvol_t& surfvol) const
+    {
+        // if (surfvol[Liquid] == 0.0) return 1.0; // To handle no-oil case.
+	return 1.0/miscible_oil(press, surfvol, 1, false);
+    }
+
+
+    void MiscibilityLiveOil::evalBDeriv(const double press, const surfvol_t& surfvol,
+                                        double& B, double& dBdp) const
+    {
+	B = evalB(press, surfvol);
+	dBdp = -B*B*miscible_oil(press, surfvol, 1, true);
+    }
+
 
     double MiscibilityLiveOil::miscible_oil(double press, const surfvol_t& surfvol,
 					    int item, bool deriv) const
