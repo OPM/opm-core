@@ -83,13 +83,13 @@ int main(int argc, char** argv)
                 var = state.saturation_[2];
                 break;
             case 5:
-                var = state.volume_formation_factor_[0];
+                var = state.formation_volume_factor_[0];
                 break;
             case 6:
-                var = state.volume_formation_factor_[1];
+                var = state.formation_volume_factor_[1];
                 break;
             case 7:
-                var = state.volume_formation_factor_[2];
+                var = state.formation_volume_factor_[2];
                 break;
             case 8:
                 var = state.solution_factor_[0];
