@@ -27,7 +27,7 @@
 namespace Opm
 {
     /*!
-     * \brief Fluid states for a black oil model.
+     * \brief Fluid state for a black oil model.
      */
     struct FluidStateBlackoil : public BlackoilDefs
     {
@@ -36,7 +36,7 @@ namespace Opm
         PhaseVec phase_pressure_;
         PhaseVec phase_volume_density_;
         Scalar total_phase_volume_density_;
-        PhaseVec volume_formation_factor_;
+        PhaseVec formation_volume_factor_;
         PhaseVec solution_factor_;
         Scalar phase_to_comp_[numPhases*numComponents]; // RB^{-1} in Fortran ordering
         PhaseVec saturation_;
@@ -48,6 +48,30 @@ namespace Opm
         Dune::FieldVector<Dune::FieldVector<Scalar, numPhases>, numPhases> drelperm_;
         PhaseVec mobility_;
         Dune::FieldVector<Dune::FieldVector<Scalar, numPhases>, numPhases> dmobility_;
+    };
+
+    /*!
+     * \brief Multiple fluid states for a black oil model.
+     */
+    struct ManyFluidStatesBlackoil : public BlackoilDefs
+    {
+        std::vector<Scalar> temperature_;
+        std::vector<CompVec> surface_volume_;
+        std::vector<PhaseVec> phase_pressure_;
+        std::vector<PhaseVec> phase_volume_density_;
+        std::vector<Scalar> total_phase_volume_density_;
+        std::vector<PhaseVec> formation_volume_factor_;
+        std::vector<PhaseVec> solution_factor_;
+        std::vector<PhaseToCompMatrix> phase_to_comp_; // RB^{-1} in Fortran ordering
+        std::vector<PhaseVec> saturation_;
+        std::vector<PhaseVec> phase_compressibility_;
+        std::vector<Scalar> total_compressibility_;
+        std::vector<Scalar> experimental_term_;
+        std::vector<PhaseVec> viscosity_;
+        std::vector<PhaseVec> relperm_;
+        std::vector<PhaseJacobian> drelperm_;
+        std::vector<PhaseVec> mobility_;
+        std::vector<PhaseJacobian> dmobility_;
     };
 
 } // end namespace Opm
