@@ -162,7 +162,7 @@ public:
         R[Vapour] = params().pvt_.R(p[Vapour], z, Vapour);
         R[Liquid] = params().pvt_.R(p[Liquid], z, Liquid);
         // Set the A matrix (A = RB^{-1})
-        Dune::SharedFortranMatrix A(numComponents, numPhases, fluid_state.phase_to_comp_);
+        Dune::SharedFortranMatrix A(numComponents, numPhases, &fluid_state.phase_to_comp_[0][0]);
         zero(A);
         A(Water, Aqua) = 1.0/B[Aqua];
         A(Gas, Vapour) = 1.0/B[Vapour];
@@ -237,7 +237,7 @@ public:
     template <class ManyFluidStates>
     static void computeManyEquilibria(ManyFluidStates& fluid_state)
     {
-        // Get B and R factors, viscosities Vectorized at lower level.
+        // Get B and R factors, viscosities. Vectorized at lower level.
         const std::vector<PhaseVec>& pv = fluid_state.phase_pressure_;
         const std::vector<CompVec>& zv = fluid_state.surface_volume_;
         std::vector<PhaseVec>& Bv = fluid_state.formation_volume_factor_;
@@ -252,6 +252,13 @@ public:
         // The rest is vectorized in this function.
         int num = pv.size();
         fluid_state.phase_to_comp_.resize(num);
+        fluid_state.phase_volume_density_.resize(num);
+        fluid_state.total_phase_volume_density_.resize(num);
+        fluid_state.phase_to_comp_.resize(num);
+        fluid_state.saturation_.resize(num);
+        fluid_state.phase_compressibility_.resize(num);
+        fluid_state.total_compressibility_.resize(num);
+        fluid_state.experimental_term_.resize(num);
         for (int i = 0; i < num; ++i) {
             // Convenience vars.
             const PhaseVec& B = Bv[i];
