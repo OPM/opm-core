@@ -54,6 +54,7 @@ namespace Opm
             surface_densities_[Water] = dens[1];
             surface_densities_[Gas] = dens[2];
         }
+
         FluidState computeState(PhaseVec phase_pressure, CompVec z) const
         {
             FluidState state;
@@ -66,11 +67,42 @@ namespace Opm
             for (int phase = 0; phase < numPhases; ++phase) {
                 state.mobility_[phase] = state.relperm_[phase]/state.viscosity_[phase];
                 for (int p2 = 0; p2 < numPhases; ++p2) {
+                    // Ignoring pressure variation in viscosity for this one.
                     state.dmobility_[phase][p2] = state.drelperm_[phase][p2]/state.viscosity_[phase];
                 }
             }
             return state;
         }
+
+        void computeManyStates(const std::vector<PhaseVec>& phase_pressure,
+                               const std::vector<CompVec>& z,
+                               ManyFluidStatesBlackoil& state) const
+        {
+            int num = phase_pressure.size();
+            state.temperature_.clear();
+            state.temperature_.resize(num, 300.0);
+            state.phase_pressure_ = phase_pressure;
+            state.surface_volume_ = z;
+            FluidSystemBlackoil<>::computeManyEquilibria(state); // Sets everything but relperm and mobility.
+            state.relperm_.resize(num);
+            state.drelperm_.resize(num);
+            state.mobility_.resize(num);
+            state.dmobility_.resize(num);
+            for (int i = 0; i < num; ++i) {
+                FluidMatrixInteractionBlackoil<double>::kr(state.relperm_[i], fmi_params_,
+                                                           state.saturation_[i], state.temperature_[i]);
+                FluidMatrixInteractionBlackoil<double>::dkr(state.drelperm_[i], fmi_params_,
+                                                            state.saturation_[i], state.temperature_[i]);
+                for (int phase = 0; phase < numPhases; ++phase) {
+                    state.mobility_[i][phase] = state.relperm_[i][phase]/state.viscosity_[i][phase];
+                    for (int p2 = 0; p2 < numPhases; ++p2) {
+                        // Ignoring pressure variation in viscosity for this one.
+                        state.dmobility_[i][phase][p2] = state.drelperm_[i][phase][p2]/state.viscosity_[i][phase];
+                    }
+                }
+            }
+        }
+
         const CompVec& surfaceDensities() const
         {
             return surface_densities_;
