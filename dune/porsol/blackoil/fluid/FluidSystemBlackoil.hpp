@@ -240,7 +240,7 @@ public:
         // Get B and R factors, viscosities Vectorized at lower level.
         const std::vector<PhaseVec>& pv = fluid_state.phase_pressure_;
         const std::vector<CompVec>& zv = fluid_state.surface_volume_;
-        std::vector<PhaseVec>& Bv = fluid_state.volume_formation_factor_;
+        std::vector<PhaseVec>& Bv = fluid_state.formation_volume_factor_;
         std::vector<PhaseVec> dBv;
         params().pvt_.dBdp(pv, zv, Bv, dBv);
         std::vector<PhaseVec>& Rv = fluid_state.solution_factor_;
@@ -251,7 +251,7 @@ public:
 
         // The rest is vectorized in this function.
         int num = pv.size();
-        fluid_state.phase_to_comp.resize(num);
+        fluid_state.phase_to_comp_.resize(num);
         for (int i = 0; i < num; ++i) {
             // Convenience vars.
             const PhaseVec& B = Bv[i];
