@@ -470,7 +470,11 @@ coarse_sys_meta_construct(grid_t *g, const int *p,
     return m;
 }
 
+#define USE_MIM_IP_SIMPLE 0
+#define USE_MIM_IP_TPFA 1
+#define USE_MIM_IP_QFAMILY 0
 
+#if USE_MIM_IP_SIMPLE
 /* ---------------------------------------------------------------------- */
 static double *
 compute_fs_ip(grid_t *g, const double *perm,
@@ -491,6 +495,46 @@ compute_fs_ip(grid_t *g, const double *perm,
 
     return Binv;
 }
+#elif USE_MIM_IP_TPFA
+#include "trans_tpfa.h"
+/* ---------------------------------------------------------------------- */
+static double *
+compute_fs_ip(grid_t *g, const double *perm,
+              const struct coarse_sys_meta *m)
+/* ---------------------------------------------------------------------- */
+{
+    size_t c, nc, nconn, p1, p2, i, j;
+    double *Binv, *htrans;
+
+    nc     = g->number_of_cells;
+
+    Binv   = malloc(m->sum_ngconn2 * sizeof *Binv);
+    htrans = malloc(g->cell_facepos[ nc ] * sizeof *htrans);
+
+    if ((Binv != NULL) && (htrans != NULL)) {
+        tpfa_htrans_compute(g, perm, htrans);
+
+        for (c = p2 = 0; c < nc; c++) {
+            p1    = g->cell_facepos[c + 0]     ;
+            nconn = g->cell_facepos[c + 1] - p1;
+
+            for (i = 0; i < nconn; i++) {
+                Binv[p2 + i*(nconn + 1)] = htrans[p1 + i];
+
+                for (j = (i + 1) % nconn; j != i; j = (j + 1) % nconn) {
+                    Binv[p2 + i*nconn + j] = 0.0;
+                }
+            }
+
+            p2 += nconn * nconn;
+        }
+    }
+
+    free(htrans);
+
+    return Binv;
+}
+#endif
 
 
 /* Create basis function weighting source term (unsigned) based on
@@ -1698,13 +1742,13 @@ coarse_sys_compute_Binv(int                nb,
             a1 = 1.0;
             a2 = 0.0;
             dgemv_("No Transpose", &mm, &nn, &a1,
-                   &sys->cell_ip[sys->ip_pos[b]], &ld,
+                   &sys->cell_ip[sys->cell_ip_pos[b]], &ld,
                    Lti, &incx, &a2, B, &incy);
             fprintf(fp, "IP{%d} = [\n", b + 1);
             for (i2 = 0; i2 < nn; i2++) {
                 for (i1 = 0; i1 < mm; i1++) {
                     fprintf(fp, "%18.12e ",
-                            sys->cell_ip[sys->ip_pos[b] + i1 + i2*mm]);
+                            sys->cell_ip[sys->cell_ip_pos[b] + i1 + i2*mm]);
                 }
                 fprintf(fp, ";\n");
             }
