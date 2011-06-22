@@ -80,6 +80,16 @@ coarse_sys_compute_Binv(int                nb,
                         struct coarse_sys *sys,
                         double            *work);
 
+void
+coarse_sys_compute_fs_flux(grid_t                 *g,
+                           struct coarse_topology *ct,
+                           struct coarse_sys      *sys,
+                           const int              *b2c_pos,
+                           const int              *b2c,
+                           const double           *v_c,
+                           double                 *flux,
+                           double                 *work);
+
 
 #ifdef __cplusplus
 }

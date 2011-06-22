@@ -490,11 +490,8 @@ ifsh_ms_press_flux(grid_t *G, struct ifsh_ms_data *h,
                    double *cpress, double *fflux)
 /* ---------------------------------------------------------------------- */
 {
-    int    b, f, i, j, n, dof, *c;
+    int    b, f, i, dof, *c;
     double s;
-
-    MAT_SIZE_T nrows, ncols, lda, incx, incy;
-    double a1, a2;
 
     hybsys_compute_press_flux(h->pimpl->ct->nblocks,
                               h->pimpl->sys->blkdof_pos,
@@ -521,12 +518,6 @@ ifsh_ms_press_flux(grid_t *G, struct ifsh_ms_data *h,
     average_flux(h->pimpl->ct->nfaces,
                  h->pimpl->ct->neighbours, h->pimpl->flux);
 
-    vector_zero(G->number_of_faces, fflux);
-
-    incx = incy = 1;
-    a1   = 1.0;
-    a2   = 0.0;
-
     for (b = i = 0; b < h->pimpl->ct->nblocks; b++) {
         /* Derive coarse-scale (projected) hc fluxes for block */
         for (; i < h->pimpl->sys->blkdof_pos[b + 1]; i++) {
@@ -538,35 +529,17 @@ ifsh_ms_press_flux(grid_t *G, struct ifsh_ms_data *h,
             h->pimpl->hflux[ i ] = s * h->pimpl->flux[ f ];
         }
 
-        /* Construct fs hc fluxes in block (\Psi_b * v_c) */
-        ncols  = i - h->pimpl->sys->blkdof_pos[b]; /* ndof in block */
-        nrows  = h->pimpl->sys->basis_pos[b + 1] -
-                 h->pimpl->sys->basis_pos[b + 0];  /* NUMEL(Psi(:)) */
-        nrows /= ncols;
-
-        lda = nrows;
-        dgemv_("No Transpose", &nrows, &ncols, &a1,
-               h->pimpl->sys->basis + h->pimpl->sys->basis_pos[b],
-               &lda, h->pimpl->hflux + h->pimpl->sys->blkdof_pos[b],
-               &incx, &a2, h->pimpl->fs_hflux, &incy);
-
-        /* Derive cell pressure (constant per block) and accumulate fs
-         * interface fluxes (internal interfaces visited twice). */
-        n = 0;
+        /* Derive fine-scale pressure from block pressure */
         for (c  = h->pimpl->b2c + h->pimpl->pb2c[b + 0];
              c != h->pimpl->b2c + h->pimpl->pb2c[b + 1]; c++) {
 
             cpress[*c] = h->pimpl->bpress[b];
-
-            for (j = G->cell_facepos[*c + 0];
-                 j < G->cell_facepos[*c + 1]; j++, n++) {
-                f = G->cell_faces[j];
-                s = 2.0*(G->face_cells[2*f + 0] == *c) - 1.0;
-
-                fflux[ f ] += s * h->pimpl->fs_hflux[ n ];
-            }
         }
     }
 
-    average_flux(G->number_of_faces, G->face_cells, fflux);
+    coarse_sys_compute_fs_flux(G, h->pimpl->ct, h->pimpl->sys,
+                               h->pimpl->pb2c, h->pimpl->b2c,
+                               h->pimpl->hflux,
+                               fflux,                    /* Output */
+                               h->pimpl->fs_hflux);      /* Scratch array */
 }

@@ -1776,3 +1776,68 @@ coarse_sys_compute_Binv(int                nb,
         p2 += nbf * nbf;
     }
 }
+
+
+/* ---------------------------------------------------------------------- */
+void
+coarse_sys_compute_fs_flux(grid_t                 *G,
+                           struct coarse_topology *ct,
+                           struct coarse_sys      *sys,
+                           const int              *b2c_pos,
+                           const int              *b2c,
+                           const double           *v_c,
+                           double                 *flux,
+                           double                 *work)
+/* ---------------------------------------------------------------------- */
+{
+    int        b, c1, c2, f, i, n;
+    const int  *c;
+
+    MAT_SIZE_T nrows, ncols, lda, incx, incy;
+    double     a1, a2, s;
+
+    vector_zero(G->number_of_faces, flux);
+
+    incx = incy = 1;
+    a1   = 1.0;
+    a2   = 0.0;
+
+    for (b = 0; b < ct->nblocks; b++) {
+        /* Construct fs hc fluxes in block (\Psi_b * v_c) */
+        ncols  = sys->blkdof_pos[b + 1] -
+                 sys->blkdof_pos[b + 0]; /* ndof in block */
+        nrows  = sys->basis_pos [b + 1] -
+                 sys->basis_pos [b + 0];  /* NUMEL(Psi(:)) */
+        nrows /= ncols;
+
+        lda = nrows;
+        dgemv_("No Transpose", &nrows, &ncols, &a1,
+               sys->basis + sys->basis_pos[b],
+               &lda, v_c + sys->blkdof_pos[b],
+               &incx, &a2, work, &incy);
+
+        /* Accumulate fs interface fluxes (internal interfaces visited
+         * twice). */
+        n = 0;
+        for (c  = b2c + b2c_pos[b + 0];
+             c != b2c + b2c_pos[b + 1]; c++) {
+
+            for (i = G->cell_facepos[*c + 0];
+                 i < G->cell_facepos[*c + 1]; i++, n++) {
+
+                f = G->cell_faces[i];
+                s = 2.0*(G->face_cells[2*f + 0] == *c) - 1.0;
+
+                flux[ f ] += s * work[ n ];
+            }
+        }
+    }
+
+    /* Symmetrise fine-scale flux */
+    for (f = 0; f < G->number_of_faces; f++) {
+        c1 = G->face_cells[2*f + 0];
+        c2 = G->face_cells[2*f + 1];
+
+        flux[f] /= (c1 >= 0) + (c2 >= 0);
+    }
+}
