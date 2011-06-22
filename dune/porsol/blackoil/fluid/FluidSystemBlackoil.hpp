@@ -36,7 +36,7 @@
 
 #include "BlackoilPVT.hpp"
 #include "BlackoilDefs.hpp"
-//#include <dune/porsol/common/Matrix.hpp>
+#include <dune/porsol/common/Matrix.hpp>
 #include <dune/common/EclipseGridParser.hpp>
 #include <stdexcept>
 
@@ -151,7 +151,6 @@ public:
     template <class FluidState>
     static void computeEquilibrium(FluidState& fluid_state)
     {
-#if 0
         // Get B and R factors.
         const PhaseVec& p = fluid_state.phase_pressure_;
         const CompVec& z = fluid_state.surface_volume_;
@@ -228,7 +227,6 @@ public:
         // Experimental term.
         PhaseVec tmp = prod(Ai, prod(dA, prod(Ai, z)));
         fluid_state.experimental_term_ = tmp[Aqua] + tmp[Liquid] + tmp[Gas];
-#endif
     }
 
     /*!
