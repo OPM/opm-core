@@ -36,7 +36,7 @@
 
 #include "BlackoilPVT.hpp"
 #include "BlackoilDefs.hpp"
-#include <dune/porsol/common/Matrix.hpp>
+//#include <dune/porsol/common/Matrix.hpp>
 #include <dune/common/EclipseGridParser.hpp>
 #include <stdexcept>
 
@@ -151,6 +151,7 @@ public:
     template <class FluidState>
     static void computeEquilibrium(FluidState& fluid_state)
     {
+#if 0
         // Get B and R factors.
         const PhaseVec& p = fluid_state.phase_pressure_;
         const CompVec& z = fluid_state.surface_volume_;
@@ -227,6 +228,7 @@ public:
         // Experimental term.
         PhaseVec tmp = prod(Ai, prod(dA, prod(Ai, z)));
         fluid_state.experimental_term_ = tmp[Aqua] + tmp[Liquid] + tmp[Gas];
+#endif
     }
 
     /*!
@@ -269,13 +271,24 @@ public:
             const CompVec& z = zv[i];
 
             // Set the A matrix (A = RB^{-1})
-            Dune::SharedFortranMatrix A(numComponents, numPhases, &fluid_state.phase_to_comp_[i][0][0]);
+            // Using At since we really want Fortran ordering
+            // (since ultimately that is what the opmpressure
+            //  C library expects).
+            PhaseToCompMatrix& At = fluid_state.phase_to_comp_[i];
+            /*
             zero(A);
             A(Water, Aqua) = 1.0/B[Aqua];
             A(Gas, Vapour) = 1.0/B[Vapour];
             A(Gas, Liquid) = R[Liquid]/B[Liquid];
             A(Oil, Vapour) = R[Vapour]/B[Vapour];
             A(Oil, Liquid) = 1.0/B[Liquid];
+            */
+            At = 0.0;
+            At[Aqua][Water] = 1.0/B[Aqua];
+            At[Vapour][Gas] = 1.0/B[Vapour];
+            At[Liquid][Gas] = R[Liquid]/B[Liquid];
+            At[Vapour][Oil] = R[Vapour]/B[Vapour];
+            At[Liquid][Oil] = 1.0/B[Liquid];
 
             // Update phase volumes. This is the same as multiplying with A^{-1}
             PhaseVec& u = fluid_state.phase_volume_density_[i];
@@ -295,6 +308,7 @@ public:
             // Phase compressibilities.
             PhaseVec& cp = fluid_state.phase_compressibility_[i];
             // Set the derivative of the A matrix (A = RB^{-1})
+            /*
             double data_for_dA[numComponents*numPhases];
             Dune::SharedFortranMatrix dA(numComponents, numPhases, data_for_dA);
             zero(dA);
@@ -303,24 +317,51 @@ public:
             dA(Oil, Liquid) = -dB[Liquid]/(B[Liquid]*B[Liquid]); // Different order than above.
             dA(Gas, Liquid) = dA(Oil, Liquid)*R[Liquid] + dR[Liquid]/B[Liquid];
             dA(Oil, Vapour) = dA(Gas, Vapour)*R[Vapour] + dR[Vapour]/B[Vapour];
+            */
+            PhaseToCompMatrix dAt(0.0);
+            dAt[Aqua][Water] = -dB[Aqua]/(B[Aqua]*B[Aqua]);
+            dAt[Vapour][Gas] = -dB[Vapour]/(B[Vapour]*B[Vapour]);
+            dAt[Liquid][Oil] = -dB[Liquid]/(B[Liquid]*B[Liquid]); // Different order than above.
+            dAt[Liquid][Gas] = dAt[Liquid][Oil]*R[Liquid] + dR[Liquid]/B[Liquid];
+            dAt[Vapour][Oil] = dAt[Vapour][Gas]*R[Vapour] + dR[Vapour]/B[Vapour];
+
+            /*
             double data_for_Ai[numComponents*numPhases];
             Dune::SharedFortranMatrix Ai(numComponents, numPhases, data_for_Ai);
-            // Ai = A; // This does not make a deep copy.
             std::copy(A.data(), A.data() + numComponents*numPhases, Ai.data());
             Dune::invert(Ai);
+            */
+            PhaseToCompMatrix Ait;
+            Dune::FMatrixHelp::invertMatrix(At, Ait);
+
+            /*
             double data_for_C[numComponents*numPhases];
             Dune::SharedFortranMatrix C(numComponents, numPhases, data_for_C);
             Dune::prod(Ai, dA, C);
-            //CompVec ones(1.0);
-            //cp = Dune::prod(C, ones); // Probably C' and not C; we want phasewise compressibilities:
+            */
+            PhaseToCompMatrix Ct;
+            Dune::FMatrixHelp::multMatrix(dAt, Ait, Ct);
+
+            /*
             cp[Aqua] = C(Water, Aqua);
             cp[Liquid] = C(Oil, Liquid) + C(Gas, Liquid);
             cp[Vapour] = C(Gas, Vapour) + C(Oil, Vapour);
+            */
+            cp[Aqua] = Ct[Aqua][Water];
+            cp[Liquid] = Ct[Liquid][Oil] + Ct[Liquid][Gas];
+            cp[Vapour] = Ct[Vapour][Gas] + Ct[Vapour][Oil];
             fluid_state.total_compressibility_[i] = cp*s;
 
             // Experimental term.
+            /*
             PhaseVec tmp = prod(Ai, prod(dA, prod(Ai, z)));
             fluid_state.experimental_term_[i] = tmp[Aqua] + tmp[Liquid] + tmp[Gas];
+            */
+            PhaseVec tmp1, tmp2, tmp3;
+            Ait.mtv(z, tmp1);
+            dAt.mtv(tmp1, tmp2);
+            Ait.mtv(tmp2, tmp3);
+            fluid_state.experimental_term_[i] = tmp3[Aqua] + tmp3[Liquid] + tmp3[Gas];
         }
     }
 
