@@ -48,7 +48,8 @@ namespace Opm
         void init(const Dune::EclipseGridParser& parser)
         {
             fmi_params_.init(parser);
-            FluidSystemBlackoil<>::init(parser);
+            // FluidSystemBlackoil<>::init(parser);
+            pvt_.init(parser);
             const std::vector<double>& dens = parser.getDENSITY().densities_[0];
             surface_densities_[Oil] = dens[0];
             surface_densities_[Water] = dens[1];
@@ -61,7 +62,8 @@ namespace Opm
             state.temperature_ = 300;
             state.phase_pressure_ = phase_pressure;
             state.surface_volume_ = z;
-            FluidSystemBlackoil<>::computeEquilibrium(state); // Sets everything but relperm and mobility.
+            // FluidSystemBlackoil<>::computeEquilibrium(state); // Sets everything but relperm and mobility.
+            computeEquilibrium(state);
             FluidMatrixInteractionBlackoil<double>::kr(state.relperm_, fmi_params_, state.saturation_, state.temperature_);
             FluidMatrixInteractionBlackoil<double>::dkr(state.drelperm_, fmi_params_, state.saturation_, state.temperature_);
             for (int phase = 0; phase < numPhases; ++phase) {
@@ -83,7 +85,8 @@ namespace Opm
             state.temperature_.resize(num, 300.0);
             state.phase_pressure_ = phase_pressure;
             state.surface_volume_ = z;
-            FluidSystemBlackoil<>::computeManyEquilibria(state); // Sets everything but relperm and mobility.
+            // FluidSystemBlackoil<>::computeManyEquilibria(state); // Sets everything but relperm and mobility.
+            computeManyEquilibria(state);
             state.relperm_.resize(num);
             state.drelperm_.resize(num);
             state.mobility_.resize(num);
@@ -104,6 +107,7 @@ namespace Opm
             }
         }
 
+
         const CompVec& surfaceDensities() const
         {
             return surface_densities_;
@@ -119,12 +123,190 @@ namespace Opm
                 }
             }
             return phase_dens;
-       }
+        }
 
     private:
+        BlackoilPVT pvt_;
         FluidMatrixInteractionBlackoilParams<double> fmi_params_;
         CompVec surface_densities_;
+
+
+    /*!
+     * \brief Assuming the surface volumes and the pressures of all
+     *        phases are known, compute everything except relperm and
+     *        mobility.
+     */
+    template <class FluidState>
+    void computeEquilibrium(FluidState& fluid_state) const
+    {
+        // Get B and R factors.
+        const PhaseVec& p = fluid_state.phase_pressure_;
+        const CompVec& z = fluid_state.surface_volume_;
+        PhaseVec& B = fluid_state.formation_volume_factor_;
+        B[Aqua]   = pvt_.B(p[Aqua],   z, Aqua);
+        B[Vapour] = pvt_.B(p[Vapour], z, Vapour);
+        B[Liquid] = pvt_.B(p[Liquid], z, Liquid);
+        PhaseVec& R = fluid_state.solution_factor_; 
+        R[Aqua]   = 0.0;
+        R[Vapour] = pvt_.R(p[Vapour], z, Vapour);
+        R[Liquid] = pvt_.R(p[Liquid], z, Liquid);
+        PhaseVec dB;
+        dB[Aqua]   = pvt_.dBdp(p[Aqua],   z, Aqua);
+        dB[Vapour] = pvt_.dBdp(p[Vapour], z, Vapour);
+        dB[Liquid] = pvt_.dBdp(p[Liquid], z, Liquid);
+        PhaseVec dR;
+        dR[Aqua]   = 0.0;
+        dR[Vapour] = pvt_.dRdp(p[Vapour], z, Vapour);
+        dR[Liquid] = pvt_.dRdp(p[Liquid], z, Liquid);
+
+        // Convenience vars.
+        PhaseToCompMatrix& At = fluid_state.phase_to_comp_;
+        PhaseVec& u = fluid_state.phase_volume_density_;
+        double& tot_phase_vol_dens = fluid_state.total_phase_volume_density_;
+        PhaseVec& s = fluid_state.saturation_;
+        PhaseVec& cp = fluid_state.phase_compressibility_;
+        double& tot_comp = fluid_state.total_compressibility_;
+        double& exp_term = fluid_state.experimental_term_;
+
+        computeSingleEquilibrium(B, dB, R, dR, z,
+                                 At, u, tot_phase_vol_dens,
+                                 s, cp, tot_comp, exp_term);
+
+        // Compute viscosities.
+        PhaseVec& mu = fluid_state.viscosity_;
+        mu[Aqua]   = pvt_.getViscosity(p[Aqua],   z, Aqua);
+        mu[Vapour] = pvt_.getViscosity(p[Vapour], z, Vapour);
+        mu[Liquid] = pvt_.getViscosity(p[Liquid], z, Liquid);
+    }
+
+    /*!
+     * \brief Assuming the surface volumes and the pressures of all
+     *        phases are known, compute everything except relperm and
+     *        mobility.
+     */
+    template <class ManyFluidStates>
+    void computeManyEquilibria(ManyFluidStates& fluid_state) const
+    {
+        // Get B and R factors, viscosities. Vectorized at lower level.
+        const std::vector<PhaseVec>& pv = fluid_state.phase_pressure_;
+        const std::vector<CompVec>& zv = fluid_state.surface_volume_;
+        std::vector<PhaseVec>& Bv = fluid_state.formation_volume_factor_;
+        std::vector<PhaseVec> dBv;
+        pvt_.dBdp(pv, zv, Bv, dBv);
+        std::vector<PhaseVec>& Rv = fluid_state.solution_factor_;
+        std::vector<PhaseVec> dRv;
+        pvt_.dRdp(pv, zv, Rv, dRv);
+        std::vector<PhaseVec>& muv = fluid_state.viscosity_;
+        pvt_.getViscosity(pv, zv, muv);
+
+        // The rest is vectorized in this function.
+        int num = pv.size();
+        fluid_state.phase_to_comp_.resize(num);
+        fluid_state.phase_volume_density_.resize(num);
+        fluid_state.total_phase_volume_density_.resize(num);
+        fluid_state.phase_to_comp_.resize(num);
+        fluid_state.saturation_.resize(num);
+        fluid_state.phase_compressibility_.resize(num);
+        fluid_state.total_compressibility_.resize(num);
+        fluid_state.experimental_term_.resize(num);
+#pragma omp parallel for
+        for (int i = 0; i < num; ++i) {
+            // Convenience vars.
+            const PhaseVec& B = Bv[i];
+            const PhaseVec& dB = dBv[i];
+            const PhaseVec& R = Rv[i];
+            const PhaseVec& dR = dRv[i];
+            const CompVec& z = zv[i];
+
+            PhaseToCompMatrix& At = fluid_state.phase_to_comp_[i];
+            PhaseVec& u = fluid_state.phase_volume_density_[i];
+            double& tot_phase_vol_dens = fluid_state.total_phase_volume_density_[i];
+            PhaseVec& s = fluid_state.saturation_[i];
+            PhaseVec& cp = fluid_state.phase_compressibility_[i];
+            double& tot_comp = fluid_state.total_compressibility_[i];
+            double& exp_term = fluid_state.experimental_term_[i];
+
+            computeSingleEquilibrium(B, dB, R, dR, z,
+                                     At, u, tot_phase_vol_dens,
+                                     s, cp, tot_comp, exp_term);
+        }
+    }
+
+    static void computeSingleEquilibrium(const PhaseVec& B,
+                                         const PhaseVec& dB,
+                                         const PhaseVec& R,
+                                         const PhaseVec& dR,
+                                         const CompVec& z,
+                                         PhaseToCompMatrix& At,
+                                         PhaseVec& u,
+                                         double& tot_phase_vol_dens,
+                                         PhaseVec& s,
+                                         PhaseVec& cp,
+                                         double& tot_comp,
+                                         double& exp_term)
+    {
+        // Set the A matrix (A = RB^{-1})
+        // Using At since we really want Fortran ordering
+        // (since ultimately that is what the opmpressure
+        //  C library expects).
+        // PhaseToCompMatrix& At = fluid_state.phase_to_comp_[i];
+        At = 0.0;
+        At[Aqua][Water] = 1.0/B[Aqua];
+        At[Vapour][Gas] = 1.0/B[Vapour];
+        At[Liquid][Gas] = R[Liquid]/B[Liquid];
+        At[Vapour][Oil] = R[Vapour]/B[Vapour];
+        At[Liquid][Oil] = 1.0/B[Liquid];
+
+        // Update phase volumes. This is the same as multiplying with A^{-1}
+        // PhaseVec& u = fluid_state.phase_volume_density_[i];
+        double detR = 1.0 - R[Vapour]*R[Liquid];
+        u[Aqua] = B[Aqua]*z[Water];
+        u[Vapour] = B[Vapour]*(z[Gas] - R[Liquid]*z[Oil])/detR;
+        u[Liquid] = B[Liquid]*(z[Oil] - R[Vapour]*z[Gas])/detR;
+        tot_phase_vol_dens = u[Aqua] + u[Vapour] + u[Liquid];
+
+        // PhaseVec& s = fluid_state.saturation_[i];
+        for (int phase = 0; phase < numPhases; ++phase) {
+            s[phase] = u[phase]/tot_phase_vol_dens;
+        }
+
+        // Phase compressibilities.
+        // PhaseVec& cp = fluid_state.phase_compressibility_[i];
+        // Set the derivative of the A matrix (A = RB^{-1})
+        PhaseToCompMatrix dAt(0.0);
+        dAt[Aqua][Water] = -dB[Aqua]/(B[Aqua]*B[Aqua]);
+        dAt[Vapour][Gas] = -dB[Vapour]/(B[Vapour]*B[Vapour]);
+        dAt[Liquid][Oil] = -dB[Liquid]/(B[Liquid]*B[Liquid]); // Different order than above.
+        dAt[Liquid][Gas] = dAt[Liquid][Oil]*R[Liquid] + dR[Liquid]/B[Liquid];
+        dAt[Vapour][Oil] = dAt[Vapour][Gas]*R[Vapour] + dR[Vapour]/B[Vapour];
+
+        PhaseToCompMatrix Ait;
+        Dune::FMatrixHelp::invertMatrix(At, Ait);
+
+        PhaseToCompMatrix Ct;
+        Dune::FMatrixHelp::multMatrix(dAt, Ait, Ct);
+
+        cp[Aqua] = Ct[Aqua][Water];
+        cp[Liquid] = Ct[Liquid][Oil] + Ct[Liquid][Gas];
+        cp[Vapour] = Ct[Vapour][Gas] + Ct[Vapour][Oil];
+        tot_comp = cp*s;
+
+        // Experimental term.
+        PhaseVec tmp1, tmp2, tmp3;
+        Ait.mtv(z, tmp1);
+        dAt.mtv(tmp1, tmp2);
+        Ait.mtv(tmp2, tmp3);
+        exp_term = tmp3[Aqua] + tmp3[Liquid] + tmp3[Gas];
+    }
+
+
     };
+
+
+
+
+
+
 
 
 
