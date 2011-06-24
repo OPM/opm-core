@@ -388,9 +388,10 @@ namespace Opm
                 frac_flow[cell] /= total_mobility;
             }
 
-            // Obtain properties from both sides of the face.
+            // std::vector<CompVec> face_z_vec(num_faces);
 #pragma omp parallel for
             for (int face = 0; face < num_faces; ++face) {
+            // Obtain properties from both sides of the face.
                 typedef typename Grid::Vector Vec;
                 Vec fc = grid.faceCentroid(face);
                 int c[2] = { grid.faceCell(face, 0), grid.faceCell(face, 1) };
@@ -460,6 +461,7 @@ namespace Opm
                     }
                 }
                 face_z *= face_z_factor;
+                // face_z_vec[face] = face_z;
 
                 // Computing upwind mobilities and derivatives
                 for (int phase = 0; phase < np; ++phase) {
@@ -480,11 +482,16 @@ namespace Opm
                         }
                     }
                 }
-
                 // Find faceA.
                 FluidStateBlackoil face_state = fluid.computeState(face_pressure[face], face_z);
                 std::copy(&face_state.phase_to_comp_[0][0], &face_state.phase_to_comp_[0][0] + nc*np, &faceA[face*nc*np]);
             }
+
+            // Find faceA. Slower, since it does too much.
+//             ManyFluidStatesBlackoil face_state;
+//             fluid.computeManyStates(face_pressure, face_z_vec, face_state);
+//             const double* fA = &face_state.phase_to_comp_[0][0][0];
+//             std::copy(fA, fA + num_faces*nc*np, &faceA[0]);
         }
 
 
