@@ -125,6 +125,163 @@ namespace Opm
             return phase_dens;
         }
 
+
+        // ---- New interface ----
+
+        /// Input: p, z
+        /// Output: B, R
+        template <class States>
+        void computeBAndR(States& states)
+        {
+            const std::vector<PhaseVec>& p = states.phase_pressure;
+            const std::vector<CompVec>& z = states.surface_volume_density;
+            std::vector<PhaseVec>& B = states.formation_volume_factor;
+            std::vector<PhaseVec>& R = states.solution_factor;
+            pvt_.B(p, z, B);
+            pvt_.R(p, z, R);
+        }
+
+        /// Input: p, z
+        /// Output: B, R, mu
+        template <class States>
+        void computePvtNoDerivs(States& states)
+        {
+            computeBAndR(states);
+            const std::vector<PhaseVec>& p = states.phase_pressure;
+            const std::vector<CompVec>& z = states.surface_volume_density;
+            std::vector<PhaseVec>& mu = states.viscosity;
+            pvt_.getViscosity(p, z, mu);
+        }
+
+        /// Input: p, z
+        /// Output: B, dB/dp, R, dR/dp, mu
+        template <class States>
+        void computePvt(States& states)
+        {
+            const std::vector<PhaseVec>& p = states.phase_pressure;
+            const std::vector<CompVec>& z = states.surface_volume_density;
+            std::vector<PhaseVec>& B = states.formation_volume_factor;
+            std::vector<PhaseVec>& dB = states.formation_volume_factor_deriv;
+            std::vector<PhaseVec>& R = states.solution_factor;
+            std::vector<PhaseVec>& dR = states.solution_factor_deriv;
+            std::vector<PhaseVec>& mu = states.viscosity;
+            pvt_.dBdp(p, z, B, dB);
+            pvt_.dRdp(p, z, R, dR);
+            pvt_.getViscosity(p, z, mu);
+        }
+
+        /// Input: B, R
+        /// Output: A
+        template <class States>
+        void computeStateMatrix(States& states)
+        {
+            int num = states.state_matrix.size();
+            states.state_matrix.resize(num);
+#pragma omp parallel for
+            for (int i = 0; i < num; ++i) {
+                const PhaseVec& B = states.formation_volume_factor[i];
+                const PhaseVec& R = states.solution_factor[i];
+                PhaseToCompMatrix& At = states.state_matrix[i];
+                // Set the A matrix (A = RB^{-1})
+                // Using A transposed (At) since we really want Fortran ordering:
+                // ultimately that is what the opmpressure C library expects.
+                At = 0.0;
+                At[Aqua][Water] = 1.0/B[Aqua];
+                At[Vapour][Gas] = 1.0/B[Vapour];
+                At[Liquid][Gas] = R[Liquid]/B[Liquid];
+                At[Vapour][Oil] = R[Vapour]/B[Vapour];
+                At[Liquid][Oil] = 1.0/B[Liquid];
+            }
+        }
+
+
+        /// Input: z, B, dB/dp, R, dR/dp
+        /// Output: A, u, sum(u), s, c, cT, ex
+        template <class States>
+        void computePvtDepending(States& states)
+        {
+            int num = states.state_matrix.size();
+            states.state_matrix.resize(num);
+            states.phase_volume_density.resize(num);
+            states.total_phase_volume_density.resize(num);
+            states.saturation.resize(num);
+            states.phase_compressibility.resize(num);
+            states.total_compressibility.resize(num);
+            states.experimental_term.resize(num);
+#pragma omp parallel for
+            for (int i = 0; i < num; ++i) {
+                const CompVec& z = states.surface_volume_density[i];
+                const PhaseVec& B = states.formation_volume_factor[i];
+                const PhaseVec& dB = states.formation_volume_factor_deriv[i];
+                const PhaseVec& R = states.solution_factor[i];
+                const PhaseVec& dR = states.solution_factor_deriv[i];
+                PhaseToCompMatrix& At = states.state_matrix[i];
+                PhaseVec& u = states.phase_volume_density[i];
+                double& tot_phase_vol_dens = states.total_phase_volume_density[i];
+                PhaseVec& s = states.saturation[i];
+                PhaseVec& cp = states.phase_compressibility[i];
+                double& tot_comp = states.total_compressibility[i];
+                double& exp_term = states.experimental_term[i];
+                computeSingleEquilibrium(B, dB, R, dR, z,
+                                         At, u, tot_phase_vol_dens,
+                                         s, cp, tot_comp, exp_term);
+            }
+        }
+
+        /// Input: s, mu
+        /// Output: kr, lambda
+        template <class States>
+        void computeMobilitiesNoDerivs(States& states)
+        {
+            int num = states.state_matrix.size();
+            states.relperm.resize(num);
+            states.mobility.resize(num);
+#pragma omp parallel for
+            for (int i = 0; i < num; ++i) {
+                const CompVec& s = states.saturation[i];
+                const PhaseVec& mu = states.viscosity[i];
+                PhaseVec& kr = states.relperm[i];
+                PhaseVec& lambda = states.mobility[i];
+                FluidMatrixInteractionBlackoil<double>::kr(kr, fmi_params_, s, 300.0);
+                for (int phase = 0; phase < numPhases; ++phase) {
+                    lambda[phase] = kr[phase]/mu[phase];
+                }
+
+            }
+        }
+
+        /// Input: s, mu
+        /// Output: kr, dkr/ds, lambda, dlambda/ds
+        template <class States>
+        void computeMobilities(States& states)
+        {
+            int num = states.state_matrix.size();
+            states.relperm.resize(num);
+            states.relperm_deriv.resize(num);
+            states.mobility.resize(num);
+            states.mobility_deriv.resize(num);
+#pragma omp parallel for
+            for (int i = 0; i < num; ++i) {
+                const CompVec& s = states.saturation[i];
+                const PhaseVec& mu = states.viscosity[i];
+                PhaseVec& kr = states.relperm[i];
+                PhaseJacobian& dkr = states.relperm_deriv[i];
+                PhaseVec& lambda = states.mobility[i];
+                PhaseJacobian& dlambda = states.mobility_deriv[i];
+                FluidMatrixInteractionBlackoil<double>::kr(kr, fmi_params_, s, 300.0);
+                FluidMatrixInteractionBlackoil<double>::dkr(dkr, fmi_params_, s, 300.0);
+                for (int phase = 0; phase < numPhases; ++phase) {
+                    lambda[phase] = kr[phase]/mu[phase];
+                    for (int p2 = 0; p2 < numPhases; ++p2) {
+                        // Ignoring pressure variation in viscosity for this one.
+                        dlambda[phase][p2] = dkr[phase][p2]/mu[phase];
+                    }
+                }
+
+            }
+        }
+
+
     private:
         BlackoilPVT pvt_;
         FluidMatrixInteractionBlackoilParams<double> fmi_params_;
@@ -306,9 +463,19 @@ namespace Opm
 
 
 
+    struct AllFluidData : public BlackoilDefs
+    {
+        // Per-cell data
+        AllFluidStates cell_data;
 
-
-
+        // Per-face data.
+        std::vector<double> faceA;                  // A = RB^{-1}. Fortran ordering, flat storage.
+        std::vector<double> phasemobf;              // Phase mobilities. Flat storage (numPhases per face).
+        std::vector<PhaseVec> phasemobc;            // Phase mobilities per cell.
+        std::vector<double> phasemobf_deriv;        // Phase mobility derivatives. Flat storage (numPhases^2 per face).
+        std::vector<PhaseJacobian> phasemobc_deriv; // Phase mobilities derivatives per cell.
+        std::vector<double> gravcapf;               // Gravity (\rho g \delta z-ish) contribution per face, flat storage.
+    };
 
 
     /// Container for all fluid data needed by solvers.
