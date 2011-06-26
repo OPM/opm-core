@@ -74,6 +74,40 @@ namespace Opm
         std::vector<PhaseJacobian> dmobility_;
     };
 
+    /*!
+     * \brief Multiple fluid states for a black oil model.
+     */
+    struct AllFluidStates : public BlackoilDefs
+    {
+        // Canonical state variables.
+        std::vector<CompVec> surface_volume_density;         // z
+        std::vector<PhaseVec> phase_pressure;                // p
+
+        // Variables from PVT functions.
+        std::vector<PhaseVec> formation_volume_factor;       // B
+        std::vector<PhaseVec> formation_volume_factor_deriv; // dB/dp
+        std::vector<PhaseVec> solution_factor;               // R
+        std::vector<PhaseVec> solution_factor_deriv;         // dR/dp
+        std::vector<PhaseVec> viscosity;                     // mu
+
+        // Variables computed from PVT data.
+        // The A matrices are all in Fortran order (or, equivalently,
+        // we store the transposes).
+        std::vector<PhaseToCompMatrix> state_matrix;         // A' = (RB^{-1})'
+        std::vector<PhaseVec> phase_volume_density;          // u
+        std::vector<Scalar> total_phase_volume_density;      // sum(u)
+        std::vector<PhaseVec> saturation;                    // s = u/sum(u)
+        std::vector<PhaseVec> phase_compressibility;         // c
+        std::vector<Scalar> total_compressibility;           // cT
+        std::vector<Scalar> experimental_term;               // ex = sum(Ai*dA*Ai*z)
+
+        // Variables computed from saturation.
+        std::vector<PhaseVec> relperm;                       // kr
+        std::vector<PhaseJacobian> relperm_deriv;            // dkr/ds
+        std::vector<PhaseVec> mobility;                      // lambda
+        std::vector<PhaseJacobian> mobility_deriv;           // dlambda/ds
+    };
+
 } // end namespace Opm
 
 
