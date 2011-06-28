@@ -50,29 +50,6 @@ namespace Opm
         PhaseJacobian dmobility_;
     };
 
-    /*!
-     * \brief Multiple fluid states for a black oil model.
-     */
-    struct ManyFluidStatesBlackoil : public BlackoilDefs
-    {
-        std::vector<Scalar> temperature_;
-        std::vector<CompVec> surface_volume_;
-        std::vector<PhaseVec> phase_pressure_;
-        std::vector<PhaseVec> phase_volume_density_;
-        std::vector<Scalar> total_phase_volume_density_;
-        std::vector<PhaseVec> formation_volume_factor_;
-        std::vector<PhaseVec> solution_factor_;
-        std::vector<PhaseToCompMatrix> phase_to_comp_; // RB^{-1} in Fortran ordering
-        std::vector<PhaseVec> saturation_;
-        std::vector<PhaseVec> phase_compressibility_;
-        std::vector<Scalar> total_compressibility_;
-        std::vector<Scalar> experimental_term_;
-        std::vector<PhaseVec> viscosity_;
-        std::vector<PhaseVec> relperm_;
-        std::vector<PhaseJacobian> drelperm_;
-        std::vector<PhaseVec> mobility_;
-        std::vector<PhaseJacobian> dmobility_;
-    };
 
     /*!
      * \brief Multiple fluid states for a black oil model.
