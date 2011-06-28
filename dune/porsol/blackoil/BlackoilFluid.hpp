@@ -131,7 +131,7 @@ namespace Opm
         /// Input: p, z
         /// Output: B, R
         template <class States>
-        void computeBAndR(States& states)
+        void computeBAndR(States& states) const
         {
             const std::vector<PhaseVec>& p = states.phase_pressure;
             const std::vector<CompVec>& z = states.surface_volume_density;
@@ -144,7 +144,7 @@ namespace Opm
         /// Input: p, z
         /// Output: B, R, mu
         template <class States>
-        void computePvtNoDerivs(States& states)
+        void computePvtNoDerivs(States& states) const
         {
             computeBAndR(states);
             const std::vector<PhaseVec>& p = states.phase_pressure;
@@ -156,7 +156,7 @@ namespace Opm
         /// Input: p, z
         /// Output: B, dB/dp, R, dR/dp, mu
         template <class States>
-        void computePvt(States& states)
+        void computePvt(States& states) const
         {
             const std::vector<PhaseVec>& p = states.phase_pressure;
             const std::vector<CompVec>& z = states.surface_volume_density;
@@ -173,7 +173,7 @@ namespace Opm
         /// Input: B, R
         /// Output: A
         template <class States>
-        void computeStateMatrix(States& states)
+        void computeStateMatrix(States& states) const
         {
             int num = states.state_matrix.size();
             states.state_matrix.resize(num);
@@ -198,7 +198,7 @@ namespace Opm
         /// Input: z, B, dB/dp, R, dR/dp
         /// Output: A, u, sum(u), s, c, cT, ex
         template <class States>
-        void computePvtDepending(States& states)
+        void computePvtDepending(States& states) const
         {
             int num = states.state_matrix.size();
             states.state_matrix.resize(num);
@@ -231,7 +231,7 @@ namespace Opm
         /// Input: s, mu
         /// Output: kr, lambda
         template <class States>
-        void computeMobilitiesNoDerivs(States& states)
+        void computeMobilitiesNoDerivs(States& states) const
         {
             int num = states.state_matrix.size();
             states.relperm.resize(num);
@@ -253,7 +253,7 @@ namespace Opm
         /// Input: s, mu
         /// Output: kr, dkr/ds, lambda, dlambda/ds
         template <class States>
-        void computeMobilities(States& states)
+        void computeMobilities(States& states) const
         {
             int num = states.state_matrix.size();
             states.relperm.resize(num);
