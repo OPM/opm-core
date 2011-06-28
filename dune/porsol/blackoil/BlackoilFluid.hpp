@@ -175,7 +175,7 @@ namespace Opm
         template <class States>
         void computeStateMatrix(States& states) const
         {
-            int num = states.state_matrix.size();
+            int num = states.formation_volume_factor.size();
             states.state_matrix.resize(num);
 #pragma omp parallel for
             for (int i = 0; i < num; ++i) {
@@ -200,7 +200,7 @@ namespace Opm
         template <class States>
         void computePvtDepending(States& states) const
         {
-            int num = states.state_matrix.size();
+            int num = states.formation_volume_factor.size();
             states.state_matrix.resize(num);
             states.phase_volume_density.resize(num);
             states.total_phase_volume_density.resize(num);
@@ -233,7 +233,7 @@ namespace Opm
         template <class States>
         void computeMobilitiesNoDerivs(States& states) const
         {
-            int num = states.state_matrix.size();
+            int num = states.saturation.size();
             states.relperm.resize(num);
             states.mobility.resize(num);
 #pragma omp parallel for
@@ -255,7 +255,7 @@ namespace Opm
         template <class States>
         void computeMobilities(States& states) const
         {
-            int num = states.state_matrix.size();
+            int num = states.saturation.size();
             states.relperm.resize(num);
             states.relperm_deriv.resize(num);
             states.mobility.resize(num);
@@ -560,7 +560,7 @@ namespace Opm
                 // Also compute the potentials.
                 PhaseVec pot[2];
                 for (int phase = 0; phase < np; ++phase) {
-                    gravcapf[np*face + phase] = gravcontrib[0][phase] - gravcontrib[1][phase];
+                    gravcapf[face][phase] = gravcontrib[0][phase] - gravcontrib[1][phase];
                     pot[0][phase] = phase_p[0][phase] + gravcapf[face][phase];
                     pot[1][phase] = phase_p[1][phase];
                 }
@@ -600,23 +600,23 @@ namespace Opm
                     if (pot[0][phase] == pot[1][phase]) {
                         // Average.
                         double aver = 0.5*(phase_mob[0][phase] + phase_mob[1][phase]);
-                        phasemobf[np*face + phase] = aver;
+                        phasemobf[face][phase] = aver;
                         for (int p2 = 0; p2 < numPhases; ++p2) {
-                            phasemobf_deriv[np*np*face + np*phase + p2] = phasemob_deriv[0][phase][p2]
+                            phasemobf_deriv[face][phase][p2] = phasemob_deriv[0][phase][p2]
                                 + phasemob_deriv[1][phase][p2];
                         }
                     } else {
                         // Upwind.
                         int upwind = pot[0][phase] > pot[1][phase] ? 0 : 1;
-                        phasemobf[np*face + phase] = phase_mob[upwind][phase];
+                        phasemobf[face][phase] = phase_mob[upwind][phase];
                         for (int p2 = 0; p2 < numPhases; ++p2) {
-                            phasemobf_deriv[np*np*face + np*phase + p2] = phasemob_deriv[upwind][phase][p2];
+                            phasemobf_deriv[face][phase][p2] = phasemob_deriv[upwind][phase][p2];
                         }
                     }
                 }
                 // Find faceA.
                 FluidStateBlackoil face_state = fluid.computeState(face_pressure[face], face_z);
-                std::copy(&face_state.phase_to_comp_[0][0], &face_state.phase_to_comp_[0][0] + nc*np, &faceA[face*nc*np]);
+                std::copy(&face_state.phase_to_comp_[0][0], &face_state.phase_to_comp_[0][0] + nc*np, &faceA[face][0][0]);
             }
 
             // Find faceA. Slower, since it does too much.
