@@ -379,6 +379,28 @@ namespace Opm
 
 
 
+    struct FaceFluidData : public BlackoilDefs
+    {
+        // Canonical state variables.
+        std::vector<CompVec> surface_volume_density;         // z
+        std::vector<PhaseVec> phase_pressure;                // p
+
+        // Variables from PVT functions.
+        std::vector<PhaseVec> formation_volume_factor;       // B
+        std::vector<PhaseVec> solution_factor;               // R
+
+        // Variables computed from PVT data.
+        // The A matrices are all in Fortran order (or, equivalently,
+        // we store the transposes).
+        std::vector<PhaseToCompMatrix> state_matrix;         // A' = (RB^{-1})'
+
+        // Variables computed from saturation.
+        std::vector<PhaseVec> mobility;                      // lambda
+        std::vector<PhaseJacobian> mobility_deriv;           // dlambda/ds
+
+        // Gravity and/or capillary pressure potential differences.
+        std::vector<PhaseVec> gravity_potential;             // (\rho g \delta z)-ish contribution per face
+    };
 
 
     struct AllFluidData : public BlackoilDefs
@@ -389,10 +411,7 @@ namespace Opm
         std::vector<double> relvoldiscr;
 
         // Per-face data.
-        std::vector<PhaseToCompMatrix> faceA;        // A = RB^{-1}. Fortran ordering.
-        std::vector<PhaseVec> phasemobf;             // Phase mobilities. Flat storage (numPhases per face).
-        std::vector<PhaseJacobian> phasemobf_deriv;  // Phase mobility derivatives. Flat storage (numPhases^2 per face).
-        std::vector<PhaseVec> gravcapf;              // Gravity (\rho g \delta z-ish) contribution per face, flat storage.
+        FaceFluidData face_data;
 
     public:
         template <class Grid, class Rock>
@@ -408,11 +427,8 @@ namespace Opm
         {
             int num_cells = cell_z.size();
             ASSERT(num_cells == grid.numCells());
-            int num_faces = face_pressure.size();
-            ASSERT(num_faces == grid.numFaces());
             const int np = numPhases;
             const int nc = numComponents;
-            bool nonzero_gravity = gravity.two_norm() > 0.0;
             BOOST_STATIC_ASSERT(np == nc);
             BOOST_STATIC_ASSERT(np == 3);
 
@@ -433,12 +449,37 @@ namespace Opm
                 relvoldiscr[cell] = std::fabs(cell_data.total_phase_volume_density[cell] - 1.0);
             }
 
-            // Compute face properties.
-            faceA.resize(num_faces);
-            phasemobf.resize(num_faces);
-            phasemobf_deriv.resize(num_faces);
-            gravcapf.resize(num_faces);
-            // std::vector<CompVec> face_z_vec(num_faces);
+
+            // Compute upwinded face properties, including z.
+            computeUpwindProperties(grid, fluid, gravity,
+                                    cell_pressure, face_pressure,
+                                    cell_z, bdy_z);
+
+            // Compute state matrices for faces.
+            // p, z -> B, R, A
+            face_data.phase_pressure = face_pressure;
+            fluid.computeBAndR(face_data);
+            fluid.computeStateMatrix(face_data);
+        }
+
+
+        template <class Grid>
+        void computeUpwindProperties(const Grid& grid,
+                                     const BlackoilFluid& fluid,
+                                     const typename Grid::Vector gravity,
+                                     const std::vector<PhaseVec>& cell_pressure,
+                                     const std::vector<PhaseVec>& face_pressure,
+                                     const std::vector<CompVec>& cell_z,
+                                     const CompVec& bdy_z)
+        {
+            int num_faces = face_pressure.size();
+            ASSERT(num_faces == grid.numFaces());
+            bool nonzero_gravity = gravity.two_norm() > 0.0;
+            face_data.state_matrix.resize(num_faces);
+            face_data.mobility.resize(num_faces);
+            face_data.mobility_deriv.resize(num_faces);
+            face_data.gravity_potential.resize(num_faces);
+            face_data.surface_volume_density.resize(num_faces);
 #pragma omp parallel for
             for (int face = 0; face < num_faces; ++face) {
             // Obtain properties from both sides of the face.
@@ -477,9 +518,9 @@ namespace Opm
                 // z coordinate of the centroid, and z_12 is the face centroid.
                 // Also compute the potentials.
                 PhaseVec pot[2];
-                for (int phase = 0; phase < np; ++phase) {
-                    gravcapf[face][phase] = gravcontrib[0][phase] - gravcontrib[1][phase];
-                    pot[0][phase] = phase_p[0][phase] + gravcapf[face][phase];
+                for (int phase = 0; phase < numPhases; ++phase) {
+                    face_data.gravity_potential[face][phase] = gravcontrib[0][phase] - gravcontrib[1][phase];
+                    pot[0][phase] = phase_p[0][phase] + face_data.gravity_potential[face][phase];
                     pot[1][phase] = phase_p[1][phase];
                 }
 
@@ -511,37 +552,28 @@ namespace Opm
                     }
                 }
                 face_z *= face_z_factor;
-                // face_z_vec[face] = face_z;
+                face_data.surface_volume_density[face] = face_z;
 
                 // Computing upwind mobilities and derivatives
-                for (int phase = 0; phase < np; ++phase) {
+                for (int phase = 0; phase < numPhases; ++phase) {
                     if (pot[0][phase] == pot[1][phase]) {
                         // Average.
                         double aver = 0.5*(phase_mob[0][phase] + phase_mob[1][phase]);
-                        phasemobf[face][phase] = aver;
+                        face_data.mobility[face][phase] = aver;
                         for (int p2 = 0; p2 < numPhases; ++p2) {
-                            phasemobf_deriv[face][phase][p2] = phasemob_deriv[0][phase][p2]
+                            face_data.mobility_deriv[face][phase][p2] = phasemob_deriv[0][phase][p2]
                                 + phasemob_deriv[1][phase][p2];
                         }
                     } else {
                         // Upwind.
                         int upwind = pot[0][phase] > pot[1][phase] ? 0 : 1;
-                        phasemobf[face][phase] = phase_mob[upwind][phase];
+                        face_data.mobility[face][phase] = phase_mob[upwind][phase];
                         for (int p2 = 0; p2 < numPhases; ++p2) {
-                            phasemobf_deriv[face][phase][p2] = phasemob_deriv[upwind][phase][p2];
+                            face_data.mobility_deriv[face][phase][p2] = phasemob_deriv[upwind][phase][p2];
                         }
                     }
                 }
-                // Find faceA.
-                FluidStateBlackoil face_state = fluid.computeState(face_pressure[face], face_z);
-                std::copy(&face_state.phase_to_comp_[0][0], &face_state.phase_to_comp_[0][0] + nc*np, &faceA[face][0][0]);
             }
-
-            // Find faceA. Slower, since it does too much.
-//             ManyFluidStatesBlackoil face_state;
-//             fluid.computeManyStates(face_pressure, face_z_vec, face_state);
-//             const double* fA = &face_state.phase_to_comp_[0][0][0];
-//             std::copy(fA, fA + num_faces*nc*np, &faceA[0]);
         }
 
 
