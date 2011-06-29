@@ -20,7 +20,6 @@
 #include "config.h"
 
 #include <dune/porsol/blackoil/fluid/FluidMatrixInteractionBlackoil.hpp>
-#include <dune/porsol/blackoil/fluid/FluidSystemBlackoil.hpp>
 #include <dune/common/param/ParameterGroup.hpp>
 #include <dune/common/fvector.hh>
 
@@ -51,7 +50,4 @@ int main(int argc, char** argv)
         std::cout << s[Law::Liquid] << "    " << kr << '\n';
     }
 
-    // Test the FluidSystemBlackoil class.
-    Opm::FluidSystemBlackoil<> fluid_system;
-    fluid_system.init(parser);
 }
