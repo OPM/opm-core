@@ -1500,6 +1500,8 @@ coarse_sys_destroy(struct coarse_sys *sys)
 
         free(sys->blkdof);
         free(sys->blkdof_pos);
+
+        free(sys->dof2conn);
     }
 
     free(sys);
