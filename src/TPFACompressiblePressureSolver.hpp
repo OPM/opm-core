@@ -324,7 +324,12 @@ public:
                                  const double* phasemobf_deriv,
                                  const double* surf_dens)
     {
-        compr_quantities cq = { 3, 0, 0, 0, faceA, phasemobf };
+        compr_quantities cq = { 3, // nphases
+                                0, // totcompr
+                                0, // voldiscr
+                                0, // Ac
+                                const_cast<double *>(faceA)    ,
+                                const_cast<double *>(phasemobf) };
         return cfs_tpfa_impes_maxtime(grid_.c_grid(), &cq, &trans_[0], &porevol_[0], data_,
                                       phasemobf_deriv, surf_dens, gravity_);
     }
