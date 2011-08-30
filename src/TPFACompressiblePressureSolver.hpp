@@ -200,7 +200,12 @@ public:
         }
 
         // Assemble the embedded linear system.
-        compr_quantities cq = { 3, totcompr, voldiscr, cellA, faceA, phasemobf };
+        compr_quantities cq = { 3                               ,
+                                const_cast<double *>(totcompr ) ,
+                                const_cast<double *>(voldiscr ) ,
+                                const_cast<double *>(cellA    ) ,
+                                const_cast<double *>(faceA    ) ,
+                                const_cast<double *>(phasemobf) };
 
         // Call the assembly routine. After this, linearSystem() may be called.
         cfs_tpfa_assemble(g, dt, wells, &bc, src,
