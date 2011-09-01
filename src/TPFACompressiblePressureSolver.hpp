@@ -145,20 +145,20 @@ public:
     /// \f[ \omega = \sum_{p} \frac{\lambda_p}{\lambda_t} \rho_p \f]
     /// where \f$\lambda_p\f$ is a phase mobility, \f$\rho_p\f$ is a
     /// phase density and \f$\lambda_t\f$ is the total mobility.
-    void assemble(const std::vector<double>& sources,
-                  const std::vector<FlowBCTypes>& bctypes,
-                  const std::vector<double>& bcvalues,
+    void assemble(const double* sources,
+                  const FlowBCTypes* bctypes,
+                  const double* bcvalues,
                   const double dt,
-                  const std::vector<double>& totcompr,
-                  const std::vector<double>& voldiscr,
-                  const std::vector<double>& cellA,  // num phases^2 * num cells, fortran ordering!
-                  const std::vector<double>& faceA,  // num phases^2 * num faces, fortran ordering!
-                  const std::vector<double>& wellperfA,
-                  const std::vector<double>& phasemobf,
-                  const std::vector<double>& phasemobwellperf,
-                  const std::vector<double>& cell_pressure,
-                  const std::vector<double>& gravcapf,
-                  const std::vector<double>& wellperf_gpot,
+                  const double* totcompr,
+                  const double* voldiscr,
+                  const double* cellA,  // num phases^2 * num cells, fortran ordering!
+                  const double* faceA,  // num phases^2 * num faces, fortran ordering!
+                  const double* wellperfA,
+                  const double* phasemobf,
+                  const double* phasemobwellperf,
+                  const double* cell_pressure,
+                  const double* gravcapf,
+                  const double* wellperf_gpot,
                   const double* surf_dens)
     {
         if (state_ == Uninitialized) {
@@ -168,7 +168,7 @@ public:
 
         // Boundary conditions.
         int num_faces = g->number_of_faces;
-        assert(num_faces == int(bctypes.size()));
+        // assert(num_faces == int(bctypes.size()));
         bctypes_.clear();
         bctypes_.resize(num_faces, UNSET);
         for (int face = 0; face < num_faces; ++face) {
@@ -178,11 +178,12 @@ public:
                 bctypes_[face] = FLUX;
             }
         }
-        bcvalues_ = bcvalues;
-        flowbc_t bc = { &bctypes_[0], const_cast<double*>(&bcvalues_[0]) };
+        bcvalues_.resize(num_faces);
+        std::copy(bcvalues, bcvalues + num_faces, bcvalues_.begin());
+        flowbc_t bc = { &bctypes_[0], &bcvalues_[0] };
 
         // Source terms from user.
-        double* src = const_cast<double*>(&sources[0]); // Ugly? Yes. Safe? I think so.
+        double* src = const_cast<double*>(sources); // Ugly? Yes. Safe? I think so.
 
         // Wells.
         well_t* wells = NULL;
@@ -192,22 +193,28 @@ public:
             wells = &wells_;
             wctrl = &wctrl_;
             wcompl = &wcompl_;
-            well_gpot_storage_ = wellperf_gpot;
-            well_A_storage_ = wellperfA;
-            well_phasemob_storage_ = phasemobwellperf;
+            // The next objects already have the correct sizes.
+            std::copy(wellperf_gpot, wellperf_gpot + well_gpot_storage_.size(), well_gpot_storage_.begin());
+            std::copy(wellperfA, wellperfA + well_A_storage_.size(), well_A_storage_.begin());
+            std::copy(phasemobwellperf, phasemobwellperf + well_phasemob_storage_.size(), well_phasemob_storage_.begin());
         }
 
         // Assemble the embedded linear system.
-        compr_quantities cq = { 3, &totcompr[0], &voldiscr[0], &cellA[0], &faceA[0], &phasemobf[0] };
+        compr_quantities cq = { 3                               ,
+                                const_cast<double *>(totcompr ) ,
+                                const_cast<double *>(voldiscr ) ,
+                                const_cast<double *>(cellA    ) ,
+                                const_cast<double *>(faceA    ) ,
+                                const_cast<double *>(phasemobf) };
 
         // Call the assembly routine. After this, linearSystem() may be called.
         cfs_tpfa_assemble(g, dt, wells, &bc, src,
-                          &cq, &trans_[0], &gravcapf[0],
+                          &cq, &trans_[0], gravcapf,
                           wctrl, wcompl,
-                          &cell_pressure[0], &porevol_[0],
+                          cell_pressure, &porevol_[0],
                           data_);
-        phasemobf_ = phasemobf;
-        gravcapf_  = gravcapf;
+        phasemobf_.assign(phasemobf, phasemobf + grid_.numFaces()*3);
+        gravcapf_.assign(gravcapf, gravcapf + grid_.numFaces()*3);
         state_ = Assembled;
     }
 
@@ -312,14 +319,19 @@ public:
 
     /// @brief
     ///     Explicit IMPES time step limit.
-    double explicitTimestepLimit(const std::vector<double>& faceA,  // num phases^2 * num faces, fortran ordering!
-                                 const std::vector<double>& phasemobf,
-                                 const std::vector<double>& phasemobf_deriv,
+    double explicitTimestepLimit(const double* faceA,  // num phases^2 * num faces, fortran ordering!
+                                 const double* phasemobf,
+                                 const double* phasemobf_deriv,
                                  const double* surf_dens)
     {
-        compr_quantities cq = { 3, 0, 0, 0, &faceA[0], &phasemobf[0] };
+        compr_quantities cq = { 3, // nphases
+                                0, // totcompr
+                                0, // voldiscr
+                                0, // Ac
+                                const_cast<double *>(faceA)    ,
+                                const_cast<double *>(phasemobf) };
         return cfs_tpfa_impes_maxtime(grid_.c_grid(), &cq, &trans_[0], &porevol_[0], data_,
-                                      &phasemobf_deriv[0], surf_dens, gravity_);
+                                      phasemobf_deriv, surf_dens, gravity_);
     }
 
 
