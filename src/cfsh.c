@@ -192,6 +192,9 @@ cfsh_assemble(flowbc_t        *bc,
 {
     int npp;                /* Number of prescribed pressure values */
 
+    /* Suppress warnings about unused parameters. */
+    (void) wctrl;  (void) WI;  (void) BivW;  (void) wdp;
+
     hybsys_schur_comp_unsymm(h->pimpl->nc,
                              h->pimpl->gdof_pos,
                              Binv, Biv, P, h->pimpl->sys);
