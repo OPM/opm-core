@@ -1,8 +1,17 @@
 syntax: glob
 
-Makefile.in
+# Compiler output and editor autosave files
+*~
+*.o
+*.lo
+*.a
+*.so
+a.out
+
+# Automatically generated output from the Autotools
 aclocal.m4
 autom4te*
+autoscan.*
 config.*
 configure
 depcomp
@@ -11,3 +20,4 @@ ltmain.sh
 m4/libtool.m4
 m4/lt*.m4
 missing
+Makefile.in
