@@ -127,7 +127,7 @@ hash_set_expand(size_t m, struct hash_set *t)
 
     s = malloc(m * sizeof *s);
     if (s != NULL) {
-        memset(s, -1, m * sizeof *s);
+        for (i = 0; i < m; i++) { s[i] = -1; }
 
         for (i = 0; i < t->m; i++) {
             ret = hash_set_insert_core(t->s[i], m, s);
@@ -169,7 +169,7 @@ struct hash_set *
 hash_set_allocate(int m)
 /* ---------------------------------------------------------------------- */
 {
-    size_t            sz;
+    size_t           i, sz;
     struct hash_set *new;
 
     new = malloc(1 * sizeof *new);
@@ -182,7 +182,7 @@ hash_set_allocate(int m)
 
             new = NULL;
         } else {
-            memset(new->s, -1, sz * sizeof *new->s);
+            for (i = 0; i < sz; i++) { new->s[i] = -1; }
             new->m = sz;
         }
     }

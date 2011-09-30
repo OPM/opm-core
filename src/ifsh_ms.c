@@ -90,14 +90,16 @@ max_block_cells(size_t nc, size_t nb, const int *p)
 /* ---------------------------------------------------------------------- */
 {
     int    ret, *cnt;
-    size_t c;
+    size_t b, c;
 
     ret = -1;
 
-    cnt = calloc(nb, sizeof *cnt);
+    cnt = malloc(nb * sizeof *cnt);
 
     if (cnt != NULL) {
         ret = 0;
+
+        for (b = 0; b < nb; b++) { cnt[b] = 0; }
 
         for (c = 0; c < nc; c++) {
             cnt[p[c]] += 1;
@@ -376,6 +378,7 @@ ifsh_ms_construct(grid_t       *G     ,
                   LocalSolver   linsolve)
 /* ---------------------------------------------------------------------- */
 {
+    int                  i;
     struct ifsh_ms_data *new;
 
     new = malloc(1 * sizeof *new);
@@ -400,8 +403,10 @@ ifsh_ms_construct(grid_t       *G     ,
             set_impl_pointers(G, new);
 
             memcpy(new->pimpl->p, p, G->number_of_cells * sizeof *p);
-            memset(new->pimpl->pb2c, 0,
-                   new->pimpl->ct->nblocks * sizeof *new->pimpl->pb2c);
+
+            for (i = 0; i < new->pimpl->ct->nblocks; i++) {
+                new->pimpl->pb2c[i] = 0;
+            }
 
             partition_invert(G->number_of_cells, new->pimpl->p,
                              new->pimpl->pb2c, new->pimpl->b2c);

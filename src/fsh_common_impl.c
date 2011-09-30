@@ -221,7 +221,11 @@ void
 fsh_define_cell_wells(size_t nc, well_t *W, struct fsh_impl *pimpl)
 /* ---------------------------------------------------------------------- */
 {
-    memset(pimpl->cwell_pos, 0, (nc + 1) * sizeof *pimpl->cwell_pos);
+    size_t i;
+
+    for (i = 0; i < nc + 1; i++) {
+        pimpl->cwell_pos[i] = 0;
+    }
 
     derive_cell_wells(nc, W, pimpl->cwell_pos, pimpl->cwells);
 }

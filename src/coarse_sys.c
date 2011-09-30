@@ -131,7 +131,7 @@ coarse_sys_meta_allocate(size_t nblocks, size_t nfaces_c,
                          size_t nc     , size_t nfaces_f)
 /* ---------------------------------------------------------------------- */
 {
-    size_t                  alloc_sz;
+    size_t                  i, alloc_sz;
     struct coarse_sys_meta *new;
 
     new = malloc(1 * sizeof *new);
@@ -147,13 +147,17 @@ coarse_sys_meta_allocate(size_t nblocks, size_t nfaces_c,
         alloc_sz += nfaces_c;    /* bfno */
         alloc_sz += 2*nfaces_c;  /* loc_dofno */
 
-        new->data = calloc(alloc_sz, sizeof *new->data);
+        new->data = malloc(alloc_sz * sizeof *new->data);
 
         if (new->data == NULL) {
             coarse_sys_meta_destroy(new);
 
             new = NULL;
         } else {
+            for (i = 0; i < alloc_sz; i++) {
+                new->data[i] = 0;
+            }
+
             new->blk_nhf   = new->data;
             new->blk_nfsf  = new->blk_nhf   + nblocks;
             new->ncf       = new->blk_nfsf  + nblocks;
@@ -294,7 +298,9 @@ enumerate_active_bf(struct coarse_topology *ct,
 {
     int act, cf, b_in, b_out, b1, b2, p;
 
-    memset(m->bfno, -1, ct->nfaces * sizeof *m->bfno);
+    for (p = 0; p < ct->nfaces; p++) {
+        m->bfno[p] = -1;
+    }
 
     act = 0;
 
@@ -330,7 +336,9 @@ compute_loc_dofno(struct coarse_topology *ct,
 {
     int b, nb, p, cf, locno, col_off;
 
-    memset(m->loc_dofno, -1, 2 * ct->nfaces * sizeof *m->loc_dofno);
+    for (p = 0; p < 2 * ct->nfaces; p++) {
+        m->loc_dofno[p] = -1;
+    }
 
     nb = ct->nblocks;
 
@@ -401,7 +409,9 @@ coarse_sys_meta_fill(int nc, const int *pgconn,
         }
     }
 
-    memset(m->loc_fno, -1, nneigh * sizeof *m->loc_fno);
+    for (f = 0; f < nneigh; f++) {
+        m->loc_fno[f] = -1;
+    }
 
     m->max_cf_nf = 0;
 
@@ -587,9 +597,11 @@ enforce_explicit_source(size_t nc, size_t nb, const int *p,
     int    *has_src;
 
     ret     = 0;
-    has_src = calloc(nb, sizeof *has_src);
+    has_src = malloc(nb * sizeof *has_src);
 
     if (has_src != NULL) {
+        for (b = 0; b < nb; b++) { has_src[b] = 0; }
+
         for (c = 0; c < nc; c++) {
             has_src[p[c]] += fabs(src[c]) > 0.0;
         }
@@ -709,9 +721,11 @@ blkdof_fill(struct coarse_topology *ct,
 
     nb = ct->nblocks;
 
-    sys->blkdof_pos = calloc(nb + 1, sizeof *sys->blkdof_pos);
+    sys->blkdof_pos = malloc((nb + 1) * sizeof *sys->blkdof_pos);
 
     if (sys->blkdof_pos != NULL) {
+        for (b = 0; b <= nb; b++) { sys->blkdof_pos[b] = 0; }
+
         /* Count number of active BFs per block */
         for (b = 0, p = 0; b < nb; b++) {
             for (; p < ct->blkfacepos[b + 1]; p++) {
@@ -799,7 +813,7 @@ coarse_sys_allocate(struct coarse_topology *ct,
 /* ---------------------------------------------------------------------- */
 {
     int               alloc_ok;
-    size_t            nb;
+    size_t            i, nb;
     size_t            bf_asz, ip_asz, Binv_asz; /* Allocation sizes */
 
     struct coarse_sys *new;
@@ -816,8 +830,8 @@ coarse_sys_allocate(struct coarse_topology *ct,
 
             new->dof2conn = malloc(m->n_act_bf * sizeof *new->dof2conn);
 
-            new->basis_pos   = calloc(nb + 1, sizeof *new->basis_pos  );
-            new->cell_ip_pos = calloc(nb + 1, sizeof *new->cell_ip_pos);
+            new->basis_pos   = malloc((nb + 1) * sizeof *new->basis_pos  );
+            new->cell_ip_pos = malloc((nb + 1) * sizeof *new->cell_ip_pos);
 
             new->basis       = malloc(bf_asz   * sizeof *new->basis  );
             new->cell_ip     = malloc(ip_asz   * sizeof *new->cell_ip);
@@ -834,6 +848,11 @@ coarse_sys_allocate(struct coarse_topology *ct,
         if (alloc_ok < 7) {
             coarse_sys_destroy(new);
             new = NULL;
+        } else {
+            for (i = 0; i <= nb; i++) {
+                new->basis_pos  [i] = 0;
+                new->cell_ip_pos[i] = 0;
+            }
         }
     }
 
@@ -1211,7 +1230,9 @@ symmetrise_flux(size_t cf, grid_t *g, struct coarse_topology *ct,
     cnt  = bf_asm->fcount;
 
     vector_zero(bf_asm->A->m, flux);
-    memset(cnt, 0, bf_asm->A->m * sizeof *bf_asm->fcount);
+    for (f = 0; f < bf_asm->A->m; f++) {
+        cnt[f] = 0;
+    }
 
     /* Accumulate (and count) number of fine-scale flux contributions
      * from this particular BF. */

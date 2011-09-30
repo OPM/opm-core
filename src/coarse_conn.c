@@ -492,6 +492,7 @@ coarse_topology_build(int ncoarse_f, int nblk,
                       struct block_neighbours **bns)
 /* ---------------------------------------------------------------------- */
 {
+    int                     i;
     int                     subface_valid;
     size_t                  nblkf, nsubf;
     struct coarse_topology *new;
@@ -499,7 +500,7 @@ coarse_topology_build(int ncoarse_f, int nblk,
     new = malloc(1 * sizeof *new);
     if (new != NULL) {
         new->neighbours = malloc(2 * ncoarse_f * sizeof *new->neighbours);
-        new->blkfacepos = calloc(nblk + 1      , sizeof *new->blkfacepos);
+        new->blkfacepos = malloc((nblk + 1)    * sizeof *new->blkfacepos);
 
         new->blkfaces   = NULL;
         new->subfacepos = NULL;
@@ -510,19 +511,27 @@ coarse_topology_build(int ncoarse_f, int nblk,
             coarse_topology_destroy(new);
             new = NULL;
         } else {
-            memset(new->neighbours, INT_MIN,
-                   2 * ncoarse_f * sizeof *new->neighbours);
+            for (i = 0; i < 2 * ncoarse_f; i++) {
+                new->neighbours[i] = INT_MIN;
+            }
+            for (i = 0; i < nblk + 1; i++) {
+                new->blkfacepos[i] = 0;
+            }
 
             coarse_topology_build_coarsef(nblk, bns, new->neighbours,
                                           new->blkfacepos, &nblkf, &nsubf);
 
             if (nsubf > 0) {
-                new->subfacepos = calloc(ncoarse_f + 1, sizeof *new->subfacepos);
-                new->subfaces   = malloc(nsubf        * sizeof *new->subfaces);
+                new->subfacepos = malloc((ncoarse_f + 1) * sizeof *new->subfacepos);
+                new->subfaces   = malloc(nsubf           * sizeof *new->subfaces);
 
                 if ((new->subfacepos == NULL) || (new->subfaces == NULL)) {
                     free(new->subfaces);   new->subfaces   = NULL;
                     free(new->subfacepos); new->subfacepos = NULL;
+                } else {
+                    for (i = 0; i < ncoarse_f + 1; i++) {
+                        new->subfacepos[i] = 0;
+                    }
                 }
             }
 

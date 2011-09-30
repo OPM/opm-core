@@ -42,11 +42,11 @@ int
 allocate_cell_wells(int nc, well_t *W, int **cwpos, int **cwells)
 /* ---------------------------------------------------------------------- */
 {
-    int totwconn;
+    int i, totwconn;
 
     totwconn = W->well_connpos[W->number_of_wells];
 
-    *cwpos  = calloc(nc + 1       , sizeof **cwpos );
+    *cwpos  = malloc((nc + 1)     * sizeof **cwpos );
     *cwells = malloc(2 * totwconn * sizeof **cwells);
 
     if ((*cwpos == NULL) || (*cwells == NULL)) {
@@ -56,6 +56,10 @@ allocate_cell_wells(int nc, well_t *W, int **cwpos, int **cwells)
         *cwells  = NULL;
 
         totwconn = 0;
+    } else {
+        for (i = 0; i < nc + 1; i++) {
+            (*cwpos)[i] = 0;
+        }
     }
 
     return totwconn;
