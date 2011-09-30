@@ -39,6 +39,7 @@
 #include <cassert>
 
 #include <algorithm>
+#include <array>
 #include <vector>
 
 namespace Opm {
@@ -257,8 +258,44 @@ namespace Opm {
         initIteration(const ReservoirState& state,
                       const Grid&           g    ,
                       JacobianSystem&       sys  ) {
+            std::array<double, 2*2> dmob;
+
+            const double *s = &state.saturation[0*2 + 0];
+
+            for (int c = 0; c < g.number_of_cells; ++c, s += 0) {
+                this->mobility(c, s, store_.mob(c), dmob);
+
+                store_.dmob(c)[0] =  dmob[0*2 + 0];
+                store_.dmob(c)[1] = -dmob[1*2 + 1];
+            }
         }
 
+        template <class ReservoirState,
+                  class Grid          ,
+                  class NewtonIterate >
+        void
+        finishIteration(const ReservoirState& state,
+                        const Grid&           g    ,
+                        NewtonIterate&        it   ) {
+            // Nothing to do at end of iteration in this model.
+            (void) state;  (void) g;  (void) it;
+        }
+
+        template <class Grid          ,
+                  class SolutionVector,
+                  class ReservoirState>
+        void
+        finishStep(const Grid&           g    ,
+                   const SolutionVector& x    ,
+                   ReservoirState&       state) {
+
+            double *s = &state.saturation[0*2 + 0];
+
+            for (int c = 0; c < g.number_of_cells; ++c, s += 2) {
+                s[0] += x[c]    ;
+                s[1]  = 1 - s[0];
+            }
+        }
 
     private:
         void
@@ -342,8 +379,6 @@ namespace Opm {
 
             return gflux;
         }
-
-        TwophaseFluid                 fluid_  ;
 
         bool                          gravity_;
         std::vector<int>              f2hf_   ;
