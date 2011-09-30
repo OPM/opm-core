@@ -1,4 +1,4 @@
-//===========================================================================
+/*===========================================================================
 //
 // File: ImplicitAssembly.hpp
 //
@@ -10,14 +10,14 @@
 //          Atgeirr F. Rasmussen  <atgeirr@sintef.no>
 //          Bård Skaflestad       <Bard.Skaflestad@sintef.no>
 //
-//===========================================================================
+//==========================================================================*/
 
 
 /*
   Copyright 2011 SINTEF ICT, Applied Mathematics.
   Copyright 2011 Statoil ASA.
 
-  This file is part of the Open Porous Media (OPM).
+  This file is part of the Open Porous Media Project (OPM).
 
   OPM is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -227,4 +227,4 @@ namespace Opm {
         std::vector<double> asm_buffer_ ;
     };
 }
-#endif  // OPM_IMPLICITASSEMBLY_HPP_HEADER
+#endif  /* OPM_IMPLICITASSEMBLY_HPP_HEADER */
