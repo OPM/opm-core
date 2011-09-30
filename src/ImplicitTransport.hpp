@@ -5,9 +5,9 @@
 // Created: 2011-09-29 10:38:42+0200
 //
 // Authors: Ingeborg S. Ligaarden <Ingeborg.Ligaarden@sintef.no>
+//          Jostein R. Natvig     <Jostein.R.Natvig@sintef.no>
 //          Halvor M. Nilsen      <HalvorMoll.Nilsen@sintef.no>
 //          Atgeirr F. Rasmussen  <atgeirr@sintef.no>
-//          Jostein R. Natvig     <Jostein.R.Natvig@sintef.no>
 //          Bård Skaflestad       <Bard.Skaflestad@sintef.no>
 //
 //==========================================================================*/
