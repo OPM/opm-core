@@ -121,7 +121,13 @@ namespace Opm {
             }
 
             typename Vector::value_type
-            norm() { return Norm<Vector>::norm(v_); }
+            norm() const { return Norm<Vector>::norm(v_); }
+
+            typename Vector::value_type&
+            operator[](size_t i)       { return v_[i]; }
+
+            const typename Vector::value_type&
+            operator[](size_t i) const { return v_[i]; }
 
         private:
             Vector v_;
