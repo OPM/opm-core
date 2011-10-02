@@ -195,15 +195,28 @@ namespace Opm {
 
             void
             setSize(size_t m, size_t n, size_t nnz = 0);
+
+            const Matrix&
+            matrix();
         } */;
 
-        template <class Matrix, class Vector>
+        template <class Matrix, class Vector,
+                  template <class Mat,
+                            class Vec>
+                  class LinSolve>
         class JacobianSystem {
         public:
             typedef Matrix matrix_type;
 
             MatrixBlockAssembler<Matrix>& matrix() { return mba_ ; }
             NewtonVectors       <Vector>& vector() { return vecs_; }
+
+            void
+            solve() {
+                LinSolve<Matrix,Vector> ls(mba_.matrix());
+
+                ls.solve(vecs_.residual(), vecs_.increment());
+            }
 
         private:
             MatrixBlockAssembler<Matrix> mba_ ;
