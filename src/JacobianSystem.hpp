@@ -129,6 +129,9 @@ namespace Opm {
             const typename Vector::value_type&
             operator[](size_t i) const { return v_[i]; }
 
+            Vector&       wrappedVector()       { return v_; }
+            const Vector& wrappedVector() const { return v_; }
+
         private:
             Vector v_;
         };
