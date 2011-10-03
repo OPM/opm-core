@@ -122,9 +122,9 @@ namespace Opm {
             const int ndof2 = ndof * ndof;
             nconn_          = countConnections(g, c);
 
-            row_structure_.resize   (0);
-            row_structure_.reserve  (nconn + 1);
-            row_structure_.push_back(c);
+            connections_.resize   (0);
+            connections_.reserve  (nconn + 1);
+            connections_.push_back(c);
 
             asm_buffer_.resize((2*nconn + 1)*ndof2 + (nconn + 2)*ndof);
             std::fill(asm_buffer_.begin(), asm_buffer_.end(), 0.0);
