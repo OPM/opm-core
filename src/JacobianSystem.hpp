@@ -203,12 +203,11 @@ namespace Opm {
             matrix();
         } */;
 
-        template <class Matrix, class Vector,
-                  template <class Mat,
-                            class Vec>
-                  class LinSolve>
+        template <class Matrix, class Vector, class LinSolve>
         class JacobianSystem {
         public:
+            JacobianSystem(LinSolve& solver) : solver_(solver) {}
+
             typedef Matrix matrix_type;
 
             MatrixBlockAssembler<Matrix>& matrix() { return mba_ ; }
@@ -216,14 +215,18 @@ namespace Opm {
 
             void
             solve() {
-                LinSolve<Matrix,Vector> ls(mba_.matrix());
-
-                ls.solve(vecs_.residual(), vecs_.increment());
+                solver_.solve(mba_ .matrix   (),
+                              vecs_.residual (),
+                              vecs_.increment());
             }
 
         private:
-            MatrixBlockAssembler<Matrix> mba_ ;
-            NewtonVectors       <Vector> vecs_;
+            JacobianSystem           (const JacobianSystem&);
+            JacobianSystem& operator=(const JacobianSystem&);
+
+            MatrixBlockAssembler<Matrix> mba_   ;
+            NewtonVectors       <Vector> vecs_  ;
+            LinSolve&                    solver_;
         };
     }
 }

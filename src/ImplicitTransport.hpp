@@ -59,6 +59,8 @@ namespace Opm {
               class JacobianSystem>
     class ImplicitTransport : private Model {
     public:
+        ImplicitTransport(JacobianSystem& sys) : sys_(sys) {}
+
         template <class Grid          ,
                   class SourceTerms   ,
                   class ReservoirState>
@@ -112,13 +114,16 @@ namespace Opm {
         }
 
     private:
+        ImplicitTransport           (const ImplicitTransport&);
+        ImplicitTransport& operator=(const ImplicitTransport&);
+
         using Model::initStep;
         using Model::initIteration;
         using Model::finishIteration;
         using Model::finishStep;
 
         ImplicitAssembly<Model> asm_;
-        JacobianSystem          sys_;
+        JacobianSystem&         sys_;
     };
 }
 #endif  /* OPM_IMPLICITTRANSPORT_HPP_HEADER */

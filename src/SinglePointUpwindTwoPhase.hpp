@@ -258,11 +258,14 @@ namespace Opm {
         initIteration(const ReservoirState& state,
                       const Grid&           g    ,
                       JacobianSystem&       sys  ) {
+
+            std::array<double, 2  > s   ;
             std::array<double, 2*2> dmob;
 
-            const double *s = &state.saturation[0*2 + 0];
+            for (int c = 0; c < g.number_of_cells; ++c) {
+                s[0] = state.saturation[c*2 + 0] + sys.vector().solution()[c];
+                s[1] = 1 - s[0];
 
-            for (int c = 0; c < g.number_of_cells; ++c, s += 0) {
                 this->mobility(c, s, store_.mob(c), dmob);
 
                 store_.dmob(c)[0] =  dmob[0*2 + 0];
