@@ -55,11 +55,8 @@ namespace Opm {
             sz_t m   = g.number_of_cells;
             sz_t nnz = g.number_of_cells + countConnections(g);
 
-            m   *= DofPerCell;
-            nnz *= DofPerCell * DofPerCell;
-
-            sys.matrix().setSize(m, m, nnz);
-            sys.vector().setSize(m);
+            sys.matrix().setSize(DofPerCell, m, m, nnz);
+            sys.vector().setSize(DofPerCell, m);
         }
 
         template <class ReservoirState,

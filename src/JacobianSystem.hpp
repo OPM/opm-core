@@ -197,7 +197,7 @@ namespace Opm {
             finalizeStructure();
 
             void
-            setSize(size_t m, size_t n, size_t nnz = 0);
+            setSize(size_t ndof, size_t m, size_t n, size_t nnz = 0);
 
             const Matrix&
             matrix();
