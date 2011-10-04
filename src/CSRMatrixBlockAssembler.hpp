@@ -107,6 +107,8 @@ namespace Opm {
 
             void
             setSize(size_t ndof, size_t m, size_t n, size_t nnz = 0) {
+                (void) n;
+
                 clear();
 
                 allocate(ndof, m, nnz);
@@ -143,6 +145,7 @@ namespace Opm {
             }
 
             template <class Connections>
+            void
             expandSortConn(const Connections& conn, ::std::size_t ndof) {
                 sconn_.resize(0);
                 sconn_.reserve(conn.size());
@@ -158,7 +161,7 @@ namespace Opm {
                 esconn_.reserve(ndof * sconn_.size());
 
                 for (::std::vector<int>::iterator
-                         c = sconn_.begin(), e = sconn_.end(); ++c) {
+                         c = sconn_.begin(), e = sconn_.end(); c != e; ++c) {
                     for (::std::size_t dof = 0; dof < ndof; ++dof) {
                         esconn_.push_back(static_cast<int>((*c)*ndof + dof));
                     }
