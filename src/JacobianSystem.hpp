@@ -36,149 +36,136 @@
 #ifndef OPM_JACOBIANSYSTEM_HPP_HEADER
 #define OPM_JACOBIANSYSTEM_HPP_HEADER
 
-#include <algorithm>
-#include <array>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
+
+#include <algorithm>
+#include <array>
 #include <functional>
 #include <numeric>
 
 namespace Opm {
     namespace ImplicitTransportDefault {
-        template <typename T>
-        class MaxAbs : public std::binary_function<T, T, T> {
+        template <class BaseVec>
+        class VectorAdder {
         public:
-            T operator()(const T& x, const T& y) {
-                return std::max(std::abs(x), std::abs(y));
+            // y += x
+            static void
+            add(const BaseVec& x, BaseVec& y) {
+                typedef typename BaseVec::value_type VT;
+
+                ::std::transform(x.begin(), x.end(),
+                                 y.begin(),
+                                 y.begin(),
+                                 ::std::plus<VT>());
             }
         };
 
-        template <class Vector>
-        class MaxNorm {
+        template <class BaseVec>
+        class VectorNegater {
         public:
-            typename Vector::value_type
-            norm(const Vector& v) {
-                typedef typename Vector::value_type VT;
+            // x *= -1
+            static void
+            negate(BaseVec& x) {
+                typedef typename BaseVec::value_type VT;
 
-                return std::accumulate(v.begin(), v.end(),
-                                       VT(0), MaxAbs<VT>());
+                ::std::transform(x.begin(), x.end(),
+                                 x.begin(),
+                                 ::std::negate<VT>());
             }
         };
 
-        template <typename T>
-        class SumAbs : public std::binary_function<T, T, T> {
-        public:
-            T operator()(const T& x, const T& y) {
-                return std::abs(x) + std::abs(y);
+        template <class BaseVec>
+        class VectorZero {
+            static void
+            zero(BaseVec& x) {
+                typedef typename BaseVec::value_type VT;
+
+                ::std::fill(x.begin(), x.end(), VT(0.0));
             }
         };
 
-        template <class Vector>
-        class TaxiCabNorm {
+        template <class BaseVec>
+        class VectorBlockAssembler {
         public:
-            typename Vector::value_type
-            norm(const Vector& v) {
-                typedef typename Vector::value_type VT;
+            template <class Block>
+            static void
+            assemble(::std::size_t ndof,
+                     ::std::size_t i   ,
+                     const Block&  b   ,
+                     BaseVec&      vec ) {
 
-                return std::accumulate(v.begin(), v.end(),
-                                       VT(0), SumAbs<VT>());
-            }
-        };
-
-        template <class Vector>
-        class EuclidianNorm {
-        public:
-            typename Vector::value_type
-            norm(const Vector& v) {
-                typedef typename Vector::value_type VT;
-                typedef typename Vector::iterator   VI;
-
-                VT ret2 = 0;
-                for (VI i = v.begin(), e = v.end(); i != e; ++i) {
-                    VT  x = std::abs(*i);
-
-                    ret2 += x * x;
+                for (::std::size_t d = 0; d < ndof; ++d) {
+                    vec[i*ndof + d] += b[d];
                 }
-
-                return std::sqrt(ret2);
             }
         };
 
-        template <class Vector,
-                  template<class> class Norm = MaxNorm>
-        class DefaultNewtonVector {
-            typedef typename Vector::value_type VT;
+        template <class BaseVec>
+        class VectorSizeSetter {
         public:
-            void
-            resize(size_t m) { v_.resize(m); }
+            VectorSizeSetter(BaseVec& v) : v_(v) {}
 
             void
-            negate() {
-                std::transform(v_.begin(),
-                               v_.end  (),
-                               v_.begin(),
-                               std::negate<VT>());
+            setSize(::std::size_t ndof, ::std::size_t m) {
+                v_.resize(ndof * m);
             }
-
-            typename Vector::value_type
-            norm() const { return Norm<Vector>::norm(v_); }
-
-            typename Vector::value_type&
-            operator[](size_t i)       { return v_[i]; }
-
-            const typename Vector::value_type&
-            operator[](size_t i) const { return v_[i]; }
-
-            Vector&       wrappedVector()       { return v_; }
-            const Vector& wrappedVector() const { return v_; }
 
         private:
-            Vector v_;
+            BaseVec& v_;
         };
 
-        template <class Vector>
-        class NewtonVectors {
-            typedef typename std::array<Vector, 3> VC ;
-            typedef typename VC ::iterator         VCI;
-
+        template <class                  BaseVec                         ,
+                  template <class> class VSzSetter = VectorSizeSetter    ,
+                  template <class> class VAdd      = VectorAdder         ,
+                  template <class> class VBlkAsm   = VectorBlockAssembler>
+        class NewtonVectorCollection {
             enum { Residual = 0, Increment = 1, Solution = 2 };
 
         public:
             void
-            setSize(size_t m) {
-                for (VCI i = v_.begin(), e = v_.end(); i != e; ++i) {
-                    i->resize(m);
-                }
-            }
+            setSize(::std::size_t ndof, ::std::size_t m) {
+                typedef typename ::std::array<BaseVec, 3>::iterator VAI;
 
-            template <class Block>
-            void
-            assembleBlock(size_t n, size_t i, const Block& b) {
-                for (size_t k = 0; k < n; ++k) {
-                    residual()[i*n + k] += b[k];
+                for (VAI i = vcoll_.begin(), e = vcoll_.end(); i != e; ++i) {
+                    VSzSetter<BaseVec>(*i).setSize(ndof, m);
                 }
+
+                ndof_ = ndof;
             }
 
             void
             addIncrement() {
-                std::transform(v_[ Solution  ].begin(),
-                               v_[ Solution  ].end  (),
-                               v_[ Increment ].begin(),
-                               v_[ Solution  ].begin(),
-                               std::plus<typename Vector::value_type>());
+                VAdd<BaseVec>::add(vcoll_[ Increment ], vcoll_[ Solution ]);
             }
 
-            Vector&       residual ()       { return v_[ Residual  ]; }
-            const Vector& residual () const { return v_[ Residual  ]; }
+            template <class Block>
+            void
+            assembleBlock(::std::size_t ndof,
+                          ::std::size_t i   ,
+                          const Block&  b   ) {
 
-            Vector&       increment()       { return v_[ Increment ]; }
-            const Vector& increment() const { return v_[ Increment ]; }
+                assert (ndof_ >  0    );
+                assert (ndof  == ndof_);
 
-            Vector&       solution ()       { return v_[ Solution  ]; }
-            const Vector& solution () const { return v_[ Solution  ]; }
+                VBlkAsm<BaseVec>::assemble(ndof, i, b, vcoll_[ Residual ]);
+            }
+
+            typedef BaseVec vector_type;
+
+            const vector_type& increment() const { return vcoll_[ Increment ]; }
+            const vector_type& residual () const { return vcoll_[ Residual  ]; }
+            const vector_type& solution () const { return vcoll_[ Solution  ]; }
+
+            // Write access for Newton solver purposes
+            vector_type& writableIncrement()     { return vcoll_[ Increment ]; }
+            vector_type& writableResidual ()     { return vcoll_[ Residual  ]; }
+            vector_type& writableSolution ()     { return vcoll_[ Solution  ]; }
 
         private:
-            VC v_;
+            ::std::size_t            ndof_ ;
+            ::std::array<BaseVec, 3> vcoll_;
         };
 
         template <class Matrix>
@@ -203,30 +190,35 @@ namespace Opm {
             matrix();
         } */;
 
-        template <class Matrix, class Vector, class LinSolve>
+        template <class Matrix        ,
+                  class NVecCollection>
         class JacobianSystem {
         public:
-            JacobianSystem(LinSolve& solver) : solver_(solver) {}
+            JacobianSystem() {}
 
-            typedef Matrix matrix_type;
+            typedef Matrix                               matrix_type;
+            typedef MatrixBlockAssembler<Matrix>         assembler_type;
+            typedef typename NVecCollection::vector_type vector_type;
 
-            MatrixBlockAssembler<Matrix>& matrix() { return mba_ ; }
-            NewtonVectors       <Vector>& vector() { return vecs_; }
+            assembler_type&    matasm()       { return mba_         ; }
+            NVecCollection&    vector()       { return sysvec_      ; }
+            const matrix_type& matrix() const { return mba_.matrix(); }
 
             void
-            solve() {
-                solver_.solve(mba_ .matrix   (),
-                              vecs_.residual (),
-                              vecs_.increment());
+            setSize(::std::size_t ndof,
+                    ::std::size_t m   ,
+                    ::std::size_t nnz = 0) {
+
+                mba_   .setSize(ndof, m, m, nnz);
+                sysvec_.setSize(ndof, m        );
             }
 
         private:
             JacobianSystem           (const JacobianSystem&);
             JacobianSystem& operator=(const JacobianSystem&);
 
-            MatrixBlockAssembler<Matrix> mba_   ;
-            NewtonVectors       <Vector> vecs_  ;
-            LinSolve&                    solver_;
+            MatrixBlockAssembler<Matrix> mba_   ; // Coefficient matrix
+            NVecCollection               sysvec_; // Residual
         };
     }
 }
