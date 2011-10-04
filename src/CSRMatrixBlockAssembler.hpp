@@ -182,5 +182,7 @@ namespace Opm {
 
             struct CSRMatrix      mat_;
         };
+    }
+}
 
 #endif  /* OPM_CSRMATRIXBLOCKASSEMBLER_HPP_HEADER */
