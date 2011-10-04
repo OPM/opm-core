@@ -55,8 +55,7 @@ namespace Opm {
             sz_t m   = g.number_of_cells;
             sz_t nnz = g.number_of_cells + countConnections(g);
 
-            sys.matrix().setSize(DofPerCell, m, m, nnz);
-            sys.vector().setSize(DofPerCell, m);
+            sys.setSize(DofPerCell, m, nnz);
         }
 
         template <class ReservoirState,
@@ -75,7 +74,7 @@ namespace Opm {
                 this->assembleCellContrib(g, c, sys);
             }
 
-            sys.matrix().finalizeStructure();
+            sys.matasm().finalizeStructure();
 
             if (src != 0) {
                 this->assembleSourceContrib(g, src, dt, sys);
@@ -160,7 +159,7 @@ namespace Opm {
             const int ndof  = DofPerCell;
             const int ndof2 = ndof * ndof;
 
-            sys.matrix().createBlockRow(c, connections_, ndof);
+            sys.matasm().createBlockRow(c, connections_, ndof);
 
             typedef std::vector<int>::size_type sz_t;
 
@@ -168,7 +167,7 @@ namespace Opm {
             const double* J2 = J1 + ((1*nconn + 1) * ndof2);
 
             // Assemble contributions from accumulation term
-            sys.matrix().assembleBlock(ndof, c, c, J1);  J1 += ndof2;
+            sys.matasm().assembleBlock(ndof, c, c, J1);  J1 += ndof2;
 
             // Assemble connection contributions.
             for (int i = g.cell_facepos[c + 0];
@@ -180,8 +179,8 @@ namespace Opm {
                 c2 = (c1 == c) ? c2 : c1;
 
                 if (c2 >= 0) {
-                    sys.matrix().assembleBlock(ndof, c, c , J1);
-                    sys.matrix().assembleBlock(ndof, c, c2, J2);
+                    sys.matasm().assembleBlock(ndof, c, c , J1);
+                    sys.matasm().assembleBlock(ndof, c, c2, J2);
 
                     J1 += ndof2;
                     J2 += ndof2;
@@ -214,7 +213,7 @@ namespace Opm {
 
                 const int c = src.cell[i];
 
-                sys.matrix().assembleBlock(ndof, c, c, J);
+                sys.matasm().assembleBlock(ndof, c, c, J);
                 sys.vector().assembleBlock(ndof, c,    F);
             }
         }
