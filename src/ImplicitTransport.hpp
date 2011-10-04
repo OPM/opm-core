@@ -55,49 +55,64 @@ namespace Opm {
         };
     }
 
-    template <class Model         ,
-              class JacobianSystem>
+    template <class Model            ,
+              class JacobianSystem   ,
+              template <class> VNorm ,
+              template <class> VNeg  = VectorNegater,
+              template <class> VZero = VectorZero>
     class ImplicitTransport : private Model {
     public:
-        ImplicitTransport(JacobianSystem& sys) : sys_(sys) {}
+        ImplicitTransport() {}
 
         template <class Grid          ,
                   class SourceTerms   ,
-                  class ReservoirState>
-        void solve(const Grid&                                g    ,
-                   const SourceTerms&                         src  ,
-                   const double                               dt   ,
-                   const ImplicitTransportDetails::NRControl& ctrl ,
-                   ReservoirState&                            state,
-                   ImplicitTransportDetails::NRReport&        rpt  ) {
+                  class ReservoirState,
+                  class LinearSolver  >
+        void solve(const Grid&                                g       ,
+                   const SourceTerms&                         src     ,
+                   const double                               dt      ,
+                   const ImplicitTransportDetails::NRControl& ctrl    ,
+                   ReservoirState&                            state   ,
+                   LinearSolver&                              linsolve,
+                   ImplicitTransportDetails::NRReport&        rpt     ) {
+
+            typedef typename JacobianSystem::vector_type vector_type;
 
             asm_.createSystem(g, sys_);
+
+            VZero<vector_type>::zero(sys_.writableResidual());
 
             this->initStep(state, g, sys_);
             this->initIteration(state, g, sys_);
 
             asm_.assemble(state, g, src, dt, sys_);
 
-            const double nrm_res0 = sys_.vector().residual().norm();
-            rpt.norm_res          = nrm_res0;
-            rpt.norm_dx           = -1.0;
-            rpt.nit               = 0;
+            const double nrm_res0 =
+                VNorm<vector_type>::norm(sys_.vector().residual());
+
+            rpt.norm_res = nrm_res0;
+            rpt.norm_dx  = -1.0;
+            rpt.nit      = 0;
 
             bool done = rpt.norm_res < ctrl.atol;
 
             while (! done) {
-                sys_.solve ();
-                sys_.vector().increment().negate();
+                linsolve.solve(sys_.matrix(),
+                               sys_.vector().residual(),
+                               sys_.vector().writableIncrement());
+
+                VNeg<vector_type>::negate(sys_.vector().writableIncrement());
 
                 this->finishIteration(state, g, sys_.vector());
 
-                nrm_dx = sys_.vector().increment().norm();
+                nrm_dx = VNorm<vector_type>::norm(sys_.vector().increment());
 
                 sys_.vector().addIncrement();
                 this->initIteration(state, g, sys_);
 
                 asm_.assemble(state, g, src, dt, sys_);
-                rpt.norm_res = sys_.vector().residual().norm();
+                rpt.norm_res =
+                    VNorm<vector_type>::norm(sys_.vector().residual());
 
                 rpt.nit++;
 
