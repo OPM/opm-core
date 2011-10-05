@@ -37,6 +37,7 @@
 #define OPM_NORMSUPPORT_HPP_HEADER
 
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include <numeric>
 
