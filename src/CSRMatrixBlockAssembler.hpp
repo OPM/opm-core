@@ -61,7 +61,6 @@ namespace Opm {
 
                 assert (ndof >  0);
                 assert (ndof == ndof_);
-                assert (i    == (ia_.size() - 1 - 1) / ndof_);
 
                 const ::std::size_t start = ia_[i*ndof + 0];
                 const ::std::size_t off   =
