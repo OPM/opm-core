@@ -60,6 +60,12 @@ namespace Opm {
             ::std::size_t nnz = g.number_of_cells + countConnections(g);
 
             sys.setSize(DofPerCell, m, nnz);
+
+            for (int c = 0; c < g.number_of_cells; ++c) {
+                this->createRowStructure(g, c, sys);
+            }
+
+            sys.matasm().finalizeStructure();
         }
 
         template <class ReservoirState,
@@ -77,8 +83,6 @@ namespace Opm {
                 this->computeCellContrib(state, g, c, dt);
                 this->assembleCellContrib(g, c, sys);
             }
-
-            sys.matasm().finalizeStructure();
 
             if (src != 0) {
                 this->assembleSourceContrib(g, src, dt, sys);
@@ -115,6 +119,32 @@ namespace Opm {
             return n;
         }
 
+        template <class Grid, class System>
+        void
+        createRowStructure(const Grid& g  ,
+                           const int   c  ,
+                           System&     sys) const {
+
+            int nconn = countConnections(g, c);
+
+            ::std::vector<int> connections;
+            connections.reserve  (nconn + 1);
+            connections.push_back(c);
+
+            for (int i = g.cell_facepos[c + 0];
+                 i     < g.cell_facepos[c + 1]; ++i) {
+                int f  = g.cell_faces[i];
+                int c1 = g.face_cells[2*f + 0];
+                int c2 = g.face_cells[2*f + 1];
+
+                if ((c1 >= 0) && (c2 >= 0)) {
+                    connections.push_back((c1 == c) ? c2 : c1);
+                }
+            }
+
+            sys.matasm().createBlockRow(c, connections, DofPerCell);
+        }
+
         template <class ReservoirState, class Grid>
         int
         computeCellContrib(const ReservoirState& state,
@@ -123,11 +153,8 @@ namespace Opm {
                            const int             c    ) {
             const int ndof  = DofPerCell;
             const int ndof2 = ndof * ndof;
-            nconn_          = countConnections(g, c);
 
-            connections_.resize   (0);
-            connections_.reserve  (nconn_ + 1);
-            connections_.push_back(c);
+            nconn_ = countConnections(g, c);
 
             asm_buffer_.resize((2*nconn_ + 1)*ndof2 + (nconn_ + 2)*ndof);
             std::fill(asm_buffer_.begin(), asm_buffer_.end(), 0.0);
@@ -146,8 +173,6 @@ namespace Opm {
                 int c2 = g.face_cells[2*f + 1];
 
                 if ((c1 >= 0) && (c2 >= 0)) {
-                    connections_.push_back((c1 == c) ? c2 : c1);
-
                     model_.fluxConnection(state, g, dt, c, f, J1, J2, F);
                     J1 += ndof2;  J2 += ndof2;   F += ndof;
                 }
@@ -165,8 +190,6 @@ namespace Opm {
                             System&     sys) const {
             const int ndof  = DofPerCell;
             const int ndof2 = ndof * ndof;
-
-            sys.matasm().createBlockRow(c, connections_, ndof);
 
             typedef std::vector<int>::size_type sz_t;
 
@@ -225,10 +248,9 @@ namespace Opm {
             }
         }
 
-        Model&              model_      ;
-        int                 nconn_      ;
-        std::vector<int>    connections_;
-        std::vector<double> asm_buffer_ ;
+        Model&              model_     ;
+        int                 nconn_     ;
+        std::vector<double> asm_buffer_;
     };
 }
 #endif  /* OPM_IMPLICITASSEMBLY_HPP_HEADER */
