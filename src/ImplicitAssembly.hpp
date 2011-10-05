@@ -36,24 +36,28 @@
 #ifndef OPM_IMPLICITASSEMBLY_HPP_HEADER
 #define OPM_IMPLICITASSEMBLY_HPP_HEADER
 
+#include <cstddef>
 #include <algorithm>
 #include <vector>
 
 namespace Opm {
     template <class Model>
-    class ImplicitAssembly : private Model {
+    class ImplicitAssembly {
         enum { DofPerCell = Model::DofPerCell };
 
     public:
+        ImplicitAssembly(Model& model)
+            : model_(model)
+        {}
+
         template <class Grid          ,
                   class JacobianSystem>
         void
         createSystem(const Grid&     g  ,
                      JacobianSystem& sys) const {
 
-            typedef typename JacobianSystem::matrix_type::size_type sz_t;
-            sz_t m   = g.number_of_cells;
-            sz_t nnz = g.number_of_cells + countConnections(g);
+            ::std::size_t m   = g.number_of_cells;
+            ::std::size_t nnz = g.number_of_cells + countConnections(g);
 
             sys.setSize(DofPerCell, m, nnz);
         }
@@ -65,12 +69,12 @@ namespace Opm {
         void
         assemble(const ReservoirState& state,
                  const Grid&           g    ,
-                 const SourceTerms&    src  ,
+                 const SourceTerms*    src  ,
                  const double          dt   ,
                  JacobianSystem&       sys  ) {
 
-            for (int c = 0; c < g->number_of_cells; ++c) {
-                this->computeCellContrib(g, c, dt);
+            for (int c = 0; c < g.number_of_cells; ++c) {
+                this->computeCellContrib(state, g, c, dt);
                 this->assembleCellContrib(g, c, sys);
             }
 
@@ -122,17 +126,17 @@ namespace Opm {
             nconn_          = countConnections(g, c);
 
             connections_.resize   (0);
-            connections_.reserve  (nconn + 1);
+            connections_.reserve  (nconn_ + 1);
             connections_.push_back(c);
 
-            asm_buffer_.resize((2*nconn + 1)*ndof2 + (nconn + 2)*ndof);
+            asm_buffer_.resize((2*nconn_ + 1)*ndof2 + (nconn_ + 2)*ndof);
             std::fill(asm_buffer_.begin(), asm_buffer_.end(), 0.0);
 
-            double* F  = &asm_buffer_[(2*nconn + 1) * ndof2];
-            double* J1 = &asm_buffer_[(0*nconn + 1) * ndof2];
-            double* J2 = J1         + (1*nconn + 0) * ndof2 ;
+            double* F  = &asm_buffer_[(2*nconn_ + 1) * ndof2];
+            double* J1 = &asm_buffer_[(0*nconn_ + 1) * ndof2];
+            double* J2 = J1         + (1*nconn_ + 0) * ndof2 ;
 
-            this->initResidual(c, F);
+            model_.initResidual(c, F);
             F += ndof;
 
             for (int i = g.cell_facepos[c + 0];
@@ -144,15 +148,18 @@ namespace Opm {
                 if ((c1 >= 0) && (c2 >= 0)) {
                     connections_.push_back((c1 == c) ? c2 : c1);
 
-                    this->fluxConnection(state, g, dt, c, f, J1, J2, F);
+                    model_.fluxConnection(state, g, dt, c, f, J1, J2, F);
                     J1 += ndof2;  J2 += ndof2;   F += ndof;
                 }
             }
 
-            this->accumulation(g, c, &asm_buffer_[0], F);
+            model_.accumulation(g, c, &asm_buffer_[0], F);
+
+            return 1;
         }
 
         template <class Grid, class System>
+        void
         assembleCellContrib(const Grid& g  ,
                             const int   c  ,
                             System&     sys) const {
@@ -164,7 +171,7 @@ namespace Opm {
             typedef std::vector<int>::size_type sz_t;
 
             const double* J1 = &asm_buffer_[0];
-            const double* J2 = J1 + ((1*nconn + 1) * ndof2);
+            const double* J2 = J1 + ((1*nconn_ + 1) * ndof2);
 
             // Assemble contributions from accumulation term
             sys.matasm().assembleBlock(ndof, c, c, J1);  J1 += ndof2;
@@ -173,8 +180,8 @@ namespace Opm {
             for (int i = g.cell_facepos[c + 0];
                  i     < g.cell_facepos[c + 1]; ++i) {
                 int f  = g.cell_faces[i];
-                int c1 = g.face_cell[2*f + 0];
-                int c2 = g.face_cell[2*f + 1];
+                int c1 = g.face_cells[2*f + 0];
+                int c2 = g.face_cells[2*f + 1];
 
                 c2 = (c1 == c) ? c2 : c1;
 
@@ -188,8 +195,8 @@ namespace Opm {
             }
 
             // Assemble residual
-            const double* F = &asm_buffer_[(2*nconn + 1) * ndof2];
-            for (int conn = 0; conn < nconn + 2; ++conn, F += ndof) {
+            const double* F = &asm_buffer_[(2*nconn_ + 1) * ndof2];
+            for (int conn = 0; conn < nconn_ + 2; ++conn, F += ndof) {
                 sys.vector().assembleBlock(ndof, c, F);
             }
         }
@@ -197,27 +204,28 @@ namespace Opm {
         template <class Grid, class SourceTerms, class System>
         void
         assembleSourceContrib(const Grid&        g,
-                              const SourceTerms& src,
+                              const SourceTerms* src,
                               const double       dt,
                               System&            sys) {
             const int ndof  = DofPerCell;
             const int ndof2 = ndof * ndof;
 
-            for (int i = 0; i < src.nsrc; ++i) {
+            for (int i = 0; i < src->nsrc; ++i) {
                 std::fill_n(asm_buffer_.begin(), ndof2 + ndof, 0.0);
 
                 double *J = &asm_buffer_[0];
                 double *F = J + ndof2;
 
-                this->sourceTerms(g, src, i, dt, J, F);
+                model_.sourceTerms(g, src, i, dt, J, F);
 
-                const int c = src.cell[i];
+                const int c = src->cell[i];
 
                 sys.matasm().assembleBlock(ndof, c, c, J);
                 sys.vector().assembleBlock(ndof, c,    F);
             }
         }
 
+        Model&              model_      ;
         int                 nconn_      ;
         std::vector<int>    connections_;
         std::vector<double> asm_buffer_ ;

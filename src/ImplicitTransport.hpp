@@ -41,6 +41,13 @@
 namespace Opm {
     namespace ImplicitTransportDetails {
         struct NRControl {
+            NRControl()
+                : max_it(1),
+                  atol(1.0e-6),
+                  rtol(5.0e-7),
+                  dxtol(1.0e-8)
+            {}
+
             int    max_it;
             double atol  ;
             double rtol  ;
@@ -55,21 +62,24 @@ namespace Opm {
         };
     }
 
-    template <class Model            ,
-              class JacobianSystem   ,
-              template <class> VNorm ,
-              template <class> VNeg  = VectorNegater,
-              template <class> VZero = VectorZero>
-    class ImplicitTransport : private Model {
+    template <class Model                  ,
+              class JacobianSystem         ,
+              template <class> class VNorm ,
+              template <class> class VNeg  ,
+              template <class> class VZero >
+    class ImplicitTransport {
     public:
-        ImplicitTransport() {}
+        ImplicitTransport(Model& model)
+            : model_(model),
+              asm_  (model)
+        {}
 
         template <class Grid          ,
                   class SourceTerms   ,
                   class ReservoirState,
                   class LinearSolver  >
         void solve(const Grid&                                g       ,
-                   const SourceTerms&                         src     ,
+                   const SourceTerms*                         src     ,
                    const double                               dt      ,
                    const ImplicitTransportDetails::NRControl& ctrl    ,
                    ReservoirState&                            state   ,
@@ -80,10 +90,10 @@ namespace Opm {
 
             asm_.createSystem(g, sys_);
 
-            VZero<vector_type>::zero(sys_.writableResidual());
+            VZero<vector_type>::zero(sys_.vector().writableResidual());
 
-            this->initStep(state, g, sys_);
-            this->initIteration(state, g, sys_);
+            model_.initStep(state, g, sys_);
+            model_.initIteration(state, g, sys_);
 
             asm_.assemble(state, g, src, dt, sys_);
 
@@ -103,12 +113,13 @@ namespace Opm {
 
                 VNeg<vector_type>::negate(sys_.vector().writableIncrement());
 
-                this->finishIteration(state, g, sys_.vector());
+                model_.finishIteration(state, g, sys_.vector());
 
-                nrm_dx = VNorm<vector_type>::norm(sys_.vector().increment());
+                rpt.norm_dx =
+                    VNorm<vector_type>::norm(sys_.vector().increment());
 
                 sys_.vector().addIncrement();
-                this->initIteration(state, g, sys_);
+                model_.initIteration(state, g, sys_);
 
                 asm_.assemble(state, g, src, dt, sys_);
                 rpt.norm_res =
@@ -118,13 +129,15 @@ namespace Opm {
 
                 done = (rpt.norm_res < ctrl.atol)            ||
                        (rpt.norm_res < ctrl.rtol * nrm_res0) ||
+                       (rpt.norm_dx  < ctrl.dxtol)           ||
                        (rpt.nit == ctrl.max_it);
             }
 
-            this->finisStep(g, sys_.vector().solution(), state);
+            model_.finishStep(g, sys_.vector().solution(), state);
 
             if      (rpt.norm_res < ctrl.atol)            { rpt.flag =  1; }
             else if (rpt.norm_res < ctrl.rtol * nrm_res0) { rpt.flag =  2; }
+            else if (rpt.norm_dx  < ctrl.dxtol)           { rpt.flag =  3; }
             else                                          { rpt.flag = -1; }
         }
 
@@ -132,13 +145,16 @@ namespace Opm {
         ImplicitTransport           (const ImplicitTransport&);
         ImplicitTransport& operator=(const ImplicitTransport&);
 
+#if 0
         using Model::initStep;
         using Model::initIteration;
         using Model::finishIteration;
         using Model::finishStep;
+#endif
 
+        Model&                  model_;
         ImplicitAssembly<Model> asm_;
-        JacobianSystem&         sys_;
+        JacobianSystem          sys_;
     };
 }
 #endif  /* OPM_IMPLICITTRANSPORT_HPP_HEADER */

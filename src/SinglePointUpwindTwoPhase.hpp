@@ -100,21 +100,22 @@ namespace Opm {
 
 
     template <class TwophaseFluid>
-    class SinglePointUpwindTwoPhase : private TwophaseFluid {
+    class SinglePointUpwindTwoPhase {
     public:
         template <class Grid>
-        SinglePointUpwindTwoPhase(const Grid&                g        ,
+        SinglePointUpwindTwoPhase(const TwophaseFluid&       fluid    ,
+                                  const Grid&                g        ,
                                   const std::vector<double>& porevol  ,
                                   const double*              grav  = 0,
                                   const double*              trans = 0)
-            : TwophaseFluid()                                   ,
-              gravity_     ((grav != 0) && (trans != 0))        ,
-              f2hf_        (2 * g.number_of_faces, -1)          ,
-              store_       (g.number_of_cells,
-                            g.cell_facepos[ g.number_of_cells ]),
+            : fluid_  (fluid)                              ,
+              gravity_((grav != 0) && (trans != 0))        ,
+              f2hf_   (2 * g.number_of_faces, -1)          ,
+              store_  (g.number_of_cells,
+                       g.cell_facepos[ g.number_of_cells ])
         {
             if (gravity_) {
-                store_.drho() = this->density(0) - this->density(1);
+                store_.drho() = fluid_.density(0) - fluid_.density(1);
 
                 this->computeStaticGravity(g, grav, trans);
             }
@@ -128,12 +129,15 @@ namespace Opm {
                 }
             }
 
-            std::copy(porevol.begin(), porevol.end(), data_.porevol());
+            std::copy(porevol.begin(), porevol.end(), store_.porevol());
         }
 
         // -----------------------------------------------------------------
         // System assembly innards
         // -----------------------------------------------------------------
+
+        enum { DofPerCell = 1 };
+        
         void
         initResidual(const int c, double* F) const {
             (void) c;       // Suppress 'unused' warning
@@ -153,7 +157,7 @@ namespace Opm {
                        double*               F    ) const {
 
             const int *n = g.face_cells + (2 * f);
-            double dflux = state.faceflux[f];
+            double dflux = state.faceflux()[f];
             double gflux = gravityFlux(f);
 
             int    pix[2];
@@ -165,7 +169,7 @@ namespace Opm {
             double mt = m[0] + m[1];
             assert (mt > 0);
 
-            double sgn  = 2.0*(c1 == c) - 1.0;
+            double sgn  = 2.0*(n[0] == c) - 1.0;
             dflux      *= sgn;
             gflux      *= sgn;
 
@@ -196,32 +200,34 @@ namespace Opm {
                      double*     F) const {
             (void) g;
 
-            const double pv = data_.porevol(c);
+            const double pv = store_.porevol(c);
 
             *J += pv;
-            *F += pv * data_.ds(c);
+            *F += pv * store_.ds(c);
         }
 
         template <class Grid       ,
                   class SourceTerms>
         void
         sourceTerms(const Grid&        g  ,
-                    const SourceTerms& src,
+                    const SourceTerms* src,
                     const int          i  ,
                     const double       dt ,
                     double*            J  ,
                     double*            F  ) const {
 
-            double dflux = -src.flux[i]; // .flux[] is rate of *inflow*
+            (void) g;
+
+            double dflux = -src->flux[i]; // ->flux[] is rate of *inflow*
 
             if (dflux < 0) {
                 // src -> cell, affects residual only.
-                *F += dt * dflux * src.saturation[2*i + 0];
+                *F += dt * dflux * src->saturation[2*i + 0];
             } else {
                 // cell -> src
-                const int     c  = src.cell[i];
-                const double* m  = data_.mob (c);
-                const double* dm = data_.dmob(c);
+                const int     c  = src->cell[i];
+                const double* m  = store_.mob (c);
+                const double* dm = store_.dmob(c);
 
                 const double  mt = m[0] + m[1];
 
@@ -248,7 +254,8 @@ namespace Opm {
                  JacobianSystem&       sys  ) {
             (void) state;  (void) g; // Suppress 'unused'
 
-            sys.vector().solution().fill(0.0);
+            // sys.vector().solution().fill(0.0);
+            (void) sys;
         }
 
         template <class ReservoirState,
@@ -260,14 +267,19 @@ namespace Opm {
                       JacobianSystem&       sys  ) {
 
             std::array<double, 2  > s   ;
+            std::array<double, 2  > mob ;
             std::array<double, 2*2> dmob;
 
+            const ::std::vector<double>& sat = state.saturation();
+
             for (int c = 0; c < g.number_of_cells; ++c) {
-                s[0] = state.saturation[c*2 + 0] + sys.vector().solution()[c];
+                s[0] = sat[c*2 + 0] + sys.vector().solution()[c];
                 s[1] = 1 - s[0];
 
-                this->mobility(c, s, store_.mob(c), dmob);
+                fluid_.mobility(c, s, mob, dmob);
 
+                store_.mob (c)[0] =  mob [0];
+                store_.mob (c)[1] =  mob [1];
                 store_.dmob(c)[0] =  dmob[0*2 + 0];
                 store_.dmob(c)[1] = -dmob[1*2 + 1];
             }
@@ -292,7 +304,7 @@ namespace Opm {
                    const SolutionVector& x    ,
                    ReservoirState&       state) {
 
-            double *s = &state.saturation[0*2 + 0];
+            double *s = &state.saturation()[0*2 + 0];
 
             for (int c = 0; c < g.number_of_cells; ++c, s += 2) {
                 s[0] += x[c]    ;
@@ -316,28 +328,28 @@ namespace Opm {
                 if (! (dflux < 0) && ! (gflux < 0)) { pix[0] = 0; }
                 else                                { pix[0] = 1; }
 
-                m[0] = data_.mob(n[ pix[0] ]) [ 0 ];
+                m[0] = store_.mob(n[ pix[0] ]) [ 0 ];
 
                 if (! (dflux - m[0]*gflux < 0))     { pix[1] = 0; }
                 else                                { pix[1] = 1; }
 
-                m[1] = data_.mob(n[ pix[1] ]) [ 1 ];
+                m[1] = store_.mob(n[ pix[1] ]) [ 1 ];
 
             } else {
 
                 if (! (dflux < 0) && ! (gflux > 0)) { pix[1] = 0; }
                 else                                { pix[1] = 1; }
 
-                m[1] = data_.mob(n[ pix[1] ]) [ 1 ];
+                m[1] = store_.mob(n[ pix[1] ]) [ 1 ];
 
                 if (dflux + m[1]*gflux > 0)         { pix[0] = 0; }
                 else                                { pix[0] = 1; }
 
-                m[0] = data_.mob(n[ pix[0] ]) [ 0 ];
+                m[0] = store_.mob(n[ pix[0] ]) [ 0 ];
             }
 
-            dm[0] = data_.dmob(n[ pix[0] ]) [ 0 ];
-            dm[1] = data_.dmob(n[ pix[1] ]) [ 1 ];
+            dm[0] = store_.dmob(n[ pix[0] ]) [ 0 ];
+            dm[1] = store_.dmob(n[ pix[1] ]) [ 1 ];
         }
 
         template <class Grid>
@@ -359,7 +371,7 @@ namespace Opm {
                         dg += grav[j] * (fc[j] - cc[j]);
                     }
 
-                    data_.dg(i) = trans[f] * dg;
+                    store_.dg(i) = trans[f] * dg;
                 }
             }
         }
@@ -374,8 +386,8 @@ namespace Opm {
 
                 assert ((i1 >= 0) && (i2 >= 0));
 
-                gflux  = data_.dg(i1) - data_.dg(i2);
-                gflux *= data_.drho();
+                gflux  = store_.dg(i1) - store_.dg(i2);
+                gflux *= store_.drho();
             } else {
                 gflux = 0.0;
             }
@@ -383,6 +395,7 @@ namespace Opm {
             return gflux;
         }
 
+        TwophaseFluid                 fluid_  ;
         bool                          gravity_;
         std::vector<int>              f2hf_   ;
         spu_2p::ModelParameterStorage store_  ;
