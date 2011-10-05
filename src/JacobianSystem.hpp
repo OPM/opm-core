@@ -78,6 +78,7 @@ namespace Opm {
 
         template <class BaseVec>
         class VectorZero {
+        public:
             static void
             zero(BaseVec& x) {
                 typedef typename BaseVec::value_type VT;
