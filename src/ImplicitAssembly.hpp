@@ -80,7 +80,7 @@ namespace Opm {
                  JacobianSystem&       sys  ) {
 
             for (int c = 0; c < g.number_of_cells; ++c) {
-                this->computeCellContrib(state, g, c, dt);
+                this->computeCellContrib(state, g, dt, c);
                 this->assembleCellContrib(g, c, sys);
             }
 
