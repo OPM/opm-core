@@ -87,6 +87,9 @@ namespace Opm {
             }
         };
 
+        template <class Matrix>
+        class MatrixZero;
+
         template <class BaseVec>
         class VectorBlockAssembler {
         public:
@@ -187,8 +190,8 @@ namespace Opm {
             void
             setSize(size_t ndof, size_t m, size_t n, size_t nnz = 0);
 
-            const Matrix&
-            matrix();
+            Matrix&       matrix()      ;
+            const Matrix& matrix() const;
         } */;
 
         template <class Matrix        ,
@@ -201,9 +204,10 @@ namespace Opm {
             typedef MatrixBlockAssembler<Matrix>         assembler_type;
             typedef typename NVecCollection::vector_type vector_type;
 
-            assembler_type&    matasm()       { return mba_         ; }
-            NVecCollection&    vector()       { return sysvec_      ; }
-            const matrix_type& matrix() const { return mba_.matrix(); }
+            assembler_type&    matasm()         { return mba_         ; }
+            NVecCollection&    vector()         { return sysvec_      ; }
+            const matrix_type& matrix() const   { return mba_.matrix(); }
+            matrix_type&       writableMatrix() { return mba_.matrix(); }
 
             void
             setSize(::std::size_t ndof,
