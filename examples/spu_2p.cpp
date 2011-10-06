@@ -206,11 +206,11 @@ public:
 };
 
 typedef Opm::ImplicitTransport<TransportModel,
-                               JacSys,
-                               MaxNorm,
-                               VectorNegater,
-                               VectorZero,
-                               MatrixZero> TransportSolver;
+                               JacSys        ,
+                               MaxNorm       ,
+                               VectorNegater ,
+                               VectorZero    ,
+                               MatrixZero    > TransportSolver;
 
 void
 compute_porevolume(const grid_t*        g,
@@ -234,13 +234,13 @@ compute_porevolume(const grid_t*        g,
 int
 main()
 {
-    grid_t* grid = create_cart_grid(2, 1, 1);
+    grid_t* grid = create_cart_grid(100, 100, 1);
 
     Rock rock(grid->number_of_cells, grid->dimensions);
 
     rock.perm_homogeneous(1);
     rock.poro_homogeneous(1);
-    
+
     PressureSolver psolver(grid, rock);
 
     std::vector<double> totmob(grid->number_of_cells, 1.0);
@@ -265,7 +265,7 @@ main()
 
     Opm::ImplicitTransportDetails::NRReport  rpt;
     Opm::ImplicitTransportDetails::NRControl ctrl;
-    
+
     using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
     CSRMatrixUmfpackSolver linsolve;
 
@@ -279,14 +279,20 @@ main()
     TransportModel  model  (fluid, *grid, porevol);
     TransportSolver tsolver(model);
 
-    double dt   = 0.5;
-    ctrl.max_it = 10 ;
+    double dt   = 1e4;
+    ctrl.max_it = 20 ;
     tsolver.solve(*grid, tsrc, dt, ctrl, state, linsolve, rpt);
 
     vector_write(state.saturation().size(),
                  &state.saturation()[0],
                  "saturation-00.txt");
-    
+
+    std::cerr << "Number of linear solves: " << rpt.nit        << '\n'
+              << "Process converged:       " << (rpt.flag > 0) << '\n'
+              << "Convergence flag:        " << rpt.flag       << '\n'
+              << "Final residual norm:     " << rpt.norm_res   << '\n'
+              << "Final increment norm:    " << rpt.norm_dx    << '\n';
+
     destroy_transport_source(tsrc);
     destroy_cart_grid(grid);
 }
