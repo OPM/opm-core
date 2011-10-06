@@ -265,7 +265,6 @@ main()
 
     Opm::ImplicitTransportDetails::NRReport  rpt;
     Opm::ImplicitTransportDetails::NRControl ctrl;
-    ctrl.max_it = 1;
     
     using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
     CSRMatrixUmfpackSolver linsolve;
@@ -280,7 +279,8 @@ main()
     TransportModel  model  (fluid, *grid, porevol);
     TransportSolver tsolver(model);
 
-    double dt = 1;
+    double dt   = 0.5;
+    ctrl.max_it = 10 ;
     tsolver.solve(*grid, tsrc, dt, ctrl, state, linsolve, rpt);
 
     std::cerr << state.saturation() << '\n';
