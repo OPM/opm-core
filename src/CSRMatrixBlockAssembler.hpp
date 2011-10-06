@@ -50,6 +50,15 @@ namespace Opm {
     namespace ImplicitTransportDefault {
 
         template <>
+        class MatrixZero <struct CSRMatrix> {
+        public:
+            static void
+            zero(struct CSRMatrix& A) {
+                csrmatrix_zero(&A);
+            }
+        };
+
+        template <>
         class MatrixBlockAssembler<struct CSRMatrix> {
         public:
             template <class Block>
@@ -83,6 +92,7 @@ namespace Opm {
 
                 assert (ndof >  0);
                 assert (ndof == ndof_);
+                assert (i    == (ia_.size() - 1) / ndof_);  (void) i;
 
                 expandSortConn(conn, ndof);
                 const int nconn = static_cast<int>(esconn_.size());
@@ -117,8 +127,8 @@ namespace Opm {
                 construct();
             }
 
-            const struct CSRMatrix&
-            matrix() const { return mat_; }
+            struct CSRMatrix&       matrix()       { return mat_; }
+            const struct CSRMatrix& matrix() const { return mat_; }
 
         private:
             void
