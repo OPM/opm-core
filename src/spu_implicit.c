@@ -136,7 +136,6 @@ spu_implicit(grid_t *g, double *s0, double *s, double h, double x0, int ntab, do
               void (*linear_solver)(int, int*, int*, double *, double *, double *))
 {
     int    nc   = g->number_of_cells;
-    int    nf   = g->number_of_faces;
     int    nhf  = g->cell_facepos[nc]; /* Too much */
     double infnorm;
     double *b; 
