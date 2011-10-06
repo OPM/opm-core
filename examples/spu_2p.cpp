@@ -209,7 +209,8 @@ typedef Opm::ImplicitTransport<TransportModel,
                                JacSys,
                                MaxNorm,
                                VectorNegater,
-                               VectorZero> TransportSolver;
+                               VectorZero,
+                               MatrixZero> TransportSolver;
 
 void
 compute_porevolume(const grid_t*        g,
