@@ -37,6 +37,7 @@
 #define OPM_SINGLEPOINTUPWINDTWOPHASE_HPP_HEADER
 
 #include <cassert>
+#include <cstddef>
 
 #include <algorithm>
 #include <array>
@@ -137,7 +138,7 @@ namespace Opm {
         // -----------------------------------------------------------------
 
         enum { DofPerCell = 1 };
-        
+
         void
         initResidual(const int c, double* F) const {
             (void) c;       // Suppress 'unused' warning
@@ -252,10 +253,17 @@ namespace Opm {
         initStep(const ReservoirState& state,
                  const Grid&           g    ,
                  JacobianSystem&       sys  ) {
-            (void) state;  (void) g; // Suppress 'unused'
 
-            // sys.vector().solution().fill(0.0);
-            (void) sys;
+            // Impose s=0.5 at next time level as an NR initial value.
+
+            const ::std::vector<double>& s = state.saturation();
+            ::std::vector<double>&       x = sys.vector().writableSolution();
+
+            assert (x.size() == (::std::size_t) (g.number_of_cells));
+
+            for (int c = 0, nc = g.number_of_cells; c < nc; ++c) {
+                x[c] = 0.5 - s[2*c + 0];
+            }
         }
 
         template <class ReservoirState,
