@@ -283,7 +283,9 @@ main()
     ctrl.max_it = 10 ;
     tsolver.solve(*grid, tsrc, dt, ctrl, state, linsolve, rpt);
 
-    std::cerr << state.saturation() << '\n';
+    vector_write(state.saturation().size(),
+                 &state.saturation()[0],
+                 "saturation-00.txt");
     
     destroy_transport_source(tsrc);
     destroy_cart_grid(grid);
