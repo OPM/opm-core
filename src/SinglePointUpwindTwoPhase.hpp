@@ -270,10 +270,13 @@ namespace Opm {
             std::array<double, 2  > mob ;
             std::array<double, 2*2> dmob;
 
+            const ::std::vector<double>& x   = sys.vector().solution();
             const ::std::vector<double>& sat = state.saturation();
 
             for (int c = 0; c < g.number_of_cells; ++c) {
-                s[0] = sat[c*2 + 0] + sys.vector().solution()[c];
+                store_.ds(c) = x[c]; // Store sat-change for accumulation().
+
+                s[0] = sat[c*2 + 0] + x[c];
                 s[1] = 1 - s[0];
 
                 fluid_.mobility(c, s, mob, dmob);
