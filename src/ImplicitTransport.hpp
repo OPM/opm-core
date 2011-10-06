@@ -66,7 +66,8 @@ namespace Opm {
               class JacobianSystem         ,
               template <class> class VNorm ,
               template <class> class VNeg  ,
-              template <class> class VZero >
+              template <class> class VZero ,
+              template <class> class MZero >
     class ImplicitTransport {
     public:
         ImplicitTransport(Model& model)
@@ -87,13 +88,15 @@ namespace Opm {
                    ImplicitTransportDetails::NRReport&        rpt     ) {
 
             typedef typename JacobianSystem::vector_type vector_type;
+            typedef typename JacobianSystem::matrix_type matrix_type;
 
             asm_.createSystem(g, sys_);
 
-            VZero<vector_type>::zero(sys_.vector().writableResidual());
-
             model_.initStep(state, g, sys_);
             model_.initIteration(state, g, sys_);
+
+            MZero<matrix_type>::zero(sys_.writableMatrix());
+            VZero<vector_type>::zero(sys_.vector().writableResidual());
 
             asm_.assemble(state, g, src, dt, sys_);
 
@@ -120,6 +123,9 @@ namespace Opm {
 
                 sys_.vector().addIncrement();
                 model_.initIteration(state, g, sys_);
+
+                MZero<matrix_type>::zero(sys_.writableMatrix());
+                VZero<vector_type>::zero(sys_.vector().writableResidual());
 
                 asm_.assemble(state, g, src, dt, sys_);
                 rpt.norm_res =
