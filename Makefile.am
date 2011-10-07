@@ -10,9 +10,16 @@ cpgpreprocess_HEADERS = facetopology.h preprocess.h sparsetable.h \
                      uniquepoints.h
 
 lib_LTLIBRARIES = libcpgpreprocess.la
+noinst_LTLIBRARIES = libcpgpreprocess_noinst.la
 
-libcpgpreprocess_la_SOURCES = facetopology.c  uniquepoints.c \
-			   preprocess.c sparsetable.c
+libcpgpreprocess_la_SOURCES =                   \
+facetopology.c                                  \
+uniquepoints.c                                  \
+preprocess.c                                    \
+sparsetable.c
+
+libcpgreprocess_noinst_la_SOURCES =             \
+$(libcpgpreprocess_noinst_la_SOURCES)
 
 
 ## include $(top_srcdir)/am/global-rules
