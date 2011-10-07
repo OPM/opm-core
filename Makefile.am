@@ -18,8 +18,5 @@ uniquepoints.c                                  \
 preprocess.c                                    \
 sparsetable.c
 
-libcpgreprocess_noinst_la_SOURCES =             \
-$(libcpgpreprocess_noinst_la_SOURCES)
-
-
-## include $(top_srcdir)/am/global-rules
+libcpgpreprocess_noinst_la_SOURCES =            \
+$(libcpgpreprocess_la_SOURCES)
