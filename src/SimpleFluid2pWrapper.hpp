@@ -1,8 +1,8 @@
 /*===========================================================================
 //
-// File: CSRMatrixUmfpackSolver.hpp
+// File: SimpleFluid2pWrapper.hpp
 //
-// Created: 2011-10-03 17:27:26+0200
+// Created: 2011-09-30 11:38:28+0200
 //
 // Authors: Ingeborg S. Ligaarden <Ingeborg.Ligaarden@sintef.no>
 //          Jostein R. Natvig     <Jostein.R.Natvig@sintef.no>
@@ -33,36 +33,46 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_CSRMATRIXUMFPACKSOLVER_HPP_HEADER
-#define OPM_CSRMATRIXUMFPACKSOLVER_HPP_HEADER
+#ifndef OPM_SimpleFluid2pWrapper_HPP_HEADER
+#define OPM_SimpleFluid2pWrapper_HPP_HEADER
 
-#include <dune/porsol/opmtransport/examples/call_umfpack.h>
+#include <array>
+#include <cmath>
 
 namespace Opm {
-    namespace ImplicitTransportLinAlgSupport {
-        class CSRMatrixUmfpackSolver {
-        public:
-            template <class Vector>
-            void
-            solve(const struct CSRMatrix* A,
-                  const Vector            b,
-                  Vector                  x) {
+    template <class ReservoirProperties>
+    class SimpleFluid2pWrapper {
+    public:
+        SimpleFluid2pWrapper	(const ReservoirProperties& resprop)
+        {
+           resprop_ = resprop;
+        }
 
-                call_UMFPACK(const_cast<CSRMatrix*>(A),
-                             b, x);
-            }
+        double density(int p) const { return 0; }
 
-            template <class Vector>
-            void
-            solve(const struct CSRMatrix& A,
-                  const Vector&           b,
-                  Vector&                 x) {
+        template <class Sat ,
+                  class Mob ,
+                  class DMob>
+        void
+        mobility(int c, const Sat& s, Mob& mob, DMob& dmob) const {
 
-                call_UMFPACK(const_cast<CSRMatrix*>(&A),
-                             &b[0], &x[0]);
-            }
-        };
-    }
+
+            const double s1 = s[0];
+            const double s2 = 1 - s1;
+            mob[0] = resprop_.mobilityFirstPhase(c, s[0]) ;
+            mob[1] = resprop_.mobilitySecondPhase(c, s[0]) ;
+            mob[2] = resprop_.dmobilityFirstPhase(c, s[0]) ;
+            mob[3] = resprop_.dmobilitySecondPhase(c, s[0]) ;
+
+            mob[0] /= mu_[0];  dmob[0*2 + 0] /= mu_[0];
+            mob[1] /= mu_[1];  dmob[1*2 + 1] /= mu_[1];
+        }
+
+    private:
+        ReservoirProperties& resprop_;
+        std::array<double, 2> mu_ ;
+        std::array<double, 2> rho_;
+    };
 }
 
-#endif  /* OPM_CSRMATRIXUMFPACKSOLVER_HPP_HEADER */
+#endif  /* OPM_SimpleFluid2pWrapper_HPP_HEADER */

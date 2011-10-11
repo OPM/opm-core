@@ -42,9 +42,8 @@
 #include <algorithm>
 #include <vector>
 
-#include <sparse_sys.h>
-
-#include "JacobianSystem.hpp"
+#include <dune/porsol/opmtransport/src/JacobianSystem.hpp>
+#include <dune/porsol/opmpressure/src/sparse_sys.h>
 
 namespace Opm {
     namespace ImplicitTransportDefault {
