@@ -201,6 +201,9 @@ namespace Dune
                       std::ostream_iterator<T>(os, " "));
             os << "\b]\n";
         }
+        const T data(int i)const {
+        	return data_[i];
+        }
 
     private:
         std::vector<T> data_;
