@@ -55,17 +55,14 @@ namespace Opm {
                   class DMob>
         void
         mobility(int c, const Sat& s, Mob& mob, DMob& dmob) const {
-
-
             const double s1 = s[0];
             const double s2 = 1 - s1;
-            mob[0] = resprop_.mobilityFirstPhase(c, s[0]) ;
-            mob[1] = resprop_.mobilitySecondPhase(c, s[0]) ;
-            mob[2] = resprop_.dmobilityFirstPhase(c, s[0]) ;
-            mob[3] = resprop_.dmobilitySecondPhase(c, s[0]) ;
+            mob[0]  = resprop_.mobilityFirstPhase(c, s[0]) ;
+            mob[1]  = resprop_.mobilitySecondPhase(c, s[0]) ;
 
-            mob[0] /= mu_[0];  dmob[0*2 + 0] /= mu_[0];
-            mob[1] /= mu_[1];  dmob[1*2 + 1] /= mu_[1];
+            dmob[0] =  resprop_.dmobilityFirstPhase(c, s[0]) ;
+            dmob[3] = -resprop_.dmobilitySecondPhase(c, s[0]) ;
+            dmob[1] = dmob[2] = 0.0;
         }
 
     private:
