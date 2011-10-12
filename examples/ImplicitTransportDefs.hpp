@@ -4,6 +4,10 @@
 
 #include <dune/porsol/opmtransport/src/NormSupport.hpp>
 #include <dune/porsol/opmtransport/src/ImplicitTransport.hpp>
+#include <dune/istl/operators.hh>
+#include <dune/istl/solvers.hh>
+#include <dune/common/fvector.hh>
+#include <dune/common/fmatrix.hh>
 template <class Ostream, class Collection>
 Ostream&
 operator<<(Ostream& os, const Collection& c)
@@ -88,4 +92,75 @@ private:
     ::std::vector<double> poro_;
 };
 
+//template <class P>
+class TwophaseFluidWrapper {
+public:
+	TwophaseFluidWrapper(const Dune::ReservoirPropertyCapillary<3>& r)
+	        : r_(r)
+	{}
+	//TwophaseFluidWrapper(){}
+	//TwophaseFluidWrapper(TwophaseFluidWrapper){}
+
+    /*
+    void init(const Dune::ReservoirPropertyCapillary<3>& r)
+    {
+        r_ = r;
+    }
+    */
+
+    template <class Sat ,
+              class Mob ,
+              class DMob>
+    void
+    mobility(int c, const Sat& s, Mob& mob, DMob& dmob) const {
+        const double s1 = s[0];
+
+        r_.phaseMobilities     (c, s1, mob );
+        r_.phaseMobilitiesDeriv(c, s1, dmob);
+    }
+
+    double density(int p) const {
+        if (p == 0) {
+            return r_.densityFirstPhase();
+        } else {
+            return r_.densitySecondPhase();
+        }
+    }
+    
+
+private:
+    Dune::ReservoirPropertyCapillary<3> r_;
+};
+class TransportLinearSolver {
+public:
+	typedef Dune::FieldVector<double, 1>    ScalarVectorBlockType;
+	typedef Dune::FieldMatrix<double, 1, 1> ScalarMatrixBlockType;
+
+	typedef Dune::BlockVector<ScalarVectorBlockType> ScalarBlockVector;
+	typedef Dune::BCRSMatrix <ScalarMatrixBlockType> ScalarBCRSMatrix;
+    void
+    solve(const ScalarBCRSMatrix&  A,
+          const ScalarBlockVector& b,
+          ScalarBlockVector&       x) {
+
+        Dune::MatrixAdapter<ScalarBCRSMatrix,
+                            ScalarBlockVector,
+                            ScalarBlockVector> opA(A);
+
+        Dune::SeqILU0<ScalarBCRSMatrix,
+                      ScalarBlockVector,
+                      ScalarBlockVector> precond(A, 1.0);
+
+        int maxit  = A.N();
+        double tol = 5.0e-7;
+        int verb   = 1;
+
+        Dune::BiCGSTABSolver<ScalarBlockVector>
+            solver(opA, precond, tol, maxit, verb);
+
+        ScalarBlockVector           bcpy(b);
+        Dune::InverseOperatorResult res;
+        solver.apply(x, bcpy, res);
+    }
+};
 #endif // /OPENRS_IMPLICITTRANSPORTDEFS_HEADER

@@ -131,7 +131,35 @@ namespace Opm {
 
             std::copy(porevol.begin(), porevol.end(), store_.porevol());
         }
+        /*
+        template <class Grid>
+        void init(const TwophaseFluid&       fluid    ,
+                		const Grid&                g        ,
+                		const std::vector<double>& porevol  ,
+                		const double*              grav  = 0,
+                		const double*              trans = 0)
+                {
+        		   fluid_ = fluid;
+        		   gravity_ = grav;
+        		   f2hf_.resize(2 * g.number_of_faces, -1);
+        		   store_(g.number_of_cells,g.cell_facepos[ g.number_of_cells ]);
+                    if (gravity_) {
+                        store_.drho() = fluid_.density(0) - fluid_.density(1);
 
+                        this->computeStaticGravity(g, grav, trans);
+                    }
+
+                    for (int c = 0, i = 0; c < g.number_of_cells; ++c) {
+                        for (; i < g.cell_facepos[c + 1]; ++i) {
+                            const int f = g.cell_faces[i];
+                            const int p = 1 - (g.face_cells[2*f + 0] == c);
+
+                            f2hf_[2*f + p] = i;
+                        }
+                    }
+
+                    std::copy(porevol.begin(), porevol.end(), store_.porevol());
+                */
         // -----	------------------------------------------------------------
         // System assembly innards
         // -----------------------------------------------------------------
