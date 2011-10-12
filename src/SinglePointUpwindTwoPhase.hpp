@@ -40,7 +40,6 @@
 #include <cstddef>
 
 #include <algorithm>
-#include <array>
 #include <vector>
 
 namespace Opm {
@@ -256,8 +255,9 @@ namespace Opm {
 
             // Impose s=0.5 at next time level as an NR initial value.
 
-            const ::std::vector<double>& s = state.saturation();
-            ::std::vector<double>&       x = sys.vector().writableSolution();
+            const ::std::vector<double>&          s = state.saturation();
+            typename JacobianSystem::vector_type& x =
+                sys.vector().writableSolution();
 
             assert (x.size() == (::std::size_t) (g.number_of_cells));
 
@@ -274,11 +274,10 @@ namespace Opm {
                       const Grid&           g    ,
                       JacobianSystem&       sys  ) {
 
-            std::array<double, 2  > s   ;
-            std::array<double, 2  > mob ;
-            std::array<double, 2*2> dmob;
+            double s[2],  mob[2],  dmob[2 * 2];
 
-            const ::std::vector<double>& x   = sys.vector().solution();
+            const typename JacobianSystem::vector_type& x =
+                sys.vector().solution();
             const ::std::vector<double>& sat = state.saturation();
 
             for (int c = 0; c < g.number_of_cells; ++c) {
