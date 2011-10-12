@@ -41,7 +41,7 @@
 #include <cstddef>
 
 #include <algorithm>
-#include <array>
+//#include <array>
 #include <functional>
 #include <numeric>
 
@@ -130,10 +130,15 @@ namespace Opm {
         public:
             void
             setSize(::std::size_t ndof, ::std::size_t m) {
+#if 0
                 typedef typename ::std::array<BaseVec, 3>::iterator VAI;
 
                 for (VAI i = vcoll_.begin(), e = vcoll_.end(); i != e; ++i) {
                     VSzSetter<BaseVec>(*i).setSize(ndof, m);
+                }
+#endif
+                for (::std::size_t i = 0; i < sizeof (vcoll_) / sizeof (vcoll_[0]); ++i) {
+                    VSzSetter<BaseVec>(vcoll_[i]).setSize(ndof, m);
                 }
 
                 ndof_ = ndof;
@@ -168,8 +173,9 @@ namespace Opm {
             vector_type& writableSolution ()     { return vcoll_[ Solution  ]; }
 
         private:
-            ::std::size_t            ndof_ ;
-            ::std::array<BaseVec, 3> vcoll_;
+            ::std::size_t  ndof_    ;
+            BaseVec        vcoll_[3];
+            //::std::array<BaseVec, 3> vcoll_;
         };
 
         template <class Matrix>
