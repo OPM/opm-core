@@ -38,8 +38,12 @@ public:
         buildGeometry(grid);
     }
 
-    /// Access the underlying C grid.
     grid_t* c_grid()
+    {
+       return &g_;
+    }
+    /// Access the underlying C grid.
+    const grid_t* c_grid() const
     {
         return &g_;
     }
