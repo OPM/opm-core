@@ -8,6 +8,7 @@
 #include <dune/istl/solvers.hh>
 #include <dune/common/fvector.hh>
 #include <dune/common/fmatrix.hh>
+#if 0
 template <class Ostream, class Collection>
 Ostream&
 operator<<(Ostream& os, const Collection& c)
@@ -20,13 +21,24 @@ operator<<(Ostream& os, const Collection& c)
 
     return os;
 }
+#endif
+namespace Opm{
 template <class Vector>
-class MaxNorm {
+class MaxNormStl {
 	public:
 	    static double
 	    norm(const Vector& v) {
-		return  Opm::ImplicitTransportDefault::AccumulationNorm <Vector,  Opm::ImplicitTransportDefault::MaxAbs>::norm(v);
+		return  ImplicitTransportDefault::AccumulationNorm <Vector,  ImplicitTransportDefault::MaxAbs>::norm(v);
 	    }
+};
+
+template <class Vector>
+class MaxNormDune {
+public:
+    static double
+    norm(const Vector& v) {
+        return v.infinity_norm();
+    }
 };
 
 template <int np = 2>
@@ -163,4 +175,43 @@ public:
         solver.apply(x, bcpy, res);
     }
 };
+class TransportSource {
+public:
+    TransportSource() : nsrc(0) {}
+
+    int                   nsrc      ;
+    ::std::vector< int  > cell      ;
+    ::std::vector<double> pressure  ;
+    ::std::vector<double> flux      ;
+    ::std::vector<double> saturation;
+};
+template <class Arr>
+void
+append_transport_source(int c, double p, double v, const Arr& s,
+                        TransportSource& src)
+{
+    src.cell      .push_back(c);
+    src.pressure  .push_back(p);
+    src.flux      .push_back(v);
+    src.saturation.insert(src.saturation.end(),
+                          s.begin(), s.end());
+    ++src.nsrc;
+}
+void
+compute_porevolume(const grid_t*        g,
+                   const Rock&          rock,
+                   std::vector<double>& porevol)
+{
+    const ::std::vector<double>& poro = rock.poro();
+
+    assert (poro.size() == (::std::size_t)(g->number_of_cells));
+
+    porevol.resize(rock.poro().size());
+
+    ::std::transform(poro.begin(), poro.end(),
+                     g->cell_volumes,
+                     porevol.begin(),
+                     ::std::multiplies<double>());
+}
+}
 #endif // /OPENRS_IMPLICITTRANSPORTDEFS_HEADER
