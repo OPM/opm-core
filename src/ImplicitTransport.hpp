@@ -121,7 +121,7 @@ namespace Opm {
                 rpt.norm_dx =
                     VNorm<vector_type>::norm(sys_.vector().increment());
 
-                std::cerr << rpt.norm_dx << '\n';
+                //std::cerr << rpt.norm_dx << '\n';
 
                 sys_.vector().addIncrement();
                 model_.initIteration(state, g, sys_);
@@ -135,7 +135,7 @@ namespace Opm {
 
                 rpt.nit++;
 
-                std::cerr <<  "Iteration " << rpt.nit << " norm :" << rpt.norm_res << '\n';
+                std::cerr <<  "Iteration " << std::scientific  << rpt.nit << " norm :" << rpt.norm_res << '\n';
 
                 done = (rpt.norm_res < ctrl.atol)            ||
                        (rpt.norm_res < ctrl.rtol * nrm_res0) ||

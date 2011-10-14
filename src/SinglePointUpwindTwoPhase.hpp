@@ -48,7 +48,7 @@ namespace Opm {
         public:
             ModelParameterStorage(int nc, int totconn)
                 : drho_(0.0), mob_(0), dmob_(0),
-                  porevol_(0), dg_(0), ds_(0),
+                  porevol_(0), dg_(0), ds_(0), pc_(0), dpc_(0), trans_(0),
                   data_()
             {
                 size_t alloc_sz;
@@ -58,7 +58,9 @@ namespace Opm {
                 alloc_sz += 1 * nc;      // porevol_
                 alloc_sz += 1 * totconn; // dg_
                 alloc_sz += 1 * nc;      // ds_
-
+                alloc_sz += 1 * nc;      // pc_
+                alloc_sz += 1 * nc;      // dpc_
+                alloc_sz += 1 * totconn; // dtrans
                 data_.resize(alloc_sz);
 
                 mob_     = &data_[0];
@@ -66,6 +68,9 @@ namespace Opm {
                 porevol_ = dmob_    + (2 * nc     );
                 dg_      = porevol_ + (1 * nc     );
                 ds_      = dg_      + (1 * totconn);
+                pc_      = ds_      + (1 * nc     );
+                dpc_     = pc_      + (1 * nc     );
+                trans_   = dpc_      + (1 * nc     );
             }
 
             double&       drho   ()            { return drho_            ; }
@@ -86,6 +91,15 @@ namespace Opm {
             double&       ds(int c)            { return ds_[c]           ; }
             double        ds(int c)      const { return ds_[c]           ; }
 
+            double&       pc(int c)            { return pc_[c]           ; }
+            double        pc(int c)      const { return pc_[c]           ; }
+
+            double&       dpc(int c)           { return dpc_[c]          ; }
+            double        dpc(int c)     const { return dpc_[c]          ; }
+
+            double&       trans(int f)           { return trans_[f]          ; }
+            double        trans(int f)     const { return trans_[f]          ; }
+
         private:
             double  drho_   ;
             double *mob_    ;
@@ -93,6 +107,9 @@ namespace Opm {
             double *porevol_;
             double *dg_     ;
             double *ds_     ;
+            double *pc_     ;
+            double *dpc_    ;
+            double *trans_    ;
 
             std::vector<double> data_;
         };
@@ -114,9 +131,13 @@ namespace Opm {
               store_  (g.number_of_cells,
                        g.cell_facepos[ g.number_of_cells ])
         {
+        	if(trans){
+        		for (int f = 0; f < g.number_of_faces; ++f) {
+        			store_.trans(f)=trans[f];
+        		}
+        	}
             if (gravity_) {
                 store_.drho() = fluid_.density(0) - fluid_.density(1);
-
                 this->computeStaticGravity(g, grav, trans);
             }
 
@@ -160,7 +181,7 @@ namespace Opm {
 
                     std::copy(porevol.begin(), porevol.end(), store_.porevol());
                 */
-        // -----	------------------------------------------------------------
+        // -----------------------------------------------------------------
         // System assembly innards
         // -----------------------------------------------------------------
 
@@ -187,6 +208,10 @@ namespace Opm {
             const int *n = g.face_cells + (2 * f);
             double dflux = state.faceflux()[f];
             double gflux = gravityFlux(f);
+            double pcflux,dpcflux[2];
+            capFlux(f, pcflux, dpcflux);
+            gflux += pcflux;
+
 
             int    pix[2];
             double m[2], dm[2];
@@ -201,8 +226,9 @@ namespace Opm {
             dflux      *= sgn;
             gflux      *= sgn;
 
+
             double       f1 = m[0] / mt;
-            const double v1 = dflux + m[1]*gflux;
+            const double v1 = dflux + m[1]*gflux;//  gflux+ sgn*trans (pc(n[0]) - pc(n[1]))
 
             // Assemble residual contributions
             *F += dt * f1 * v1;
@@ -218,6 +244,10 @@ namespace Opm {
             /* dF/dm_2 \cdot dm_2/ds */
             *J[ pix[1] ] -= dt * f1       / mt * v1    * dm[1];
             *J[ pix[1] ] += dt * f1            * gflux * dm[1];
+
+            /* contribution from dpcflux */
+            J1[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
+            J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[1] * m[1];
         }
 
         template <class Grid>
@@ -290,7 +320,7 @@ namespace Opm {
             assert (x.size() == (::std::size_t) (g.number_of_cells));
 
             for (int c = 0, nc = g.number_of_cells; c < nc; ++c) {
-                x[c] = 0.5 - s[2*c + 0];
+                x[c] = 0.0;//0.5 - s[2*c + 0];
             }
         }
 
@@ -302,7 +332,7 @@ namespace Opm {
                       const Grid&           g    ,
                       JacobianSystem&       sys  ) {
 
-            double s[2],  mob[2],  dmob[2 * 2];
+            double s[2],  mob[2],  dmob[2 * 2], pc, dpc;
 
             const typename JacobianSystem::vector_type& x =
                 sys.vector().solution();
@@ -315,11 +345,14 @@ namespace Opm {
                 s[1] = 1 - s[0];
 
                 fluid_.mobility(c, s, mob, dmob);
+                fluid_.pc(c, s, pc, dpc);
 
                 store_.mob (c)[0] =  mob [0];
                 store_.mob (c)[1] =  mob [1];
                 store_.dmob(c)[0] =  dmob[0*2 + 0];
                 store_.dmob(c)[1] = -dmob[1*2 + 1];
+                store_.pc(c)      = pc;
+                store_.dpc(c)     = dpc;
             }
         }
 
@@ -431,6 +464,16 @@ namespace Opm {
             }
 
             return gflux;
+        }
+        void
+        capFlux(const int f,double& pcflux, double* dpcflux) const {
+        	//double capflux;
+        	int i1 = f2hf_[2*f + 0];
+        	int i2 = f2hf_[2*f + 1];
+        	assert ((i1 >= 0) && (i2 >= 0));
+        	pcflux  = store_.trans(f)*(store_.pc(i1) - store_.pc(i2));
+        	dpcflux[0]  = store_.trans(f)*store_.dpc(i1);
+        	dpcflux[1]  = -store_.trans(f)*store_.dpc(i2);
         }
 
         TwophaseFluid                 fluid_  ;
