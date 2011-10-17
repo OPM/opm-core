@@ -228,9 +228,15 @@ namespace Opm {
             *J[ pix[1] ] -= dt * f1       / mt * v1    * dm[1];
             *J[ pix[1] ] += dt * f1            * gflux * dm[1];
 
+
             /* contribution from dpcflux */
-            J1[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
-            J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[1] * m[1];
+            if(sgn>0){
+            	J1[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
+            	J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[1] * m[1];
+            }else{
+            	J1[0*2 + 0] -= sgn*dt * f1            * dpcflux[1] * m[1];
+            	J2[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
+            }
         }
 
         template <class Grid>
