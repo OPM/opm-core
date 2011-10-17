@@ -34,9 +34,10 @@
 */
 
 #include <cassert>
+#include <cstddef>
 
 #include <algorithm>
-#include <cstddef>
+#include <array>
 #include <functional>
 #include <iostream>
 #include <iterator>
@@ -61,7 +62,7 @@
 
 #include <SimpleFluid2p.hpp>
 #include <SinglePointUpwindTwoPhase.hpp>
-#include <array>
+
 template <class Ostream, class Collection>
 Ostream&
 operator<<(Ostream& os, const Collection& c)
