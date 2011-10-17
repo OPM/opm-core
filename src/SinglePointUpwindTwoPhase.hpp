@@ -109,7 +109,7 @@ namespace Opm {
             double *ds_     ;
             double *pc_     ;
             double *dpc_    ;
-            double *trans_    ;
+            double *trans_  ;
 
             std::vector<double> data_;
         };
@@ -153,17 +153,6 @@ namespace Opm {
             std::copy(porevol.begin(), porevol.end(), store_.porevol());
         }
 
-                    for (int c = 0, i = 0; c < g.number_of_cells; ++c) {
-                        for (; i < g.cell_facepos[c + 1]; ++i) {
-                            const int f = g.cell_faces[i];
-                            const int p = 1 - (g.face_cells[2*f + 0] == c);
-
-                            f2hf_[2*f + p] = i;
-                        }
-                    }
-
-                    std::copy(porevol.begin(), porevol.end(), store_.porevol());
-                */
         // -----------------------------------------------------------------
         // System assembly innards
         // -----------------------------------------------------------------
