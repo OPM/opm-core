@@ -17,59 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
-
-#include "sparse_sys.h"
 #include "compr_quant.h"
-
-
-void
-compr_quantities_deallocate(struct compr_quantities *cq)
-{
-    if (cq != NULL) {
-        free(cq->Ac);
-    }
-
-    free(cq);
-}
-
-
-struct compr_quantities *
-compr_quantities_allocate(size_t nc, size_t nf, int np)
-{
-    size_t                   alloc_sz, np2;
-    struct compr_quantities *cq;
-
-    cq = malloc(1 * sizeof *cq);
-
-    if (cq != NULL) {
-        np2 = np * np;
-
-        alloc_sz  = np2 * nc;   /* Ac */
-        alloc_sz += np2 * nc;   /* dAc */
-        alloc_sz += np2 * nf;   /* Af */
-        alloc_sz += np  * nf;   /* phasemobf */
-        alloc_sz += 1   * nc;   /* voldiscr */
-
-        cq->Ac = malloc(alloc_sz * sizeof *cq->Ac);
-
-        if (cq->Ac == NULL) {
-            compr_quantities_deallocate(cq);
-            cq = NULL;
-        } else {
-            cq->dAc       = cq->Ac        + (np2 * nc);
-            cq->Af        = cq->dAc       + (np2 * nc);
-            cq->phasemobf = cq->Af        + (np2 * nf);
-            cq->voldiscr  = cq->phasemobf + (np  * nf);
-
-            cq->nphases   = np;
-
-            vector_zero(alloc_sz, cq->Ac);
-        }
-    }
-
-    return cq;
-}
 
 
 /* ---------------------------------------------------------------------- */
