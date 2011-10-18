@@ -291,7 +291,7 @@ namespace Opm {
 
             // Impose s=0.5 at next time level as an NR initial value.
 
-            const ::std::vector<double>&          s = state.saturation();
+            //const ::std::vector<double>&          s = state.saturation();
             typename JacobianSystem::vector_type& x =
                 sys.vector().writableSolution();
 
@@ -343,6 +343,7 @@ namespace Opm {
                         NewtonIterate&        it   ) {
             // Nothing to do at end of iteration in this model.
             (void) state;  (void) g;  (void) it;
+            typedef typename NewtonIterate::vector_type vector_t;
         }
 
         template <class Grid          ,
@@ -356,8 +357,10 @@ namespace Opm {
             double *s = &state.saturation()[0*2 + 0];
 
             for (int c = 0; c < g.number_of_cells; ++c, s += 2) {
-                s[0] += x[c]    ;
+            	s[0] += x[c]    ;
                 s[1]  = 1 - s[0];
+                assert(s[0]<=1);
+                assert(s[0]<=1);
             }
         }
 

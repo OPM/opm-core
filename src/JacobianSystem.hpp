@@ -54,7 +54,6 @@ namespace Opm {
             static void
             add(const BaseVec& x, BaseVec& y) {
                 typedef typename BaseVec::value_type VT;
-
                 ::std::transform(x.begin(), x.end(),
                                  y.begin(),
                                  y.begin(),
@@ -69,10 +68,9 @@ namespace Opm {
             static void
             negate(BaseVec& x) {
                 typedef typename BaseVec::value_type VT;
-
                 ::std::transform(x.begin(), x.end(),
-                                 x.begin(),
-                                 ::std::negate<VT>());
+        				x.begin(),
+        		        ::std::negate<VT>());
             }
         };
 
@@ -208,6 +206,7 @@ namespace Opm {
 
             typedef Matrix                               matrix_type;
             typedef MatrixBlockAssembler<Matrix>         assembler_type;
+            typedef NVecCollection              vector_collection_type;
             typedef typename NVecCollection::vector_type vector_type;
 
             assembler_type&    matasm()         { return mba_         ; }

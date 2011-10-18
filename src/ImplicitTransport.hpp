@@ -37,7 +37,7 @@
 #define OPM_IMPLICITTRANSPORT_HPP_HEADER
 
 #include "ImplicitAssembly.hpp"
-
+#include <boost/lambda/lambda.hpp>
 namespace Opm {
     namespace ImplicitTransportDetails {
         struct NRControl {
@@ -45,13 +45,15 @@ namespace Opm {
                 : max_it(1),
                   atol(1.0e-6),
                   rtol(5.0e-7),
-                  dxtol(1.0e-8)
+                  dxtol(1.0e-8),
+                  max_it_ls(5)
             {}
 
             int    max_it;
             double atol  ;
             double rtol  ;
             double dxtol ;
+            int    max_it_ls;
         };
 
         struct NRReport {
@@ -89,7 +91,7 @@ namespace Opm {
 
             typedef typename JacobianSystem::vector_type vector_type;
             typedef typename JacobianSystem::matrix_type matrix_type;
-
+            typedef typename JacobianSystem::vector_collection_type vector_collection_type;
             asm_.createSystem(g, sys_);
 
             model_.initStep(state, g, sys_);
@@ -107,7 +109,7 @@ namespace Opm {
             rpt.norm_dx  = -1.0;
             rpt.nit      = 0;
 
-            bool done = rpt.norm_res < ctrl.atol;
+            bool done = false;//rpt.norm_res < ctrl.atol;
 
             while (! done) {
                 linsolve.solve(sys_.matrix(),
@@ -121,25 +123,46 @@ namespace Opm {
                 rpt.norm_dx =
                     VNorm<vector_type>::norm(sys_.vector().increment());
 
-                //std::cerr << rpt.norm_dx << '\n';
-
-                sys_.vector().addIncrement();
-                model_.initIteration(state, g, sys_);
-
-                MZero<matrix_type>::zero(sys_.writableMatrix());
-                VZero<vector_type>::zero(sys_.vector().writableResidual());
-
-                asm_.assemble(state, g, src, dt, sys_);
+                int lin_it=0;
+                double residual=VNorm<vector_type>::norm(sys_.vector().residual());
+                bool finnished=false;//residual < rpt.norm_res;
+                double alpha=2.0;
+                // store old solution and increasement before line search
+                vector_type dx_old(sys_.vector().increment());
+                vector_type x_old(sys_.vector().solution());
+                while(! finnished){
+                	alpha/=2.0;
+                	sys_.vector().writableIncrement()=dx_old;
+                	sys_.vector().writableIncrement()*=alpha;
+                	sys_.vector().writableSolution()=x_old;
+                	/*
+                	 * should be used if vector_type is std::vector<double>
+                	std::vector<double> operator*=(std::vector<double>& vec,const double a){
+                	    for_each(vec.begin(),vec.end(), boost::lambda::_1*=a );
+                	    return vec;
+                	}
+                	*/
+                	sys_.vector().addIncrement();
+                    model_.initIteration(state, g, sys_);
+                    MZero<matrix_type>::zero(sys_.writableMatrix());
+                    VZero<vector_type>::zero(sys_.vector().writableResidual());
+                    asm_.assemble(state, g, src, dt, sys_);
+                	residual=VNorm<vector_type>::norm(sys_.vector().residual());
+                	lin_it +=1;
+                	finnished=(residual < rpt.norm_res) || (lin_it> ctrl.max_it_ls);
+                	std::cerr <<  "Line search iteration " << std::scientific  << lin_it << " norm :" << residual <<  " alpha " << alpha << '\n';
+                }
                 rpt.norm_res =
                     VNorm<vector_type>::norm(sys_.vector().residual());
 
                 rpt.nit++;
 
-                std::cerr <<  "Iteration " << std::scientific  << rpt.nit << " norm :" << rpt.norm_res << '\n';
+                std::cerr <<  "Iteration " << std::scientific  << rpt.nit << " norm :" << rpt.norm_res <<  " alpha " << alpha << '\n';
 
                 done = (rpt.norm_res < ctrl.atol)            ||
                        (rpt.norm_res < ctrl.rtol * nrm_res0) ||
                        (rpt.norm_dx  < ctrl.dxtol)           ||
+                       (lin_it       > ctrl.max_it_ls)       ||
                        (rpt.nit == ctrl.max_it);
             }
 
