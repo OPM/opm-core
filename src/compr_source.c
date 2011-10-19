@@ -96,11 +96,11 @@ compr_src_allocate(int np, int nsrc)
             } else {
                 status = 1;
             }
-        }
 
-        if (status <= 0) {
-            compr_src_deallocate(src);
-            src = NULL;
+            if (status <= 0) {
+                compr_src_deallocate(src);
+                src = NULL;
+            }
         }
     }
 
