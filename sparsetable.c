@@ -51,6 +51,7 @@ void free_sparse_table (sparse_table_t *tab)
 
 sparse_table_t *malloc_sparse_table(int m, int n, int datasz)
 {
+  size_t alloc_sz;
   sparse_table_t *tab = malloc(sizeof *tab);
   tab->m = m; 
   tab->n = n;
@@ -61,8 +62,9 @@ sparse_table_t *malloc_sparse_table(int m, int n, int datasz)
     return NULL;
   }
   
-  
-  if(!(tab->data = malloc(n * datasz))){
+  alloc_sz  = datasz;
+  alloc_sz *= n;
+  if(!(tab->data = malloc(alloc_sz))){
     fprintf(stderr, "Could not allocate space for sparse data(%d)\n", n);
     free_sparse_table(tab);
     return NULL;
