@@ -20,11 +20,11 @@
 #include <stdlib.h>
 
 #include "sparse_sys.h"
-#include "compr_quant.h"
+#include "compr_quant_general.h"
 
 
 void
-compr_quantities_deallocate(struct compr_quantities *cq)
+compr_quantities_gen_deallocate(struct compr_quantities_gen *cq)
 {
     if (cq != NULL) {
         free(cq->Ac);
@@ -34,11 +34,11 @@ compr_quantities_deallocate(struct compr_quantities *cq)
 }
 
 
-struct compr_quantities *
-compr_quantities_allocate(size_t nc, size_t nf, int np)
+struct compr_quantities_gen *
+compr_quantities_gen_allocate(size_t nc, size_t nf, int np)
 {
-    size_t                   alloc_sz, np2;
-    struct compr_quantities *cq;
+    size_t                       alloc_sz, np2;
+    struct compr_quantities_gen *cq;
 
     cq = malloc(1 * sizeof *cq);
 
@@ -54,7 +54,7 @@ compr_quantities_allocate(size_t nc, size_t nf, int np)
         cq->Ac = malloc(alloc_sz * sizeof *cq->Ac);
 
         if (cq->Ac == NULL) {
-            compr_quantities_deallocate(cq);
+            compr_quantities_gen_deallocate(cq);
             cq = NULL;
         } else {
             cq->dAc       = cq->Ac        + (np2 * nc);
@@ -69,65 +69,4 @@ compr_quantities_allocate(size_t nc, size_t nf, int np)
     }
 
     return cq;
-}
-
-
-/* ---------------------------------------------------------------------- */
-/* Compute B \ (V') == zeta(cellNo) .* faceFlux2CellFlux(fflux) */
-/* ---------------------------------------------------------------------- */
-void
-compr_flux_term(grid_t       *G,
-                const double *fflux,
-                const double *zeta,
-                double       *Biv)
-/* ---------------------------------------------------------------------- */
-{
-    int    c, i, f;
-    double s;
-
-    for (c = i = 0; c < G->number_of_cells; c++) {
-        for (; i < G->cell_facepos[c + 1]; i++) {
-            f = G->cell_faces[i];
-            s = 2.0*(c == G->face_cells[2*f + 0]) - 1.0;
-
-            Biv[i] = zeta[c] * s * fflux[f];
-        }
-    }
-}
-
-
-/* ---------------------------------------------------------------------- */
-/* Compute P == ct .* pv ./ dt */
-/* ---------------------------------------------------------------------- */
-void
-compr_accum_term(size_t        nc,
-                 double        dt,
-                 const double *porevol,
-                 const double *totcompr,
-                 double       *P)
-/* ---------------------------------------------------------------------- */
-{
-    size_t c;
-
-    for (c = 0; c < nc; c++) {
-        P[c] = totcompr[c] * porevol[c] / dt;
-    }
-}
-
-
-/* ---------------------------------------------------------------------- */
-/* Add pressure accumulation term (P*p_0) to cell sources */
-/* ---------------------------------------------------------------------- */
-void
-compr_src_add_press_accum(size_t        nc,
-                          const double *p0,
-                          const double *P,
-                          double       *src)
-/* ---------------------------------------------------------------------- */
-{
-    size_t c;
-
-    for (c = 0; c < nc; c++) {
-        src[c] += P[c] * p0[c];
-    }
 }

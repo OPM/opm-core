@@ -8,7 +8,9 @@ blas_lapack.h                                   \
 coarse_conn.h                                   \
 coarse_sys.h                                    \
 compr_quant.h                                   \
+compr_quant_general.h                           \
 cfs_tpfa.h                                      \
+cfs_tpfa_residual.h                             \
 dfs.h                                           \
 flow_bc.h                                       \
 fsh.h                                           \
@@ -33,7 +35,9 @@ cfsh.c                                          \
 coarse_conn.c                                   \
 coarse_sys.c                                    \
 compr_quant.c                                   \
+compr_quant_general.c                           \
 cfs_tpfa.c                                      \
+cfs_tpfa_residual.c                             \
 dfs.c                                           \
 flow_bc.c                                       \
 fsh.c                                           \
