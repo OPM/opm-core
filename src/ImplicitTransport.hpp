@@ -93,7 +93,6 @@ namespace Opm {
             typedef typename JacobianSystem::matrix_type matrix_type;
             typedef typename JacobianSystem::vector_collection_type vector_collection_type;
             asm_.createSystem(g, sys_);
-
             model_.initStep(state, g, sys_);
             model_.initIteration(state, g, sys_);
 
@@ -118,14 +117,14 @@ namespace Opm {
 
                 VNeg<vector_type>::negate(sys_.vector().writableIncrement());
 
-                model_.finishIteration(state, g, sys_.vector());
+                //model_.finishIteration(state, g, sys_.vector());
 
                 rpt.norm_dx =
                     VNorm<vector_type>::norm(sys_.vector().increment());
 
                 int lin_it=0;
                 double residual=VNorm<vector_type>::norm(sys_.vector().residual());
-                bool finnished=false;//residual < rpt.norm_res;
+                bool finnished=rpt.norm_res<ctrl.atol;//residual < rpt.norm_res;
                 double alpha=2.0;
                 // store old solution and increasement before line search
                 vector_type dx_old(sys_.vector().increment());
@@ -136,11 +135,10 @@ namespace Opm {
                 	sys_.vector().writableIncrement()*=alpha;
                 	sys_.vector().writableSolution()=x_old;
                 	/*
-                	 * should be used if vector_type is std::vector<double>
-                	std::vector<double> operator*=(std::vector<double>& vec,const double a){
+                	 	should be used if vector_type is std::vector<double>
+                		std::vector<double> operator*=(std::vector<double>& vec,const double a){
                 	    for_each(vec.begin(),vec.end(), boost::lambda::_1*=a );
                 	    return vec;
-                	}
                 	*/
                 	sys_.vector().addIncrement();
                     model_.initIteration(state, g, sys_);
@@ -150,14 +148,15 @@ namespace Opm {
                 	residual=VNorm<vector_type>::norm(sys_.vector().residual());
                 	lin_it +=1;
                 	finnished=(residual < rpt.norm_res) || (lin_it> ctrl.max_it_ls);
-                	std::cerr <<  "Line search iteration " << std::scientific  << lin_it << " norm :" << residual <<  " alpha " << alpha << '\n';
+                	//std::cerr <<  "Line search iteration " << std::scientific  << lin_it << " norm :" << residual <<  " alpha " << alpha << '\n';
                 }
                 rpt.norm_res =
                     VNorm<vector_type>::norm(sys_.vector().residual());
 
                 rpt.nit++;
 
-                std::cerr <<  "Iteration " << std::scientific  << rpt.nit << " norm :" << rpt.norm_res <<  " alpha " << alpha << '\n';
+                std::cout <<  "Iteration " << std::scientific  << rpt.nit
+                		<< " norm :" << rpt.norm_res <<  " alpha " << alpha << std::endl;
 
                 done = (rpt.norm_res < ctrl.atol)            ||
                        (rpt.norm_res < ctrl.rtol * nrm_res0) ||

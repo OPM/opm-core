@@ -53,18 +53,30 @@ namespace Opm {
         template <class Grid          ,
                   class JacobianSystem>
         void
-        createSystem(const Grid&     g  ,
+        createSystem(const Grid&     g  ,//const SourceTerms* tsrc,
                      JacobianSystem& sys) const {
 
             ::std::size_t m   = g.number_of_cells;
-            ::std::size_t nnz = g.number_of_cells + countConnections(g);
+            ::std::size_t nnz = g.number_of_cells
+            		          + countConnections(g);
+//            		          + tsrc->pf;
 
             sys.setSize(DofPerCell, m, nnz);
 
             for (int c = 0; c < g.number_of_cells; ++c) {
                 this->createRowStructure(g, c, sys);
             }
-
+            /* is done by modifiying grid
+            // add elements for periodic boundary
+            for (int pf = 0; pf<tsrc->pf; ++pf){
+            	int nconn = 1;
+            	::std::vector<int> connections(1);
+            	connections[0]=(tsrc->periodic_cells[2*pf]);
+            	sys.matasm().createBlockRow(tsrc->periodic_cells[2*pf+1], connections, DofPerCell);
+            	connections[0]=(tsrc->periodic_cells[2*pf+1]);
+            	sys.matasm().createBlockRow(tsrc->periodic_cells[2*pf], connections, DofPerCell);
+            }
+            */
             sys.matasm().finalizeStructure();
         }
 
@@ -141,8 +153,8 @@ namespace Opm {
                     connections.push_back((c1 == c) ? c2 : c1);
                 }
             }
-
             sys.matasm().createBlockRow(c, connections, DofPerCell);
+
         }
 
         template <class ReservoirState, class Grid>
@@ -216,7 +228,6 @@ namespace Opm {
                     J2 += ndof2;
                 }
             }
-
             // Assemble residual
             const double* F = &asm_buffer_[(2*nconn_ + 1) * ndof2];
             for (int conn = 0; conn < nconn_ + 2; ++conn, F += ndof) {

@@ -48,7 +48,7 @@ namespace Opm {
         public:
             ModelParameterStorage(int nc, int totconn)
                 : drho_(0.0), mob_(0), dmob_(0),
-                  porevol_(0), dg_(0), ds_(0), pc_(0), dpc_(0), trans_(0),
+                  porevol_(0), dg_(0), ds_(0), pc_(0), dpc_(0), trans_(0), htrans_(0),
                   data_()
             {
                 size_t alloc_sz;
@@ -61,6 +61,7 @@ namespace Opm {
                 alloc_sz += 1 * nc;      // pc_
                 alloc_sz += 1 * nc;      // dpc_
                 alloc_sz += 1 * totconn; // dtrans
+                alloc_sz += 1 * totconn; // dhtrans
                 data_.resize(alloc_sz);
 
                 mob_     = &data_[0];
@@ -71,6 +72,7 @@ namespace Opm {
                 pc_      = ds_      + (1 * nc     );
                 dpc_     = pc_      + (1 * nc     );
                 trans_   = dpc_      + (1 * nc     );
+                htrans_   = dpc_      + (1 * totconn);
             }
 
             double&       drho   ()            { return drho_            ; }
@@ -100,6 +102,9 @@ namespace Opm {
             double&       trans(int f)           { return trans_[f]          ; }
             double        trans(int f)     const { return trans_[f]          ; }
 
+            double&       htrans(int f)           { return htrans_[f]          ; }
+            double        htrans(int f)     const { return htrans_[f]          ; }
+
         private:
             double  drho_   ;
             double *mob_    ;
@@ -110,6 +115,7 @@ namespace Opm {
             double *pc_     ;
             double *dpc_    ;
             double *trans_  ;
+            double *htrans_  ;
 
             std::vector<double> data_;
         };
@@ -124,33 +130,58 @@ namespace Opm {
                                   const Grid&                g        ,
                                   const std::vector<double>& porevol  ,
                                   const double*              grav  = 0,
-                                  const double*              trans = 0)
+                                  const double*              htrans = 0)
             : fluid_  (fluid)                              ,
-              gravity_((grav != 0) && (trans != 0))        ,
+              gravity_(grav)        ,
               f2hf_   (2 * g.number_of_faces, -1)          ,
               store_  (g.number_of_cells,
                        g.cell_facepos[ g.number_of_cells ])
         {
-        	if(trans){
-        		for (int f = 0; f < g.number_of_faces; ++f) {
-        			store_.trans(f)=trans[f];
+        	int n_hf=g.cell_facepos[ g.number_of_cells ];
+        	if(htrans){
+        		for (int hf = 0; hf < n_hf; ++hf) {
+        			store_.htrans(hf)=htrans[hf];
         		}
         	}
             if (gravity_) {
                 store_.drho() = fluid_.density(0) - fluid_.density(1);
-                this->computeStaticGravity(g, grav, trans);
+                //this->computeStaticGravity(g, gravity_);
             }
 
             for (int c = 0, i = 0; c < g.number_of_cells; ++c) {
                 for (; i < g.cell_facepos[c + 1]; ++i) {
                     const int f = g.cell_faces[i];
                     const int p = 1 - (g.face_cells[2*f + 0] == c);
-
                     f2hf_[2*f + p] = i;
                 }
             }
 
+
             std::copy(porevol.begin(), porevol.end(), store_.porevol());
+        }
+        void makefhfQPeriodic(const std::vector<int>& p_faces,const std::vector<int>& hf_faces){
+        	for(int i=0; i<p_faces.size(); ++i){
+        		int f = p_faces[i];
+        		int hf = hf_faces[i];
+        		bool changed=false;
+        		if(f2hf_[2*f] == hf){
+        			assert(f2hf_[2*f+1]==-1);
+        		}else{
+        			assert(f2hf_[2*f]==-1);
+        			f2hf_[2*f]=hf;
+        			changed=true;
+        		}
+        		if(!changed){
+        			if(f2hf_[2*f+1]== hf){
+        				assert(f2hf_[2*f]==-1);
+        			}else{
+        				assert(f2hf_[2*f+1]==-1);
+        				f2hf_[2*f+1]=hf;
+        				changed=true;
+        			}
+        		}
+        		assert(changed);
+        	}
         }
 
         // -----------------------------------------------------------------
@@ -181,7 +212,7 @@ namespace Opm {
             double dflux = state.faceflux()[f];
             double gflux = gravityFlux(f);
             double pcflux,dpcflux[2];
-            capFlux(f, pcflux, dpcflux);
+            capFlux(f,n, pcflux, dpcflux);
             gflux += pcflux;
 
 
@@ -207,8 +238,17 @@ namespace Opm {
 
             // Assemble Jacobian (J1 <-> c, J2 <-> other)
             double *J[2];
-            if (n[0] == c) { J[0] = J1; J[1] = J2; }
-            else           { J[0] = J2; J[1] = J1; }
+            if (n[0] == c) {
+            	J[0] = J1; J[1] = J2;
+               // sign is positive
+            	J1[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
+            	J2[0*2 + 0] += sgn*dt * f1            * dpcflux[1] * m[1];
+            } else {
+            	J[0] = J2; J[1] = J1;
+            	// sign is negative
+            	J1[0*2 + 0] += sgn*dt * f1            * dpcflux[1] * m[1];
+            	J2[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
+            }
 
             // dF/dm_1 \cdot dm_1/ds
             *J[ pix[0] ] += dt * (1 - f1) / mt * v1    * dm[0];
@@ -219,13 +259,13 @@ namespace Opm {
 
 
             /* contribution from dpcflux */
-            if(sgn>0){
-            	J1[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
-            	J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[1] * m[1];
-            }else{
-            	J1[0*2 + 0] -= sgn*dt * f1            * dpcflux[1] * m[1];
-            	J2[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
-            }
+            //if(sgn>0){
+            //	J1[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
+            //	J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[1] * m[1];
+            //}else{
+            //	J1[0*2 + 0] += sgn*dt * f1            * dpcflux[1] * m[1];
+            //	J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[0] * m[1];
+            //}
         }
 
         template <class Grid>
@@ -296,10 +336,28 @@ namespace Opm {
                 sys.vector().writableSolution();
 
             assert (x.size() == (::std::size_t) (g.number_of_cells));
-
+            int n_hf=g.cell_facepos[ g.number_of_cells ];
+            if(store_.htrans(0)>0){
+                 for (int f = 0; f < g.number_of_faces; ++f) {
+                	 for (int j=1;j < 2; ++j){
+                	 	 int hf=f2hf_[2*f+j];
+                	 	 if(!(hf==-1)){
+                	 		 assert(hf>=0);
+                    		 store_.trans(f)+=1/store_.htrans(hf);
+                	 	 }
+                	 }
+                 }
+                 for (int f = 0; f < g.number_of_faces; ++f) {
+                	 store_.trans(f)=1/store_.trans(f);
+                 }
+            }
+            if (gravity_) {
+            	this->computeStaticGravity(g, gravity_);
+            }
             for (int c = 0, nc = g.number_of_cells; c < nc; ++c) {
                 x[c] = 0.0;//0.5 - s[2*c + 0];
             }
+
         }
 
         template <class ReservoirState,
@@ -407,8 +465,7 @@ namespace Opm {
         template <class Grid>
         void
         computeStaticGravity(const Grid&   g    ,
-                             const double* grav ,
-                             const double* trans) {
+                             const double* grav ){
             const int d = g.dimensions;
 
             for (int c = 0, i = 0; c < g.number_of_cells; ++c) {
@@ -420,10 +477,10 @@ namespace Opm {
 
                     double dg = 0.0;
                     for (int j = 0; j < d; ++j) {
-                        dg += grav[j] * (fc[j] - cc[j]);
+                        dg += gravity_[j] * (fc[j] - cc[j]);
                     }
 
-                    store_.dg(i) = trans[f] * dg;
+                    store_.dg(i) = store_.trans(f) * dg;
                 }
             }
         }
@@ -447,18 +504,19 @@ namespace Opm {
             return gflux;
         }
         void
-        capFlux(const int f,double& pcflux, double* dpcflux) const {
+        capFlux(const int f,const int* n,double& pcflux, double* dpcflux) const {
         	//double capflux;
-        	int i1 = f2hf_[2*f + 0];
-        	int i2 = f2hf_[2*f + 1];
+        	int i1 = n[0];
+        	int i2 = n[1];
         	assert ((i1 >= 0) && (i2 >= 0));
-        	pcflux  = store_.trans(f)*(store_.pc(i1) - store_.pc(i2));
-        	dpcflux[0]  = store_.trans(f)*store_.dpc(i1);
-        	dpcflux[1]  = -store_.trans(f)*store_.dpc(i2);
+        	//double sgn=-1.0;
+        	pcflux  = store_.trans(f)*(store_.pc(i2) - store_.pc(i1));
+        	dpcflux[0]  = -store_.trans(f)*store_.dpc(i1);
+        	dpcflux[1]  = store_.trans(f)*store_.dpc(i2);
         }
 
         TwophaseFluid                 fluid_  ;
-        bool                          gravity_;
+        const double*                       gravity_;
         std::vector<int>              f2hf_   ;
         spu_2p::ModelParameterStorage store_  ;
     };
