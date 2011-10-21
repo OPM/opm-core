@@ -48,7 +48,7 @@ namespace Opm {
         public:
             ModelParameterStorage(int nc, int totconn)
                 : drho_(0.0), mob_(0), dmob_(0),
-                  porevol_(0), dg_(0), ds_(0), pc_(0), dpc_(0), trans_(0), htrans_(0),
+                  porevol_(0), dg_(0), ds_(0), pc_(0), dpc_(0), trans_(0),
                   data_()
             {
                 size_t alloc_sz;
@@ -61,7 +61,6 @@ namespace Opm {
                 alloc_sz += 1 * nc;      // pc_
                 alloc_sz += 1 * nc;      // dpc_
                 alloc_sz += 1 * totconn; // dtrans
-                alloc_sz += 1 * totconn; // dhtrans
                 data_.resize(alloc_sz);
 
                 mob_     = &data_[0];
@@ -72,7 +71,6 @@ namespace Opm {
                 pc_      = ds_      + (1 * nc     );
                 dpc_     = pc_      + (1 * nc     );
                 trans_   = dpc_      + (1 * nc     );
-                htrans_   = dpc_      + (1 * totconn);
             }
 
             double&       drho   ()            { return drho_            ; }
@@ -102,9 +100,6 @@ namespace Opm {
             double&       trans(int f)           { return trans_[f]          ; }
             double        trans(int f)     const { return trans_[f]          ; }
 
-            double&       htrans(int f)           { return htrans_[f]          ; }
-            double        htrans(int f)     const { return htrans_[f]          ; }
-
         private:
             double  drho_   ;
             double *mob_    ;
@@ -115,7 +110,6 @@ namespace Opm {
             double *pc_     ;
             double *dpc_    ;
             double *trans_  ;
-            double *htrans_  ;
 
             std::vector<double> data_;
         };
@@ -129,20 +123,21 @@ namespace Opm {
         SinglePointUpwindTwoPhase(const TwophaseFluid&       fluid    ,
                                   const Grid&                g        ,
                                   const std::vector<double>& porevol  ,
-                                  const double*              grav  = 0,
-                                  const double*              htrans = 0)
+                                  const double*              grav  = 0)
+ //                                 const double*              htrans = 0)
             : fluid_  (fluid)                              ,
               gravity_(grav)        ,
               f2hf_   (2 * g.number_of_faces, -1)          ,
               store_  (g.number_of_cells,
                        g.cell_facepos[ g.number_of_cells ])
-        {
+        {/*
         	int n_hf=g.cell_facepos[ g.number_of_cells ];
         	if(htrans){
         		for (int hf = 0; hf < n_hf; ++hf) {
         			store_.htrans(hf)=htrans[hf];
         		}
         	}
+        	*/
             if (gravity_) {
                 store_.drho() = fluid_.density(0) - fluid_.density(1);
                 //this->computeStaticGravity(g, gravity_);
@@ -317,7 +312,33 @@ namespace Opm {
                 *J += dt * dflux * df;
             }
         }
-
+        template <class Grid>
+        void
+        initGravityTrans(const Grid&  g    ,
+        		         const std::vector<double> &  htrans) {
+        	int n_hf =g.cell_facepos[ g.number_of_cells ];
+        	if(htrans.size()>0){
+        		for (int f = 0; f < g.number_of_faces; ++f) {
+        			store_.trans(f)=0;
+        		}
+        		for (int f = 0; f < g.number_of_faces; ++f) {
+        			for (int j=1;j < 2; ++j){
+        				int hf=f2hf_[2*f+j];
+        				if(!(hf==-1)){
+        					assert(hf>=0);
+        					store_.trans(f)+=1/htrans[hf];
+        				}
+        			}
+        		}
+        		for (int f = 0; f < g.number_of_faces; ++f) {
+        			store_.trans(f)=1/store_.trans(f);
+        			assert(store_.trans(f)>0);
+        		}
+        	}
+        	if (gravity_) {
+        		this->computeStaticGravity(g, gravity_);
+        	}
+        }
         // -----------------------------------------------------------------
         // Newton control
         // -----------------------------------------------------------------
@@ -336,24 +357,7 @@ namespace Opm {
                 sys.vector().writableSolution();
 
             assert (x.size() == (::std::size_t) (g.number_of_cells));
-            int n_hf=g.cell_facepos[ g.number_of_cells ];
-            if(store_.htrans(0)>0){
-                 for (int f = 0; f < g.number_of_faces; ++f) {
-                	 for (int j=1;j < 2; ++j){
-                	 	 int hf=f2hf_[2*f+j];
-                	 	 if(!(hf==-1)){
-                	 		 assert(hf>=0);
-                    		 store_.trans(f)+=1/store_.htrans(hf);
-                	 	 }
-                	 }
-                 }
-                 for (int f = 0; f < g.number_of_faces; ++f) {
-                	 store_.trans(f)=1/store_.trans(f);
-                 }
-            }
-            if (gravity_) {
-            	this->computeStaticGravity(g, gravity_);
-            }
+
             for (int c = 0, nc = g.number_of_cells; c < nc; ++c) {
                 x[c] = 0.0;//0.5 - s[2*c + 0];
             }
