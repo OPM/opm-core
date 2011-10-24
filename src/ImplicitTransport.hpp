@@ -114,6 +114,12 @@ namespace Opm {
                 linsolve.solve(sys_.matrix(),
                                sys_.vector().residual(),
                                sys_.vector().writableIncrement());
+                Dune::writeMatrixToMatlab(sys_.matrix(),"matrix_matlab");
+                std::ofstream myfile;
+                myfile.open ("residual.txt");
+                Dune::printvector(myfile,sys_.vector().residual(),"redidual","");
+                myfile.close();
+
 
                 VNeg<vector_type>::negate(sys_.vector().writableIncrement());
 

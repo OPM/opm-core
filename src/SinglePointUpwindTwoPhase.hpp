@@ -322,7 +322,7 @@ namespace Opm {
         			store_.trans(f)=0;
         		}
         		for (int f = 0; f < g.number_of_faces; ++f) {
-        			for (int j=1;j < 2; ++j){
+        			for (int j=0;j < 2; ++j){
         				int hf=f2hf_[2*f+j];
         				if(!(hf==-1)){
         					assert(hf>=0);
