@@ -7,6 +7,7 @@ libopmpressure_HEADERS =                        \
 blas_lapack.h                                   \
 coarse_conn.h                                   \
 coarse_sys.h                                    \
+compr_bc.h                                      \
 compr_quant.h                                   \
 compr_quant_general.h                           \
 compr_source.h                                  \
@@ -35,6 +36,7 @@ libopmpressure_la_SOURCES =                     \
 cfsh.c                                          \
 coarse_conn.c                                   \
 coarse_sys.c                                    \
+compr_bc.c                                      \
 compr_quant.c                                   \
 compr_quant_general.c                           \
 compr_source.c                                  \
