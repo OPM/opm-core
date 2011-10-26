@@ -975,13 +975,6 @@ unenumerate_local_dofs(size_t                  cf,
 {
     int *b, *c, i;
 
-    /* Note that memset()-ing all of m->loc_fno (g->number_of_faces
-     * entries) may or may not be faster than this loop.  The loop is
-     * entirely random access to m->loc_fno which ruins locality, but
-     * typically visits only a small subset of the actual elements.
-     *
-     * Profiling/measurement needed. */
-
     for (b  = ct->neighbours + 2*(cf + 0);
          b != ct->neighbours + 2*(cf + 1); b++) {
         if (*b >= 0) {
