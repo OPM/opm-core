@@ -36,7 +36,6 @@
 #ifndef OPM_SimpleFluid2pWrapper_HPP_HEADER
 #define OPM_SimpleFluid2pWrapper_HPP_HEADER
 
-#include <array>
 #include <cmath>
 
 namespace Opm {
@@ -67,8 +66,6 @@ namespace Opm {
 
     private:
         ReservoirProperties& resprop_;
-        std::array<double, 2> mu_ ;
-        std::array<double, 2> rho_;
     };
 }
 
