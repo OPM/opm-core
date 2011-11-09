@@ -2,11 +2,13 @@ function varargout = processgrid(varargin)
 %Compute grid topology and geometry from pillar grid description.
 %
 % SYNOPSIS:
-%   G = processGRDECL(grdecl)
+%   G = processgrid(grdecl)
+%   G = processgrid(grdecl,ztol)
 %
 % PARAMETERS:
 %   grdecl - Raw pillar grid structure, as defined by function
 %            'readGRDECL', with fields COORDS, ZCORN and, possibly, ACTNUM.
+%   ztol   - tolerance for unique points 
 %
 % RETURNS:
 %   G      - Valid grid definition containing connectivity, cell
