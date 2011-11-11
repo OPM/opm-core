@@ -114,12 +114,16 @@ namespace Opm {
                 linsolve.solve(sys_.matrix(),
                                sys_.vector().residual(),
                                sys_.vector().writableIncrement());
-                Dune::writeMatrixToMatlab(sys_.matrix(),"matrix_matlab");
+                std::ofstream myfile2;
+                myfile2.open ("jacobi.txt");
+                Dune::printSparseMatrix(myfile2, sys_.matrix(), "", "", 26, 15);
+                myfile2.close();
+
+                Dune::writeMatrixToMatlab(sys_.matrix(),"matrix_matlab"); // write jacobi
                 std::ofstream myfile;
                 myfile.open ("residual.txt");
-                Dune::printvector(myfile,sys_.vector().residual(),"redidual","");
+                Dune::printvector(myfile,sys_.vector().residual(),"redidual","", 1, 10, 15); //write residual
                 myfile.close();
-
 
                 VNeg<vector_type>::negate(sys_.vector().writableIncrement());
 
