@@ -111,9 +111,12 @@ namespace Opm {
             bool done = false;//rpt.norm_res < ctrl.atol;
 
             while (! done) {
+            	VZero<vector_type>::zero(sys_.vector().writableIncrement());
+
                 linsolve.solve(sys_.matrix(),
                                sys_.vector().residual(),
                                sys_.vector().writableIncrement());
+
                 std::ofstream myfile2;
                 myfile2.open ("jacobi.txt");
                 Dune::printSparseMatrix(myfile2, sys_.matrix(), "", "", 26, 15);
@@ -124,6 +127,12 @@ namespace Opm {
                 myfile.open ("residual.txt");
                 Dune::printvector(myfile,sys_.vector().residual(),"redidual","", 1, 10, 15); //write residual
                 myfile.close();
+
+                std::ofstream myfile3;
+                myfile3.open ("increment.txt");
+                Dune::printvector(myfile3,sys_.vector().writableIncrement(),"increment","", 1, 10, 15); //write residual
+                myfile3.close();
+
 
                 VNeg<vector_type>::negate(sys_.vector().writableIncrement());
 
