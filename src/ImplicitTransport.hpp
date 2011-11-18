@@ -88,13 +88,13 @@ namespace Opm {
                    ReservoirState&                            state   ,
                    LinearSolver&                              linsolve,
                    ImplicitTransportDetails::NRReport&        rpt     ) {
-
+        	bool s_range;
             typedef typename JacobianSystem::vector_type vector_type;
             typedef typename JacobianSystem::matrix_type matrix_type;
             typedef typename JacobianSystem::vector_collection_type vector_collection_type;
             asm_.createSystem(g, sys_);
             model_.initStep(state, g, sys_);
-            model_.initIteration(state, g, sys_);
+            model_.initIteration(state, g, sys_, s_range);
 
             MZero<matrix_type>::zero(sys_.writableMatrix());
             VZero<vector_type>::zero(sys_.vector().writableResidual());
@@ -150,6 +150,7 @@ namespace Opm {
                 vector_type x_old(sys_.vector().solution());
                 while(! finnished){
                 	alpha/=2.0;
+                	s_range = true;
                 	sys_.vector().writableIncrement()=dx_old;
                 	sys_.vector().writableIncrement()*=alpha;
                 	sys_.vector().writableSolution()=x_old;
@@ -160,14 +161,21 @@ namespace Opm {
                 	    return vec;
                 	*/
                 	sys_.vector().addIncrement();
-                    model_.initIteration(state, g, sys_);
+                    model_.initIteration(state, g, sys_, s_range);
+                    if (s_range) {
                     MZero<matrix_type>::zero(sys_.writableMatrix());
                     VZero<vector_type>::zero(sys_.vector().writableResidual());
                     asm_.assemble(state, g, src, dt, sys_);
                 	residual=VNorm<vector_type>::norm(sys_.vector().residual());
-                	lin_it +=1;
-                	finnished=(residual < rpt.norm_res) || (lin_it> ctrl.max_it_ls);
-                	//std::cerr <<  "Line search iteration " << std::scientific  << lin_it << " norm :" << residual <<  " alpha " << alpha << '\n';
+
+                		std::cout <<  "Line search iteration " << std::scientific  << lin_it << " norm :" << residual <<  " alpha " << alpha << '\n';
+                    }else{
+                    	std::cout <<  "Line search iteration " << std::scientific  << lin_it << " Saturation out of range, continue. Alpha " << alpha << '\n';
+                    	residual = 1e99;
+                    }
+                    finnished=(residual < rpt.norm_res) || (lin_it> ctrl.max_it_ls);
+                    lin_it +=1;
+
                 }
                 rpt.norm_res =
                     VNorm<vector_type>::norm(sys_.vector().residual());

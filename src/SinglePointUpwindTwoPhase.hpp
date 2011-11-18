@@ -370,7 +370,8 @@ namespace Opm {
         void
         initIteration(const ReservoirState& state,
                       const Grid&           g    ,
-                      JacobianSystem&       sys  ) {
+                      JacobianSystem&       sys,
+                      bool& s_range  ) {
 
             double s[2],  mob[2],  dmob[2 * 2], pc, dpc;
 
@@ -382,6 +383,19 @@ namespace Opm {
                 store_.ds(c) = x[c]; // Store sat-change for accumulation().
 
                 s[0] = sat[c*2 + 0] + x[c];
+
+                double s_min = fluid_.s_min(c);
+                double s_max = fluid_.s_max(c);
+
+
+		        if ( s[0] < (s_min - 1e-10) || s[0] > (s_max + 1e-10) ) {
+                   	std::cout << "Warning: s out of range." << s[0] << std::endl;
+                	//std::cout << "Warning: s0<0." << std::endl;
+                	s_range = false;
+                }
+
+		    	s[0] = std::max(s_min, s[0]);
+		        s[0] = std::min(s_max, s[0]);
                 s[1] = 1 - s[0];
 
                 fluid_.mobility(c, s, mob, dmob);
