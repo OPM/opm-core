@@ -88,7 +88,7 @@ namespace Opm {
                    ReservoirState&                            state   ,
                    LinearSolver&                              linsolve,
                    ImplicitTransportDetails::NRReport&        rpt     ) {
-        	bool s_range;
+            bool s_range;
             typedef typename JacobianSystem::vector_type vector_type;
             typedef typename JacobianSystem::matrix_type matrix_type;
             typedef typename JacobianSystem::vector_collection_type vector_collection_type;
@@ -111,28 +111,11 @@ namespace Opm {
             bool done = false;//rpt.norm_res < ctrl.atol;
 
             while (! done) {
-            	VZero<vector_type>::zero(sys_.vector().writableIncrement());
+                VZero<vector_type>::zero(sys_.vector().writableIncrement());
 
                 linsolve.solve(sys_.matrix(),
                                sys_.vector().residual(),
                                sys_.vector().writableIncrement());
-
-                std::ofstream myfile2;
-                myfile2.open ("jacobi.txt");
-                Dune::printSparseMatrix(myfile2, sys_.matrix(), "", "", 26, 15);
-                myfile2.close();
-
-                Dune::writeMatrixToMatlab(sys_.matrix(),"matrix_matlab"); // write jacobi
-                std::ofstream myfile;
-                myfile.open ("residual.txt");
-                Dune::printvector(myfile,sys_.vector().residual(),"redidual","", 1, 10, 15); //write residual
-                myfile.close();
-
-                std::ofstream myfile3;
-                myfile3.open ("increment.txt");
-                Dune::printvector(myfile3,sys_.vector().writableIncrement(),"increment","", 1, 10, 15); //write residual
-                myfile3.close();
-
 
                 VNeg<vector_type>::negate(sys_.vector().writableIncrement());
 
@@ -149,29 +132,31 @@ namespace Opm {
                 vector_type dx_old(sys_.vector().increment());
                 vector_type x_old(sys_.vector().solution());
                 while(! finnished){
-                	alpha/=2.0;
-                	s_range = true;
-                	sys_.vector().writableIncrement()=dx_old;
-                	sys_.vector().writableIncrement()*=alpha;
-                	sys_.vector().writableSolution()=x_old;
-                	/*
-                	 	should be used if vector_type is std::vector<double>
-                		std::vector<double> operator*=(std::vector<double>& vec,const double a){
-                	    for_each(vec.begin(),vec.end(), boost::lambda::_1*=a );
-                	    return vec;
-                	*/
-                	sys_.vector().addIncrement();
+                    alpha/=2.0;
+                    s_range = true;
+                    sys_.vector().writableIncrement()=dx_old;
+                    sys_.vector().writableIncrement()*=alpha;
+                    sys_.vector().writableSolution()=x_old;
+                    /*
+                      should be used if vector_type is std::vector<double>
+                      std::vector<double> operator*=(std::vector<double>& vec,const double a){
+                      for_each(vec.begin(),vec.end(), boost::lambda::_1*=a );
+                      return vec;
+                    */
+                    sys_.vector().addIncrement();
                     model_.initIteration(state, g, sys_, s_range);
                     if (s_range) {
-                    MZero<matrix_type>::zero(sys_.writableMatrix());
-                    VZero<vector_type>::zero(sys_.vector().writableResidual());
-                    asm_.assemble(state, g, src, dt, sys_);
-                	residual=VNorm<vector_type>::norm(sys_.vector().residual());
+                        MZero<matrix_type>::zero(sys_.writableMatrix());
+                        VZero<vector_type>::zero(sys_.vector().writableResidual());
+                        asm_.assemble(state, g, src, dt, sys_);
+                        residual=VNorm<vector_type>::norm(sys_.vector().residual());
 
-                		std::cout <<  "Line search iteration " << std::scientific  << lin_it << " norm :" << residual <<  " alpha " << alpha << '\n';
+                        std::cout << "Line search iteration " << std::scientific << lin_it << " norm :" << residual << " alpha " << alpha << '\n';
+
+
                     }else{
-                    	std::cout <<  "Line search iteration " << std::scientific  << lin_it << " Saturation out of range, continue. Alpha " << alpha << '\n';
-                    	residual = 1e99;
+                        std::cout << "Line search iteration " << std::scientific << lin_it << " Saturation out of range, continue. Alpha " << alpha << '\n';
+                        residual = 1e99;
                     }
                     finnished=(residual < rpt.norm_res) || (lin_it> ctrl.max_it_ls);
                     lin_it +=1;
@@ -183,13 +168,13 @@ namespace Opm {
                 rpt.nit++;
 
                 std::cout <<  "Iteration " << std::scientific  << rpt.nit
-                		<< " norm :" << rpt.norm_res <<  " alpha " << alpha << std::endl;
+                          << " norm :" << rpt.norm_res <<  " alpha " << alpha << std::endl;
 
                 done = (rpt.norm_res < ctrl.atol)            ||
-                       (rpt.norm_res < ctrl.rtol * nrm_res0) ||
-                       (rpt.norm_dx  < ctrl.dxtol)           ||
-                       (lin_it       > ctrl.max_it_ls)       ||
-                       (rpt.nit == ctrl.max_it);
+                    (rpt.norm_res < ctrl.rtol * nrm_res0) ||
+                    (rpt.norm_dx  < ctrl.dxtol)           ||
+                    (lin_it       > ctrl.max_it_ls)       ||
+                    (rpt.nit == ctrl.max_it);
             }
 
             model_.finishStep(g, sys_.vector().solution(), state);

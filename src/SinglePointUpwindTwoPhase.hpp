@@ -124,20 +124,20 @@ namespace Opm {
                                   const Grid&                g        ,
                                   const std::vector<double>& porevol  ,
                                   const double*              grav  = 0)
- //                                 const double*              htrans = 0)
+            //                                 const double*              htrans = 0)
             : fluid_  (fluid)                              ,
               gravity_(grav)        ,
               f2hf_   (2 * g.number_of_faces, -1)          ,
               store_  (g.number_of_cells,
                        g.cell_facepos[ g.number_of_cells ])
         {/*
-        	int n_hf=g.cell_facepos[ g.number_of_cells ];
-        	if(htrans){
-        		for (int hf = 0; hf < n_hf; ++hf) {
-        			store_.htrans(hf)=htrans[hf];
-        		}
-        	}
-        	*/
+           int n_hf=g.cell_facepos[ g.number_of_cells ];
+           if(htrans){
+           for (int hf = 0; hf < n_hf; ++hf) {
+           store_.htrans(hf)=htrans[hf];
+           }
+           }
+         */
             if (gravity_) {
                 store_.drho() = fluid_.density(0) - fluid_.density(1);
                 //this->computeStaticGravity(g, gravity_);
@@ -154,29 +154,43 @@ namespace Opm {
 
             std::copy(porevol.begin(), porevol.end(), store_.porevol());
         }
-        void makefhfQPeriodic(const std::vector<int>& p_faces,const std::vector<int>& hf_faces){
-        	for(int i=0; i<p_faces.size(); ++i){
-        		int f = p_faces[i];
-        		int hf = hf_faces[i];
-        		bool changed=false;
-        		if(f2hf_[2*f] == hf){
-        			assert(f2hf_[2*f+1]==-1);
-        		}else{
-        			assert(f2hf_[2*f]==-1);
-        			f2hf_[2*f]=hf;
-        			changed=true;
-        		}
-        		if(!changed){
-        			if(f2hf_[2*f+1]== hf){
-        				assert(f2hf_[2*f]==-1);
-        			}else{
-        				assert(f2hf_[2*f+1]==-1);
-        				f2hf_[2*f+1]=hf;
-        				changed=true;
-        			}
-        		}
-        		assert(changed);
-        	}
+        void makefhfQPeriodic(  const std::vector<int>& p_faces,const std::vector<int>& hf_faces,
+                                const std::vector<int>& nb_faces)
+        {
+            std::vector<int> nbhf(hf_faces.size());
+            for(int i=0; i<p_faces.size(); ++i){
+                int nbf = nb_faces[i];
+                if(f2hf_[2*nbf] == -1){
+                    nbhf[i] = f2hf_[2*nbf+1];
+                }else{
+                    assert(f2hf_[2*nbf+1]==-1);
+                    nbhf[i] = f2hf_[2*nbf];
+                }
+            }
+            for(int i=0; i<p_faces.size(); ++i){
+
+                int f = p_faces[i];
+                int hf = hf_faces[i];
+                bool changed=false;
+
+                if(f2hf_[2*f] == hf){
+                    assert(f2hf_[2*f+1]==-1);
+                }else{
+                    assert(f2hf_[2*f]==-1);
+                    f2hf_[2*f]=nbhf[i];
+                    changed=true;
+                }
+                if(!changed){
+                    if(f2hf_[2*f+1]== hf){
+                        assert(f2hf_[2*f]==-1);
+                    }else{
+                        assert(f2hf_[2*f+1]==-1);
+                        f2hf_[2*f+1]=nbhf[i];
+                        changed=true;
+                    }
+                }
+                assert(changed);
+            }
         }
 
         // -----------------------------------------------------------------
@@ -210,7 +224,6 @@ namespace Opm {
             capFlux(f,n, pcflux, dpcflux);
             gflux += pcflux;
 
-
             int    pix[2];
             double m[2], dm[2];
             upwindMobility(dflux, gflux, n, pix, m, dm);
@@ -234,15 +247,15 @@ namespace Opm {
             // Assemble Jacobian (J1 <-> c, J2 <-> other)
             double *J[2];
             if (n[0] == c) {
-            	J[0] = J1; J[1] = J2;
-               // sign is positive
-            	J1[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
-            	J2[0*2 + 0] += sgn*dt * f1            * dpcflux[1] * m[1];
+                J[0] = J1; J[1] = J2;
+                // sign is positive
+                J1[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
+                J2[0*2 + 0] += sgn*dt * f1            * dpcflux[1] * m[1];
             } else {
-            	J[0] = J2; J[1] = J1;
-            	// sign is negative
-            	J1[0*2 + 0] += sgn*dt * f1            * dpcflux[1] * m[1];
-            	J2[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
+                J[0] = J2; J[1] = J1;
+                // sign is negative
+                J1[0*2 + 0] += sgn*dt * f1            * dpcflux[1] * m[1];
+                J2[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
             }
 
             // dF/dm_1 \cdot dm_1/ds
@@ -255,11 +268,11 @@ namespace Opm {
 
             /* contribution from dpcflux */
             //if(sgn>0){
-            //	J1[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
-            //	J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[1] * m[1];
+            //  J1[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
+            //  J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[1] * m[1];
             //}else{
-            //	J1[0*2 + 0] += sgn*dt * f1            * dpcflux[1] * m[1];
-            //	J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[0] * m[1];
+            //  J1[0*2 + 0] += sgn*dt * f1            * dpcflux[1] * m[1];
+            //  J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[0] * m[1];
             //}
         }
 
@@ -315,29 +328,29 @@ namespace Opm {
         template <class Grid>
         void
         initGravityTrans(const Grid&  g    ,
-        		         const std::vector<double> &  htrans) {
-        	int n_hf =g.cell_facepos[ g.number_of_cells ];
-        	if(htrans.size()>0){
-        		for (int f = 0; f < g.number_of_faces; ++f) {
-        			store_.trans(f)=0;
-        		}
-        		for (int f = 0; f < g.number_of_faces; ++f) {
-        			for (int j=0;j < 2; ++j){
-        				int hf=f2hf_[2*f+j];
-        				if(!(hf==-1)){
-        					assert(hf>=0);
-        					store_.trans(f)+=1/htrans[hf];
-        				}
-        			}
-        		}
-        		for (int f = 0; f < g.number_of_faces; ++f) {
-        			store_.trans(f)=1/store_.trans(f);
-        			assert(store_.trans(f)>0);
-        		}
-        	}
-        	if (gravity_) {
-        		this->computeStaticGravity(g, gravity_);
-        	}
+                         const std::vector<double> &  htrans) {
+            int n_hf =g.cell_facepos[ g.number_of_cells ];
+            if(htrans.size()>0){
+                for (int f = 0; f < g.number_of_faces; ++f) {
+                    store_.trans(f)=0;
+                }
+                for (int f = 0; f < g.number_of_faces; ++f) {
+                    for (int j=0;j < 2; ++j){
+                        int hf=f2hf_[2*f+j];
+                        if(!(hf==-1)){
+                            assert(hf>=0);
+                            store_.trans(f)+=1/htrans[hf];
+                        }
+                    }
+                }
+                for (int f = 0; f < g.number_of_faces; ++f) {
+                    store_.trans(f)=1/store_.trans(f);
+                    assert(store_.trans(f)>0);
+                }
+            }
+            if (gravity_) {
+                this->computeStaticGravity(g, gravity_);
+            }
         }
         // -----------------------------------------------------------------
         // Newton control
@@ -379,6 +392,7 @@ namespace Opm {
                 sys.vector().solution();
             const ::std::vector<double>& sat = state.saturation();
 
+            double max_alpha = 1;
             for (int c = 0; c < g.number_of_cells; ++c) {
                 store_.ds(c) = x[c]; // Store sat-change for accumulation().
 
@@ -388,14 +402,29 @@ namespace Opm {
                 double s_max = fluid_.s_max(c);
 
 
-		        if ( s[0] < (s_min - 1e-10) || s[0] > (s_max + 1e-10) ) {
-                   	std::cout << "Warning: s out of range." << s[0] << std::endl;
-                	//std::cout << "Warning: s0<0." << std::endl;
-                	s_range = false;
+                if ( s[0] < (s_min - 1e-5) || s[0] > (s_max + 1e-5) ) {
+                    if (s[0] < s_min){
+                        std::cout << "Warning: s out of range:" << s[0]-s_min << std::endl;}
+                    if (s[0] > s_max){
+                        std::cout << "Warning: s out of range:" << s[0]-s_max << std::endl;}
+                    //std::cout << "Warning: s0<0." << std::endl;
+                    s_range = false;
+
+                    if (std::abs(x[c]) > 0){
+                        double m1;
+                        /*      if (x[c] < 0){
+                                m1 = -(sat[c*2 + 0]-s_min)/x[c];
+                                } else {
+                                m1 = (s_max-sat[c*2 + 0])/x[c];
+                                }
+                                max_alpha = std::min(max_alpha, m1);
+                                std::cout << "max alpha :" << max_alpha << std::endl;
+                        */
+                    }
                 }
 
-		    	s[0] = std::max(s_min, s[0]);
-		        s[0] = std::min(s_max, s[0]);
+                s[0] = std::max(s_min, s[0]);
+                s[0] = std::min(s_max, s[0]);
                 s[1] = 1 - s[0];
 
                 fluid_.mobility(c, s, mob, dmob);
@@ -433,7 +462,7 @@ namespace Opm {
             double *s = &state.saturation()[0*2 + 0];
 
             for (int c = 0; c < g.number_of_cells; ++c, s += 2) {
-            	s[0] += x[c]    ;
+                s[0] += x[c]    ;
                 s[1]  = 1 - s[0];
                 assert(s[0]<=1);
                 assert(s[0]<=1);
@@ -449,7 +478,7 @@ namespace Opm {
                        double*      m    ,
                        double*      dm   ) const {
             bool equal_sign = ( (! (dflux < 0)) && (! (gflux < 0)) ) ||
-                              ( (! (dflux > 0)) && (! (gflux > 0)) );
+                ( (! (dflux > 0)) && (! (gflux > 0)) );
 
             if (equal_sign) {
 
@@ -523,14 +552,14 @@ namespace Opm {
         }
         void
         capFlux(const int f,const int* n,double& pcflux, double* dpcflux) const {
-        	//double capflux;
-        	int i1 = n[0];
-        	int i2 = n[1];
-        	assert ((i1 >= 0) && (i2 >= 0));
-        	//double sgn=-1.0;
-        	pcflux  = store_.trans(f)*(store_.pc(i2) - store_.pc(i1));
-        	dpcflux[0]  = -store_.trans(f)*store_.dpc(i1);
-        	dpcflux[1]  = store_.trans(f)*store_.dpc(i2);
+            //double capflux;
+            int i1 = n[0];
+            int i2 = n[1];
+            assert ((i1 >= 0) && (i2 >= 0));
+            //double sgn=-1.0;
+            pcflux  = store_.trans(f)*(store_.pc(i2) - store_.pc(i1));
+            dpcflux[0]  = -store_.trans(f)*store_.dpc(i1);
+            dpcflux[1]  = store_.trans(f)*store_.dpc(i2);
         }
 
         TwophaseFluid                 fluid_  ;
