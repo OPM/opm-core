@@ -79,52 +79,52 @@ namespace Dune
         }
 
         const std::pair<double, double> abszLimits() const
-	{
+        {
             return std::make_pair(abszmin_, abszmax_);
         }
 
 
-	void verifyInscribedShoebox(int imin, int ilen, int imax,
-				    int jmin, int jlen, int jmax,
-				    double zmin, double zlen, double zmax) 
-	{
-	    if (imin < 0) {
-		std::cerr << "Error! imin < 0 (imin = " << imin << ")\n";
-		throw std::runtime_error("Inconsistent user input.");
-	    }
-	    if (ilen > dims_[0]) {
-		std::cerr << "Error! ilen larger than grid (ilen = " << ilen <<")\n";
-		throw std::runtime_error("Inconsistent user input.");
-	    }
-	    if (imax > dims_[0]) {
-		std::cerr << "Error! imax larger than input grid (imax = " << imax << ")\n";
-		throw std::runtime_error("Inconsistent user input.");
-	    }
-	    if (jmin < 0) {
-		std::cerr << "Error! jmin < 0 (jmin = " << jmin << ")\n";
-		throw std::runtime_error("Inconsistent user input.");
-	    }
-	    if (jlen > dims_[1]) {
-		std::cerr << "Error! jlen larger than grid (jlen = " << jlen <<")\n";
-		throw std::runtime_error("Inconsistent user input.");
-	    }
-	    if (jmax > dims_[1]) {
-		std::cerr << "Error! jmax larger than input grid (jmax = " << jmax << ")\n";
-		throw std::runtime_error("Inconsistent user input.");
-	    }
-	    if (zmin < abszmin_) {
-		std::cerr << "Error! zmin ("<< zmin << ") less than minimum ZCORN value ("<< abszmin_ << ")\n";
-		throw std::runtime_error("Inconsistent user input.");
-	    }
-	    if (zmax > abszmax_) {
-		std::cerr << "Error! zmax ("<< zmax << ") larger than maximal ZCORN value ("<< abszmax_ << ")\n";
-		throw std::runtime_error("Inconsistent user input.");
-	    }
-	    if (zlen > (abszmax_ - abszmin_)) {
-		std::cerr << "Error! zlen ("<< zlen <<") larger than maximal ZCORN (" << abszmax_ << ") minus minimal ZCORN ("<< abszmin_ <<")\n";
-		throw std::runtime_error("Inconsistent user input.");
-	    }
-	}
+        void verifyInscribedShoebox(int imin, int ilen, int imax,
+                                    int jmin, int jlen, int jmax,
+                                    double zmin, double zlen, double zmax) 
+        {
+            if (imin < 0) {
+                std::cerr << "Error! imin < 0 (imin = " << imin << ")\n";
+                throw std::runtime_error("Inconsistent user input.");
+            }
+            if (ilen > dims_[0]) {
+                std::cerr << "Error! ilen larger than grid (ilen = " << ilen <<")\n";
+                throw std::runtime_error("Inconsistent user input.");
+            }
+            if (imax > dims_[0]) {
+                std::cerr << "Error! imax larger than input grid (imax = " << imax << ")\n";
+                throw std::runtime_error("Inconsistent user input.");
+            }
+            if (jmin < 0) {
+                std::cerr << "Error! jmin < 0 (jmin = " << jmin << ")\n";
+                throw std::runtime_error("Inconsistent user input.");
+            }
+            if (jlen > dims_[1]) {
+                std::cerr << "Error! jlen larger than grid (jlen = " << jlen <<")\n";
+                throw std::runtime_error("Inconsistent user input.");
+            }
+            if (jmax > dims_[1]) {
+                std::cerr << "Error! jmax larger than input grid (jmax = " << jmax << ")\n";
+                throw std::runtime_error("Inconsistent user input.");
+            }
+            if (zmin < abszmin_) {
+                std::cerr << "Error! zmin ("<< zmin << ") less than minimum ZCORN value ("<< abszmin_ << ")\n";
+                throw std::runtime_error("Inconsistent user input.");
+            }
+            if (zmax > abszmax_) {
+                std::cerr << "Error! zmax ("<< zmax << ") larger than maximal ZCORN value ("<< abszmax_ << ")\n";
+                throw std::runtime_error("Inconsistent user input.");
+            }
+            if (zlen > (abszmax_ - abszmin_)) {
+                std::cerr << "Error! zlen ("<< zlen <<") larger than maximal ZCORN (" << abszmax_ << ") minus minimal ZCORN ("<< abszmin_ <<")\n";
+                throw std::runtime_error("Inconsistent user input.");
+            }
+        }
 
         void chop(int imin, int imax, int jmin, int jmax, double zmin, double zmax, bool resettoorigin=true)
         {
@@ -139,24 +139,24 @@ namespace Dune
                 throw std::runtime_error("Inconsistent COORD and SPECGRID.");
             }
             int num_new_coord = 6*(new_dims_[0] + 1)*(new_dims_[1] + 1);
-	    double x_correction = COORD[6*((dims_[0] + 1)*jmin + imin)];
-	    double y_correction = COORD[6*((dims_[0] + 1)*jmin + imin) + 1];
+            double x_correction = COORD[6*((dims_[0] + 1)*jmin + imin)];
+            double y_correction = COORD[6*((dims_[0] + 1)*jmin + imin) + 1];
             new_COORD_.resize(num_new_coord, 1e100);
             for (int j = jmin; j < jmax + 1; ++j) {
                 for (int i = imin; i < imax + 1; ++i) {
                     int pos = (dims_[0] + 1)*j + i;
                     int new_pos = (new_dims_[0] + 1)*(j-jmin) + (i-imin);
-		    // Copy all 6 coordinates for a pillar.
+                    // Copy all 6 coordinates for a pillar.
                     std::copy(COORD.begin() + 6*pos, COORD.begin() + 6*(pos + 1), new_COORD_.begin() + 6*new_pos);
-		    if (resettoorigin) {
-		        // Substract lowest x value from all X-coords, similarly for y, and truncate in z-direction
-		      new_COORD_[6*new_pos]     -= x_correction;
-		      new_COORD_[6*new_pos + 1] -= y_correction;
-		      new_COORD_[6*new_pos + 2]  = 0;
-		      new_COORD_[6*new_pos + 3] -= x_correction;
-		      new_COORD_[6*new_pos + 4] -= y_correction;
-		      new_COORD_[6*new_pos + 5]  = zmax-zmin;
-		    }
+                    if (resettoorigin) {
+                        // Substract lowest x value from all X-coords, similarly for y, and truncate in z-direction
+                      new_COORD_[6*new_pos]     -= x_correction;
+                      new_COORD_[6*new_pos + 1] -= y_correction;
+                      new_COORD_[6*new_pos + 2]  = 0;
+                      new_COORD_[6*new_pos + 3] -= x_correction;
+                      new_COORD_[6*new_pos + 4] -= y_correction;
+                      new_COORD_[6*new_pos + 5]  = zmax-zmin;
+                    }
                 }
             }
 
@@ -202,10 +202,10 @@ namespace Dune
             new_dims_[2] = kmax - kmin;
 
             // Filter the ZCORN field, build mapping from new to old cells.
-	    double z_origin_correction = 0.0;
-	    if (resettoorigin) {
-		z_origin_correction = zmin;
-	    }
+            double z_origin_correction = 0.0;
+            if (resettoorigin) {
+                z_origin_correction = zmin;
+            }
             new_ZCORN_.resize(8*new_dims_[0]*new_dims_[1]*new_dims_[2], 1e100);
             new_to_old_cell_.resize(new_dims_[0]*new_dims_[1]*new_dims_[2], -1);
             int cellcount = 0;
@@ -340,16 +340,17 @@ namespace Dune
             int sz = field.size();
             //int num_new_zcorn = new_ZCORN_.size();
             //assert(sz%20 == 0);
-            int num_full_rows=sz/20;
-            int num_extra_entries=sz-num_full_rows*20;
+            const int nel_per_row = 20;
+            int num_full_rows=sz/nel_per_row;
+            int num_extra_entries=sz%nel_per_row;
             for (int i = 0; i < num_full_rows; ++i) {
-                for (int j = 0; j < 20; ++j) {
-                    os << "  " << field[20*i + j];
+                for (int j = 0; j < nel_per_row; ++j) {
+                    os << "  " << field[nel_per_row*i + j];
                 }
                 os << '\n';
             }
             for (int i = 0; i < num_extra_entries; ++i) {
-                os << "  " << field[num_full_rows*20+i];
+                os << "  " << field[num_full_rows*nel_per_row+i];
             }
             os << "/\n\n";
         }
