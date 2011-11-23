@@ -339,12 +339,12 @@ namespace Dune
             os << keyword << '\n';
             int sz = field.size();
             //int num_new_zcorn = new_ZCORN_.size();
-            assert(sz%20 == 0);
+            //assert(sz%20 == 0);
             int num_full_rows=sz/20;
             int num_extra_entries=sz-num_full_rows*20;
             for (int i = 0; i < num_full_rows; ++i) {
                 for (int j = 0; j < 20; ++j) {
-                    os << "  " << field[8*i + j];
+                    os << "  " << field[20*i + j];
                 }
                 os << '\n';
             }
