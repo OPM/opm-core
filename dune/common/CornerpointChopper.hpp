@@ -335,31 +335,50 @@ namespace Dune
                          const std::string& keyword)
         {
             if (field.empty()) return;
+            
             os << keyword << '\n';
             int sz = field.size();
-            T last = std::numeric_limits<T>::max();
-            int repeats = 0;
-            for (int i = 0; i < sz; ++i) {
-                T val = field[i];
-                if (val == last) {
-                    ++repeats;
-                } else {
-                    if (repeats == 1) {
-                        os << last << '\n';
-                    } else if (repeats > 1) {
-                        os << repeats << '*' << last << '\n';
-                    }
-                    last = val;
-                    repeats = 1;
+            //int num_new_zcorn = new_ZCORN_.size();
+            assert(sz%20 == 0);
+            int num_full_rows=sz/20;
+            int num_extra_entries=sz-num_full_rows*20;
+            for (int i = 0; i < num_full_rows; ++i) {
+                for (int j = 0; j < 20; ++j) {
+                    os << "  " << field[8*i + j];
                 }
+                os << '\n';
             }
-            if (repeats == 1) {
-                os << last << '\n';
-            } else if (repeats > 1) {
-                os << repeats << '*' << last << '\n';
+            for (int i = 0; i < num_extra_entries; ++i) {
+                os << "  " << field[num_full_rows*20+i];
             }
             os << "/\n\n";
         }
+
+//            os << keyword << '\n';
+//            int sz = field.size();
+//            T last = std::numeric_limits<T>::max();
+//            int repeats = 0;
+//            for (int i = 0; i < sz; ++i) {
+//                T val = field[i];
+//                if (val == last) {
+//                    ++repeats;
+//                } else {
+//                    if (repeats == 1) {
+//                        os << last << '\n';
+//                    } else if (repeats > 1) {
+//                        os << repeats << '*' << last << '\n';
+//                    }
+//                    last = val;
+//                    repeats = 1;
+//                }
+//            }
+//            if (repeats == 1) {
+//                os << last << '\n';
+//            } else if (repeats > 1) {
+//                os << repeats << '*' << last << '\n';
+//            }
+//            os << "/\n\n";
+//        }
 
 
         template <typename T>
