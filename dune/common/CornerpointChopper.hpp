@@ -335,7 +335,7 @@ namespace Dune
                          const std::string& keyword)
         {
             if (field.empty()) return;
-            
+
             os << keyword << '\n';
             int sz = field.size();
             //int num_new_zcorn = new_ZCORN_.size();
