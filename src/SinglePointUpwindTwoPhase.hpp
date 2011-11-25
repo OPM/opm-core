@@ -97,8 +97,8 @@ namespace Opm {
             double&       dpc(int c)           { return dpc_[c]          ; }
             double        dpc(int c)     const { return dpc_[c]          ; }
 
-            double&       trans(int f)           { return trans_[f]          ; }
-            double        trans(int f)     const { return trans_[f]          ; }
+            double&       trans(int f)         { return trans_[f]        ; }
+            double        trans(int f)   const { return trans_[f]        ; }
 
         private:
             double  drho_   ;
@@ -124,20 +124,13 @@ namespace Opm {
                                   const Grid&                g        ,
                                   const std::vector<double>& porevol  ,
                                   const double*              grav  = 0)
-            //                                 const double*              htrans = 0)
             : fluid_  (fluid)                              ,
               gravity_(grav)        ,
               f2hf_   (2 * g.number_of_faces, -1)          ,
               store_  (g.number_of_cells,
                        g.cell_facepos[ g.number_of_cells ])
-        {/*
-           int n_hf=g.cell_facepos[ g.number_of_cells ];
-           if(htrans){
-           for (int hf = 0; hf < n_hf; ++hf) {
-           store_.htrans(hf)=htrans[hf];
-           }
-           }
-         */
+        {
+
             if (gravity_) {
                 store_.drho() = fluid_.density(0) - fluid_.density(1);
                 //this->computeStaticGravity(g, gravity_);
@@ -150,7 +143,6 @@ namespace Opm {
                     f2hf_[2*f + p] = i;
                 }
             }
-
 
             std::copy(porevol.begin(), porevol.end(), store_.porevol());
         }
@@ -239,7 +231,7 @@ namespace Opm {
 
 
             double       f1 = m[0] / mt;
-            const double v1 = dflux + m[1]*gflux;//  gflux+ sgn*trans (pc(n[0]) - pc(n[1]))
+            const double v1 = dflux + m[1]*gflux;
 
             // Assemble residual contributions
             *F += dt * f1 * v1;
@@ -264,16 +256,6 @@ namespace Opm {
             /* dF/dm_2 \cdot dm_2/ds */
             *J[ pix[1] ] -= dt * f1       / mt * v1    * dm[1];
             *J[ pix[1] ] += dt * f1            * gflux * dm[1];
-
-
-            /* contribution from dpcflux */
-            //if(sgn>0){
-            //  J1[0*2 + 0] += sgn*dt * f1            * dpcflux[0] * m[1];
-            //  J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[1] * m[1];
-            //}else{
-            //  J1[0*2 + 0] += sgn*dt * f1            * dpcflux[1] * m[1];
-            //  J2[0*2 + 0] -= sgn*dt * f1            * dpcflux[0] * m[1];
-            //}
         }
 
         template <class Grid>
@@ -364,7 +346,6 @@ namespace Opm {
                  JacobianSystem&       sys  ) {
 
             // Impose s=0.5 at next time level as an NR initial value.
-
             //const ::std::vector<double>&          s = state.saturation();
             typename JacobianSystem::vector_type& x =
                 sys.vector().writableSolution();
@@ -401,26 +382,14 @@ namespace Opm {
                 double s_min = fluid_.s_min(c);
                 double s_max = fluid_.s_max(c);
 
-
                 if ( s[0] < (s_min - 1e-5) || s[0] > (s_max + 1e-5) ) {
                     if (s[0] < s_min){
-                        std::cout << "Warning: s out of range:" << s[0]-s_min << std::endl;}
-                    if (s[0] > s_max){
-                        std::cout << "Warning: s out of range:" << s[0]-s_max << std::endl;}
-                    //std::cout << "Warning: s0<0." << std::endl;
-                    s_range = false;
-
-                    if (std::abs(x[c]) > 0){
-                        double m1;
-                        /*      if (x[c] < 0){
-                                m1 = -(sat[c*2 + 0]-s_min)/x[c];
-                                } else {
-                                m1 = (s_max-sat[c*2 + 0])/x[c];
-                                }
-                                max_alpha = std::min(max_alpha, m1);
-                                std::cout << "max alpha :" << max_alpha << std::endl;
-                        */
+                        std::cout << "Warning: s out of range:" << s[0]-s_min << std::endl;
                     }
+                    if (s[0] > s_max){
+                        std::cout << "Warning: s out of range:" << s[0]-s_max << std::endl;
+                    }
+                    s_range = false; //line search fails
                 }
 
                 s[0] = std::max(s_min, s[0]);

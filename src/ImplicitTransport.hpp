@@ -46,7 +46,8 @@ namespace Opm {
                   atol(1.0e-6),
                   rtol(5.0e-7),
                   dxtol(1.0e-8),
-                  max_it_ls(5)
+                  max_it_ls(5),
+                  verbose(0)
             {}
 
             int    max_it;
@@ -54,6 +55,7 @@ namespace Opm {
             double rtol  ;
             double dxtol ;
             int    max_it_ls;
+            bool   verbose;
         };
 
         struct NRReport {
@@ -88,7 +90,7 @@ namespace Opm {
                    ReservoirState&                            state   ,
                    LinearSolver&                              linsolve,
                    ImplicitTransportDetails::NRReport&        rpt     ) {
-            bool s_range;
+            bool s_range; // for use in line search
             typedef typename JacobianSystem::vector_type vector_type;
             typedef typename JacobianSystem::matrix_type matrix_type;
             typedef typename JacobianSystem::vector_collection_type vector_collection_type;
@@ -108,7 +110,7 @@ namespace Opm {
             rpt.norm_dx  = -1.0;
             rpt.nit      = 0;
 
-            bool done = false;//rpt.norm_res < ctrl.atol;
+            bool done = false; //rpt.norm_res < ctrl.atol;
 
             while (! done) {
                 VZero<vector_type>::zero(sys_.vector().writableIncrement());
@@ -124,14 +126,15 @@ namespace Opm {
                 rpt.norm_dx =
                     VNorm<vector_type>::norm(sys_.vector().increment());
 
-                int lin_it=0;
+                // Begin line search. The line search should be moved to model
                 double residual=VNorm<vector_type>::norm(sys_.vector().residual());
-                bool finnished=rpt.norm_res<ctrl.atol;//residual < rpt.norm_res;
+                int lin_it=0;
+                bool finished=rpt.norm_res<ctrl.atol;//residual < rpt.norm_res;
                 double alpha=2.0;
-                // store old solution and increasement before line search
+                // store old solution and increment before line search
                 vector_type dx_old(sys_.vector().increment());
                 vector_type x_old(sys_.vector().solution());
-                while(! finnished){
+                while(! finished){
                     alpha/=2.0;
                     s_range = true;
                     sys_.vector().writableIncrement()=dx_old;
@@ -149,27 +152,29 @@ namespace Opm {
                         MZero<matrix_type>::zero(sys_.writableMatrix());
                         VZero<vector_type>::zero(sys_.vector().writableResidual());
                         asm_.assemble(state, g, src, dt, sys_);
-                        residual=VNorm<vector_type>::norm(sys_.vector().residual());
-
-                        std::cout << "Line search iteration " << std::scientific << lin_it << " norm :" << residual << " alpha " << alpha << '\n';
-
-
+                        residual = VNorm<vector_type>::norm(sys_.vector().residual());
+                        if (ctrl.verbose){
+                            std::cout << "Line search iteration " << std::scientific << lin_it
+                                      << " norm :" << residual << " alpha " << alpha << '\n';
+                        }
                     }else{
-                        std::cout << "Line search iteration " << std::scientific << lin_it << " Saturation out of range, continue. Alpha " << alpha << '\n';
+                        if (ctrl.verbose){
+                            std::cout << "Line search iteration " << std::scientific << lin_it
+                                      << " Saturation out of range, continue. Alpha " << alpha << '\n';
+                        }
                         residual = 1e99;
                     }
-                    finnished=(residual < rpt.norm_res) || (lin_it> ctrl.max_it_ls);
+                    finished=(residual < rpt.norm_res) || (lin_it> ctrl.max_it_ls);
                     lin_it +=1;
-
-                }
+                }// End line search
                 rpt.norm_res =
                     VNorm<vector_type>::norm(sys_.vector().residual());
 
                 rpt.nit++;
-
-                std::cout <<  "Iteration " << std::scientific  << rpt.nit
-                          << " norm :" << rpt.norm_res <<  " alpha " << alpha << std::endl;
-
+                if (ctrl.verbose){
+                    std::cout <<  "Iteration " << std::scientific  << rpt.nit
+                              << " norm :" << rpt.norm_res <<  " alpha " << alpha << std::endl;
+                }
                 done = (rpt.norm_res < ctrl.atol)            ||
                     (rpt.norm_res < ctrl.rtol * nrm_res0) ||
                     (rpt.norm_dx  < ctrl.dxtol)           ||
