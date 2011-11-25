@@ -361,11 +361,10 @@ namespace Opm {
         template <class ReservoirState,
                   class Grid          ,
                   class JacobianSystem>
-        void
+        bool
         initIteration(const ReservoirState& state,
                       const Grid&           g    ,
-                      JacobianSystem&       sys,
-                      bool& s_range  ) {
+                      JacobianSystem&       sys) {
 
             double s[2],  mob[2],  dmob[2 * 2], pc, dpc;
 
@@ -373,7 +372,7 @@ namespace Opm {
                 sys.vector().solution();
             const ::std::vector<double>& sat = state.saturation();
 
-            double max_alpha = 1;
+            bool in_range = true;
             for (int c = 0; c < g.number_of_cells; ++c) {
                 store_.ds(c) = x[c]; // Store sat-change for accumulation().
 
@@ -384,14 +383,13 @@ namespace Opm {
 
                 if ( s[0] < (s_min - 1e-5) || s[0] > (s_max + 1e-5) ) {
                     if (s[0] < s_min){
-                        std::cout << "Warning: s out of range:" << s[0]-s_min << std::endl;
+                        std::cout << "Warning: s out of range, s-s_min = " << s_min-s[0] << std::endl;
                     }
                     if (s[0] > s_max){
-                        std::cout << "Warning: s out of range:" << s[0]-s_max << std::endl;
+                        std::cout << "Warning: s out of range, s-s_max = " << s[0]-s_max << std::endl;
                     }
-                    s_range = false; //line search fails
+                    in_range = false; //line search fails
                 }
-
                 s[0] = std::max(s_min, s[0]);
                 s[0] = std::min(s_max, s[0]);
                 s[1] = 1 - s[0];
@@ -406,6 +404,7 @@ namespace Opm {
                 store_.pc(c)      = pc;
                 store_.dpc(c)     = dpc;
             }
+            return in_range;
         }
 
         template <class ReservoirState,
@@ -532,7 +531,7 @@ namespace Opm {
         }
 
         TwophaseFluid                 fluid_  ;
-        const double*                       gravity_;
+        const double*                 gravity_;
         std::vector<int>              f2hf_   ;
         spu_2p::ModelParameterStorage store_  ;
     };
