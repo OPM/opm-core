@@ -39,7 +39,6 @@
 #include <cstddef>
 #include <algorithm>
 #include <vector>
-#include <dune/istl/io.hh>
 
 namespace Opm {
     template <class Model>
