@@ -83,11 +83,11 @@ namespace Opm {
             dmob[0*2 + 1] = dmob[1*2 + 0] = 0;
         }
 
-        template <class Sat ,
-                  class Mob ,
-                  class DMob>
+        template <class Sat  ,
+                  class Pcap ,
+                  class DPcap>
         void
-        pc(int c, const Sat& s, Mob& pcap, DMob& dpcap) const {
+        pc(int c, const Sat& s, Pcap& pcap, DPcap& dpcap) const {
             (void) c;           // Unused
             (void) s;           // Unused
 
