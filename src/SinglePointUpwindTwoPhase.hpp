@@ -345,15 +345,24 @@ namespace Opm {
                  const Grid&           g    ,
                  JacobianSystem&       sys  ) {
 
-            // Impose s=0.5 at next time level as an NR initial value.
-            //const ::std::vector<double>&          s = state.saturation();
+            (void) state;       // Suppress 'unused' warning.
+
+#define USE_PREVIOUS_SOLUTION 1
+#if !USE_PREVIOUS_SOLUTION
+            const ::std::vector<double>&          s = state.saturation();
+#endif
             typename JacobianSystem::vector_type& x =
                 sys.vector().writableSolution();
 
             assert (x.size() == (::std::size_t) (g.number_of_cells));
 
             for (int c = 0, nc = g.number_of_cells; c < nc; ++c) {
-                x[c] = 0.0;//0.5 - s[2*c + 0];
+#if !USE_PREVIOUS_SOLUTION
+                // Impose s=0.5 at next time level as an NR initial value.
+                x[c] = 0.5 - s[2*c + 0];
+#else
+                x[c] = 0.0;
+#endif
             }
 
         }
