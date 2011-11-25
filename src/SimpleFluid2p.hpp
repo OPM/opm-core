@@ -83,6 +83,21 @@ namespace Opm {
             dmob[0*2 + 1] = dmob[1*2 + 0] = 0;
         }
 
+        template <class Sat ,
+                  class Mob ,
+                  class DMob>
+        void
+        pc(int c, const Sat& s, Mob& pcap, DMob& dpcap) const {
+            (void) c;           // Unused
+            (void) s;           // Unused
+
+            pcap  = 0.0;
+            dpcap = 0.0;
+        }
+
+        double s_min(int c) const { (void) c; return 0.0; }
+        double s_max(int c) const { (void) c; return 1.0; }
+
     private:
         std::array<double, 2> mu_ ;
         std::array<double, 2> rho_;
