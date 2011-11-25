@@ -156,7 +156,24 @@ public:
             && cell_centroids_ == other.cell_centroids_
             && cell_volumes_ == other.cell_volumes_;
     }
-
+    // make a grid which looks periodic but do not have 2 half faces for each
+    // periodic boundary
+    void makeQPeriodic(const std::vector<int>& hf_ind,const std::vector<int>& periodic_cells){
+    	for(int i=0; i<int(hf_ind.size());++i){
+    		//std::array<int,2> cells;
+    		int& cell0=face_cells_[2*cell_faces_[ hf_ind[i] ]+0];
+    		int& cell1=face_cells_[2*cell_faces_[ hf_ind[i] ]+1];
+    		assert(periodic_cells[2*i+1]>=0);
+    		if(periodic_cells[2*i+0] == cell0){
+    			assert(cell1==-1);
+    			cell1=periodic_cells[2*i+1];
+    		}else{
+    			assert(periodic_cells[2*i+0] == cell1);
+    			assert(cell0==-1);
+    			cell0=periodic_cells[2*i+1];
+    		}
+    	}
+    }
 private:
     grid_t g_;
     // Topology storage.
