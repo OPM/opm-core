@@ -93,7 +93,7 @@ namespace Opm {
             bool init;
             typedef typename JacobianSystem::vector_type vector_type;
             typedef typename JacobianSystem::matrix_type matrix_type;
-            typedef typename JacobianSystem::vector_collection_type vector_collection_type;
+
             asm_.createSystem(g, sys_);
             model_.initStep(state, g, sys_);
             init = model_.initIteration(state, g, sys_);
