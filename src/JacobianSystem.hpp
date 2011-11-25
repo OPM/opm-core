@@ -85,6 +85,26 @@ namespace Opm {
             }
         };
 
+        template <class BaseVec>
+        class VectorAssign {
+        public:
+            // y <- x
+            static void
+            assign(const BaseVec& x, BaseVec& y) {
+                ::std::copy(x.begin(), x.end(), y.begin());
+            }
+
+            // y <- a*x
+            template <class Scalar>
+            static void
+            assign(const Scalar& a, const BaseVec& x, BaseVec& y) {
+                typedef typename BaseVec::value_type VT;
+                ::std::transform(x.begin(), x.end(),
+                                 y.begin(),
+                                 ::std::bind2nd(::std::multiplies<VT>(), a));
+            }
+        };
+
         template <class Matrix>
         class MatrixZero;
 

@@ -38,6 +38,7 @@
 
 #include "ImplicitAssembly.hpp"
 #include <boost/lambda/lambda.hpp>
+
 namespace Opm {
     namespace ImplicitTransportDetails {
         struct NRControl {
@@ -71,7 +72,8 @@ namespace Opm {
               template <class> class VNorm ,
               template <class> class VNeg  ,
               template <class> class VZero ,
-              template <class> class MZero >
+              template <class> class MZero ,
+              template <class> class VAsgn >
     class ImplicitTransport {
     public:
         ImplicitTransport(Model& model)
@@ -136,15 +138,11 @@ namespace Opm {
                 vector_type x_old(sys_.vector().solution());
                 while(! finished){
                     alpha/=2.0;
-                    sys_.vector().writableIncrement()=dx_old;
-                    sys_.vector().writableIncrement()*=alpha;
-                    sys_.vector().writableSolution()=x_old;
-                    /*
-                      should be used if vector_type is std::vector<double>
-                      std::vector<double> operator*=(std::vector<double>& vec,const double a){
-                      for_each(vec.begin(),vec.end(), boost::lambda::_1*=a );
-                      return vec;
-                    */
+                    VAsgn<vector_type>::assign(alpha, dx_old,
+                                               sys_.vector().writableIncrement());
+                    VAsgn<vector_type>::assign(x_old,
+                                               sys_.vector().writableSolution());
+
                     sys_.vector().addIncrement();
                     init = model_.initIteration(state, g, sys_);
                     if (init) {
