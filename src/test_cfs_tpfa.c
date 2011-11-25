@@ -674,7 +674,7 @@ main(void)
     for (i = 0; i < G->number_of_cells; i++) {
         fprintf(stderr, "press(%02d) = %g;\n", i + 1, cpress[i]);
     }
-    
+
     cfs_tpfa_destroy(h);
     deallocate_cq(cq);
     deallocate_flowbc(bc);

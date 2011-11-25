@@ -182,9 +182,7 @@ void
 csrmatrix_zero(struct CSRMatrix *A)
 /* ---------------------------------------------------------------------- */
 {
-    size_t i;
-
-    for (i = 0; i < A->nnz; i++) { A->sa[i] = 0.0; }
+    vector_zero(A->nnz, A->sa);
 }
 
 
@@ -247,7 +245,7 @@ vector_write(size_t n, const double *v, const char *fn)
     if (fp != NULL) {
         vector_write_stream(n, v, fp);
     }
-    
+
     fclose(fp);
 }
 
