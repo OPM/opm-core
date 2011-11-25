@@ -37,7 +37,6 @@
 #define OPM_IMPLICITTRANSPORT_HPP_HEADER
 
 #include "ImplicitAssembly.hpp"
-#include <boost/lambda/lambda.hpp>
 
 namespace Opm {
     namespace ImplicitTransportDetails {
