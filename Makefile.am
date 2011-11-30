@@ -15,12 +15,14 @@ noinst_LTLIBRARIES = libcpgpreprocess_noinst.la
 libcpgpreprocess_la_SOURCES =			\
 cgridinterface.c				\
 facetopology.c					\
-uniquepoints.c					\
+facetopology.h					\
+geometry.c					\
+geometry.h					\
 preprocess.c					\
 sparsetable.c					\
-facetopology.h					\
-uniquepoints.h					\
-sparsetable.h
+sparsetable.h					\
+uniquepoints.c					\
+uniquepoints.h
 
 libcpgpreprocess_noinst_la_SOURCES =            \
 $(libcpgpreprocess_la_SOURCES)

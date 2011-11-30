@@ -42,6 +42,8 @@ extern "C" {
                             double                  tol,
                             struct CornerpointGrid *out);
 
+   void compute_geometry     (struct CornerpointGrid *g);
+
    void free_cornerpoint_grid(struct CornerpointGrid *g);
 #ifdef __cplusplus
 }
