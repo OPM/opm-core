@@ -19,6 +19,8 @@ facetopology.h					\
 geometry.c					\
 geometry.h					\
 preprocess.c					\
+readvector.cpp					\
+readvector.hpp					\
 sparsetable.c					\
 sparsetable.h					\
 uniquepoints.c					\
