@@ -8,6 +8,7 @@ cpgpreprocessdir = $(includedir)/cpgpreprocess
 
 cpgpreprocess_HEADERS = cgridinterface.h preprocess.h
 
+noinst_PROGRAMS = grid_io_demo
 
 lib_LTLIBRARIES = libcpgpreprocess.la
 noinst_LTLIBRARIES = libcpgpreprocess_noinst.la
@@ -28,3 +29,6 @@ uniquepoints.h
 
 libcpgpreprocess_noinst_la_SOURCES =            \
 $(libcpgpreprocess_la_SOURCES)
+
+grid_io_demo_SOURCES = test_readvector.cpp
+grid_io_demo_LDADD = libcpgpreprocess.la

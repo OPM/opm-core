@@ -1,7 +1,9 @@
 #include <iostream>
 #include <vector>
-#include <cpgpreprocess/preprocess.h>
-#include <cpgpreprocess/cgridinterface.h>
+
+#include "grid.h"
+#include "preprocess.h"
+#include "cgridinterface.h"
 
 #include "readvector.hpp"
 
