@@ -69,9 +69,8 @@ static int
 fill_cell_topology(struct processed_grid  *pg,
                    struct CornerpointGrid *G )
 {
-    int    f, c1, c2;
+    int    f, c1, c2, tag;
     size_t c, nc, nhf;
-    enum face_tag tag;
 
     struct UnstructuredGrid *g;
 
