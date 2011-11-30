@@ -31,3 +31,6 @@ ltmain.sh
 missing
 m4/libtool.m4
 m4/lt*.m4
+
+# Specific executables
+grid_io_demo
