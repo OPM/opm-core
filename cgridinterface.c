@@ -1,5 +1,8 @@
 #include <stdlib.h>
-#include "newinterface.h"
+
+#include <grid.h>
+
+#include "cgridinterface.h"
 
    
 
@@ -61,54 +64,71 @@ static int *compute_cell_faces(grid_t *g)
 
 void preprocess         (const struct grdecl   *in, 
                          double                tol, 
-                         cornerpoint_grid_t    *out)
+                         struct CornerpointGrid *G)
 {
-   struct processed_grid pg;
+   struct processed_grid    pg;
+   struct UnstructuredGrid *base;
+
+   base = (struct UnstructuredGrid *) G;
+
    process_grdecl(in, tol, &pg);
 
    /* 
     *  General grid interface 
     */
-   out->dimensions = 3;
+   base->dimensions = 3;
 
-   out->number_of_nodes  = pg.number_of_nodes;
-   out->number_of_faces  = pg.number_of_faces;
-   out->number_of_cells  = pg.number_of_cells;
+   base->number_of_nodes  = pg.number_of_nodes;
+   base->number_of_faces  = pg.number_of_faces;
+   base->number_of_cells  = pg.number_of_cells;
 
-   out->node_coordinates = pg.node_coordinates;
+   base->node_coordinates = pg.node_coordinates;
 
-   out->face_nodes       = pg.face_nodes;
-   out->face_nodepos     = pg.face_ptr;
-   out->face_cells       = pg.face_neighbors;
+   base->face_nodes       = pg.face_nodes;
+   base->face_nodepos     = pg.face_ptr;
+   base->face_cells       = pg.face_neighbors;
    
-   out->face_centroids   = NULL;
-   out->face_normals     = NULL;
-   out->face_areas       = NULL;
+   base->face_centroids   = NULL;
+   base->face_normals     = NULL;
+   base->face_areas       = NULL;
    
    /* NB: compute_cell_facepos must be called before compute_cell_faces */
-   out->cell_facepos     = compute_cell_facepos((grid_t*) out);
-   out->cell_faces       = compute_cell_faces  ((grid_t*) out);
-   out->cell_centroids   = NULL;
-   out->cell_volumes     = NULL;
+   base->cell_facepos     = compute_cell_facepos(base);
+   base->cell_faces       = compute_cell_faces  (base);
+   base->cell_centroids   = NULL;
+   base->cell_volumes     = NULL;
 
 
    /* 
     *  Cornerpoint grid interface 
     */
-   out->cartdims[0]      = pg.dimensions[0];
-   out->cartdims[1]      = pg.dimensions[1];
-   out->cartdims[2]      = pg.dimensions[2];
+   G->cartdims[0]      = pg.dimensions[0];
+   G->cartdims[1]      = pg.dimensions[1];
+   G->cartdims[2]      = pg.dimensions[2];
 
-   out->face_tag         = pg.face_tag;
-   out->number_of_nodes_on_pillars = pg.number_of_nodes_on_pillars;
-   out->cartesian_cell_index = pg.local_cell_index;
+#if 0
+   base->face_tag       = pg.face_tag;
+#else
+   free(pg.face_tag);
+#endif
+
+   G->index_map = pg.local_cell_index;
 }
    
-void free_cornerpoint_grid(cornerpoint_grid_t    *g)
+void free_cornerpoint_grid(struct CornerpointGrid *G)
 {
-   free_grid((grid_t*) g);
+    free(G->grid.face_nodes);
+    free(G->grid.face_nodepos);
+    free(G->grid.face_cells);
+    free(G->grid.cell_facepos);
+    free(G->grid.cell_faces);
 
-   free(g->face_tag);
-   free(g->cartesian_cell_index);
+    free(G->grid.node_coordinates);
+    free(G->grid.face_centroids);
+    free(G->grid.face_areas);
+    free(G->grid.face_normals);
+    free(G->grid.cell_centroids);
+    free(G->grid.cell_volumes);
+
+    free(G->index_map);
 }
-

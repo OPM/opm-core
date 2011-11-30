@@ -6,17 +6,18 @@ ACLOCAL_AMFLAGS = -I m4
 
 cpgpreprocessdir = $(includedir)/cpgpreprocess
 
-cpgpreprocess_HEADERS = preprocess.h
+cpgpreprocess_HEADERS = cgridinterface.h preprocess.h
 
 
 lib_LTLIBRARIES = libcpgpreprocess.la
 noinst_LTLIBRARIES = libcpgpreprocess_noinst.la
 
 libcpgpreprocess_la_SOURCES =			\
+cgridinterface.c				\
 facetopology.c					\
 uniquepoints.c					\
 preprocess.c					\
-sparsetable.c 					\
+sparsetable.c					\
 facetopology.h					\
 uniquepoints.h					\
 sparsetable.h

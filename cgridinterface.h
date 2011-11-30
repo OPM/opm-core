@@ -16,41 +16,35 @@
   Copyright 2010 SINTEF ICT, Applied Mathematics.
 */
 
-#ifndef NEWINTERFACE_H
-#define NEWINTERFACE_H
+#ifndef CGRIDINTERFACE_H
+#define CGRIDINTERFACE_H
+
+#include <grid.h>
+
 #include "preprocess.h"
-#include "../reorder-utils/grid.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-   typedef struct {
-      /* 
-       *   Common grid definitions 
+   struct CornerpointGrid {
+       struct UnstructuredGrid grid;
+
+      /*
+       *   Special cornerpoint definitions
        */
-      GRID_TOPOLOGY
-      GRID_GEOMETRY
-      
-      /* 
-       *   Special cornerpoint definitions 
-       */
-      int            cartdims[3];
-      enum face_tag *face_tag;
-      int            number_of_nodes_on_pillars;
-      int           *cartesian_cell_index;
-      
-   } cornerpoint_grid_t;
-   
-   
-   void preprocess         (const struct grdecl   *in, 
-                            double                tol, 
-                            cornerpoint_grid_t    *out);
-   
-   void free_cornerpoint_grid(cornerpoint_grid_t    *g);
-   
+      int  cartdims[3];
+      int *index_map;
+   };
+
+
+   void preprocess         (const struct grdecl    *in,
+                            double                  tol,
+                            struct CornerpointGrid *out);
+
+   void free_cornerpoint_grid(struct CornerpointGrid *g);
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif  /* CGRIDINTERFACE_H */
