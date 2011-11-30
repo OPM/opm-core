@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 
-typedef struct {
+struct UnstructuredGrid {
     int    dimensions;
 
     int    number_of_cells;
@@ -48,7 +48,9 @@ typedef struct {
 
     double *cell_centroids;
     double *cell_volumes;
-} grid_t;
+};
+
+typedef struct UnstructuredGrid grid_t;
 
 
 #ifdef __cplusplus
