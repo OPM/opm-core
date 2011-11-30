@@ -36,8 +36,6 @@ static void readvector(FILE *fp, struct ParserState *s, std::vector<T>& v)
 {
     T   value;
     int count, i;
-    int ret;
-    int ok;
 
     count = 1;
     s->error = 0;
@@ -60,7 +58,7 @@ static void readvector(FILE *fp, struct ParserState *s, std::vector<T>& v)
 template <typename T>
 static void parse_next_token(FILE *fp,  struct ParserState *s, T *v, int *r)
 {
-    char str[bufsz], *ptr;
+    char str[bufsz];
     char rstr[bufsz];
     char vstr[bufsz];
 
@@ -111,9 +109,9 @@ static void split_token_string(char *str, char *rstr, char *vstr)
         rstr[0]='\0';
     }
     
-    while(*vstr++=*str++) 
+    while((*vstr++=*str++) )
     { 
-        ; 
+        continue ; 
     }
     *vstr='\0';
 }
@@ -224,11 +222,12 @@ static char *get_token_string(FILE *fp, struct ParserState *s, char *str)
 
 static void skip_line(FILE *fp, struct ParserState *s)
 {
+    static_cast<void>(s);
     int c;
     while((c = fgetc(fp))!=EOF && c != '\n') {
         ;
     }
-
+}
 
 /* ------------------------------------------------------------------ */
 
@@ -255,28 +254,11 @@ template <typename T>
 void read_vector_from_file(const char *fn, std::vector<T>& v)
 {
     FILE *fp = fopen(fn, "r");
-    struct ParserState s = {1, 0};
+    struct ParserState s = { 0 };
     readvector(fp, &s, v);
     fclose(fp);
 }
 
 
-
-#if 1
-int main()
-{
-    std::vector<double> v;
-    read_vector_from_file("example/zcorn.txt", zcorn);
-    std::vector<int> actnum;
-    read_vector_from_file("example/actnum.txt", actnum);
-    for (int i=0; i<v.size(); ++i)
-    {
-        fprintf(stderr, "%f\n", zcorn[i]);
-    }
-    for (int i=0; i<actnum.size(); ++i)
-    {
-        fprintf(stderr, "%d\n", actnum[i]);
-    }
-    return 0;
-}
-#endif
+template void read_vector_from_file<int>(const char *fn, std::vector<int>& v);
+template void read_vector_from_file<double>(const char *fn, std::vector<double>& v);
