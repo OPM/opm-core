@@ -35,6 +35,7 @@ extern "C" {
        */
       int  cartdims[3];
       int *index_map;
+      int *cface_tag;
    };
 
 
