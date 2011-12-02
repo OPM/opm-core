@@ -1,4 +1,13 @@
-/* Copyright 2010 (c) Jostein R. Natvig <jostein.natvig@gmail.com> */
+/*===========================================================================
+//
+// Author: Jostein R. Natvig     <Jostein.R.Natvig@sintef.no>
+//
+//==========================================================================*/
+
+
+/*
+  Copyright 2011 SINTEF ICT, Applied Mathematics.
+*/
 
 
 #include <stdlib.h>
@@ -260,5 +269,12 @@ void read_vector_from_file(const char *fn, std::vector<T>& v)
 }
 
 
-template void read_vector_from_file<int>(const char *fn, std::vector<int>& v);
-template void read_vector_from_file<double>(const char *fn, std::vector<double>& v);
+void read_vector_from_file(const char *fn, std::vector<int>& v)
+{
+    read_vector_from_file<int>(fn, v);
+}
+
+void read_vector_from_file(const char *fn, std::vector<double>& v)
+{
+    read_vector_from_file<double>(fn, v);
+}
