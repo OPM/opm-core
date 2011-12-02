@@ -28,7 +28,7 @@
 
 
 
-char* 
+static char* 
 read_keyword(FILE *fp, char *buf)
 {
     int i, j, c;
@@ -126,6 +126,7 @@ int main(int argc, char *argv[])
     
     fprintf(stderr, "Scanned %d lines, found %d keywords.\n", lineno, nkw);
 
+    return 0;
 }
 /* Local Variables:    */
 /* c-basic-offset:4    */
