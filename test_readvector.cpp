@@ -8,7 +8,7 @@
 
 #include "readvector.hpp"
 
-struct CornerpointGrid
+static struct CornerpointGrid
 read_grid(const std::string& dir)
 {
     std::string fn;
