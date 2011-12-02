@@ -135,6 +135,8 @@ fill_cell_topology(struct processed_grid  *pg,
             }
         }
     }
+
+    return g->cell_facepos != NULL;
 }
 
 void preprocess         (const struct grdecl   *in,
