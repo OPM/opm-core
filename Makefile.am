@@ -6,7 +6,10 @@ ACLOCAL_AMFLAGS = -I m4
 
 cpgpreprocessdir = $(includedir)/cpgpreprocess
 
-cpgpreprocess_HEADERS = cgridinterface.h preprocess.h
+cpgpreprocess_HEADERS =				\
+cgridinterface.h				\
+preprocess.h					\
+readvector.hpp
 
 noinst_PROGRAMS = grid_io_demo
 
@@ -22,7 +25,6 @@ geometry.h					\
 grid.h						\
 preprocess.c					\
 readvector.cpp					\
-readvector.hpp					\
 sparsetable.c					\
 sparsetable.h					\
 uniquepoints.c					\
