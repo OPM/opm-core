@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "grid.h"
@@ -7,18 +8,26 @@
 
 #include "readvector.hpp"
 
-int main()
+struct CornerpointGrid
+read_grid(const std::string& dir)
 {
+    std::string fn;
+    fn = dir + '/' + "zcorn.txt";
+
     std::vector<double> zcorn;
-    read_vector_from_file("example/zcorn.txt", zcorn);
-    std::vector<int> actnum;
-    read_vector_from_file("example/actnum.txt", actnum);
+    read_vector_from_file(fn, zcorn);
 
+    fn = dir + '/' + "coord.txt";
     ::std::vector<double> coord;
-    read_vector_from_file("example/coord.txt", coord);
+    read_vector_from_file(fn, coord);
 
+    fn = dir + '/' + "actnum.txt";
+    std::vector<int> actnum;
+    read_vector_from_file(fn, actnum);
+
+    fn = dir + '/' + "dimens.txt";
     ::std::vector<double> dimens;
-    read_vector_from_file("example/dimens.txt", dimens);
+    read_vector_from_file(fn, dimens);
 
     struct grdecl grdecl;
     grdecl.zcorn = &zcorn[0];
@@ -49,7 +58,16 @@ int main()
         }
     }
 
-    free_cornerpoint_grid(&G);
+    return G;
+}
 
+int main()
+{
+    struct CornerpointGrid G;
+
+    G = read_grid(std::string("example"));
+
+    free_cornerpoint_grid(&G);
+    
     return 0;
 }
