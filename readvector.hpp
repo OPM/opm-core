@@ -16,7 +16,9 @@
 #ifndef READVECTOR_HPP_HEADER
 #define READVECTOR_HPP_HEADER
 
-void read_vector_from_file(const char *fn, std::vector<int>& v);
-void read_vector_from_file(const char *fn, std::vector<double>& v);
+#include <string>
+
+void read_vector_from_file(const std::string&, std::vector<int>& v);
+void read_vector_from_file(const std::string&, std::vector<double>& v);
 
 #endif  /* READVECTOR_HPP_HEADER */

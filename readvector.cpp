@@ -18,6 +18,8 @@
 
 #include <vector>
 
+#include "readvector.hpp"
+
 struct ParserState {
     int             error;
 };
@@ -260,21 +262,21 @@ static char *convert_string(double *value, char *str)
 
 /* ------------------------------------------------------------------ */
 template <typename T>
-void read_vector_from_file(const char *fn, std::vector<T>& v)
+void read_vector_from_file(const std::string& fn, std::vector<T>& v)
 {
-    FILE *fp = fopen(fn, "r");
+    FILE *fp = fopen(fn.c_str(), "r");
     struct ParserState s = { 0 };
     readvector(fp, &s, v);
     fclose(fp);
 }
 
 
-void read_vector_from_file(const char *fn, std::vector<int>& v)
+void read_vector_from_file(const std::string& fn, std::vector<int>& v)
 {
     read_vector_from_file<int>(fn, v);
 }
 
-void read_vector_from_file(const char *fn, std::vector<double>& v)
+void read_vector_from_file(const std::string& fn, std::vector<double>& v)
 {
     read_vector_from_file<double>(fn, v);
 }
