@@ -1,8 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <grid.h>
-
 #include "geometry.h"
 #include "cgridinterface.h"
 

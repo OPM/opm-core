@@ -19,8 +19,7 @@
 #ifndef CGRIDINTERFACE_H
 #define CGRIDINTERFACE_H
 
-#include <grid.h>
-
+#include "grid.h"
 #include "preprocess.h"
 
 #ifdef __cplusplus
