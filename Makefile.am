@@ -11,7 +11,7 @@ cgridinterface.h				\
 preprocess.h					\
 readvector.hpp
 
-noinst_PROGRAMS = grid_io_demo
+noinst_PROGRAMS = grid_io_demo scaneclipsedeck
 
 lib_LTLIBRARIES = libcpgpreprocess.la
 noinst_LTLIBRARIES = libcpgpreprocess_noinst.la
