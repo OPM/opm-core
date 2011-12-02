@@ -19,6 +19,7 @@ facetopology.c					\
 facetopology.h					\
 geometry.c					\
 geometry.h					\
+grid.h						\
 preprocess.c					\
 readvector.cpp					\
 readvector.hpp					\
