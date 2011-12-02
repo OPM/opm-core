@@ -34,3 +34,4 @@ m4/lt*.m4
 
 # Specific executables
 grid_io_demo
+scaneclipsedeck
