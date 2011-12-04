@@ -1,67 +1,22 @@
+/*===========================================================================
+//
+// File: cgridinterface.c
+//
+// Author: Jostein R. Natvig <Jostein.R.Natvig@sintef.no>
+//
+//==========================================================================*/
+
+
+/*
+  Copyright 2011 SINTEF ICT, Applied Mathematics.
+*/
+
 #include <assert.h>
 #include <stdlib.h>
 
 #include "geometry.h"
 #include "cgridinterface.h"
 
-
-#if 0
-static int *compute_cell_facepos(grid_t *g)
-{
-   int i,j,k;
-   int *facepos = malloc((g->number_of_cells + 1) * sizeof *facepos);
-   int *fcells  = g->face_cells;
-
-   for (i=0; i<g->number_of_cells; ++i) {
-      facepos [i] = 0;
-   }
-
-   for (i=0; i<2*g->number_of_faces; ++i) {
-         if (*fcells != -1) {
-            (facepos[*fcells])++;
-         }
-         fcells++;
-   }
-
-   /* cumsum */
-   j=0;
-   for (i=0; i<g->number_of_cells; ++i) {
-      k = j + facepos[i];
-      facepos[i] = j;
-      j = k;
-   }
-   facepos[i] = j;
-
-   return facepos;
-}
-
-
-static int *compute_cell_faces(grid_t *g)
-{
-   int *cfaces = malloc(g->cell_facepos[g->number_of_cells] * sizeof *cfaces);
-   int *work   = malloc(g->number_of_cells * sizeof *work);
-   int *fcells = g->face_cells;
-   int i,k,cell;
-   for(i=0; i<g->number_of_cells; ++i) {
-      work[i] = 0;
-   }
-
-   for (i=0; i<g->number_of_faces; ++i) {
-      for (k=0;k<2; ++k) {
-
-         if (*fcells != -1) {
-            cell = *fcells;
-            cfaces[g->cell_facepos[cell] + work[cell]] = i;
-            work[cell]++;
-         }
-         fcells++;
-      }
-   }
-   free(work);
-
-   return cfaces;
-}
-#endif
 
 static int
 fill_cell_topology(struct processed_grid  *pg,
