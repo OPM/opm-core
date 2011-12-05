@@ -163,7 +163,7 @@ read(const std::string & datafilename, int xColumn, int fColumn)
 void 
 MonotCubicInterpolator::
 addPair(double newx, double newf) throw(const char*) {
-  if (isnan(newx) || isinf(newx) || isnan(newf) || isinf(newf)) {
+  if (std::isnan(newx) || std::isinf(newx) || std::isnan(newf) || std::isinf(newf)) {
     throw("MonotCubicInterpolator: addPair() received inf/nan input.");
   }
   data[newx] = newf ;
@@ -179,7 +179,7 @@ double
 MonotCubicInterpolator::
 evaluate(double x) const throw(const char*){
 
-  if (isnan(x) || isinf(x)) {
+  if (std::isnan(x) || std::isinf(x)) {
     throw("MonotCubicInterpolator: evaluate() received inf/nan input.");
   }
 
