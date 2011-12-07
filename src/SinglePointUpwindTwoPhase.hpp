@@ -311,7 +311,7 @@ namespace Opm {
         void
         initGravityTrans(const Grid&  g    ,
                          const std::vector<double> &  htrans) {
-            int n_hf =g.cell_facepos[ g.number_of_cells ];
+            // int n_hf =g.cell_facepos[ g.number_of_cells ];
             if(htrans.size()>0){
                 for (int f = 0; f < g.number_of_faces; ++f) {
                     store_.trans(f)=0;
