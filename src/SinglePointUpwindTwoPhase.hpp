@@ -150,7 +150,7 @@ namespace Opm {
                                 const std::vector<int>& nb_faces)
         {
             std::vector<int> nbhf(hf_faces.size());
-            for(int i=0; i<p_faces.size(); ++i){
+            for(unsigned int i=0; i<p_faces.size(); ++i){
                 int nbf = nb_faces[i];
                 if(f2hf_[2*nbf] == -1){
                     nbhf[i] = f2hf_[2*nbf+1];
@@ -159,7 +159,7 @@ namespace Opm {
                     nbhf[i] = f2hf_[2*nbf];
                 }
             }
-            for(int i=0; i<p_faces.size(); ++i){
+            for(unsigned int i=0; i<p_faces.size(); ++i){
 
                 int f = p_faces[i];
                 int hf = hf_faces[i];
@@ -311,7 +311,7 @@ namespace Opm {
         void
         initGravityTrans(const Grid&  g    ,
                          const std::vector<double> &  htrans) {
-            int n_hf =g.cell_facepos[ g.number_of_cells ];
+            // int n_hf =g.cell_facepos[ g.number_of_cells ];
             if(htrans.size()>0){
                 for (int f = 0; f < g.number_of_faces; ++f) {
                     store_.trans(f)=0;
