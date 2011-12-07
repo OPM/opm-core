@@ -1,7 +1,7 @@
 # $Date$
 # $Revision$
 
-SUBDIRS = . test
+SUBDIRS = tinyxml . test
 
 paramdir = $(includedir)/dune/common/param
 
@@ -14,8 +14,8 @@ noinst_LTLIBRARIES = libparam.la
 libparam_la_SOURCES = Parameter.cpp ParameterGroup.cpp ParameterTools.cpp \
                       ParameterXML.cpp
 
-libparam_la_CPPFLAGS = $(XML_CPPFLAGS) $(BOOST_CPPFLAGS)
+libparam_la_CPPFLAGS = $(BOOST_CPPFLAGS)
 libparam_la_LDFLAGS  = $(BOOST_LDFLAGS)
-libparam_la_LIBADD   = $(XML_LIBS) $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB)
+libparam_la_LIBADD = tinyxml/libtinyxml.la  $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB)
 
 include $(top_srcdir)/am/global-rules
