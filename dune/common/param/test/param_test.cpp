@@ -42,6 +42,7 @@
 
 #include "../ParameterGroup.hpp"
 #include <cstddef>
+#include <sstream>
 
 using namespace Dune;
 
@@ -59,6 +60,40 @@ BOOST_AUTO_TEST_CASE(commandline_syntax_init)
     const std::size_t argc = sizeof(argv)/sizeof(argv[0]);
     parameter::ParameterGroup p(argc, argv);
     BOOST_CHECK(p.get<std::string>("topitem") == "somestring");
+    std::ostringstream os;
+    p.writeParamToStream(os);
+    std::string correct_answer = "/group/anotheritem=2\n"
+        "/group/item=overridingstring\n"
+        "/group/subgroup/anotheritem=4\n"
+        "/group/subgroup/item=3\n"
+        "/slashtopitem=anotherstring\n"
+        "/topitem=somestring\n";
+    BOOST_CHECK(os.str() == correct_answer);
+
+    // Tests that only run in debug mode.
+#ifndef NDEBUG
+#endif
+}
+
+
+BOOST_AUTO_TEST_CASE(xml_syntax_init)
+{
+    typedef const char* cp;
+    cp argv[] = { "program_command",
+                  "testdata.xml",
+                  "/group/item=overridingstring" };
+    const std::size_t argc = sizeof(argv)/sizeof(argv[0]);
+    parameter::ParameterGroup p(argc, argv);
+    BOOST_CHECK(p.get<std::string>("topitem") == "somestring");
+    std::ostringstream os;
+    p.writeParamToStream(os);
+    std::string correct_answer = "/group/anotheritem=2\n"
+        "/group/item=overridingstring\n"
+        "/group/subgroup/anotheritem=4\n"
+        "/group/subgroup/item=3\n"
+        "/slashtopitem=anotherstring\n"
+        "/topitem=somestring\n";
+    BOOST_CHECK(os.str() == correct_answer);
 
     // Tests that only run in debug mode.
 #ifndef NDEBUG
