@@ -23,8 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "hash_set.h"
-#include "coarse_conn.h"
+#include <opmcore/pressure/msmfem/hash_set.h>
+#include <opmcore/pressure/msmfem/coarse_conn.h>
 
 #define MAX(a,b)   (((a) > (b)) ? (a) : (b))
 #define MIN(a,b)   (-MAX(-(a), -(b)))

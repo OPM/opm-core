@@ -24,9 +24,9 @@
 extern "C" {
 #endif
 
-#include "grid.h"
-#include "well.h"
-#include "sparse_sys.h"
+#include <opmcore/grid.h>
+#include <opmcore/well.h>
+#include <opmcore/linalg/sparse_sys.h>
 
 struct CSRMatrix *
 hybsys_define_globconn(grid_t *G, well_t *W);

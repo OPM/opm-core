@@ -39,7 +39,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <mex.h>
 
 
-#include "grdecl.h"
+#include <grdecl.h>
 
 
 

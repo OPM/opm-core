@@ -20,11 +20,11 @@
 #ifndef OPM_COARSE_SYS_HEADER_INCLUDED
 #define OPM_COARSE_SYS_HEADER_INCLUDED
 
+#include <opmcore/grid.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "grid.h"
 
 /* ---------------------------------------------------------------------- */
 

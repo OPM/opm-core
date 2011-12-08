@@ -6,8 +6,9 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include "grid.h"
-#include "spu_explicit.h"
+
+#include <opmcore/grid.h>
+#include <opmcore/transport/spu_explicit.h>
 
 
 /* Twophase mobility-weighted upwind */

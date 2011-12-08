@@ -9,8 +9,9 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <math.h>
-#include "grid.h"
-#include "spu_implicit.h"
+
+#include <opmcore/grid.h>
+#include <opmcore/transport/spu_implicit.h>
 
 
 

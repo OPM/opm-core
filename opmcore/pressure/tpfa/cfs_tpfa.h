@@ -20,9 +20,9 @@
 #ifndef OPM_CFS_TPFA_HEADER_INCLUDED
 #define OPM_CFS_TPFA_HEADER_INCLUDED
 
-#include "grid.h"
-#include "flow_bc.h"
-#include "well.h"
+#include <opmcore/grid.h>
+#include <opmcore/well.h>
+#include <opmcore/pressure/flow_bc.h>
 
 #ifdef __cplusplus
 extern "C" {

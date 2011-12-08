@@ -19,7 +19,7 @@
 
 #include <stdlib.h>
 
-#include "well.h"
+#include <opmcore/well.h>
 
 
 /* Release memory resources for cell->well mapping. */

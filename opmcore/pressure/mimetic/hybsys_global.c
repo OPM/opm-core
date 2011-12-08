@@ -21,8 +21,11 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "hash_set.h"
-#include "hybsys_global.h"
+/* ---> Layering violation! */
+#include <opmcore/pressure/msmfem/hash_set.h>
+/* <--- Layering violation! */
+
+#include <opmcore/pressure/mimetic/hybsys_global.h>
 
 
 #if defined MAX

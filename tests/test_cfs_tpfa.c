@@ -5,14 +5,17 @@
 
 #include <suitesparse/umfpack.h>
 
-#include "cfs_tpfa.h"
-#include "sparse_sys.h"
-#include "compr_quant.h"
-#include "trans_tpfa.h"
+#include <opmcore/grid.h>
+#include <opmcore/well.h>
 
-#include "grid.h"
-#include "flow_bc.h"
-#include "well.h"
+#include <opmcore/linalg/sparse_sys.h>
+
+#include <opmcore/pressure/flow_bc.h>
+
+#include <opmcore/pressure/tpfa/cfs_tpfa.h>
+#include <opmcore/pressure/tpfa/compr_quant.h>
+#include <opmcore/pressure/tpfa/trans_tpfa.h>
+
 
 
 struct CSCMatrix {

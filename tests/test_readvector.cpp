@@ -2,11 +2,11 @@
 #include <string>
 #include <vector>
 
-#include "grid.h"
-#include "preprocess.h"
-#include "cgridinterface.h"
+#include <opmcore/grid.h>
+#include <opmcore/utility/cpgpreprocess/preprocess.h>
+#include <opmcore/utility/cpgpreprocess/cgridinterface.h>
 
-#include "readvector.hpp"
+#include <opmcore/utility/cpgpreprocess/readvector.hpp>
 
 static struct CornerpointGrid
 read_grid(const std::string& dir)

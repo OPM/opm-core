@@ -42,7 +42,7 @@
 #include <algorithm>
 #include <vector>
 
-#include <sparse_sys.h>
+#include <opmcore/linalg/sparse_sys.h>
 
 namespace Opm {
     namespace ImplicitTransportDefault {

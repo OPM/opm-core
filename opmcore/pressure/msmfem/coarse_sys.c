@@ -34,14 +34,16 @@
 #endif
 
 
-#include "blas_lapack.h"
-#include "coarse_conn.h"
-#include "coarse_sys.h"
-#include "hybsys.h"
-#include "hybsys_global.h"
-#include "mimetic.h"
-#include "partition.h"
-#include "sparse_sys.h"
+#include <opmcore/linalg/blas_lapack.h>
+#include <opmcore/linalg/sparse_sys.h>
+
+#include <opmcore/pressure/mimetic/hybsys.h>
+#include <opmcore/pressure/mimetic/hybsys_global.h>
+#include <opmcore/pressure/mimetic/mimetic.h>
+
+#include <opmcore/pressure/msmfem/coarse_conn.h>
+#include <opmcore/pressure/msmfem/coarse_sys.h>
+#include <opmcore/pressure/msmfem/partition.h>
 
 
 #if defined(MAX)
@@ -506,7 +508,7 @@ compute_fs_ip(grid_t *g, const double *perm,
     return Binv;
 }
 #elif USE_MIM_IP_TPFA
-#include "trans_tpfa.h"
+#include <opmcore/pressure/tpfa/trans_tpfa.h>
 /* ---------------------------------------------------------------------- */
 static double *
 compute_fs_ip(grid_t *g, const double *perm,
