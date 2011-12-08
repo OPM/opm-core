@@ -55,7 +55,7 @@
 */
 static int compare(const void *a, const void *b)
 {
-  if (*(double*)a < *(double*) b) return -1;
+  if (*(const double*)a < *(const double*) b) return -1;
   else return 1;
 }
 
@@ -278,7 +278,7 @@ int finduniquepoints(const struct grdecl *g,
 
   zptr[pos++] = zout - zlist;
 
-  double *coord = (double*)g->coord;
+  const double *coord = g->coord;
   double *pt    = out->node_coordinates;
 
   /* Loop over pillars, find unique points on each pillar */
