@@ -180,18 +180,25 @@ static grid_t *
 cart_grid(int nx, int ny, int nz)
 {
     /* The following applies to any grid derived from base_grid_t. */
+
+    int    *cfaces, *cfacepos;
+    double *ccentroids, *cvolumes;
+    int    *fnodes, *fnodepos, *fcells;
+    double *fnormals, *fcentroids, *fareas;
+    double *coord;
+
     int i,j,k;
     int Nx = nx+1;
     int Ny = ny+1;
     int Nz = nz+1;
 
-    grid_t *G = malloc(1 * sizeof *G);
-
-    G->dimensions = 3;
-
     int nxf = Nx*ny*nz;
     int nyf = nx*Ny*nz;
     int nzf = nx*ny*Nz;
+
+    grid_t *G = malloc(1 * sizeof *G);
+
+    G->dimensions = 3;
 
     G->number_of_cells  = nx*ny*nz;
     G->number_of_faces  = nxf+nyf+nzf;
@@ -212,10 +219,10 @@ cart_grid(int nx, int ny, int nz)
     G->cell_volumes     = malloc(G->number_of_cells * 1 * sizeof *(G->cell_volumes));
 
 
-    int    *cfaces     = G->cell_faces;
-    int    *cfacepos   = G->cell_facepos;
-    double *ccentroids = G->cell_centroids;
-    double *cvolumes   = G->cell_volumes;
+    cfaces     = G->cell_faces;
+    cfacepos   = G->cell_facepos;
+    ccentroids = G->cell_centroids;
+    cvolumes   = G->cell_volumes;
     for (k=0; k<nz; ++k)  {
         for (j=0; j<ny; ++j) {
             for (i=0; i<nx; ++i) {
@@ -239,12 +246,12 @@ cart_grid(int nx, int ny, int nz)
     }
 
 
-    int    *fnodes     = G->face_nodes;
-    int    *fnodepos   = G->face_nodepos;
-    int    *fcells     = G->face_cells;
-    double *fnormals   = G->face_normals;
-    double *fcentroids = G->face_centroids;
-    double *fareas     = G->face_areas;
+    fnodes     = G->face_nodes;
+    fnodepos   = G->face_nodepos;
+    fcells     = G->face_cells;
+    fnormals   = G->face_normals;
+    fcentroids = G->face_centroids;
+    fareas     = G->face_areas;
 
     /* Faces with x-normal */
     for (k=0; k<nz; ++k) {
@@ -352,7 +359,7 @@ cart_grid(int nx, int ny, int nz)
         }
     }
 
-    double *coord = G->node_coordinates;
+    coord = G->node_coordinates;
     for (k=0; k<nz+1; ++k) {
         for (j=0; j<ny+1; ++j) {
             for (i=0; i<nx+1; ++i) {
