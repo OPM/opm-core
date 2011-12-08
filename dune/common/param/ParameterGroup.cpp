@@ -43,11 +43,6 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <iostream>
 
-#include <stdio.h>
-#include <string.h>
-
-//#include "TermColors.hpp" // from utils
-
 #include <dune/common/param/Parameter.hpp>
 #include <dune/common/param/ParameterStrings.hpp>
 #include <dune/common/param/ParameterTools.hpp>
