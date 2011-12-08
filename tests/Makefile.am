@@ -7,4 +7,3 @@ test_sf2p
 test_jacsys_SOURCES     = test_jacsys.cpp
 test_readvector_SOURCES = test_readvector.cpp
 test_sf2p_SOURCES       = test_sf2p.cpp
-
