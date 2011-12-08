@@ -85,12 +85,14 @@ static int createSortedList(double *list, int n, int m,
 */
 static int uniquify(int n, double *list, double tolerance)
 {
+  int i, pos = 0;
+  double val;
+
   assert (!(tolerance < 0.0));
 
   if (n<1) return 0;
-  int    i;
-  int    pos = 0; 
-  double val = list[pos++];/* Keep first value */
+
+  val = list[pos++];/* Keep first value */
   
   for (i=1; i<n; ++i){
     if (val + tolerance < list [i]){
@@ -253,7 +255,6 @@ int finduniquepoints(const struct grdecl *g,
   int ny = out->dimensions[1];
   int nz = out->dimensions[2];
 
-
     /* ztab->data may need extra space temporarily due to simple boundary treatement  */
   int            npillarpoints = 8*(nx+1)*(ny+1)*nz; 
   int            npillars      = (nx+1)*(ny+1);
@@ -264,7 +265,6 @@ int finduniquepoints(const struct grdecl *g,
 
 
   int nc = g->dims[0]*g->dims[1]*g->dims[2];
-  out->node_coordinates = malloc (3*8*nc*sizeof(*out->node_coordinates));
 
   double *zlist = ztab->data; /* casting void* to double* */
   int     *zptr = ztab->ptr;
@@ -276,10 +276,14 @@ int finduniquepoints(const struct grdecl *g,
   double  *zout  = zlist;  
   int     pos    = 0;
 
+  const double *coord = g->coord;
+  double *pt;
+  int    *p;
+
+  out->node_coordinates = malloc (3*8*nc*sizeof(*out->node_coordinates));
   zptr[pos++] = zout - zlist;
 
-  const double *coord = g->coord;
-  double *pt    = out->node_coordinates;
+  pt    = out->node_coordinates;
 
   /* Loop over pillars, find unique points on each pillar */
   for (j=0; j < g->dims[1]+1; ++j){
@@ -313,7 +317,7 @@ int finduniquepoints(const struct grdecl *g,
   out->number_of_nodes            = zptr[pos-1];
 
   /* Loop over all vertical sets of zcorn values, assign point numbers */
-  int *p = plist;
+  p = plist;
   for (j=0; j < 2*g->dims[1]; ++j){
     for (i=0; i < 2*g->dims[0]; ++i){
       
