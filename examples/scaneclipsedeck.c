@@ -89,6 +89,7 @@ read_keyword(FILE *fp, char *buf)
 
 int main(int argc, char *argv[])
 {
+    int  c, lineno, nkw;
     FILE         *fp;
     char buf[10];
     
@@ -104,7 +105,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    int c, lineno = 0, nkw = 0;
+    lineno = nkw = 0;
     
     if (read_keyword(fp, buf) != NULL) {
         ++nkw;
