@@ -8,15 +8,12 @@ lib_LTLIBRARIES = libopmcore.la
 
 libopmcore_la_SOURCES = 				\
 opmcore/utility/cart_grid.c				\
-opmcore/utility/cpgpreprocess/mxgrdecl.c		\
 opmcore/utility/cpgpreprocess/geometry.c		\
 opmcore/utility/cpgpreprocess/preprocess.c		\
-opmcore/utility/cpgpreprocess/processgrid.c		\
 opmcore/utility/cpgpreprocess/readvector.cpp		\
 opmcore/utility/cpgpreprocess/cgridinterface.c		\
 opmcore/utility/cpgpreprocess/sparsetable.c		\
 opmcore/utility/cpgpreprocess/facetopology.c		\
-opmcore/utility/cpgpreprocess/scaneclipsedeck.c		\
 opmcore/utility/cpgpreprocess/uniquepoints.c		\
 opmcore/linalg/sparse_sys.c				\
 opmcore/linalg/call_umfpack.c				\
