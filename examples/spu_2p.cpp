@@ -216,7 +216,7 @@ typedef Opm::ImplicitTransport<TransportModel,
                                MatrixZero    ,
                                VectorAssign  > TransportSolver;
 
-void
+static void
 compute_porevolume(const grid_t*        g,
                    const Rock&          rock,
                    std::vector<double>& porevol)
