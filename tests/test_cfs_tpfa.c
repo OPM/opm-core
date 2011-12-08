@@ -223,6 +223,9 @@ cart_grid(int nx, int ny, int nz)
     cfacepos   = G->cell_facepos;
     ccentroids = G->cell_centroids;
     cvolumes   = G->cell_volumes;
+
+    cfacepos[0] = 0;
+
     for (k=0; k<nz; ++k)  {
         for (j=0; j<ny; ++j) {
             for (i=0; i<nx; ++i) {
