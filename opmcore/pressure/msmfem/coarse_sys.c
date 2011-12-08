@@ -128,7 +128,7 @@ coarse_sys_meta_destroy(struct coarse_sys_meta *m)
 
 
 /* ---------------------------------------------------------------------- */
-struct coarse_sys_meta *
+static struct coarse_sys_meta *
 coarse_sys_meta_allocate(size_t nblocks, size_t nfaces_c,
                          size_t nc     , size_t nfaces_f)
 /* ---------------------------------------------------------------------- */

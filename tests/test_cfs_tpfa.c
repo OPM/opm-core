@@ -137,7 +137,7 @@ solve_umfpack(struct CSCMatrix *csc, const double *b, double *x)
 
 
 /*---------------------------------------------------------------------------*/
-void
+static void
 call_UMFPACK(struct CSRMatrix *A, double *b, double *x)
 /*---------------------------------------------------------------------------*/
 {
@@ -176,7 +176,7 @@ deallocate_cart_grid(grid_t *G)
     free(G);
 }
 
-grid_t *
+static grid_t *
 cart_grid(int nx, int ny, int nz)
 {
     /* The following applies to any grid derived from base_grid_t. */
