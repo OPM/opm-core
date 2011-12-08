@@ -271,7 +271,7 @@ int finduniquepoints(const struct grdecl *g,
 
   int     i,j,k;
 
-  int     d1[3]  = {2*g->dims[0], 2*g->dims[1], 2*g->dims[2]};
+  int     d1[3];
   int     len    = 0;
   double  *zout  = zlist;  
   int     pos    = 0;
@@ -279,6 +279,8 @@ int finduniquepoints(const struct grdecl *g,
   const double *coord = g->coord;
   double *pt;
   int    *p;
+
+  d1[0] = 2*g->dims[0];  d1[1] = 2*g->dims[1];  d1[2] = 2*g->dims[2];
 
   out->node_coordinates = malloc (3*8*nc*sizeof(*out->node_coordinates));
   zptr[pos++] = zout - zlist;
