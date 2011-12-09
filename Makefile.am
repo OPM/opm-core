@@ -16,7 +16,6 @@ opmcore/utility/cpgpreprocess/sparsetable.c		\
 opmcore/utility/cpgpreprocess/facetopology.c		\
 opmcore/utility/cpgpreprocess/uniquepoints.c		\
 opmcore/linalg/sparse_sys.c				\
-opmcore/linalg/call_umfpack.c				\
 opmcore/pressure/cfsh.c					\
 opmcore/pressure/flow_bc.c				\
 opmcore/pressure/well.c					\
@@ -57,7 +56,6 @@ opmcore/utility/cpgpreprocess/grdecl.h			\
 opmcore/utility/cart_grid.h				\
 opmcore/well.h						\
 opmcore/linalg/sparse_sys.h				\
-opmcore/linalg/call_umfpack.h				\
 opmcore/linalg/blas_lapack.h				\
 opmcore/fluid/SimpleFluid2p.hpp				\
 opmcore/grid.h						\
@@ -96,3 +94,8 @@ opmcore/transport/JacobianSystem.hpp			\
 opmcore/transport/spu_implicit.h			\
 opmcore/transport/ImplicitAssembly.hpp			\
 opmcore/transport/transport_source.h
+
+if UMFPACK
+libopmcore_la_SOURCES  += opmcore/linalg/call_umfpack.c
+nobase_include_HEADERS += opmcore/linalg/call_umfpack.h
+endif
