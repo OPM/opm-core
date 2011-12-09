@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <tr1/memory>
 
 namespace Dune
 {
@@ -252,7 +253,7 @@ namespace Dune
             }
 
             EclipseGridParser sp;
-            boost::shared_ptr<SPECGRID> sg(new SPECGRID);
+            std::tr1::shared_ptr<SPECGRID> sg(new SPECGRID);
             for (int dd = 0; dd < 3; ++dd) {
                 sg->dimensions[dd] = new_dims_[dd];
             }
