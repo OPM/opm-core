@@ -37,6 +37,8 @@
 #ifndef OPENRS_LININT_HEADER
 #define OPENRS_LININT_HEADER
 
+#include <vector>
+#include <algorithm>
 
 namespace Dune
 {

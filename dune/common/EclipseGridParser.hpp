@@ -40,9 +40,9 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <map>
 #include <set>
-#include <boost/shared_ptr.hpp>
-#include "SpecialEclipseFields.hpp"
-#include "EclipseUnits.hpp"
+#include <tr1/memory>
+#include <dune/common/SpecialEclipseFields.hpp>
+#include <dune/common/EclipseUnits.hpp>
 #include <dune/common/Factory.hpp>
 
 namespace Dune
@@ -53,7 +53,7 @@ namespace Dune
    
    This object is constructed using an Eclipse .grdecl-file. All data
    fields are extracted upon construction and written to vector data
-   structures, which can then be read out in O(1) time afterwards via
+   structures, which can then be read out afterwards via
    convenience functions.
 
    There is also a convenience function to easily check which fields
@@ -105,7 +105,7 @@ public:
     /// Returns a reference to a vector containing pointers to the values 
     /// corresponding to the given keyword when the values are not only integers
     /// or floats.
-    const boost::shared_ptr<SpecialBase> getSpecialValue(const std::string& keyword) const;
+    const std::tr1::shared_ptr<SpecialBase> getSpecialValue(const std::string& keyword) const;
 
     // This macro implements support for a special field keyword. It requires that a subclass
     // of SpecialBase exists, that has the same name as the keyword.
@@ -159,7 +159,7 @@ public:                                                                         
     void setFloatingPointField(const std::string& keyword, const std::vector<double>& field);
 
     /// Sets a special field to have a particular value.
-    void setSpecialField(const std::string& keyword, boost::shared_ptr<SpecialBase> field);
+    void setSpecialField(const std::string& keyword, std::tr1::shared_ptr<SpecialBase> field);
 
     /// Compute the units used by the deck, depending on the presence
     /// of keywords such as METRIC, FIELD etc.  It is an error to call
@@ -170,18 +170,18 @@ public:                                                                         
     const EclipseUnits& units() const;
 
 private:
-    boost::shared_ptr<SpecialBase> createSpecialField(std::istream& is, const std::string& fieldname);
+    std::tr1::shared_ptr<SpecialBase> createSpecialField(std::istream& is, const std::string& fieldname);
     void readImpl(std::istream& is);
 
 
     std::string directory_;
     std::map<std::string, std::vector<int> > integer_field_map_;
     std::map<std::string, std::vector<double> > floating_field_map_;
-    std::map<std::string, boost::shared_ptr<SpecialBase> > special_field_map_;
+    std::map<std::string, std::tr1::shared_ptr<SpecialBase> > special_field_map_;
     std::set<std::string> ignored_fields_;
     std::vector<int> empty_integer_field_;
     std::vector<double> empty_floating_field_;
-    boost::shared_ptr<SpecialBase> empty_special_field_;
+    std::tr1::shared_ptr<SpecialBase> empty_special_field_;
     EclipseUnits units_;
 };
 

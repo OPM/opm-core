@@ -42,9 +42,9 @@
 #include <cmath>
 #include <cfloat>
 #include <algorithm>
-#include "EclipseGridInspector.hpp"
-#include "EclipseGridParser.hpp"
-#include "SpecialEclipseFields.hpp"
+#include <dune/common/EclipseGridInspector.hpp>
+#include <dune/common/EclipseGridParser.hpp>
+#include <dune/common/SpecialEclipseFields.hpp>
 
 namespace Dune
 {

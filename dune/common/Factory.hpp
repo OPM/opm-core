@@ -37,7 +37,7 @@
 
 
 #include <map>
-#include <boost/shared_ptr.hpp>
+#include <tr1/memory>
 
 namespace Dune
 {
@@ -53,7 +53,7 @@ namespace Dune
     {
     public:
         /// The type of pointer returned by createObject().
-        typedef boost::shared_ptr<Base> ProductPtr;
+        typedef std::tr1::shared_ptr<Base> ProductPtr;
 
 	/// Creates a new object of the class associated with the given type string,
         /// and returns a pointer to it.
@@ -111,7 +111,7 @@ namespace Dune
             }
         };
 
-        typedef boost::shared_ptr<Creator> CreatorPtr;
+        typedef std::tr1::shared_ptr<Creator> CreatorPtr;
         typedef std::map<std::string, CreatorPtr> CreatorMap;
         // This map contains the whole factory, i.e. all the Creators.
 	CreatorMap string_to_creator_;
@@ -132,7 +132,7 @@ namespace Dune
         template <class Derived>
         void doAddCreator(const std::string& type)
         {
-            boost::shared_ptr<Creator> c(new ConcreteCreator<Derived>);
+            CreatorPtr c(new ConcreteCreator<Derived>);
 	    string_to_creator_[type] = c;
         }
     };

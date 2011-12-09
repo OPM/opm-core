@@ -231,7 +231,7 @@ void EclipseGridParser::readImpl(istream& is)
     //       though (of course retaining the basic guarantee).
     map<string, vector<int> >& intmap = integer_field_map_;
     map<string, vector<double> >& floatmap = floating_field_map_;
-    map<string, boost::shared_ptr<SpecialBase> >& specialmap = special_field_map_;
+    map<string, tr1::shared_ptr<SpecialBase> >& specialmap = special_field_map_;
 
     // Actually read the data
     is >> ignoreWhitespace;
@@ -249,7 +249,7 @@ void EclipseGridParser::readImpl(istream& is)
 	    readVectorData(is, floatmap[keyword]);
 	    break;
 	case SpecialField: {
-	    boost::shared_ptr<SpecialBase> sb_ptr = createSpecialField(is, keyword);
+	    std::tr1::shared_ptr<SpecialBase> sb_ptr = createSpecialField(is, keyword);
 	    if (sb_ptr) {
 		specialmap[keyword] = sb_ptr;
 	    } else {
@@ -307,7 +307,7 @@ void EclipseGridParser::readImpl(istream& is)
         std::cout << '\t' << i->first << '\n';
 
     std::cout << "\nSpecial fields:\n";
-    for (std::map<string, boost::shared_ptr<SpecialBase> >::iterator
+    for (std::map<string, std::tr1::shared_ptr<SpecialBase> >::iterator
               i = specialmap.begin(); i != specialmap.end(); ++i)
         std::cout << '\t' << i->first << '\n';
 #endif
@@ -320,7 +320,7 @@ void EclipseGridParser::convertToSI()
 //---------------------------------------------------------------------------
 {
     // Convert all special fields.
-    typedef std::map<string, boost::shared_ptr<SpecialBase> >::iterator SpecialIt;
+    typedef std::map<string, std::tr1::shared_ptr<SpecialBase> >::iterator SpecialIt;
     for (SpecialIt i = special_field_map_.begin(); i != special_field_map_.end(); ++i) {
         i->second->convertToSI(units_);
     }
@@ -408,7 +408,7 @@ vector<string> EclipseGridParser::fieldNames() const
 	}
     }
     {
-	map<string, boost::shared_ptr<SpecialBase> >::const_iterator it = special_field_map_.begin();
+	map<string, std::tr1::shared_ptr<SpecialBase> >::const_iterator it = special_field_map_.begin();
 	for (; it != special_field_map_.end(); ++it) {
 	    names.push_back(it->first);
 	}
@@ -459,10 +459,10 @@ const std::vector<double>& EclipseGridParser::getFloatingPointValue(const std::s
 
 
 //---------------------------------------------------------------------------
-const boost::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const std::string& keyword) const
+const std::tr1::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const std::string& keyword) const
 //---------------------------------------------------------------------------
 {
-    map<string, boost::shared_ptr<SpecialBase> >::const_iterator it = special_field_map_.find(keyword);
+    map<string, std::tr1::shared_ptr<SpecialBase> >::const_iterator it = special_field_map_.find(keyword);
     if (it == special_field_map_.end()) {
         THROW("No such field: " << keyword);
     } else {
@@ -471,13 +471,13 @@ const boost::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const st
 }
 
 //---------------------------------------------------------------------------
-boost::shared_ptr<SpecialBase>
+std::tr1::shared_ptr<SpecialBase>
 EclipseGridParser::createSpecialField(std::istream& is,
 				      const std::string& fieldname)
 //---------------------------------------------------------------------------
 {
     string ukey = upcase(fieldname);
-    boost::shared_ptr<SpecialBase> spec_ptr
+    std::tr1::shared_ptr<SpecialBase> spec_ptr
         = Factory<SpecialBase>::createObject(fieldname);
     spec_ptr->read(is);
     return spec_ptr;
@@ -501,7 +501,7 @@ void EclipseGridParser::setFloatingPointField(const std::string& keyword,
 
 //---------------------------------------------------------------------------
 void EclipseGridParser::setSpecialField(const std::string& keyword,
-                                        boost::shared_ptr<SpecialBase> field)
+                                        std::tr1::shared_ptr<SpecialBase> field)
 //---------------------------------------------------------------------------
 {
     special_field_map_[keyword] = field;
