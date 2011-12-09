@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.65])
+AC_PREREQ([2.62])
 AC_INIT([OPM Core Library], [0.1], [atgeirr@sintef.no],dnl
         [opmcore], [https://public.ict.sintef.no/opm/hg/opmcore])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
@@ -18,6 +18,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CC_C_O
+AC_PROG_LIBTOOL
 
 # AX_LAPACK requires a working F77 compiler or, rather, its runtime
 # support libraries.
@@ -50,9 +51,6 @@ AC_SEARCH_LIBS([umfpack_dl_solve], [umfpack],
 AM_CONDITIONAL([UMFPACK],
   [test "x$umfpack_header" != "xno" -a "x$umfpack_lib" != "xno"])
 
-AM_COND_IF([UMFPACK], [],
-[AC_MSG_NOTICE([Found no working installation of UMFPACK.
-                UMFPACK support is disabled.])])
 
 AC_CONFIG_FILES([
  Makefile
