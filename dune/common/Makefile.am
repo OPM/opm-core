@@ -1,17 +1,17 @@
 # $Date$
 # $Revision$
 
-SUBDIRS = . param test
+SUBDIRS = param . test
 
 common_HEADERS	= \
 	Average.hpp \
 	EclipseGridInspector.hpp \
 	EclipseGridParser.hpp \
 	EclipseGridParserHelpers.hpp \
-        ErrorMacros.hpp \
+	ErrorMacros.hpp \
 	Factory.hpp \
 	linInt.hpp \
-        MonotCubicInterpolator.hpp \
+	MonotCubicInterpolator.hpp \
 	RootFinders.hpp \
 	SparseTable.hpp \
 	SparseVector.hpp \
