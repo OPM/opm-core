@@ -19,6 +19,7 @@ am
 autom4te.cache
 config.*
 configure
+compile
 depcomp
 dependencies.m4
 install-sh
