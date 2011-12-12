@@ -11,7 +11,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 LT_INIT
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([opmcore/grid.h])
+AC_CONFIG_SRCDIR([opm/core/grid.h])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
