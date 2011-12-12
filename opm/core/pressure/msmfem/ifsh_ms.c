@@ -21,17 +21,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <opmcore/linalg/blas_lapack.h>
-#include <opmcore/linalg/sparse_sys.h>
+#include <opm/core/linalg/blas_lapack.h>
+#include <opm/core/linalg/sparse_sys.h>
 
-#include <opmcore/pressure/mimetic/hybsys.h>
-#include <opmcore/pressure/mimetic/hybsys_global.h>
-#include <opmcore/pressure/mimetic/mimetic.h>
+#include <opm/core/pressure/mimetic/hybsys.h>
+#include <opm/core/pressure/mimetic/hybsys_global.h>
+#include <opm/core/pressure/mimetic/mimetic.h>
 
-#include <opmcore/pressure/msmfem/coarse_conn.h>
-#include <opmcore/pressure/msmfem/coarse_sys.h>
-#include <opmcore/pressure/msmfem/partition.h>
-#include <opmcore/pressure/msmfem/ifsh_ms.h>
+#include <opm/core/pressure/msmfem/coarse_conn.h>
+#include <opm/core/pressure/msmfem/coarse_sys.h>
+#include <opm/core/pressure/msmfem/partition.h>
+#include <opm/core/pressure/msmfem/ifsh_ms.h>
 
 
 #if defined(MAX)

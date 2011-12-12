@@ -22,8 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <opmcore/linalg/blas_lapack.h>
-#include <opmcore/pressure/mimetic/hybsys.h>
+#include <opm/core/linalg/blas_lapack.h>
+#include <opm/core/pressure/mimetic/hybsys.h>
 
 
 #if defined(MAX)

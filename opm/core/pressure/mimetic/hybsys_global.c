@@ -22,10 +22,10 @@
 #include <stdlib.h>
 
 /* ---> Layering violation! */
-#include <opmcore/pressure/msmfem/hash_set.h>
+#include <opm/core/pressure/msmfem/hash_set.h>
 /* <--- Layering violation! */
 
-#include <opmcore/pressure/mimetic/hybsys_global.h>
+#include <opm/core/pressure/mimetic/hybsys_global.h>
 
 
 #if defined MAX

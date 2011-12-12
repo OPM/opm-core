@@ -19,8 +19,8 @@
 
 #include <stdlib.h>
 
-#include <opmcore/linalg/sparse_sys.h>
-#include <opmcore/pressure/tpfa/compr_quant_general.h>
+#include <opm/core/linalg/sparse_sys.h>
+#include <opm/core/pressure/tpfa/compr_quant_general.h>
 
 
 void

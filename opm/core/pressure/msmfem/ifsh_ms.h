@@ -26,8 +26,8 @@ extern "C" {
 
 #include <stddef.h>
 
-#include <opmcore/grid.h>
-#include <opmcore/pressure/msmfem/coarse_sys.h>
+#include <opm/core/grid.h>
+#include <opm/core/pressure/msmfem/coarse_sys.h>
 
 struct CSRMatrix;
 struct ifsh_ms_impl;

@@ -44,26 +44,26 @@
 #include <iterator>
 #include <vector>
 
-#include <opmcore/linalg/sparse_sys.h>
+#include <opm/core/linalg/sparse_sys.h>
 
-#include <opmcore/pressure/tpfa/ifs_tpfa.h>
-#include <opmcore/pressure/tpfa/trans_tpfa.h>
+#include <opm/core/pressure/tpfa/ifs_tpfa.h>
+#include <opm/core/pressure/tpfa/trans_tpfa.h>
 
-#include <opmcore/utility/cart_grid.h>
+#include <opm/core/utility/cart_grid.h>
 
-#include <opmcore/fluid/SimpleFluid2p.hpp>
+#include <opm/core/fluid/SimpleFluid2p.hpp>
 
-#include <opmcore/transport/transport_source.h>
-#include <opmcore/transport/CSRMatrixUmfpackSolver.hpp>
+#include <opm/core/transport/transport_source.h>
+#include <opm/core/transport/CSRMatrixUmfpackSolver.hpp>
 
-#include <opmcore/transport/NormSupport.hpp>
-#include <opmcore/transport/ImplicitAssembly.hpp>
-#include <opmcore/transport/ImplicitTransport.hpp>
-#include <opmcore/transport/JacobianSystem.hpp>
+#include <opm/core/transport/NormSupport.hpp>
+#include <opm/core/transport/ImplicitAssembly.hpp>
+#include <opm/core/transport/ImplicitTransport.hpp>
+#include <opm/core/transport/JacobianSystem.hpp>
 
-#include <opmcore/transport/CSRMatrixBlockAssembler.hpp>
+#include <opm/core/transport/CSRMatrixBlockAssembler.hpp>
 
-#include <opmcore/transport/SinglePointUpwindTwoPhase.hpp>
+#include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
 
 template <class Ostream, class Collection>
 Ostream&

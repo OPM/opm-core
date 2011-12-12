@@ -22,7 +22,7 @@
 
 #include <stddef.h>
 
-#include <opmcore/grid.h>
+#include <opm/core/grid.h>
 
 #ifdef __cplusplus
 extern "C" {

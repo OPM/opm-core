@@ -36,7 +36,7 @@
 #ifndef OPM_CSRMATRIXUMFPACKSOLVER_HPP_HEADER
 #define OPM_CSRMATRIXUMFPACKSOLVER_HPP_HEADER
 
-#include <opmcore/linalg/call_umfpack.h>
+#include <opm/core/linalg/call_umfpack.h>
 
 namespace Opm {
     namespace ImplicitTransportLinAlgSupport {

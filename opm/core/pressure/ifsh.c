@@ -24,10 +24,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <opmcore/pressure/fsh.h>
-#include <opmcore/pressure/fsh_common_impl.h>
-#include <opmcore/pressure/mimetic/hybsys.h>
-#include <opmcore/pressure/mimetic/hybsys_global.h>
+#include <opm/core/pressure/fsh.h>
+#include <opm/core/pressure/fsh_common_impl.h>
+#include <opm/core/pressure/mimetic/hybsys.h>
+#include <opm/core/pressure/mimetic/hybsys_global.h>
 
 
 /* ---------------------------------------------------------------------- */

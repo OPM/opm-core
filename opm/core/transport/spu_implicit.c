@@ -10,8 +10,8 @@
 #include <limits.h>
 #include <math.h>
 
-#include <opmcore/grid.h>
-#include <opmcore/transport/spu_implicit.h>
+#include <opm/core/grid.h>
+#include <opm/core/transport/spu_implicit.h>
 
 
 

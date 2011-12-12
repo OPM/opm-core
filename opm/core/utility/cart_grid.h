@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-#include <opmcore/grid.h>
+#include <opm/core/grid.h>
 
 void
 destroy_cart_grid(grid_t *G);

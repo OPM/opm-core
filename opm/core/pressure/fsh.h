@@ -20,9 +20,9 @@
 #ifndef OPM_FSH_HEADER_INCLUDED
 #define OPM_FHS_HEADER_INCLUDED
 
-#include <opmcore/grid.h>
-#include <opmcore/well.h>
-#include <opmcore/pressure/flow_bc.h>
+#include <opm/core/grid.h>
+#include <opm/core/well.h>
+#include <opm/core/pressure/flow_bc.h>
 
 #ifdef __cplusplus
 extern "C" {

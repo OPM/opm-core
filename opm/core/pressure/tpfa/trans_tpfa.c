@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <opmcore/linalg/blas_lapack.h>
-#include <opmcore/pressure/tpfa/trans_tpfa.h>
+#include <opm/core/linalg/blas_lapack.h>
+#include <opm/core/pressure/tpfa/trans_tpfa.h>
 
 /* ---------------------------------------------------------------------- */
 /* htrans <- sum(C(:,i) .* K(cellNo,:) .* N(:,j), 2) ./ sum(C.*C, 2) */

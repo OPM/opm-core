@@ -24,15 +24,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <opmcore/grid.h>
-#include <opmcore/well.h>
-#include <opmcore/pressure/flow_bc.h>
+#include <opm/core/grid.h>
+#include <opm/core/well.h>
+#include <opm/core/pressure/flow_bc.h>
 
-#include <opmcore/pressure/fsh.h>
-#include <opmcore/pressure/fsh_common_impl.h>
+#include <opm/core/pressure/fsh.h>
+#include <opm/core/pressure/fsh_common_impl.h>
 
-#include <opmcore/pressure/mimetic/hybsys.h>
-#include <opmcore/pressure/mimetic/hybsys_global.h>
+#include <opm/core/pressure/mimetic/hybsys.h>
+#include <opm/core/pressure/mimetic/hybsys_global.h>
 
 #if defined MAX
 #undef MAX
