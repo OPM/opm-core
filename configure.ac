@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.62])
+AC_PREREQ([2.59])
 AC_INIT([OPM Core Library], [0.1], [atgeirr@sintef.no],dnl
         [opmcore], [https://public.ict.sintef.no/opm/hg/opmcore])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
@@ -17,7 +17,7 @@ AC_CONFIG_HEADERS([config.h])
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
-AC_PROG_CC_C_O
+AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 
 # AX_LAPACK requires a working F77 compiler or, rather, its runtime
