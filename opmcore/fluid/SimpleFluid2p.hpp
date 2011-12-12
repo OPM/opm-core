@@ -36,15 +36,15 @@
 #ifndef OPM_SIMPLEFLUID2P_HPP_HEADER
 #define OPM_SIMPLEFLUID2P_HPP_HEADER
 
-#include <array>
+#include <tr1/array>
 #include <cmath>
 
 namespace Opm {
     template <int n = 2>
     class SimpleFluid2p {
     public:
-        SimpleFluid2p(const std::array<double, 2>& mu,
-                      const std::array<double, 2>& rho)
+        SimpleFluid2p(const std::tr1::array<double, 2>& mu,
+                      const std::tr1::array<double, 2>& rho)
             : mu_(mu), rho_(rho)
         {
         }
@@ -99,8 +99,8 @@ namespace Opm {
         double s_max(int c) const { (void) c; return 1.0; }
 
     private:
-        std::array<double, 2> mu_ ;
-        std::array<double, 2> rho_;
+        std::tr1::array<double, 2> mu_ ;
+        std::tr1::array<double, 2> rho_;
     };
 }
 

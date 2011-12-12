@@ -38,7 +38,7 @@
 #include <cstddef>
 
 #include <algorithm>
-#include <array>
+#include <tr1/array>
 #include <functional>
 #include <iostream>
 #include <iterator>
@@ -273,8 +273,8 @@ main()
     using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
     CSRMatrixUmfpackSolver linsolve;
 
-    std::array<double, 2> mu  = {{ 1.0, 1.0 }};
-    std::array<double, 2> rho = {{ 0.0, 0.0 }};
+    std::tr1::array<double, 2> mu  = {{ 1.0, 1.0 }};
+    std::tr1::array<double, 2> rho = {{ 0.0, 0.0 }};
     TwophaseFluid fluid(mu, rho);
 
     std::vector<double> porevol;
