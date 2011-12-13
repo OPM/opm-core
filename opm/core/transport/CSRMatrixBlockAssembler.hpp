@@ -102,12 +102,12 @@ namespace Opm {
 
                 sa_.insert(sa_.end(), nconn * ndof, double(0.0));
 
-                construct();
-                setCSRSize();
+                finalizeStructure();
             }
 
             void
             finalizeStructure() {
+                construct();
                 setCSRSize();
             }
 
@@ -121,8 +121,6 @@ namespace Opm {
 
                 ia_.push_back(0);
                 ndof_ = ndof;
-
-                construct();
             }
 
             struct CSRMatrix&       matrix()       { return mat_; }
