@@ -26,7 +26,7 @@ read_grid(const std::string& dir)
     read_vector_from_file(fn, actnum);
 
     fn = dir + '/' + "dimens.txt";
-    ::std::vector<double> dimens;
+    ::std::vector<int> dimens;
     read_vector_from_file(fn, dimens);
 
     struct grdecl grdecl;
