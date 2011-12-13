@@ -32,5 +32,8 @@ missing
 # Ignoring executables
 *_test
 examples/scaneclipsedeck
+examples/spu_2p
+tests/test_cfs_tpfa
+tests/test_jacsys
 tests/test_readvector
 tests/test_sf2p
