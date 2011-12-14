@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.65])
+AC_PREREQ([2.59])
 AC_INIT([OPM Core Library], [0.1], [atgeirr@sintef.no],dnl
         [opmcore], [https://public.ict.sintef.no/opm/hg/opmcore])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
@@ -11,13 +11,14 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 LT_INIT
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([opmcore/grid.h])
+AC_CONFIG_SRCDIR([opm/core/grid.h])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
-AC_PROG_CC_C_O
+AM_PROG_CC_C_O
+AC_PROG_LIBTOOL
 
 # AX_LAPACK requires a working F77 compiler or, rather, its runtime
 # support libraries.
@@ -32,10 +33,6 @@ AX_LAPACK
 # Checks for header files.
 AC_CHECK_HEADERS([float.h limits.h stddef.h stdlib.h string.h])
 
-AC_CHECK_HEADERS([suitesparse/umfpack.h],
-                 [umfpack_header=yes],
-                 [umfpack_header=no])
-
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_TYPE_SIZE_T
@@ -44,15 +41,21 @@ AC_CHECK_TYPES([ptrdiff_t])
 # Checks for library functions.
 AC_CHECK_FUNCS([floor memmove pow sqrt strchr strtol])
 
+
+# To use UMFPACK, we need the header, and both the AMD and UMFPACK libs.
+AC_CHECK_HEADERS([suitesparse/umfpack.h],
+                 [umfpack_header=yes],
+                 [umfpack_header=no])
+
+AC_SEARCH_LIBS([amd_free], [amd],
+               [amd_lib=yes], [amd_lib=no], [-lm])
+
 AC_SEARCH_LIBS([umfpack_dl_solve], [umfpack],
-               [umfpack_lib=yes], [umfpack_lib=no])
+               [umfpack_lib=yes], [umfpack_lib=no], [-lamd -lm])
 
 AM_CONDITIONAL([UMFPACK],
   [test "x$umfpack_header" != "xno" -a "x$umfpack_lib" != "xno"])
 
-AM_COND_IF([UMFPACK], [],
-[AC_MSG_NOTICE([Found no working installation of UMFPACK.
-                UMFPACK support is disabled.])])
 
 AC_CONFIG_FILES([
  Makefile

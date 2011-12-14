@@ -78,7 +78,7 @@ main() {
 #endif
 
 #if 0
-#include <opmcore/transport/JacobianSystem.hpp>
+#include <opm/core/transport/JacobianSystem.hpp>
 
 //using namespace Opm::LinAlgSupport;
 using namespace Opm::ImplicitTransportDefault;
@@ -101,11 +101,11 @@ main() {
 #endif
 
 #if 1
-#include <opmcore/linalg/sparse_sys.h>
+#include <opm/core/linalg/sparse_sys.h>
 
-#include <opmcore/transport/JacobianSystem.hpp>
-#include <opmcore/transport/CSRMatrixBlockAssembler.hpp>
-#include <opmcore/transport/CSRMatrixUmfpackSolver.hpp>
+#include <opm/core/transport/JacobianSystem.hpp>
+#include <opm/core/transport/CSRMatrixBlockAssembler.hpp>
+#include <opm/core/transport/CSRMatrixUmfpackSolver.hpp>
 
 using namespace Opm::ImplicitTransportDefault;
 

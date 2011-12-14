@@ -5,16 +5,16 @@
 
 #include <suitesparse/umfpack.h>
 
-#include <opmcore/grid.h>
-#include <opmcore/well.h>
+#include <opm/core/grid.h>
+#include <opm/core/well.h>
 
-#include <opmcore/linalg/sparse_sys.h>
+#include <opm/core/linalg/sparse_sys.h>
 
-#include <opmcore/pressure/flow_bc.h>
+#include <opm/core/pressure/flow_bc.h>
 
-#include <opmcore/pressure/tpfa/cfs_tpfa.h>
-#include <opmcore/pressure/tpfa/compr_quant.h>
-#include <opmcore/pressure/tpfa/trans_tpfa.h>
+#include <opm/core/pressure/tpfa/cfs_tpfa.h>
+#include <opm/core/pressure/tpfa/compr_quant.h>
+#include <opm/core/pressure/tpfa/trans_tpfa.h>
 
 
 
