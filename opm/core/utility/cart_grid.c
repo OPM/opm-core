@@ -31,8 +31,6 @@
 #include <stdio.h>
 #include "cart_grid.h"
 
-void destroy_cart_grid    (struct UnstructuredGrid *G);
-
 static struct UnstructuredGrid *allocate_cart_grid_3d(int nx, int ny, int nz);
 static void fill_cart_topology_3d(struct UnstructuredGrid *G, int nx, int ny, int nz);
 static void fill_cart_geometry_3d(struct UnstructuredGrid *G, int nx, int ny, int nz);
