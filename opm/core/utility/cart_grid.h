@@ -39,8 +39,11 @@ extern "C" {
 void
 destroy_cart_grid(grid_t *G);
 
-grid_t *
+struct UnstructuredGrid*
 create_cart_grid(int nx, int ny, int nz);
+
+struct UnstructuredGrid*
+create_cart_grid_2d(int nx, int ny);
 
 #ifdef __cplusplus
 }
