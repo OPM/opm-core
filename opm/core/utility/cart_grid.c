@@ -740,6 +740,9 @@ fill_cart_topology_2d(struct UnstructuredGrid *G, int nx, int ny)
     cfaces     = G->cell_faces;
     cfacepos   = G->cell_facepos;
 
+    Nx  = nx + 1;
+    nxf = Nx * ny;
+
     cfacepos[0] = 0;
     for (j=0; j<ny; ++j) {
         for (i=0; i<nx; ++i) {
