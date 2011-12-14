@@ -36,14 +36,18 @@ extern "C" {
 
 #include <opm/core/grid.h>
 
-void
-destroy_cart_grid(grid_t *G);
+void                     destroy_cart_grid(grid_t *G);
 
-struct UnstructuredGrid*
-create_cart_grid(int nx, int ny, int nz);
+struct UnstructuredGrid *create_cart_grid(int nx, int ny, int nz);
 
-struct UnstructuredGrid*
-create_cart_grid_2d(int nx, int ny);
+struct UnstructuredGrid *create_cart_grid_2d(int nx, int ny);
+struct UnstructuredGrid *create_cart_grid_3d(int nx, int ny, int nz);
+
+struct UnstructuredGrid *create_tensor_grid_2d(int nx, int ny, 
+                                               double x[], double y[]);
+struct UnstructuredGrid *create_tensor_grid_3d(int nx, int ny, int nz, 
+                                               double x[], double y[], double z[]);
+
 
 #ifdef __cplusplus
 }

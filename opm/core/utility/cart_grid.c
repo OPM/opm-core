@@ -43,11 +43,15 @@ create_cart_grid_3d(int nx, int ny, int nz)
     struct UnstructuredGrid *G;
 
     G = allocate_cart_grid_3d(nx, ny, nz);
-    if (G != NULL)
+    if (G == NULL)
     {
-        fill_cart_topology_3d(G, nx, ny, nz);
-        fill_cart_geometry_3d(G, nx, ny, nz);
+        fprintf(stderr, "Cannot allocate space for grid.\n");
+        exit(EXIT_FAILURE);
     }
+
+    fill_cart_topology_3d(G, nx, ny, nz);
+    fill_cart_geometry_3d(G, nx, ny, nz);
+
     return G;
 }
 
@@ -63,11 +67,80 @@ create_cart_grid_2d(int nx, int ny)
     struct UnstructuredGrid *G;
 
     G = allocate_cart_grid_2d(nx, ny);
-    if (G != NULL)
+    if (G == NULL)
     {
-        fill_cart_topology_2d(G, nx, ny);
-        fill_cart_geometry_2d(G, nx, ny);
+        fprintf(stderr, "Cannot allocate space for grid.\n");
+        exit(EXIT_FAILURE);
     }
+
+    fill_cart_topology_2d(G, nx, ny);
+    fill_cart_geometry_2d(G, nx, ny);
+
+    return G;
+}
+
+/* --------------------------------------------------------------------- */
+
+struct UnstructuredGrid *
+create_tensor_grid_2d(int nx, int ny, double x[], double y[])
+{
+    int    i,j;
+
+    double *coord;
+    struct UnstructuredGrid *G;
+
+    G = allocate_cart_grid_2d(nx, ny);
+
+    if (G == NULL)
+    {
+        fprintf(stderr, "Cannot allocate space for grid.\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    fill_cart_topology_2d(G, nx, ny);
+
+    coord = G->node_coordinates;
+    for (j=0; j<ny+1; ++j) {
+        for (i=0; i<nx+1; ++i) {
+            *coord++ = x[i];
+            *coord++ = y[j];
+        }
+    }
+    
+    return G;
+}
+
+/* --------------------------------------------------------------------- */
+
+struct UnstructuredGrid *
+create_tensor_grid_3d(int nx, int ny, int nz, double x[], double y[], double z[])
+{
+    int    i,j,k;
+
+    double *coord;
+    struct UnstructuredGrid *G;
+
+    G = allocate_cart_grid_3d(nx, ny, nz);
+
+    if (G == NULL)
+    {
+        fprintf(stderr, "Cannot allocate space for grid.\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    fill_cart_topology_3d(G, nx, ny, nz);
+
+    coord = G->node_coordinates;
+    for (k=0; k<nz+1; ++k) {
+        for (j=0; j<ny+1; ++j) {
+            for (i=0; i<nx+1; ++i) {
+                *coord++ = x[i];
+                *coord++ = y[j];
+                *coord++ = z[k];
+            }
+        }
+    }
+
     return G;
 }
 
@@ -805,6 +878,7 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G, int nx, int ny)
         }
     }
 }
+
 
 
 
