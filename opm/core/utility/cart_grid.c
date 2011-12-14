@@ -673,7 +673,6 @@ create_cart_grid(int nx, int ny, int nz)
 static struct UnstructuredGrid*
 allocate_cart_grid_2d(int nx, int ny)
 {
-    int    i,j;
     int    nxf, nyf;
     int    Nx, Ny;
 
@@ -733,8 +732,8 @@ static void
 fill_cart_topology_2d(struct UnstructuredGrid *G, int nx, int ny)
 {
     int    i,j;
-    int    nxf, nyf;
-    int    Nx, Ny;
+    int    nxf;
+    int    Nx;
 
     int    *fnodes, *fnodepos, *fcells, *cfaces, *cfacepos;
 
