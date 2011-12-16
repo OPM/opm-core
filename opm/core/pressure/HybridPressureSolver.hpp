@@ -21,10 +21,10 @@
 #ifndef OPM_HYBRIDPRESSURESOLVER_HEADER_INCLUDED
 #define OPM_HYBRIDPRESSURESOLVER_HEADER_INCLUDED
 
-#include "fsh.h"
-#include "sparse_sys.h"
-#include "mimetic.h"
-#include "GridAdapter.hpp"
+#include <opm/core/pressure/fsh.h>
+#include <opm/core/linalg/sparse_sys.h>
+#include <opm/core/pressure/mimetic/mimetic.h>
+#include <opm/core/GridAdapter.hpp>
 #include <stdexcept>
 
 

@@ -59,6 +59,7 @@ opm/core/linalg/sparse_sys.h                            \
 opm/core/linalg/blas_lapack.h                           \
 opm/core/fluid/SimpleFluid2p.hpp                        \
 opm/core/grid.h                                         \
+opm/core/GridAdapter.hpp                                \
 opm/core/pressure/fsh.h                                 \
 opm/core/pressure/HybridPressureSolver.hpp              \
 opm/core/pressure/TPFAPressureSolver.hpp                \
@@ -71,7 +72,6 @@ opm/core/pressure/tpfa/trans_tpfa.h                     \
 opm/core/pressure/tpfa/cfs_tpfa_residual.h              \
 opm/core/pressure/tpfa/ifs_tpfa.h                       \
 opm/core/pressure/TPFACompressiblePressureSolver.hpp    \
-opm/core/pressure/GridAdapter.hpp                       \
 opm/core/pressure/msmfem/coarse_sys.h                   \
 opm/core/pressure/msmfem/hash_set.h                     \
 opm/core/pressure/msmfem/ifsh_ms.h                      \

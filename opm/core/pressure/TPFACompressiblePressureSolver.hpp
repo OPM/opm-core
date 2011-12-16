@@ -21,13 +21,13 @@
 #define OPM_TPFACOMPRESSIBLEPRESSURESOLVER_HEADER_INCLUDED
 
 
-#include "cfs_tpfa.h"
-#include "trans_tpfa.h"
-#include "sparse_sys.h"
-#include "flow_bc.h"
-#include "well.h"
-#include "compr_quant.h"
-#include "GridAdapter.hpp"
+#include <opm/core/pressure/tpfa/cfs_tpfa.h>
+#include <opm/core/pressure/tpfa/trans_tpfa.h>
+#include <opm/core/linalg/sparse_sys.h>
+#include <opm/core/pressure/flow_bc.h>
+#include <opm/core/well.h>
+#include <opm/core/pressure/tpfa/compr_quant.h>
+#include <opm/core/GridAdapter.hpp>
 #include <stdexcept>
 
 

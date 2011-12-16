@@ -21,7 +21,7 @@
 #define OPM_GRIDADAPTER_HEADER_INCLUDED
 
 
-#include "grid.h"
+#include <opm/core/grid.h>
 #include <stdexcept>
 
 class GridAdapter
