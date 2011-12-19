@@ -1,0 +1,13 @@
+<?xml version = '1.0' encoding = 'ISO-8859-1'?>
+<ParameterGroup>
+  <MergeWithFile value="extratestdata.xml"/>
+  <Parameter type="string" name="topitem" value="somestring"/>
+  <Parameter type="string" name="slashtopitem" value="anotherstring"/>
+  <ParameterGroup name="group">
+    <Parameter type="int" name="item" value="1"/>
+    <Parameter type="int" name="anotheritem" value="2"/>
+    <ParameterGroup name="subgroup">
+      <Parameter type="int" name="item" value="3"/>
+    </ParameterGroup>
+  </ParameterGroup>
+</ParameterGroup>
