@@ -2,7 +2,7 @@ AM_CPPFLAGS =					\
 -I$(top_srcdir)                                 \
 $(BOOST_CPPFLAGS)
 
-LDFLAGS = $(BOOST_LDADD)
+LDFLAGS = $(BOOST_LDFLAGS)
 
 
 LDADD =						\
