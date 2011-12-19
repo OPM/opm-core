@@ -134,8 +134,6 @@ void preprocess         (const struct grdecl   *in,
 
    process_grdecl(in, tol, &pg);
 
-   ok = allocate_geometry(base);
-
    /*
     *  General grid interface
     */
@@ -160,6 +158,7 @@ void preprocess         (const struct grdecl   *in,
    base->cell_centroids   = NULL;
    base->cell_volumes     = NULL;
 
+   ok = allocate_geometry(base);
 
    /*
     *  Cornerpoint grid interface
