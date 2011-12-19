@@ -40,7 +40,7 @@
 #define BOOST_TEST_MODULE SparseVectorTest
 #include <boost/test/unit_test.hpp>
 
-#include "../SparseVector.hpp"
+#include <opm/core/utility/SparseVector.hpp>
 
 using namespace Dune;
 

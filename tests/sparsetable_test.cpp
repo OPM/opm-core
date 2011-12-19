@@ -39,7 +39,7 @@
 #define BOOST_TEST_MODULE SparseTableTest
 #include <boost/test/unit_test.hpp>
 
-#include "../SparseTable.hpp"
+#include <opm/core/utility/SparseTable.hpp>
 
 using namespace Dune;
 

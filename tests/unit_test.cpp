@@ -40,7 +40,7 @@
 
 #include <boost/bind.hpp>
 
-#include "../Units.hpp"
+#include <opm/core/utility/Units.hpp>
 
 using namespace Dune::prefix;
 using namespace Dune::unit;

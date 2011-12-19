@@ -33,7 +33,7 @@
   along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <dune/common/MonotCubicInterpolator.hpp>
+#include <opm/core/utility/MonotCubicInterpolator.hpp>
 
 int main()
 {

@@ -29,6 +29,11 @@ AC_F77_WRAPPERS
 
 # Checks for libraries.
 AX_LAPACK
+AX_BOOST_BASE([1.37])
+AX_BOOST_SYSTEM
+AX_BOOST_DATE_TIME
+AX_BOOST_FILESYSTEM
+AX_BOOST_UNIT_TEST_FRAMEWORK
 
 # Checks for header files.
 AC_CHECK_HEADERS([float.h limits.h stddef.h stdlib.h string.h])
