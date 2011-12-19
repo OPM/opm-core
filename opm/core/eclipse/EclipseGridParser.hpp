@@ -41,9 +41,9 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <set>
 #include <tr1/memory>
-#include <dune/common/SpecialEclipseFields.hpp>
-#include <dune/common/EclipseUnits.hpp>
-#include <dune/common/Factory.hpp>
+#include <opm/core/eclipse/SpecialEclipseFields.hpp>
+#include <opm/core/eclipse/EclipseUnits.hpp>
+#include <opm/core/utility/Factory.hpp>
 
 namespace Dune
 {

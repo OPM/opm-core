@@ -40,8 +40,8 @@
 #include <string>
 #include <istream>
 #include <vector>
-#include <dune/common/ErrorMacros.hpp>
-#include <dune/common/linInt.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/linInt.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
 
 namespace Dune

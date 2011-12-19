@@ -42,8 +42,8 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <tr1/memory>
 
-#include <dune/common/param/ParameterMapItem.hpp>
-#include <dune/common/param/ParameterRequirement.hpp>
+#include <opm/core/utility/parameters/ParameterMapItem.hpp>
+#include <opm/core/utility/parameters/ParameterRequirement.hpp>
 
 namespace Dune {
     namespace parameter {
@@ -287,6 +287,6 @@ namespace Dune {
     } // namespace parameter
 } // namespace Dune
 
-#include <dune/common/param/ParameterGroup_impl.hpp>
+#include <opm/core/utility/parameters/ParameterGroup_impl.hpp>
 
 #endif // OPENRS_PARAMETERGROUP_HEADER

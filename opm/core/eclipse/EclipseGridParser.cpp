@@ -42,12 +42,12 @@
 #include <algorithm>
 #include <limits>
 #include <cfloat>
-#include "EclipseGridParser.hpp"
-#include "EclipseGridParserHelpers.hpp"
-#include "SpecialEclipseFields.hpp"
-#include <dune/common/ErrorMacros.hpp>
+#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/eclipse/EclipseGridParserHelpers.hpp>
+#include <opm/core/eclipse/SpecialEclipseFields.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
 #include <boost/filesystem.hpp>
-#include <dune/common/Units.hpp>
+#include <opm/core/utility/Units.hpp>
 
 using namespace std;
 

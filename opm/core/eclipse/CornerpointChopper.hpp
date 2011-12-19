@@ -20,8 +20,8 @@
 #ifndef OPM_CORNERPOINTCHOPPER_HEADER_INCLUDED
 #define OPM_CORNERPOINTCHOPPER_HEADER_INCLUDED
 
-#include <dune/common/EclipseGridParser.hpp>
-#include <dune/common/param/ParameterGroup.hpp>
+#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/eclipse/param/ParameterGroup.hpp>
 #include <iostream>
 #include <fstream>
 #include <string>

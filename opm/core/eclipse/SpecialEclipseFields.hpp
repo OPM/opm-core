@@ -40,9 +40,9 @@
 #include <string>
 #include <fstream>
 #include <limits>
-#include <dune/common/ErrorMacros.hpp>
-#include <dune/common/EclipseGridParserHelpers.hpp>
-#include <dune/common/EclipseUnits.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/eclipse/EclipseGridParserHelpers.hpp>
+#include <opm/core/eclipse/EclipseUnits.hpp>
 
 namespace Dune
 {

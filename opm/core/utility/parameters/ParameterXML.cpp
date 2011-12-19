@@ -36,9 +36,9 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <dune/common/param/ParameterXML.hpp>
-#include <dune/common/param/Parameter.hpp>
-#include <dune/common/param/ParameterStrings.hpp>
+#include <opm/core/utility/parameters/ParameterXML.hpp>
+#include <opm/core/utility/parameters/Parameter.hpp>
+#include <opm/core/utility/parameters/ParameterStrings.hpp>
 
 #include <exception>
 #include <iostream>
@@ -46,7 +46,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/filesystem.hpp>
 
 
-#include <dune/common/param/tinyxml/tinyxml.h>
+#include <opm/core/utility/parameters/tinyxml/tinyxml.h>
 
 
 

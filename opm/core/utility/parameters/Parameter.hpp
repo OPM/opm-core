@@ -39,8 +39,8 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <sstream>
 
-#include <dune/common/param/ParameterMapItem.hpp>
-#include <dune/common/param/ParameterStrings.hpp>
+#include <opm/core/utility/parameters/ParameterMapItem.hpp>
+#include <opm/core/utility/parameters/ParameterStrings.hpp>
 
 namespace Dune {
     /// See ParameterGroup.hpp for how to use the parameter system

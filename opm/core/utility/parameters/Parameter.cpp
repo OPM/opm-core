@@ -37,7 +37,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #endif
 #include <string>
-#include <dune/common/param/Parameter.hpp>
+#include <opm/core/utility/parameters/Parameter.hpp>
 
 namespace Dune {
     namespace parameter {

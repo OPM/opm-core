@@ -36,17 +36,17 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <dune/common/param/ParameterGroup.hpp>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
 
 #include <cassert>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
 
-#include <dune/common/param/Parameter.hpp>
-#include <dune/common/param/ParameterStrings.hpp>
-#include <dune/common/param/ParameterTools.hpp>
-#include <dune/common/param/ParameterXML.hpp>
+#include <opm/core/utility/parameters/Parameter.hpp>
+#include <opm/core/utility/parameters/ParameterStrings.hpp>
+#include <opm/core/utility/parameters/ParameterTools.hpp>
+#include <opm/core/utility/parameters/ParameterXML.hpp>
 
 namespace Dune {
     namespace parameter {

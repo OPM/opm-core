@@ -3,7 +3,7 @@
 
 SUBDIRS = tinyxml . test
 
-paramdir = $(includedir)/dune/common/param
+paramdir = $(includedir)/opm/core/utility/parameters/param
 
 param_HEADERS = Parameter.hpp ParameterGroup.hpp ParameterGroup_impl.hpp \
                 ParameterMapItem.hpp ParameterRequirement.hpp \

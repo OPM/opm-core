@@ -36,7 +36,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef OPENRS_PARAMETERXML_HEADER
 #define OPENRS_PARAMETERXML_HEADER
 
-#include <dune/common/param/ParameterGroup.hpp>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
 
 namespace Dune {
     namespace parameter {

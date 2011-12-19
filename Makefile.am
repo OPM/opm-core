@@ -7,6 +7,17 @@ SUBDIRS = . tests examples
 lib_LTLIBRARIES = libopmcore.la
 
 libopmcore_la_SOURCES = 				\
+opm/core/eclipse/EclipseGridInspector.cpp               \
+opm/core/eclipse/EclipseGridParser.cpp                  \
+opm/core/utility/MonotCubicInterpolator.cpp             \
+opm/core/utility/parameters/Parameter.cpp               \
+opm/core/utility/parameters/ParameterGroup.cpp          \
+opm/core/utility/parameters/ParameterTools.cpp          \
+opm/core/utility/parameters/ParameterXML.cpp            \
+opm/core/utility/parameters/tinyxml/tinystr.cpp         \
+opm/core/utility/parameters/tinyxml/tinyxml.cpp         \
+opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp    \
+opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp   \
 opm/core/utility/cart_grid.c				\
 opm/core/utility/cpgpreprocess/geometry.c		\
 opm/core/utility/cpgpreprocess/preprocess.c		\
@@ -15,6 +26,7 @@ opm/core/utility/cpgpreprocess/cgridinterface.c		\
 opm/core/utility/cpgpreprocess/sparsetable.c		\
 opm/core/utility/cpgpreprocess/facetopology.c		\
 opm/core/utility/cpgpreprocess/uniquepoints.c		\
+opm/core/utility/StopWatch.cpp                          \
 opm/core/linalg/sparse_sys.c				\
 opm/core/pressure/cfsh.c				\
 opm/core/pressure/flow_bc.c				\
