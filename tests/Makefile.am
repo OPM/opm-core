@@ -1,5 +1,5 @@
 AM_CPPFLAGS =					\
--I$(top_srcdir)                                 \
+-I$(top_srcdir)					\
 $(BOOST_CPPFLAGS)
 
 LDFLAGS = $(BOOST_LDFLAGS)
@@ -7,19 +7,19 @@ LDFLAGS = $(BOOST_LDFLAGS)
 
 LDADD =						\
 $(top_builddir)/libopmcore.la			\
-$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)    \
-$(BOOST_FILESYSTEM_LIB)                         \
-$(BOOST_SYSTEM_LIB)                             \
-$(BOOST_DATE_TIME_LIB)                          \
-$(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+$(BOOST_FILESYSTEM_LIB)				\
+$(BOOST_SYSTEM_LIB)				\
+$(BOOST_DATE_TIME_LIB)				\
+$(BOOST_UNIT_TEST_FRAMEWORK_LIB)		\
+$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 
 noinst_PROGRAMS =				\
-monotcubicinterpolator_test                     \
-param_test                                      \
-sparsetable_test                                \
-sparsevector_test                               \
-unit_test                                       \
+monotcubicinterpolator_test			\
+param_test					\
+sparsetable_test				\
+sparsevector_test				\
+unit_test					\
 test_readvector					\
 test_sf2p
 
@@ -32,7 +32,7 @@ test_readvector_SOURCES   = test_readvector.cpp
 test_sf2p_SOURCES         = test_sf2p.cpp
 
 if UMFPACK
-noinst_PROGRAMS += test_cfs_tpfa
-noinst_PROGRAMS += test_jacsys
-test_jacsys_SOURCES     = test_jacsys.cpp
+noinst_PROGRAMS    += test_cfs_tpfa
+noinst_PROGRAMS    += test_jacsys
+test_jacsys_SOURCES = test_jacsys.cpp
 endif
