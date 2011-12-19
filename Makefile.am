@@ -56,6 +56,31 @@ opm/core/transport/spu_implicit.c                       \
 opm/core/transport/transport_source.c
 
 nobase_include_HEADERS =                                \
+opm/core/eclipse/CornerpointChopper.hpp                 \
+opm/core/eclipse/EclipseGridInspector.hpp               \
+opm/core/eclipse/EclipseGridParser.hpp                  \
+opm/core/eclipse/EclipseGridParserHelpers.hpp           \
+opm/core/eclipse/EclipseUnits.hpp                       \
+opm/core/eclipse/SpecialEclipseFields.hpp               \
+opm/core/utility/Average.hpp                            \
+opm/core/utility/cpgpreprocess/readvector.hpp           \
+opm/core/utility/ErrorMacros.hpp                        \
+opm/core/utility/Factory.hpp                            \
+opm/core/utility/linInt.hpp                             \
+opm/core/utility/MonotCubicInterpolator.hpp             \
+opm/core/utility/parameters/Parameter.hpp               \
+opm/core/utility/parameters/ParameterGroup.hpp          \
+opm/core/utility/parameters/ParameterGroup_impl.hpp     \
+opm/core/utility/parameters/ParameterMapItem.hpp        \
+opm/core/utility/parameters/ParameterRequirement.hpp    \
+opm/core/utility/parameters/ParameterStrings.hpp        \
+opm/core/utility/parameters/ParameterTools.hpp          \
+opm/core/utility/parameters/ParameterXML.hpp            \
+opm/core/utility/RootFinders.hpp                        \
+opm/core/utility/SparseTable.hpp                        \
+opm/core/utility/SparseVector.hpp                       \
+opm/core/utility/StopWatch.hpp                          \
+opm/core/utility/Units.hpp                              \
 opm/core/utility/cpgpreprocess/readvector.hpp           \
 opm/core/utility/cpgpreprocess/uniquepoints.h           \
 opm/core/utility/cpgpreprocess/preprocess.h             \
