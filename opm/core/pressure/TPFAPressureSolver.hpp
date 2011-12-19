@@ -21,12 +21,12 @@
 #define OPM_TPFAPRESSURESOLVER_HEADER_INCLUDED
 
 
-#include "ifs_tpfa.h"
-#include "trans_tpfa.h"
-#include "sparse_sys.h"
-#include "flow_bc.h"
-#include "mimetic.h" // for updating gpress
-#include "GridAdapter.hpp"
+#include <opm/core/pressure/tpfa/ifs_tpfa.h>
+#include <opm/core/pressure/tpfa/trans_tpfa.h>
+#include <opm/core/linalg/sparse_sys.h>
+#include <opm/core/pressure/flow_bc.h>
+#include <opm/core/pressure/mimetic/mimetic.h> // for updating gpress
+#include <opm/core/GridAdapter.hpp>
 #include <stdexcept>
 
 
