@@ -147,22 +147,22 @@ struct FAULTS : public SpecialBase
     virtual void read(std::istream& is)
     {
 	while(is) {
-	    std::string name;
-	    is >> name;
-	    if (name[0] == '/') {
+	    std::string fltname;
+	    is >> fltname;
+	    if (fltname[0] == '/') {
 		is >> ignoreLine;
 		break;
 	    }
-	    while (name.find("--") == 0) {
+	    while (fltname.find("--") == 0) {
 		// This line is a comment
-		is >> ignoreLine >> name;
+		is >> ignoreLine >> fltname;
 	    }
 	    FaultSegment fault_segment;
 	    fault_segment.ijk_coord.resize(6);
-	    fault_segment.fault_name = name;
+	    fault_segment.fault_name = fltname;
 	    int nread = readDefaultedVectorData(is, fault_segment.ijk_coord, 6);
 	    if (nread != 6) {
-		THROW("Error reading fault_segment " << name);
+		THROW("Error reading fault_segment " << fltname);
 	    }
 	    is >> fault_segment.face;
 	    faults.push_back(fault_segment);
@@ -217,18 +217,18 @@ struct MULTFLT : public SpecialBase
     virtual void read(std::istream& is)
     {
 	while(is) {
-	    std::string name;
-	    is >> name;
-	    if (name[0] == '/') {
+	    std::string fltname;
+	    is >> fltname;
+	    if (fltname[0] == '/') {
 		is >> ignoreLine;
 		break;
 	    }
-	    while (name == "--") {
+	    while (fltname == "--") {
 		// This line is a comment
-		is >> ignoreLine >> name;
+		is >> ignoreLine >> fltname;
 	    }
 	    MultfltLine multflt_line;
-	    multflt_line.fault_name = name;
+	    multflt_line.fault_name = fltname;
 	    std::vector<double> data(2,1.0);
 	    if (readDefaultedVectorData(is, data, 2) == 2) {
 		ignoreSlashLine(is);
@@ -770,18 +770,18 @@ struct WELSPECS : public SpecialBase
     virtual void read(std::istream& is)
     {
 	while(is) {
-	    std::string name = readString(is); 
-	    if (name[0] == '/') {
+	    std::string wellname = readString(is); 
+	    if (wellname[0] == '/') {
 		is >> ignoreLine;
 		break;
 	    }
-	    while (name.find("--") == 0) {
+	    while (wellname.find("--") == 0) {
 		// This line is a comment
 		is >> ignoreLine;
-		name = readString(is);
+		wellname = readString(is);
 	    }
 	    WelspecsLine welspecs_line;
-	    welspecs_line.name_ = name;
+	    welspecs_line.name_ = wellname;
 	    welspecs_line.group_ = readString(is);
 	    std::vector<int> int_data(2,1);
 	    readDefaultedVectorData(is, int_data, 2);
@@ -891,18 +891,18 @@ struct COMPDAT : public SpecialBase
     virtual void read(std::istream& is)
     {
 	while(is) {
-	    std::string name = readString(is); 
-	    if (name[0] == '/') {
+	    std::string wellname = readString(is); 
+	    if (wellname[0] == '/') {
 		is >> ignoreLine;
 		break;
 	    }
-	    while (name.find("--") == 0) {
+	    while (wellname.find("--") == 0) {
 		// This line is a comment
 		is >> ignoreLine;
-		name = readString(is);
+		wellname = readString(is);
 	    }
 	    CompdatLine compdat_line;
-	    compdat_line.well_ = name;
+	    compdat_line.well_ = wellname;
 	    readDefaultedVectorData(is, compdat_line.grid_ind_, 4);
 	    compdat_line.open_shut_flag_ = readString(is);
 	    std::vector<int> int_data(1,-1);
@@ -999,18 +999,18 @@ struct WCONINJE : public SpecialBase
     virtual void read(std::istream& is)
     {
 	while(is) {
-	    std::string name = readString(is); 
-	    if (name[0] == '/') {
+	    std::string wellname = readString(is); 
+	    if (wellname[0] == '/') {
 		is >> ignoreLine;
 		break;
 	    }
-	    while (name.find("--") == 0) {
+	    while (wellname.find("--") == 0) {
 		// This line is a comment
 		is >> ignoreLine;
-		name = readString(is);
+		wellname = readString(is);
 	    }
 	    WconinjeLine wconinje_line;
-	    wconinje_line.well_ = name;
+	    wconinje_line.well_ = wellname;
 	    wconinje_line.injector_type_ = readString(is);
 	    wconinje_line.open_shut_flag_ = readString(is);
 	    wconinje_line.control_mode_ = readString(is);
@@ -1108,18 +1108,18 @@ struct WCONPROD : public SpecialBase
     virtual void read(std::istream& is)
     {
 	while(is) {
-	    std::string name = readString(is); 
-	    if (name[0] == '/') {
+	    std::string wellname = readString(is); 
+	    if (wellname[0] == '/') {
 		is >> ignoreLine;
 		break;
 	    }
-	    while (name.find("--") == 0) {
+	    while (wellname.find("--") == 0) {
 		// This line is a comment
 		is >> ignoreLine;
-		name = readString(is);
+		wellname = readString(is);
 	    }
 	    WconprodLine wconprod_line;
-	    wconprod_line.well_ = name;
+	    wconprod_line.well_ = wellname;
 	    wconprod_line.open_shut_flag_ = readString(is);
 	    wconprod_line.control_mode_ = readString(is);
 	    std::vector<double> double_data(9, 1.0E20);
@@ -1210,18 +1210,18 @@ struct WELTARG : public SpecialBase
     virtual void read(std::istream& is)
     {
 	while(is) {
-	    std::string name = readString(is); 
-	    if (name[0] == '/') {
+	    std::string wellname = readString(is); 
+	    if (wellname[0] == '/') {
 		is >> ignoreLine;
 		break;
 	    }
-	    while (name.find("--") == 0) {
+	    while (wellname.find("--") == 0) {
 		// This line is a comment
 		is >> ignoreLine;
-		name = readString(is);
+		wellname = readString(is);
 	    }
 	    WeltargLine weltarg_line;
-	    weltarg_line.well_ = name;
+	    weltarg_line.well_ = wellname;
 	    weltarg_line.control_change_ = readString(is);
 	    is >> weltarg_line.new_value_;
 	    ignoreSlashLine(is);
