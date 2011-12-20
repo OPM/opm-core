@@ -63,7 +63,6 @@ opm/core/eclipse/EclipseGridParserHelpers.hpp           \
 opm/core/eclipse/EclipseUnits.hpp                       \
 opm/core/eclipse/SpecialEclipseFields.hpp               \
 opm/core/utility/Average.hpp                            \
-opm/core/utility/cpgpreprocess/readvector.hpp           \
 opm/core/utility/ErrorMacros.hpp                        \
 opm/core/utility/Factory.hpp                            \
 opm/core/utility/linInt.hpp                             \
