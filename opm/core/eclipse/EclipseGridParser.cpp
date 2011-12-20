@@ -349,8 +349,8 @@ void EclipseGridParser::convertToSI()
             THROW("Units for field " << key << " not specified. Cannon convert to SI.");
         }
         // Convert.
-        for (int i = 0; i < int(field.size()); ++i) {
-            field[i] = Dune::unit::convert::from(field[i], unit);
+        for (int j = 0; j < int(field.size()); ++j) {
+            field[j] = Dune::unit::convert::from(field[j], unit);
         }
     }
 
