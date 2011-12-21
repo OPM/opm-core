@@ -18,15 +18,15 @@
 */
 
 
-#include "BlackoilPVT.hpp"
-#include <dune/common/EclipseGridParser.hpp>
-#include <dune/common/Units.hpp>
-#include "MiscibilityDead.hpp"
-#include "MiscibilityLiveOil.hpp"
-#include "MiscibilityLiveGas.hpp"
-#include "MiscibilityWater.hpp"
-#include <dune/common/ErrorMacros.hpp>
-#include <dune/common/linInt.hpp>
+#include <opm/core/fluid/blackoil/BlackoilPVT.hpp>
+#include <opm/core/fluid/blackoil/MiscibilityDead.hpp>
+#include <opm/core/fluid/blackoil/MiscibilityLiveOil.hpp>
+#include <opm/core/fluid/blackoil/MiscibilityLiveGas.hpp>
+#include <opm/core/fluid/blackoil/MiscibilityWater.hpp>
+#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/utility/Units.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/linInt.hpp>
 
 using namespace Dune;
 

@@ -34,8 +34,8 @@
 #ifndef OPENRS_MISCIBILITYWATER_HEADER
 #define OPENRS_MISCIBILITYWATER_HEADER
 
-#include "MiscibilityProps.hpp"
-#include <dune/common/ErrorMacros.hpp>
+#include <opm/core/fluid/blackoil/MiscibilityProps.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
 
 // Forward declaration.
 class PVTW;

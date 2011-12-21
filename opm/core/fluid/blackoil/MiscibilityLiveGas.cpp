@@ -29,10 +29,10 @@
 */
 
 
+#include <opm/core/fluid/blackoil/MiscibilityLiveGas.hpp>
 #include <algorithm>
-#include "MiscibilityLiveGas.hpp"
-#include <dune/common/ErrorMacros.hpp>
-#include <dune/common/linInt.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/linInt.hpp>
 
 using namespace std;
 using namespace Dune;

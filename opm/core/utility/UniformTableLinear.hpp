@@ -26,8 +26,8 @@
 #include <utility>
 #include <iostream>
 
-#include <dune/common/ErrorMacros.hpp>
-#include <dune/porsol/common/linearInterpolation.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/linearInterpolation.hpp>
 
 namespace Dune {
     namespace utils {

@@ -28,10 +28,10 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <opm/core/fluid/blackoil/MiscibilityLiveOil.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/linInt.hpp>
 #include <algorithm>
-#include "MiscibilityLiveOil.hpp"
-#include <dune/common/ErrorMacros.hpp>
-#include <dune/common/linInt.hpp>
 
 using namespace std;
 using namespace Dune;
@@ -85,7 +85,7 @@ namespace Opm
 	while (undersat_oil_tables_[iNext][0].size() < 2) {
 		++iNext;
 	}
-	assert(iNext < sz); 
+	ASSERT(iNext < sz); 
 	for (int i=0; i<sz; ++i) {
 		if (undersat_oil_tables_[i][0].size() > 1) {
 			iPrev = i;

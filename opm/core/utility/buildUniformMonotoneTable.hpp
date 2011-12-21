@@ -20,8 +20,8 @@
 #ifndef OPM_BUILDUNIFORMMONOTONETABLE_HEADER_INCLUDED
 #define OPM_BUILDUNIFORMMONOTONETABLE_HEADER_INCLUDED
 
-#include <dune/common/MonotCubicInterpolator.hpp>
-#include <dune/porsol/common/UniformTableLinear.hpp>
+#include <opm/core/utility/MonotCubicInterpolator.hpp>
+#include <opm/core/utility/UniformTableLinear.hpp>
 
 namespace Dune {
     namespace utils {
