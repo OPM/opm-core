@@ -75,6 +75,8 @@ opm/core/utility/parameters/ParameterRequirement.hpp    \
 opm/core/utility/parameters/ParameterStrings.hpp        \
 opm/core/utility/parameters/ParameterTools.hpp          \
 opm/core/utility/parameters/ParameterXML.hpp            \
+opm/core/utility/parameters/tinyxml/tinystr.h           \
+opm/core/utility/parameters/tinyxml/tinyxml.h           \
 opm/core/utility/RootFinders.hpp                        \
 opm/core/utility/SparseTable.hpp                        \
 opm/core/utility/SparseVector.hpp                       \
