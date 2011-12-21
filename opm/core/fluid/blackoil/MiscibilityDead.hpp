@@ -35,8 +35,8 @@
  *  Detailed description.
  */
 
-#include "MiscibilityProps.hpp"
-#include <dune/porsol/common/UniformTableLinear.hpp>
+#include <opm/core/fluid/blackoil/MiscibilityProps.hpp>
+#include <opm/core/utility/UniformTableLinear.hpp>
 
 namespace Opm
 {

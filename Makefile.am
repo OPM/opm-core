@@ -9,6 +9,11 @@ lib_LTLIBRARIES = libopmcore.la
 libopmcore_la_SOURCES = 				\
 opm/core/eclipse/EclipseGridInspector.cpp               \
 opm/core/eclipse/EclipseGridParser.cpp                  \
+opm/core/fluid/blackoil/BlackoilPVT.cpp                 \
+opm/core/fluid/blackoil/MiscibilityDead.cpp             \
+opm/core/fluid/blackoil/MiscibilityLiveGas.cpp          \
+opm/core/fluid/blackoil/MiscibilityLiveOil.cpp          \
+opm/core/fluid/blackoil/MiscibilityProps.cpp            \
 opm/core/utility/MonotCubicInterpolator.cpp             \
 opm/core/utility/parameters/Parameter.cpp               \
 opm/core/utility/parameters/ParameterGroup.cpp          \
