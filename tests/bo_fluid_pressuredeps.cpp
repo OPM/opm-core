@@ -19,10 +19,51 @@
 
 #include "config.h"
 
-#include <dune/common/param/ParameterGroup.hpp>
-#include <dune/common/EclipseGridParser.hpp>
-#include <dune/porsol/blackoil/BlackoilFluid.hpp>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
+#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/fluid/BlackoilFluid.hpp>
 
+#ifdef COMPUTE_OLD_TERMS
+void printCompressibilityTerms(double p, const Opm::BlackoilFluid::FluidState& state)
+{
+    std::cout.precision(6);
+    std::cout.width(15);
+    std::cout.fill(' ');
+    std::cout << p << "  ";
+    std::cout.width(15);
+    std::cout.fill(' ');
+    std::cout << state.total_compressibility_ << "  ";
+    std::cout.width(15);
+    std::cout.fill(' ');
+    std::cout << totmob << "  ";
+    std::cout.width(15);
+    std::cout.fill(' ');
+    std::cout << state.total_phase_volume_density_ << "  ";
+    std::cout.width(15);
+    std::cout.fill(' ');
+    std::cout << state.experimental_term_ << '\n';
+}
+#endif
+
+void printSatsEtc(double p, const Opm::BlackoilFluid::FluidState& state)
+{
+    std::cout.precision(6);
+    std::cout.width(15);
+    std::cout.fill(' ');
+    std::cout << p << "  ";
+    std::cout.width(15);
+    std::cout.fill(' ');
+    std::cout << state.saturation_[0] << "  ";
+    std::cout.width(15);
+    std::cout.fill(' ');
+    std::cout << state.saturation_[1] << "  ";
+    std::cout.width(15);
+    std::cout.fill(' ');
+    std::cout << state.saturation_[2] << "  ";
+    std::cout.width(15);
+    std::cout.fill(' ');
+    std::cout << state.total_phase_volume_density_ << '\n';
+}
 
 int main(int argc, char** argv)
 {
@@ -43,7 +84,9 @@ int main(int argc, char** argv)
     int num_pts = param.getDefault("num_pts", 41);
     double min_press = param.getDefault("min_press", 1e7);
     double max_press = param.getDefault("max_press", 3e7);
+#ifdef COMPUTE_OLD_TERMS
     bool print_compr = param.getDefault("print_compr", true);
+#endif
     for (int i = 0; i < num_pts; ++i) {
         double factor = double(i)/double(num_pts - 1);
         double p = (1.0 - factor)*min_press + factor*max_press;
@@ -52,40 +95,14 @@ int main(int argc, char** argv)
         for (int phase = 0; phase < Opm::BlackoilFluid::numPhases; ++phase) {
             totmob += state.mobility_[phase];
         }
+#ifdef COMPUTE_OLD_TERMS
         if (print_compr) {
-            std::cout.precision(6);
-            std::cout.width(15);
-            std::cout.fill(' ');
-            std::cout << p << "  ";
-            std::cout.width(15);
-            std::cout.fill(' ');
-            std::cout << state.total_compressibility_ << "  ";
-            std::cout.width(15);
-            std::cout.fill(' ');
-            std::cout << totmob << "  ";
-            std::cout.width(15);
-            std::cout.fill(' ');
-            std::cout << state.total_phase_volume_density_ << "  ";
-            std::cout.width(15);
-            std::cout.fill(' ');
-            std::cout << state.experimental_term_ << '\n';
+            printCompressibilityTerms(p, state);
         } else {
-            std::cout.precision(6);
-            std::cout.width(15);
-            std::cout.fill(' ');
-            std::cout << p << "  ";
-            std::cout.width(15);
-            std::cout.fill(' ');
-            std::cout << state.saturation_[0] << "  ";
-            std::cout.width(15);
-            std::cout.fill(' ');
-            std::cout << state.saturation_[1] << "  ";
-            std::cout.width(15);
-            std::cout.fill(' ');
-            std::cout << state.saturation_[2] << "  ";
-            std::cout.width(15);
-            std::cout.fill(' ');
-            std::cout << state.total_phase_volume_density_ << '\n';
+            printSatsEtc(p, state);
         }
+#else
+        printSatsEtc(p, state);
+#endif
     }
 }

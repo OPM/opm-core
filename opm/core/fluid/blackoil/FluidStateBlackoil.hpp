@@ -40,9 +40,11 @@ namespace Opm
         PhaseVec solution_factor_;
         PhaseToCompMatrix phase_to_comp_; // RB^{-1} in Fortran ordering
         PhaseVec saturation_;
+#ifdef COMPUTE_OLD_TERMS
         PhaseVec phase_compressibility_;
         Scalar total_compressibility_;
         Scalar experimental_term_;
+#endif
         PhaseVec viscosity_;
         PhaseVec relperm_;
         PhaseJacobian drelperm_;
@@ -62,9 +64,7 @@ namespace Opm
 
         // Variables from PVT functions.
         std::vector<PhaseVec> formation_volume_factor;       // B
-        std::vector<PhaseVec> formation_volume_factor_deriv; // dB/dp
         std::vector<PhaseVec> solution_factor;               // R
-        std::vector<PhaseVec> solution_factor_deriv;         // dR/dp
         std::vector<PhaseVec> viscosity;                     // mu
 
         // Variables computed from PVT data.
@@ -74,9 +74,13 @@ namespace Opm
         std::vector<PhaseVec> phase_volume_density;          // u
         std::vector<Scalar> total_phase_volume_density;      // sum(u)
         std::vector<PhaseVec> saturation;                    // s = u/sum(u)
+#ifdef COMPUTE_OLD_TERMS
+        std::vector<PhaseVec> formation_volume_factor_deriv; // dB/dp
+        std::vector<PhaseVec> solution_factor_deriv;         // dR/dp
         std::vector<PhaseVec> phase_compressibility;         // c
         std::vector<Scalar> total_compressibility;           // cT
         std::vector<Scalar> experimental_term;               // ex = sum(Ai*dA*Ai*z)
+#endif
 
         // Variables computed from saturation.
         std::vector<PhaseVec> relperm;                       // kr

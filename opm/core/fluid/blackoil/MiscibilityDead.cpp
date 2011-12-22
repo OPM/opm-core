@@ -82,7 +82,7 @@ namespace Opm
     {
     }
 
-    double MiscibilityDead::getViscosity(int region, double press, const surfvol_t& /*surfvol*/) const
+    double MiscibilityDead::getViscosity(int /*region*/, double press, const surfvol_t& /*surfvol*/) const
     {
 	return viscosity_(press);
     }
@@ -100,7 +100,7 @@ namespace Opm
         }
     }
 
-    double MiscibilityDead::B(int region, double press, const surfvol_t& /*surfvol*/) const
+    double MiscibilityDead::B(int /*region*/, double press, const surfvol_t& /*surfvol*/) const
     {
 	// Interpolate 1/B 
 	return 1.0/one_over_B_(press);

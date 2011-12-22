@@ -20,10 +20,10 @@
 #ifndef OPM_FLUIDMATRIXINTERACTIONBLACKOIL_HEADER_INCLUDED
 #define OPM_FLUIDMATRIXINTERACTIONBLACKOIL_HEADER_INCLUDED
 
-#include <dune/common/EclipseGridParser.hpp>
-#include <dune/porsol/common/UniformTableLinear.hpp>
-#include <dune/porsol/common/buildUniformMonotoneTable.hpp>
-#include "BlackoilDefs.hpp"
+#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/utility/UniformTableLinear.hpp>
+#include <opm/core/utility/buildUniformMonotoneTable.hpp>
+#include <opm/core/fluid/blackoil/BlackoilDefs.hpp>
 #include <iostream>
 #include <stdexcept>
 

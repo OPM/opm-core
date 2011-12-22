@@ -19,9 +19,9 @@
 
 #include "config.h"
 
-#include <dune/porsol/blackoil/fluid/FluidMatrixInteractionBlackoil.hpp>
-#include <dune/common/param/ParameterGroup.hpp>
-#include <dune/common/fvector.hh>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
+#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/fluid/blackoil/FluidMatrixInteractionBlackoil.hpp>
 
 
 int main(int argc, char** argv)
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
     Opm::FluidMatrixInteractionBlackoilParams<double> fluid_params;
     fluid_params.init(parser);
     typedef Opm::FluidMatrixInteractionBlackoil<double> Law;
-    Dune::FieldVector<double, 3> s, kr;
+    Law::PhaseVec s, kr;
     const double temp = 300; // [K]
     int num = 41;
     for (int i = 0; i < num; ++i) {
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
         Law::kr(kr, fluid_params, s, temp);
         std::cout.width(6);
         std::cout.fill(' ');
-        std::cout << s[Law::Liquid] << "    " << kr << '\n';
+        std::cout << s[Law::Liquid] << "    " << kr[0] << ' ' << kr[1] << ' ' << kr[2] << '\n';
     }
 
 }

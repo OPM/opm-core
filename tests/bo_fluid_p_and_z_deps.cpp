@@ -20,9 +20,9 @@
 
 #include "config.h"
 
-#include <dune/common/param/ParameterGroup.hpp>
-#include <dune/common/EclipseGridParser.hpp>
-#include <dune/porsol/blackoil/BlackoilFluid.hpp>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
+#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/fluid/BlackoilFluid.hpp>
 
 
 int main(int argc, char** argv)
@@ -49,7 +49,11 @@ int main(int argc, char** argv)
     int changing_component = param.getDefault("changing_component", int(Opm::BlackoilFluid::Gas));
     double min_z = param.getDefault("min_z", 0.0);
     double max_z = param.getDefault("max_z", 500.0);
+#ifdef COMPUTE_OLD_TERMS
     int variable = param.getDefault("variable", 0);
+#else
+    int variable = param.getDefault("variable", 2);
+#endif
     Opm::BlackoilFluid::CompVec z = z0;
     std::cout << "%}\n"
               << "data = [\n";
@@ -67,12 +71,14 @@ int main(int argc, char** argv)
             std::cout.fill(' ');
             double var = 0.0;
             switch (variable) {
+#ifdef COMPUTE_OLD_TERMS
             case 0:
                 var = state.total_compressibility_;
                 break;
             case 1:
                 var = state.experimental_term_;
                 break;
+#endif
             case 2:
                 var = state.saturation_[0];
                 break;

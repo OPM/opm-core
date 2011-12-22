@@ -21,11 +21,10 @@
 #define OPM_BLACKOILFLUID_HEADER_INCLUDED
 
 
-#include <dune/porsol/blackoil/fluid/FluidMatrixInteractionBlackoil.hpp>
-#include <dune/porsol/blackoil/fluid/FluidStateBlackoil.hpp>
-#include <dune/porsol/blackoil/fluid/BlackoilPVT.hpp>
-#include <dune/common/EclipseGridParser.hpp>
-#include <dune/common/fvector.hh>
+#include <opm/core/fluid/blackoil/FluidMatrixInteractionBlackoil.hpp>
+#include <opm/core/fluid/blackoil/FluidStateBlackoil.hpp>
+#include <opm/core/fluid/blackoil/BlackoilPVT.hpp>
+#include <opm/core/eclipse/EclipseGridParser.hpp>
 #include <vector>
 
 
@@ -174,26 +173,34 @@ namespace Opm
             states.phase_volume_density.resize(num);
             states.total_phase_volume_density.resize(num);
             states.saturation.resize(num);
+#ifdef COMPUTE_OLD_TERMS
             states.phase_compressibility.resize(num);
             states.total_compressibility.resize(num);
             states.experimental_term.resize(num);
+#endif
 #pragma omp parallel for
             for (int i = 0; i < num; ++i) {
                 const CompVec& z = states.surface_volume_density[i];
                 const PhaseVec& B = states.formation_volume_factor[i];
-                const PhaseVec& dB = states.formation_volume_factor_deriv[i];
                 const PhaseVec& R = states.solution_factor[i];
-                const PhaseVec& dR = states.solution_factor_deriv[i];
                 PhaseToCompMatrix& At = states.state_matrix[i];
                 PhaseVec& u = states.phase_volume_density[i];
                 double& tot_phase_vol_dens = states.total_phase_volume_density[i];
                 PhaseVec& s = states.saturation[i];
+#ifdef COMPUTE_OLD_TERMS
+                const PhaseVec& dB = states.formation_volume_factor_deriv[i];
+                const PhaseVec& dR = states.solution_factor_deriv[i];
                 PhaseVec& cp = states.phase_compressibility[i];
                 double& tot_comp = states.total_compressibility[i];
                 double& exp_term = states.experimental_term[i];
                 computeSingleEquilibrium(B, dB, R, dR, z,
                                          At, u, tot_phase_vol_dens,
                                          s, cp, tot_comp, exp_term);
+#else
+                computeSingleEquilibrium(B, R, z,
+                                         At, u, tot_phase_vol_dens,
+                                         s);
+#endif
             }
         }
 
@@ -276,6 +283,13 @@ namespace Opm
         R[Aqua]   = 0.0;
         R[Vapour] = pvt_.R(p[Vapour], z, Vapour);
         R[Liquid] = pvt_.R(p[Liquid], z, Liquid);
+
+        // Convenience vars.
+        PhaseToCompMatrix& At = fluid_state.phase_to_comp_;
+        PhaseVec& u = fluid_state.phase_volume_density_;
+        double& tot_phase_vol_dens = fluid_state.total_phase_volume_density_;
+        PhaseVec& s = fluid_state.saturation_;
+#ifdef COMPUTE_OLD_TERMS
         PhaseVec dB;
         dB[Aqua]   = pvt_.dBdp(p[Aqua],   z, Aqua);
         dB[Vapour] = pvt_.dBdp(p[Vapour], z, Vapour);
@@ -284,19 +298,17 @@ namespace Opm
         dR[Aqua]   = 0.0;
         dR[Vapour] = pvt_.dRdp(p[Vapour], z, Vapour);
         dR[Liquid] = pvt_.dRdp(p[Liquid], z, Liquid);
-
-        // Convenience vars.
-        PhaseToCompMatrix& At = fluid_state.phase_to_comp_;
-        PhaseVec& u = fluid_state.phase_volume_density_;
-        double& tot_phase_vol_dens = fluid_state.total_phase_volume_density_;
-        PhaseVec& s = fluid_state.saturation_;
         PhaseVec& cp = fluid_state.phase_compressibility_;
         double& tot_comp = fluid_state.total_compressibility_;
         double& exp_term = fluid_state.experimental_term_;
-
         computeSingleEquilibrium(B, dB, R, dR, z,
                                  At, u, tot_phase_vol_dens,
                                  s, cp, tot_comp, exp_term);
+#else
+        computeSingleEquilibrium(B, R, z,
+                                 At, u, tot_phase_vol_dens,
+                                 s);
+#endif
 
         // Compute viscosities.
         PhaseVec& mu = fluid_state.viscosity_;
@@ -307,6 +319,7 @@ namespace Opm
 
 
 
+#ifdef COMPUTE_OLD_TERMS
     static void computeSingleEquilibrium(const PhaseVec& B,
                                          const PhaseVec& dB,
                                          const PhaseVec& R,
@@ -319,6 +332,15 @@ namespace Opm
                                          PhaseVec& cp,
                                          double& tot_comp,
                                          double& exp_term)
+#else
+    static void computeSingleEquilibrium(const PhaseVec& B,
+                                         const PhaseVec& R,
+                                         const CompVec& z,
+                                         PhaseToCompMatrix& At,
+                                         PhaseVec& u,
+                                         double& tot_phase_vol_dens,
+                                         PhaseVec& s)
+#endif
     {
         // Set the A matrix (A = RB^{-1})
         // Using At since we really want Fortran ordering
@@ -345,6 +367,7 @@ namespace Opm
             s[phase] = u[phase]/tot_phase_vol_dens;
         }
 
+#ifdef COMPUTE_OLD_TERMS
         // Phase compressibilities.
         // PhaseVec& cp = fluid_state.phase_compressibility_[i];
         // Set the derivative of the A matrix (A = RB^{-1})
@@ -372,6 +395,7 @@ namespace Opm
         dAt.mtv(tmp1, tmp2);
         Ait.mtv(tmp2, tmp3);
         exp_term = tmp3[Aqua] + tmp3[Liquid] + tmp3[Gas];
+#endif
     }
 
 
