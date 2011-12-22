@@ -37,3 +37,5 @@ tests/test_cfs_tpfa
 tests/test_jacsys
 tests/test_readvector
 tests/test_sf2p
+tests/bo_fluid_p_and_z_deps
+tests/bo_fluid_pressuredeps
