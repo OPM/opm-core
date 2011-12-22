@@ -3,6 +3,8 @@ ACLOCAL_AMFLAGS = -I m4
 # Recurse to build examples after libraries
 SUBDIRS = . tests examples
 
+CPPFLAGS += $(BOOST_CPPFLAGS)
+
 # Declare libraries
 lib_LTLIBRARIES = libopmcore.la
 
