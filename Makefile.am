@@ -4,7 +4,8 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = . tests examples
 
 CPPFLAGS += $(BOOST_CPPFLAGS)
-LIBS +=  $(BOOST_FILESYSTEM_LIB)                        \
+LIBS +=  $(BOOST_LDFLAGS)                               \
+         $(BOOST_FILESYSTEM_LIB)                        \
          $(BOOST_SYSTEM_LIB)                            \
          $(BOOST_DATE_TIME_LIB)                         \
          $(BOOST_UNIT_TEST_FRAMEWORK_LIB)               \
