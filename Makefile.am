@@ -4,11 +4,16 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = . tests examples
 
 CPPFLAGS += $(BOOST_CPPFLAGS)
+LIBS +=  $(BOOST_FILESYSTEM_LIB)                        \
+         $(BOOST_SYSTEM_LIB)                            \
+         $(BOOST_DATE_TIME_LIB)                         \
+         $(BOOST_UNIT_TEST_FRAMEWORK_LIB)               \
+         $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 # Declare libraries
 lib_LTLIBRARIES = libopmcore.la
 
-libopmcore_la_SOURCES = 				\
+libopmcore_la_SOURCES =                                 \
 opm/core/eclipse/EclipseGridInspector.cpp               \
 opm/core/eclipse/EclipseGridParser.cpp                  \
 opm/core/fluid/blackoil/BlackoilPVT.cpp                 \
@@ -25,21 +30,21 @@ opm/core/utility/parameters/tinyxml/tinystr.cpp         \
 opm/core/utility/parameters/tinyxml/tinyxml.cpp         \
 opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp    \
 opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp   \
-opm/core/utility/cart_grid.c				\
-opm/core/utility/cpgpreprocess/geometry.c		\
-opm/core/utility/cpgpreprocess/preprocess.c		\
-opm/core/utility/cpgpreprocess/readvector.cpp		\
-opm/core/utility/cpgpreprocess/cgridinterface.c		\
-opm/core/utility/cpgpreprocess/sparsetable.c		\
-opm/core/utility/cpgpreprocess/facetopology.c		\
-opm/core/utility/cpgpreprocess/uniquepoints.c		\
+opm/core/utility/cart_grid.c                            \
+opm/core/utility/cpgpreprocess/geometry.c               \
+opm/core/utility/cpgpreprocess/preprocess.c             \
+opm/core/utility/cpgpreprocess/readvector.cpp           \
+opm/core/utility/cpgpreprocess/cgridinterface.c         \
+opm/core/utility/cpgpreprocess/sparsetable.c            \
+opm/core/utility/cpgpreprocess/facetopology.c           \
+opm/core/utility/cpgpreprocess/uniquepoints.c           \
 opm/core/utility/StopWatch.cpp                          \
-opm/core/linalg/sparse_sys.c				\
-opm/core/pressure/cfsh.c				\
-opm/core/pressure/flow_bc.c				\
-opm/core/pressure/well.c				\
-opm/core/pressure/fsh_common_impl.c			\
-opm/core/pressure/fsh.c			                \
+opm/core/linalg/sparse_sys.c                            \
+opm/core/pressure/cfsh.c                                \
+opm/core/pressure/flow_bc.c                             \
+opm/core/pressure/well.c                                \
+opm/core/pressure/fsh_common_impl.c                     \
+opm/core/pressure/fsh.c                                 \
 opm/core/pressure/tpfa/ifs_tpfa.c                       \
 opm/core/pressure/tpfa/compr_source.c                   \
 opm/core/pressure/tpfa/cfs_tpfa.c                       \

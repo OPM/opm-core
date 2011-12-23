@@ -5,13 +5,7 @@ $(BOOST_CPPFLAGS)
 LDFLAGS = $(BOOST_LDFLAGS)
 
 
-LDADD =						\
-$(top_builddir)/libopmcore.la			\
-$(BOOST_FILESYSTEM_LIB)				\
-$(BOOST_SYSTEM_LIB)				\
-$(BOOST_DATE_TIME_LIB)				\
-$(BOOST_UNIT_TEST_FRAMEWORK_LIB)		\
-$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+LDADD =	$(top_builddir)/libopmcore.la
 
 
 noinst_PROGRAMS =				\
