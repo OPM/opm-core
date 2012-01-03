@@ -252,17 +252,16 @@ void EclipseGridParser::readImpl(istream& is)
 	    map<string, std::tr1::shared_ptr<SpecialBase> >::iterator pos =
 		specialmap.find(keyword);
 	    if (pos == specialmap.end()) {
-		    std::tr1::shared_ptr<SpecialBase> sb_ptr =
-			createSpecialField(is, keyword);
-		    if (sb_ptr) {
-			specialmap[keyword] = sb_ptr;
-		    } else {
-			THROW("Could not create field " << keyword);
-		    }
+		std::tr1::shared_ptr<SpecialBase> sb_ptr =
+		    createSpecialField(is, keyword);
+		if (sb_ptr) {
+		    specialmap[keyword] = sb_ptr;
 		} else {
-		    std::tr1::shared_ptr<SpecialBase> sb_ptr = pos->second;
-		    sb_ptr->read(is);
+		    THROW("Could not create field " << keyword);
 		}
+	    } else {
+		pos->second->read(is);
+	    }
 	    break;
 	}
 	case IgnoreWithData: {
