@@ -1408,6 +1408,36 @@ struct PVCDO : public SpecialBase
     }
 };
 
+struct TSTEP : public SpecialBase
+{
+    std::vector<std::vector<double> > tstep_;
+
+    virtual std::string name() const {return std::string("TSTEP");}
+
+    virtual void read(std::istream& is)
+    {
+	std::vector<double> tstep;
+	readVectorData(is, tstep);
+	if (!tstep.empty()) {
+	    tstep_.push_back(tstep);
+	}
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << '\n';
+	for (int i=0; i<(int)tstep_.size(); ++i) {
+	    copy(tstep_[i].begin(), tstep_[i].end(),
+		 std::ostream_iterator<double>(os, " "));
+	    os << '\n';
+	}
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+    }
+};
+
 struct MultRec : public SpecialBase
 {
     virtual void read(std::istream& is)
