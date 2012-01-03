@@ -1410,7 +1410,7 @@ struct PVCDO : public SpecialBase
 
 struct TSTEP : public SpecialBase
 {
-    std::vector<std::vector<double> > tstep_;
+    std::vector<double> tstep_;
 
     virtual std::string name() const {return std::string("TSTEP");}
 
@@ -1419,22 +1419,24 @@ struct TSTEP : public SpecialBase
 	std::vector<double> tstep;
 	readVectorData(is, tstep);
 	if (!tstep.empty()) {
-	    tstep_.push_back(tstep);
+	    tstep_.insert(tstep_.end(), tstep.begin(), tstep.end());
 	}
     }
 
     virtual void write(std::ostream& os) const
     {
 	os << name() << '\n';
-	for (int i=0; i<(int)tstep_.size(); ++i) {
-	    copy(tstep_[i].begin(), tstep_[i].end(),
-		 std::ostream_iterator<double>(os, " "));
-	    os << '\n';
-	}
+	copy(tstep_.begin(), tstep_.end(),
+	     std::ostream_iterator<double>(os, " "));
+	os << '\n';
     }
 
     virtual void convertToSI(const EclipseUnits& units)
     {
+	int num_steps = tstep_.size();
+	for (int i = 0; i < num_steps; ++i) {
+	    tstep_[i] *= units.time;
+	}
     }
 };
 
