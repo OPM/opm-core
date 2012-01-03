@@ -83,7 +83,7 @@ namespace EclipseKeywords
           string("BULKMOD"),  string("YOUNGMOD"),   string("LAMEMOD"),
           string("SHEARMOD"), string("POISSONMOD"), string("PWAVEMOD"),
           string("MULTPV"),   string("PRESSURE"),   string("SGAS"),
-	  string("SWAT")
+	  string("SWAT"),     string("SOIL")
         };
     const int num_floating_fields = sizeof(floating_fields) / sizeof(floating_fields[0]);
 
@@ -348,7 +348,7 @@ void EclipseGridParser::convertToSI()
         } else if (key == "PORO"     || key == "BULKMOD"  || key == "YOUNGMOD" ||
 		   key == "LAMEMOD"  || key == "SHEARMOD" || key == "POISSONMOD" ||
 		   key == "PWAVEMOD" || key == "MULTPV"   || key == "PWAVEMOD" ||
-		   key == "SGAS"     || key == "SWAT") {
+		   key == "SGAS"     || key == "SWAT"     || key == "SOIL") {
             unit = 1.0;
 	} else if (key == "PRESSURE") {
 	    unit = units_.pressure;	    
