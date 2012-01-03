@@ -59,6 +59,12 @@ AC_SEARCH_LIBS([umfpack_dl_solve], [umfpack],
 AM_CONDITIONAL([UMFPACK],
   [test "x$umfpack_header" != "xno" -a "x$umfpack_lib" != "xno"])
 
+m4_ifdef([AM_COND_IF],
+[AM_COND_IF([UMFPACK], [],
+ [AC_MSG_NOTICE([Found no working installation of UMFPACK.
+                 UMFPACK support is disabled.])])
+])
+
 
 AC_CONFIG_FILES([
  Makefile
