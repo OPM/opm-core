@@ -868,7 +868,7 @@ struct CompdatLine
         skin_factor_(0.0),
         D_factor_(-1e100),
 	penetration_direct_("Z"),
-        r0_(0.0)
+        r0_(-1.0)
     {
 	grid_ind_.resize(4);
     }
@@ -1018,13 +1018,18 @@ struct WCONINJE : public SpecialBase
 	    double_data[2] = wconinje_line.BHP_limit_; 
 	    double_data[4] = wconinje_line.VFP_table_number_; 
 	    double_data[5] = wconinje_line.concentration_;
-	    readDefaultedVectorData(is, double_data, 6);
+            const int num_to_read = 6;
+	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
 	    wconinje_line.surface_flow_max_rate_ = double_data[0];
 	    wconinje_line.fluid_volume_max_rate_ = double_data[1];
 	    wconinje_line.BHP_limit_ = double_data[2];
 	    wconinje_line.THP_limit_ = double_data[3];
 	    wconinje_line.VFP_table_number_ = (int)double_data[4];
 	    wconinje_line.concentration_ = double_data[5];
+	    // HACK! Ignore any further items
+            if (num_read == num_to_read) {
+                ignoreSlashLine(is);
+            }
 	    wconinje.push_back(wconinje_line);
 	}
     }
@@ -1127,7 +1132,8 @@ struct WCONPROD : public SpecialBase
 	    double_data[6] = wconprod_line.THP_limit_; 
 	    double_data[7] = wconprod_line.VFP_table_number_; 
 	    double_data[8] = wconprod_line.artif_lift_quantity_;
-	    readDefaultedVectorData(is, double_data, 9);
+            const int num_to_read = 9;
+	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
 	    wconprod_line.oil_max_rate_ = double_data[0];
 	    wconprod_line.water_max_rate_ = double_data[1];
 	    wconprod_line.gas_max_rate_ = double_data[2];
@@ -1138,6 +1144,11 @@ struct WCONPROD : public SpecialBase
 	    wconprod_line.VFP_table_number_ = (int)double_data[7];
 	    wconprod_line.artif_lift_quantity_ = double_data[8];
 	    wconprod.push_back(wconprod_line);
+	    // HACK! Ignore any further items
+            if (num_read == num_to_read) {
+                ignoreSlashLine(is);
+            }
+
 	}
     }
 
@@ -1404,6 +1415,38 @@ struct PVCDO : public SpecialBase
 	    pvcdo_[i][2] *= units.compressibility;
 	    pvcdo_[i][3] *= units.viscosity;
 	    pvcdo_[i][4] *= units.compressibility;
+	}
+    }
+};
+
+struct TSTEP : public SpecialBase
+{
+    std::vector<double> tstep_;
+
+    virtual std::string name() const {return std::string("TSTEP");}
+
+    virtual void read(std::istream& is)
+    {
+	std::vector<double> tstep;
+	readVectorData(is, tstep);
+	if (!tstep.empty()) {
+	    tstep_.insert(tstep_.end(), tstep.begin(), tstep.end());
+	}
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << '\n';
+	copy(tstep_.begin(), tstep_.end(),
+	     std::ostream_iterator<double>(os, " "));
+	os << '\n';
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+	int num_steps = tstep_.size();
+	for (int i = 0; i < num_steps; ++i) {
+	    tstep_[i] *= units.time;
 	}
     }
 };

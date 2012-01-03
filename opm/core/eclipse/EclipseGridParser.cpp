@@ -83,7 +83,7 @@ namespace EclipseKeywords
           string("BULKMOD"),  string("YOUNGMOD"),   string("LAMEMOD"),
           string("SHEARMOD"), string("POISSONMOD"), string("PWAVEMOD"),
           string("MULTPV"),   string("PRESSURE"),   string("SGAS"),
-	  string("SWAT")
+	  string("SWAT"),     string("SOIL")
         };
     const int num_floating_fields = sizeof(floating_fields) / sizeof(floating_fields[0]);
 
@@ -95,7 +95,7 @@ namespace EclipseKeywords
 	  string("SGOF"),     string("SWOF"),   string("ROCK"),
 	  string("ROCKTAB"),  string("WELSPECS"), string("COMPDAT"),
 	  string("WCONINJE"), string("WCONPROD"), string("WELTARG"),
-	  string("EQUIL"),    string("PVCDO"),
+	  string("EQUIL"),    string("PVCDO"),    string("TSTEP"),
 	  // The following fields only have a dummy implementation
 	  // that allows us to ignore them.
           "SWFN",
@@ -111,7 +111,7 @@ namespace EclipseKeywords
 	  string("NSTACK"),   string("SATNUM"),
 	  string("RPTRST"),   string("ROIP"),     string("RWIP"),
 	  string("RWSAT"),    string("RPR"),      string("WBHP"),
-	  string("WOIR"),     string("TSTEP"),    string("BOX"),
+	  string("WOIR"),     string("BOX"),
           string("COORDSYS"), string("PBVD")
 	};
     const int num_ignore_with_data = sizeof(ignore_with_data) / sizeof(ignore_with_data[0]);
@@ -249,11 +249,18 @@ void EclipseGridParser::readImpl(istream& is)
 	    readVectorData(is, floatmap[keyword]);
 	    break;
 	case SpecialField: {
-	    std::tr1::shared_ptr<SpecialBase> sb_ptr = createSpecialField(is, keyword);
-	    if (sb_ptr) {
-		specialmap[keyword] = sb_ptr;
+	    map<string, std::tr1::shared_ptr<SpecialBase> >::iterator pos =
+		specialmap.find(keyword);
+	    if (pos == specialmap.end()) {
+		std::tr1::shared_ptr<SpecialBase> sb_ptr =
+		    createSpecialField(is, keyword);
+		if (sb_ptr) {
+		    specialmap[keyword] = sb_ptr;
+		} else {
+		    THROW("Could not create field " << keyword);
+		}
 	    } else {
-		THROW("Could not create field " << keyword);
+		pos->second->read(is);
 	    }
 	    break;
 	}
@@ -341,7 +348,7 @@ void EclipseGridParser::convertToSI()
         } else if (key == "PORO"     || key == "BULKMOD"  || key == "YOUNGMOD" ||
 		   key == "LAMEMOD"  || key == "SHEARMOD" || key == "POISSONMOD" ||
 		   key == "PWAVEMOD" || key == "MULTPV"   || key == "PWAVEMOD" ||
-		   key == "SGAS"     || key == "SWAT") {
+		   key == "SGAS"     || key == "SWAT"     || key == "SOIL") {
             unit = 1.0;
 	} else if (key == "PRESSURE") {
 	    unit = units_.pressure;	    
