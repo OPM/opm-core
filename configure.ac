@@ -8,7 +8,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
-LT_INIT
+m4_ifdef([LT_INIT], [LT_INIT])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([opm/core/grid.h])
@@ -18,7 +18,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
+m4_ifdef([LT_INIT], [], [AC_PROG_LIBTOOL])
 
 # AX_LAPACK requires a working F77 compiler or, rather, its runtime
 # support libraries.
