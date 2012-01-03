@@ -38,6 +38,10 @@ AX_BOOST_UNIT_TEST_FRAMEWORK
 # Checks for header files.
 AC_CHECK_HEADERS([float.h limits.h stddef.h stdlib.h string.h])
 
+AC_CHECK_HEADERS([suitesparse/umfpack.h],
+                 [umfpack_header=yes],
+                 [umfpack_header=no])
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_TYPE_SIZE_T
@@ -45,12 +49,6 @@ AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions.
 AC_CHECK_FUNCS([floor memmove pow sqrt strchr strtol])
-
-
-# To use UMFPACK, we need the header, and both the AMD and UMFPACK libs.
-AC_CHECK_HEADERS([suitesparse/umfpack.h],
-                 [umfpack_header=yes],
-                 [umfpack_header=no])
 
 AC_SEARCH_LIBS([amd_free], [amd],
                [amd_lib=yes], [amd_lib=no], [-lm])
