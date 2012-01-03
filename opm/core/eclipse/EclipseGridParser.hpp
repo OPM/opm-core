@@ -142,6 +142,7 @@ public:                                                                         
     SPECIAL_FIELD(WELTARG);
     SPECIAL_FIELD(EQUIL);
     SPECIAL_FIELD(PVCDO);
+    SPECIAL_FIELD(TSTEP);
 
     // The following fields only have a dummy implementation
     // that allows us to ignore them.

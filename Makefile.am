@@ -3,12 +3,25 @@ ACLOCAL_AMFLAGS = -I m4
 # Recurse to build examples after libraries
 SUBDIRS = . tests examples
 
+CPPFLAGS += $(BOOST_CPPFLAGS)
+LIBS +=  $(BOOST_LDFLAGS)                               \
+         $(BOOST_FILESYSTEM_LIB)                        \
+         $(BOOST_SYSTEM_LIB)                            \
+         $(BOOST_DATE_TIME_LIB)                         \
+         $(BOOST_UNIT_TEST_FRAMEWORK_LIB)               \
+         $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
 # Declare libraries
 lib_LTLIBRARIES = libopmcore.la
 
-libopmcore_la_SOURCES = 				\
+libopmcore_la_SOURCES =                                 \
 opm/core/eclipse/EclipseGridInspector.cpp               \
 opm/core/eclipse/EclipseGridParser.cpp                  \
+opm/core/fluid/blackoil/BlackoilPVT.cpp                 \
+opm/core/fluid/blackoil/MiscibilityDead.cpp             \
+opm/core/fluid/blackoil/MiscibilityLiveGas.cpp          \
+opm/core/fluid/blackoil/MiscibilityLiveOil.cpp          \
+opm/core/fluid/blackoil/MiscibilityProps.cpp            \
 opm/core/utility/MonotCubicInterpolator.cpp             \
 opm/core/utility/parameters/Parameter.cpp               \
 opm/core/utility/parameters/ParameterGroup.cpp          \
@@ -18,21 +31,21 @@ opm/core/utility/parameters/tinyxml/tinystr.cpp         \
 opm/core/utility/parameters/tinyxml/tinyxml.cpp         \
 opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp    \
 opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp   \
-opm/core/utility/cart_grid.c				\
-opm/core/utility/cpgpreprocess/geometry.c		\
-opm/core/utility/cpgpreprocess/preprocess.c		\
-opm/core/utility/cpgpreprocess/readvector.cpp		\
-opm/core/utility/cpgpreprocess/cgridinterface.c		\
-opm/core/utility/cpgpreprocess/sparsetable.c		\
-opm/core/utility/cpgpreprocess/facetopology.c		\
-opm/core/utility/cpgpreprocess/uniquepoints.c		\
+opm/core/utility/cart_grid.c                            \
+opm/core/utility/cpgpreprocess/geometry.c               \
+opm/core/utility/cpgpreprocess/preprocess.c             \
+opm/core/utility/cpgpreprocess/readvector.cpp           \
+opm/core/utility/cpgpreprocess/cgridinterface.c         \
+opm/core/utility/cpgpreprocess/sparsetable.c            \
+opm/core/utility/cpgpreprocess/facetopology.c           \
+opm/core/utility/cpgpreprocess/uniquepoints.c           \
 opm/core/utility/StopWatch.cpp                          \
-opm/core/linalg/sparse_sys.c				\
-opm/core/pressure/cfsh.c				\
-opm/core/pressure/flow_bc.c				\
-opm/core/pressure/well.c				\
-opm/core/pressure/fsh_common_impl.c			\
-opm/core/pressure/fsh.c			                \
+opm/core/linalg/sparse_sys.c                            \
+opm/core/pressure/cfsh.c                                \
+opm/core/pressure/flow_bc.c                             \
+opm/core/pressure/well.c                                \
+opm/core/pressure/fsh_common_impl.c                     \
+opm/core/pressure/fsh.c                                 \
 opm/core/pressure/tpfa/ifs_tpfa.c                       \
 opm/core/pressure/tpfa/compr_source.c                   \
 opm/core/pressure/tpfa/cfs_tpfa.c                       \
@@ -62,10 +75,20 @@ opm/core/eclipse/EclipseGridParser.hpp                  \
 opm/core/eclipse/EclipseGridParserHelpers.hpp           \
 opm/core/eclipse/EclipseUnits.hpp                       \
 opm/core/eclipse/SpecialEclipseFields.hpp               \
+opm/core/fluid/BlackoilFluid.hpp                        \
+opm/core/fluid/SimpleFluid2p.hpp                        \
+opm/core/fluid/blackoil/BlackoilDefs.hpp                \
+opm/core/fluid/blackoil/BlackoilPVT.hpp                 \
+opm/core/fluid/blackoil/FluidMatrixInteractionBlackoil.hpp \
+opm/core/fluid/blackoil/FluidStateBlackoil.hpp          \
+opm/core/fluid/blackoil/MiscibilityDead.hpp             \
+opm/core/fluid/blackoil/MiscibilityLiveGas.hpp          \
+opm/core/fluid/blackoil/MiscibilityLiveOil.hpp          \
+opm/core/fluid/blackoil/MiscibilityProps.hpp            \
+opm/core/fluid/blackoil/MiscibilityWater.hpp            \
 opm/core/utility/Average.hpp                            \
 opm/core/utility/ErrorMacros.hpp                        \
 opm/core/utility/Factory.hpp                            \
-opm/core/utility/linInt.hpp                             \
 opm/core/utility/MonotCubicInterpolator.hpp             \
 opm/core/utility/parameters/Parameter.hpp               \
 opm/core/utility/parameters/ParameterGroup.hpp          \
@@ -81,7 +104,11 @@ opm/core/utility/RootFinders.hpp                        \
 opm/core/utility/SparseTable.hpp                        \
 opm/core/utility/SparseVector.hpp                       \
 opm/core/utility/StopWatch.hpp                          \
+opm/core/utility/UniformTableLinear.hpp                 \
 opm/core/utility/Units.hpp                              \
+opm/core/utility/buildUniformMonotoneTable.hpp          \
+opm/core/utility/linInt.hpp                             \
+opm/core/utility/linearInterpolation.hpp                \
 opm/core/utility/cpgpreprocess/readvector.hpp           \
 opm/core/utility/cpgpreprocess/uniquepoints.h           \
 opm/core/utility/cpgpreprocess/preprocess.h             \
@@ -95,7 +122,6 @@ opm/core/utility/cart_grid.h                            \
 opm/core/well.h                                         \
 opm/core/linalg/sparse_sys.h                            \
 opm/core/linalg/blas_lapack.h                           \
-opm/core/fluid/SimpleFluid2p.hpp                        \
 opm/core/grid.h                                         \
 opm/core/GridAdapter.hpp                                \
 opm/core/pressure/fsh.h                                 \
