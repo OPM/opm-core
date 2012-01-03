@@ -18,6 +18,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
 AC_PROG_CC
 m4_ifdef([LT_INIT], [], [AC_PROG_LIBTOOL])
+AC_PROG_RANLIB
 
 # AX_LAPACK requires a working F77 compiler or, rather, its runtime
 # support libraries.
@@ -48,6 +49,7 @@ AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions.
 AC_CHECK_FUNCS([floor memmove pow sqrt strchr strtol])
+AC_FUNC_STRTOD
 
 AC_SEARCH_LIBS([amd_free], [amd],
                [amd_lib=yes], [amd_lib=no], [-lm])
