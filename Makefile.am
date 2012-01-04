@@ -22,6 +22,7 @@ opm/core/fluid/blackoil/MiscibilityDead.cpp             \
 opm/core/fluid/blackoil/MiscibilityLiveGas.cpp          \
 opm/core/fluid/blackoil/MiscibilityLiveOil.cpp          \
 opm/core/fluid/blackoil/MiscibilityProps.cpp            \
+opm/core/fluid/BlackoilPropertiesFromDeck.cpp           \
 opm/core/utility/MonotCubicInterpolator.cpp             \
 opm/core/utility/parameters/Parameter.cpp               \
 opm/core/utility/parameters/ParameterGroup.cpp          \
@@ -76,6 +77,9 @@ opm/core/eclipse/EclipseGridParserHelpers.hpp           \
 opm/core/eclipse/EclipseUnits.hpp                       \
 opm/core/eclipse/SpecialEclipseFields.hpp               \
 opm/core/fluid/BlackoilFluid.hpp                        \
+opm/core/fluid/BlackoilPropertiesInterface.hpp          \
+opm/core/fluid/BlackoilPropertiesFromDeck.hpp           \
+opm/core/fluid/RockFromDeck.hpp                         \
 opm/core/fluid/SimpleFluid2p.hpp                        \
 opm/core/fluid/blackoil/BlackoilDefs.hpp                \
 opm/core/fluid/blackoil/BlackoilPVT.hpp                 \
