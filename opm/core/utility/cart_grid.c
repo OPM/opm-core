@@ -94,7 +94,7 @@ create_tensor_grid_2d(int nx, int ny, double x[], double y[])
         fprintf(stderr, "Cannot allocate space for grid.\n");
         exit(EXIT_FAILURE);
     }
-    
+
     fill_cart_topology_2d(G, nx, ny);
 
     coord = G->node_coordinates;
@@ -104,7 +104,7 @@ create_tensor_grid_2d(int nx, int ny, double x[], double y[])
             *coord++ = y[j];
         }
     }
-    
+
     return G;
 }
 
@@ -125,7 +125,7 @@ create_tensor_grid_3d(int nx, int ny, int nz, double x[], double y[], double z[]
         fprintf(stderr, "Cannot allocate space for grid.\n");
         exit(EXIT_FAILURE);
     }
-    
+
     fill_cart_topology_3d(G, nx, ny, nz);
 
     coord = G->node_coordinates;
@@ -209,14 +209,14 @@ allocate_cart_grid_3d(int nx, int ny, int nz)
         G->cell_volumes     = malloc(G->number_of_cells * 1 * sizeof *(G->cell_volumes));
 
         if ((G->face_nodes       == NULL ) ||
-            (G->face_nodepos     == NULL ) || 
-            (G->face_cells       == NULL ) || 
-            (G->face_centroids   == NULL ) || 
-            (G->face_normals     == NULL ) || 
-            (G->face_areas       == NULL ) ||                       
-            (G->cell_faces       == NULL ) || 
-            (G->cell_facepos     == NULL ) || 
-            (G->cell_centroids   == NULL ) || 
+            (G->face_nodepos     == NULL ) ||
+            (G->face_cells       == NULL ) ||
+            (G->face_centroids   == NULL ) ||
+            (G->face_normals     == NULL ) ||
+            (G->face_areas       == NULL ) ||
+            (G->cell_faces       == NULL ) ||
+            (G->cell_facepos     == NULL ) ||
+            (G->cell_centroids   == NULL ) ||
             (G->cell_volumes     == NULL )  )
         {
             destroy_cart_grid(G);
@@ -241,7 +241,7 @@ fill_cart_topology_3d(struct UnstructuredGrid *G, int nx, int ny, int nz)
     Nx  = nx+1;
     Ny  = ny+1;
     Nz  = nz+1;
-    
+
     nxf = Nx*ny*nz;
     nyf = nx*Ny*nz;
     nzf = nx*ny*Nz;
@@ -266,9 +266,10 @@ fill_cart_topology_3d(struct UnstructuredGrid *G, int nx, int ny, int nz)
     }
 
 
-    fnodes     = G->face_nodes;
-    fnodepos   = G->face_nodepos;
-    fcells     = G->face_cells;
+    fnodes      = G->face_nodes;
+    fnodepos    = G->face_nodepos;
+    fcells      = G->face_cells;
+    fnodepos[0] = 0;
 
     /* Faces with x-normal */
     for (k=0; k<nz; ++k) {
@@ -344,7 +345,7 @@ fill_cart_topology_3d(struct UnstructuredGrid *G, int nx, int ny, int nz)
                 }
             }
         }
-    }    
+    }
 }
 
 /* --------------------------------------------------------------------- */
@@ -499,14 +500,14 @@ create_cart_grid(int nx, int ny, int nz)
     G->cell_volumes     = malloc(G->number_of_cells * 1 * sizeof *(G->cell_volumes));
 
     if ((G->face_nodes       == NULL ) ||
-        (G->face_nodepos     == NULL ) || 
-        (G->face_cells       == NULL ) || 
-        (G->face_centroids   == NULL ) || 
-        (G->face_normals     == NULL ) || 
-        (G->face_areas       == NULL ) ||                       
-        (G->cell_faces       == NULL ) || 
-        (G->cell_facepos     == NULL ) || 
-        (G->cell_centroids   == NULL ) || 
+        (G->face_nodepos     == NULL ) ||
+        (G->face_cells       == NULL ) ||
+        (G->face_centroids   == NULL ) ||
+        (G->face_normals     == NULL ) ||
+        (G->face_areas       == NULL ) ||
+        (G->cell_faces       == NULL ) ||
+        (G->cell_facepos     == NULL ) ||
+        (G->cell_centroids   == NULL ) ||
         (G->cell_volumes     == NULL )  )
     {
         fprintf(stderr, "Cannot allocate space for grid.\n");
@@ -547,6 +548,7 @@ create_cart_grid(int nx, int ny, int nz)
     fnormals   = G->face_normals;
     fcentroids = G->face_centroids;
     fareas     = G->face_areas;
+    fnodepos[0] = 0;
 
     /* Faces with x-normal */
     for (k=0; k<nz; ++k) {
@@ -708,14 +710,14 @@ allocate_cart_grid_2d(int nx, int ny)
         G->cell_volumes     = malloc(G->number_of_cells * 1 * sizeof *(G->cell_volumes));
 
         if ((G->face_nodes       == NULL ) ||
-            (G->face_nodepos     == NULL ) || 
-            (G->face_cells       == NULL ) || 
-            (G->face_centroids   == NULL ) || 
-            (G->face_normals     == NULL ) || 
-            (G->face_areas       == NULL ) ||                       
-            (G->cell_faces       == NULL ) || 
-            (G->cell_facepos     == NULL ) || 
-            (G->cell_centroids   == NULL ) || 
+            (G->face_nodepos     == NULL ) ||
+            (G->face_cells       == NULL ) ||
+            (G->face_centroids   == NULL ) ||
+            (G->face_normals     == NULL ) ||
+            (G->face_areas       == NULL ) ||
+            (G->cell_faces       == NULL ) ||
+            (G->cell_facepos     == NULL ) ||
+            (G->cell_centroids   == NULL ) ||
             (G->cell_volumes     == NULL )  )
         {
             destroy_cart_grid(G);
@@ -750,7 +752,7 @@ fill_cart_topology_2d(struct UnstructuredGrid *G, int nx, int ny)
             *cfaces++ = i+  nx*j  +nxf;
             *cfaces++ = i+1+Nx*j;
             *cfaces++ = i+  nx*(j+1)+nxf;
-            
+
             cfacepos[1] = cfacepos[0]+4;
             ++cfacepos;
         }
@@ -761,12 +763,13 @@ fill_cart_topology_2d(struct UnstructuredGrid *G, int nx, int ny)
     fnodes     = G->face_nodes;
     fnodepos   = G->face_nodepos;
     fcells     = G->face_cells;
-    
+    fnodepos[0] = 0;
+
     /* Faces with x-normal */
     for (j=0; j<ny; ++j) {
         for (i=0; i<nx+1; ++i) {
             *fnodes++ = i+Nx*j;
-            *fnodes++ = i+Nx*j+1;
+            *fnodes++ = i+Nx*(j+1);
             fnodepos[1] = fnodepos[0] + 2;
             ++fnodepos;
             if (i==0) {
@@ -787,8 +790,8 @@ fill_cart_topology_2d(struct UnstructuredGrid *G, int nx, int ny)
     /* Faces with y-normal */
     for (j=0; j<ny+1; ++j) {
         for (i=0; i<nx; ++i) {
-            *fnodes++ = i+    Nx*j;
             *fnodes++ = i+1 + Nx*j;
+            *fnodes++ = i+    Nx*j;
             fnodepos[1] = fnodepos[0] + 2;
             ++fnodepos;
             if (j==0) {
@@ -833,7 +836,7 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G, int nx, int ny)
         for (i=0; i<nx; ++i) {
             *ccentroids++ = i+0.5;
             *ccentroids++ = j+0.5;
-            
+
             *cvolumes++ = 1;
         }
     }
@@ -843,16 +846,16 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G, int nx, int ny)
     fnormals   = G->face_normals;
     fcentroids = G->face_centroids;
     fareas     = G->face_areas;
-    
+
     /* Faces with x-normal */
     for (j=0; j<ny; ++j) {
         for (i=0; i<nx+1; ++i) {
             *fnormals++ = 1;
             *fnormals++ = 0;
-            
+
             *fcentroids++ = i;
             *fcentroids++ = j+0.5;
-            
+
             *fareas++ = 1;
         }
     }
@@ -862,14 +865,14 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G, int nx, int ny)
         for (i=0; i<nx; ++i) {
             *fnormals++ = 0;
             *fnormals++ = 1;
-            
+
             *fcentroids++ = i+0.5;
             *fcentroids++ = j;
-            
+
             *fareas++ = 1;
         }
     }
-    
+
     coord = G->node_coordinates;
     for (j=0; j<ny+1; ++j) {
         for (i=0; i<nx+1; ++i) {
@@ -886,7 +889,7 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G, int nx, int ny)
 #if UNIT_TEST
 int main()
 {
-    
+
     grid_t *g = create_cart_grid_2d(2,2);
     int i;
     int k;
@@ -895,7 +898,7 @@ int main()
         fprintf(stderr, "%d: ", i);
         for (k=g->cell_facepos[i]; k<g->cell_facepos[i+1]; ++k)
         {
-            fprintf(stderr, "%d ", g->cell_faces[k]); 
+            fprintf(stderr, "%d ", g->cell_faces[k]);
         }
         fprintf(stderr, "\n");
     }
