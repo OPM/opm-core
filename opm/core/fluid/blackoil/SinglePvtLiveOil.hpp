@@ -1,16 +1,5 @@
-//===========================================================================
-//                                                                           
-// File: MiscibilityLiveOil.hpp                                               
-//                                                                           
-// Created: Wed Feb 10 09:08:09 2010                                         
-//                                                                           
-// Author: Bjørn Spjelkavik <bsp@sintef.no>
-//                                                                           
-// Revision: $Id$
-//                                                                           
-//===========================================================================
 /*
-  Copyright 2010 SINTEF ICT, Applied Mathematics.
+  Copyright 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -28,63 +17,67 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SINTEF_MISCIBILITYLIVEOIL_HEADER
-#define SINTEF_MISCIBILITYLIVEOIL_HEADER
+#ifndef OPM_SINGLEPVTLIVEOIL_HEADER_INCLUDED
+#define OPM_SINGLEPVTLIVEOIL_HEADER_INCLUDED
 
-    /** Class for miscible live oil.
-     *  Detailed description.
-     */
 
-#include "MiscibilityProps.hpp"
+#include <opm/core/fluid/blackoil/SinglePvtInterface.hpp>
+#include <vector>
 
 namespace Opm
 {
-    class MiscibilityLiveOil : public MiscibilityProps
+    /// Class for miscible live oil.
+    class SinglePvtLiveOil : public SinglePvtInterface
     {
     public:
 	typedef std::vector<std::vector<std::vector<double> > > table_t;
 
-	MiscibilityLiveOil(const table_t& pvto);
-	virtual ~MiscibilityLiveOil();
+	SinglePvtLiveOil(const table_t& pvto);
+	virtual ~SinglePvtLiveOil();
 
-        virtual double getViscosity(int region, double press, const surfvol_t& surfvol) const;
-	virtual double R   (int region, double press, const surfvol_t& surfvol) const;
-	virtual double dRdp(int region, double press, const surfvol_t& surfvol) const;
-        virtual double B   (int region, double press, const surfvol_t& surfvol) const;
-	virtual double dBdp(int region, double press, const surfvol_t& surfvol) const;
+        /// Viscosity as a function of p and z.
+        virtual void mu(const int n,
+                        const double* p,
+                        const double* z,
+                        double* output_mu) const;
 
-        virtual void getViscosity(const std::vector<PhaseVec>& pressures,
-                                  const std::vector<CompVec>& surfvol,
-                                  int phase,
-                                  std::vector<double>& output) const;
-        virtual void B(const std::vector<PhaseVec>& pressures,
-                       const std::vector<CompVec>& surfvol,
-                       int phase,
-                       std::vector<double>& output) const;
-        virtual void dBdp(const std::vector<PhaseVec>& pressures,
-                          const std::vector<CompVec>& surfvol,
-                          int phase,
-                          std::vector<double>& output_B,
-                          std::vector<double>& output_dBdp) const;
-        virtual void R(const std::vector<PhaseVec>& pressures,
-                       const std::vector<CompVec>& surfvol,
-                       int phase,
-                       std::vector<double>& output) const;
-        virtual void dRdp(const std::vector<PhaseVec>& pressures,
-                          const std::vector<CompVec>& surfvol,
-                          int phase,
-                          std::vector<double>& output_R,
-                          std::vector<double>& output_dRdp) const;
+        /// Formation volume factor as a function of p and z.
+        virtual void B(const int n,
+                       const double* p,
+                       const double* z,
+                       double* output_B) const;
 
-    protected:
-        double evalR(double press, const surfvol_t& surfvol) const;
-        void evalRDeriv(double press, const surfvol_t& surfvol, double& R, double& dRdp) const;
-        double evalB(double press, const surfvol_t& surfvol) const;
-        void evalBDeriv(double press, const surfvol_t& surfvol, double& B, double& dBdp) const;
+        /// Formation volume factor and p-derivative as functions of p and z.
+        virtual void dBdp(const int n,
+                          const double* p,
+                          const double* z,
+                          double* output_B,
+                          double* output_dBdp) const;
 
-	// item:  1=B  2=mu;
-	double miscible_oil(double press, const surfvol_t& surfvol, int item,
-			    bool deriv = false) const;
+        /// Solution factor as a function of p and z.
+        virtual void R(const int n,
+                       const double* p,
+                       const double* z,
+                       double* output_R) const;
+
+        /// Solution factor and p-derivative as functions of p and z.
+        virtual void dRdp(const int n,
+                          const double* p,
+                          const double* z,
+                          double* output_R,
+                          double* output_dRdp) const;
+
+    private:
+        double evalB(double press, const double* surfvol) const;
+        void evalBDeriv(double press, const double* surfvol, double& B, double& dBdp) const;
+        double evalR(double press, const double* surfvol) const;
+        void evalRDeriv(double press, const double* surfvol, double& R, double& dRdp) const;
+
+	// item:  1=>1/B  2=>mu;
+	double miscible_oil(const double press,
+                            const double* surfvol,
+                            const int item,
+			    const bool deriv = false) const;
 
 	// PVT properties of live oil (with dissolved gas)
 	std::vector<std::vector<double> > saturated_oil_table_;	
@@ -93,5 +86,5 @@ namespace Opm
 
 }
 
-#endif // SINTEF_MISCIBILITYLIVEOIL_HEADER
+#endif // OPM_SINGLEPVTLIVEOIL_HEADER_INCLUDED
 

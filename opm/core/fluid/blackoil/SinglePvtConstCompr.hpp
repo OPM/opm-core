@@ -1,16 +1,5 @@
-//===========================================================================
-//                                                                           
-// File: MiscibilityLiveOil.hpp                                               
-//                                                                           
-// Created: Wed Feb 10 09:08:09 2010                                         
-//                                                                           
-// Author: Bjørn Spjelkavik <bsp@sintef.no>
-//                                                                           
-// Revision: $Id$
-//                                                                           
-//===========================================================================
 /*
-  Copyright 2010 SINTEF ICT, Applied Mathematics.
+  Copyright 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -28,70 +17,119 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SINTEF_MISCIBILITYLIVEOIL_HEADER
-#define SINTEF_MISCIBILITYLIVEOIL_HEADER
+#ifndef OPM_SINGLEPVTCONSTCOMPR_HEADER_INCLUDED
+#define OPM_SINGLEPVTCONSTCOMPR_HEADER_INCLUDED
 
-    /** Class for miscible live oil.
-     *  Detailed description.
-     */
 
-#include "MiscibilityProps.hpp"
+#include <opm/core/fluid/blackoil/SinglePvtInterface.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
+#include <vector>
+#include <algorithm>
+
 
 namespace Opm
 {
-    class MiscibilityLiveOil : public MiscibilityProps
+    class SinglePvtConstCompr : public SinglePvtInterface
     {
     public:
-	typedef std::vector<std::vector<std::vector<double> > > table_t;
+        typedef std::vector<std::vector<double> > table_t;
 
-	MiscibilityLiveOil(const table_t& pvto);
-	virtual ~MiscibilityLiveOil();
+	SinglePvtConstCompr(const table_t& pvtw)
+        {
+	    const int region_number = 0;
+	    if (pvtw.size() != 1) {
+		THROW("More than one PVD-region");
+	    }
+            ref_press_ = pvtw[region_number][0];
+            ref_B_     = pvtw[region_number][1];
+            comp_      = pvtw[region_number][2];
+            viscosity_ = pvtw[region_number][3];
+            if (pvtw[region_number].size() > 4 && pvtw[region_number][4] != 0.0) {
+                THROW("SinglePvtConstCompr does not support 'viscosibility'.");
+            }
+        }
 
-        virtual double getViscosity(int region, double press, const surfvol_t& surfvol) const;
-	virtual double R   (int region, double press, const surfvol_t& surfvol) const;
-	virtual double dRdp(int region, double press, const surfvol_t& surfvol) const;
-        virtual double B   (int region, double press, const surfvol_t& surfvol) const;
-	virtual double dBdp(int region, double press, const surfvol_t& surfvol) const;
+	SinglePvtConstCompr(double visc)
+            : ref_press_(0.0),
+              ref_B_(1.0),
+              comp_(0.0),
+              viscosity_(visc)
+        {
+        }
 
-        virtual void getViscosity(const std::vector<PhaseVec>& pressures,
-                                  const std::vector<CompVec>& surfvol,
-                                  int phase,
-                                  std::vector<double>& output) const;
-        virtual void B(const std::vector<PhaseVec>& pressures,
-                       const std::vector<CompVec>& surfvol,
-                       int phase,
-                       std::vector<double>& output) const;
-        virtual void dBdp(const std::vector<PhaseVec>& pressures,
-                          const std::vector<CompVec>& surfvol,
-                          int phase,
-                          std::vector<double>& output_B,
-                          std::vector<double>& output_dBdp) const;
-        virtual void R(const std::vector<PhaseVec>& pressures,
-                       const std::vector<CompVec>& surfvol,
-                       int phase,
-                       std::vector<double>& output) const;
-        virtual void dRdp(const std::vector<PhaseVec>& pressures,
-                          const std::vector<CompVec>& surfvol,
-                          int phase,
-                          std::vector<double>& output_R,
-                          std::vector<double>& output_dRdp) const;
+	virtual ~SinglePvtConstCompr()
+        {
+        }
 
-    protected:
-        double evalR(double press, const surfvol_t& surfvol) const;
-        void evalRDeriv(double press, const surfvol_t& surfvol, double& R, double& dRdp) const;
-        double evalB(double press, const surfvol_t& surfvol) const;
-        void evalBDeriv(double press, const surfvol_t& surfvol, double& B, double& dBdp) const;
+        virtual void mu(const int n,
+                        const double* /*p*/,
+                        const double* /*z*/,
+                        double* output_mu) const
+        {
+            std::fill(output_mu, output_mu + n, viscosity_);
+        }
 
-	// item:  1=B  2=mu;
-	double miscible_oil(double press, const surfvol_t& surfvol, int item,
-			    bool deriv = false) const;
+        virtual void B(const int n,
+                       const double* p,
+                       const double* /*z*/,
+                       double* output_B) const
+        {
+            if (comp_) {
+#pragma omp parallel for
+                for (int i = 0; i < n; ++i) {
+                    // Computing a polynomial approximation to the exponential.
+                    double x = comp_*(p[i] - ref_press_);
+                    output_B[i] = ref_B_/(1.0 + x + 0.5*x*x);
+                }
+            } else {
+                std::fill(output_B, output_B + n, ref_B_);
+            }
+        }
 
-	// PVT properties of live oil (with dissolved gas)
-	std::vector<std::vector<double> > saturated_oil_table_;	
-	std::vector<std::vector<std::vector<double> > > undersat_oil_tables_;
+        virtual void dBdp(const int n,
+                          const double* p,
+                          const double* /*z*/,
+                          double* output_B,
+                          double* output_dBdp) const
+        {
+            B(n, p, 0, output_B);
+            if (comp_) {
+#pragma omp parallel for
+                for (int i = 0; i < n; ++i) {
+                    output_dBdp[i] = -comp_*output_B[i];
+                }
+            } else {
+                std::fill(output_dBdp, output_dBdp + n, 0.0);
+            }
+        }
+
+        virtual void R(const int n,
+                       const double* /*p*/,
+                       const double* /*z*/,
+                       double* output_R) const
+        {
+            std::fill(output_R, output_R + n, 0.0);
+        }
+
+        virtual void dRdp(const int n,
+                          const double* /*p*/,
+                          const double* /*z*/,
+                          double* output_R,
+                          double* output_dRdp) const
+        {
+            std::fill(output_R, output_R + n, 0.0);
+            std::fill(output_dRdp, output_dRdp + n, 0.0);
+        }
+
+    private:
+        double ref_press_;
+        double ref_B_;
+        double comp_;
+        double viscosity_;
     };
 
 }
 
-#endif // SINTEF_MISCIBILITYLIVEOIL_HEADER
+
+#endif // OPM_SINGLEPVTCONSTCOMPR_HEADER_INCLUDED
 

@@ -28,24 +28,24 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-#include <opm/core/fluid/blackoil/MiscibilityLiveGas.hpp>
-#include <algorithm>
+#include <opm/core/fluid/blackoil/SinglePvtLiveGas.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/linInt.hpp>
+#include <algorithm>
 
-using namespace std;
-using namespace Dune;
 
 namespace Opm
 {
+
+    using Dune::linearInterpolationExtrap;
+    using Dune::linearInterpolDerivative;
 
     //------------------------------------------------------------------------
     // Member functions
     //-------------------------------------------------------------------------
 
     /// Constructor
-    MiscibilityLiveGas::MiscibilityLiveGas(const table_t& pvtg)
+    SinglePvtLiveGas::SinglePvtLiveGas(const table_t& pvtg)
     {
 	// GAS, PVTG
 	const int region_number = 0;
@@ -81,135 +81,156 @@ namespace Opm
     }
 
     // Destructor
-     MiscibilityLiveGas::~MiscibilityLiveGas()
+     SinglePvtLiveGas::~SinglePvtLiveGas()
     {
     }
 
-    double MiscibilityLiveGas::getViscosity(int /*region*/, double press, const surfvol_t& surfvol) const
-    {
-	return miscible_gas(press, surfvol, 2, false);
-    }
 
-    void MiscibilityLiveGas::getViscosity(const std::vector<PhaseVec>& pressures,
-                                          const std::vector<CompVec>& surfvol,
-                                          int phase,
-                                          std::vector<double>& output) const
+    void SinglePvtLiveGas::mu(const int n,
+                              const double* p,
+                              const double* z,
+                              double* output_mu) const
     {
-        ASSERT(pressures.size() == surfvol.size());
-        int num = pressures.size();
-        output.resize(num);
-        for (int i = 0; i < num; ++i) {
-            output[i] = miscible_gas(pressures[i][phase], surfvol[i], 2, false);
+#pragma omp parallel for
+        for (int i = 0; i < n; ++i) {
+            output_mu[i] = miscible_gas(p[i], z + num_phases_*i, 2, false);
         }
     }
 
-    // Vaporised oil-gas ratio.
-    double MiscibilityLiveGas::R(int /*region*/, double press, const surfvol_t& surfvol) const
+
+    /// Formation volume factor as a function of p and z.
+    void SinglePvtLiveGas::B(const int n,
+                             const double* p,
+                             const double* z,
+                             double* output_B) const
     {
-        if (surfvol[Liquid] == 0.0) {
+#pragma omp parallel for
+        for (int i = 0; i < n; ++i) {
+            output_B[i] = evalB(p[i], z + num_phases_*i);
+        }
+
+    }
+
+
+    /// Formation volume factor and p-derivative as functions of p and z.
+    void SinglePvtLiveGas::dBdp(const int n,
+                                const double* p,
+                                const double* z,
+                                double* output_B,
+                                double* output_dBdp) const
+    {
+#pragma omp parallel for
+        for (int i = 0; i < n; ++i) {
+            evalBDeriv(p[i], z + num_phases_*i, output_B[i], output_dBdp[i]);
+        }
+    }
+
+
+    /// Solution factor as a function of p and z.
+    void SinglePvtLiveGas::R(const int n,
+                             const double* p,
+                             const double* z,
+                             double* output_R) const
+    {
+#pragma omp parallel for
+        for (int i = 0; i < n; ++i) {
+            output_R[i] = evalR(p[i], z + num_phases_*i);
+        }
+
+    }
+
+
+    /// Solution factor and p-derivative as functions of p and z.
+    void SinglePvtLiveGas::dRdp(const int n,
+                                const double* p,
+                                const double* z,
+                                double* output_R,
+                                double* output_dRdp) const
+    {
+#pragma omp parallel for
+        for (int i = 0; i < n; ++i) {
+            evalRDeriv(p[i], z + num_phases_*i, output_R[i], output_dRdp[i]);
+        }
+    }
+
+
+    // ---- Private methods ----
+
+    double SinglePvtLiveGas::evalB(const double press, const double* surfvol) const
+    {
+        if (surfvol[phase_pos_[Vapour]] == 0.0) {
+            // To handle no-gas case.
+            return 1.0;
+        }
+        return miscible_gas(press, surfvol, 1, false);
+    }
+
+    void SinglePvtLiveGas::evalBDeriv(const double press, const double* surfvol,
+                                      double& B, double& dBdp) const
+    {
+        if (surfvol[phase_pos_[Vapour]] == 0.0) {
+            // To handle no-gas case.
+            B = 1.0;
+            dBdp = 0.0;
+            return;
+        }
+        B = miscible_gas(press, surfvol, 1, false);
+        dBdp =  miscible_gas(press, surfvol, 1, true);
+    }
+
+    double SinglePvtLiveGas::evalR(const double press, const double* surfvol) const
+    {
+        if (surfvol[phase_pos_[Liquid]] == 0.0) {
+            // To handle no-gas case.
             return 0.0;
         }
-	double R = linearInterpolationExtrap(saturated_gas_table_[0],
+	double satR = linearInterpolationExtrap(saturated_gas_table_[0],
 					     saturated_gas_table_[3], press);
-	double maxR = surfvol[Liquid]/surfvol[Vapour];
-	if (R < maxR ) {  // Saturated case
-	    return R;
+	double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
+	if (satR < maxR ) {
+            // Saturated case
+	    return satR;
 	} else {
-	    return maxR;  // Undersaturated case
+            // Undersaturated case
+	    return maxR;
 	}
     }
 
-    void MiscibilityLiveGas::R(const std::vector<PhaseVec>& pressures,
-                               const std::vector<CompVec>& surfvol,
-                               int phase,
-                               std::vector<double>& output) const
+    void SinglePvtLiveGas::evalRDeriv(const double press, const double* surfvol,
+                                      double& R, double& dRdp) const
     {
-        ASSERT(pressures.size() == surfvol.size());
-        int num = pressures.size();
-        output.resize(num);
-        for (int i = 0; i < num; ++i) {
-            output[i] = R(0, pressures[i][phase], surfvol[i]);
+        if (surfvol[phase_pos_[Liquid]] == 0.0) {
+            // To handle no-gas case.
+            R = 0.0;
+            dRdp = 0.0;
+            return;
         }
-    }
-
-    // Vaporised oil-gas ratio derivative
-    double MiscibilityLiveGas::dRdp(int /*region*/, double press, const surfvol_t& surfvol) const
-    {
-	double R = linearInterpolationExtrap(saturated_gas_table_[0],
+	double satR = linearInterpolationExtrap(saturated_gas_table_[0],
 					     saturated_gas_table_[3], press);
-	double maxR = surfvol[Liquid]/surfvol[Vapour];
-	if (R < maxR ) {  // Saturated case
-	    return linearInterpolDerivative(saturated_gas_table_[0],
+	double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
+	if (satR < maxR ) {
+            // Saturated case
+            R = satR;
+	    dRdp = linearInterpolDerivative(saturated_gas_table_[0],
 					    saturated_gas_table_[3],
 					    press);
 	} else {
-	    return 0.0;  // Undersaturated case
+            // Undersaturated case
+            R = maxR;
+	    dRdp = 0.0;
 	}	
     }
 
-    void MiscibilityLiveGas::dRdp(const std::vector<PhaseVec>& pressures,
-                                  const std::vector<CompVec>& surfvol,
-                                  int phase,
-                                  std::vector<double>& output_R,
-                                  std::vector<double>& output_dRdp) const
-    {
-        ASSERT(pressures.size() == surfvol.size());
-        R(pressures, surfvol, phase, output_R);
-        int num = pressures.size();
-        output_dRdp.resize(num);
-        for (int i = 0; i < num; ++i) {
-            output_dRdp[i] = dRdp(0, pressures[i][phase], surfvol[i]); // \TODO Speedup here by using already evaluated R.
-        }
-    }
-
-    double MiscibilityLiveGas::B(int /*region*/, double press, const surfvol_t& surfvol) const
-    {
-        if (surfvol[Vapour] == 0.0) return 1.0; // To handle no-gas case.
-        return  miscible_gas(press, surfvol, 1, false);
-    }
-
-    void MiscibilityLiveGas::B(const std::vector<PhaseVec>& pressures,
-                               const std::vector<CompVec>& surfvol,
-                               int phase,
-                               std::vector<double>& output) const
-    {
-        ASSERT(pressures.size() == surfvol.size());
-        int num = pressures.size();
-        output.resize(num);
-        for (int i = 0; i < num; ++i) {
-            output[i] = B(0, pressures[i][phase], surfvol[i]);
-        }
-    }
-
-    double MiscibilityLiveGas::dBdp(int /*region*/, double press, const surfvol_t& surfvol) const
-    {	
-        if (surfvol[Vapour] == 0.0) return 0.0; // To handle no-gas case.
-        return miscible_gas(press, surfvol, 1, true);
-    }
-
-    void MiscibilityLiveGas::dBdp(const std::vector<PhaseVec>& pressures,
-                                  const std::vector<CompVec>& surfvol,
-                                  int phase,
-                                  std::vector<double>& output_B,
-                                  std::vector<double>& output_dBdp) const
-    {
-        ASSERT(pressures.size() == surfvol.size());
-        B(pressures, surfvol, phase, output_B);
-        int num = pressures.size();
-        output_dBdp.resize(num);
-        for (int i = 0; i < num; ++i) {
-            output_dBdp[i] = dBdp(0, pressures[i][phase], surfvol[i]); // \TODO Speedup here by using already evaluated B.
-        }
-    }
-
-    double MiscibilityLiveGas::miscible_gas(double press, const surfvol_t& surfvol, int item,
-					    bool deriv) const
+    double SinglePvtLiveGas::miscible_gas(const double press,
+                                          const double* surfvol,
+                                          const int item,
+                                          const bool deriv) const
     {
 	int section;
 	double R = linearInterpolationExtrap(saturated_gas_table_[0],
 					     saturated_gas_table_[3], press,
 					     section);
-	double maxR = surfvol[Liquid]/surfvol[Vapour];
+	double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
 	if (deriv) {
 	    if (R < maxR ) {  // Saturated case
 		return linearInterpolDerivative(saturated_gas_table_[0],

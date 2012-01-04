@@ -1,16 +1,5 @@
-//===========================================================================
-//                                                                           
-// File: MiscibiltyLiveOil.cpp                                               
-//                                                                           
-// Created: Wed Feb 10 09:08:25 2010                                         
-//                                                                           
-// Author: Bjørn Spjelkavik <bsp@sintef.no>
-//                                                                           
-// Revision: $Id$
-//                                                                           
-//===========================================================================
 /*
-  Copyright 2010 SINTEF ICT, Applied Mathematics.
+  Copyright 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -28,16 +17,18 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opm/core/fluid/blackoil/MiscibilityLiveOil.hpp>
+#include <opm/core/fluid/blackoil/SinglePvtLiveOil.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/linInt.hpp>
 #include <algorithm>
 
-using namespace std;
-using namespace Dune;
 
 namespace Opm
 {
+
+    using Dune::linearInterpolationExtrap;
+    using Dune::linearInterpolDerivative;
+    using Dune::tableIndex;
 
 
     //------------------------------------------------------------------------
@@ -45,7 +36,7 @@ namespace Opm
     //-------------------------------------------------------------------------
 
     /// Constructor
-    MiscibilityLiveOil::MiscibilityLiveOil(const table_t& pvto)
+    SinglePvtLiveOil::SinglePvtLiveOil(const table_t& pvto)
     {
 	// OIL, PVTO
 	const int region_number = 0;
@@ -164,132 +155,108 @@ namespace Opm
 		}
 	}
     }
-    // Destructor
-     MiscibilityLiveOil::~MiscibilityLiveOil()
+
+    /// Destructor.
+    SinglePvtLiveOil::~SinglePvtLiveOil()
     {
     }
 
-    double MiscibilityLiveOil::getViscosity(int /*region*/, double press, const surfvol_t& surfvol) const
-    {
-	return miscible_oil(press, surfvol, 2, false);
-    }
 
-    void MiscibilityLiveOil::getViscosity(const std::vector<PhaseVec>& pressures,
-                                          const std::vector<CompVec>& surfvol,
-                                          int phase,
-                                          std::vector<double>& output) const
+    /// Viscosity as a function of p and z.
+    void SinglePvtLiveOil::mu(const int n,
+                              const double* p,
+                              const double* z,
+                              double* output_mu) const
     {
-        ASSERT(pressures.size() == surfvol.size());
-        int num = pressures.size();
-        output.resize(num);
 #pragma omp parallel for
-        for (int i = 0; i < num; ++i) {
-            output[i] = miscible_oil(pressures[i][phase], surfvol[i], 2, false);
-        }
-    }
-
-    // Dissolved gas-oil ratio   
-    double MiscibilityLiveOil::R(int /*region*/, double press, const surfvol_t& surfvol) const
-    {
-        return evalR(press, surfvol);
-    }
-
-    void MiscibilityLiveOil::R(const std::vector<PhaseVec>& pressures,
-                               const std::vector<CompVec>& surfvol,
-                               int phase,
-                               std::vector<double>& output) const
-    {
-        ASSERT(pressures.size() == surfvol.size());
-        int num = pressures.size();
-        output.resize(num);
-#pragma omp parallel for
-        for (int i = 0; i < num; ++i) {
-            output[i] = evalR(pressures[i][phase], surfvol[i]);
-        }
-    }
-
-    //  Dissolved gas-oil ratio derivative
-    double MiscibilityLiveOil::dRdp(int /*region*/, double press, const surfvol_t& surfvol) const
-    {
-	double R = linearInterpolationExtrap(saturated_oil_table_[0],
-					     saturated_oil_table_[3], press);
-	double maxR = surfvol[Vapour]/surfvol[Liquid];
-	if (R < maxR ) {  // Saturated case
-	    return linearInterpolDerivative(saturated_oil_table_[0],
-					    saturated_oil_table_[3],
-					    press);
-	} else {
-	    return 0.0;  // Undersaturated case
-	}	
-    }
-
-    void MiscibilityLiveOil::dRdp(const std::vector<PhaseVec>& pressures,
-                                  const std::vector<CompVec>& surfvol,
-                                  int phase,
-                                  std::vector<double>& output_R,
-                                  std::vector<double>& output_dRdp) const
-    {
-        ASSERT(pressures.size() == surfvol.size());
-        int num = pressures.size();
-        output_R.resize(num);
-        output_dRdp.resize(num);
-#pragma omp parallel for
-        for (int i = 0; i < num; ++i) {
-            evalRDeriv(pressures[i][phase], surfvol[i], output_R[i], output_dRdp[i]);
-        }
-    }
-
-    double MiscibilityLiveOil::B(int /*region*/, double press, const surfvol_t& surfvol) const
-    {
-        return evalB(press, surfvol);
-    }
-
-    void MiscibilityLiveOil::B(const std::vector<PhaseVec>& pressures,
-                               const std::vector<CompVec>& surfvol,
-                               int phase,
-                               std::vector<double>& output) const
-    {
-        ASSERT(pressures.size() == surfvol.size());
-        int num = pressures.size();
-        output.resize(num);
-#pragma omp parallel for
-        for (int i = 0; i < num; ++i) {
-            output[i] = evalB(pressures[i][phase], surfvol[i]);
-        }
-    }
-
-    double MiscibilityLiveOil::dBdp(int /*region*/, double press, const surfvol_t& surfvol) const
-    {	
-        // if (surfvol[Liquid] == 0.0) return 0.0; // To handle no-oil case.
-	double Bo = evalB(press, surfvol); // \TODO check if we incur virtual call overhead here.
-	return -Bo*Bo*miscible_oil(press, surfvol, 1, true);
-    }
-
-    void MiscibilityLiveOil::dBdp(const std::vector<PhaseVec>& pressures,
-                                  const std::vector<CompVec>& surfvol,
-                                  int phase,
-                                  std::vector<double>& output_B,
-                                  std::vector<double>& output_dBdp) const
-    {
-        ASSERT(pressures.size() == surfvol.size());
-        B(pressures, surfvol, phase, output_B);
-        int num = pressures.size();
-        output_dBdp.resize(num);
-#pragma omp parallel for
-        for (int i = 0; i < num; ++i) {
-            output_dBdp[i] = dBdp(0, pressures[i][phase], surfvol[i]); // \TODO Speedup here by using already evaluated B.
+        for (int i = 0; i < n; ++i) {
+            output_mu[i] = miscible_oil(p[i], z + num_phases_*i, 2, false);
         }
     }
 
 
-    double MiscibilityLiveOil::evalR(double press, const surfvol_t& surfvol) const
+    /// Formation volume factor as a function of p and z.
+    void SinglePvtLiveOil::B(const int n,
+                             const double* p,
+                             const double* z,
+                             double* output_B) const
     {
-        if (surfvol[Vapour] == 0.0) {
+#pragma omp parallel for
+        for (int i = 0; i < n; ++i) {
+            output_B[i] = evalB(p[i], z + num_phases_*i);
+        }
+
+    }
+
+
+    /// Formation volume factor and p-derivative as functions of p and z.
+    void SinglePvtLiveOil::dBdp(const int n,
+                                const double* p,
+                                const double* z,
+                                double* output_B,
+                                double* output_dBdp) const
+    {
+#pragma omp parallel for
+        for (int i = 0; i < n; ++i) {
+            evalBDeriv(p[i], z + num_phases_*i, output_B[i], output_dBdp[i]);
+        }
+    }
+
+
+    /// Solution factor as a function of p and z.
+    void SinglePvtLiveOil::R(const int n,
+                             const double* p,
+                             const double* z,
+                             double* output_R) const
+    {
+#pragma omp parallel for
+        for (int i = 0; i < n; ++i) {
+            output_R[i] = evalR(p[i], z + num_phases_*i);
+        }
+
+    }
+
+
+    /// Solution factor and p-derivative as functions of p and z.
+    void SinglePvtLiveOil::dRdp(const int n,
+                                const double* p,
+                                const double* z,
+                                double* output_R,
+                                double* output_dRdp) const
+    {
+#pragma omp parallel for
+        for (int i = 0; i < n; ++i) {
+            evalRDeriv(p[i], z + num_phases_*i, output_R[i], output_dRdp[i]);
+        }
+    }
+
+
+
+
+    // ---- Private methods ----
+
+    double SinglePvtLiveOil::evalB(double press, const double* surfvol) const
+    {
+        // if (surfvol[phase_pos_[Liquid]] == 0.0) return 1.0; // To handle no-oil case.
+	return 1.0/miscible_oil(press, surfvol, 1, false);
+    }
+
+
+    void SinglePvtLiveOil::evalBDeriv(const double press, const double* surfvol,
+                                      double& B, double& dBdp) const
+    {
+	B = evalB(press, surfvol);
+	dBdp = -B*B*miscible_oil(press, surfvol, 1, true);
+    }
+
+    double SinglePvtLiveOil::evalR(double press, const double* surfvol) const
+    {
+        if (surfvol[phase_pos_[Vapour]] == 0.0) {
             return 0.0;
         }	
 	double R = linearInterpolationExtrap(saturated_oil_table_[0],
 					     saturated_oil_table_[3], press);
-	double maxR = surfvol[Vapour]/surfvol[Liquid];
+	double maxR = surfvol[phase_pos_[Vapour]]/surfvol[phase_pos_[Liquid]];
 	if (R < maxR ) {  // Saturated case
 	    return R;
 	} else {
@@ -297,17 +264,17 @@ namespace Opm
 	}
     }
 
-    void MiscibilityLiveOil::evalRDeriv(const double press, const surfvol_t& surfvol,
-                                        double& R, double& dRdp) const
+    void SinglePvtLiveOil::evalRDeriv(const double press, const double* surfvol,
+                                      double& R, double& dRdp) const
     {
-        if (surfvol[Vapour] == 0.0) {
+        if (surfvol[phase_pos_[Vapour]] == 0.0) {
             R = 0.0;
             dRdp = 0.0;
             return;
         }
 	R = linearInterpolationExtrap(saturated_oil_table_[0],
                                       saturated_oil_table_[3], press);
-	double maxR = surfvol[Vapour]/surfvol[Liquid];
+	double maxR = surfvol[phase_pos_[Vapour]]/surfvol[phase_pos_[Liquid]];
 	if (R < maxR ) {
             // Saturated case
 	    dRdp = linearInterpolDerivative(saturated_oil_table_[0],
@@ -321,29 +288,16 @@ namespace Opm
     }
 
 
-    double MiscibilityLiveOil::evalB(double press, const surfvol_t& surfvol) const
-    {
-        // if (surfvol[Liquid] == 0.0) return 1.0; // To handle no-oil case.
-	return 1.0/miscible_oil(press, surfvol, 1, false);
-    }
-
-
-    void MiscibilityLiveOil::evalBDeriv(const double press, const surfvol_t& surfvol,
-                                        double& B, double& dBdp) const
-    {
-	B = evalB(press, surfvol);
-	dBdp = -B*B*miscible_oil(press, surfvol, 1, true);
-    }
-
-
-    double MiscibilityLiveOil::miscible_oil(double press, const surfvol_t& surfvol,
-					    int item, bool deriv) const
+    double SinglePvtLiveOil::miscible_oil(const double press,
+                                          const double* surfvol,
+                                          const int item,
+                                          const bool deriv) const
     {
 	int section;
 	double R = linearInterpolationExtrap(saturated_oil_table_[0],
 					     saturated_oil_table_[3],
 					     press, section);
-	double maxR = (surfvol[Liquid] == 0.0) ? 0.0 : surfvol[Vapour]/surfvol[Liquid];
+	double maxR = (surfvol[phase_pos_[Liquid]] == 0.0) ? 0.0 : surfvol[phase_pos_[Vapour]]/surfvol[phase_pos_[Liquid]];
 	if (deriv) {
 	    if (R < maxR ) {  // Saturated case
 		return linearInterpolDerivative(saturated_oil_table_[0],

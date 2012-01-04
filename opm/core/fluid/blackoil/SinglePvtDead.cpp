@@ -1,16 +1,5 @@
-//===========================================================================
-//                                                                           
-// File: MiscibilityDead.cpp                                                  
-//                                                                           
-// Created: Wed Feb 10 09:06:04 2010                                         
-//                                                                           
-// Author: Bjørn Spjelkavik <bsp@sintef.no>
-//                                                                           
-// Revision: $Id$
-//                                                                           
-//===========================================================================
 /*
-  Copyright 2010 SINTEF ICT, Applied Mathematics.
+  Copyright 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -28,17 +17,14 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opm/core/fluid/blackoil/MiscibilityDead.hpp>
-#include <algorithm>
-#include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/linInt.hpp>
+#include <opm/core/fluid/blackoil/SinglePvtDead.hpp>
 #include <opm/core/utility/buildUniformMonotoneTable.hpp>
-#include <boost/lexical_cast.hpp>
-#include <string>
-#include <fstream>
+#include <algorithm>
 
-using namespace std;
-using namespace Dune;
+// Extra includes for debug dumping of tables.
+// #include <boost/lexical_cast.hpp>
+// #include <string>
+// #include <fstream>
 
 namespace Opm
 {
@@ -48,7 +34,7 @@ namespace Opm
     //-------------------------------------------------------------------------
 
     /// Constructor
-    MiscibilityDead::MiscibilityDead(const table_t& pvd_table)
+    SinglePvtDead::SinglePvtDead(const table_t& pvd_table)
     {
 	const int region_number = 0;
 	if (pvd_table.size() != 1) {
@@ -78,102 +64,65 @@ namespace Opm
     }
 
     // Destructor
-    MiscibilityDead::~MiscibilityDead()
+    SinglePvtDead::~SinglePvtDead()
     {
     }
 
-    double MiscibilityDead::getViscosity(int /*region*/, double press, const surfvol_t& /*surfvol*/) const
-    {
-	return viscosity_(press);
-    }
 
-    void MiscibilityDead::getViscosity(const std::vector<PhaseVec>& pressures,
-                                       const std::vector<CompVec>&,
-                                       int phase,
-                                       std::vector<double>& output) const
+
+    void SinglePvtDead::mu(const int n,
+                           const double* p,
+                           const double* /*z*/,
+                           double* output_mu) const
     {
-        int num = pressures.size();
-        output.resize(num);
 #pragma omp parallel for
-        for (int i = 0; i < num; ++i) {
-            output[i] = viscosity_(pressures[i][phase]);
+        for (int i = 0; i < n; ++i) {
+            output_mu[i] = viscosity_(p[i]);
         }
     }
 
-    double MiscibilityDead::B(int /*region*/, double press, const surfvol_t& /*surfvol*/) const
+    void SinglePvtDead::B(const int n,
+                          const double* p,
+                          const double* /*z*/,
+                          double* output_B) const
     {
-	// Interpolate 1/B 
-	return 1.0/one_over_B_(press);
-    }
-
-    void MiscibilityDead::B(const std::vector<PhaseVec>& pressures,
-                            const std::vector<CompVec>&,
-                            int phase,
-                            std::vector<double>& output) const
-    {
-        int num = pressures.size();
-        output.resize(num);
 #pragma omp parallel for
-        for (int i = 0; i < num; ++i) {
-            output[i] = 1.0/one_over_B_(pressures[i][phase]);
+        for (int i = 0; i < n; ++i) {
+            output_B[i] = 1.0/one_over_B_(p[i]);
         }
     }
 
-    double MiscibilityDead::dBdp(int region, double press, const surfvol_t& /*surfvol*/) const
+    void SinglePvtDead::dBdp(const int n,
+                             const double* p,
+                             const double* /*z*/,
+                             double* output_B,
+                             double* output_dBdp) const
     {
-	// Interpolate 1/B
-	surfvol_t dummy_surfvol;
-	double Bg = B(region, press, dummy_surfvol);
-	return -Bg*Bg*one_over_B_.derivative(press);
-    }
-
-    void MiscibilityDead::dBdp(const std::vector<PhaseVec>& pressures,
-                               const std::vector<CompVec>& surfvols,
-                               int phase,
-                               std::vector<double>& output_B,
-                               std::vector<double>& output_dBdp) const
-    {
-        B(pressures, surfvols, phase, output_B);
-        int num = pressures.size();
-        output_dBdp.resize(num);
+        B(n, p, 0, output_B);
 #pragma omp parallel for
-        for (int i = 0; i < num; ++i) {
+        for (int i = 0; i < n; ++i) {
             double Bg = output_B[i];
-            output_dBdp[i] = -Bg*Bg*one_over_B_.derivative(pressures[i][phase]);
+            output_dBdp[i] = -Bg*Bg*one_over_B_.derivative(p[i]);
         }
     }
 
-    double MiscibilityDead::R(int /*region*/, double /*press*/, const surfvol_t& /*surfvol*/) const
+
+    void SinglePvtDead::R(const int n,
+                          const double* /*p*/,
+                          const double* /*z*/,
+                          double* output_R) const
     {
-        return 0.0;
+        std::fill(output_R, output_R + n, 0.0);
     }
 
-    void MiscibilityDead::R(const std::vector<PhaseVec>& pressures,
-                            const std::vector<CompVec>&,
-                            int,
-                            std::vector<double>& output) const
+    void SinglePvtDead::dRdp(const int n,
+                             const double* /*p*/,
+                             const double* /*z*/,
+                             double* output_R,
+                             double* output_dRdp) const
     {
-        int num = pressures.size();
-        output.clear();
-        output.resize(num, 0.0);
-    }
-
-    double MiscibilityDead::dRdp(int /*region*/, double /*press*/, const surfvol_t& /*surfvol*/) const
-    {
-        return 0.0;
-    }
-
-    void MiscibilityDead::dRdp(const std::vector<PhaseVec>& pressures,
-                               const std::vector<CompVec>&,
-                               int,
-                               std::vector<double>& output_R,
-                               std::vector<double>& output_dRdp) const
-    {
-        int num = pressures.size();
-        output_R.clear();
-        output_R.resize(num, 0.0);
-        output_dRdp.clear();
-        output_dRdp.resize(num, 0.0);
+        std::fill(output_R, output_R + n, 0.0);
+        std::fill(output_dRdp, output_dRdp + n, 0.0);
     }
 
 }

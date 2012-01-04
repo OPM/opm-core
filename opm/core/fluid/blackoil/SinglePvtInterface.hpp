@@ -1,16 +1,5 @@
-//===========================================================================
-//                                                                           
-// File: MiscibilityProps.hpp                                                 
-//                                                                           
-// Created: Wed Feb 10 09:04:35 2010                                         
-//                                                                           
-// Author: Bjørn Spjelkavik <bsp@sintef.no>
-//                                                                           
-// Revision: $Id$
-//                                                                           
-//===========================================================================
 /*
-  Copyright 2010 SINTEF ICT, Applied Mathematics.
+  Copyright 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -28,60 +17,73 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SINTEF_MISCIBILITYPROPS_HEADER
-#define SINTEF_MISCIBILITYPROPS_HEADER
+#ifndef OPM_SINGLEPVTINTERFACE_HEADER_INCLUDED
+#define OPM_SINGLEPVTINTERFACE_HEADER_INCLUDED
 
-    /** Base class for properties of fluids and rocks.
-     *  Detailed description.
-     */
 
-#include "BlackoilDefs.hpp"
-#include <vector>
-#include <tr1/array>
+#include <opm/core/fluid/blackoil/BlackoilPhases.hpp>
+
 
 namespace Opm
 {
 
-
-    class MiscibilityProps : public BlackoilDefs
+    class SinglePvtInterface : public BlackoilPhases
     {
     public:
-	typedef CompVec surfvol_t;
+        SinglePvtInterface();
 
-	MiscibilityProps();
-	virtual ~MiscibilityProps();
+	virtual ~SinglePvtInterface();
 
-        virtual double getViscosity(int region, double press, const surfvol_t& surfvol) const = 0;
-        virtual double B   (int region, double press, const surfvol_t& surfvol) const = 0;
-	virtual double dBdp(int region, double press, const surfvol_t& surfvol) const = 0;
-	virtual double R   (int region, double press, const surfvol_t& surfvol) const = 0;
-	virtual double dRdp(int region, double press, const surfvol_t& surfvol) const = 0;
+        /// \param[in]  num_phases   The number of active phases.
+        /// \param[in]  phase_pos    Array of BlackpoilPhases::MaxNumPhases
+        ///                          integers, giving the relative
+        ///                          positions of the three canonical
+        ///                          phases A, L, V in order to handle
+        ///                          arbitrary two-phase situations.
+        void setPhaseConfiguration(const int num_phases, const int* phase_pos);
 
-        virtual void getViscosity(const std::vector<PhaseVec>& pressures,
-                                  const std::vector<CompVec>& surfvol,
-                                  int phase,
-                                  std::vector<double>& output) const = 0;
-        virtual void B(const std::vector<PhaseVec>& pressures,
-                       const std::vector<CompVec>& surfvol,
-                       int phase,
-                       std::vector<double>& output) const = 0;
-        virtual void dBdp(const std::vector<PhaseVec>& pressures,
-                          const std::vector<CompVec>& surfvol,
-                          int phase,
-                          std::vector<double>& output_B,
-                          std::vector<double>& output_dBdp) const = 0;
-        virtual void R(const std::vector<PhaseVec>& pressures,
-                       const std::vector<CompVec>& surfvol,
-                       int phase,
-                       std::vector<double>& output) const = 0;
-        virtual void dRdp(const std::vector<PhaseVec>& pressures,
-                          const std::vector<CompVec>& surfvol,
-                          int phase,
-                          std::vector<double>& output_R,
-                          std::vector<double>& output_dRdp) const = 0;
+        /// For all the virtual methods, the following apply: p and z
+        /// are expected to be of size n and n*num_phases, respectively.
+        /// Output arrays shall be of size n, and must be valid before
+        /// calling the method.
+
+        /// Viscosity as a function of p and z.
+        virtual void mu(const int n,
+                        const double* p,
+                        const double* z,
+                        double* output_mu) const = 0;
+
+        /// Formation volume factor as a function of p and z.
+        virtual void B(const int n,
+                       const double* p,
+                       const double* z,
+                       double* output_B) const = 0;
+
+        /// Formation volume factor and p-derivative as functions of p and z.
+        virtual void dBdp(const int n,
+                          const double* p,
+                          const double* z,
+                          double* output_B,
+                          double* output_dBdp) const = 0;
+
+        /// Solution factor as a function of p and z.
+        virtual void R(const int n,
+                       const double* p,
+                       const double* z,
+                       double* output_R) const = 0;
+
+        /// Solution factor and p-derivative as functions of p and z.
+        virtual void dRdp(const int n,
+                          const double* p,
+                          const double* z,
+                          double* output_R,
+                          double* output_dRdp) const = 0;
+    protected:
+        int num_phases_;
+        int phase_pos_[MaxNumPhases];
     };
 
 } // namespace Opm
 
-#endif // SINTEF_MISCIBILITYPROPS_HEADER
+#endif // OPM_SINGLEPVTINTERFACE_HEADER_INCLUDED
 

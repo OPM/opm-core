@@ -22,6 +22,10 @@ opm/core/fluid/blackoil/MiscibilityDead.cpp             \
 opm/core/fluid/blackoil/MiscibilityLiveGas.cpp          \
 opm/core/fluid/blackoil/MiscibilityLiveOil.cpp          \
 opm/core/fluid/blackoil/MiscibilityProps.cpp            \
+opm/core/fluid/blackoil/SinglePvtDead.cpp               \
+opm/core/fluid/blackoil/SinglePvtLiveGas.cpp            \
+opm/core/fluid/blackoil/SinglePvtLiveOil.cpp            \
+opm/core/fluid/blackoil/SinglePvtInterface.cpp          \
 opm/core/fluid/BlackoilPropertiesFromDeck.cpp           \
 opm/core/utility/MonotCubicInterpolator.cpp             \
 opm/core/utility/parameters/Parameter.cpp               \
@@ -82,6 +86,7 @@ opm/core/fluid/BlackoilPropertiesFromDeck.hpp           \
 opm/core/fluid/RockFromDeck.hpp                         \
 opm/core/fluid/SimpleFluid2p.hpp                        \
 opm/core/fluid/blackoil/BlackoilDefs.hpp                \
+opm/core/fluid/blackoil/BlackoilPhases.hpp              \
 opm/core/fluid/blackoil/BlackoilPVT.hpp                 \
 opm/core/fluid/blackoil/FluidMatrixInteractionBlackoil.hpp \
 opm/core/fluid/blackoil/FluidStateBlackoil.hpp          \
@@ -90,6 +95,11 @@ opm/core/fluid/blackoil/MiscibilityLiveGas.hpp          \
 opm/core/fluid/blackoil/MiscibilityLiveOil.hpp          \
 opm/core/fluid/blackoil/MiscibilityProps.hpp            \
 opm/core/fluid/blackoil/MiscibilityWater.hpp            \
+opm/core/fluid/blackoil/SinglePvtDead.hpp               \
+opm/core/fluid/blackoil/SinglePvtLiveGas.hpp            \
+opm/core/fluid/blackoil/SinglePvtLiveOil.hpp            \
+opm/core/fluid/blackoil/SinglePvtInterface.hpp          \
+opm/core/fluid/blackoil/SinglePvtConstCompr.hpp         \
 opm/core/utility/Average.hpp                            \
 opm/core/utility/ErrorMacros.hpp                        \
 opm/core/utility/Factory.hpp                            \

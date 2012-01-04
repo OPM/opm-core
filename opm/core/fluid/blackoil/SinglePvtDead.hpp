@@ -1,16 +1,5 @@
-//===========================================================================
-//                                                                           
-// File: MiscibilityDead.hpp                                                  
-//                                                                           
-// Created: Wed Feb 10 09:05:47 2010                                         
-//                                                                           
-// Author: Bjørn Spjelkavik <bsp@sintef.no>
-//                                                                           
-// Revision: $Id$
-//                                                                           
-//===========================================================================
 /*
-  Copyright 2010 SINTEF ICT, Applied Mathematics.
+  Copyright 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -28,55 +17,57 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SINTEF_MISCIBILITYDEAD_HEADER
-#define SINTEF_MISCIBILITYDEAD_HEADER
+#ifndef OPM_SINGLEPVTDEAD_HEADER_INCLUDED
+#define OPM_SINGLEPVTDEAD_HEADER_INCLUDED
 
-/** Class for immiscible dead oil and dry gas.
- *  Detailed description.
- */
 
-#include <opm/core/fluid/blackoil/MiscibilityProps.hpp>
+#include <opm/core/fluid/blackoil/SinglePvtInterface.hpp>
 #include <opm/core/utility/UniformTableLinear.hpp>
+#include <vector>
 
 namespace Opm
 {
-    class MiscibilityDead : public MiscibilityProps
+
+    /// Class for immiscible dead oil and dry gas.
+    class SinglePvtDead : public SinglePvtInterface
     {
     public:
 	typedef std::vector<std::vector<std::vector<double> > > table_t;
 
-	MiscibilityDead(const table_t& pvd_table);
-	virtual ~MiscibilityDead();
+	SinglePvtDead(const table_t& pvd_table);
+	virtual ~SinglePvtDead();
 
-        virtual double getViscosity(int region, double press, const surfvol_t& surfvol) const;
-        virtual double B(int region, double press, const surfvol_t& surfvol) const;
-	virtual double dBdp(int region, double press, const surfvol_t& surfvol) const;
-	virtual double R(int region, double press, const surfvol_t& surfvol) const;
-	virtual double dRdp(int region, double press, const surfvol_t& surfvol) const;
+        /// Viscosity as a function of p and z.
+        virtual void mu(const int n,
+                        const double* p,
+                        const double* z,
+                        double* output_mu) const;
 
-        virtual void getViscosity(const std::vector<PhaseVec>& pressures,
-                                  const std::vector<CompVec>& surfvol,
-                                  int phase,
-                                  std::vector<double>& output) const;
-        virtual void B(const std::vector<PhaseVec>& pressures,
-                       const std::vector<CompVec>& surfvol,
-                       int phase,
-                       std::vector<double>& output) const;
-        virtual void dBdp(const std::vector<PhaseVec>& pressures,
-                          const std::vector<CompVec>& surfvol,
-                          int phase,
-                          std::vector<double>& output_B,
-                          std::vector<double>& output_dBdp) const;
-        virtual void R(const std::vector<PhaseVec>& pressures,
-                       const std::vector<CompVec>& surfvol,
-                       int phase,
-                       std::vector<double>& output) const;
-        virtual void dRdp(const std::vector<PhaseVec>& pressures,
-                          const std::vector<CompVec>& surfvol,
-                          int phase,
-                          std::vector<double>& output_R,
-                          std::vector<double>& output_dRdp) const;
+        /// Formation volume factor as a function of p and z.
+        virtual void B(const int n,
+                       const double* p,
+                       const double* z,
+                       double* output_B) const;
 
+        /// Formation volume factor and p-derivative as functions of p and z.
+        virtual void dBdp(const int n,
+                          const double* p,
+                          const double* z,
+                          double* output_B,
+                          double* output_dBdp) const;
+
+        /// Solution factor as a function of p and z.
+        virtual void R(const int n,
+                       const double* p,
+                       const double* z,
+                       double* output_R) const;
+
+        /// Solution factor and p-derivative as functions of p and z.
+        virtual void dRdp(const int n,
+                          const double* p,
+                          const double* z,
+                          double* output_R,
+                          double* output_dRdp) const;
     private:
 	// PVT properties of dry gas or dead oil
         Dune::utils::UniformTableLinear<double> one_over_B_;
@@ -85,5 +76,5 @@ namespace Opm
 
 }
 
-#endif // SINTEF_MISCIBILITYDEAD_HEADER
+#endif // OPM_SINGLEPVTDEAD_HEADER_INCLUDED
 
