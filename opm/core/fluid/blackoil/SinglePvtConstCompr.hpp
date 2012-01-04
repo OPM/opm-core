@@ -29,6 +29,12 @@
 
 namespace Opm
 {
+
+    /// Class for constant compressible phases (PVTW or PVCDO).
+    /// For all the virtual methods, the following apply: p and z
+    /// are expected to be of size n and n*num_phases, respectively.
+    /// Output arrays shall be of size n, and must be valid before
+    /// calling the method.
     class SinglePvtConstCompr : public SinglePvtInterface
     {
     public:

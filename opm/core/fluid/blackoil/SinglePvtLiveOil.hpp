@@ -26,7 +26,11 @@
 
 namespace Opm
 {
-    /// Class for miscible live oil.
+    /// Class for miscible live oil (with dissolved gas in liquid phase).
+    /// For all the virtual methods, the following apply: p and z
+    /// are expected to be of size n and n*num_phases, respectively.
+    /// Output arrays shall be of size n, and must be valid before
+    /// calling the method.
     class SinglePvtLiveOil : public SinglePvtInterface
     {
     public:

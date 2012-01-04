@@ -39,7 +39,7 @@ namespace Opm
         ///                          integers, giving the relative
         ///                          positions of the three canonical
         ///                          phases A, L, V in order to handle
-        ///                          arbitrary two-phase situations.
+        ///                          arbitrary two-phase and three-phase situations.
         void setPhaseConfiguration(const int num_phases, const int* phase_pos);
 
         /// For all the virtual methods, the following apply: p and z

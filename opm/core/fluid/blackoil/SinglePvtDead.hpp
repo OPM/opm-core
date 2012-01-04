@@ -29,6 +29,10 @@ namespace Opm
 {
 
     /// Class for immiscible dead oil and dry gas.
+    /// For all the virtual methods, the following apply: p and z
+    /// are expected to be of size n and n*num_phases, respectively.
+    /// Output arrays shall be of size n, and must be valid before
+    /// calling the method.
     class SinglePvtDead : public SinglePvtInterface
     {
     public:
