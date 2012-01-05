@@ -25,8 +25,11 @@
 #include <opm/core/eclipse/EclipseGridInspector.hpp>
 #include <opm/core/fluid/BlackoilPropertiesFromDeck.hpp>
 
-#include <iterator>
+#include <algorithm>
 #include <iostream>
+#include <iterator>
+#include <string>
+#include <vector>
 
 int main(int argc, char** argv)
 {
