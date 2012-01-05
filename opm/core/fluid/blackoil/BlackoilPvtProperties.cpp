@@ -110,6 +110,12 @@ namespace Opm
     }
 
 
+    int BlackoilPvtProperties::numPhases() const
+    {
+        return phase_usage_.num_phases;
+    }
+
+
     void BlackoilPvtProperties::mu(const int n,
                                    const double* p,
                                    const double* z,
