@@ -26,6 +26,7 @@
 
 #include <iterator>
 #include <iostream>
+#include <vector>
 
 int main(int argc, char** argv)
 {
@@ -36,7 +37,7 @@ int main(int argc, char** argv)
     std::string ecl_file = param.get<std::string>("filename");
     Dune::EclipseGridParser deck(ecl_file);
 
-    Opm::BlackoilPropertiesFromDeck props(deck);
+    Opm::BlackoilPropertiesFromDeck props(deck, ::std::vector<int>(1));
 
     const int n = 1;
     double p[n] = { 150e5 };
