@@ -28,6 +28,7 @@ opm/core/fluid/blackoil/SinglePvtLiveGas.cpp            \
 opm/core/fluid/blackoil/SinglePvtLiveOil.cpp            \
 opm/core/fluid/blackoil/SinglePvtInterface.cpp          \
 opm/core/fluid/BlackoilPropertiesFromDeck.cpp           \
+opm/core/fluid/RockFromDeck.cpp                         \
 opm/core/fluid/SaturationPropsFromDeck.cpp              \
 opm/core/utility/MonotCubicInterpolator.cpp             \
 opm/core/utility/parameters/Parameter.cpp               \
