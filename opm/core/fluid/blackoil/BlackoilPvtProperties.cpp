@@ -51,9 +51,15 @@ namespace Opm
 	if (deck.hasField("DENSITY")) {
 	    const std::vector<double>& d = deck.getDENSITY().densities_[region_number_];
 	    enum { ECL_oil = 0, ECL_water = 1, ECL_gas = 2 };
-	    densities_[Aqua]   = d[ECL_water];
-	    densities_[Vapour] = d[ECL_gas];
-	    densities_[Liquid] = d[ECL_oil];
+            if (phase_usage_.phase_used[Aqua]) {
+                densities_[phase_usage_.phase_pos[Aqua]]   = d[ECL_water];
+            }
+            if (phase_usage_.phase_used[Vapour]) {
+                densities_[phase_usage_.phase_pos[Vapour]] = d[ECL_gas];
+            }
+            if (phase_usage_.phase_used[Liquid]) {
+                densities_[phase_usage_.phase_pos[Liquid]] = d[ECL_oil];
+            }
 	} else {
 	    THROW("Input is missing DENSITY\n");
 	}
