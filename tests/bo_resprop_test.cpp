@@ -25,8 +25,8 @@
 #include <opm/core/fluid/BlackoilPropertiesFromDeck.hpp>
 
 #include <algorithm>
-#include <iterator>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <vector>
 
