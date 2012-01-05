@@ -24,6 +24,7 @@
 #include <opm/core/fluid/blackoil/SinglePvtLiveOil.hpp>
 #include <opm/core/fluid/blackoil/SinglePvtLiveGas.hpp>
 #include <opm/core/fluid/blackoil/SinglePvtConstCompr.hpp>
+#include <opm/core/fluid/blackoil/phaseUsageFromDeck.hpp>
 #include <opm/core/eclipse/EclipseGridParser.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
@@ -33,39 +34,18 @@
 namespace Opm
 {
 
+    BlackoilPvtProperties::BlackoilPvtProperties()
+    {
+    }
+
+
     void BlackoilPvtProperties::init(const Dune::EclipseGridParser& deck)
     {
         typedef std::vector<std::vector<std::vector<double> > > table_t;
         // If we need multiple regions, this class and the SinglePvt* classes must change.
 	region_number_ = 0;
 
-        // Discover phase usage.
-        std::fill(phase_used_, phase_used_ + MaxNumPhases, 0);
-        if (deck.hasField("WATER")) {
-            phase_used_[Aqua] = 1;
-        }
-        if (deck.hasField("OIL")) {
-            phase_used_[Liquid] = 1;
-        }
-        if (deck.hasField("GAS")) {
-            phase_used_[Vapour] = 1;
-        }
-        num_phases_ = 0;
-        for (int i = 0; i < MaxNumPhases; ++i) {
-            phase_pos_[i] = num_phases_;
-            num_phases_ += phase_used_[i];
-        }
-
-        // Only 2 or 3 phase systems handled.
-        if (num_phases_ < 2 || num_phases_ > 3) {
-            THROW("Cannot handle cases with " << num_phases_ << " phases.");
-        }
-
-        // We need oil systems, since we do not support the keywords needed for
-        // water-gas systems.
-        if (!phase_used_[Liquid]) {
-            THROW("Cannot handle cases with no OIL, i.e. water-gas systems.");
-        }
+        phase_usage_ = phaseUsageFromDeck(deck);
 
 	// Surface densities. Accounting for different orders in eclipse and our code.
 	if (deck.hasField("DENSITY")) {
@@ -79,42 +59,42 @@ namespace Opm
 	}
 
         // Set the properties.
-        props_.resize(num_phases_);
+        props_.resize(phase_usage_.num_phases);
         // Water PVT
-        if (phase_used_[Aqua]) {
+        if (phase_usage_.phase_used[Aqua]) {
             if (deck.hasField("PVTW")) {
-                props_[phase_pos_[Aqua]].reset(new SinglePvtConstCompr(deck.getPVTW().pvtw_));
+                props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(deck.getPVTW().pvtw_));
             } else {
                 // Eclipse 100 default.
-                props_[phase_pos_[Aqua]].reset(new SinglePvtConstCompr(0.5*Dune::prefix::centi*Dune::unit::Poise));
+                props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(0.5*Dune::prefix::centi*Dune::unit::Poise));
             }
         }
         // Oil PVT
-        if (phase_used_[Liquid]) {
+        if (phase_usage_.phase_used[Liquid]) {
             if (deck.hasField("PVDO")) {
-                props_[phase_pos_[Liquid]].reset(new SinglePvtDead(deck.getPVDO().pvdo_));
+                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDead(deck.getPVDO().pvdo_));
             } else if (deck.hasField("PVTO")) {
-                props_[phase_pos_[Liquid]].reset(new SinglePvtLiveOil(deck.getPVTO().pvto_));
+                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtLiveOil(deck.getPVTO().pvto_));
             } else if (deck.hasField("PVCDO")) {
-                props_[phase_pos_[Liquid]].reset(new SinglePvtConstCompr(deck.getPVCDO().pvcdo_));
+                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtConstCompr(deck.getPVCDO().pvcdo_));
             } else {
                 THROW("Input is missing PVDO or PVTO\n");
             }
         }
 	// Gas PVT
-        if (phase_used_[Vapour]) {
+        if (phase_usage_.phase_used[Vapour]) {
             if (deck.hasField("PVDG")) {
-                props_[phase_pos_[Vapour]].reset(new SinglePvtDead(deck.getPVDG().pvdg_));
+                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDead(deck.getPVDG().pvdg_));
             } else if (deck.hasField("PVTG")) {
-                props_[phase_pos_[Vapour]].reset(new SinglePvtLiveGas(deck.getPVTG().pvtg_));
+                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(deck.getPVTG().pvtg_));
             } else {
                 THROW("Input is missing PVDG or PVTG\n");
             }
         }
 
         // Must inform pvt property objects of phase structure.
-        for (int i = 0; i < num_phases_; ++i) {
-            props_[i]->setPhaseConfiguration(num_phases_, phase_pos_);
+        for (int i = 0; i < phase_usage_.num_phases; ++i) {
+            props_[i]->setPhaseConfiguration(phase_usage_.num_phases, phase_usage_.phase_pos);
         }
     }
 
@@ -130,11 +110,11 @@ namespace Opm
                                    double* output_mu) const
     {
         data1_.resize(n);
-        for (int phase = 0; phase < num_phases_; ++phase) {
+        for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
             props_[phase]->mu(n, p, z, &data1_[0]);
 #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
-                output_mu[num_phases_*i + phase] = data1_[i];
+                output_mu[phase_usage_.num_phases*i + phase] = data1_[i];
             }
         }
     }
@@ -145,11 +125,11 @@ namespace Opm
                                   double* output_B) const
     {
         data1_.resize(n);
-        for (int phase = 0; phase < num_phases_; ++phase) {
+        for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
             props_[phase]->B(n, p, z, &data1_[0]);
 #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
-                output_B[num_phases_*i + phase] = data1_[i];
+                output_B[phase_usage_.num_phases*i + phase] = data1_[i];
             }
         }
     }
@@ -162,12 +142,12 @@ namespace Opm
     {
         data1_.resize(n);
         data2_.resize(n);
-        for (int phase = 0; phase < num_phases_; ++phase) {
+        for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
             props_[phase]->dBdp(n, p, z, &data1_[0], &data2_[0]);
 #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
-                output_B[num_phases_*i + phase] = data1_[i];
-                output_dBdp[num_phases_*i + phase] = data2_[i];
+                output_B[phase_usage_.num_phases*i + phase] = data1_[i];
+                output_dBdp[phase_usage_.num_phases*i + phase] = data2_[i];
             }
         }
     }
@@ -179,11 +159,11 @@ namespace Opm
                                   double* output_R) const
     {
         data1_.resize(n);
-        for (int phase = 0; phase < num_phases_; ++phase) {
+        for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
             props_[phase]->R(n, p, z, &data1_[0]);
 #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
-                output_R[num_phases_*i + phase] = data1_[i];
+                output_R[phase_usage_.num_phases*i + phase] = data1_[i];
             }
         }
     }
@@ -196,12 +176,12 @@ namespace Opm
     {
         data1_.resize(n);
         data2_.resize(n);
-        for (int phase = 0; phase < num_phases_; ++phase) {
+        for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
             props_[phase]->dRdp(n, p, z, &data1_[0], &data2_[0]);
 #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
-                output_R[num_phases_*i + phase] = data1_[i];
-                output_dRdp[num_phases_*i + phase] = data2_[i];
+                output_R[phase_usage_.num_phases*i + phase] = data1_[i];
+                output_dRdp[phase_usage_.num_phases*i + phase] = data2_[i];
             }
         }
     }

@@ -86,6 +86,7 @@ opm/core/fluid/BlackoilPropertiesInterface.hpp          \
 opm/core/fluid/BlackoilPropertiesFromDeck.hpp           \
 opm/core/fluid/RockFromDeck.hpp                         \
 opm/core/fluid/SimpleFluid2p.hpp                        \
+opm/core/fluid/blackoil/phaseUsageFromDeck.hpp          \
 opm/core/fluid/blackoil/BlackoilDefs.hpp                \
 opm/core/fluid/blackoil/BlackoilPhases.hpp              \
 opm/core/fluid/blackoil/BlackoilPVT.hpp                 \
