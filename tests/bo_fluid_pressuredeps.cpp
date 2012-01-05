@@ -45,7 +45,7 @@ void printCompressibilityTerms(double p, const Opm::BlackoilFluid::FluidState& s
 }
 #endif
 
-void printSatsEtc(double p, const Opm::BlackoilFluid::FluidState& state)
+static void printSatsEtc(double p, const Opm::BlackoilFluid::FluidState& state)
 {
     std::cout.precision(6);
     std::cout.width(15);
