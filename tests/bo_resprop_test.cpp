@@ -24,8 +24,10 @@
 #include <opm/core/eclipse/EclipseGridParser.hpp>
 #include <opm/core/fluid/BlackoilPropertiesFromDeck.hpp>
 
+#include <algorithm>
 #include <iterator>
 #include <iostream>
+#include <string>
 #include <vector>
 
 int main(int argc, char** argv)
