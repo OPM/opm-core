@@ -17,6 +17,7 @@ AC_CONFIG_HEADERS([config.h])
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
+AM_PROG_CC_C_O
 m4_ifdef([LT_INIT], [], [AC_PROG_LIBTOOL])
 AC_PROG_RANLIB
 
