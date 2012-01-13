@@ -802,7 +802,7 @@ fill_cart_topology_2d(struct UnstructuredGrid *G, int nx, int ny)
                 *fcells++ =  i+nx*j;
             }
             else if (j == ny) {
-                *fcells++ =  i+nx*j;
+                *fcells++ =  i+nx*(j-1);
                 *fcells++ = -1;
             }
             else {
