@@ -29,6 +29,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <opm/core/grid.h>
+
 #include "cart_grid.h"
 
 static struct UnstructuredGrid *allocate_cart_grid_3d(int nx, int ny, int nz);
