@@ -462,8 +462,7 @@ void process_grdecl(const struct grdecl   *in,
 
           if (in->actnum[c1] && in->actnum[c2] && (z2 < z1)){
             fprintf(stderr, "\nZCORN should be strictly nondecreasing along pillars!\n");
-            fprintf(stderr, "(%d %d %d) %d %d\n%24.16f\n%24.16f: %d\n",
-                    i,j,k,in->actnum[c1], in->actnum[c2], z1, z2, z2<z1);
+
             error = 1;
             goto end;
           }
