@@ -91,8 +91,8 @@ static void compute_cell_index(const int dims[3], int i, int j, int *neighbors, 
   }else{
     for(k=0; k<len; k+=2){
       if (neighbors[k] != -1){
-	int tmp = i + dims[0]*(j + dims[1]*neighbors[k]);
-	neighbors[k] = tmp;
+        int tmp = i + dims[0]*(j + dims[1]*neighbors[k]);
+        neighbors[k] = tmp;
       }
     }
   }
@@ -158,9 +158,9 @@ static int checkmemeory(int nz, struct processed_grid *out, int **intersections)
   direction == 1 : constant-j faces.
  */
 static void process_vertical_faces(int direction,
-			   int **intersections,
-			    int *plist, int *work,
-			    struct processed_grid *out)
+                           int **intersections,
+                            int *plist, int *work,
+                            struct processed_grid *out)
 {
   int i,j;
   int d[3];
@@ -178,8 +178,8 @@ static void process_vertical_faces(int direction,
     for (i=0; i<nx+1-direction; ++i){
 
       if (!checkmemeory(nz, out, intersections)){
-	fprintf(stderr, "Could not allocat enough space in process_vertical_faces\n");
-	exit(1);
+        fprintf(stderr, "Could not allocat enough space in process_vertical_faces\n");
+        exit(1);
       }
 
       /* Vectors of point numbers */
@@ -187,26 +187,26 @@ static void process_vertical_faces(int direction,
       igetvectors(d, 2*i+direction, 2*j+1-direction, plist, cornerpts);
 
       if(direction==1){
-	/* 1   3       0   1    */
-	/*       --->           */
-	/* 0   2       2   3    */
-	/* rotate clockwise     */
-	int *tmp     = cornerpts[1];
-	cornerpts[1] = cornerpts[0];
-	cornerpts[0] = cornerpts[2];
-	cornerpts[2] = cornerpts[3];
-	cornerpts[3] = tmp;
+        /* 1   3       0   1    */
+        /*       --->           */
+        /* 0   2       2   3    */
+        /* rotate clockwise     */
+        int *tmp     = cornerpts[1];
+        cornerpts[1] = cornerpts[0];
+        cornerpts[0] = cornerpts[2];
+        cornerpts[2] = cornerpts[3];
+        cornerpts[3] = tmp;
       }
 
       /* int startface = ftab->position; */
       startface = out->number_of_faces;
       /* int num_intersections = *npoints - npillarpoints; */
       num_intersections = out->number_of_nodes -
-	                      out->number_of_nodes_on_pillars;
+                              out->number_of_nodes_on_pillars;
 
       findconnections(2*nz+2, cornerpts,
-		      *intersections+4*num_intersections,
-		      work, out);
+                      *intersections+4*num_intersections,
+                      work, out);
 
       ptr = out->face_neighbors + 2*startface;
       len = 2*out->number_of_faces - 2*startface;
@@ -241,8 +241,8 @@ static int linearindex(const int dims[3], int i, int j, int k)
 
  */
 static void process_horizontal_faces(int **intersections,
-			      int *plist,
-			      struct processed_grid *out)
+                              int *plist,
+                              struct processed_grid *out)
 {
   int i,j,k;
 
@@ -265,8 +265,8 @@ static void process_horizontal_faces(int **intersections,
 
 
       if (!checkmemeory(nz, out, intersections)){
-	fprintf(stderr, "Could not allocat enough space in process_horizontal_faces\n");
-	exit(1);
+        fprintf(stderr, "Could not allocat enough space in process_horizontal_faces\n");
+        exit(1);
       }
 
 
@@ -282,53 +282,53 @@ static void process_horizontal_faces(int **intersections,
 
       for (k = 1; k<nz*2+1; ++k){
 
-	/* Skip if space between face k and face k+1 is collapsed. */
-	/* Note that inactive cells (with ACTNUM==0) have all been  */
-	/* collapsed in finduniquepoints.                           */
-	if (c[0][k] == c[0][k+1] && c[1][k] == c[1][k+1] &&
-	    c[2][k] == c[2][k+1] && c[3][k] == c[3][k+1]){
+        /* Skip if space between face k and face k+1 is collapsed. */
+        /* Note that inactive cells (with ACTNUM==0) have all been  */
+        /* collapsed in finduniquepoints.                           */
+        if (c[0][k] == c[0][k+1] && c[1][k] == c[1][k+1] &&
+            c[2][k] == c[2][k+1] && c[3][k] == c[3][k+1]){
 
-	  /* If the pinch is a cell: */
-	  if (k%2){
-	    int idx = linearindex(out->dimensions, i,j,(k-1)/2);
-	    cell[idx] = -1;
-	  }
-	}
-	else{
+          /* If the pinch is a cell: */
+          if (k%2){
+            int idx = linearindex(out->dimensions, i,j,(k-1)/2);
+            cell[idx] = -1;
+          }
+        }
+        else{
 
-	  if (k%2){
-	    /* Add face */
-	    *f++ = c[0][k];
-	    *f++ = c[2][k];
-	    *f++ = c[3][k];
-	    *f++ = c[1][k];
+          if (k%2){
+            /* Add face */
+            *f++ = c[0][k];
+            *f++ = c[2][k];
+            *f++ = c[3][k];
+            *f++ = c[1][k];
 
-	    out->face_tag[  out->number_of_faces] = TOP;
-	    out->face_ptr[++out->number_of_faces] = f - out->face_nodes;
+            out->face_tag[  out->number_of_faces] = TOP;
+            out->face_ptr[++out->number_of_faces] = f - out->face_nodes;
 
-	    thiscell = linearindex(out->dimensions, i,j,(k-1)/2);
-	    *n++ = prevcell;
-	    *n++ = prevcell = thiscell;
+            thiscell = linearindex(out->dimensions, i,j,(k-1)/2);
+            *n++ = prevcell;
+            *n++ = prevcell = thiscell;
 
-	    cell[thiscell] = cellno++;
+            cell[thiscell] = cellno++;
 
-	  }
-	  else{
-	    if (prevcell != -1){
-	      /* Add face */
-	      *f++ = c[0][k];
-	      *f++ = c[2][k];
-	      *f++ = c[3][k];
-	      *f++ = c[1][k];
+          }
+          else{
+            if (prevcell != -1){
+              /* Add face */
+              *f++ = c[0][k];
+              *f++ = c[2][k];
+              *f++ = c[3][k];
+              *f++ = c[1][k];
 
               out->face_tag[  out->number_of_faces] = TOP;
-	      out->face_ptr[++out->number_of_faces] = f - out->face_nodes;
+              out->face_ptr[++out->number_of_faces] = f - out->face_nodes;
 
-	      *n++ = prevcell;
-	      *n++ = prevcell = -1;
-	    }
-	  }
-	}
+              *n++ = prevcell;
+              *n++ = prevcell = -1;
+            }
+          }
+        }
       }
     }
   }
@@ -372,7 +372,7 @@ static void approximate_intersection_pt(int *L, double *c, double *pt)
  */
 static void
 compute_intersection_coordinates(int                   *intersections,
-				 struct processed_grid *out)
+                                 struct processed_grid *out)
 {
   int n  = out->number_of_nodes;
   int np = out->number_of_nodes_on_pillars;
@@ -407,8 +407,8 @@ compute_intersection_coordinates(int                   *intersections,
   Public interface
  */
 void process_grdecl(const struct grdecl   *in,
-		    double                tolerance,
-		    struct processed_grid *out)
+                    double                tolerance,
+                    struct processed_grid *out)
 {
   int i,j,k;
 
@@ -437,7 +437,7 @@ void process_grdecl(const struct grdecl   *in,
   for (j=0; j<ny; ++j){
     for (i=0; i<nx; ++i){
       for (k=0; k<nz; ++k){
-	*iptr++ = in->actnum[i+nx*(j+ny*k)];
+        *iptr++ = in->actnum[i+nx*(j+ny*k)];
       }
     }
   }
@@ -453,21 +453,21 @@ void process_grdecl(const struct grdecl   *in,
     /* Ensure that zcorn is strictly nondecreasing in k-direction */
     for (j=0; j<2*ny; ++j){
       for (i=0; i<2*nx; ++i){
-	for (k=0; k<2*nz-1; ++k){
-	  double z1 = sign*in->zcorn[i+2*nx*(j+2*ny*(k))];
-	  double z2 = sign*in->zcorn[i+2*nx*(j+2*ny*(k+1))];
-	  
+        for (k=0; k<2*nz-1; ++k){
+          double z1 = sign*in->zcorn[i+2*nx*(j+2*ny*(k))];
+          double z2 = sign*in->zcorn[i+2*nx*(j+2*ny*(k+1))];
+
           int c1 = i/2 + nx*(j/2 + ny*k/2);
           int c2 = i/2 + nx*(j/2 + ny*(k+1)/2);
-          
-	  if (in->actnum[c1] && in->actnum[c2] && (z2 < z1)){
-	    fprintf(stderr, "\nZCORN should be strictly nondecreasing along pillars!\n");	 
-            fprintf(stderr, "(%d %d %d) %d %d\n%24.16f\n%24.16f: %d\n", 
+
+          if (in->actnum[c1] && in->actnum[c2] && (z2 < z1)){
+            fprintf(stderr, "\nZCORN should be strictly nondecreasing along pillars!\n");
+            fprintf(stderr, "(%d %d %d) %d %d\n%24.16f\n%24.16f: %d\n",
                     i,j,k,in->actnum[c1], in->actnum[c2], z1, z2, z2<z1);
-	    error = 1;
-	    goto end;
-	  }
-	}
+            error = 1;
+            goto end;
+          }
+        }
       }
     }
 
@@ -479,15 +479,15 @@ void process_grdecl(const struct grdecl   *in,
 
   if (error){
     fprintf(stderr, "Attempt to reverse sign in ZCORN failed.\n"
-		    "Grid definition may be broken\n");
+                    "Grid definition may be broken\n");
   }
-  
+
   /* Permute zcorn */
   dptr = zcorn;
   for (j=0; j<2*ny; ++j){
     for (i=0; i<2*nx; ++i){
       for (k=0; k<2*nz; ++k){
-	*dptr++ = sign*in->zcorn[i+2*nx*(j+2*ny*k)];
+        *dptr++ = sign*in->zcorn[i+2*nx*(j+2*ny*k)];
       }
     }
   }
@@ -562,7 +562,7 @@ void process_grdecl(const struct grdecl   *in,
 
   /* Invert global-to-local map */
   global_cell_index = malloc(out->number_of_cells *
-				  sizeof (*global_cell_index));
+                                  sizeof (*global_cell_index));
   for (i=0; i<nx*ny*nz; ++i){
     if(out->local_cell_index[i]!=-1){
       global_cell_index[out->local_cell_index[i]] = i;
