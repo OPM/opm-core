@@ -33,6 +33,7 @@ missing
 *_test
 examples/scaneclipsedeck
 examples/spu_2p
+examples/reorder-qfs
 tests/test_cfs_tpfa
 tests/test_jacsys
 tests/test_readvector
