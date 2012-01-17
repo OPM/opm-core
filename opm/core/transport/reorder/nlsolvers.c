@@ -140,7 +140,7 @@ regulafalsi (double (*G)(double, void*), void *data, double tol, int maxit,
 {
   *iterations = 0;
 
-  double sn = 0.5;//((double *) data)[2]; /* "Undefined" value */
+  double sn = 0.5;/*((double *) data)[2]; *//* "Undefined" value */
   double Gn = G(sn, data);
   if (fabs(Gn) < tol) return sn;
 
@@ -185,7 +185,7 @@ regulafalsi (double (*G)(double, void*), void *data, double tol, int maxit,
       G0 = G1;
     }
     else {
-      // const double gamma_illinois = 0.5;
+        /* const double gamma_illinois = 0.5; */
       const double gamma_pegasus  = G1/(G1+Gn);
       G0 *= gamma_pegasus;
     }
