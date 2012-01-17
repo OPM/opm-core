@@ -28,6 +28,7 @@ opm/core/fluid/blackoil/SinglePvtLiveGas.cpp            \
 opm/core/fluid/blackoil/SinglePvtLiveOil.cpp            \
 opm/core/fluid/blackoil/SinglePvtInterface.cpp          \
 opm/core/fluid/BlackoilPropertiesFromDeck.cpp           \
+opm/core/fluid/RockBasic.cpp                            \
 opm/core/fluid/RockFromDeck.cpp                         \
 opm/core/fluid/SaturationPropsFromDeck.cpp              \
 opm/core/utility/MonotCubicInterpolator.cpp             \
@@ -86,6 +87,7 @@ opm/core/eclipse/SpecialEclipseFields.hpp               \
 opm/core/fluid/BlackoilFluid.hpp                        \
 opm/core/fluid/BlackoilPropertiesInterface.hpp          \
 opm/core/fluid/BlackoilPropertiesFromDeck.hpp           \
+opm/core/fluid/RockBasic.hpp                            \
 opm/core/fluid/RockFromDeck.hpp                         \
 opm/core/fluid/SaturationPropsFromDeck.hpp              \
 opm/core/fluid/SimpleFluid2p.hpp                        \
