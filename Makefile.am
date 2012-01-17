@@ -27,6 +27,7 @@ opm/core/fluid/blackoil/SinglePvtDead.cpp               \
 opm/core/fluid/blackoil/SinglePvtLiveGas.cpp            \
 opm/core/fluid/blackoil/SinglePvtLiveOil.cpp            \
 opm/core/fluid/blackoil/SinglePvtInterface.cpp          \
+opm/core/fluid/BlackoilPropertiesBasic.cpp              \
 opm/core/fluid/BlackoilPropertiesFromDeck.cpp           \
 opm/core/fluid/PvtPropertiesBasic.cpp                   \
 opm/core/fluid/RockBasic.cpp                            \
@@ -88,6 +89,7 @@ opm/core/eclipse/EclipseUnits.hpp                       \
 opm/core/eclipse/SpecialEclipseFields.hpp               \
 opm/core/fluid/BlackoilFluid.hpp                        \
 opm/core/fluid/BlackoilPropertiesInterface.hpp          \
+opm/core/fluid/BlackoilPropertiesBasic.hpp              \
 opm/core/fluid/BlackoilPropertiesFromDeck.hpp           \
 opm/core/fluid/PvtPropertiesBasic.hpp                   \
 opm/core/fluid/RockBasic.hpp                            \
