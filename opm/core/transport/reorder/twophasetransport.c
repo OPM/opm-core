@@ -8,7 +8,9 @@
 #include <opm/core/transport/reorder/tarjan.h>
 #include <opm/core/transport/reorder/twophase.h>
 
-int twophasetransport(
+#include <opm/core/transport/reorder/twophasetransport.h>
+
+void twophasetransport(
     const double *porevolume,
     const double *source,
     double dt,
@@ -16,13 +18,13 @@ int twophasetransport(
     const double *darcyflux,
     double *saturation) 
 {
-    int    sz, i;
+    int    i;
 
     int    ncomponents;
     int    *sequence;
     int    *components;
 
-    struct cdata cd = {grid, darcyflux, source, porevolume, dt};
+    struct cdata cd;
     struct vdata vd;
 
     /* Compute sequence of single-cell problems */
@@ -41,10 +43,15 @@ int twophasetransport(
         vd.fractionalflow[i] = 0.0;
     }
 
+    cd.grid       = grid;
+    cd.darcyflux  = darcyflux;
+    cd.source     = source;
+    cd.porevolume = porevolume;
+    cd.dt         = dt;
+
     /* Assume all strong components are single-cell domains. */
     for(i=0; i<grid->number_of_cells; ++i) 
     { 
-        fprintf(stderr,"i:%d\n", i);
         solve(&vd, &cd, sequence[i]);
     }
 

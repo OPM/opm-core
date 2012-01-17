@@ -4,7 +4,7 @@
 #define TWOPHASETRANSPORT_H_INCLUDED
 
 struct UnstructuredGrid;
-int twophasetransport(
+void twophasetransport(
     const double *porevolume,
     const double *source,
     double dt,
