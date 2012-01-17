@@ -73,8 +73,14 @@ opm/core/pressure/mimetic/mimetic.c                     \
 opm/core/pressure/mimetic/hybsys_global.c               \
 opm/core/pressure/mimetic/hybsys.c                      \
 opm/core/transport/spu_explicit.c                       \
-opm/core/transport/spu_implicit.c                       \
-opm/core/transport/transport_source.c
+opm/core/transport/spu_implicit.c		\
+opm/core/transport/transport_source.c		\
+opm/core/transport/reorder/reordersequence.c	\
+opm/core/transport/reorder/twophase.c		\
+opm/core/transport/reorder/nlsolvers.c		\
+opm/core/transport/reorder/tarjan.c		\
+opm/core/transport/reorder/twophasetransport.c
+
 
 nobase_include_HEADERS =                                \
 opm/core/eclipse/CornerpointChopper.hpp                 \
@@ -177,7 +183,12 @@ opm/core/transport/spu_explicit.h                       \
 opm/core/transport/JacobianSystem.hpp                   \
 opm/core/transport/spu_implicit.h                       \
 opm/core/transport/ImplicitAssembly.hpp                 \
-opm/core/transport/transport_source.h
+opm/core/transport/transport_source.h		\
+opm/core/transport/reorder/nlsolvers.h		\
+opm/core/transport/reorder/reordersequence.h	\
+opm/core/transport/reorder/twophase.h		\
+opm/core/transport/reorder/tarjan.h		\
+opm/core/transport/reorder/twophasetransport.h
 
 if UMFPACK
 libopmcore_la_SOURCES  += opm/core/linalg/call_umfpack.c
