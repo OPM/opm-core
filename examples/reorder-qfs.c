@@ -86,7 +86,7 @@ qfs(grid_t *g, struct Rock *rock, double *src,
 
     htrans = malloc(alloc_sz * sizeof *htrans);
     trans  = htrans + totconn;
-    gpress = trans    + g->number_of_cells;
+    gpress = trans  + g->number_of_faces;
 
     h = ifs_tpfa_construct(g);
 
@@ -127,13 +127,13 @@ compute_porevolume(struct UnstructuredGrid *g, double *poro,
 
 int main(void)
 {
-    struct UnstructuredGrid *g = create_cart_grid_2d(2,1);
+    struct UnstructuredGrid *g = create_cart_grid_2d(10,10);
     struct Rock *rock = init_rock(g->number_of_cells, g->dimensions);
     double *sat   = malloc(g->number_of_cells *sizeof *sat);
     double *press = malloc(g->number_of_cells *sizeof *press);
     double *flux  = malloc(g->number_of_faces *sizeof *flux);
-    double *pv    = malloc(g->number_of_faces *sizeof *pv);
-    double *src    = malloc(g->number_of_faces *sizeof *src);
+    double *pv    = malloc(g->number_of_cells *sizeof *pv);
+    double *src    = malloc(g->number_of_cells *sizeof *src);
 
     vector_zero(g->number_of_cells, sat);
     vector_zero(g->number_of_cells, src);
@@ -141,13 +141,11 @@ int main(void)
 
     qfs(g, rock, src, press, flux);
     
-    vector_write_stream(g->number_of_cells, press, stderr);
-
     compute_porevolume(g, rock->poro, pv);
 
-    twophasetransport(pv, src, 1.0, g, flux, sat);
+    twophasetransport(pv, src, 10, g, flux, sat);
 
-    vector_write_stream(g->number_of_cells, sat, stderr);
+    vector_write(g->number_of_cells, sat, "saturation.txt");
 
     free(pv);
     free(src);
