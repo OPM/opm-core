@@ -82,12 +82,10 @@ qfs(grid_t *g, struct Rock *rock, double *src,
 
     alloc_sz  = totconn;            /* htrans */
     alloc_sz += g->number_of_faces; /* trans */
-//    alloc_sz += g->number_of_cells; /* src */
     alloc_sz += totconn;            /* gpress */
 
     htrans = malloc(alloc_sz * sizeof *htrans);
     trans  = htrans + totconn;
-//    src    = trans  + g->number_of_faces;
     gpress = trans    + g->number_of_cells;
 
     h = ifs_tpfa_construct(g);
@@ -96,8 +94,7 @@ qfs(grid_t *g, struct Rock *rock, double *src,
     tpfa_htrans_compute(g, rock->perm, htrans);
     tpfa_trans_compute (g, htrans    , trans );
 
-    vector_zero(g->number_of_cells, src   );
-    vector_zero(totconn           , gpress);
+    vector_zero(totconn, gpress);
 
     assert (g->number_of_cells > 1);
 
@@ -117,8 +114,9 @@ qfs(grid_t *g, struct Rock *rock, double *src,
     fprintf(stderr, "QFS: Done\n");
 }
 
-void *compute_porevolume(struct UnstructuredGrid *g, double *poro, 
-    double *pv)
+static void
+compute_porevolume(struct UnstructuredGrid *g, double *poro, 
+                   double *pv)
 {
     int i;
     for (i=0; i<g->number_of_cells; ++i)
