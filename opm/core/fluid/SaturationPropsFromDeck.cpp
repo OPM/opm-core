@@ -71,6 +71,18 @@ namespace Opm
         }
     }
 
+
+
+
+    /// \return   P, the number of phases.
+    int SaturationPropsFromDeck::numPhases() const
+    {
+	return phase_usage_.num_phases;
+    }
+
+
+
+
     /// Relative permeability.
     /// \param[in]  n      Number of data points.
     /// \param[in]  s      Array of nP saturation values.
@@ -98,6 +110,8 @@ namespace Opm
             }
         }
     }
+
+
 
 
     /// Capillary pressure.
