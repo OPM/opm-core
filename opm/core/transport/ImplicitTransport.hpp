@@ -70,8 +70,24 @@ namespace Opm {
 	{
 	    os << "Number of linear solves: " << rpt.nit        << '\n'
 	       << "Process converged:       " << (rpt.flag > 0) << '\n'
-	       << "Convergence flag:        " << rpt.flag       << '\n'
-	       << "Final residual norm:     " << rpt.norm_res   << '\n'
+	       << "Convergence flag:        " << rpt.flag;
+	    switch (rpt.flag) {
+	    case 1:
+		os << "   (absolute tolerance satisfied)\n";
+		break;
+	    case 2:
+		os << "   (relative tolerance satisfied)\n";
+		break;
+	    case 3:
+		os << "   (solution change tolerance satisfied)\n";
+		break;
+	    case -1:
+		os << "  (failed to converge)\n";
+		break;
+	    default:
+		os << "    (unknown convergence flag)\n";
+	    }
+	    os << "Final residual norm:     " << rpt.norm_res   << '\n'
 	       << "Final increment norm:    " << rpt.norm_dx    << '\n';
 	    return os;
 	}
