@@ -124,7 +124,7 @@ namespace Opm {
                                   const Grid&                g        ,
                                   const std::vector<double>& porevol  ,
                                   const double*              grav  = 0,
-				  const bool                 guess_previous = false)
+				  const bool                 guess_previous = true)
             : fluid_  (fluid)                              ,
               gravity_(grav)        ,
               f2hf_   (2 * g.number_of_faces, -1)          ,
