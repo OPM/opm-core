@@ -123,12 +123,14 @@ namespace Opm {
         SinglePointUpwindTwoPhase(const TwophaseFluid&       fluid    ,
                                   const Grid&                g        ,
                                   const std::vector<double>& porevol  ,
-                                  const double*              grav  = 0)
+                                  const double*              grav  = 0,
+				  const bool                 guess_previous = false)
             : fluid_  (fluid)                              ,
               gravity_(grav)        ,
               f2hf_   (2 * g.number_of_faces, -1)          ,
               store_  (g.number_of_cells,
-                       g.cell_facepos[ g.number_of_cells ])
+                       g.cell_facepos[ g.number_of_cells ]),
+	      init_step_use_previous_sol_(guess_previous)
         {
 
             if (gravity_) {
@@ -347,24 +349,20 @@ namespace Opm {
 
             (void) state;       // Suppress 'unused' warning.
 
-#define USE_PREVIOUS_SOLUTION 1
-#if !USE_PREVIOUS_SOLUTION
-            const ::std::vector<double>&          s = state.saturation();
-#endif
             typename JacobianSystem::vector_type& x =
                 sys.vector().writableSolution();
 
             assert (x.size() == (::std::size_t) (g.number_of_cells));
 
-            for (int c = 0, nc = g.number_of_cells; c < nc; ++c) {
-#if !USE_PREVIOUS_SOLUTION
-                // Impose s=0.5 at next time level as an NR initial value.
-                x[c] = 0.5 - s[2*c + 0];
-#else
-                x[c] = 0.0;
-#endif
-            }
-
+	    if (init_step_use_previous_sol_) {
+		std::fill(x.begin(), x.end(), 0.0);
+            } else {
+		const std::vector<double>& s = state.saturation();
+		for (int c = 0, nc = g.number_of_cells; c < nc; ++c) {
+		    // Impose s=0.5 at next time level as an NR initial value.
+		    x[c] = 0.5 - s[2*c + 0];
+		}
+	    }
         }
 
         template <class ReservoirState,
@@ -543,6 +541,7 @@ namespace Opm {
         const double*                 gravity_;
         std::vector<int>              f2hf_   ;
         spu_2p::ModelParameterStorage store_  ;
+	bool init_step_use_previous_sol_;
     };
 }
 #endif  /* OPM_SINGLEPOINTUPWINDTWOPHASE_HPP_HEADER */
