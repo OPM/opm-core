@@ -824,6 +824,7 @@ struct WELSPECS : public SpecialBase
 	       << welspecs[i].datum_depth_BHP_ << "  "
 	       << welspecs[i].pref_phase_ << "  "
 	       << welspecs[i].drain_rad_ << "  "
+	       << welspecs[i].spec_inflow_ << "  "
 	       << welspecs[i].shut_in_ << "  "
 	       << welspecs[i].crossflow_ << "  "
 	       << welspecs[i].pressure_table_number_ << "  "
