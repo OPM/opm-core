@@ -43,7 +43,7 @@
 
 #include <ostream>
 
-namespace Dune
+namespace Opm
 {
 
     /// A SparseTable stores a table with rows of varying size
@@ -236,7 +236,7 @@ namespace Dune
 	}
     };
 
-} // namespace Dune
+} // namespace Opm
 
 
 #endif // OPENRS_SPARSETABLE_HEADER

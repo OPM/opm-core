@@ -42,7 +42,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <opm/core/utility/parameters/ParameterMapItem.hpp>
 #include <opm/core/utility/parameters/ParameterStrings.hpp>
 
-namespace Dune {
+namespace Opm {
     /// See ParameterGroup.hpp for how to use the parameter system
     namespace parameter {
 	/// @brief
@@ -210,5 +210,5 @@ namespace Dune {
 	    static std::string type() {return ID_param_type__string;}
 	};
     } // namespace parameter
-} // namespace Dune
+} // namespace Opm
 #endif  // OPENRS_PARAMETER_HPP

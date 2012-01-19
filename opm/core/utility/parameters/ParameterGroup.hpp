@@ -45,7 +45,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <opm/core/utility/parameters/ParameterMapItem.hpp>
 #include <opm/core/utility/parameters/ParameterRequirement.hpp>
 
-namespace Dune {
+namespace Opm {
     namespace parameter {
 	/// ParameterGroup is a class that is used to provide run-time paramters.
 	/// The standard use of the class is to call create it with the
@@ -285,7 +285,7 @@ namespace Dune {
 	    void recursiveSetIsOutputEnabled(bool output_is_enabled);
 	};
     } // namespace parameter
-} // namespace Dune
+} // namespace Opm
 
 #include <opm/core/utility/parameters/ParameterGroup_impl.hpp>
 

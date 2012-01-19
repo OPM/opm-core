@@ -44,7 +44,7 @@ namespace Opm
         typedef FluidStateBlackoil FluidState;
         typedef BlackoilFluidData FluidData;
 
-        void init(const Dune::EclipseGridParser& parser)
+        void init(const EclipseGridParser& parser)
         {
             fmi_params_.init(parser);
             // FluidSystemBlackoil<>::init(parser);
@@ -379,10 +379,10 @@ namespace Opm
         dAt[Vapour][Oil] = dAt[Vapour][Gas]*R[Vapour] + dR[Vapour]/B[Vapour];
 
         PhaseToCompMatrix Ait;
-        Dune::FMatrixHelp::invertMatrix(At, Ait);
+        FMatrixHelp::invertMatrix(At, Ait);
 
         PhaseToCompMatrix Ct;
-        Dune::FMatrixHelp::multMatrix(dAt, Ait, Ct);
+        FMatrixHelp::multMatrix(dAt, Ait, Ct);
 
         cp[Aqua] = Ct[Aqua][Water];
         cp[Liquid] = Ct[Liquid][Oil] + Ct[Liquid][Gas];

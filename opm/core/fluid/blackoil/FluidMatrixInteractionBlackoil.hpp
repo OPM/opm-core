@@ -39,11 +39,11 @@ class FluidMatrixInteractionBlackoilParams
 {
 public:
     typedef ScalarT Scalar;
-    void init(const Dune::EclipseGridParser& ep)
+    void init(const EclipseGridParser& ep)
     {
         // Extract input data.
-        const Dune::SGOF::table_t& sgof_table = ep.getSGOF().sgof_;
-        const Dune::SWOF::table_t& swof_table = ep.getSWOF().swof_;
+        const SGOF::table_t& sgof_table = ep.getSGOF().sgof_;
+        const SWOF::table_t& swof_table = ep.getSWOF().swof_;
         if (sgof_table.size() != 1 || swof_table.size() != 1) {
             std::cerr << "We must have exactly one SWOF and one SGOF table (at the moment).\n";
             throw std::logic_error("Not implemented");
@@ -74,12 +74,12 @@ private:
     template <class S, class P>
     friend class FluidMatrixInteractionBlackoil;
 
-    Dune::utils::UniformTableLinear<Scalar> krw_;
-    Dune::utils::UniformTableLinear<Scalar> krow_;
-    Dune::utils::UniformTableLinear<Scalar> pcow_;
-    Dune::utils::UniformTableLinear<Scalar> krg_;
-    Dune::utils::UniformTableLinear<Scalar> krog_;
-    Dune::utils::UniformTableLinear<Scalar> pcog_;
+    utils::UniformTableLinear<Scalar> krw_;
+    utils::UniformTableLinear<Scalar> krow_;
+    utils::UniformTableLinear<Scalar> pcow_;
+    utils::UniformTableLinear<Scalar> krg_;
+    utils::UniformTableLinear<Scalar> krog_;
+    utils::UniformTableLinear<Scalar> pcog_;
     Scalar krocw_; // = krow_(s_wc)
 };
 

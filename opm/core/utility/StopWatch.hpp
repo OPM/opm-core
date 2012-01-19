@@ -37,7 +37,7 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-namespace Dune
+namespace Opm
 {
 
     namespace time
@@ -76,6 +76,6 @@ namespace Dune
 
     } // namespace time
 
-} // namespace Dune
+} // namespace Opm
 
 #endif // OPENRS_STOPWATCH_HEADER

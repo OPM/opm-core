@@ -32,7 +32,7 @@ namespace Opm
     }
 
     /// Initialize from deck.
-    void SaturationPropsFromDeck::init(const Dune::EclipseGridParser& deck)
+    void SaturationPropsFromDeck::init(const EclipseGridParser& deck)
     {
         phase_usage_ = phaseUsageFromDeck(deck);
 
@@ -43,7 +43,7 @@ namespace Opm
         }
         const int samples = 200;
         if (phase_usage_.phase_used[Aqua]) {
-            const Dune::SWOF::table_t& swof_table = deck.getSWOF().swof_;
+            const SWOF::table_t& swof_table = deck.getSWOF().swof_;
             if (swof_table.size() != 1) {
                 THROW("We must have exactly one SWOF table.");
             }
@@ -57,7 +57,7 @@ namespace Opm
             krocw_ = krow[0]; // At connate water -> ecl. SWOF
         }
         if (phase_usage_.phase_used[Vapour]) {
-            const Dune::SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
+            const SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
             if (sgof_table.size() != 1) {
                 THROW("We must have exactly one SGOF table.");
             }

@@ -42,7 +42,7 @@
 
 #include <opm/core/utility/SparseVector.hpp>
 
-using namespace Dune;
+using namespace Opm;
 
 BOOST_AUTO_TEST_CASE(construction_and_queries)
 {

@@ -29,7 +29,7 @@
 #include <stdexcept>
 #include <tr1/memory>
 
-namespace Dune
+namespace Opm
 {
 
     class CornerPointChopper

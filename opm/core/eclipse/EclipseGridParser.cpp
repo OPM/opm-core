@@ -53,7 +53,7 @@ using namespace std;
 
 //#define VERBOSE
 
-namespace Dune
+namespace Opm
 {
 
 // ---------- List of supported keywords ----------
@@ -357,7 +357,7 @@ void EclipseGridParser::convertToSI()
         }
         // Convert.
         for (int j = 0; j < int(field.size()); ++j) {
-            field[j] = Dune::unit::convert::from(field[j], unit);
+            field[j] = unit::convert::from(field[j], unit);
         }
     }
 
@@ -575,4 +575,4 @@ void EclipseGridParser::computeUnits()
     }
 }
 
-} // namespace Dune
+} // namespace Opm

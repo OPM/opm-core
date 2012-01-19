@@ -20,7 +20,7 @@
 #ifndef OPM_ECLIPSEUNITS_HEADER_INCLUDED
 #define OPM_ECLIPSEUNITS_HEADER_INCLUDED
 
-namespace Dune
+namespace Opm
 {
     struct EclipseUnits
     {
@@ -55,7 +55,7 @@ namespace Dune
     };
 
 
-} // namespace Dune
+} // namespace Opm
 
 
 #endif // OPM_ECLIPSEUNITS_HEADER_INCLUDED

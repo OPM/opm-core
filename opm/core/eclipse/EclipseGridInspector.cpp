@@ -46,7 +46,7 @@
 #include <opm/core/eclipse/EclipseGridParser.hpp>
 #include <opm/core/eclipse/SpecialEclipseFields.hpp>
 
-namespace Dune
+namespace Opm
 {
 
 EclipseGridInspector::EclipseGridInspector(const EclipseGridParser& parser)
@@ -332,4 +332,4 @@ std::tr1::array<double, 8> EclipseGridInspector::cellZvals(int i, int j, int k) 
 }
 
 
-} // namespace Dune
+} // namespace Opm

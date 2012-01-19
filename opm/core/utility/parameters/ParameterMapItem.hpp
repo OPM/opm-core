@@ -38,7 +38,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 
-namespace Dune {
+namespace Opm {
     namespace parameter {
 	/// The parameter handlig system is structured as a tree,
 	/// where each node inhertis from ParameterMapItem.
@@ -68,6 +68,6 @@ namespace Dune {
 	    static std::string type();
 	};
     } // namespace parameter
-} // namespace Dune
+} // namespace Opm
 
 #endif // OPENRS_PARAMETERMAPITEM_HEADER

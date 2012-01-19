@@ -38,7 +38,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
-namespace Dune {
+namespace Opm {
     namespace parameter {
 	/// \brief This function fills a ParameterGroup with a  XML file.
 	///
@@ -49,6 +49,6 @@ namespace Dune {
 	/// \param filename is the name of an XML file.
 	void fill_xml(ParameterGroup& pg, const std::string filename);
     } // namespace parameter
-} // namespace Dune
+} // namespace Opm
 
 #endif // OPENRS_PARAMETERXML_HEADER

@@ -42,7 +42,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-namespace Dune {
+namespace Opm {
     namespace parameter {
 	/// @brief
 	/// @todo Doc me!
@@ -238,6 +238,6 @@ namespace Dune {
 	    const std::vector<std::string> elements_;
 	};
     } // namespace parameter
-} // namespace Dune
+} // namespace Opm
 
 #endif // OPENRS_PARAMETERREQUIREMENT_HEADER

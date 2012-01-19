@@ -41,7 +41,7 @@
 #include <tr1/type_traits>
 #include <cmath>
 
-namespace Dune {
+namespace Opm {
     namespace utils {
 
 
@@ -91,7 +91,7 @@ namespace Dune {
 
 
     } // namespace utils
-} // namespace Dune
+} // namespace Opm
 
 
 

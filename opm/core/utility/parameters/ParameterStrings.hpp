@@ -38,7 +38,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 
-namespace Dune {
+namespace Opm {
     namespace parameter {
 	const std::string ID_true                   = "true";
 	const std::string ID_false                  = "false";
@@ -65,6 +65,6 @@ namespace Dune {
 	const std::string ID_delimiter_path       = "/";
 	const std::string ID_delimiter_assignment = "=";
     } // namespace parameter
-} // namespace Dune
+} // namespace Opm
 
 #endif // OPENRS_PARAMETERSTRINGS_HEADER

@@ -39,7 +39,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace Dune
+namespace Opm
 {
 
     /** Linear interpolation. 
@@ -83,7 +83,7 @@ namespace Dune
     }
 
 
-} // namespace Dune
+} // namespace Opm
 
 
 

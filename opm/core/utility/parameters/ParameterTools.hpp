@@ -39,10 +39,10 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <utility>
 
-namespace Dune {
+namespace Opm {
     namespace parameter {
 	std::pair<std::string, std::string> split(const std::string& name);
     } // namespace parameter
-} // namespace Dune
+} // namespace Opm
 
 #endif // OPENRS_PARAMETERTOOLS_HEADER

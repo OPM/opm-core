@@ -42,9 +42,9 @@
 //#include <limits>
 //#include <cmath>
 //#include <cstdlib>
-#include <dune/common/ErrorMacros.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
 
-namespace Dune
+namespace Opm
 {
 
 	inline double regulaFalsiStep(const double a,
@@ -170,7 +170,7 @@ namespace Dune
         }
 
 
-} // namespace Dune
+} // namespace Opm
 
 
 

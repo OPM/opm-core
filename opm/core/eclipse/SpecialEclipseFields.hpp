@@ -44,7 +44,7 @@
 #include <opm/core/eclipse/EclipseGridParserHelpers.hpp>
 #include <opm/core/eclipse/EclipseUnits.hpp>
 
-namespace Dune
+namespace Opm
 {
 
 // Abstract base class for special fields.
@@ -1511,7 +1511,7 @@ struct SOF2 : public MultRec {};
 struct TUNING : public MultRec {};
 
 
-} // End of namespace Dune
+} // End of namespace Opm
 
 #endif // OPENRS_SPECIALECLIPSEFIELDS_HEADER
 

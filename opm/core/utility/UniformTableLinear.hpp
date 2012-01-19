@@ -29,7 +29,7 @@
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/linearInterpolation.hpp>
 
-namespace Dune {
+namespace Opm {
     namespace utils {
 
 
@@ -255,6 +255,6 @@ namespace Dune {
         }
 
     } // namespace utils
-} // namespace Dune
+} // namespace Opm
 
 #endif // OPM_UNIFORMTABLELINEAR_HEADER_INCLUDED

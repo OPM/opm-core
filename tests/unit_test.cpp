@@ -42,8 +42,8 @@
 
 #include <opm/core/utility/Units.hpp>
 
-using namespace Dune::prefix;
-using namespace Dune::unit;
+using namespace Opm::prefix;
+using namespace Opm::unit;
 
 int main()
 {

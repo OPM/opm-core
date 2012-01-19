@@ -35,7 +35,7 @@
 #ifndef OPENRS_UNITS_HEADER
 #define OPENRS_UNITS_HEADER
 
-namespace Dune
+namespace Opm
 {
     namespace prefix
     {
@@ -127,7 +127,7 @@ namespace Dune
         //
         // Note: Under the penalty of treason will you be
         //
-        //    using namespace Dune::unit::convert;
+        //    using namespace Opm::unit::convert;
         //
         // I mean it!
         //
@@ -140,8 +140,8 @@ namespace Dune
             // value in units of milli-darcy (mD) to the equivalent
             // value in SI units (m^2).
             //
-            //    using namespace Dune::unit;
-            //    using namespace Dune::prefix;
+            //    using namespace Opm::unit;
+            //    using namespace Opm::prefix;
             //    convert::from(kx, milli*darcy);
             //
             inline double from(const double q, const double unit)
@@ -157,7 +157,7 @@ namespace Dune
             // pressure values in the SI unit Pascal (i.e., unit::Pascal)
             // to the equivalent values in Psi (unit::psia).
             //
-            //    using namespace Dune::unit;
+            //    using namespace Opm::unit;
             //    std::transform(p.begin(), p.end(), p.begin(),
             //                   boost::bind(convert::to, _1, psia));
             //
@@ -178,5 +178,5 @@ namespace Dune
         const double FEET = 0.30479999798832;
         const double WELL_INDEX_UNIT = VISCOSITY_UNIT/(DAYS2SECONDS*1e5);
     } // namespace units
-} // namespace Dune
+} // namespace Opm
 #endif // OPENRS_UNITS_HEADER
