@@ -199,7 +199,7 @@ private:
 };
 
 
-typedef Opm::SimpleFluid2p<>                          TwophaseFluid;
+typedef Opm::SimpleFluid2p<2>                         TwophaseFluid;
 typedef Opm::SinglePointUpwindTwoPhase<TwophaseFluid> TransportModel;
 
 using namespace Opm::ImplicitTransportDefault;
@@ -330,8 +330,9 @@ main(int argc, char** argv)
     const int ny = param.getDefault("ny", 100);
     const int nz = param.getDefault("nz", 1);
     const int num_psteps = param.getDefault("num_psteps", 1);
-    double stepsize_days = param.getDefault("stepsize_days", 1.0);
-    double stepsize = Opm::unit::convert::from(stepsize_days, Opm::unit::day);
+    const double stepsize_days = param.getDefault("stepsize_days", 1.0);
+    const double stepsize = Opm::unit::convert::from(stepsize_days, Opm::unit::day);
+    const bool guess_old_solution = param.getDefault("guess_old_solution", false);
 
     std::tr1::array<int, 3> grid_dims = {{ nx, ny, nz }};
     std::tr1::array<double, 3> cell_size = {{ 1.0, 1.0, 1.0 }};
@@ -366,14 +367,16 @@ main(int argc, char** argv)
     std::vector<double> porevol;
     compute_porevolume(grid, rock, porevol);
 
-    TransportModel  model  (fluid, *grid, porevol, 0, false);
+    TransportModel  model  (fluid, *grid, porevol, 0, guess_old_solution);
     TransportSolver tsolver(model);
 
     Opm::ImplicitTransportDetails::NRReport  rpt;
     Opm::ImplicitTransportDetails::NRControl ctrl;
     double current_time = 0.0;
     double total_time = stepsize*num_psteps;
-    ctrl.max_it = 20;
+    ctrl.max_it = param.getDefault("max_it", 20);
+    ctrl.verbosity = param.getDefault("verbosity", 0);
+    ctrl.max_it_ls = param.getDefault("max_it_ls", 5);
 
     using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
     CSRMatrixUmfpackSolver linsolve;
