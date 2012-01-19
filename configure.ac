@@ -55,6 +55,14 @@ AC_FUNC_STRTOD
 AC_SEARCH_LIBS([amd_free], [amd],
                [amd_lib=yes], [amd_lib=no], [-lm])
 
+# From SuiteSparse version 3.7, umfpack may depend on more libs
+AC_SEARCH_LIBS([cholmod_l_start], [cholmod])
+AC_SEARCH_LIBS([colamd_set_defaults], [colamd])
+# According to docs, umfpack may depend on these, too,
+# but they seem unneeded for our usage.
+# AC_SEARCH_LIBS([???], [camd])
+# AC_SEARCH_LIBS([???], [ccolamd])
+
 AC_SEARCH_LIBS([umfpack_dl_solve], [umfpack],
                [umfpack_lib=yes], [umfpack_lib=no], [-lamd -lm])
 
