@@ -64,6 +64,17 @@ namespace Opm {
             double norm_res;
             double norm_dx;
         };
+
+	template <class Ostream>
+	Ostream& operator<<(Ostream& os, const NRReport& rpt)
+	{
+	    os << "Number of linear solves: " << rpt.nit        << '\n'
+	       << "Process converged:       " << (rpt.flag > 0) << '\n'
+	       << "Convergence flag:        " << rpt.flag       << '\n'
+	       << "Final residual norm:     " << rpt.norm_res   << '\n'
+	       << "Final increment norm:    " << rpt.norm_dx    << '\n';
+	    return os;
+	}
     }
 
     template <class Model                  ,

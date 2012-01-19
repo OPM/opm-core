@@ -311,14 +311,12 @@ main(int argc, char** argv)
                   << "\n" << std::endl;
 
 	outputState(state, pstep);
+
 	psolver.solve(grid, totmob, src, state);
+
 	tsolver.solve(*grid, tsrc, stepsize, ctrl, state, linsolve, rpt);
 
-	std::cout << "Number of linear solves: " << rpt.nit        << '\n'
-		  << "Process converged:       " << (rpt.flag > 0) << '\n'
-		  << "Convergence flag:        " << rpt.flag       << '\n'
-		  << "Final residual norm:     " << rpt.norm_res   << '\n'
-		  << "Final increment norm:    " << rpt.norm_dx    << '\n';
+	std::cout << rpt;
 
 	current_time += stepsize;
     }
