@@ -41,6 +41,7 @@
 #include <tr1/array>
 #include <functional>
 #include <iostream>
+#include <iomanip>
 #include <iterator>
 #include <vector>
 
@@ -50,6 +51,7 @@
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
 
 #include <opm/core/utility/cart_grid.h>
+#include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
 #include <opm/core/fluid/SimpleFluid2p.hpp>
@@ -241,11 +243,11 @@ template <class State>
 void outputState(const State& state, const int step)
 {
     std::ostringstream satfilename;
-    satfilename << "saturation-" << 
+    satfilename << "saturation-" << std::setw(3) << std::setfill('0') << step << ".txt";
     // Write saturation
     vector_write(state.saturation().size(),
 		 &state.saturation()[0],
-		 "saturation-00.txt");
+		 satfilename.str().c_str());
 
 }
 
@@ -254,7 +256,7 @@ void outputState(const State& state, const int step)
 int
 main(int argc, char** argv)
 {
-    Dune::parameter::ParameterGroup param(argc, argv);
+    Opm::parameter::ParameterGroup param(argc, argv, false);
     const int num_psteps = param.getDefault("num_psteps", 1);
 
     grid_t* grid = create_cart_grid(100, 100, 1);
@@ -292,31 +294,35 @@ main(int argc, char** argv)
 
     Opm::ImplicitTransportDetails::NRReport  rpt;
     Opm::ImplicitTransportDetails::NRControl ctrl;
-    double dt   = 1e4;
-    ctrl.max_it = 20 ;
+    double current_time = 0.0;
+    double stepsize = 10.0*Opm::unit::day;
+    double total_time = stepsize*num_psteps;
+    ctrl.max_it = 20;
 
     using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
     CSRMatrixUmfpackSolver linsolve;
 
     for (int pstep = 0; pstep < num_psteps; ++pstep) {
-        std::cout << "\n\n================    Simulation step number " << step
+        std::cout << "\n\n================    Simulation step number " << pstep
                   << "    ==============="
-                  << "\n      Current time (days)     " << Dune::unit::convert::to(current_time, Dune::unit::day)
-                  << "\n      Current stepsize (days) " << Dune::unit::convert::to(stepsize, Dune::unit::day)
-                  << "\n      Total time (days)       " << Dune::unit::convert::to(total_time_, Dune::unit::day)
+                  << "\n      Current time (days)     " << Opm::unit::convert::to(current_time, Opm::unit::day)
+                  << "\n      Current stepsize (days) " << Opm::unit::convert::to(stepsize, Opm::unit::day)
+                  << "\n      Total time (days)       " << Opm::unit::convert::to(total_time, Opm::unit::day)
                   << "\n" << std::endl;
 
 	outputState(state, pstep);
 	psolver.solve(grid, totmob, src, state);
-	tsolver.solve(*grid, tsrc, dt, ctrl, state, linsolve, rpt);
-
+	tsolver.solve(*grid, tsrc, stepsize, ctrl, state, linsolve, rpt);
 
 	std::cout << "Number of linear solves: " << rpt.nit        << '\n'
 		  << "Process converged:       " << (rpt.flag > 0) << '\n'
 		  << "Convergence flag:        " << rpt.flag       << '\n'
 		  << "Final residual norm:     " << rpt.norm_res   << '\n'
 		  << "Final increment norm:    " << rpt.norm_dx    << '\n';
+
+	current_time += stepsize;
     }
+
     outputState(state, num_psteps);
 
     destroy_transport_source(tsrc);
