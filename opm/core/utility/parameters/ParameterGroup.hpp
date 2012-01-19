@@ -135,7 +135,7 @@ namespace Dune {
 	    /// \param argv is an array of char*, each of which is a
 	    /// command line argument.
             template <typename StringArray>
-	    ParameterGroup(int argc, StringArray argv);
+	    ParameterGroup(int argc, StringArray argv, const bool verify_syntax = true);
 
 	    /// \brief This method checks if there is something with name
 	    ///        \p name in the parameter gropup.

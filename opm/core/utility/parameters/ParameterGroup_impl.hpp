@@ -105,10 +105,10 @@ namespace Dune {
 
 
         template <typename StringArray>
-	ParameterGroup::ParameterGroup(int argc, StringArray argv)
+	ParameterGroup::ParameterGroup(int argc, StringArray argv, bool verify_syntax)
             : path_(ID_path_root), parent_(0), output_is_enabled_(true)
 	{
-	    if (argc < 2) {
+	    if (verify_syntax && (argc < 2)) {
 		std::cerr << "Usage: " << argv[0] << " "
 			  << "[paramfilename1.{xml,param}] "
 			  << "[paramfilename2.{xml,param}] "
