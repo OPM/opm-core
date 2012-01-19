@@ -42,6 +42,7 @@
 #include <functional>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include <iterator>
 #include <vector>
 
@@ -51,6 +52,7 @@
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
 
 #include <opm/core/utility/cart_grid.h>
+#include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
@@ -120,23 +122,26 @@ private:
     ::std::vector<double> poro_;
 };
 
-template <int np = 2>
 class ReservoirState {
 public:
-    ReservoirState(const grid_t* g)
+    ReservoirState(const UnstructuredGrid* g, const int num_phases = 2)
         : press_ (g->number_of_cells),
           fpress_(g->number_of_faces),
           flux_  (g->number_of_faces),
-          sat_   (np * g->number_of_cells)
+          sat_   (num_phases * g->number_of_cells)
     {}
+
+    int numPhases() const { return sat_.size()/press_.size(); }
 
     ::std::vector<double>& pressure    () { return press_ ; }
     ::std::vector<double>& facepressure() { return fpress_; }
     ::std::vector<double>& faceflux    () { return flux_  ; }
     ::std::vector<double>& saturation  () { return sat_   ; }
 
-    const ::std::vector<double>& faceflux    () const { return flux_; }
-    const ::std::vector<double>& saturation  () const { return sat_ ; }
+    const ::std::vector<double>& pressure    () const { return press_ ; }
+    const ::std::vector<double>& facepressure() const { return fpress_; }
+    const ::std::vector<double>& faceflux    () const { return flux_  ; }
+    const ::std::vector<double>& saturation  () const { return sat_   ; }
 
 private:
     ::std::vector<double> press_ ;
@@ -147,7 +152,7 @@ private:
 
 class PressureSolver {
 public:
-    PressureSolver(grid_t* g, const Rock& rock)
+    PressureSolver(UnstructuredGrid* g, const Rock& rock)
         : htrans_(g->cell_facepos[ g->number_of_cells ]),
           trans_ (g->number_of_faces),
           gpress_(g->cell_facepos[ g->number_of_cells ])
@@ -163,7 +168,7 @@ public:
 
     template <class State>
     void
-    solve(grid_t*                      g     ,
+    solve(UnstructuredGrid*                      g     ,
           const ::std::vector<double>& totmob,
           const ::std::vector<double>& src   ,
           State&                       state ) {
@@ -220,7 +225,7 @@ typedef Opm::ImplicitTransport<TransportModel,
                                VectorAssign  > TransportSolver;
 
 static void
-compute_porevolume(const grid_t*        g,
+compute_porevolume(const UnstructuredGrid*        g,
                    const Rock&          rock,
                    std::vector<double>& porevol)
 {
@@ -240,16 +245,80 @@ compute_porevolume(const grid_t*        g,
 
 
 template <class State>
-void outputState(const State& state, const int step)
+void outputState(const std::tr1::array<int, 3>& grid_dims,
+		 const std::tr1::array<double, 3>& cell_size,
+		 const State& state,
+		 const int step)
 {
-    std::ostringstream satfilename;
-    satfilename << "saturation-" << std::setw(3) << std::setfill('0') << step << ".txt";
-    // Write saturation
-    vector_write(state.saturation().size(),
-		 &state.saturation()[0],
-		 satfilename.str().c_str());
-
+    std::ostringstream vtkfilename;
+    vtkfilename << "output-" << std::setw(3) << std::setfill('0') << step << ".vtk";
+    std::ofstream vtkfile(vtkfilename.str().c_str());
+    if (!vtkfile) {
+	THROW("Failed to open " << vtkfilename.str());
+    }
+    writeVtkDataAllCartesian(grid_dims, cell_size, state, vtkfile);
 }
+
+
+template <class State>
+void writeVtkDataAllCartesian(const std::tr1::array<int, 3>& dims,
+			      const std::tr1::array<double, 3>& cell_size,
+			      const State& state,
+			      std::ostream& vtk_file)
+{
+    // Dimension is hardcoded in the prototype and the next two lines,
+    // but the rest is flexible (allows dimension == 2 or 3).
+    int dimension = 3;
+    int num_cells = dims[0]*dims[1]*dims[2];
+
+    ASSERT(dimension == 2 || dimension == 3);
+    ASSERT(num_cells = dims[0]*dims[1]* (dimension == 2 ? 1 : dims[2]));
+
+    vtk_file << "# vtk DataFile Version 2.0\n";
+    vtk_file << "Structured Grid\n \n";
+    vtk_file << "ASCII \n";
+    vtk_file << "DATASET STRUCTURED_POINTS\n";
+
+    vtk_file << "DIMENSIONS "
+	     << dims[0] + 1 << " "
+	     << dims[1] + 1 << " ";
+    if (dimension == 3) {
+	vtk_file << dims[2] + 1;
+    } else {
+	vtk_file << 1;
+    }
+    vtk_file << "\n";
+	
+    vtk_file << "ORIGIN " << 0.0 << " " << 0.0 << " " << 0.0 << "\n";
+
+    vtk_file << "SPACING " << cell_size[0] << " " << cell_size[1];
+    if (dimension == 3) {
+	vtk_file << " " << cell_size[2];
+    } else {
+	vtk_file << " " << 0.0;
+    }
+    vtk_file << "\n";
+
+    vtk_file << "CELL_DATA " << num_cells << '\n';
+    vtk_file << "SCALARS pressure float" << '\n';
+    vtk_file << "LOOKUP_TABLE pressure_table " << '\n';
+    for (int i = 0; i < num_cells; ++i) {
+	vtk_file << state.pressure()[i] << '\n';
+    }
+
+    ASSERT(state.numPhases() == 2);
+    vtk_file << "SCALARS saturation float" << '\n';
+    vtk_file << "LOOKUP_TABLE saturation_table " << '\n';
+    for (int i = 0; i < num_cells; ++i) {
+	double s = state.saturation()[2*i];
+    	if (s > 1e-10) {
+    	    vtk_file << s << '\n';
+    	} else {
+    	    vtk_file << 0.0 << '\n';
+    	}
+    }
+}
+
 
 
 // ----------------- Main program -----------------
@@ -257,9 +326,17 @@ int
 main(int argc, char** argv)
 {
     Opm::parameter::ParameterGroup param(argc, argv, false);
+    const int nx = param.getDefault("nx", 100);
+    const int ny = param.getDefault("ny", 100);
+    const int nz = param.getDefault("nz", 1);
     const int num_psteps = param.getDefault("num_psteps", 1);
+    double stepsize_days = param.getDefault("stepsize_days", 1.0);
+    double stepsize = Opm::unit::convert::from(stepsize_days, Opm::unit::day);
 
-    grid_t* grid = create_cart_grid(100, 100, 1);
+    std::tr1::array<int, 3> grid_dims = {{ nx, ny, nz }};
+    std::tr1::array<double, 3> cell_size = {{ 1.0, 1.0, 1.0 }};
+
+    UnstructuredGrid* grid = create_cart_grid(nx, ny, nz);
     Rock rock(grid->number_of_cells, grid->dimensions);
     rock.perm_homogeneous(1);
     rock.poro_homogeneous(1);
@@ -272,7 +349,7 @@ main(int argc, char** argv)
     src[0]                         =  1.0;
     src[grid->number_of_cells - 1] = -1.0;
 
-    ReservoirState<> state(grid);
+    ReservoirState state(grid);
 
     TransportSource* tsrc = create_transport_source(2, 2);
     double ssrc[]   = { 1.0, 0.0 };
@@ -289,13 +366,12 @@ main(int argc, char** argv)
     std::vector<double> porevol;
     compute_porevolume(grid, rock, porevol);
 
-    TransportModel  model  (fluid, *grid, porevol);
+    TransportModel  model  (fluid, *grid, porevol, 0, false);
     TransportSolver tsolver(model);
 
     Opm::ImplicitTransportDetails::NRReport  rpt;
     Opm::ImplicitTransportDetails::NRControl ctrl;
     double current_time = 0.0;
-    double stepsize = 10.0*Opm::unit::day;
     double total_time = stepsize*num_psteps;
     ctrl.max_it = 20;
 
@@ -310,7 +386,7 @@ main(int argc, char** argv)
                   << "\n      Total time (days)       " << Opm::unit::convert::to(total_time, Opm::unit::day)
                   << "\n" << std::endl;
 
-	outputState(state, pstep);
+	outputState(grid_dims, cell_size, state, pstep);
 
 	psolver.solve(grid, totmob, src, state);
 
@@ -321,7 +397,7 @@ main(int argc, char** argv)
 	current_time += stepsize;
     }
 
-    outputState(state, num_psteps);
+    outputState(grid_dims, cell_size, state, num_psteps);
 
     destroy_transport_source(tsrc);
     destroy_cart_grid(grid);
