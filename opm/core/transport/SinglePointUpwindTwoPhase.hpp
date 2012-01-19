@@ -130,7 +130,8 @@ namespace Opm {
               f2hf_   (2 * g.number_of_faces, -1)          ,
               store_  (g.number_of_cells,
                        g.cell_facepos[ g.number_of_cells ]),
-	      init_step_use_previous_sol_(guess_previous)
+	      init_step_use_previous_sol_(guess_previous),
+	      sat_tol_(1e-5)
         {
 
             if (gravity_) {
@@ -388,13 +389,13 @@ namespace Opm {
                 double s_min = fluid_.s_min(c);
                 double s_max = fluid_.s_max(c);
 
-                if ( s[0] < (s_min - 1e-5) || s[0] > (s_max + 1e-5) ) {
-                    if (s[0] < s_min){
-                        std::cout << "Warning: s out of range, s-s_min = " << s_min-s[0] << std::endl;
-                    }
-                    if (s[0] > s_max){
-                        std::cout << "Warning: s out of range, s-s_max = " << s[0]-s_max << std::endl;
-                    }
+                if ( s[0] < (s_min - sat_tol_) || s[0] > (s_max + sat_tol_) ) {
+                    // if (s[0] < s_min){
+		    // 	std::cout << "Warning: s out of range, s-s_min = " << s_min-s[0] << std::endl;
+                    // }
+                    // if (s[0] > s_max){
+		    // 	std::cout << "Warning: s out of range, s-s_max = " << s[0]-s_max << std::endl;
+                    // }
                     in_range = false; //line search fails
                 }
                 s[0] = std::max(s_min, s[0]);
@@ -411,6 +412,9 @@ namespace Opm {
                 store_.pc(c)      = pc;
                 store_.dpc(c)     = dpc;
             }
+	    if (!in_range) {
+		std::cout << "Warning: initIteration() - s was clamped in some cells.\n";
+	    }
             return in_range;
         }
 
@@ -437,10 +441,14 @@ namespace Opm {
             double *s = &state.saturation()[0*2 + 0];
 
             for (int c = 0; c < g.number_of_cells; ++c, s += 2) {
-                s[0] += x[c]    ;
-                s[1]  = 1 - s[0];
-                assert(s[0]<=1);
-                assert(s[0]<=1);
+                s[0] += x[c];
+                double s_min = fluid_.s_min(c);
+                double s_max = fluid_.s_max(c);
+                assert(s[0] >= s_min - sat_tol_);
+                assert(s[0] <= s_max + sat_tol_);
+                s[0] = std::max(s_min, s[0]);
+                s[0] = std::min(s_max, s[0]);
+                s[1]  = 1.0 - s[0];
             }
         }
 
@@ -542,6 +550,7 @@ namespace Opm {
         std::vector<int>              f2hf_   ;
         spu_2p::ModelParameterStorage store_  ;
 	bool init_step_use_previous_sol_;
+	double sat_tol_;
     };
 }
 #endif  /* OPM_SINGLEPOINTUPWINDTWOPHASE_HPP_HEADER */
