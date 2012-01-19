@@ -37,8 +37,8 @@
 namespace Opm
 {
 
-    using Dune::linearInterpolationExtrap;
-    using Dune::linearInterpolDerivative;
+    using Opm::linearInterpolationExtrap;
+    using Opm::linearInterpolDerivative;
 
     //------------------------------------------------------------------------
     // Member functions

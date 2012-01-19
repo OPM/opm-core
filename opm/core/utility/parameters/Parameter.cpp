@@ -39,7 +39,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <opm/core/utility/parameters/Parameter.hpp>
 
-namespace Dune {
+namespace Opm {
     namespace parameter {
 	std::string
         correct_parameter_tag(const ParameterMapItem& item)
@@ -71,4 +71,4 @@ namespace Dune {
 	    }
 	}
     } // namespace parameter
-} // namespace Dune
+} // namespace Opm

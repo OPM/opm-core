@@ -43,7 +43,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <opm/core/utility/parameters/ParameterTools.hpp>
 #include <opm/core/utility/parameters/Parameter.hpp>
 
-namespace Dune {
+namespace Opm {
     namespace parameter {
 
 	template<>
@@ -323,6 +323,6 @@ namespace Dune {
 	    return value;
 	}
     } // namespace parameter
-} // namespace Dune
+} // namespace Opm
 
 #endif // OPENRS_PARAMETERGROUP_IMPL_HEADER

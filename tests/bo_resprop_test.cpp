@@ -34,12 +34,12 @@
 int main(int argc, char** argv)
 {
     // Parameters.
-    Dune::parameter::ParameterGroup param(argc, argv);
+    Opm::parameter::ParameterGroup param(argc, argv);
 
     // Parser.
     std::string ecl_file = param.get<std::string>("filename");
-    Dune::EclipseGridParser deck(ecl_file);
-    Dune::EclipseGridInspector insp(deck);
+    Opm::EclipseGridParser deck(ecl_file);
+    Opm::EclipseGridInspector insp(deck);
     std::tr1::array<int, 3> gs = insp.gridSize();
     int num_cells = gs[0]*gs[1]*gs[2];
     std::vector<int> global_cell(num_cells);

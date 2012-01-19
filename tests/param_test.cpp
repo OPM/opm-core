@@ -44,7 +44,7 @@
 #include <cstddef>
 #include <sstream>
 
-using namespace Dune;
+using namespace Opm;
 
 BOOST_AUTO_TEST_CASE(commandline_syntax_init)
 {

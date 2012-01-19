@@ -43,7 +43,7 @@
 #include <boost/range/iterator_range.hpp>
 #include "ErrorMacros.hpp"
 
-namespace Dune
+namespace Opm
 {
 
     /// A SparseVector stores a vector with possibly many empty elements
@@ -187,7 +187,7 @@ namespace Dune
 	T default_elem_;
     };
 
-} // namespace Dune
+} // namespace Opm
 
 
 

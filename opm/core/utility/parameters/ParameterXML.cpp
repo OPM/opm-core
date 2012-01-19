@@ -50,7 +50,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 
 
-namespace Dune {
+namespace Opm {
     namespace parameter {
 
 	namespace tinyxml {
@@ -132,5 +132,5 @@ namespace Dune {
 	    }
 	}
     } // namespace parameter
-} // namespace Dune
+} // namespace Opm
 

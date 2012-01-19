@@ -23,7 +23,7 @@
 #include <opm/core/utility/MonotCubicInterpolator.hpp>
 #include <opm/core/utility/UniformTableLinear.hpp>
 
-namespace Dune {
+namespace Opm {
     namespace utils {
 
         template <typename T>
@@ -45,7 +45,7 @@ namespace Dune {
         }
 
     } // namespace utils
-} // namespace Dune
+} // namespace Opm
 
 
 

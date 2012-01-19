@@ -30,11 +30,11 @@ int main(int argc, char** argv)
     std::cout << "%{\n";
 
     // Parameters.
-    Dune::parameter::ParameterGroup param(argc, argv);
+    Opm::parameter::ParameterGroup param(argc, argv);
 
     // Parser.
     std::string ecl_file = param.get<std::string>("filename");
-    Dune::EclipseGridParser parser(ecl_file);
+    Opm::EclipseGridParser parser(ecl_file);
     // Look at the BlackoilFluid behaviour
     Opm::BlackoilFluid fluid;
     fluid.init(parser);

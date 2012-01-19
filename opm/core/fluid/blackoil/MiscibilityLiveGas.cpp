@@ -35,7 +35,7 @@
 #include <opm/core/utility/linInt.hpp>
 
 using namespace std;
-using namespace Dune;
+using namespace Opm;
 
 namespace Opm
 {

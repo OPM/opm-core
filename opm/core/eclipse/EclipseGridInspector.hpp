@@ -39,7 +39,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <tr1/array>
 
 
-namespace Dune
+namespace Opm
 {
 
 /**
@@ -99,7 +99,7 @@ private:
     void checkLogicalCoords(int i, int j, int k) const;
 };
 
-} // namespace Dune
+} // namespace Opm
 
 #endif // SINTEF_ECLIPSEGRIDINSPECTOR_HEADER
 

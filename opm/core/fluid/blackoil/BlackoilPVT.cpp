@@ -28,13 +28,13 @@
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/linInt.hpp>
 
-using namespace Dune;
+using namespace Opm;
 
 namespace Opm
 {
 
 
-    void BlackoilPVT::init(const Dune::EclipseGridParser& parser)
+    void BlackoilPVT::init(const EclipseGridParser& parser)
     {
         typedef std::vector<std::vector<std::vector<double> > > table_t;
 	region_number_ = 0;
@@ -55,7 +55,7 @@ namespace Opm
         if (parser.hasField("PVTW")) {
             water_props_.reset(new MiscibilityWater(parser.getPVTW().pvtw_));
         } else {
-            water_props_.reset(new MiscibilityWater(0.5*Dune::prefix::centi*Dune::unit::Poise)); // Eclipse 100 default 
+            water_props_.reset(new MiscibilityWater(0.5*Opm::prefix::centi*Opm::unit::Poise)); // Eclipse 100 default 
         }
 
         // Oil PVT

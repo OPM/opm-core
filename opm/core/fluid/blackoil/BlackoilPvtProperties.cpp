@@ -39,7 +39,7 @@ namespace Opm
     }
 
 
-    void BlackoilPvtProperties::init(const Dune::EclipseGridParser& deck)
+    void BlackoilPvtProperties::init(const EclipseGridParser& deck)
     {
         typedef std::vector<std::vector<std::vector<double> > > table_t;
         // If we need multiple regions, this class and the SinglePvt* classes must change.
@@ -72,7 +72,7 @@ namespace Opm
                 props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(deck.getPVTW().pvtw_));
             } else {
                 // Eclipse 100 default.
-                props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(0.5*Dune::prefix::centi*Dune::unit::Poise));
+                props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(0.5*Opm::prefix::centi*Opm::unit::Poise));
             }
         }
         // Oil PVT

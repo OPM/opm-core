@@ -26,9 +26,9 @@
 namespace Opm
 {
 
-    using Dune::linearInterpolationExtrap;
-    using Dune::linearInterpolDerivative;
-    using Dune::tableIndex;
+    using Opm::linearInterpolationExtrap;
+    using Opm::linearInterpolDerivative;
+    using Opm::tableIndex;
 
 
     //------------------------------------------------------------------------

@@ -39,7 +39,7 @@
 #include <map>
 #include <tr1/memory>
 
-namespace Dune
+namespace Opm
 {
     
     /** This is an object factory for creating objects of some type
@@ -138,7 +138,7 @@ namespace Dune
     };
 
 
-} // namespace Dune
+} // namespace Opm
 
 #endif // OPENRS_FACTORY_HEADER
 

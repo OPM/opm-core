@@ -40,7 +40,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace Dune
+namespace Opm
 {
 
     inline int tableIndex(const std::vector<double>& table, double x)
@@ -108,7 +108,7 @@ namespace Dune
 	return (yv[ix2] - yv[ix1])/(xv[ix2] - xv[ix1])*(x - xv[ix1]) + yv[ix1];
     }
 
-} // namespace Dune
+} // namespace Opm
 
 
 

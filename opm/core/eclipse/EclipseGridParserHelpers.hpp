@@ -44,7 +44,7 @@
 #include <opm/core/utility/linInt.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
 
-namespace Dune
+namespace Opm
 {
 
 namespace
@@ -463,7 +463,7 @@ namespace
 
 } // anon namespace
 
-} // namespace Dune
+} // namespace Opm
 
 
 #endif // OPENRS_ECLIPSEGRIDPARSERHELPERS_HEADER

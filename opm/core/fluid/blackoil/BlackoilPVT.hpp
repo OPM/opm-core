@@ -33,7 +33,7 @@ namespace Opm
     class BlackoilPVT : public BlackoilDefs
     {
     public:
-	void init(const Dune::EclipseGridParser& ep);
+	void init(const EclipseGridParser& ep);
 
         double getViscosity(double press,
                             const CompVec& surfvol,

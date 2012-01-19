@@ -27,11 +27,11 @@
 int main(int argc, char** argv)
 {
     // Parameters.
-    Dune::parameter::ParameterGroup param(argc, argv);
+    Opm::parameter::ParameterGroup param(argc, argv);
 
     // Parser.
     std::string ecl_file = param.get<std::string>("filename");
-    Dune::EclipseGridParser parser(ecl_file);
+    Opm::EclipseGridParser parser(ecl_file);
 
     // Test the FluidMatrixInteractionBlackoil class.
     Opm::FluidMatrixInteractionBlackoilParams<double> fluid_params;

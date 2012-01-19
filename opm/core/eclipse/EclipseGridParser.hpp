@@ -45,7 +45,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <opm/core/eclipse/EclipseUnits.hpp>
 #include <opm/core/utility/Factory.hpp>
 
-namespace Dune
+namespace Opm
 {
 
 /**
@@ -187,6 +187,6 @@ private:
 };
 
 
-} // namespace Dune
+} // namespace Opm
 
 #endif // SINTEF_ECLIPSEGRIDPARSER_HEADER

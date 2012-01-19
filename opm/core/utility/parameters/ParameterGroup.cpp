@@ -48,7 +48,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <opm/core/utility/parameters/ParameterTools.hpp>
 #include <opm/core/utility/parameters/ParameterXML.hpp>
 
-namespace Dune {
+namespace Opm {
     namespace parameter {
 
 	ParameterGroup::ParameterGroup()
@@ -326,4 +326,4 @@ namespace Dune {
 	}
 
     } // namespace parameter
-} // namespace Dune
+} // namespace Opm

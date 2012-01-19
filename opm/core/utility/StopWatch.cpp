@@ -39,7 +39,7 @@
 #include "StopWatch.hpp"
 #include "ErrorMacros.hpp"
 
-namespace Dune
+namespace Opm
 {
 
     namespace time
@@ -100,7 +100,7 @@ namespace Dune
 
     } // namespace time
 
-} // namespace Dune
+} // namespace Opm
 
 
 
