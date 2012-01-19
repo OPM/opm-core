@@ -50,6 +50,7 @@
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
 
 #include <opm/core/utility/cart_grid.h>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
 
 #include <opm/core/fluid/SimpleFluid2p.hpp>
 
@@ -65,18 +66,18 @@
 
 #include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
 
-template <class Ostream, class Collection>
-Ostream&
-operator<<(Ostream& os, const Collection& c)
-{
-    typedef typename Collection::value_type VT;
+// template <class Ostream, class Collection>
+// Ostream&
+// operator<<(Ostream& os, const Collection& c)
+// {
+//     typedef typename Collection::value_type VT;
 
-    os << "[ ";
-    std::copy(c.begin(), c.end(), ::std::ostream_iterator<VT>(os, " "));
-    os << "]";
+//     os << "[ ";
+//     std::copy(c.begin(), c.end(), ::std::ostream_iterator<VT>(os, " "));
+//     os << "]";
 
-    return os;
-}
+//     return os;
+// }
 
 class Rock {
 public:
@@ -235,13 +236,29 @@ compute_porevolume(const grid_t*        g,
                      ::std::multiplies<double>());
 }
 
-int
-main()
+
+template <class State>
+void outputState(const State& state, const int step)
 {
+    std::ostringstream satfilename;
+    satfilename << "saturation-" << 
+    // Write saturation
+    vector_write(state.saturation().size(),
+		 &state.saturation()[0],
+		 "saturation-00.txt");
+
+}
+
+
+// ----------------- Main program -----------------
+int
+main(int argc, char** argv)
+{
+    Dune::parameter::ParameterGroup param(argc, argv);
+    const int num_psteps = param.getDefault("num_psteps", 1);
+
     grid_t* grid = create_cart_grid(100, 100, 1);
-
     Rock rock(grid->number_of_cells, grid->dimensions);
-
     rock.perm_homogeneous(1);
     rock.poro_homogeneous(1);
 
@@ -255,23 +272,13 @@ main()
 
     ReservoirState<> state(grid);
 
-    psolver.solve(grid, totmob, src, state);
-
     TransportSource* tsrc = create_transport_source(2, 2);
-
     double ssrc[]   = { 1.0, 0.0 };
     double ssink[]  = { 0.0, 1.0 };
     double zdummy[] = { 0.0, 0.0 };
-
     append_transport_source(0, 2, 0, src[0], ssrc, zdummy, tsrc);
     append_transport_source(grid->number_of_cells - 1, 2, 0,
-                            src.back(), ssink, zdummy, tsrc);
-
-    Opm::ImplicitTransportDetails::NRReport  rpt;
-    Opm::ImplicitTransportDetails::NRControl ctrl;
-
-    using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
-    CSRMatrixUmfpackSolver linsolve;
+			    src.back(), ssink, zdummy, tsrc);
 
     std::tr1::array<double, 2> mu  = {{ 1.0, 1.0 }};
     std::tr1::array<double, 2> rho = {{ 0.0, 0.0 }};
@@ -283,19 +290,34 @@ main()
     TransportModel  model  (fluid, *grid, porevol);
     TransportSolver tsolver(model);
 
+    Opm::ImplicitTransportDetails::NRReport  rpt;
+    Opm::ImplicitTransportDetails::NRControl ctrl;
     double dt   = 1e4;
     ctrl.max_it = 20 ;
-    tsolver.solve(*grid, tsrc, dt, ctrl, state, linsolve, rpt);
 
-    vector_write(state.saturation().size(),
-                 &state.saturation()[0],
-                 "saturation-00.txt");
+    using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
+    CSRMatrixUmfpackSolver linsolve;
 
-    std::cerr << "Number of linear solves: " << rpt.nit        << '\n'
-              << "Process converged:       " << (rpt.flag > 0) << '\n'
-              << "Convergence flag:        " << rpt.flag       << '\n'
-              << "Final residual norm:     " << rpt.norm_res   << '\n'
-              << "Final increment norm:    " << rpt.norm_dx    << '\n';
+    for (int pstep = 0; pstep < num_psteps; ++pstep) {
+        std::cout << "\n\n================    Simulation step number " << step
+                  << "    ==============="
+                  << "\n      Current time (days)     " << Dune::unit::convert::to(current_time, Dune::unit::day)
+                  << "\n      Current stepsize (days) " << Dune::unit::convert::to(stepsize, Dune::unit::day)
+                  << "\n      Total time (days)       " << Dune::unit::convert::to(total_time_, Dune::unit::day)
+                  << "\n" << std::endl;
+
+	outputState(state, pstep);
+	psolver.solve(grid, totmob, src, state);
+	tsolver.solve(*grid, tsrc, dt, ctrl, state, linsolve, rpt);
+
+
+	std::cout << "Number of linear solves: " << rpt.nit        << '\n'
+		  << "Process converged:       " << (rpt.flag > 0) << '\n'
+		  << "Convergence flag:        " << rpt.flag       << '\n'
+		  << "Final residual norm:     " << rpt.norm_res   << '\n'
+		  << "Final increment norm:    " << rpt.norm_dx    << '\n';
+    }
+    outputState(state, num_psteps);
 
     destroy_transport_source(tsrc);
     destroy_cart_grid(grid);
