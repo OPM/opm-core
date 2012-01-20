@@ -12,6 +12,7 @@
 #include <opm/core/grid.h>
 #include <opm/core/transport/reorder/twophase.h>
 #include <opm/core/transport/reorder/nlsolvers.h>
+#include <opm/core/transport/reorder/fluid.h>
 #endif
 
 /* Parameters used in solution of single-cell boundary-value problem */
