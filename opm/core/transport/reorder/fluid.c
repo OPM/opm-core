@@ -7,6 +7,7 @@ double fluxfun(double sw, const int reg)
 /*---------------------------------------------------------------------------*/
 {
     double so, mw, mo, vw, vo;
+    (void) reg;
     /* Hardcoding behaviour to make test program work */
     so = 1.0 - sw;
     vw = 0.001;
@@ -21,6 +22,7 @@ double dfluxfun(double sw, const int reg)
 /*---------------------------------------------------------------------------*/
 {
     double so, mw, mo, vw, vo, dmw, dmo, fw;
+    (void) reg;
     /* Hardcoding behaviour to make test program work */
     so = 1.0 - sw;
     vw = 0.001;
