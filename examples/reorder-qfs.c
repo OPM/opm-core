@@ -143,7 +143,7 @@ int main(void)
     
     compute_porevolume(g, rock->poro, pv);
 
-    twophasetransport(pv, src, 10, g, flux, sat);
+    twophasetransport(pv, src, 10, g, flux, NULL, sat);
 
     vector_write(g->number_of_cells, sat, "saturation.txt");
 
