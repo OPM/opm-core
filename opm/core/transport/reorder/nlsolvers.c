@@ -27,7 +27,6 @@ static const char no_root_str[]=
     "  In %s:\n"
     "  With G(0) =% 5f, G(1) =% 5f, G(s) cannot have a zero in [0,1]!\n";
 
-static const double EPS = 1e-14;
 
 
 /*---------------------------------------------------------------------------*/
@@ -73,11 +72,11 @@ ridders (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctr
 
     s0 = 0.0;
     G0 = G(s0, data);
-    if (fabs(G0)<EPS) { return s0; }
+    if (fabs(G0) < ctrl->nltolerance) { return s0; }
 
     s1 = 1.0;
     G1 = G(s1, data);
-    if (fabs(G1)<EPS) { return s1; }
+    if (fabs(G1) < ctrl->nltolerance) { return s1; }
 
     if (G0*G1 > 0)
     {
@@ -174,11 +173,11 @@ regulafalsi (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl 
     /* Initial guess is interval [0,1] of course */
     s0 = 0.0;
     G0 = G(s0, data);
-    if (fabs(G0) < EPS) { return s0; }
+    if (fabs(G0) < ctrl->nltolerance) { return s0; }
 
     s1 = 1.0;
     G1 = G(s1, data);
-    if (fabs(G1) < EPS) { return s1; }
+    if (fabs(G1) < ctrl->nltolerance) { return s1; }
 
     if (G0*G1 > 0)
     {
@@ -259,11 +258,11 @@ bisection (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *c
     /* Initial guess is interval [0,1] of course */
     s0 = 0.0;
     G0 = G(s0, data);
-    if (fabs(G0) < EPS) { return s0; }
+    if (fabs(G0) < ctrl->nltolerance) { return s0; }
 
     s1 = 1.0;
     G1 = G(s1, data);
-    if (fabs(G1) < EPS) { return s1; }
+    if (fabs(G1) < ctrl->nltolerance) { return s1; }
 
     if (G0*G1 > 0.0)
     {
