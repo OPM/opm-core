@@ -3,6 +3,10 @@
 #ifndef TWOPHASETRANSPORT_H_INCLUDED
 #define TWOPHASETRANSPORT_H_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct UnstructuredGrid;
 void twophasetransport(
     const double *porevolume,
@@ -12,5 +16,9 @@ void twophasetransport(
     const double *darcyflux,
     const int *satnum,
     double *saturation);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TWOPHASETRANSPORT_H_INCLUDED */
