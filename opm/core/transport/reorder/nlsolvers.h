@@ -3,9 +3,20 @@
 #ifndef NLSOLVERS_H
 #define NLSOLVERS_H
 
-double bisection   (double (*)(double, void*), void*, double, int, int*);
-double ridder      (double (*)(double, void*), void*, double, int, int*);
-double regulafalsi (double (*)(double, void*), void*, double, int, int*);
+struct NonlinearSolverCtrl
+{
+   enum     Method {RIDDERS, REGULAFALSI, BISECTION} method;
+   double  nltolerance;
+   int     maxiterations;
+   double  initialguess;
+   int     iterations;    /* set by solver */
+   double  residual;      /* set by solver */
+};
+
+double find_zero  (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctrl);
+double bisection   (double (*)(double, void*), void*, struct NonlinearSolverCtrl *ctrl);
+double ridders     (double (*)(double, void*), void*, struct NonlinearSolverCtrl *ctrl);
+double regulafalsi (double (*)(double, void*), void*, struct NonlinearSolverCtrl *ctrl);
 
 #endif /* NLSOLVERS_H */
 

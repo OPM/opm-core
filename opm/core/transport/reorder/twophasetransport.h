@@ -8,9 +8,9 @@ void twophasetransport(
     const double *porevolume,
     const double *source,
     double dt,
-    struct UnstructuredGrid *grid, 
+    struct UnstructuredGrid *grid,
     const double *darcyflux,
+    const int *satnum,
     double *saturation);
 
 #endif /* TWOPHASETRANSPORT_H_INCLUDED */
-

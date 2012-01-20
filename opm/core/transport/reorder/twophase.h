@@ -4,21 +4,33 @@
 #define TWOPHASE_H_INCLUDED
 
 
-struct vdata {
-    double *saturation;      /* one per cell */
-    double *fractionalflow;  /* one per cell */
-};
 
 struct UnstructuredGrid;
-struct cdata  {
+struct SolverData  {
     struct UnstructuredGrid *grid;
-    const double *darcyflux;   /* one flux per face  in cdata::grid*/
-    const double *source;      /* one source per cell */
-    const double *porevolume;  /* one volume per cell */
-    double  dt;
+    const double            *darcyflux;   /* one flux per face  in cdata::grid*/
+    const double            *porevolume;  /* one volume per cell */
+    const double            *source;      /* one source per cell */
+    const int               *satnum;      /* saturation region of each cell */
+    double                   dt;
+    double                  *saturation;      /* one per cell */
+    double                  *fractionalflow;  /* one per cell */
 };
 
-void solve(void *vdata, const void *cdata, int cell);
+struct NonlinearSolverCtrl;
+
+
+void
+solvecell (void *data, struct NonlinearSolverCtrl *ctrl, int cell);
+
+void
+destroy_solverdata(struct SolverData *d);
+
+struct SolverData *
+init_solverdata(struct UnstructuredGrid *grid, const double *darcyflux,
+                const double *porevolume, const double *source,
+                const int *satnum, double dt, double *saturation);
+
 #endif /* TWOPHASE_H_INCLUDED */
 
 /* Local Variables:    */

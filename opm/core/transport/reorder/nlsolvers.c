@@ -6,125 +6,148 @@
 #include <assert.h>
 #include <math.h>
 
+#ifdef MATLAB_MEX_FILE
 #include "nlsolvers.h"
 
-
-#ifdef MEXFILE
 #include <mex.h>
-extern int interrupted;
+extern int interrupt_signal;
 #define print   mexPrintf
 #define malloc  mxMalloc
 #define calloc  mxCalloc
 #define realloc mxRealloc
 #define free    mxFree
 #else
+
 #define print printf
+#include "nlsolvers.h"
+
 #endif
 
-
 static const char no_root_str[]=
-  "  In %s:\n"
-  "  With G(0) =% 5f, G(1) =% 5f, G(s) cannot have a zero in [0,1]!\n";
+    "  In %s:\n"
+    "  With G(0) =% 5f, G(1) =% 5f, G(s) cannot have a zero in [0,1]!\n";
 
 static const double EPS = 1e-14;
 
 
+/*---------------------------------------------------------------------------*/
+double
+find_zero (double (*f)(double, void*), void *data, struct NonlinearSolverCtrl *ctrl)
+/*---------------------------------------------------------------------------*/
+{
+    double zero;
+    switch (ctrl->method) {
+    default:
+    case BISECTION:
+        zero = bisection  (f, data, ctrl);
+        break;
+
+    case RIDDERS:
+        zero = ridders    (f, data, ctrl);
+        break;
+
+    case REGULAFALSI:
+        zero = regulafalsi(f, data, ctrl);
+        break;
+    }
+
+    return zero;
+}
+
 /* Start with bracket [0,1] with G(0)*G(1)<0.  */
 /*---------------------------------------------------------------------------*/
 double
-ridder (double (*G)(double, void*), void *data, double tol, int maxit, int *iterations)
+ridders (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctrl)
 /*---------------------------------------------------------------------------*/
 {
-  *iterations = 0;
+    double G0, G1, G2, G3;
+    double s0, s1, s2, s3;
+    double swap, sgn, root;
+    int it;
 
-  double s2 = ((double *) data)[2];
-  double G2 = G(s2, data);
-  if (fabs(G2)<tol) return s2;
+    ctrl->iterations = 0;
 
-  /* Initial guess is interval [0,1] of course */
-  double s0=0.0;
-  double G0=G(s0, data);
-  if (fabs(G0)<EPS) return s0;
+    s2 = ctrl->initialguess;
+    G2 = G(s2, data);
+    if (fabs(G2) < ctrl->nltolerance) { return s2; }
 
-  double s1=1.0;
-  double G1=G(s1, data);
-  if (fabs(G1)<EPS) return s1;
+    s0 = 0.0;
+    G0 = G(s0, data);
+    if (fabs(G0)<EPS) { return s0; }
 
-  if (G0*G1 > 0)
-  {
-    print(no_root_str, "ridder", G0, G1);
-    return -1.0;
-  }
+    s1 = 1.0;
+    G1 = G(s1, data);
+    if (fabs(G1)<EPS) { return s1; }
 
-  if (G0>G1)
-  {
-    double swap;
-    swap = G0;
-    G0   = G1;
-    G1   = swap;
-  }
-
-  double s3=0;
-  double G3=10;
-
-  int it = 0;
-  while ( (fabs(G3) > tol)  &&  (it++ < maxit))
-  {
-    /* find zero crossing of line segment [(s0,G0), (s1,G1)] */
-    double root = sqrt(G2*G2-G0*G1);
-    if (fabs(root)<EPS)
-      return -1.0; /* Hmmm */
-
-    double sgn  = G0>G1 ? 1.0 : -1.0;
-    s3          = s2 + ( s2-s0 )*sgn*G2/root;
-    G3          = G(s3, data);
-
-
-    /* if     G2*G3<0  */
-    if (G2*G3 <= 0.0)
+    if (G0*G1 > 0)
     {
-      if (G2 > G3)
-      {
-	s0 = s3;
-	G0 = G3;
-	s1 = s2;
-	G1 = G2;
-      }
-      else
-      {
-	s0 = s2;
-	G0 = G2;
-	s1 = s3;
-	G1 = G3;
+        print(no_root_str, "ridder", G0, G1);
+        return -1.0;
+    }
 
-      }
+    if (G0>G1)
+    {
+        swap = G0;
+        G0   = G1;
+        G1   = swap;
+    }
 
-    }
-    else if (G0*G3 <= 0.0)
-    {
-      s1 = s3;
-      G1 = G3;
-    }
-    else if (G1*G3 <= 0.0)
-    {
-      s0 = s3;
-      G0 = G3;
-    }
-    else
-    {
-      print(
-	    "In ridder:\n"
-	    "G0=%10.10f, G1=%10.10f, G3=%10.10f\n",
-	    G0, G1, G3
-	    );
-      getchar();
-    }
-    s2   = 0.5*(s0+s1);
-    G2   = G(s2, data);
-  }
+    s3 = 0;
+    G3 = 10;
 
-  *iterations = it;
-  return s3;
+    it = 0;
+    while ( (fabs(G3) > ctrl->nltolerance)  &&
+            (ctrl->iterations++ < ctrl->maxiterations))
+    {
+        /* find zero crossing of line segment [(s0,G0), (s1,G1)] */
+        root = sqrt(G2*G2 - G0*G1);
+
+        sgn = G0>G1 ? 1.0 : -1.0;
+        s3  = s2 + ( s2-s0 )*sgn*G2/root;
+        G3  = G(s3, data);
+
+
+        /* if     G2*G3<0  */
+        if (G2*G3 <= 0.0)
+        {
+            if (G2 > G3)
+            {
+                s0 = s3;
+                G0 = G3;
+                s1 = s2;
+                G1 = G2;
+            }
+            else
+            {
+                s0 = s2;
+                G0 = G2;
+                s1 = s3;
+                G1 = G3;
+
+            }
+
+        }
+        else if (G0*G3 <= 0.0)
+        {
+            s1 = s3;
+            G1 = G3;
+        }
+        else if (G1*G3 <= 0.0)
+        {
+            s0 = s3;
+            G0 = G3;
+        }
+        else
+        {
+            print("In ridder:\nG0=%10.10f, G1=%10.10f, "
+                  "G3=%10.10f\n", G0, G1, G3);
+        }
+        s2   = 0.5*(s0+s1);
+        G2   = G(s2, data);
+    }
+
+    ctrl->residual = G3;
+    return s3;
 }
 
 
@@ -134,71 +157,83 @@ ridder (double (*G)(double, void*), void *data, double tol, int maxit, int *iter
    otherwise.*/
 /*---------------------------------------------------------------------------*/
 double
-regulafalsi (double (*G)(double, void*), void *data, double tol, int maxit,
-	     int *iterations)
+regulafalsi (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctrl)
 /*---------------------------------------------------------------------------*/
 {
-  *iterations = 0;
+    double Gn, G0, G1;
+    double sn, s0, s1;
+    double swap, gamma_pegasus;
+    int it;
 
-  double sn = 0.5;/*((double *) data)[2]; *//* "Undefined" value */
-  double Gn = G(sn, data);
-  if (fabs(Gn) < tol) return sn;
+    ctrl->iterations = 0;
 
-  /* Initial guess is interval [0,1] of course */
-  double s0=0.0;
-  double G0=G(s0, data);
-  if (fabs(G0)<EPS) return s0;
+    sn = ctrl->initialguess;
+    Gn = G(sn, data);
+    if (fabs(Gn) < ctrl->nltolerance) { return sn; }
 
-  double s1=1.0;
-  double G1=G(s1, data);
-  if (fabs(G1)<EPS) return s1;
+    /* Initial guess is interval [0,1] of course */
+    s0 = 0.0;
+    G0 = G(s0, data);
+    if (fabs(G0) < EPS) { return s0; }
 
-  if (G0*G1 > 0) {
-    print(no_root_str, "regulafalsi", G0, G1);
-    return -1.0;
-  }
+    s1 = 1.0;
+    G1 = G(s1, data);
+    if (fabs(G1) < EPS) { return s1; }
 
-  if (G0>G1) {
-    double swap;
-    swap = G0;
-    G0   = G1;
-    G1   = swap;
-  }
+    if (G0*G1 > 0)
+    {
+        print(no_root_str, "regulafalsi", G0, G1);
+        return -1.0;
+    }
 
-  int it = 0;
-  while ( (fabs(Gn) > tol)  &&  (it++ < maxit))  {
+    if (G0>G1)
+    {
+        swap = G0;
+        G0   = G1;
+        G1   = swap;
+    }
+
+    it = 0;
+    while ( (fabs(Gn) > ctrl->nltolerance)  &&
+            (ctrl->iterations++ < ctrl->maxiterations))
+    {
+
 #if 0
-    /* Unmodified Regula-Falsi */
-    /* maintain bracket with G1>G0 */
-    if ( Gn>0 ) {
-      G1 = Gn;
-      s1 = sn;
-    }
-    else {
-      G0 = Gn;
-      s0 = sn;
-    }
+        /* Unmodified Regula-Falsi */
+        /* maintain bracket with G1>G0 */
+        if ( Gn>0 )
+        {
+            G1 = Gn;
+            s1 = sn;
+        }
+        else
+        {
+            G0 = Gn;
+            s0 = sn;
+        }
 #else
-    /* Modified Regula-Falsi*/
-    if ((Gn>0.0)==(G0>0.0)) {
-      s0 = s1;
-      G0 = G1;
-    }
-    else {
-        /* const double gamma_illinois = 0.5; */
-      const double gamma_pegasus  = G1/(G1+Gn);
-      G0 *= gamma_pegasus;
-    }
-    s1 = sn;
-    G1 = Gn;
+        /* Modified Regula-Falsi*/
+        if ((Gn>0.0)==(G0>0.0))
+        {
+            s0 = s1;
+            G0 = G1;
+        }
+        else
+        {
+            /* const double gamma_illinois = 0.5; */
+            gamma_pegasus  = G1/(G1+Gn);
+            G0 *= gamma_pegasus;
+        }
+        s1 = sn;
+        G1 = Gn;
 #endif
 
-    sn = s0 - (s1-s0)*G0/(G1-G0);
-    Gn = G(sn, data);
-  }
+        sn = s0 - (s1-s0)*G0/(G1-G0);
+        Gn = G(sn, data);
+    }
 
-  *iterations = it;
-  return sn;
+    ctrl->residual = Gn;
+    return sn;
 }
 
 
@@ -207,54 +242,66 @@ regulafalsi (double (*G)(double, void*), void *data, double tol, int maxit,
    Set SL=sN if G(sN<0), sR=sN otherwise.*/
 /*---------------------------------------------------------------------------*/
 double
-bisection (double (*G)(double, void*), void *data, double tol, int maxit,
-	   int *iterations)
+bisection (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctrl)
 /*---------------------------------------------------------------------------*/
 {
-  *iterations = 0;
-
-  double sn = ((double *) data)[2];
-  double Gn = G(sn, data);
-  if (fabs(Gn)<tol) return sn;
-
-  /* Initial guess is interval [0,1] of course */
-  double s0=0.0;
-  double G0=G(s0, data);
-  if (fabs(G0)<EPS) return s0;
-
-  double s1=1.0;
-  double G1=G(s1, data);
-  if (fabs(G1)<EPS) return s1;
-
-  if (G0*G1 > 0.0) {
-    print(no_root_str, "bisection", G0, G1);
-    return -1.0;
-  }
-
-  if (G0>G1) {
+    double Gn, G0, G1;
+    double sn, s0, s1;
     double swap;
-    swap = G0;
-    G0   = G1;
-    G1   = swap;
-  }
+    int it;
 
-  int it=0;
-  while ( (fabs(Gn)>tol) && (it++ < maxit) ) {
-    if ( Gn>0 ) {
-      G1 = Gn;
-      s1 = sn;
-    }
-    else {
-      G0 = Gn;
-      s0 = sn;
-    }
+    ctrl->iterations = 0;
 
-    sn = 0.5*(s0+s1);
+    sn = ctrl->initialguess;
     Gn = G(sn, data);
-  }
-  *iterations = it;
-  if (it >= maxit) print("Warning: convergence criterion not met\n");
-  return sn;
+    if (fabs(Gn) < ctrl->nltolerance) { return sn; }
+
+    /* Initial guess is interval [0,1] of course */
+    s0 = 0.0;
+    G0 = G(s0, data);
+    if (fabs(G0) < EPS) { return s0; }
+
+    s1 = 1.0;
+    G1 = G(s1, data);
+    if (fabs(G1) < EPS) { return s1; }
+
+    if (G0*G1 > 0.0)
+    {
+        print(no_root_str, "bisection", G0, G1);
+        return -1.0;
+    }
+
+    if (G0>G1)
+    {
+        swap = G0;
+        G0   = G1;
+        G1   = swap;
+    }
+
+    it=0;
+    while ( (fabs(Gn)>ctrl->nltolerance) &&
+            (ctrl->iterations++ < ctrl->maxiterations) )
+    {
+        if ( Gn>0 )
+        {
+            G1 = Gn;
+            s1 = sn;
+        }
+        else
+        {
+            G0 = Gn;
+            s0 = sn;
+        }
+
+        sn = 0.5*(s0+s1);
+        Gn = G(sn, data);
+    }
+    if (ctrl->iterations >= ctrl->maxiterations)
+    {
+        print("Warning: convergence criterion not met\n");
+    }
+    ctrl->residual = Gn;
+    return sn;
 }
 
 
