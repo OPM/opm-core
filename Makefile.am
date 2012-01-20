@@ -80,6 +80,7 @@ opm/core/pressure/mimetic/hybsys.c                      \
 opm/core/transport/spu_explicit.c                       \
 opm/core/transport/spu_implicit.c		\
 opm/core/transport/transport_source.c		\
+opm/core/transport/reorder/fluid.c		\
 opm/core/transport/reorder/reordersequence.c	\
 opm/core/transport/reorder/twophase.c		\
 opm/core/transport/reorder/nlsolvers.c		\
@@ -195,6 +196,7 @@ opm/core/transport/JacobianSystem.hpp                   \
 opm/core/transport/spu_implicit.h                       \
 opm/core/transport/ImplicitAssembly.hpp                 \
 opm/core/transport/transport_source.h		\
+opm/core/transport/reorder/fluid.h		\
 opm/core/transport/reorder/nlsolvers.h		\
 opm/core/transport/reorder/reordersequence.h	\
 opm/core/transport/reorder/twophase.h		\
