@@ -339,6 +339,7 @@ main(int argc, char** argv)
     const double stepsize = Opm::unit::convert::from(stepsize_days, Opm::unit::day);
     const bool guess_old_solution = param.getDefault("guess_old_solution", false);
     const bool use_reorder = param.getDefault("use_reorder", false);
+    const bool output = param.getDefault("output", true);
 
     std::tr1::array<int, 3> grid_dims = {{ nx, ny, nz }};
     std::tr1::array<double, 3> cell_size = {{ 1.0, 1.0, 1.0 }};
@@ -399,7 +400,9 @@ main(int argc, char** argv)
                   << "\n      Total time (days)       " << Opm::unit::convert::to(total_time, Opm::unit::day)
                   << "\n" << std::endl;
 
-	outputState(grid_dims, cell_size, state, pstep);
+	if (output) {
+	    outputState(grid_dims, cell_size, state, pstep);
+	}
 
 	psolver.solve(grid, totmob, src, state);
 
@@ -429,7 +432,9 @@ main(int argc, char** argv)
 	current_time += stepsize;
     }
 
-    outputState(grid_dims, cell_size, state, num_psteps);
+    if (output) {
+	outputState(grid_dims, cell_size, state, num_psteps);
+    }
 
     destroy_transport_source(tsrc);
     destroy_cart_grid(grid);
