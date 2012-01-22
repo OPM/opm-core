@@ -60,14 +60,28 @@
 
 #include <opm/core/transport/transport_source.h>
 #include <opm/core/transport/CSRMatrixUmfpackSolver.hpp>
+
 #include <opm/core/transport/NormSupport.hpp>
 #include <opm/core/transport/ImplicitAssembly.hpp>
 #include <opm/core/transport/ImplicitTransport.hpp>
 #include <opm/core/transport/JacobianSystem.hpp>
+
 #include <opm/core/transport/CSRMatrixBlockAssembler.hpp>
+
 #include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
 
-#include <opm/core/transport/reorder/twophasetransport.h>
+// template <class Ostream, class Collection>
+// Ostream&
+// operator<<(Ostream& os, const Collection& c)
+// {
+//     typedef typename Collection::value_type VT;
+
+//     os << "[ ";
+//     std::copy(c.begin(), c.end(), ::std::ostream_iterator<VT>(os, " "));
+//     os << "]";
+
+//     return os;
+// }
 
 class Rock {
 public:
@@ -154,7 +168,7 @@ public:
 
     template <class State>
     void
-    solve(UnstructuredGrid*            g     ,
+    solve(UnstructuredGrid*                      g     ,
           const ::std::vector<double>& totmob,
           const ::std::vector<double>& src   ,
           State&                       state ) {
@@ -306,26 +320,6 @@ void writeVtkDataAllCartesian(const std::tr1::array<int, 3>& dims,
 }
 
 
-static void toWaterSat(const std::vector<double>& sboth, std::vector<double>& sw)
-{
-    int num = sboth.size()/2;
-    sw.resize(num);
-    for (int i = 0; i < num; ++i) {
-	sw[i] = sboth[2*i];
-    }
-}
-
-static void toBothSat(const std::vector<double>& sw, std::vector<double>& sboth)
-{
-    int num = sw.size();
-    sboth.resize(2*num);
-    for (int i = 0; i < num; ++i) {
-	sboth[2*i] = sw[i];
-	sboth[2*i + 1] = 1.0 - sw[i];
-    }
-}
-
-
 // ----------------- Main program -----------------
 int
 main(int argc, char** argv)
@@ -338,7 +332,6 @@ main(int argc, char** argv)
     const double stepsize_days = param.getDefault("stepsize_days", 1.0);
     const double stepsize = Opm::unit::convert::from(stepsize_days, Opm::unit::day);
     const bool guess_old_solution = param.getDefault("guess_old_solution", false);
-    const bool use_reorder = param.getDefault("use_reorder", false);
 
     std::tr1::array<int, 3> grid_dims = {{ nx, ny, nz }};
     std::tr1::array<double, 3> cell_size = {{ 1.0, 1.0, 1.0 }};
@@ -357,9 +350,6 @@ main(int argc, char** argv)
     src[grid->number_of_cells - 1] = -1.0;
 
     ReservoirState state(grid);
-    // We need a separate one, because the reorder
-    // code expects a scalar sw, not both sw and so.
-    std::vector<double> reorder_sat(grid->number_of_cells);
 
     TransportSource* tsrc = create_transport_source(2, 2);
     double ssrc[]   = { 1.0, 0.0 };
@@ -368,7 +358,6 @@ main(int argc, char** argv)
     append_transport_source(0, 2, 0, src[0], ssrc, zdummy, tsrc);
     append_transport_source(grid->number_of_cells - 1, 2, 0,
 			    src.back(), ssink, zdummy, tsrc);
-    std::vector<double> reorder_src = src;
 
     std::tr1::array<double, 2> mu  = {{ 1.0, 1.0 }};
     std::tr1::array<double, 2> rho = {{ 0.0, 0.0 }};
@@ -403,28 +392,9 @@ main(int argc, char** argv)
 
 	psolver.solve(grid, totmob, src, state);
 
-	if (use_reorder) {
-	    toWaterSat(state.saturation(), reorder_sat);
-	    // We must treat reorder_src here,
-	    // if we are to handle anything but simple water
-	    // injection, since it is expected to be
-	    // equal to total outflow (if negative)
-	    // and water inflow (if positive).
-	    // Also, for anything but noflow boundaries,
-	    // boundary flows must be accumulated into
-	    // source term following the same convention.
-	    twophasetransport(&porevol[0],
-			      &reorder_src[0],
-			      stepsize,
-			      grid,
-			      &state.faceflux()[0],
-			      NULL,
-			      &reorder_sat[0]);
-	    toBothSat(reorder_sat, state.saturation());
-	} else {
-	    tsolver.solve(*grid, tsrc, stepsize, ctrl, state, linsolve, rpt);
-	    std::cout << rpt;
-	}
+	tsolver.solve(*grid, tsrc, stepsize, ctrl, state, linsolve, rpt);
+
+	std::cout << rpt;
 
 	current_time += stepsize;
     }
