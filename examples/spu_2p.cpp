@@ -306,7 +306,7 @@ void writeVtkDataAllCartesian(const std::tr1::array<int, 3>& dims,
 }
 
 
-void toWaterSat(const std::vector<double>& sboth, std::vector<double>& sw)
+static void toWaterSat(const std::vector<double>& sboth, std::vector<double>& sw)
 {
     int num = sboth.size()/2;
     sw.resize(num);
@@ -315,7 +315,7 @@ void toWaterSat(const std::vector<double>& sboth, std::vector<double>& sw)
     }
 }
 
-void toBothSat(const std::vector<double>& sw, std::vector<double>& sboth)
+static void toBothSat(const std::vector<double>& sw, std::vector<double>& sboth)
 {
     int num = sw.size();
     sboth.resize(2*num);
