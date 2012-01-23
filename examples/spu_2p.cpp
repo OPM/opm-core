@@ -57,6 +57,7 @@
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
 #include <opm/core/fluid/SimpleFluid2p.hpp>
+#include <opm/core/fluid/IncompPropertiesBasic.hpp>
 
 #include <opm/core/transport/transport_source.h>
 #include <opm/core/transport/CSRMatrixUmfpackSolver.hpp>
@@ -69,44 +70,8 @@
 
 #include <opm/core/transport/reorder/twophasetransport.h>
 
-class Rock {
-public:
-    Rock(::std::size_t nc, ::std::size_t dim)
-        : dim_ (dim           ),
-          perm_(nc * dim * dim),
-          poro_(nc            ) {}
 
-    const ::std::vector<double>& perm() const { return perm_; }
-    const ::std::vector<double>& poro() const { return poro_; }
 
-    void
-    perm_homogeneous(double k) {
-        setVector(0.0, perm_);
-
-        const ::std::size_t d2 = dim_ * dim_;
-
-        for (::std::size_t c = 0, nc = poro_.size(); c < nc; ++c) {
-            for (::std::size_t i = 0; i < dim_; ++i) {
-                perm_[c*d2 + i*(dim_ + 1)] = k;
-            }
-        }
-    }
-
-    void
-    poro_homogeneous(double phi) {
-        setVector(phi, poro_);
-    }
-
-private:
-    void
-    setVector(double x, ::std::vector<double>& v) {
-        ::std::fill(v.begin(), v.end(), x);
-    }
-
-    ::std::size_t         dim_ ;
-    ::std::vector<double> perm_;
-    ::std::vector<double> poro_;
-};
 
 class ReservoirState {
 public:
@@ -136,14 +101,18 @@ private:
     ::std::vector<double> sat_   ;
 };
 
+
+
+
 class PressureSolver {
 public:
-    PressureSolver(UnstructuredGrid* g, const Rock& rock)
+    PressureSolver(UnstructuredGrid* g,
+		   const Opm::IncompPropertiesInterface& props)
         : htrans_(g->cell_facepos[ g->number_of_cells ]),
           trans_ (g->number_of_faces),
           gpress_(g->cell_facepos[ g->number_of_cells ])
     {
-        tpfa_htrans_compute(g, &rock.perm()[0], &htrans_[0]);
+        tpfa_htrans_compute(g, props.permeability(), &htrans_[0]);
 
         h_ = ifs_tpfa_construct(g);
     }
@@ -185,6 +154,8 @@ private:
 };
 
 
+
+
 typedef Opm::SimpleFluid2p<2>                         TwophaseFluid;
 typedef Opm::SinglePointUpwindTwoPhase<TwophaseFluid> TransportModel;
 
@@ -210,24 +181,24 @@ typedef Opm::ImplicitTransport<TransportModel,
                                MatrixZero    ,
                                VectorAssign  > TransportSolver;
 
+
+
+
 static void
-compute_porevolume(const UnstructuredGrid*        g,
-                   const Rock&          rock,
+compute_porevolume(const UnstructuredGrid* g,
+                   const Opm::IncompPropertiesInterface& props,
                    std::vector<double>& porevol)
 {
-    const ::std::vector<double>& poro = rock.poro();
-
-#if 0
-    assert (poro.size() == static_cast<::std::size_t>(g->number_of_cells));
-#endif
-
-    porevol.resize(rock.poro().size());
-
-    ::std::transform(poro.begin(), poro.end(),
+    int num_cells = g->number_of_cells;
+    porevol.resize(num_cells);
+    const double* poro = props.porosity();
+    ::std::transform(poro, poro + num_cells,
                      g->cell_volumes,
                      porevol.begin(),
                      ::std::multiplies<double>());
 }
+
+
 
 
 template <class State>
@@ -244,6 +215,8 @@ void outputState(const std::tr1::array<int, 3>& grid_dims,
     }
     writeVtkDataAllCartesian(grid_dims, cell_size, state, vtkfile);
 }
+
+
 
 
 template <class State>
@@ -306,6 +279,8 @@ void writeVtkDataAllCartesian(const std::tr1::array<int, 3>& dims,
 }
 
 
+
+
 static void toWaterSat(const std::vector<double>& sboth, std::vector<double>& sw)
 {
     int num = sboth.size()/2;
@@ -324,6 +299,8 @@ static void toBothSat(const std::vector<double>& sw, std::vector<double>& sboth)
 	sboth[2*i + 1] = 1.0 - sw[i];
     }
 }
+
+
 
 
 // ----------------- Main program -----------------
@@ -347,11 +324,13 @@ main(int argc, char** argv)
     UnstructuredGrid* grid = create_cart_grid(nx, ny, nz);
 
     // Rock init.
-    Rock rock(grid->number_of_cells, grid->dimensions);
-    rock.perm_homogeneous(1);
-    rock.poro_homogeneous(1);
+    param.insertParameter("permeability", "1.01325e15"); // = 1.0 in SI. For reproducing old output.
+    Opm::IncompPropertiesBasic props(param, grid->dimensions, grid->number_of_cells);
+    // Rock rock(grid->number_of_cells, grid->dimensions);
+    // rock.perm_homogeneous(1);
+    // rock.poro_homogeneous(1);
     std::vector<double> porevol;
-    compute_porevolume(grid, rock, porevol);
+    compute_porevolume(grid, props, porevol);
 
     // Fluid init.
     std::tr1::array<double, 2> mu  = {{ 1.0, 1.0 }};
@@ -359,7 +338,7 @@ main(int argc, char** argv)
     TwophaseFluid fluid(mu, rho);
 
     // Solvers init.
-    PressureSolver psolver(grid, rock);
+    PressureSolver psolver(grid, props);
     TransportModel  model  (fluid, *grid, porevol, 0, guess_old_solution);
     TransportSolver tsolver(model);
 
