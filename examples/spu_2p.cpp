@@ -341,27 +341,37 @@ main(int argc, char** argv)
     const bool use_reorder = param.getDefault("use_reorder", false);
     const bool output = param.getDefault("output", true);
 
+    // Grid init.
     std::tr1::array<int, 3> grid_dims = {{ nx, ny, nz }};
     std::tr1::array<double, 3> cell_size = {{ 1.0, 1.0, 1.0 }};
-
     UnstructuredGrid* grid = create_cart_grid(nx, ny, nz);
+
+    // Rock init.
     Rock rock(grid->number_of_cells, grid->dimensions);
     rock.perm_homogeneous(1);
     rock.poro_homogeneous(1);
+    std::vector<double> porevol;
+    compute_porevolume(grid, rock, porevol);
 
+    // Fluid init.
+    std::tr1::array<double, 2> mu  = {{ 1.0, 1.0 }};
+    std::tr1::array<double, 2> rho = {{ 0.0, 0.0 }};
+    TwophaseFluid fluid(mu, rho);
+
+    // Solvers init.
     PressureSolver psolver(grid, rock);
+    TransportModel  model  (fluid, *grid, porevol, 0, guess_old_solution);
+    TransportSolver tsolver(model);
 
+    // State-related and source-related variables init.
     std::vector<double> totmob(grid->number_of_cells, 1.0);
     std::vector<double> src   (grid->number_of_cells, 0.0);
-
     src[0]                         =  1.0;
     src[grid->number_of_cells - 1] = -1.0;
-
     ReservoirState state(grid);
-    // We need a separate one, because the reorder
+    // We need a separate reorder_sat, because the reorder
     // code expects a scalar sw, not both sw and so.
     std::vector<double> reorder_sat(grid->number_of_cells);
-
     TransportSource* tsrc = create_transport_source(2, 2);
     double ssrc[]   = { 1.0, 0.0 };
     double ssink[]  = { 0.0, 1.0 };
@@ -371,16 +381,7 @@ main(int argc, char** argv)
 			    src.back(), ssink, zdummy, tsrc);
     std::vector<double> reorder_src = src;
 
-    std::tr1::array<double, 2> mu  = {{ 1.0, 1.0 }};
-    std::tr1::array<double, 2> rho = {{ 0.0, 0.0 }};
-    TwophaseFluid fluid(mu, rho);
-
-    std::vector<double> porevol;
-    compute_porevolume(grid, rock, porevol);
-
-    TransportModel  model  (fluid, *grid, porevol, 0, guess_old_solution);
-    TransportSolver tsolver(model);
-
+    // Control init.
     Opm::ImplicitTransportDetails::NRReport  rpt;
     Opm::ImplicitTransportDetails::NRControl ctrl;
     double current_time = 0.0;
@@ -389,9 +390,11 @@ main(int argc, char** argv)
     ctrl.verbosity = param.getDefault("verbosity", 0);
     ctrl.max_it_ls = param.getDefault("max_it_ls", 5);
 
+    // Linear solver init.
     using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
     CSRMatrixUmfpackSolver linsolve;
 
+    // Main simulation loop.
     for (int pstep = 0; pstep < num_psteps; ++pstep) {
         std::cout << "\n\n================    Simulation step number " << pstep
                   << "    ==============="
