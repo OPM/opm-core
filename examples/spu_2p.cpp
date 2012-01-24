@@ -330,7 +330,7 @@ main(int argc, char** argv)
     double tot_porevol = std::accumulate(porevol.begin(), porevol.end(), 0.0);
 
     // Fluid init.
-    std::tr1::array<double, 2> mu  = {{ 1.0, 1.0 }};
+    std::tr1::array<double, 2> mu  = {{ 0.001, 0.003 }};
     std::tr1::array<double, 2> rho = {{ 0.0, 0.0 }};
     TwophaseFluid fluid(mu, rho);
 
