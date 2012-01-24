@@ -34,18 +34,6 @@
 */
 #include "config.h"
 
-#include <cassert>
-#include <cstddef>
-
-#include <algorithm>
-#include <tr1/array>
-#include <functional>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <iterator>
-#include <vector>
-
 #include <opm/core/linalg/sparse_sys.h>
 
 #include <opm/core/pressure/tpfa/ifs_tpfa.h>
@@ -70,7 +58,19 @@
 
 #include <opm/core/transport/reorder/twophasetransport.hpp>
 
+#include <boost/filesystem/convenience.hpp>
 
+#include <cassert>
+#include <cstddef>
+
+#include <algorithm>
+#include <tr1/array>
+#include <functional>
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <iterator>
+#include <vector>
 
 
 class ReservoirState {
@@ -205,10 +205,11 @@ template <class State>
 void outputState(const std::tr1::array<int, 3>& grid_dims,
 		 const std::tr1::array<double, 3>& cell_size,
 		 const State& state,
-		 const int step)
+		 const int step,
+		 const std::string& output_dir)
 {
     std::ostringstream vtkfilename;
-    vtkfilename << "output-" << std::setw(3) << std::setfill('0') << step << ".vtk";
+    vtkfilename << output_dir << "/output-" << std::setw(3) << std::setfill('0') << step << ".vtk";
     std::ofstream vtkfile(vtkfilename.str().c_str());
     if (!vtkfile) {
 	THROW("Failed to open " << vtkfilename.str());
@@ -307,7 +308,9 @@ static void toBothSat(const std::vector<double>& sw, std::vector<double>& sboth)
 int
 main(int argc, char** argv)
 {
+    std::cout << "================    Test program for incompressible two-phase flow     ===============\n";
     Opm::parameter::ParameterGroup param(argc, argv, false);
+    std::cout << "================    Reading parameters     ===============" << std::endl;
     const int nx = param.getDefault("nx", 100);
     const int ny = param.getDefault("ny", 100);
     const int nz = param.getDefault("nz", 1);
@@ -317,6 +320,13 @@ main(int argc, char** argv)
     const bool guess_old_solution = param.getDefault("guess_old_solution", false);
     const bool use_reorder = param.getDefault("use_reorder", false);
     const bool output = param.getDefault("output", true);
+    std::string output_dir;
+    if (output) {
+	output_dir = param.getDefault("output_dir", std::string("output"));
+	// Ensure that output dir exists
+	boost::filesystem::path fpath(output_dir);
+	create_directories(fpath);
+    }
 
     // Grid init.
     std::tr1::array<int, 3> grid_dims = {{ nx, ny, nz }};
@@ -371,7 +381,17 @@ main(int argc, char** argv)
     using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
     CSRMatrixUmfpackSolver linsolve;
 
+    if (output) {
+	if (param.anyUnused()) {
+	    std::cout << "--------------------   Unused parameters:   --------------------\n";
+	    param.displayUsage();
+	    std::cout << "----------------------------------------------------------------" << std::endl;
+	}
+	param.writeParam(output_dir + "/spu_2p.param");
+    }
+
     // Main simulation loop.
+    std::cout << "\n\n================    Starting main simulation loop     ===============" << std::endl;
     for (int pstep = 0; pstep < num_psteps; ++pstep) {
         std::cout << "\n\n================    Simulation step number " << pstep
                   << "    ==============="
@@ -381,7 +401,7 @@ main(int argc, char** argv)
                   << "\n" << std::endl;
 
 	if (output) {
-	    outputState(grid_dims, cell_size, state, pstep);
+	    outputState(grid_dims, cell_size, state, pstep, output_dir);
 	}
 
 	psolver.solve(grid, totmob, src, state);
@@ -413,7 +433,7 @@ main(int argc, char** argv)
     }
 
     if (output) {
-	outputState(grid_dims, cell_size, state, num_psteps);
+	outputState(grid_dims, cell_size, state, num_psteps, output_dir);
     }
 
     destroy_transport_source(tsrc);
