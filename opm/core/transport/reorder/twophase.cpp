@@ -2,18 +2,12 @@
 
 #include <stdlib.h>
 
-#ifdef MATLAB_MEX_FILE
-#include <mex.h>
-#include "grid.h"
-#include "twophase.h"
-#include "nlsolvers.h"
-#include "fluid.h"
-#else
 #include <opm/core/grid.h>
 #include <opm/core/transport/reorder/twophase.hpp>
 #include <opm/core/transport/reorder/nlsolvers.h>
 #include <opm/core/transport/reorder/fluid.h>
-#endif
+#include <opm/core/fluid/IncompPropertiesInterface.hpp>
+
 
 /* Parameters used in solution of single-cell boundary-value problem */
 struct Parameters
@@ -22,7 +16,6 @@ struct Parameters
     double influx;  /* sum_j min(v_ij, 0)*f(s_j) */
     double outflux; /* sum_j max(v_ij, 0)        */
     double dtpv;    /* dt/pv(i)                  */
-    int    region;
 };
 
 
@@ -41,9 +34,13 @@ destroy_solverdata(struct SolverData *d)
 }
 
 struct SolverData *
-init_solverdata(struct UnstructuredGrid *grid, const double *darcyflux,
-                const double *porevolume, const double *source,
-                const int *satnum, double dt, double *saturation)
+init_solverdata(struct UnstructuredGrid *grid,
+		const Opm::IncompPropertiesInterface* props,
+		const double *darcyflux,
+                const double *porevolume,
+		const double *source,
+                const double dt,
+		double *saturation)
 {
     int i;
     struct SolverData *d = (struct SolverData*) malloc(sizeof *d);
@@ -51,10 +48,10 @@ init_solverdata(struct UnstructuredGrid *grid, const double *darcyflux,
     if(d!=NULL)
     {
         d->grid       = grid;
+	d->props      = props;
         d->darcyflux  = darcyflux;
         d->porevolume = porevolume;
         d->source     = source;
-        d->satnum     = satnum;
         d->dt         = dt;
 
         d->saturation     = saturation;
@@ -80,7 +77,7 @@ void solvecell(void *data, struct NonlinearSolverCtrl *ctrl, int cell)
     struct Parameters   prm = get_parameters(d, cell);
     
     d->saturation[cell] = find_zero(residual, &prm, ctrl);
-    d->fractionalflow[cell] = fluxfun(d->saturation[cell], prm.region);
+    d->fractionalflow[cell] = fluxfun(d->saturation[cell], -999);
 }
 
 
@@ -102,7 +99,7 @@ static double
 residual(double s, void *data)
 {
     struct Parameters *p = (struct Parameters*) data;
-    return s - p->s0 +  p->dtpv*(p->outflux*fluxfun(s, p->region) + p->influx);
+    return s - p->s0 +  p->dtpv*(p->outflux*fluxfun(s, -999) + p->influx);
 }
 
 static struct Parameters
@@ -118,14 +115,6 @@ get_parameters(struct SolverData *d, int cell)
     p.influx  = d->source[cell] >  0 ? -d->source[cell] : 0.0;
     p.outflux = d->source[cell] <= 0 ? -d->source[cell] : 0.0;
     p.dtpv    = d->dt/d->porevolume[cell];
-    if (d->satnum==NULL)
-    {
-        p.region =  0;
-    }
-    else
-    {
-        p.region = d->satnum[cell];
-    }
 
     d->saturation[cell] = 0;
     for (i=g->cell_facepos[cell]; i<g->cell_facepos[cell+1]; ++i) {

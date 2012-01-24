@@ -4,34 +4,12 @@
 #include <stdio.h>
 #include <assert.h>
 
-#ifdef MATLAB_MEX_FILE
-#include "grid.h"
-#include "reordersequence.h"
-#include "tarjan.h"
-#include "nlsolvers.h"
-#include "twophase.hpp"
-#include "twophasetransport.hpp"
-
-#include <mex.h>
-extern int interrupt_signal;
-#define print   mexPrintf
-#define malloc  mxMalloc
-#define calloc  mxCalloc
-#define realloc mxRealloc
-#define free    mxFree
-
-#else
 #include <opm/core/grid.h>
 #include <opm/core/transport/reorder/reordersequence.h>
 #include <opm/core/transport/reorder/tarjan.h>
 #include <opm/core/transport/reorder/nlsolvers.h>
 #include <opm/core/transport/reorder/twophase.hpp>
 #include <opm/core/transport/reorder/twophasetransport.hpp>
-
-#define print printf
-
-#endif
-
 
 
 
@@ -40,8 +18,8 @@ void twophasetransport(
     const double            *source,
     double                   dt,
     struct UnstructuredGrid *grid,
+    const Opm::IncompPropertiesInterface* props,
     const double            *darcyflux,
-    const int               *satnum,
     double                  *saturation)
 {
     int    i;
@@ -50,8 +28,8 @@ void twophasetransport(
     int    *sequence;
     int    *components;
 
-    struct SolverData *data = init_solverdata(grid, darcyflux,
-                                              porevolume, source, satnum, dt, saturation);
+    struct SolverData *data = init_solverdata(grid, props, darcyflux,
+                                              porevolume, source, dt, saturation);
 
 
     struct NonlinearSolverCtrl ctrl;

@@ -423,8 +423,8 @@ main(int argc, char** argv)
 			      &reorder_src[0],
 			      stepsize,
 			      grid,
+			      &props,
 			      &state.faceflux()[0],
-			      NULL,
 			      &reorder_sat[0]);
 	    toBothSat(reorder_sat, state.saturation());
 	} else {
