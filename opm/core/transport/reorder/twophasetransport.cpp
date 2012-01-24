@@ -9,7 +9,7 @@
 #include "reordersequence.h"
 #include "tarjan.h"
 #include "nlsolvers.h"
-#include "twophase.h"
+#include "twophase.hpp"
 #include "twophasetransport.hpp"
 
 #include <mex.h>
@@ -25,7 +25,7 @@ extern int interrupt_signal;
 #include <opm/core/transport/reorder/reordersequence.h>
 #include <opm/core/transport/reorder/tarjan.h>
 #include <opm/core/transport/reorder/nlsolvers.h>
-#include <opm/core/transport/reorder/twophase.h>
+#include <opm/core/transport/reorder/twophase.hpp>
 #include <opm/core/transport/reorder/twophasetransport.hpp>
 
 #define print printf

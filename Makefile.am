@@ -82,7 +82,7 @@ opm/core/transport/spu_implicit.c		\
 opm/core/transport/transport_source.c		\
 opm/core/transport/reorder/fluid.c		\
 opm/core/transport/reorder/reordersequence.c	\
-opm/core/transport/reorder/twophase.c		\
+opm/core/transport/reorder/twophase.cpp		\
 opm/core/transport/reorder/nlsolvers.c		\
 opm/core/transport/reorder/tarjan.c		\
 opm/core/transport/reorder/twophasetransport.cpp
@@ -199,7 +199,7 @@ opm/core/transport/transport_source.h		\
 opm/core/transport/reorder/fluid.h		\
 opm/core/transport/reorder/nlsolvers.h		\
 opm/core/transport/reorder/reordersequence.h	\
-opm/core/transport/reorder/twophase.h		\
+opm/core/transport/reorder/twophase.hpp		\
 opm/core/transport/reorder/tarjan.h		\
 opm/core/transport/reorder/twophasetransport.hpp
 

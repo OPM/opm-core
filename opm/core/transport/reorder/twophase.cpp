@@ -10,7 +10,7 @@
 #include "fluid.h"
 #else
 #include <opm/core/grid.h>
-#include <opm/core/transport/reorder/twophase.h>
+#include <opm/core/transport/reorder/twophase.hpp>
 #include <opm/core/transport/reorder/nlsolvers.h>
 #include <opm/core/transport/reorder/fluid.h>
 #endif
@@ -46,7 +46,7 @@ init_solverdata(struct UnstructuredGrid *grid, const double *darcyflux,
                 const int *satnum, double dt, double *saturation)
 {
     int i;
-    struct SolverData *d = malloc(sizeof *d);
+    struct SolverData *d = (struct SolverData*) malloc(sizeof *d);
 
     if(d!=NULL)
     {
@@ -58,8 +58,8 @@ init_solverdata(struct UnstructuredGrid *grid, const double *darcyflux,
         d->dt         = dt;
 
         d->saturation     = saturation;
-        d->fractionalflow = malloc(grid->number_of_cells *
-                                   sizeof *d->fractionalflow);
+        d->fractionalflow = (double*) malloc(grid->number_of_cells *
+					     sizeof *d->fractionalflow);
         if (d->fractionalflow == NULL)
         {
             destroy_solverdata(d);
@@ -76,8 +76,8 @@ init_solverdata(struct UnstructuredGrid *grid, const double *darcyflux,
 /* Solver for single-cell bvp calls root-finder in nlsolvers.c */
 void solvecell(void *data, struct NonlinearSolverCtrl *ctrl, int cell)
 {
-    struct SolverData   *d   = data;
-    struct Parameters   prm = get_parameters(data, cell);
+    struct SolverData   *d   = (struct SolverData*) data;
+    struct Parameters   prm = get_parameters(d, cell);
     
     d->saturation[cell] = find_zero(residual, &prm, ctrl);
     d->fractionalflow[cell] = fluxfun(d->saturation[cell], prm.region);
@@ -101,7 +101,7 @@ void solvecell(void *data, struct NonlinearSolverCtrl *ctrl, int cell)
 static double
 residual(double s, void *data)
 {
-    struct Parameters *p = data;
+    struct Parameters *p = (struct Parameters*) data;
     return s - p->s0 +  p->dtpv*(p->outflux*fluxfun(s, p->region) + p->influx);
 }
 

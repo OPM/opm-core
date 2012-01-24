@@ -1,11 +1,8 @@
 /* Copyright 2011 (c) Jostein R. Natvig <Jostein.R.Natvig at sintef.no> */
 
-#ifndef TWOPHASE_H_INCLUDED
-#define TWOPHASE_H_INCLUDED
+#ifndef TWOPHASE_HPP_INCLUDED
+#define TWOPHASE_HPP_INCLUDED
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 struct UnstructuredGrid;
@@ -34,9 +31,6 @@ init_solverdata(struct UnstructuredGrid *grid, const double *darcyflux,
                 const double *porevolume, const double *source,
                 const int *satnum, double dt, double *saturation);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* TWOPHASE_H_INCLUDED */
 
