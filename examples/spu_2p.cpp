@@ -381,12 +381,15 @@ main(int argc, char** argv)
     using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
     CSRMatrixUmfpackSolver linsolve;
 
+    // Warn if any parameters are unused.
+    if (param.anyUnused()) {
+	std::cout << "--------------------   Unused parameters:   --------------------\n";
+	param.displayUsage();
+	std::cout << "----------------------------------------------------------------" << std::endl;
+    }
+
+    // Write parameters used for later reference.
     if (output) {
-	if (param.anyUnused()) {
-	    std::cout << "--------------------   Unused parameters:   --------------------\n";
-	    param.displayUsage();
-	    std::cout << "----------------------------------------------------------------" << std::endl;
-	}
 	param.writeParam(output_dir + "/spu_2p.param");
     }
 
