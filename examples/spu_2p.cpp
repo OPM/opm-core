@@ -312,7 +312,7 @@ main(int argc, char** argv)
     const int ny = param.getDefault("ny", 100);
     const int nz = param.getDefault("nz", 1);
     const int num_psteps = param.getDefault("num_psteps", 1);
-    const double stepsize_days = param.getDefault("stepsize_days", 0.5);
+    const double stepsize_days = param.getDefault("stepsize_days", 1.0);
     const double stepsize = Opm::unit::convert::from(stepsize_days, Opm::unit::day);
     const bool guess_old_solution = param.getDefault("guess_old_solution", false);
     const bool use_reorder = param.getDefault("use_reorder", false);
