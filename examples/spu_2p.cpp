@@ -350,8 +350,8 @@ main(int argc, char** argv)
     src[0]                         =  flow_per_sec;
     src[grid->number_of_cells - 1] = -flow_per_sec;
     TransportSource* tsrc = create_transport_source(2, 2);
-    double ssrc[]   = { flow_per_sec, 0.0 };
-    double ssink[]  = { 0.0, flow_per_sec };
+    double ssrc[]   = { 1.0, 0.0 };
+    double ssink[]  = { 0.0, 1.0 };
     double zdummy[] = { 0.0, 0.0 };
     append_transport_source(0, 2, 0, src[0], ssrc, zdummy, tsrc);
     append_transport_source(grid->number_of_cells - 1, 2, 0,
