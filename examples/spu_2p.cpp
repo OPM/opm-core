@@ -312,7 +312,7 @@ main(int argc, char** argv)
     const int ny = param.getDefault("ny", 100);
     const int nz = param.getDefault("nz", 1);
     const int num_psteps = param.getDefault("num_psteps", 1);
-    const double stepsize_days = param.getDefault("stepsize_days", 1.0);
+    const double stepsize_days = param.getDefault("stepsize_days", 0.5);
     const double stepsize = Opm::unit::convert::from(stepsize_days, Opm::unit::day);
     const bool guess_old_solution = param.getDefault("guess_old_solution", false);
     const bool use_reorder = param.getDefault("use_reorder", false);
@@ -324,13 +324,10 @@ main(int argc, char** argv)
     UnstructuredGrid* grid = create_cart_grid(nx, ny, nz);
 
     // Rock init.
-    param.insertParameter("permeability", "1.01325e15"); // = 1.0 in SI. For reproducing old output.
     Opm::IncompPropertiesBasic props(param, grid->dimensions, grid->number_of_cells);
-    // Rock rock(grid->number_of_cells, grid->dimensions);
-    // rock.perm_homogeneous(1);
-    // rock.poro_homogeneous(1);
     std::vector<double> porevol;
     compute_porevolume(grid, props, porevol);
+    double tot_porevol = std::accumulate(porevol.begin(), porevol.end(), 0.0);
 
     // Fluid init.
     std::tr1::array<double, 2> mu  = {{ 1.0, 1.0 }};
@@ -344,16 +341,17 @@ main(int argc, char** argv)
 
     // State-related and source-related variables init.
     std::vector<double> totmob(grid->number_of_cells, 1.0);
-    std::vector<double> src   (grid->number_of_cells, 0.0);
-    src[0]                         =  1.0;
-    src[grid->number_of_cells - 1] = -1.0;
     ReservoirState state(grid);
     // We need a separate reorder_sat, because the reorder
     // code expects a scalar sw, not both sw and so.
     std::vector<double> reorder_sat(grid->number_of_cells);
+    double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
+    std::vector<double> src   (grid->number_of_cells, 0.0);
+    src[0]                         =  flow_per_sec;
+    src[grid->number_of_cells - 1] = -flow_per_sec;
     TransportSource* tsrc = create_transport_source(2, 2);
-    double ssrc[]   = { 1.0, 0.0 };
-    double ssink[]  = { 0.0, 1.0 };
+    double ssrc[]   = { flow_per_sec, 0.0 };
+    double ssink[]  = { 0.0, flow_per_sec };
     double zdummy[] = { 0.0, 0.0 };
     append_transport_source(0, 2, 0, src[0], ssrc, zdummy, tsrc);
     append_transport_source(grid->number_of_cells - 1, 2, 0,
