@@ -1,6 +1,7 @@
 /* Copyright 2011 (c) Jostein R. Natvig <Jostein.R.Natvig at sintef.no> */
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <opm/core/grid.h>
 #include <opm/core/transport/reorder/twophase.hpp>
@@ -16,12 +17,14 @@ struct Parameters
     double influx;  /* sum_j min(v_ij, 0)*f(s_j) */
     double outflux; /* sum_j max(v_ij, 0)        */
     double dtpv;    /* dt/pv(i)                  */
+    int cell;
+    const Opm::IncompPropertiesInterface* props;
 };
 
 
 static struct Parameters get_parameters(struct SolverData *d, int cell);
 static double residual(double s, void *data);
-/* static double fluxfun(double s, int cell); */
+static double fluxfun_props(double s, int cell, const Opm::IncompPropertiesInterface* props);
 
 void
 destroy_solverdata(struct SolverData *d)
@@ -77,18 +80,15 @@ void solvecell(void *data, struct NonlinearSolverCtrl *ctrl, int cell)
     struct Parameters   prm = get_parameters(d, cell);
     
     d->saturation[cell] = find_zero(residual, &prm, ctrl);
-    d->fractionalflow[cell] = fluxfun(d->saturation[cell], -999);
+    // double ff1 = fluxfun_props(d->saturation[cell], cell, d->props);
+    // double ff2 = fluxfun(d->saturation[cell], -999);
+    // printf("New = %f   old = %f\n", ff1, ff2);
+    d->fractionalflow[cell] = fluxfun_props(d->saturation[cell], cell, d->props);
 }
 
 
 /* ====================== Internals =================================*/
 
-
-/* static double  */
-/* fluxfun(double s, int region) */
-/* { */
-/*     return s*s/(s*s + (1-s)*(1-s)); */
-/* } */
 
 /* Residual function r(s) for a single-cell bvp */
 /*
@@ -99,7 +99,7 @@ static double
 residual(double s, void *data)
 {
     struct Parameters *p = (struct Parameters*) data;
-    return s - p->s0 +  p->dtpv*(p->outflux*fluxfun(s, -999) + p->influx);
+    return s - p->s0 +  p->dtpv*(p->outflux*fluxfun_props(s, p->cell, p->props) + p->influx);
 }
 
 static struct Parameters
@@ -115,6 +115,8 @@ get_parameters(struct SolverData *d, int cell)
     p.influx  = d->source[cell] >  0 ? -d->source[cell] : 0.0;
     p.outflux = d->source[cell] <= 0 ? -d->source[cell] : 0.0;
     p.dtpv    = d->dt/d->porevolume[cell];
+    p.cell    = cell;
+    p.props   = d->props;
 
     d->saturation[cell] = 0;
     for (i=g->cell_facepos[cell]; i<g->cell_facepos[cell+1]; ++i) {
@@ -142,6 +144,16 @@ get_parameters(struct SolverData *d, int cell)
     return p;
 }
 
+static double fluxfun_props(double s, int cell, const Opm::IncompPropertiesInterface* props)
+{
+    const double* visc = props->viscosity();
+    double sat[2] = { s, 1.0 - s };
+    double mob[2];
+    props->relperm(1, sat, &cell, mob, NULL);
+    mob[0] /= visc[0];
+    mob[1] /= visc[1];
+    return mob[0]/(mob[0] + mob[1]);
+}
 
 
 /* Local Variables:    */
