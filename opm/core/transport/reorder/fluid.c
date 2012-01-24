@@ -1,6 +1,9 @@
 #include <opm/core/transport/reorder/fluid.h>
 
 
+#if 1
+
+/* Quadratic relperm */
 
 /*---------------------------------------------------------------------------*/
 double fluxfun(double sw, const int reg)
@@ -37,7 +40,26 @@ double dfluxfun(double sw, const int reg)
 
     return (dmw * (1-fw) - dmo * fw) / (mw+mo);
 }
+#else
 
+/* Linear relperm */
+
+/*---------------------------------------------------------------------------*/
+double fluxfun(double sw, const int reg)
+/*---------------------------------------------------------------------------*/
+{
+    (void) reg;
+    return sw;
+}
+
+/*---------------------------------------------------------------------------*/
+double dfluxfun(double sw, const int reg)
+/*---------------------------------------------------------------------------*/
+{
+    (void) sw, reg;
+    return 1.0;
+}
+#endif
 /* Local Variables:    */
 /* c-basic-offset:4    */
 /* End:                */
