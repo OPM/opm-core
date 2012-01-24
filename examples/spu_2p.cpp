@@ -68,7 +68,7 @@
 #include <opm/core/transport/CSRMatrixBlockAssembler.hpp>
 #include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
 
-#include <opm/core/transport/reorder/twophasetransport.h>
+#include <opm/core/transport/reorder/twophasetransport.hpp>
 
 
 

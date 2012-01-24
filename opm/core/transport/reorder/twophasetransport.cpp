@@ -10,7 +10,7 @@
 #include "tarjan.h"
 #include "nlsolvers.h"
 #include "twophase.h"
-#include "twophasetransport.h"
+#include "twophasetransport.hpp"
 
 #include <mex.h>
 extern int interrupt_signal;
@@ -26,7 +26,7 @@ extern int interrupt_signal;
 #include <opm/core/transport/reorder/tarjan.h>
 #include <opm/core/transport/reorder/nlsolvers.h>
 #include <opm/core/transport/reorder/twophase.h>
-#include <opm/core/transport/reorder/twophasetransport.h>
+#include <opm/core/transport/reorder/twophasetransport.hpp>
 
 #define print printf
 
@@ -58,8 +58,8 @@ void twophasetransport(
 
 
     /* Compute sequence of single-cell problems */
-    sequence   = malloc(  grid->number_of_cells    * sizeof *sequence);
-    components = malloc(( grid->number_of_cells+1) * sizeof *components);
+    sequence   = (int*) malloc(  grid->number_of_cells    * sizeof *sequence);
+    components = (int*) malloc(( grid->number_of_cells+1) * sizeof *components);
 
     compute_sequence(grid, darcyflux, sequence, components, &ncomponents);
     assert(ncomponents == grid->number_of_cells);
@@ -68,7 +68,7 @@ void twophasetransport(
 
     ctrl.maxiterations = 20;
     ctrl.nltolerance   = 1e-9;
-    ctrl.method        = REGULAFALSI;
+    ctrl.method        = NonlinearSolverCtrl::REGULAFALSI;
     ctrl.initialguess  = 0.5;
 
     /* Assume all strong components are single-cell domains. */

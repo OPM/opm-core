@@ -11,5 +11,7 @@ scaneclipsedeck
 
 if UMFPACK
 noinst_PROGRAMS += spu_2p reorder-qfs
+
 spu_2p_SOURCES   = spu_2p.cpp
+reorder_qfs_SOURCES = reorder-qfs.cpp
 endif

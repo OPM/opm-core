@@ -3,6 +3,9 @@
 #ifndef TWOPHASE_H_INCLUDED
 #define TWOPHASE_H_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 struct UnstructuredGrid;
@@ -30,6 +33,10 @@ struct SolverData *
 init_solverdata(struct UnstructuredGrid *grid, const double *darcyflux,
                 const double *porevolume, const double *source,
                 const int *satnum, double dt, double *saturation);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TWOPHASE_H_INCLUDED */
 

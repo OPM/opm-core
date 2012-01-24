@@ -85,7 +85,7 @@ opm/core/transport/reorder/reordersequence.c	\
 opm/core/transport/reorder/twophase.c		\
 opm/core/transport/reorder/nlsolvers.c		\
 opm/core/transport/reorder/tarjan.c		\
-opm/core/transport/reorder/twophasetransport.c
+opm/core/transport/reorder/twophasetransport.cpp
 
 
 nobase_include_HEADERS =                                \
@@ -201,7 +201,7 @@ opm/core/transport/reorder/nlsolvers.h		\
 opm/core/transport/reorder/reordersequence.h	\
 opm/core/transport/reorder/twophase.h		\
 opm/core/transport/reorder/tarjan.h		\
-opm/core/transport/reorder/twophasetransport.h
+opm/core/transport/reorder/twophasetransport.hpp
 
 if UMFPACK
 libopmcore_la_SOURCES  += opm/core/linalg/call_umfpack.c

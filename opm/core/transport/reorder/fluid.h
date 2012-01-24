@@ -16,6 +16,10 @@
 #ifndef FLUID_H
 #define FLUID_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef MATLAB_MEX_FILE
 void   init_fluid(const mxArray *);
 #else
@@ -25,5 +29,9 @@ void   init_fluid(void);
 double fluxfun   (double sw, const int);
 double dfluxfun  (double sw, const int);
 int    getNumSatRegions(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FLUID_H */

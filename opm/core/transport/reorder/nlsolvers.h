@@ -3,6 +3,10 @@
 #ifndef NLSOLVERS_H
 #define NLSOLVERS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct NonlinearSolverCtrl
 {
    enum     Method {RIDDERS, REGULAFALSI, BISECTION} method;
@@ -17,6 +21,10 @@ double find_zero  (double (*G)(double, void*), void *data, struct NonlinearSolve
 double bisection   (double (*)(double, void*), void*, struct NonlinearSolverCtrl *ctrl);
 double ridders     (double (*)(double, void*), void*, struct NonlinearSolverCtrl *ctrl);
 double regulafalsi (double (*)(double, void*), void*, struct NonlinearSolverCtrl *ctrl);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* NLSOLVERS_H */
 

@@ -16,7 +16,7 @@
 #include <opm/core/linalg/call_umfpack.h>
 #include <opm/core/utility/cart_grid.h>
 
-#include <opm/core/transport/reorder/twophasetransport.h>
+#include <opm/core/transport/reorder/twophasetransport.hpp>
 
 
 struct Rock {
@@ -39,12 +39,12 @@ static struct Rock*
 init_rock(int nc, int d)
 {
     int i,j;
-    struct Rock *rock = malloc(sizeof *rock);
+    struct Rock *rock = (struct Rock*) malloc(sizeof *rock);
 
     if (rock!=NULL)
     {
-        rock->perm = malloc(nc*d*d*sizeof *rock->perm);
-        rock->poro = malloc(nc * sizeof *rock->poro);
+        rock->perm = (double*) malloc(nc*d*d*sizeof *rock->perm);
+        rock->poro = (double*) malloc(nc * sizeof *rock->poro);
 
         if ((rock->perm==NULL) || (rock->poro==NULL))
         {
@@ -84,7 +84,7 @@ qfs(grid_t *g, struct Rock *rock, double *src,
     alloc_sz += g->number_of_faces; /* trans */
     alloc_sz += totconn;            /* gpress */
 
-    htrans = malloc(alloc_sz * sizeof *htrans);
+    htrans = (double*) malloc(alloc_sz * sizeof *htrans);
     trans  = htrans + totconn;
     gpress = trans  + g->number_of_faces;
 
@@ -129,11 +129,11 @@ int main(void)
 {
     struct UnstructuredGrid *g = create_cart_grid_2d(10,10);
     struct Rock *rock = init_rock(g->number_of_cells, g->dimensions);
-    double *sat   = malloc(g->number_of_cells *sizeof *sat);
-    double *press = malloc(g->number_of_cells *sizeof *press);
-    double *flux  = malloc(g->number_of_faces *sizeof *flux);
-    double *pv    = malloc(g->number_of_cells *sizeof *pv);
-    double *src    = malloc(g->number_of_cells *sizeof *src);
+    double *sat   = (double*) malloc(g->number_of_cells *sizeof *sat);
+    double *press = (double*) malloc(g->number_of_cells *sizeof *press);
+    double *flux  = (double*) malloc(g->number_of_faces *sizeof *flux);
+    double *pv    = (double*) malloc(g->number_of_cells *sizeof *pv);
+    double *src   = (double*) malloc(g->number_of_cells *sizeof *src);
 
     vector_zero(g->number_of_cells, sat);
     vector_zero(g->number_of_cells, src);
