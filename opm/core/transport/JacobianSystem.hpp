@@ -69,8 +69,8 @@ namespace Opm {
             negate(BaseVec& x) {
                 typedef typename BaseVec::value_type VT;
                 ::std::transform(x.begin(), x.end(),
-        				x.begin(),
-        		        ::std::negate<VT>());
+                                 x.begin(),
+                                 ::std::negate<VT>());
             }
         };
 
