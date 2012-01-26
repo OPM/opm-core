@@ -12,4 +12,8 @@ scaneclipsedeck
 if UMFPACK
 noinst_PROGRAMS += spu_2p
 spu_2p_SOURCES   = spu_2p.cpp
+spu_2p_LDADD     =				\
+$(BOOST_FILESYSTEM_LIB)				\
+$(BOOST_SYSTEM_LIB)				\
+$(LDADD)
 endif
