@@ -59,6 +59,7 @@
 #include <opm/core/transport/reorder/twophasetransport.hpp>
 
 #include <boost/filesystem/convenience.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include <cassert>
 #include <cstddef>
@@ -276,7 +277,69 @@ static void toBothSat(const std::vector<double>& sw, std::vector<double>& sboth)
 
 // --------------- Types needed to define transport solver ---------------
 
-typedef Opm::SimpleFluid2p<2>                         TwophaseFluid;
+class SimpleFluid2pWrappingProps
+{
+public:
+    SimpleFluid2pWrappingProps(const Opm::IncompPropertiesInterface& props)
+	: props_(props)
+    {
+	if (props.numPhases() != 2) {
+	    THROW("SimpleFluid2pWrapper requires 2 phases.");
+	}
+    }
+
+    double density(int phase) const
+    {
+	return props_.density()[phase];
+    }
+
+    template <class Sat,
+	      class Mob,
+	      class DMob>
+    void mobility(int c, const Sat& s, Mob& mob, DMob& dmob) const
+    {
+	props_.relperm(1, &s[0], &c, &mob[0], &dmob[0]);
+	const double* mu = props_.viscosity();
+	mob[0] /= mu[0];
+	mob[1] /= mu[1];
+	// Recall that we use Fortran ordering for kr derivatives,
+	// therefore dmob[i*2 + j] is row j and column i of the
+	// matrix.
+	// Each row corresponds to a kr function, so which mu to
+	// divide by also depends on the row, j.
+	dmob[0*2 + 0] /= mu[0];
+	dmob[0*2 + 1] /= mu[1];
+	dmob[1*2 + 0] /= mu[0];
+	dmob[1*2 + 1] /= mu[1];
+    }
+
+    template <class Sat,
+	      class Pcap,
+	      class DPcap>
+    void pc(int c, const Sat& s, Pcap& pcap, DPcap& dpcap) const
+    {
+	double pc[2];
+	double dpc[4];
+	props_.capPress(1, &s[0], &c, pc, dpc);
+	pcap = pc[0];
+	ASSERT(pc[1] == 0.0);
+	dpcap = dpc[0];
+	ASSERT(dpc[1] == 0.0);
+	ASSERT(dpc[2] == 0.0);
+	ASSERT(dpc[3] == 0.0);
+    }
+ 
+    /// \todo Properly implement s_min() and s_max().
+    ///       We must think about how to do this in
+    ///       the *Properties* classes.
+    double s_min(int c) const { (void) c; return 0.0; }
+    double s_max(int c) const { (void) c; return 1.0; }
+
+private:
+    const Opm::IncompPropertiesInterface& props_;
+};
+
+typedef SimpleFluid2pWrappingProps TwophaseFluid;
 typedef Opm::SinglePointUpwindTwoPhase<TwophaseFluid> TransportModel;
 
 using namespace Opm::ImplicitTransportDefault;
@@ -311,9 +374,8 @@ main(int argc, char** argv)
     std::cout << "\n================    Test program for incompressible two-phase flow     ===============\n\n";
     Opm::parameter::ParameterGroup param(argc, argv, false);
     std::cout << "---------------    Reading parameters     ---------------" << std::endl;
-    const int nx = param.getDefault("nx", 100);
-    const int ny = param.getDefault("ny", 100);
-    const int nz = param.getDefault("nz", 1);
+
+    // Reading various control parameters.
     const int num_psteps = param.getDefault("num_psteps", 1);
     const double stepsize_days = param.getDefault("stepsize_days", 1.0);
     const double stepsize = Opm::unit::convert::from(stepsize_days, Opm::unit::day);
@@ -328,24 +390,36 @@ main(int argc, char** argv)
 	create_directories(fpath);
     }
 
-    // Grid init.
-    std::tr1::array<int, 3> grid_dims = {{ nx, ny, nz }};
-    std::tr1::array<double, 3> cell_size = {{ 1.0, 1.0, 1.0 }};
-    UnstructuredGrid* grid = create_cart_grid(nx, ny, nz);
+    // If we have a "deck_filename", grid and props will be read from that.
+    // bool use_deck = param.has("deck_filename");
+    UnstructuredGrid* grid = 0;
+    boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
+    // if (use_deck) {
+    // } else {
+	// Grid init.
+	const int nx = param.getDefault("nx", 100);
+	const int ny = param.getDefault("ny", 100);
+	const int nz = param.getDefault("nz", 1);
+	std::tr1::array<int, 3> grid_dims = {{ nx, ny, nz }};
+	std::tr1::array<double, 3> cell_size = {{ 1.0, 1.0, 1.0 }};
+	grid = create_cart_grid(nx, ny, nz);
+	// Rock init.
+	props.reset(new Opm::IncompPropertiesBasic(param, grid->dimensions, grid->number_of_cells));
+    // }
 
-    // Rock init.
-    Opm::IncompPropertiesBasic props(param, grid->dimensions, grid->number_of_cells);
+    // Extra rock init.
     std::vector<double> porevol;
-    compute_porevolume(grid, props, porevol);
+    compute_porevolume(grid, *props, porevol);
     double tot_porevol = std::accumulate(porevol.begin(), porevol.end(), 0.0);
 
-    // Fluid init.
-    std::tr1::array<double, 2> mu  = {{ 0.001, 0.003 }};
-    std::tr1::array<double, 2> rho = {{ 0.0, 0.0 }};
-    TwophaseFluid fluid(mu, rho);
+    // Fluid init for transport solver.
+    // std::tr1::array<double, 2> mu  = {{ 0.001, 0.003 }};
+    // std::tr1::array<double, 2> rho = {{ 0.0, 0.0 }};
+    // TwophaseFluid fluid(mu, rho);
+    TwophaseFluid fluid(*props);
 
     // Solvers init.
-    PressureSolver psolver(grid, props);
+    PressureSolver psolver(grid, *props);
     TransportModel  model  (fluid, *grid, porevol, 0, guess_old_solution);
     TransportSolver tsolver(model);
 
@@ -423,7 +497,7 @@ main(int argc, char** argv)
 			      &reorder_src[0],
 			      stepsize,
 			      grid,
-			      &props,
+			      props.get(),
 			      &state.faceflux()[0],
 			      &reorder_sat[0]);
 	    toBothSat(reorder_sat, state.saturation());
