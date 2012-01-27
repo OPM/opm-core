@@ -434,6 +434,7 @@ void process_grdecl(const struct grdecl   *in,
   int c1, c2;
   double *dptr;
   const int BIGNUM = 64;
+  int cellnum;
 
   const int nx = in->dims[0];
   const int ny = in->dims[1];
@@ -474,7 +475,7 @@ void process_grdecl(const struct grdecl   *in,
 
 
   /* HACK */
-  /* Check that ZCORN is strictly nodecreaing along pillars.  If */
+  /* Check that ZCORN is strictly nodecreasing along pillars.  If */
   /* not, check if -ZCORN is strictly nondecreasing.             */
 
   for (sign = 1; sign>-2; sign = sign - 2){
@@ -561,7 +562,7 @@ void process_grdecl(const struct grdecl   *in,
 
   process_vertical_faces   (0, &intersections, plist, work, out);
   process_vertical_faces   (1, &intersections, plist, work, out);
-  process_horizontal_faces (&intersections, plist, out);
+  process_horizontal_faces (   &intersections, plist,       out);
 
   free (plist);
   free (work);
@@ -570,23 +571,31 @@ void process_grdecl(const struct grdecl   *in,
 
   free (intersections);
 
+  /* Enumerate compressed cells:
+     -make array [0...#cells-1] of global cell numbers
+     -make [0...nx*ny*nz-1] array of local cell numbers, 
+      lexicographically ordered, used to remap out->face_neighbors
+   */
+  global_cell_index = malloc(out->number_of_cells *
+				  sizeof (*global_cell_index));
+  cellnum = 0;
+  for (i=0; i<nx*ny*nz; ++i){
+    if(out->local_cell_index[i]!=-1){
+      global_cell_index[cellnum] = i;
+      out->local_cell_index[i]   = cellnum;
+      cellnum++;
+    }
+  }
 
-  /* Convert to local cell numbers in face_neighbors */
-  iptr=out->face_neighbors;;
+  /* Remap out->face_neighbors */
+  iptr=out->face_neighbors;
   for (i=0; i<out->number_of_faces*2; ++i, ++iptr){
     if (*iptr != -1){
       *iptr = out->local_cell_index[*iptr];
     }
   }
 
-  /* Invert global-to-local map */
-  global_cell_index = malloc(out->number_of_cells *
-				  sizeof (*global_cell_index));
-  for (i=0; i<nx*ny*nz; ++i){
-    if(out->local_cell_index[i]!=-1){
-      global_cell_index[out->local_cell_index[i]] = i;
-    }
-  }
+  
   free(out->local_cell_index);
   out->local_cell_index = global_cell_index;
 
