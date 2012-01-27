@@ -89,9 +89,9 @@ fill_nodes(mxArray *nodes, struct processed_grid *grid)
   nnodes = grid->number_of_nodes;
   coords = mxGetPr(mxGetField(nodes, 0, "coords"));
 
-  for (i = 0; i < nnodes; ++i) {
-    for (j = 0; j < 3; ++j) {
-      coords[i + j*nnodes] = grid->node_coordinates[3*i + j];
+  for (j = 0; j < 3; ++j) {
+    for (i = 0; i < nnodes; ++i) {
+      *coords++ = grid->node_coordinates[3*i + j];
     }
   }
 }
@@ -152,10 +152,11 @@ fill_faces(mxArray *faces, struct processed_grid *grid)
 
   /* Fill faces.neighbors */
   pi = mxGetData(mxGetField(faces, 0, "neighbors"));
-  for (f = 0; f < nf; f++) {
-    /* Add one for one-based indexing in M */
-    pi[f + 0*nf] = grid->face_neighbors[2*f + 0] + 1;
-    pi[f + 1*nf] = grid->face_neighbors[2*f + 1] + 1;
+  for (i = 0; i < 2; i++) {
+    for (f = 0; f < nf; f++) {
+      /* Add one for one-based indexing in M */
+      *pi++ = grid->face_neighbors[2*f + i] + 1;
+    }
   }
 
   /* Fill faces.nodePos */
