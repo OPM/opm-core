@@ -19,8 +19,8 @@
 #ifndef CGRIDINTERFACE_H
 #define CGRIDINTERFACE_H
 
-#include "grid.h"
-#include "preprocess.h"
+#include <opm/core/grid.h>
+#include <opm/core/utility/cpgpreprocess/preprocess.h>
 
 #ifdef __cplusplus
 extern "C" {

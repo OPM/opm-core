@@ -154,7 +154,6 @@ opm/core/utility/cpgpreprocess/sparsetable.h            \
 opm/core/utility/cpgpreprocess/cgridinterface.h         \
 opm/core/utility/cpgpreprocess/geometry.h               \
 opm/core/utility/cpgpreprocess/facetopology.h           \
-opm/core/utility/cpgpreprocess/grid.h                   \
 opm/core/utility/cpgpreprocess/grdecl.h                 \
 opm/core/utility/cart_grid.h                            \
 opm/core/well.h                                         \
