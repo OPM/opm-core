@@ -13,8 +13,8 @@
 //===========================================================================*/
 
 /*
-Copyright 2009, 2010, 2011 SINTEF ICT, Applied Mathematics.
-Copyright 2009, 2010, 2011 Statoil ASA.
+Copyright 2009, 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
+Copyright 2009, 2010, 2011, 2012 Statoil ASA.
 
 This file is part of The Open Reservoir Simulator Project (OpenRS).
 
