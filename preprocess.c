@@ -102,7 +102,7 @@ void compute_cell_index(const int dims[3], int i, int j, int *neighbors, int len
 /*-----------------------------------------------------------------
   Ensure there's sufficient memory
  */
-int checkmemeory(int nz, struct processed_grid *out, int **intersections)
+int checkmemory(int nz, struct processed_grid *out, int **intersections)
 {
 
   /* Ensure there is enough space */
@@ -174,7 +174,7 @@ void process_vertical_faces(int direction,
   for (j=0; j<ny+direction; ++j) {
     for (i=0; i<nx+1-direction; ++i){
 
-      if (!checkmemeory(nz, out, intersections)){
+      if (!checkmemory(nz, out, intersections)){
 	fprintf(stderr, "Could not allocat enough space in process_vertical_faces\n");
 	exit(1);
       }
@@ -258,7 +258,7 @@ void process_horizontal_faces(int **intersections,
     for (i=0; i<nx; ++i) {
 
 
-      if (!checkmemeory(nz, out, intersections)){
+      if (!checkmemory(nz, out, intersections)){
 	fprintf(stderr, "Could not allocat enough space in process_horizontal_faces\n");
 	exit(1);
       }
@@ -558,7 +558,7 @@ void process_grdecl(const struct grdecl   *in,
   free(out->local_cell_index);
   out->local_cell_index = global_cell_index;
 
-  /* HACK: undo sign reversal in ZCORN prepprocessing */
+  /* HACK: undo sign reversal in ZCORN preprocessing */
   for (i=2; i<3*out->number_of_nodes; i = i+3)
     out->node_coordinates[i]=sign*out->node_coordinates[i];
 
