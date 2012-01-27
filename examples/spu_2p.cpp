@@ -156,34 +156,6 @@ private:
 
 
 
-typedef Opm::SimpleFluid2p<2>                         TwophaseFluid;
-typedef Opm::SinglePointUpwindTwoPhase<TwophaseFluid> TransportModel;
-
-using namespace Opm::ImplicitTransportDefault;
-
-typedef NewtonVectorCollection< ::std::vector<double> >      NVecColl;
-typedef JacobianSystem        < struct CSRMatrix, NVecColl > JacSys;
-
-template <class Vector>
-class MaxNorm {
-public:
-    static double
-    norm(const Vector& v) {
-        return AccumulationNorm <Vector, MaxAbs>::norm(v);
-    }
-};
-
-typedef Opm::ImplicitTransport<TransportModel,
-                               JacSys        ,
-                               MaxNorm       ,
-                               VectorNegater ,
-                               VectorZero    ,
-                               MatrixZero    ,
-                               VectorAssign  > TransportSolver;
-
-
-
-
 static void
 compute_porevolume(const UnstructuredGrid* g,
                    const Opm::IncompPropertiesInterface& props,
@@ -302,15 +274,43 @@ static void toBothSat(const std::vector<double>& sw, std::vector<double>& sboth)
 }
 
 
+// --------------- Types needed to define transport solver ---------------
+
+typedef Opm::SimpleFluid2p<2>                         TwophaseFluid;
+typedef Opm::SinglePointUpwindTwoPhase<TwophaseFluid> TransportModel;
+
+using namespace Opm::ImplicitTransportDefault;
+
+typedef NewtonVectorCollection< ::std::vector<double> >      NVecColl;
+typedef JacobianSystem        < struct CSRMatrix, NVecColl > JacSys;
+
+template <class Vector>
+class MaxNorm {
+public:
+    static double
+    norm(const Vector& v) {
+        return AccumulationNorm <Vector, MaxAbs>::norm(v);
+    }
+};
+
+typedef Opm::ImplicitTransport<TransportModel,
+                               JacSys        ,
+                               MaxNorm       ,
+                               VectorNegater ,
+                               VectorZero    ,
+                               MatrixZero    ,
+                               VectorAssign  > TransportSolver;
+
+
 
 
 // ----------------- Main program -----------------
 int
 main(int argc, char** argv)
 {
-    std::cout << "================    Test program for incompressible two-phase flow     ===============\n";
+    std::cout << "\n================    Test program for incompressible two-phase flow     ===============\n\n";
     Opm::parameter::ParameterGroup param(argc, argv, false);
-    std::cout << "================    Reading parameters     ===============" << std::endl;
+    std::cout << "---------------    Reading parameters     ---------------" << std::endl;
     const int nx = param.getDefault("nx", 100);
     const int ny = param.getDefault("ny", 100);
     const int nz = param.getDefault("nz", 1);
@@ -396,8 +396,8 @@ main(int argc, char** argv)
     // Main simulation loop.
     std::cout << "\n\n================    Starting main simulation loop     ===============" << std::endl;
     for (int pstep = 0; pstep < num_psteps; ++pstep) {
-        std::cout << "\n\n================    Simulation step number " << pstep
-                  << "    ==============="
+        std::cout << "\n\n---------------    Simulation step number " << pstep
+                  << "    ---------------"
                   << "\n      Current time (days)     " << Opm::unit::convert::to(current_time, Opm::unit::day)
                   << "\n      Current stepsize (days) " << Opm::unit::convert::to(stepsize, Opm::unit::day)
                   << "\n      Total time (days)       " << Opm::unit::convert::to(total_time, Opm::unit::day)
