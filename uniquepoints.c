@@ -85,12 +85,15 @@ static int createSortedList(double *list, int n, int m,
 */
 static int uniquify(int n, double *list, double tolerance)
 {
+  int    i;
+  int    pos;
+  double val;
+  
   assert (!(tolerance < 0.0));
 
   if (n<1) return 0;
-  int    i;
-  int    pos = 0; 
-  double val = list[pos++];/* Keep first value */
+  pos = 0; 
+  val = list[pos++];/* Keep first value */
   
   for (i=1; i<n; ++i){
     if (val + tolerance < list [i]){
@@ -249,9 +252,11 @@ int finduniquepoints(const struct grdecl *g,
 		     struct processed_grid *out)
 		      
 {
-  int nx = out->dimensions[0];
-  int ny = out->dimensions[1];
-  int nz = out->dimensions[2];
+    
+  const int nx = out->dimensions[0];
+  const int ny = out->dimensions[1];
+  const int nz = out->dimensions[2];
+  const int nc = g->dims[0]*g->dims[1]*g->dims[2];
 
 
     /* ztab->data may need extra space temporarily due to simple boundary treatement  */
@@ -263,30 +268,37 @@ int finduniquepoints(const struct grdecl *g,
 
 
 
-  int nc = g->dims[0]*g->dims[1]*g->dims[2];
-  out->node_coordinates = malloc (3*8*nc*sizeof(*out->node_coordinates));
 
   double *zlist = ztab->data; /* casting void* to double* */
   int     *zptr = ztab->ptr;
 
   int     i,j,k;
 
-  int     d1[3]  = {2*g->dims[0], 2*g->dims[1], 2*g->dims[2]};
+  int     d1[3];
   int     len    = 0;
   double  *zout  = zlist;  
   int     pos    = 0;
+  double *coord = (double*)g->coord;
+  double *pt;
+  const double *z[4];
+  const int *a[4];
+  int *p;
+  int pix, cix;
+  int zix;
+
+  d1[0] = 2*g->dims[0];
+  d1[1] = 2*g->dims[1];
+  d1[2] = 2*g->dims[2];
+
+  out->node_coordinates = malloc (3*8*nc*sizeof(*out->node_coordinates));
 
   zptr[pos++] = zout - zlist;
 
-  double *coord = (double*)g->coord;
-  double *pt    = out->node_coordinates;
+  pt    = out->node_coordinates;
 
   /* Loop over pillars, find unique points on each pillar */
   for (j=0; j < g->dims[1]+1; ++j){
     for (i=0; i < g->dims[0]+1; ++i){
-
-      const int    *a[4];
-      const double *z[4];
       
       /* Get positioned pointers for actnum and zcorn data */
       igetvectors(g->dims,   i,   j, g->actnum, a);
@@ -313,24 +325,23 @@ int finduniquepoints(const struct grdecl *g,
   out->number_of_nodes            = zptr[pos-1];
 
   /* Loop over all vertical sets of zcorn values, assign point numbers */
-  int *p = plist;
+  p = plist;
   for (j=0; j < 2*g->dims[1]; ++j){
     for (i=0; i < 2*g->dims[0]; ++i){
       
       /* pillar index */
-      int pix = (i+1)/2 + (g->dims[0]+1)*((j+1)/2);
+      pix = (i+1)/2 + (g->dims[0]+1)*((j+1)/2);
       
       /* cell column position */
-      int cix = g->dims[2]*((i/2) + (j/2)*g->dims[0]);
+      cix = g->dims[2]*((i/2) + (j/2)*g->dims[0]);
 
       /* zcorn column position */
-      int zix = 2*g->dims[2]*(i+2*g->dims[0]*j);
+      zix = 2*g->dims[2]*(i+2*g->dims[0]*j);
       
-      const int    *a   = g->actnum + cix; 
-      const double *z   = g->zcorn  + zix;
-
       if (!assignPointNumbers(zptr[pix], zptr[pix+1], zlist,
-			      2*g->dims[2], z, a, p, tolerance)){
+			      2*g->dims[2], 
+                              g->zcorn  + zix, g->actnum + cix, 
+                              p, tolerance)){
 	fprintf(stderr, "Something went wrong in assignPointNumbers");
 	return 0;
       }

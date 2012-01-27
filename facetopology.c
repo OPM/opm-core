@@ -69,7 +69,8 @@ static int *computeFaceTopology(int *a1,
 				int *faces)
 {
   int mask[8] = {-1};
-
+  int k;
+  int *f;
   /* Which pillar points should we use? */
   if (a1[1] > b1[1]){ mask[0] = b1[1]; } else { mask[0] = a1[1]; }
   if (a2[1] > b2[1]){ mask[2] = b2[1]; } else { mask[2] = a2[1]; }
@@ -136,8 +137,7 @@ static int *computeFaceTopology(int *a1,
       mask[3] = intersect[2];
     }
   }
-  int k;
-  int *f = faces;
+  f = faces;
   for (k=7; k>=0; --k){
     if(mask[k] != -1){
       *f++ = mask[k];
@@ -217,6 +217,7 @@ void findconnections(int n, int *pts[4],
 
   int i,j=0;
   int intersect[4]= {-1};
+  int *tmp;
   /* for (i=0; i<2*n; work[i++]=-1); */
   
   for (i = 0; i<n-1; ++i){
@@ -341,7 +342,7 @@ void findconnections(int n, int *pts[4],
 
     
     /* Swap intersection records: top line of a[i,i+1] is bottom line of a[i+1,i+2] */
-    int *tmp; tmp = itop; itop = ibottom; ibottom = tmp;
+    tmp = itop; itop = ibottom; ibottom = tmp;
 
     /* Zero out the "new" itop */
     for(j=0;j<n; ++j) itop[j]=-1;

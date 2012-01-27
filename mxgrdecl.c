@@ -1,4 +1,4 @@
-//===========================================================================
+/*=========================================================================
 //
 // File: mxgrdecl.c
 //
@@ -10,7 +10,7 @@
 //
 // $Revision$
 //
-//===========================================================================
+//=======================================================================*/
 
 /*
 Copyright 2009, 2010 SINTEF ICT, Applied Mathematics.
@@ -42,6 +42,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include "grdecl.h"
 
 
+void mx_init_grdecl(struct grdecl *g, const mxArray *s);
 
 /* Get COORD, ZCORN, ACTNUM and DIMS from mxArray.       */
 /*-------------------------------------------------------*/
@@ -50,7 +51,7 @@ void mx_init_grdecl(struct grdecl *g, const mxArray *s)
   int i,n;
   mxArray *field;
   int numel;
-
+  double *tmp;
   mxArray *cartdims=NULL, *actnum=NULL, *coord=NULL, *zcorn=NULL;
   
   if (!mxIsStruct(s) 
@@ -71,7 +72,7 @@ void mx_init_grdecl(struct grdecl *g, const mxArray *s)
      mexErrMsgTxt("cartDims field must be 3 numbers");
   }
   
-  double *tmp = mxGetPr(cartdims);
+  tmp = mxGetPr(cartdims);
   n = 1;
   for (i=0; i<3; ++i){
     g->dims[i] = tmp[i];

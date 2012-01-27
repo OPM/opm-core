@@ -1,4 +1,4 @@
-//===========================================================================
+/*=========================================================================
 //
 // File: mxgrdecl.h
 //
@@ -10,7 +10,7 @@
 //
 // $Revision$
 //
-//===========================================================================
+//=======================================================================*/
 
 /*
 Copyright 2009, 2010 SINTEF ICT, Applied Mathematics.
@@ -37,6 +37,6 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 void mx_init_grdecl (struct grdecl *g, const mxArray *s);
 
-#endif // OPENRS_MXGRDECL_HEADER
+#endif /* OPENRS_MXGRDECL_HEADER */
 
 
