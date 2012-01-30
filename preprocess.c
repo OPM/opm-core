@@ -415,8 +415,10 @@ compute_intersection_coordinates(int                   *intersections,
 }
 
 
+/* ------------------------------------------------------------------ */
 static int*
 copy_and_permute_actnum(int nx, int ny, int nz, const int *in, int *out)
+/* ------------------------------------------------------------------ */
 {
     int i,j,k;
     int *ptr = out;
@@ -437,8 +439,11 @@ copy_and_permute_actnum(int nx, int ny, int nz, const int *in, int *out)
     return out;
 }
 
+/* ------------------------------------------------------------------ */
 static double*
-copy_and_permute_zcorn(int nx, int ny, int nz, const double *in, double sign, double *out)
+copy_and_permute_zcorn(int nx, int ny, int nz, const double *in, 
+                       double sign, double *out)
+/* ------------------------------------------------------------------ */
 {
     int i,j,k;
     double *ptr = out;
@@ -458,19 +463,12 @@ copy_and_permute_zcorn(int nx, int ny, int nz, const double *in, double sign, do
     }
     return out;
 }
-  /* /\* Permute zcorn *\/ */
-  /* dptr = zcorn; */
-  /* for (j=0; j<2*ny; ++j){ */
-  /*   for (i=0; i<2*nx; ++i){ */
-  /*     for (k=0; k<2*nz; ++k){ */
-  /*       *dptr++ = sign*in->zcorn[i+2*nx*(j+2*ny*k)]; */
-  /*     } */
-  /*   } */
-  /* } */
 
+/* ------------------------------------------------------------------ */
 static int
 get_zcorn_sign(int nx, int ny, int nz, const int *actnum, 
                const double *zcorn, int *error)
+/* ------------------------------------------------------------------ */
 {
     /* Ensure that zcorn (i.e., depth) is strictly nondecreasing in
        the k-direction.  This is required by the processign algorithm.
@@ -549,103 +547,19 @@ void process_grdecl(const struct grdecl   *in,
   const int nz = in->dims[2];
   const int nc = nx*ny*nz;
 
-  /* internal */
-  int *intersections = malloc(BIGNUM* sizeof(*intersections));
-
-  /* internal */
-  int *work          = malloc(2* (2*nz+2)*   sizeof(*work));
-
-  /* Allocate space for cornerpoint numbers plus INT_MIN (INT_MAX) padding */
-  int    *plist = malloc( 4*nx*ny*(2*nz+2) * sizeof *plist);
-  
-  for(i=0; i<4*(nz+1); ++i) { work[i] = -1; }
+  /* internal work arrays */
+  int    *work;
+  int    *plist;
+  int    *intersections;
 
 
 
-  
-  g.dims[0] = nx;
-  g.dims[1] = ny;
-  g.dims[2] = nz;
-  actnum  = malloc (nc *     sizeof *actnum);
-  zcorn   = malloc (nc * 8 * sizeof *zcorn);
 
-#if 0
-  /* Permute actnum */
-  iptr = actnum;
-  for (j=0; j<ny; ++j){
-    for (i=0; i<nx; ++i){
-      for (k=0; k<nz; ++k){
-	*iptr++ = in->actnum[i+nx*(j+ny*k)];
-      }
-    }
-  }
-  g.actnum = actnum;
-#endif
-
-  g.actnum = copy_and_permute_actnum(nx, ny, nz, in->actnum, actnum);
-  sign     = get_zcorn_sign(nx, ny, nz, in->actnum, in->zcorn, &error);
-
-#if 0
-  /* HACK */
-  /* Check that ZCORN is strictly nodecreasing along pillars.  If */
-  /* not, check if -ZCORN is strictly nondecreasing.             */
-
-  for (sign = 1; sign>-2; sign = sign - 2)
-  {
-    error = 0;
-
-    /* Ensure that zcorn is strictly nondecreasing in k-direction */
-    for (j=0; j<2*ny; ++j){
-      for (i=0; i<2*nx; ++i){
-	for (k=0; k<2*nz-1; ++k){
-	  z1 = sign*in->zcorn[i+2*nx*(j+2*ny*(k))];
-	  z2 = sign*in->zcorn[i+2*nx*(j+2*ny*(k+1))];
-	  
-          c1 = i/2 + nx*(j/2 + ny*k/2);
-          c2 = i/2 + nx*(j/2 + ny*(k+1)/2);
-
-          if (in->actnum[c1] && in->actnum[c2] && (z2 < z1)){
-	    fprintf(stderr, "\nZCORN should be strictly nondecreasing along pillars!\n");	 
-	    error = 1;
-	    goto end;
-	  }
-	}
-      }
-    }
-
-  end:
-    if (!error){
-      break;
-    }
-  }
-
-  if (error){
-    fprintf(stderr, "Attempt to reverse sign in ZCORN failed.\n"
-		    "Grid definition may be broken\n");
-  }
-#endif  
-
-#if 0
-  /* Permute zcorn */
-  dptr = zcorn;
-  for (j=0; j<2*ny; ++j){
-    for (i=0; i<2*nx; ++i){
-      for (k=0; k<2*nz; ++k){
-	*dptr++ = sign*in->zcorn[i+2*nx*(j+2*ny*k)];
-      }
-    }
-  }
-  g.zcorn = zcorn;
-#endif
-  g.zcorn = copy_and_permute_zcorn(nx, ny, nz, in->zcorn, sign, zcorn);
-
-  g.coord = in->coord;
-
-
-  /* Code below assumes k index runs fastests, ie. that dimensions of
-     table is permuted to (dims[2], dims[0], dims[1]) */
-
- 
+  /* -----------------------------------------------------------------*/
+  /* Initialize output structure:
+     1) allocate space for grid topology (which may need to be increased)
+     2) set Cartesian imensions
+   */
   out->m                = BIGNUM/3;
   out->n                = BIGNUM;
 
@@ -655,9 +569,9 @@ void process_grdecl(const struct grdecl   *in,
   out->face_tag         = malloc( out->m      * sizeof *out->face_tag);
   out->face_ptr[0]      = 0;
 
-  out->dimensions[0]    = g.dims[0];
-  out->dimensions[1]    = g.dims[1];
-  out->dimensions[2]    = g.dims[2];
+  out->dimensions[0]    = nx;
+  out->dimensions[1]    = ny;
+  out->dimensions[2]    = nz;
   out->number_of_faces  = 0;
   out->number_of_nodes  = 0;
   out->number_of_cells  = 0;
@@ -669,10 +583,48 @@ void process_grdecl(const struct grdecl   *in,
 
   /* Do actual work here:*/
 
+  /* -----------------------------------------------------------------*/
+  /* For each pillar, compare zcorn values for adjacent cells to find
+   * the unique node z-coordinates specified by the input.  While
+   * here, enumerate unique points and assign point numbers (in plist)
+   * for each cornerpoint cell. In other words, plist has 8 node
+   * numbers for each cornerpoint cell.*/
+
+  /* initialize grdecl structure "g" that will be processd by
+   * "finduniquepoints" */
+  g.dims[0] = nx;
+  g.dims[1] = ny;
+  g.dims[2] = nz;
+
+  actnum    = malloc (nc *     sizeof *actnum);
+  g.actnum  = copy_and_permute_actnum(nx, ny, nz, in->actnum, actnum);
+
+  zcorn     = malloc (nc * 8 * sizeof *zcorn);
+  sign      = get_zcorn_sign(nx, ny, nz, in->actnum, in->zcorn, &error);
+  g.zcorn   = copy_and_permute_zcorn(nx, ny, nz, in->zcorn, sign, zcorn);
+
+  g.coord   = in->coord;
+
+
+  /* allocate space for cornerpoint numbers plus INT_MIN (INT_MAX) padding */
+  plist = malloc( 4*nx*ny*(2*nz+2) * sizeof *plist);
+
   finduniquepoints(&g, plist, tolerance, out);
 
   free (zcorn);
   free (actnum);
+
+  /* -----------------------------------------------------------------*/
+  /* Find face topology and face-to-cell connections */
+
+  /* internal */
+  work = malloc(2* (2*nz+2)*   sizeof(*work));
+  for(i=0; i<4*(nz+1); ++i) { work[i] = -1; }
+
+   /* internal array to store intersections */
+  intersections = malloc(BIGNUM* sizeof(*intersections));
+
+
 
   process_vertical_faces   (0, &intersections, plist, work, out);
   process_vertical_faces   (1, &intersections, plist, work, out);
@@ -681,10 +633,14 @@ void process_grdecl(const struct grdecl   *in,
   free (plist);
   free (work);
 
+  /* -----------------------------------------------------------------*/
+  /* (re)allocate space for and compute coordinates of nodes that
+   * arise from intesecting cells (faults) */
   compute_intersection_coordinates(intersections, out);
 
   free (intersections);
 
+  /* -----------------------------------------------------------------*/
   /* Enumerate compressed cells:
      -make array [0...#cells-1] of global cell numbers
      -make [0...nx*ny*nz-1] array of local cell numbers, 
@@ -713,9 +669,13 @@ void process_grdecl(const struct grdecl   *in,
   free(out->local_cell_index);
   out->local_cell_index = global_cell_index;
 
-  /* HACK: undo sign reversal in ZCORN preprocessing */
-  for (i=2; i<3*out->number_of_nodes; i = i+3)
-    out->node_coordinates[i]=sign*out->node_coordinates[i];
+  /* if sign==-1 in ZCORN preprocessing, the sign of the z-coordinate
+   * need to change before we finish */
+  if (sign == -1)
+  {
+      for (i=2; i<3*out->number_of_nodes; i = i+3)
+          out->node_coordinates[i]=sign*out->node_coordinates[i];
+  }
 
 }
 
