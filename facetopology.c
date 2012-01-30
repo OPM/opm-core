@@ -40,7 +40,6 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <limits.h>
 
 #include "preprocess.h"
-#include "sparsetable.h"
 #include "facetopology.h"
 
 /* No checking of input arguments in this code! */

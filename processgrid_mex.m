@@ -47,7 +47,7 @@ function varargout = processgrid_mex(varargin)
              '-Wchar-subscripts', '-Wredundant-decls"'};
 
    SRC = {'processgrid.c', 'preprocess.c', 'uniquepoints.c', ...
-          'facetopology.c', 'sparsetable.c', 'mxgrdecl.c'};
+          'facetopology.c', 'mxgrdecl.c'};
        
    INCLUDE = {};
    
