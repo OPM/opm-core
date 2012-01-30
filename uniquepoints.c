@@ -41,7 +41,6 @@
 #include <stdio.h>
 
 
-#include "sparsetable.h"
 #include "preprocess.h"
 #include "uniquepoints.h"
 
@@ -262,15 +261,12 @@ int finduniquepoints(const struct grdecl *g,
     /* ztab->data may need extra space temporarily due to simple boundary treatement  */
   int            npillarpoints = 8*(nx+1)*(ny+1)*nz; 
   int            npillars      = (nx+1)*(ny+1);
-  sparse_table_t *ztab      = malloc_sparse_table(npillars, 
-                                                  npillarpoints, 
-                                                  sizeof(double));
+
+  double *zlist = malloc(npillarpoints*sizeof *zlist);
+  int     *zptr = malloc((npillars+1)*sizeof *zptr);
 
 
 
-
-  double *zlist = ztab->data; /* casting void* to double* */
-  int     *zptr = ztab->ptr;
 
   int     i,j,k;
 
@@ -350,9 +346,8 @@ int finduniquepoints(const struct grdecl *g,
     }
   }
 
-
-  free_sparse_table(ztab);
-
+  free(zptr);
+  free(zlist);
 
   return 1;
 }
