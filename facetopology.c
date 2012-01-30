@@ -190,8 +190,10 @@ static int faceintersection(int *a1, int *a2, int *b1, int *b2)
 }
 
 
-#define meaningful_face !((a1[i]  ==INT_MIN) && (b1[j]  ==INT_MIN)) && \
-                        !((a1[i+1]==INT_MAX) && (b1[j+1]==INT_MAX))
+#define meaningful_face(i,j)                            \
+    !((a1[i]  ==INT_MIN) && (b1[j]  ==INT_MIN)) &&      \
+    !((a1[i+1]==INT_MAX) && (b1[j+1]==INT_MAX))
+
 
 /* work should be pointer to 2n ints initialised to zero . */
 void findconnections(int n, int *pts[4],
@@ -220,13 +222,18 @@ void findconnections(int n, int *pts[4],
   /* for (i=0; i<2*n; work[i++]=-1); */
   
   for (i = 0; i<n-1; ++i){
-    if (a1[i] == a1[i+1] && a2[i] == a2[i+1]) { continue; }
+    
+    /* pinched a-cell */
+    if (a1[i] == a1[i+1] && a2[i] == a2[i+1]){
+        continue;
+    }
 
 
 
-
+    
     while(j<n-1 && (b1[j] < a1[i+1] || b2[j] < a2[i+1])){
 
+      /* pinched b-cell */
       if (b1[j] == b1[j+1] && b2[j] == b2[j+1]){
 	itop[j+1] = itop[j];
 	++j;
@@ -244,11 +251,10 @@ void findconnections(int n, int *pts[4],
 	if (a1[i]==b1[j] && a1[i+1]==b1[j+1] &&
 	    a2[i]==b2[j] && a2[i+1]==b2[j+1]){
 
-	  /* Add face to list of faces if not any first or last points are involved. */
-	  if (meaningful_face){
+            if (meaningful_face(i,j)){
 
-	    int cell_a = i%2 ? (i-1)/2 : -1;
-	    int cell_b = j%2 ? (j-1)/2 : -1;
+	    int cell_a = i%2 != 0 ? (i-1)/2 : -1;
+	    int cell_b = j%2 != 0 ? (j-1)/2 : -1;
 
 	    if (cell_a != -1 || cell_b != -1){
 	      *c++ = cell_a;
@@ -257,6 +263,7 @@ void findconnections(int n, int *pts[4],
 	      /* face */
 	      *f++ = a1[i];
 	      *f++ = a2[i];
+
 	      /* avoid duplicating nodes in pinched faces  */
 	      if (a2[i+1] != a2[i]) { *f++ = a2[i+1]; }
               if (a1[i+1] != a1[i]) { *f++ = a1[i+1]; }
@@ -266,13 +273,8 @@ void findconnections(int n, int *pts[4],
 	    }
 	    else{
 	      ;
-	      /*
-		fprintf(stderr, 
-		      "Warning. For some reason we get face connecting void spaces\n");
-	      */
 	    }
-
-	  }
+          }
 	}
 
 	/* Non-matching faces */
@@ -301,14 +303,14 @@ void findconnections(int n, int *pts[4],
 
 
 	  /* Add face to list of faces if no INT_MIN or INT_MAX appear in a or b. */
-	  if (meaningful_face){
+	  if (meaningful_face(i,j)){
 
 	    /* 
 	       Even indices refer to space between cells, 
 	       odd indices refer to cells 
 	    */
-	    int cell_a = i%2 ? (i-1)/2 : -1;
-	    int cell_b = j%2 ? (j-1)/2 : -1;
+	    int cell_a = i%2 != 0 ? (i-1)/2 : -1;
+	    int cell_b = j%2 != 0 ? (j-1)/2 : -1;
 
 
 
@@ -322,10 +324,6 @@ void findconnections(int n, int *pts[4],
 	    }
 	    else{
 	      ;
-	      /*
-		fprintf(stderr, 
-		      "Warning. For some reason we get face connecting void spaces\n");
-	      */
 	    }
 	  }
 	}
