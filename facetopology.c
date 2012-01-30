@@ -220,7 +220,7 @@ void findconnections(int n, int *pts[4],
   /* for (i=0; i<2*n; work[i++]=-1); */
   
   for (i = 0; i<n-1; ++i){
-    if (a1[i] == a1[i+1] && a2[i] == a2[i+1]) continue;
+    if (a1[i] == a1[i+1] && a2[i] == a2[i+1]) { continue; }
 
 
 
@@ -258,8 +258,8 @@ void findconnections(int n, int *pts[4],
 	      *f++ = a1[i];
 	      *f++ = a2[i];
 	      /* avoid duplicating nodes in pinched faces  */
-	      if (a2[i+1] != a2[i]) *f++ = a2[i+1]; 
-	      if (a1[i+1] != a1[i]) *f++ = a1[i+1];
+	      if (a2[i+1] != a2[i]) { *f++ = a2[i+1]; }
+              if (a1[i+1] != a1[i]) { *f++ = a1[i+1]; }
 
 	      out->face_ptr[++out->number_of_faces] = f - out->face_nodes;
 
@@ -332,8 +332,8 @@ void findconnections(int n, int *pts[4],
       }
 
       /* Update candidates for restart of j for in next i-iteration */
-      if (b1[j] < a1[i+1]) k1 = j;
-      if (b2[j] < a2[i+1]) k2 = j;
+      if (b1[j] < a1[i+1]) { k1 = j; }
+      if (b2[j] < a2[i+1]) { k2 = j; }
 
       j = j+1;
     }
@@ -344,7 +344,7 @@ void findconnections(int n, int *pts[4],
     tmp = itop; itop = ibottom; ibottom = tmp;
 
     /* Zero out the "new" itop */
-    for(j=0;j<n; ++j) itop[j]=-1;
+    for(j=0;j<n; ++j) { itop[j]=-1; }
 
     /* Set j to appropriate start position for next i */
     j = min(k1, k2);
