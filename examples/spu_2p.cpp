@@ -42,10 +42,12 @@
 #include <opm/core/utility/cart_grid.h>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/Units.hpp>
+#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
 #include <opm/core/fluid/SimpleFluid2p.hpp>
 #include <opm/core/fluid/IncompPropertiesBasic.hpp>
+#include <opm/core/fluid/IncompPropertiesFromDeck.hpp>
 
 #include <opm/core/transport/transport_source.h>
 #include <opm/core/transport/CSRMatrixUmfpackSolver.hpp>
@@ -72,6 +74,107 @@
 #include <fstream>
 #include <iterator>
 #include <vector>
+
+
+
+
+namespace Opm
+{
+
+    /// Abstract class for grids.
+    class GridInterface
+    {
+    public:
+	virtual ~GridInterface() {}
+	virtual const UnstructuredGrid* c_grid() const = 0;
+    };
+
+
+
+    /// Concrete grid class constructing a
+    /// corner point grid from a deck.
+    class GridCornerpoint : public GridInterface
+    {
+    public:
+	GridCornerpoint(const Opm::EclipseGridParser& deck)
+	{
+	    // Extract data from deck.
+	    const std::vector<double>& zcorn = deck.getFloatingPointValue("ZCORN");
+	    const std::vector<double>& coord = deck.getFloatingPointValue("COORD");
+	    const std::vector<int>& actnum = deck.getIntegerValue("ACTNUM");
+	    const std::vector<int>& dimens = deck.getIntegerValue("DIMENS");
+
+	    // Collect in input struct for preprocessing.
+	    struct grdecl grdecl;
+	    grdecl.zcorn = &zcorn[0];
+	    grdecl.coord = &coord[0];
+	    grdecl.actnum = &actnum[0];
+	    grdecl.dims[0] = dimens[0];
+	    grdecl.dims[1] = dimens[1];
+	    grdecl.dims[2] = dimens[2];
+
+	    // Process and compute.
+	    preprocess(&grdecl, 0.0, &cpg_);
+	    compute_geometry(&cpg_);
+	}
+
+	~GridCornerpoint()
+	{
+	    free_cornerpoint_grid(&cpg_);
+	}
+
+	virtual const UnstructuredGrid* c_grid() const
+	{
+	    return &cpg_.grid;
+	}
+
+	const int* indexMap() const
+	{
+	    return cpg_.index_map;
+	}
+
+    private:
+	// Disable copying and assignment.
+	GridCornerpoint(const GridCornerpoint& other);
+	GridCornerpoint& operator=(const GridCornerpoint& other);
+	struct CornerpointGrid cpg_;
+    };
+
+    /// Concrete grid class constructing a
+    /// corner point grid from a deck.
+    class GridCartesian : public GridInterface
+    {
+    public:
+	GridCartesian(int nx, int ny)
+	{
+	    ug_ = create_cart_grid_2d(nx, ny);
+	}
+
+	GridCartesian(int nx, int ny, int nz)
+	{
+	    ug_ = create_cart_grid_3d(nx, ny, nz);
+	}
+
+	~GridCartesian()
+	{
+	    destroy_cart_grid(ug_);
+	}
+
+	virtual const UnstructuredGrid* c_grid() const
+	{
+	    return ug_;
+	}
+
+    private:
+	// Disable copying and assignment.
+	GridCartesian(const GridCartesian& other);
+	GridCartesian& operator=(const GridCartesian& other);
+	struct UnstructuredGrid* ug_;
+    };
+
+} // namespace Opm
+
+
 
 
 class ReservoirState {
@@ -107,41 +210,44 @@ private:
 
 class PressureSolver {
 public:
-    PressureSolver(UnstructuredGrid* g,
+    PressureSolver(const UnstructuredGrid* g,
 		   const Opm::IncompPropertiesInterface& props)
         : htrans_(g->cell_facepos[ g->number_of_cells ]),
           trans_ (g->number_of_faces),
           gpress_(g->cell_facepos[ g->number_of_cells ])
     {
-        tpfa_htrans_compute(g, props.permeability(), &htrans_[0]);
+	UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(g);
+        tpfa_htrans_compute(gg, props.permeability(), &htrans_[0]);
 
-        h_ = ifs_tpfa_construct(g);
+        h_ = ifs_tpfa_construct(gg);
     }
 
-    ~PressureSolver() {
+    ~PressureSolver()
+    {
         ifs_tpfa_destroy(h_);
     }
 
     template <class State>
     void
-    solve(UnstructuredGrid*            g     ,
+    solve(const UnstructuredGrid*      g     ,
           const ::std::vector<double>& totmob,
           const ::std::vector<double>& src   ,
-          State&                       state ) {
-
-        tpfa_eff_trans_compute(g, &totmob[0], &htrans_[0], &trans_[0]);
+          State&                       state )
+    {
+	UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(g);
+        tpfa_eff_trans_compute(gg, &totmob[0], &htrans_[0], &trans_[0]);
 
         // No gravity
         ::std::fill(gpress_.begin(), gpress_.end(), double(0.0));
 
-        ifs_tpfa_assemble(g, &trans_[0], &src[0], &gpress_[0], h_);
+        ifs_tpfa_assemble(gg, &trans_[0], &src[0], &gpress_[0], h_);
 
         using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
 
         CSRMatrixUmfpackSolver linsolve;
         linsolve.solve(h_->A, h_->b, h_->x);
 
-        ifs_tpfa_press_flux(g, &trans_[0], h_,
+        ifs_tpfa_press_flux(gg, &trans_[0], h_,
                             &state.pressure()[0],
                             &state.faceflux()[0]);
     }
@@ -275,6 +381,8 @@ static void toBothSat(const std::vector<double>& sw, std::vector<double>& sboth)
 }
 
 
+
+
 // --------------- Types needed to define transport solver ---------------
 
 class SimpleFluid2pWrappingProps
@@ -366,7 +474,6 @@ typedef Opm::ImplicitTransport<TransportModel,
 
 
 
-
 // ----------------- Main program -----------------
 int
 main(int argc, char** argv)
@@ -391,54 +498,59 @@ main(int argc, char** argv)
     }
 
     // If we have a "deck_filename", grid and props will be read from that.
-    // bool use_deck = param.has("deck_filename");
-    UnstructuredGrid* grid = 0;
+    bool use_deck = param.has("deck_filename");
+    //    UnstructuredGrid* grid = 0;
+    boost::scoped_ptr<Opm::GridInterface> grid;
     boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
-    // if (use_deck) {
-    // } else {
+    if (use_deck) {
+	std::string deck_filename = param.get<std::string>("deck_filename");
+	Opm::EclipseGridParser deck(deck_filename);
+	// Grid init
+	Opm::GridCornerpoint* cgrid = new Opm::GridCornerpoint(deck);
+	grid.reset(cgrid);
+	// Rock and fluid init
+	const int* im = cgrid->indexMap();
+	std::vector<int> global_cell(im, im + grid->c_grid()->number_of_cells);
+	props.reset(new Opm::IncompPropertiesFromDeck(deck, global_cell));
+    } else {
 	// Grid init.
 	const int nx = param.getDefault("nx", 100);
 	const int ny = param.getDefault("ny", 100);
 	const int nz = param.getDefault("nz", 1);
-	std::tr1::array<int, 3> grid_dims = {{ nx, ny, nz }};
-	std::tr1::array<double, 3> cell_size = {{ 1.0, 1.0, 1.0 }};
-	grid = create_cart_grid(nx, ny, nz);
-	// Rock init.
-	props.reset(new Opm::IncompPropertiesBasic(param, grid->dimensions, grid->number_of_cells));
-    // }
+	grid.reset(new Opm::GridCartesian(nx, ny, nz));
+	// Rock and fluid init.
+	props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
+    }
 
     // Extra rock init.
     std::vector<double> porevol;
-    compute_porevolume(grid, *props, porevol);
+    compute_porevolume(grid->c_grid(), *props, porevol);
     double tot_porevol = std::accumulate(porevol.begin(), porevol.end(), 0.0);
 
-    // Fluid init for transport solver.
-    // std::tr1::array<double, 2> mu  = {{ 0.001, 0.003 }};
-    // std::tr1::array<double, 2> rho = {{ 0.0, 0.0 }};
-    // TwophaseFluid fluid(mu, rho);
+    // Extra fluid init for transport solver.
     TwophaseFluid fluid(*props);
 
     // Solvers init.
-    PressureSolver psolver(grid, *props);
-    TransportModel  model  (fluid, *grid, porevol, 0, guess_old_solution);
+    PressureSolver psolver(grid->c_grid(), *props);
+    TransportModel  model  (fluid, *grid->c_grid(), porevol, 0, guess_old_solution);
     TransportSolver tsolver(model);
 
     // State-related and source-related variables init.
-    std::vector<double> totmob(grid->number_of_cells, 1.0);
-    ReservoirState state(grid);
+    std::vector<double> totmob(grid->c_grid()->number_of_cells, 1.0);
+    ReservoirState state(grid->c_grid());
     // We need a separate reorder_sat, because the reorder
     // code expects a scalar sw, not both sw and so.
-    std::vector<double> reorder_sat(grid->number_of_cells);
+    std::vector<double> reorder_sat(grid->c_grid()->number_of_cells);
     double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
-    std::vector<double> src   (grid->number_of_cells, 0.0);
+    std::vector<double> src   (grid->c_grid()->number_of_cells, 0.0);
     src[0]                         =  flow_per_sec;
-    src[grid->number_of_cells - 1] = -flow_per_sec;
+    src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
     TransportSource* tsrc = create_transport_source(2, 2);
     double ssrc[]   = { 1.0, 0.0 };
     double ssink[]  = { 0.0, 1.0 };
     double zdummy[] = { 0.0, 0.0 };
     append_transport_source(0, 2, 0, src[0], ssrc, zdummy, tsrc);
-    append_transport_source(grid->number_of_cells - 1, 2, 0,
+    append_transport_source(grid->c_grid()->number_of_cells - 1, 2, 0,
 			    src.back(), ssink, zdummy, tsrc);
     std::vector<double> reorder_src = src;
 
@@ -478,10 +590,10 @@ main(int argc, char** argv)
                   << "\n" << std::endl;
 
 	if (output) {
-	    outputState(grid_dims, cell_size, state, pstep, output_dir);
+	    // outputState(grid->c_grid()_dims, cell_size, state, pstep, output_dir);
 	}
 
-	psolver.solve(grid, totmob, src, state);
+	psolver.solve(grid->c_grid(), totmob, src, state);
 
 	if (use_reorder) {
 	    toWaterSat(state.saturation(), reorder_sat);
@@ -496,13 +608,13 @@ main(int argc, char** argv)
 	    twophasetransport(&porevol[0],
 			      &reorder_src[0],
 			      stepsize,
-			      grid,
+			      const_cast<UnstructuredGrid*>(grid->c_grid()),
 			      props.get(),
 			      &state.faceflux()[0],
 			      &reorder_sat[0]);
 	    toBothSat(reorder_sat, state.saturation());
 	} else {
-	    tsolver.solve(*grid, tsrc, stepsize, ctrl, state, linsolve, rpt);
+	    tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
 	    std::cout << rpt;
 	}
 
@@ -510,9 +622,8 @@ main(int argc, char** argv)
     }
 
     if (output) {
-	outputState(grid_dims, cell_size, state, num_psteps, output_dir);
+	// outputState(grid->c_grid()_dims, cell_size, state, num_psteps, output_dir);
     }
 
     destroy_transport_source(tsrc);
-    destroy_cart_grid(grid);
 }
