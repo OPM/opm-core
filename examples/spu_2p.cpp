@@ -718,7 +718,7 @@ main(int argc, char** argv)
     const double stepsize_days = param.getDefault("stepsize_days", 1.0);
     const double stepsize = Opm::unit::convert::from(stepsize_days, Opm::unit::day);
     const bool guess_old_solution = param.getDefault("guess_old_solution", false);
-    const bool use_reorder = param.getDefault("use_reorder", false);
+    const bool use_reorder = param.getDefault("use_reorder", true);
     const bool output = param.getDefault("output", true);
     std::string output_dir;
     if (output) {
