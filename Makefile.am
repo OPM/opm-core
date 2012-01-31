@@ -30,7 +30,9 @@ opm/core/fluid/blackoil/SinglePvtInterface.cpp          \
 opm/core/fluid/BlackoilPropertiesBasic.cpp              \
 opm/core/fluid/BlackoilPropertiesFromDeck.cpp           \
 opm/core/fluid/IncompPropertiesBasic.cpp                \
+opm/core/fluid/IncompPropertiesFromDeck.cpp             \
 opm/core/fluid/PvtPropertiesBasic.cpp                   \
+opm/core/fluid/PvtPropertiesIncompFromDeck.cpp          \
 opm/core/fluid/RockBasic.cpp                            \
 opm/core/fluid/RockFromDeck.cpp                         \
 opm/core/fluid/SaturationPropsBasic.cpp                 \
@@ -101,7 +103,9 @@ opm/core/fluid/BlackoilPropertiesBasic.hpp              \
 opm/core/fluid/BlackoilPropertiesFromDeck.hpp           \
 opm/core/fluid/IncompPropertiesInterface.hpp            \
 opm/core/fluid/IncompPropertiesBasic.hpp                \
+opm/core/fluid/IncompPropertiesFromDeck.hpp             \
 opm/core/fluid/PvtPropertiesBasic.hpp                   \
+opm/core/fluid/PvtPropertiesIncompFromDeck.hpp          \
 opm/core/fluid/RockBasic.hpp                            \
 opm/core/fluid/RockFromDeck.hpp                         \
 opm/core/fluid/SaturationPropsBasic.hpp                 \
