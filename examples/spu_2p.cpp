@@ -62,6 +62,7 @@
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <cassert>
 #include <cstddef>
@@ -102,16 +103,23 @@ namespace Opm
 	    const std::vector<double>& zcorn = deck.getFloatingPointValue("ZCORN");
 	    const std::vector<double>& coord = deck.getFloatingPointValue("COORD");
 	    const std::vector<int>& actnum = deck.getIntegerValue("ACTNUM");
-	    const std::vector<int>& dimens = deck.getIntegerValue("DIMENS");
+	    std::vector<int> dims;
+	    if (deck.hasField("DIMENS")) {
+		dims = deck.getIntegerValue("DIMENS");
+	    } else if (deck.hasField("SPECGRID")) {
+		dims = deck.getSPECGRID().dimensions;
+	    } else {
+		THROW("Deck must have either DIMENS or SPECGRID.");
+	    }
 
 	    // Collect in input struct for preprocessing.
 	    struct grdecl grdecl;
 	    grdecl.zcorn = &zcorn[0];
 	    grdecl.coord = &coord[0];
 	    grdecl.actnum = &actnum[0];
-	    grdecl.dims[0] = dimens[0];
-	    grdecl.dims[1] = dimens[1];
-	    grdecl.dims[2] = dimens[2];
+	    grdecl.dims[0] = dims[0];
+	    grdecl.dims[1] = dims[1];
+	    grdecl.dims[2] = dims[2];
 
 	    // Process and compute.
 	    preprocess(&grdecl, 0.0, &cpg_);
@@ -281,19 +289,18 @@ compute_porevolume(const UnstructuredGrid* g,
 
 
 template <class State>
-void outputState(const std::tr1::array<int, 3>& grid_dims,
-		 const std::tr1::array<double, 3>& cell_size,
+void outputState(const UnstructuredGrid* grid,
 		 const State& state,
 		 const int step,
 		 const std::string& output_dir)
 {
     std::ostringstream vtkfilename;
-    vtkfilename << output_dir << "/output-" << std::setw(3) << std::setfill('0') << step << ".vtk";
+    vtkfilename << output_dir << "/output-" << std::setw(3) << std::setfill('0') << step << ".vtu";
     std::ofstream vtkfile(vtkfilename.str().c_str());
     if (!vtkfile) {
 	THROW("Failed to open " << vtkfilename.str());
     }
-    writeVtkDataAllCartesian(grid_dims, cell_size, state, vtkfile);
+    writeVtkDataGeneralGrid(grid, state, vtkfile);
 }
 
 
@@ -355,6 +362,230 @@ void writeVtkDataAllCartesian(const std::tr1::array<int, 3>& dims,
     	} else {
     	    vtk_file << 0.0 << '\n';
     	}
+    }
+}
+
+typedef std::map<std::string, std::string> PMap;
+
+
+struct Tag
+{
+    Tag(const std::string& tag, const PMap& props, std::ostream& os)
+	: name_(tag), os_(os)
+    {
+	indent(os);
+	os << "<" << tag;
+	for (PMap::const_iterator it = props.begin(); it != props.end(); ++it) {
+	    os << " " << it->first << "=\"" << it->second << "\""; 
+	}
+	os << ">\n";
+	++indent_;
+    }
+    Tag(const std::string& tag, std::ostream& os)
+	: name_(tag), os_(os)
+    {
+	indent(os);
+	os << "<" << tag << ">\n";
+	++indent_;
+    }
+    ~Tag()
+    {
+	--indent_;
+	indent(os_);
+	os_ << "</" << name_ << ">\n";
+    }
+    static void indent(std::ostream& os)
+    {
+	for (int i = 0; i < indent_; ++i) {
+	    os << "  ";
+	}
+    }
+private:
+    static int indent_;
+    std::string name_;
+    std::ostream& os_;
+};
+
+int Tag::indent_ = 0;
+
+
+template <class State>
+void writeVtkDataGeneralGrid(const UnstructuredGrid* grid,
+			     const State& state,
+			     std::ostream& os)
+{
+    if (grid->dimensions != 3) {
+	THROW("Vtk output for 3d grids only");
+    }
+    os.precision(12);
+    os << "<?xml version=\"1.0\"?>\n";
+    PMap pm;
+    pm["type"] = "UnstructuredGrid";
+    Tag vtkfiletag("VTKFile", pm, os);
+    Tag ugtag("UnstructuredGrid", os);
+    int num_pts = grid->number_of_nodes;
+    int num_cells = grid->number_of_cells;
+    pm.clear();
+    pm["NumberOfPoints"] = boost::lexical_cast<std::string>(num_pts);
+    pm["NumberOfCells"] = boost::lexical_cast<std::string>(num_cells);
+    Tag piecetag("Piece", pm, os);
+    {
+	Tag pointstag("Points", os);
+	pm.clear();
+	pm["type"] = "Float64";
+	pm["Name"] = "Coordinates";
+	pm["NumberOfComponents"] = "3";
+	pm["format"] = "ascii";
+	Tag datag("DataArray", pm, os);
+	for (int i = 0; i < num_pts; ++i) {
+	    Tag::indent(os);
+	    os << grid->node_coordinates[3*i + 0] << ' '
+	       << grid->node_coordinates[3*i + 1] << ' '
+	       << grid->node_coordinates[3*i + 2] << '\n';
+	}
+    }
+    {
+	Tag cellstag("Cells", os);
+	pm.clear();
+	pm["type"] = "Int32";
+	pm["NumberOfComponents"] = "1";
+	pm["format"] = "ascii";
+	std::vector<int> cell_numpts;
+	cell_numpts.reserve(num_cells);
+	{
+	    pm["Name"] = "connectivity";
+	    Tag t("DataArray", pm, os);
+	    int hf = 0;
+	    for (int c = 0; c < num_cells; ++c) {
+		std::set<int> cell_pts;
+		for (; hf < grid->cell_facepos[c+1]; ++hf) {
+		    int f = grid->cell_faces[hf];
+		    const int* fnbeg = grid->face_nodes + grid->face_nodepos[f];
+		    const int* fnend = grid->face_nodes + grid->face_nodepos[f+1];
+		    cell_pts.insert(fnbeg, fnend);
+		}
+		cell_numpts.push_back(cell_pts.size());
+		Tag::indent(os);
+		std::copy(cell_pts.begin(), cell_pts.end(),
+			  std::ostream_iterator<int>(os, " "));
+		os << '\n';
+	    }
+	}
+	{
+	    pm["Name"] = "offsets";
+	    Tag t("DataArray", pm, os);
+	    int offset = 0;
+	    const int num_per_line = 10;
+	    for (int c = 0; c < num_cells; ++c) {
+		if (c % num_per_line == 0) {
+		    Tag::indent(os);
+		}
+		offset += cell_numpts[c];
+		os << offset << ' ';
+		if (c % num_per_line == num_per_line - 1
+		    || c == num_cells - 1) {
+		    os << '\n';
+		}
+	    }
+	}
+	std::vector<int> cell_foffsets;
+	cell_foffsets.reserve(num_cells);
+	{
+	    pm["Name"] = "faces";
+	    Tag t("DataArray", pm, os);
+	    const int* fp = grid->cell_facepos;
+	    int offset = 0;
+	    for (int c = 0; c < num_cells; ++c) {
+		Tag::indent(os);
+		os << fp[c+1] - fp[c] << '\n';
+		++offset;
+		for (int hf = fp[c]; hf < fp[c+1]; ++hf) {
+		    int f = grid->cell_faces[hf];
+		    const int* np = grid->face_nodepos;
+		    int f_num_pts = np[f+1] - np[f];
+		    Tag::indent(os);
+		    os << f_num_pts << ' ';
+		    ++offset;
+		    std::copy(grid->face_nodes + np[f],
+			      grid->face_nodes + np[f+1],
+			      std::ostream_iterator<int>(os, " "));
+		    os << '\n';
+		    offset += f_num_pts;
+		}
+		cell_foffsets.push_back(offset);
+	    }
+	}
+	{
+	    pm["Name"] = "faceoffsets";
+	    Tag t("DataArray", pm, os);
+	    const int num_per_line = 10;
+	    for (int c = 0; c < num_cells; ++c) {
+		if (c % num_per_line == 0) {
+		    Tag::indent(os);
+		}
+		os << cell_foffsets[c] << ' ';
+		if (c % num_per_line == num_per_line - 1
+		    || c == num_cells - 1) {
+		    os << '\n';
+		}
+	    }
+	}
+	{
+	    pm["type"] = "UInt8";
+	    pm["Name"] = "types";
+	    Tag t("DataArray", pm, os);
+	    const int num_per_line = 10;
+	    for (int c = 0; c < num_cells; ++c) {
+		if (c % num_per_line == 0) {
+		    Tag::indent(os);
+		}
+		os << "42 ";
+		if (c % num_per_line == num_per_line - 1
+		    || c == num_cells - 1) {
+		    os << '\n';
+		}
+	    }
+	}
+    }
+    {
+	pm.clear();
+	pm["Scalars"] = "saturation";
+	Tag celldatatag("CellData", pm, os);
+	pm.clear();
+	pm["type"] = "Int32";
+	pm["NumberOfComponents"] = "1";
+	pm["format"] = "ascii";
+	pm["type"] = "Float64";
+	{
+	    pm["Name"] = "pressure";
+	    Tag ptag("DataArray", pm, os);
+	    const int num_per_line = 5;
+	    for (int c = 0; c < num_cells; ++c) {
+		if (c % num_per_line == 0) {
+		    Tag::indent(os);
+		}
+		os << state.pressure()[c] << ' ';
+		if (c % num_per_line == num_per_line - 1
+		    || c == num_cells - 1) {
+		    os << '\n';
+		}
+	    }	    
+	}
+	{
+	    pm["Name"] = "saturation";
+	    Tag ptag("DataArray", pm, os);
+	    const int num_per_line = 5;
+	    for (int c = 0; c < num_cells; ++c) {
+		if (c % num_per_line == 0) {
+		    Tag::indent(os);
+		}
+		os << state.saturation()[2*c] << ' ';
+		if (c % num_per_line == num_per_line - 1
+		    || c == num_cells - 1) {
+		    os << '\n';
+		}
+	    }	    
+	}
     }
 }
 
@@ -499,7 +730,6 @@ main(int argc, char** argv)
 
     // If we have a "deck_filename", grid and props will be read from that.
     bool use_deck = param.has("deck_filename");
-    //    UnstructuredGrid* grid = 0;
     boost::scoped_ptr<Opm::GridInterface> grid;
     boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
     if (use_deck) {
@@ -590,7 +820,7 @@ main(int argc, char** argv)
                   << "\n" << std::endl;
 
 	if (output) {
-	    // outputState(grid->c_grid()_dims, cell_size, state, pstep, output_dir);
+	    outputState(grid->c_grid(), state, pstep, output_dir);
 	}
 
 	psolver.solve(grid->c_grid(), totmob, src, state);
@@ -622,7 +852,7 @@ main(int argc, char** argv)
     }
 
     if (output) {
-	// outputState(grid->c_grid()_dims, cell_size, state, num_psteps, output_dir);
+	outputState(grid->c_grid(), state, num_psteps, output_dir);
     }
 
     destroy_transport_source(tsrc);
