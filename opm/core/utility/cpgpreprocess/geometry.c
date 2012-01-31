@@ -215,7 +215,7 @@ compute_cell_geometry(int ndims, double *coords,
 
             volume += tet_volume;
             if(!(volume>0)){
-                fprintf(stderr, "Internal error in mex_compute_geometry: negative volume\n");
+                fprintf(stderr, "Internal error in compute_cell_geometry: negative volume\n");
             }
 
             /* face centroid of triangle  */
