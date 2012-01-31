@@ -83,7 +83,7 @@ namespace EclipseKeywords
           string("BULKMOD"),  string("YOUNGMOD"),   string("LAMEMOD"),
           string("SHEARMOD"), string("POISSONMOD"), string("PWAVEMOD"),
           string("MULTPV"),   string("PRESSURE"),   string("SGAS"),
-	  string("SWAT"),     string("SOIL")
+          string("SWAT"),     string("SOIL"),       string("RS")
         };
     const int num_floating_fields = sizeof(floating_fields) / sizeof(floating_fields[0]);
 
@@ -339,6 +339,7 @@ void EclipseGridParser::convertToSI()
         std::vector<double>& field = i->second;
         // Find the right unit.
         double unit = 1e100;
+        bool do_convert = true;
         if (key == "COORD" || key == "ZCORN") {
             unit = units_.length;
         } else if (key == "PERMX"  || key == "PERMY"  || key == "PERMZ"  ||
@@ -348,16 +349,20 @@ void EclipseGridParser::convertToSI()
         } else if (key == "PORO"     || key == "BULKMOD"  || key == "YOUNGMOD" ||
 		   key == "LAMEMOD"  || key == "SHEARMOD" || key == "POISSONMOD" ||
 		   key == "PWAVEMOD" || key == "MULTPV"   || key == "PWAVEMOD" ||
-		   key == "SGAS"     || key == "SWAT"     || key == "SOIL") {
+                   key == "SGAS"     || key == "SWAT"     || key == "SOIL"     ||
+                   key == "RS") {
             unit = 1.0;
+            do_convert = false; // Dimensionless keywords...
 	} else if (key == "PRESSURE") {
 	    unit = units_.pressure;	    
         } else {
             THROW("Units for field " << key << " not specified. Cannon convert to SI.");
         }
-        // Convert.
-        for (int j = 0; j < int(field.size()); ++j) {
-            field[j] = unit::convert::from(field[j], unit);
+
+        if (do_convert) {
+            for (std::vector<double>::size_type j = 0; j < field.size(); ++j) {
+                field[j] = unit::convert::from(field[j], unit);
+            }
         }
     }
 
