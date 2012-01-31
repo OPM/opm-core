@@ -17,19 +17,21 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_INCOMPPROPERTIESBASIC_HEADER_INCLUDED
-#define OPM_INCOMPPROPERTIESBASIC_HEADER_INCLUDED
+#ifndef OPM_INCOMPPROPERTIESFROMDECK_HEADER_INCLUDED
+#define OPM_INCOMPPROPERTIESFROMDECK_HEADER_INCLUDED
 
 #include <opm/core/fluid/IncompPropertiesInterface.hpp>
-#include <opm/core/fluid/RockBasic.hpp>
-#include <opm/core/fluid/PvtPropertiesBasic.hpp>
-#include <opm/core/fluid/SaturationPropsBasic.hpp>
+#include <opm/core/fluid/RockFromDeck.hpp>
+#include <opm/core/fluid/PvtPropertiesIncompFromDeck.hpp>
+#include <opm/core/fluid/SaturationPropsFromDeck.hpp>
+#include <opm/core/eclipse/EclipseGridParser.hpp>
 
 namespace Opm
 {
 
     /// Concrete class implementing the incompressible property
-    /// interface, reading all necessary input from parameters.
+    /// interface, reading all data and properties from eclipse deck
+    /// input.
     ///
     /// Supports variable number of spatial dimensions, called D.
     /// Supports variable number of phases, called P.
@@ -38,23 +40,18 @@ namespace Opm
     /// ordered cellwise:
     ///   [s^1_0 s^2_0 s^3_0 s^1_1 s^2_2 ... ]
     /// in which s^i_j denotes saturation of phase i in cell j.
-    class IncompPropertiesBasic : public IncompPropertiesInterface
+    class IncompPropertiesFromDeck : public IncompPropertiesInterface
     {
     public:
-        /// Construct from parameters.
-	/// The following parameters are accepted (defaults):
-	///    num_phases         (2)         Must be 1 or 2.
-	///    relperm_func       ("Linear")  Must be "Constant", "Linear" or "Quadratic".
-	///    rho1 [rho2, rho3]  (1.0e3)     Density in kg/m^3
-	///    mu1 [mu2, mu3]     (1.0)       Viscosity in cP
-	///    porosity           (1.0)       Porosity
-	///    permeability       (100.0)     Permeability in mD
-        IncompPropertiesBasic(const parameter::ParameterGroup& param,
-			      const int dim,
-			      const int num_cells);
+        /// Construct from deck and cell mapping.
+        /// \param  deck         eclipse input parser
+        /// \param  global_cell  mapping from cell indices (typically from a processed grid)
+        ///                      to logical cartesian indices consistent with the deck.
+        IncompPropertiesFromDeck(const EclipseGridParser& deck,
+				 const std::vector<int>& global_cell);
 
 	/// Destructor.
-        virtual ~IncompPropertiesBasic();
+        virtual ~IncompPropertiesFromDeck();
 
         // ---- Rock interface ----
 
@@ -115,10 +112,9 @@ namespace Opm
                               double* pc,
                               double* dpcds) const;
     private:
-        RockBasic rock_;
-	PvtPropertiesBasic pvt_;
-        SaturationPropsBasic satprops_;
-	std::vector<double> viscosity_;
+        RockFromDeck rock_;
+	PvtPropertiesIncompFromDeck pvt_;
+        SaturationPropsFromDeck satprops_;
     };
 
 
@@ -126,4 +122,4 @@ namespace Opm
 } // namespace Opm
 
 
-#endif // OPM_INCOMPPROPERTIESBASIC_HEADER_INCLUDED
+#endif // OPM_INCOMPPROPERTIESFROMDECK_HEADER_INCLUDED
