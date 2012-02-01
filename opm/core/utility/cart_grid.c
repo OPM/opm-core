@@ -31,6 +31,7 @@
 #include <stdio.h>
 
 #include <opm/core/grid.h>
+#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
 
 #include "cart_grid.h"
 
