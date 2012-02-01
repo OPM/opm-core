@@ -31,7 +31,7 @@ extern "C" {
 
     void compute_geometry     (struct UnstructuredGrid *g);
     
-    void free_cornerpoint_grid(struct UnstructuredGrid *g);
+    void free_grid(struct UnstructuredGrid *g);
 #ifdef __cplusplus
 }
 #endif

@@ -61,7 +61,7 @@ int main()
 
     g = read_grid(std::string("example"));
 
-    free_cornerpoint_grid(g);
+    free_grid(g);
     
     return 0;
 }

@@ -86,7 +86,7 @@ fill_cell_topology(struct processed_grid  *pg,
     return g->cell_facepos != NULL;
 }
 
-void free_cornerpoint_grid(struct UnstructuredGrid *g)
+void free_grid(struct UnstructuredGrid *g)
 {
     if (g!=NULL)
     {
@@ -212,7 +212,7 @@ preprocess (const struct grdecl *in, double tol)
    ok = allocate_geometry(g);
    if (!ok)
    {
-       free_cornerpoint_grid(g);
+       free_grid(g);
        g = NULL;
    }
    else

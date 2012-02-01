@@ -146,30 +146,6 @@ create_tensor_grid_3d(int nx, int ny, int nz, double x[], double y[], double z[]
 }
 
 /* --------------------------------------------------------------------- */
-
-void
-destroy_cart_grid(struct UnstructuredGrid *G)
-{
-    if (G != NULL) {
-        free(G->node_coordinates);
-
-        free(G->face_nodes);
-        free(G->face_nodepos);
-        free(G->face_cells);
-        free(G->face_centroids);
-        free(G->face_normals);
-        free(G->face_areas);
-
-        free(G->cell_faces);
-        free(G->cell_facepos);
-        free(G->cell_centroids);
-        free(G->cell_volumes);
-    }
-
-    free(G);
-}
-
-/* --------------------------------------------------------------------- */
 /* Static functions follow:                                              */
 /* --------------------------------------------------------------------- */
 
@@ -184,6 +160,9 @@ allocate_cart_grid_3d(int nx, int ny, int nz)
     {
 
         G->dimensions = 3;
+        G->cartdims[0] = nx;
+        G->cartdims[1] = ny;
+        G->cartdims[2] = nz;
 
         Nx  = nx+1;
         Ny  = ny+1;
@@ -211,6 +190,9 @@ allocate_cart_grid_3d(int nx, int ny, int nz)
         G->cell_centroids   = malloc(G->number_of_cells * 3 * sizeof *(G->cell_centroids));
         G->cell_volumes     = malloc(G->number_of_cells * 1 * sizeof *(G->cell_volumes));
 
+        G->global_cell      = NULL;
+        G->cell_facetag     = NULL;
+
         if ((G->face_nodes       == NULL ) ||
             (G->face_nodepos     == NULL ) ||
             (G->face_cells       == NULL ) ||
@@ -222,7 +204,7 @@ allocate_cart_grid_3d(int nx, int ny, int nz)
             (G->cell_centroids   == NULL ) ||
             (G->cell_volumes     == NULL )  )
         {
-            destroy_cart_grid(G);
+            free_grid(G);
             G = NULL;
         }
     }
@@ -687,7 +669,10 @@ allocate_cart_grid_2d(int nx, int ny)
     if (G != NULL)
     {
         G->dimensions = 2;
-
+        G->cartdims[0] = nx;
+        G->cartdims[1] = ny;
+        G->cartdims[2] = 1;
+        
         Nx  = nx+1;
         Ny  = ny+1;
 
@@ -712,6 +697,9 @@ allocate_cart_grid_2d(int nx, int ny)
         G->cell_centroids   = malloc(G->number_of_cells * 2 * sizeof *(G->cell_centroids));
         G->cell_volumes     = malloc(G->number_of_cells * 1 * sizeof *(G->cell_volumes));
 
+        G->global_cell      = NULL;
+        G->cell_facetag     = NULL;
+
         if ((G->face_nodes       == NULL ) ||
             (G->face_nodepos     == NULL ) ||
             (G->face_cells       == NULL ) ||
@@ -723,7 +711,7 @@ allocate_cart_grid_2d(int nx, int ny)
             (G->cell_centroids   == NULL ) ||
             (G->cell_volumes     == NULL )  )
         {
-            destroy_cart_grid(G);
+            free_grid(G);
             G = NULL;
         }
     }
@@ -905,7 +893,7 @@ int main()
         }
         fprintf(stderr, "\n");
     }
-    destroy_cart_grid(g);
+    free_grid(g);
     return 0;
 }
 #endif
