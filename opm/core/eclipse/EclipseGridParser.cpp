@@ -98,9 +98,9 @@ namespace EclipseKeywords
 	  string("EQUIL"),    string("PVCDO"),    string("TSTEP"),
 	  // The following fields only have a dummy implementation
 	  // that allows us to ignore them.
-          "SWFN",
-          "SOF2",
-          "TUNING"
+          string("SWFN"),
+          string("SOF2"),
+          string("TUNING")
         };
 
     const int num_special_fields = sizeof(special_fields) / sizeof(special_fields[0]);
