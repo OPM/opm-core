@@ -101,7 +101,7 @@ public:
         }
         assert(count == ngconn);
 
-        grid_t* g = grid_.c_grid();
+        UnstructuredGrid* g = grid_.c_grid();
         mim_ip_simple_all(g->number_of_cells, g->dimensions,
                           data_->max_ngconn,
                           g->cell_facepos, g->cell_faces,
@@ -158,7 +158,7 @@ public:
         double* wdp = 0;
 
         // Scale inner products and gravity terms by saturation-dependent factors.
-        grid_t* g = grid_.c_grid();
+        UnstructuredGrid* g = grid_.c_grid();
         Binv_mobilityweighted_.resize(Binv_.size());
         mim_ip_mobility_update(g->number_of_cells, g->cell_facepos, &total_mobilities[0],
                                &Binv_[0], &Binv_mobilityweighted_[0]);
@@ -258,7 +258,7 @@ public:
                                      "You must call assemble() (and solve the linear system) "
                                      "prior to calling faceFluxToCellFlux().");
         }
-        const grid_t& g = *(grid_.c_grid());
+        const UnstructuredGrid& g = *(grid_.c_grid());
         int num_cells = g.number_of_cells;
         cell_fluxes.resize(g.cell_facepos[num_cells]);
         for (int cell = 0; cell < num_cells; ++cell) {

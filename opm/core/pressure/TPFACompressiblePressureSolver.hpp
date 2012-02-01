@@ -164,7 +164,7 @@ public:
         if (state_ == Uninitialized) {
             throw std::runtime_error("Error in TPFACompressiblePressureSolver::assemble(): You must call init() prior to calling assemble().");
         }
-        grid_t* g = grid_.c_grid();
+        UnstructuredGrid* g = grid_.c_grid();
 
         // Boundary conditions.
         int num_faces = g->number_of_faces;
@@ -375,7 +375,7 @@ public:
                                      "You must call assemble() (and solve the linear system) "
                                      "prior to calling faceFluxToCellFlux().");
         }
-        const grid_t& g = *(grid_.c_grid());
+        const UnstructuredGrid& g = *(grid_.c_grid());
         int num_cells = g.number_of_cells;
         cell_fluxes.resize(g.cell_facepos[num_cells]);
         for (int cell = 0; cell < num_cells; ++cell) {

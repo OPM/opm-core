@@ -38,12 +38,12 @@ public:
         buildGeometry(grid);
     }
 
-    grid_t* c_grid()
+    UnstructuredGrid* c_grid()
     {
        return &g_;
     }
     /// Access the underlying C grid.
-    const grid_t* c_grid() const
+    const UnstructuredGrid* c_grid() const
     {
         return &g_;
     }
@@ -175,7 +175,7 @@ public:
     	}
     }
 private:
-    grid_t g_;
+    UnstructuredGrid g_;
     // Topology storage.
     std::vector<int> face_nodes_;
     std::vector<int> face_nodepos_;
