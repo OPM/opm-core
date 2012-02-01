@@ -82,22 +82,14 @@
 namespace Opm
 {
 
-    /// Abstract class for grids.
-    class GridInterface
-    {
-    public:
-	virtual ~GridInterface() {}
-	virtual const UnstructuredGrid* c_grid() const = 0;
-    };
-
-
 
     /// Concrete grid class constructing a
-    /// corner point grid from a deck.
-    class GridCornerpoint : public GridInterface
+    /// corner point grid from a deck,
+    /// or a cartesian grid.
+    class Grid
     {
     public:
-	GridCornerpoint(const Opm::EclipseGridParser& deck)
+	Grid(const Opm::EclipseGridParser& deck)
 	{
 	    // Extract data from deck.
 	    const std::vector<double>& zcorn = deck.getFloatingPointValue("ZCORN");
@@ -122,50 +114,23 @@ namespace Opm
 	    grdecl.dims[2] = dims[2];
 
 	    // Process and compute.
-	    preprocess(&grdecl, 0.0, &cpg_);
-	    compute_geometry(&cpg_);
+	    ug_ = preprocess(&grdecl, 0.0);
+	    compute_geometry(ug_);
 	}
 
-	~GridCornerpoint()
-	{
-	    free_cornerpoint_grid(&cpg_);
-	}
-
-	virtual const UnstructuredGrid* c_grid() const
-	{
-	    return &cpg_.grid;
-	}
-
-	const int* indexMap() const
-	{
-	    return cpg_.index_map;
-	}
-
-    private:
-	// Disable copying and assignment.
-	GridCornerpoint(const GridCornerpoint& other);
-	GridCornerpoint& operator=(const GridCornerpoint& other);
-	struct CornerpointGrid cpg_;
-    };
-
-    /// Concrete grid class constructing a
-    /// corner point grid from a deck.
-    class GridCartesian : public GridInterface
-    {
-    public:
-	GridCartesian(int nx, int ny)
+	Grid(int nx, int ny)
 	{
 	    ug_ = create_cart_grid_2d(nx, ny);
 	}
 
-	GridCartesian(int nx, int ny, int nz)
+	Grid(int nx, int ny, int nz)
 	{
 	    ug_ = create_cart_grid_3d(nx, ny, nz);
 	}
 
-	~GridCartesian()
+	~Grid()
 	{
-	    destroy_cart_grid(ug_);
+	    free_grid(ug_);
 	}
 
 	virtual const UnstructuredGrid* c_grid() const
@@ -175,8 +140,8 @@ namespace Opm
 
     private:
 	// Disable copying and assignment.
-	GridCartesian(const GridCartesian& other);
-	GridCartesian& operator=(const GridCartesian& other);
+	Grid(const Grid& other);
+	Grid& operator=(const Grid& other);
 	struct UnstructuredGrid* ug_;
     };
 
@@ -730,24 +695,23 @@ main(int argc, char** argv)
 
     // If we have a "deck_filename", grid and props will be read from that.
     bool use_deck = param.has("deck_filename");
-    boost::scoped_ptr<Opm::GridInterface> grid;
+    boost::scoped_ptr<Opm::Grid> grid;
     boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
     if (use_deck) {
 	std::string deck_filename = param.get<std::string>("deck_filename");
 	Opm::EclipseGridParser deck(deck_filename);
 	// Grid init
-	Opm::GridCornerpoint* cgrid = new Opm::GridCornerpoint(deck);
-	grid.reset(cgrid);
+	grid.reset(new Opm::Grid(deck));
 	// Rock and fluid init
-	const int* im = cgrid->indexMap();
-	std::vector<int> global_cell(im, im + grid->c_grid()->number_of_cells);
+	const int* gc = grid->c_grid()->global_cell;
+	std::vector<int> global_cell(gc, gc + grid->c_grid()->number_of_cells);
 	props.reset(new Opm::IncompPropertiesFromDeck(deck, global_cell));
     } else {
 	// Grid init.
 	const int nx = param.getDefault("nx", 100);
 	const int ny = param.getDefault("ny", 100);
 	const int nz = param.getDefault("nz", 1);
-	grid.reset(new Opm::GridCartesian(nx, ny, nz));
+	grid.reset(new Opm::Grid(nx, ny, nz));
 	// Rock and fluid init.
 	props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
     }
