@@ -145,7 +145,7 @@ count_blkdof(struct ifsh_ms_impl *pimpl)
 
 /* ---------------------------------------------------------------------- */
 static int
-ifsh_ms_vectors_construct(grid_t *G, struct ifsh_ms_impl *pimpl)
+ifsh_ms_vectors_construct(struct UnstructuredGrid *G, struct ifsh_ms_impl *pimpl)
 /* ---------------------------------------------------------------------- */
 {
     size_t nb, n_fs_gconn;
@@ -186,7 +186,7 @@ ifsh_ms_vectors_construct(grid_t *G, struct ifsh_ms_impl *pimpl)
 
 /* ---------------------------------------------------------------------- */
 static void
-set_impl_pointers(grid_t *G, struct ifsh_ms_data *h)
+set_impl_pointers(struct UnstructuredGrid *G, struct ifsh_ms_data *h)
 /* ---------------------------------------------------------------------- */
 {
     size_t nb, n_fs_gconn;
@@ -289,7 +289,7 @@ ifsh_ms_matrix_construct(size_t m, size_t nnz, size_t nb,
 
 /* ---------------------------------------------------------------------- */
 static struct ifsh_ms_impl *
-ifsh_ms_impl_construct(grid_t       *G     ,
+ifsh_ms_impl_construct(struct UnstructuredGrid       *G     ,
                        const int    *p     ,
                        const double *perm  ,
                        const double *src   ,
@@ -373,7 +373,7 @@ average_flux(size_t nf, const int *N, double *flux)          /* Poor name */
 
 /* ---------------------------------------------------------------------- */
 struct ifsh_ms_data *
-ifsh_ms_construct(grid_t       *G     ,
+ifsh_ms_construct(struct UnstructuredGrid       *G     ,
                   const int    *p     ,
                   const double *perm  ,
                   const double *src   ,
@@ -494,7 +494,7 @@ ifsh_ms_assemble(const double        *src   ,
 
 /* ---------------------------------------------------------------------- */
 void
-ifsh_ms_press_flux(grid_t *G, struct ifsh_ms_data *h,
+ifsh_ms_press_flux(struct UnstructuredGrid *G, struct ifsh_ms_data *h,
                    double *cpress, double *fflux)
 /* ---------------------------------------------------------------------- */
 {

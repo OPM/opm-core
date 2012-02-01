@@ -8,7 +8,7 @@
 
 #include <opm/core/utility/cpgpreprocess/readvector.hpp>
 
-static struct CornerpointGrid
+static struct UnstructuredGrid*
 read_grid(const std::string& dir)
 {
     std::string fn;
@@ -38,13 +38,7 @@ read_grid(const std::string& dir)
     grdecl.dims[1] = dimens[1];
     grdecl.dims[2] = dimens[2];
 
-    struct CornerpointGrid G;
-
-    preprocess(&grdecl, 0.0, &G);
-
-    compute_geometry(&G);
-
-    struct UnstructuredGrid *g = &G.grid;
+    struct UnstructuredGrid *g= preprocess(&grdecl, 0.0);
 
     double vol = 0.0;
     for (int c = 0; c < g->number_of_cells; c++) {
@@ -54,20 +48,20 @@ read_grid(const std::string& dir)
 
     for (int c = 0, i = 0; c < g->number_of_cells; c++) {
         for (; i < g->cell_facepos[c + 1]; i++) {
-            std::cout << "(c,i) = (" << c << "," << G.cface_tag[i] << ")\n";
+            std::cout << "(c,i) = (" << c << "," << g->cell_facetag[i] << ")\n";
         }
     }
 
-    return G;
+    return g;
 }
 
 int main()
 {
-    struct CornerpointGrid G;
+    struct UnstructuredGrid *g;
 
-    G = read_grid(std::string("example"));
+    g = read_grid(std::string("example"));
 
-    free_cornerpoint_grid(&G);
+    free_cornerpoint_grid(g);
     
     return 0;
 }

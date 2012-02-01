@@ -247,7 +247,7 @@ ifsh_assemble_well(flowbc_t        *bc,
  * the well connections represented by 'W'. */
 /* ---------------------------------------------------------------------- */
 struct fsh_data *
-ifsh_construct(grid_t *G, well_t *W)
+ifsh_construct(struct UnstructuredGrid *G, well_t *W)
 /* ---------------------------------------------------------------------- */
 {
     int              nc, ngconn_tot;

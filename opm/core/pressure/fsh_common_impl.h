@@ -54,7 +54,7 @@ struct fsh_impl *
 fsh_impl_allocate_basic(size_t idata_sz, size_t ddata_sz);
 
 void
-fsh_count_grid_dof(grid_t *G, int *max_ngdof, size_t *sum_ngdof2);
+fsh_count_grid_dof(struct UnstructuredGrid *G, int *max_ngdof, size_t *sum_ngdof2);
 
 int
 fsh_impose_bc(int              ndof,
@@ -77,7 +77,7 @@ void
 fsh_define_linsys_arrays(struct fsh_data *h);
 
 void
-fsh_compute_table_sz(grid_t *G, well_t *W, int max_ngconn,
+fsh_compute_table_sz(struct UnstructuredGrid *G, well_t *W, int max_ngconn,
                      size_t *nnu, size_t *idata_sz, size_t *ddata_sz);
 
 #endif /* OPM_FSH_COMMON_IMPL_HEADER_INCLUDED */

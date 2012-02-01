@@ -13,7 +13,7 @@
 
 /* Twophase mobility-weighted upwind */
 void
-spu_explicit(grid_t *g, double *s0, double *s, double *mob,
+spu_explicit(struct UnstructuredGrid *g, double *s0, double *s, double *mob,
              double *dflux, double *gflux, double *src,
              double dt)
 {

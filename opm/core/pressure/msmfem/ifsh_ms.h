@@ -44,7 +44,7 @@ struct ifsh_ms_data {
 
 
 struct ifsh_ms_data *
-ifsh_ms_construct(grid_t       *G,
+ifsh_ms_construct(struct UnstructuredGrid       *G,
                   const int    *p,
                   const double *perm,
                   const double *src,
@@ -60,7 +60,7 @@ ifsh_ms_assemble(const double        *src,
                  struct ifsh_ms_data *h);
 
 void
-ifsh_ms_press_flux(grid_t *G, struct ifsh_ms_data *h,
+ifsh_ms_press_flux(struct UnstructuredGrid *G, struct ifsh_ms_data *h,
                    double *cpress, double *fflux);
 
 

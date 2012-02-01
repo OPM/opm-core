@@ -38,7 +38,7 @@
  * substitution process, projected half-contact fluxes. */
 /* ---------------------------------------------------------------------- */
 void
-fsh_press_flux(grid_t *G,
+fsh_press_flux(struct UnstructuredGrid *G,
                const double *Binv, const double *gpress,
                struct fsh_data *h,
                double *cpress, double *fflux,

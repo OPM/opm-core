@@ -17,12 +17,12 @@ typedef struct Sparse {
 
 
 void 
-spu_implicit_assemble(grid_t *g, double *s0, double *s, double *mob, double *dmob,
+spu_implicit_assemble(struct UnstructuredGrid *g, double *s0, double *s, double *mob, double *dmob,
                       double *dflux, double *gflux, double *src, double dt, sparse_t *S, 
                       double *b, char *work);
 
 double 
-spu_implicit(grid_t *g, double *s0, double *s, double h, double x0, int ntab, double *tab,
+spu_implicit(struct UnstructuredGrid *g, double *s0, double *s, double h, double x0, int ntab, double *tab,
               double *dflux, double *gflux, double *src, double dt, 
              void (*linear_solver)(int, int*, int*, double *, double *, double *));
 

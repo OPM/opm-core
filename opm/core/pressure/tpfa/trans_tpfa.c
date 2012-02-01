@@ -10,7 +10,7 @@
 /* htrans <- sum(C(:,i) .* K(cellNo,:) .* N(:,j), 2) ./ sum(C.*C, 2) */
 /* ---------------------------------------------------------------------- */
 void
-tpfa_htrans_compute(grid_t *G, const double *perm, double *htrans)
+tpfa_htrans_compute(struct UnstructuredGrid *G, const double *perm, double *htrans)
 /* ---------------------------------------------------------------------- */
 {
     int    c, d, f, i, j;
@@ -61,7 +61,7 @@ tpfa_htrans_compute(grid_t *G, const double *perm, double *htrans)
 
 /* ---------------------------------------------------------------------- */
 void
-tpfa_trans_compute(grid_t *G, const double *htrans, double *trans)
+tpfa_trans_compute(struct UnstructuredGrid *G, const double *htrans, double *trans)
 /* ---------------------------------------------------------------------- */
 {
     int c, i, f;
@@ -86,7 +86,7 @@ tpfa_trans_compute(grid_t *G, const double *htrans, double *trans)
 
 /* ---------------------------------------------------------------------- */
 void
-tpfa_eff_trans_compute(grid_t       *G,
+tpfa_eff_trans_compute(struct UnstructuredGrid       *G,
                        const double *totmob,
                        const double *htrans,
                        double       *trans)

@@ -72,7 +72,7 @@ fsh_destroy(struct fsh_data *h);
  *  given grid and well pattern.
  */
 struct fsh_data *
-cfsh_construct(grid_t *G, well_t *W);
+cfsh_construct(struct UnstructuredGrid *G, well_t *W);
 
 
 
@@ -102,7 +102,7 @@ cfsh_assemble(flowbc_t        *bc,
  *  @param W The wells
  */
 struct fsh_data *
-ifsh_construct(grid_t *G, well_t *W);
+ifsh_construct(struct UnstructuredGrid *G, well_t *W);
 
 
 
@@ -161,7 +161,7 @@ ifsh_assemble(flowbc_t        *bc,
  * @param wflux[out] \TODO
  */
 void
-fsh_press_flux(grid_t *G,
+fsh_press_flux(struct UnstructuredGrid *G,
                const double *Binv, const double *gpress,
                struct fsh_data *h,
                double *cpress, double *fflux,

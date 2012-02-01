@@ -29,7 +29,7 @@ extern "C" {
 #include <opm/core/linalg/sparse_sys.h>
 
 struct CSRMatrix *
-hybsys_define_globconn(grid_t *G, well_t *W);
+hybsys_define_globconn(struct UnstructuredGrid *G, well_t *W);
 
 
 void

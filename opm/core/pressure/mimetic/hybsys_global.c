@@ -59,7 +59,7 @@ deallocate_well_dofset(size_t nw, struct hash_set **wia)
  * successful and NULL otherwise. */
 /* ---------------------------------------------------------------------- */
 static struct hash_set **
-allocate_well_dofset(grid_t *G, well_t *W)
+allocate_well_dofset(struct UnstructuredGrid *G, well_t *W)
 /* ---------------------------------------------------------------------- */
 {
     int w, i, c, ok;
@@ -100,7 +100,7 @@ allocate_well_dofset(grid_t *G, well_t *W)
  * if applicable. */
 /* ---------------------------------------------------------------------- */
 static void
-count_conn_per_row_grid(grid_t *G, struct CSRMatrix *A)
+count_conn_per_row_grid(struct UnstructuredGrid *G, struct CSRMatrix *A)
 /* ---------------------------------------------------------------------- */
 {
     int    c, nc, *ia, *ja;
@@ -132,7 +132,7 @@ count_conn_per_row_grid(grid_t *G, struct CSRMatrix *A)
  * Returns 1 if successful, and zero otherwise. */
 /* ---------------------------------------------------------------------- */
 static int
-count_conn_per_row_well(grid_t *G, well_t *W,
+count_conn_per_row_well(struct UnstructuredGrid *G, well_t *W,
                         int              *cwpos,
                         int              *cwells,
                         struct hash_set  **wia,
@@ -201,7 +201,7 @@ fill_self_connections(struct CSRMatrix *A)
 /* Fill self-to-other DOF connections (i.e., define 'ja') for grid. */
 /* ---------------------------------------------------------------------- */
 static void
-fill_grid_connections(grid_t *G, struct CSRMatrix *A)
+fill_grid_connections(struct UnstructuredGrid *G, struct CSRMatrix *A)
 /* ---------------------------------------------------------------------- */
 {
     int c, i, j, n;
@@ -269,7 +269,7 @@ fill_well_connections(int nf, int nw,
  * otherwise. */
 /* ---------------------------------------------------------------------- */
 struct CSRMatrix *
-hybsys_define_globconn(grid_t *G, well_t *W)
+hybsys_define_globconn(struct UnstructuredGrid *G, well_t *W)
 /* ---------------------------------------------------------------------- */
 {
     int nw, ok;

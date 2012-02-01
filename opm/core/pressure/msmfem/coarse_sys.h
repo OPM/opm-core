@@ -51,7 +51,7 @@ typedef void (*LocalSolver)(struct CSRMatrix *A,
                             double           *x);
 
 struct coarse_sys *
-coarse_sys_construct(grid_t *g, const int   *p,
+coarse_sys_construct(struct UnstructuredGrid *g, const int   *p,
                      struct coarse_topology *ct,
                      const double           *perm,
                      const double           *src,
@@ -81,7 +81,7 @@ coarse_sys_compute_Binv(int                nb,
                         double            *work);
 
 void
-coarse_sys_compute_fs_flux(grid_t                 *g,
+coarse_sys_compute_fs_flux(struct UnstructuredGrid                 *g,
                            struct coarse_topology *ct,
                            struct coarse_sys      *sys,
                            const int              *b2c_pos,

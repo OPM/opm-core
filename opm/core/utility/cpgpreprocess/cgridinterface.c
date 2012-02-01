@@ -14,20 +14,17 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "geometry.h"
-#include "cgridinterface.h"
+#include <opm/core/utility/cpgpreprocess/geometry.h>
+#include <opm/core/utility/cpgpreprocess/preprocess.h>
+#include <opm/core/grid.h>
 
 
 static int
 fill_cell_topology(struct processed_grid  *pg,
-                   struct CornerpointGrid *G )
+                   struct UnstructuredGrid *g )
 {
     int    f, c1, c2, tag;
     size_t c, nc, nhf;
-
-    struct UnstructuredGrid *g;
-
-    g = (struct UnstructuredGrid *) G;
 
     nc = g->number_of_cells;
 
@@ -54,11 +51,11 @@ fill_cell_topology(struct processed_grid  *pg,
 
         g->cell_faces = malloc(nhf * sizeof *g->cell_faces);
 
-        /* struct CornerpointGrid member */
-        G->cface_tag  = malloc(nhf * sizeof *G->cface_tag );
-
-        if ((g->cell_faces == NULL) || (G->cface_tag == NULL)) {
-            free(G->cface_tag);     G->cface_tag    = NULL;
+        /* struct UnstructuredGrid member */
+        g->cell_facetag  = malloc(nhf * sizeof *g->cell_facetag );
+        
+        if ((g->cell_faces == NULL) || (g->cell_facetag == NULL)) {
+            free(g->cell_facetag);  g->cell_facetag = NULL;
             free(g->cell_faces);    g->cell_faces   = NULL;
             free(g->cell_facepos);  g->cell_facepos = NULL;
         }
@@ -71,19 +68,15 @@ fill_cell_topology(struct processed_grid  *pg,
             c2  = g->face_cells[2*f + 1];
 
             if (c1 >= 0) {
-                g->cell_faces[ g->cell_facepos[c1 + 1] ] = f;
-
-                /* struct CornerpointGrid member (!) */
-                G->cface_tag [ g->cell_facepos[c1 + 1] ] = tag + 1;
+                g->cell_faces   [ g->cell_facepos[c1 + 1] ] = f;
+                g->cell_facetag [ g->cell_facepos[c1 + 1] ] = tag + 1;
 
                 g->cell_facepos[c1 + 1] += 1;
             }
 
             if (c2 >= 0) {
-                g->cell_faces[ g->cell_facepos[c2 + 1] ] = f;
-
-                /* struct CornerpointGrid member (!) */
-                G->cface_tag [ g->cell_facepos[c2 + 1] ] = tag + 0;
+                g->cell_faces   [ g->cell_facepos[c2 + 1] ] = f;
+                g->cell_facetag [ g->cell_facepos[c2 + 1] ] = tag + 0;
 
                 g->cell_facepos[c2 + 1] += 1;
             }
@@ -91,6 +84,30 @@ fill_cell_topology(struct processed_grid  *pg,
     }
 
     return g->cell_facepos != NULL;
+}
+
+void free_cornerpoint_grid(struct UnstructuredGrid *g)
+{
+    if (g!=NULL)
+    {
+        free(g->face_nodes);
+        free(g->face_nodepos);
+        free(g->face_cells);
+        free(g->cell_facepos);
+        free(g->cell_faces);
+        
+        free(g->node_coordinates);
+        free(g->face_centroids);
+        free(g->face_areas);
+        free(g->face_normals);
+        free(g->cell_centroids);
+        free(g->cell_volumes);
+        
+        free(g->global_cell);
+        free(g->cell_facetag);
+    }
+
+    free(g);
 }
 
 static int
@@ -122,100 +139,93 @@ allocate_geometry(struct UnstructuredGrid *g)
     return ok == 5;
 }
 
-void preprocess         (const struct grdecl   *in,
-                         double                tol,
-                         struct CornerpointGrid *G)
+
+void compute_geometry(struct UnstructuredGrid *g)
 {
+    assert (g != NULL);
+    if (g!=NULL)
+    {
+        assert (g->dimensions == 3);
+        
+        assert (g->face_centroids != NULL);
+        assert (g->face_normals   != NULL);
+        assert (g->face_areas     != NULL);
+        assert (g->cell_centroids != NULL);
+        assert (g->cell_volumes   != NULL);
+        
+        compute_face_geometry(g->dimensions  , g->node_coordinates,
+                              g->number_of_faces, g->face_nodepos,
+                              g->face_nodes, g->face_normals,
+                              g->face_centroids, g->face_areas);
+        
+        compute_cell_geometry(g->dimensions, g->node_coordinates,
+                              g->face_nodepos, g->face_nodes,
+                              g->face_cells, g->face_normals,
+                              g->face_centroids, g->number_of_cells,
+                              g->cell_facepos, g->cell_faces,
+                              g->cell_centroids, g->cell_volumes);
+    }
+}
+
+
+struct UnstructuredGrid *
+preprocess (const struct grdecl *in, double tol)
+{
+    struct UnstructuredGrid *g;
    int                      ok;
    struct processed_grid    pg;
-   struct UnstructuredGrid *base;
-
-   base = (struct UnstructuredGrid *) G;
+   
+   g = malloc(1 * sizeof *g);
+   if (g == NULL)
+   {
+       return NULL;
+   }
 
    process_grdecl(in, tol, &pg);
 
    /*
-    *  General grid interface
+    *  Convert "struct processed_grid" to "struct UnstructuredGrid".
     */
-   base->dimensions = 3;
+   g->dimensions = 3;
 
-   base->number_of_nodes  = pg.number_of_nodes;
-   base->number_of_faces  = pg.number_of_faces;
-   base->number_of_cells  = pg.number_of_cells;
+   g->number_of_nodes  = pg.number_of_nodes;
+   g->number_of_faces  = pg.number_of_faces;
+   g->number_of_cells  = pg.number_of_cells;
 
-   base->node_coordinates = pg.node_coordinates;
+   g->node_coordinates = pg.node_coordinates;
 
-   base->face_nodes       = pg.face_nodes;
-   base->face_nodepos     = pg.face_ptr;
-   base->face_cells       = pg.face_neighbors;
+   g->face_nodes       = pg.face_nodes;
+   g->face_nodepos     = pg.face_ptr;
+   g->face_cells       = pg.face_neighbors;
 
-   base->face_centroids   = NULL;
-   base->face_normals     = NULL;
-   base->face_areas       = NULL;
+   g->face_centroids   = NULL;
+   g->face_normals     = NULL;
+   g->face_areas       = NULL;
 
-   fill_cell_topology(&pg, G);
+   g->cell_centroids   = NULL;
+   g->cell_volumes     = NULL;
 
-   base->cell_centroids   = NULL;
-   base->cell_volumes     = NULL;
+   /* allocate and fill g->cell_faces/g->cell_facepos and
+    * g->cell_facetag */
+   fill_cell_topology(&pg, g);
 
-   ok = allocate_geometry(base);
+   ok = allocate_geometry(g);
+   if (!ok)
+   {
+       free_cornerpoint_grid(g);
+       g = NULL;
+   }
+   else
+   {
+   
+       compute_geometry(g);
+       
+       g->cartdims[0]      = pg.dimensions[0];
+       g->cartdims[1]      = pg.dimensions[1];
+       g->cartdims[2]      = pg.dimensions[2];
+       
+       g->global_cell      = pg.local_cell_index;
+   }
 
-   /*
-    *  Cornerpoint grid interface
-    */
-   G->cartdims[0]      = pg.dimensions[0];
-   G->cartdims[1]      = pg.dimensions[1];
-   G->cartdims[2]      = pg.dimensions[2];
-
-   free(pg.face_tag);
-
-   G->index_map = pg.local_cell_index;
-}
-
-void free_cornerpoint_grid(struct CornerpointGrid *G)
-{
-    free(G->grid.face_nodes);
-    free(G->grid.face_nodepos);
-    free(G->grid.face_cells);
-    free(G->grid.cell_facepos);
-    free(G->grid.cell_faces);
-
-    free(G->grid.node_coordinates);
-    free(G->grid.face_centroids);
-    free(G->grid.face_areas);
-    free(G->grid.face_normals);
-    free(G->grid.cell_centroids);
-    free(G->grid.cell_volumes);
-
-    free(G->index_map);
-    free(G->cface_tag);
-}
-
-void compute_geometry(struct CornerpointGrid *G)
-{
-    struct UnstructuredGrid *g;
-
-    assert (G != NULL);
-
-    g = (struct UnstructuredGrid *) G;
-
-    assert (g->dimensions == 3);
-
-    assert (g->face_centroids != NULL);
-    assert (g->face_normals   != NULL);
-    assert (g->face_areas     != NULL);
-    assert (g->cell_centroids != NULL);
-    assert (g->cell_volumes   != NULL);
-
-    compute_face_geometry(g->dimensions  , g->node_coordinates,
-                          g->number_of_faces, g->face_nodepos,
-                          g->face_nodes, g->face_normals,
-                          g->face_centroids, g->face_areas);
-
-    compute_cell_geometry(g->dimensions, g->node_coordinates,
-                          g->face_nodepos, g->face_nodes,
-                          g->face_cells, g->face_normals,
-                          g->face_centroids, g->number_of_cells,
-                          g->cell_facepos, g->cell_faces,
-                          g->cell_centroids, g->cell_volumes);
+   return g;
 }

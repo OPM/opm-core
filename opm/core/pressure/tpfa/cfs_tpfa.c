@@ -78,7 +78,7 @@ deallocate_densrat(struct densrat_util *ratio)
 
 /* ---------------------------------------------------------------------- */
 static struct densrat_util *
-allocate_densrat(grid_t *g, well_t *w, int np)
+allocate_densrat(struct UnstructuredGrid *g, well_t *w, int np)
 /* ---------------------------------------------------------------------- */
 {
     int    ntotperf;
@@ -137,7 +137,7 @@ impl_deallocate(struct cfs_tpfa_impl *pimpl)
 
 /* ---------------------------------------------------------------------- */
 static struct cfs_tpfa_impl *
-impl_allocate(grid_t *G, well_t *W, int np)
+impl_allocate(struct UnstructuredGrid *G, well_t *W, int np)
 /* ---------------------------------------------------------------------- */
 {
     size_t                nnu, ngconn, nwperf;
@@ -189,7 +189,7 @@ impl_allocate(grid_t *G, well_t *W, int np)
 
 /* ---------------------------------------------------------------------- */
 static struct CSRMatrix *
-construct_matrix(grid_t *G, well_t *W)
+construct_matrix(struct UnstructuredGrid *G, well_t *W)
 /* ---------------------------------------------------------------------- */
 {
     int    f, c1, c2, w, i, nc, nnu;
@@ -281,7 +281,7 @@ construct_matrix(grid_t *G, well_t *W)
 
 /* ---------------------------------------------------------------------- */
 static void
-solve_cellsys_core(grid_t       *G   ,
+solve_cellsys_core(struct UnstructuredGrid       *G   ,
                    size_t        sz  ,
                    const double *Ac  ,
                    const double *bf  ,
@@ -359,7 +359,7 @@ small_matvec(size_t        n,
 
 /* ---------------------------------------------------------------------- */
 static void
-solve_cellsys(grid_t              *G ,
+solve_cellsys(struct UnstructuredGrid              *G ,
               size_t               sz,
               const double        *Ac,
               const double        *bf,
@@ -373,7 +373,7 @@ solve_cellsys(grid_t              *G ,
 
 /* ---------------------------------------------------------------------- */
 static void
-set_dynamic_trans(grid_t                  *G    ,
+set_dynamic_trans(struct UnstructuredGrid                  *G    ,
                   const double            *trans,
                   struct compr_quantities *cq   ,
                   struct densrat_util     *ratio)
@@ -391,7 +391,7 @@ set_dynamic_trans(grid_t                  *G    ,
 
 /* ---------------------------------------------------------------------- */
 static void
-set_dynamic_grav(grid_t                  *G        ,
+set_dynamic_grav(struct UnstructuredGrid                  *G        ,
                  flowbc_t                *bc       ,
                  const double            *trans    ,
                  const double            *gravcap_f,
@@ -460,7 +460,7 @@ set_dynamic_grav_well(well_t                 *W,
 
 /* ---------------------------------------------------------------------- */
 static void
-sum_phase_contrib(grid_t       *G  ,
+sum_phase_contrib(struct UnstructuredGrid       *G  ,
                   size_t        sz ,
                   const double *xcf,
                   double       *sum)
@@ -485,7 +485,7 @@ sum_phase_contrib(grid_t       *G  ,
 
 /* ---------------------------------------------------------------------- */
 static void
-compute_densrat_update(grid_t                  *G    ,
+compute_densrat_update(struct UnstructuredGrid                  *G    ,
                        struct compr_quantities *cq   ,
                        struct densrat_util     *ratio,
                        double                  *q)
@@ -558,7 +558,7 @@ compute_densrat_update_well(well_t                  *W    ,
 
 /* ---------------------------------------------------------------------- */
 static void
-compute_psys_contrib(grid_t                  *G,
+compute_psys_contrib(struct UnstructuredGrid                  *G,
                      well_t                  *W,
                      struct completion_data  *wdata,
                      flowbc_t                *bc,
@@ -627,7 +627,7 @@ compute_psys_contrib(grid_t                  *G,
 
 /* ---------------------------------------------------------------------- */
 static int
-assemble_cell_contrib(grid_t               *G,
+assemble_cell_contrib(struct UnstructuredGrid               *G,
                       flowbc_t             *bc,
                       const double         *src,
                       struct cfs_tpfa_data *h)
@@ -734,7 +734,7 @@ assemble_well_contrib(size_t                nc,
 
 /* ---------------------------------------------------------------------- */
 static void
-compute_fpress(grid_t       *G,
+compute_fpress(struct UnstructuredGrid       *G,
                flowbc_t     *bc,
                int           np,
                const double *htrans,
@@ -790,7 +790,7 @@ compute_fpress(grid_t       *G,
 
 /* ---------------------------------------------------------------------- */
 static void
-compute_flux(grid_t       *G,
+compute_flux(struct UnstructuredGrid       *G,
              flowbc_t     *bc,
              int           np,
              const double *trans,
@@ -896,7 +896,7 @@ is_incompr(int nc, struct compr_quantities *cq)
 
 /* ---------------------------------------------------------------------- */
 struct cfs_tpfa_data *
-cfs_tpfa_construct(grid_t *G, well_t *W, int nphases)
+cfs_tpfa_construct(struct UnstructuredGrid *G, well_t *W, int nphases)
 /* ---------------------------------------------------------------------- */
 {
     size_t                nc, nf, ngconn, nwconn;
@@ -950,7 +950,7 @@ cfs_tpfa_construct(grid_t *G, well_t *W, int nphases)
 
 /* ---------------------------------------------------------------------- */
 void
-cfs_tpfa_assemble(grid_t                  *G,
+cfs_tpfa_assemble(struct UnstructuredGrid                  *G,
                   double                   dt,
                   well_t                  *W,
                   flowbc_t                *bc,
@@ -992,7 +992,7 @@ cfs_tpfa_assemble(grid_t                  *G,
 
 /* ---------------------------------------------------------------------- */
 void
-cfs_tpfa_press_flux(grid_t                 *G,
+cfs_tpfa_press_flux(struct UnstructuredGrid                 *G,
                     flowbc_t               *bc,
                     well_t                 *W,
                     int                     np,
@@ -1027,7 +1027,7 @@ cfs_tpfa_press_flux(grid_t                 *G,
 
 /* ---------------------------------------------------------------------- */
 void
-cfs_tpfa_fpress(grid_t               *G,
+cfs_tpfa_fpress(struct UnstructuredGrid               *G,
                 flowbc_t             *bc,
                 int                   np,
                 const double         *htrans,
@@ -1046,7 +1046,7 @@ cfs_tpfa_fpress(grid_t               *G,
 
 /* ---------------------------------------------------------------------- */
 void
-cfs_tpfa_retrieve_masstrans(grid_t               *G,
+cfs_tpfa_retrieve_masstrans(struct UnstructuredGrid               *G,
                             int                   np,
                             struct cfs_tpfa_data *h,
                             double               *masstrans_f)
@@ -1059,7 +1059,7 @@ cfs_tpfa_retrieve_masstrans(grid_t               *G,
 
 /* ---------------------------------------------------------------------- */
 void
-cfs_tpfa_retrieve_gravtrans(grid_t               *G,
+cfs_tpfa_retrieve_gravtrans(struct UnstructuredGrid               *G,
                             int                   np,
                             struct cfs_tpfa_data *h,
                             double               *gravtrans_f)
@@ -1073,7 +1073,7 @@ cfs_tpfa_retrieve_gravtrans(grid_t               *G,
 /* ---------------------------------------------------------------------- */
 static double
 cfs_tpfa_impes_maxtime_cell(int                      c,
-                            grid_t                  *G,
+                            struct UnstructuredGrid                  *G,
                             struct compr_quantities *cq,
                             const double            *trans,
                             const double            *porevol,
@@ -1189,7 +1189,7 @@ cfs_tpfa_impes_maxtime_cell(int                      c,
 
 /* ---------------------------------------------------------------------- */
 double
-cfs_tpfa_impes_maxtime(grid_t                  *G,
+cfs_tpfa_impes_maxtime(struct UnstructuredGrid                  *G,
                        struct compr_quantities *cq,
                        const double            *trans,
                        const double            *porevol,
@@ -1216,7 +1216,7 @@ cfs_tpfa_impes_maxtime(grid_t                  *G,
 
 /* ---------------------------------------------------------------------- */
 void
-cfs_tpfa_expl_mass_transport(grid_t                 *G,
+cfs_tpfa_expl_mass_transport(struct UnstructuredGrid                 *G,
                              well_t                 *W,
                              struct completion_data *wdata,
                              int                     np,

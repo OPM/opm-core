@@ -27,13 +27,13 @@ extern "C" {
 #endif
 
 void
-tpfa_htrans_compute(grid_t *G, const double *perm, double *htrans);
+tpfa_htrans_compute(struct UnstructuredGrid *G, const double *perm, double *htrans);
 
 void
-tpfa_trans_compute(grid_t *G, const double *htrans, double *trans);
+tpfa_trans_compute(struct UnstructuredGrid *G, const double *htrans, double *trans);
 
 void
-tpfa_eff_trans_compute(grid_t       *G,
+tpfa_eff_trans_compute(struct UnstructuredGrid       *G,
                        const double *totmob,
                        const double *htrans,
                        double       *trans);

@@ -39,7 +39,7 @@ struct compr_quantities {
 };
 
 void
-compr_flux_term(grid_t       *G,
+compr_flux_term(struct UnstructuredGrid       *G,
                 const double *fflux,
                 const double *zeta,
                 double       *Biv);

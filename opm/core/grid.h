@@ -1,5 +1,5 @@
 /*
-  Copyright 2010 SINTEF ICT, Applied Mathematics.
+  Copyright 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -48,10 +48,13 @@ struct UnstructuredGrid {
 
     double *cell_centroids;
     double *cell_volumes;
+
+
+    int    *global_cell;
+
+    int     cartdims[3];
+    int    *cell_facetag;
 };
-
-typedef struct UnstructuredGrid grid_t;
-
 
 #ifdef __cplusplus
 }

@@ -6,7 +6,7 @@
 #ifndef SPU_EXPLICIT_H_INCLUDED
 #define SPU_EXPLICIT_H_INCLUDED
 void
-spu_explicit(grid_t *g, 
+spu_explicit(struct UnstructuredGrid *g, 
              double *s0, 
              double *s, 
              double *mob,

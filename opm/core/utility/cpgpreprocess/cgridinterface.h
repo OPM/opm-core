@@ -26,25 +26,12 @@
 extern "C" {
 #endif
 
-   struct CornerpointGrid {
-       struct UnstructuredGrid grid;
+    struct UnstructuredGrid *
+    preprocess (const struct grdecl *in, double tol);
 
-      /*
-       *   Special cornerpoint definitions
-       */
-      int  cartdims[3];
-      int *index_map;
-      int *cface_tag;
-   };
-
-
-   void preprocess         (const struct grdecl    *in,
-                            double                  tol,
-                            struct CornerpointGrid *out);
-
-   void compute_geometry     (struct CornerpointGrid *g);
-
-   void free_cornerpoint_grid(struct CornerpointGrid *g);
+    void compute_geometry     (struct UnstructuredGrid *g);
+    
+    void free_cornerpoint_grid(struct UnstructuredGrid *g);
 #ifdef __cplusplus
 }
 #endif

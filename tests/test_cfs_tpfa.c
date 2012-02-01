@@ -155,7 +155,7 @@ call_UMFPACK(struct CSRMatrix *A, double *b, double *x)
 }
 
 static void
-deallocate_cart_grid(grid_t *G)
+deallocate_cart_grid(struct UnstructuredGrid *G)
 {
     if (G != NULL) {
         free(G->node_coordinates);
@@ -176,7 +176,7 @@ deallocate_cart_grid(grid_t *G)
     free(G);
 }
 
-static grid_t *
+static struct UnstructuredGrid *
 cart_grid(int nx, int ny, int nz)
 {
     /* The following applies to any grid derived from base_grid_t. */
@@ -196,7 +196,7 @@ cart_grid(int nx, int ny, int nz)
     int nyf = nx*Ny*nz;
     int nzf = nx*ny*Nz;
 
-    grid_t *G = malloc(1 * sizeof *G);
+    struct UnstructuredGrid *G = malloc(1 * sizeof *G);
 
     G->dimensions = 3;
 
@@ -489,7 +489,7 @@ destroy_wells(well_t *W)
 
 
 static well_t *
-create_wells(grid_t *G)
+create_wells(struct UnstructuredGrid *G)
 {
     well_t *new = malloc(1 * sizeof *new);
 
@@ -621,7 +621,7 @@ main(void)
     double   *gravcap_f, *porevol, *cpress0;
     double   *cpress, *fpress, *fflux, *wpress, *wflux;
 
-    grid_t                 *G;
+    struct UnstructuredGrid                 *G;
     well_t                 *W;
     well_control_t         *wctrl;
     struct completion_data *wdata;

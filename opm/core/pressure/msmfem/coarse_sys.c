@@ -196,7 +196,7 @@ bf_asm_data_deallocate(struct bf_asm_data *data)
 
 /* ---------------------------------------------------------------------- */
 static struct bf_asm_data *
-bf_asm_data_allocate(grid_t                 *g,
+bf_asm_data_allocate(struct UnstructuredGrid                 *g,
                      struct coarse_sys_meta *m)
 /* ---------------------------------------------------------------------- */
 {
@@ -463,7 +463,7 @@ coarse_sys_meta_fill(int nc, const int *pgconn,
 
 /* ---------------------------------------------------------------------- */
 static struct coarse_sys_meta *
-coarse_sys_meta_construct(grid_t *g, const int *p,
+coarse_sys_meta_construct(struct UnstructuredGrid *g, const int *p,
                           struct coarse_topology *ct)
 /* ---------------------------------------------------------------------- */
 {
@@ -489,7 +489,7 @@ coarse_sys_meta_construct(grid_t *g, const int *p,
 #if USE_MIM_IP_SIMPLE
 /* ---------------------------------------------------------------------- */
 static double *
-compute_fs_ip(grid_t *g, const double *perm,
+compute_fs_ip(struct UnstructuredGrid *g, const double *perm,
               const struct coarse_sys_meta *m)
 /* ---------------------------------------------------------------------- */
 {
@@ -511,7 +511,7 @@ compute_fs_ip(grid_t *g, const double *perm,
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
 /* ---------------------------------------------------------------------- */
 static double *
-compute_fs_ip(grid_t *g, const double *perm,
+compute_fs_ip(struct UnstructuredGrid *g, const double *perm,
               const struct coarse_sys_meta *m)
 /* ---------------------------------------------------------------------- */
 {
@@ -674,7 +674,7 @@ normalize_weighting(size_t nc, size_t nb, const int *p, double *w)
  * Returns valid ponter if successful and NULL if not. */
 /* ---------------------------------------------------------------------- */
 static double *
-coarse_weight(grid_t *g, size_t nb,
+coarse_weight(struct UnstructuredGrid *g, size_t nb,
               const int              *p,
               struct coarse_sys_meta *m,
               const double           *perm, const double *src)
@@ -926,7 +926,7 @@ set_csys_block_pointers(struct coarse_topology *ct,
 /* ---------------------------------------------------------------------- */
 static int
 enumerate_local_dofs(size_t                  cf,
-                     grid_t                 *g ,
+                     struct UnstructuredGrid                 *g ,
                      struct coarse_topology *ct,
                      struct coarse_sys_meta *m)
 /* ---------------------------------------------------------------------- */
@@ -970,7 +970,7 @@ enumerate_local_dofs(size_t                  cf,
 /* ---------------------------------------------------------------------- */
 static void
 unenumerate_local_dofs(size_t                  cf,
-                       grid_t                 *g ,
+                       struct UnstructuredGrid                 *g ,
                        struct coarse_topology *ct,
                        struct coarse_sys_meta *m)
 /* ---------------------------------------------------------------------- */
@@ -1004,7 +1004,7 @@ unenumerate_local_dofs(size_t                  cf,
 /* ---------------------------------------------------------------------- */
 static void
 linearise_local_dof(size_t                  cf,
-                    grid_t                 *g ,
+                    struct UnstructuredGrid                 *g ,
                     struct coarse_topology *ct,
                     struct coarse_sys_meta *m ,
                     struct bf_asm_data     *bf_asm)
@@ -1123,7 +1123,7 @@ define_csr_sparsity(size_t nc, size_t m, struct bf_asm_data *bf_asm)
 static void
 assemble_local_system(size_t                  cf   ,
                       size_t                  nlocf,
-                      grid_t                 *g    ,
+                      struct UnstructuredGrid                 *g    ,
                       const double           *Binv ,
                       double                 *w    ,
                       struct coarse_topology *ct   ,
@@ -1212,7 +1212,7 @@ Binv_scale_mobility(int nc, struct coarse_sys_meta *m,
  * field. */
 /* ---------------------------------------------------------------------- */
 static void
-symmetrise_flux(size_t cf, grid_t *g, struct coarse_topology *ct,
+symmetrise_flux(size_t cf, struct UnstructuredGrid *g, struct coarse_topology *ct,
                 struct coarse_sys_meta *m, struct bf_asm_data *bf_asm)
 /* ---------------------------------------------------------------------- */
 {
@@ -1303,7 +1303,7 @@ symmetrise_flux(size_t cf, grid_t *g, struct coarse_topology *ct,
 /* ---------------------------------------------------------------------- */
 static void
 solve_local_system(size_t                  cf    ,
-                   grid_t                 *g     ,
+                   struct UnstructuredGrid                 *g     ,
                    const  double          *Binv  ,
                    struct coarse_topology *ct    ,
                    struct coarse_sys_meta *m     ,
@@ -1420,7 +1420,7 @@ store_basis_function(size_t                  cf    ,
  * NULL if not. */
 /* ---------------------------------------------------------------------- */
 struct coarse_sys *
-coarse_sys_construct(grid_t *g, const int   *p,
+coarse_sys_construct(struct UnstructuredGrid *g, const int   *p,
                      struct coarse_topology *ct,
                      const double           *perm,
                      const double           *src,
@@ -1798,7 +1798,7 @@ coarse_sys_compute_Binv(int                nb,
 
 /* ---------------------------------------------------------------------- */
 void
-coarse_sys_compute_fs_flux(grid_t                 *G,
+coarse_sys_compute_fs_flux(struct UnstructuredGrid                 *G,
                            struct coarse_topology *ct,
                            struct coarse_sys      *sys,
                            const int              *b2c_pos,

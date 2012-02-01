@@ -82,7 +82,7 @@ cfsh_assemble_grid(flowbc_t        *bc,
  * the well connections represented by 'W'. */
 /* ---------------------------------------------------------------------- */
 struct fsh_data *
-cfsh_construct(grid_t *G, well_t *W)
+cfsh_construct(struct UnstructuredGrid *G, well_t *W)
 /* ---------------------------------------------------------------------- */
 {
     int              nc, ngconn_tot;
