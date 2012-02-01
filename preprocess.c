@@ -358,24 +358,65 @@ void process_horizontal_faces(int **intersections,
   pt holds coordinates to intersection between lines given by point
   numbers L[0]-L[1] and L[2]-L[3].
 */
+#define OLD_INTERSECTION 0
 static void approximate_intersection_pt(int *L, double *c, double *pt)
 {
+    double a;
+    double z0, z1, z2, z3;
+#if OLD_INTERSECTION
+#else
+    double b1, b2;
+    double x1, y1;
+    double x2, y2;
+    double z;
+#endif
 
-    double z0 = c[3*L[0]+2];
-    double z1 = c[3*L[1]+2];
-    double z2 = c[3*L[2]+2];
-    double z3 = c[3*L[3]+2];
+    /* no intersection on pillars expected here! */
+    assert(L[0]!=L[2]);
+    assert(L[1]!=L[3]);
 
-    double a = (z2-z0)/(z1-z0 - (z3-z2));
+    z0 = c[3*L[0]+2];
+    z1 = c[3*L[1]+2];
+    z2 = c[3*L[2]+2];
+    z3 = c[3*L[3]+2];
+
+    /* find parameter a where lines L0L1 and L2L3 have same
+     * z-coordinate */
+    a = (z2-z0)/(z1-z0 - (z3-z2));
     if (isinf(a) || isnan(a)){
         a = 0;
     }
 
 
+#if OLD_INTERSECTION
     pt[0] = c[3*L[0]+0]* (1.0-a) + c[3*L[1]+0]* a;
     pt[1] = c[3*L[0]+1]* (1.0-a) + c[3*L[1]+1]* a;
     pt[2] = c[3*L[0]+2]* (1.0-a) + c[3*L[1]+2]* a;
+#else
+    /* the corresponding z-coordinate is */
+    z =  z0* (1.0-a) + z1* a;
 
+
+
+    /* find point (x1, y1, z) on pillar 1 */
+    b1 = (z2-z)/(z2-z0);
+    b2 = (z-z0)/(z2-z0);
+    x1 = c[3*L[0]+0]*b1 + c[3*L[2]+0]*b2;
+    y1 = c[3*L[0]+1]*b1 + c[3*L[2]+1]*b2;
+
+    /* find point (x2, y2, z) on pillar 2 */
+    b1 = (z-z3)/(z1-z3);
+    b2 = (z1-z)/(z1-z3);
+    x2 = c[3*L[1]+0]*b1 + c[3*L[3]+0]*b2;
+    y2 = c[3*L[1]+1]*b1 + c[3*L[3]+1]*b2;
+    
+    /* horizontal lines are by definition ON the bilinear surface
+       spanned by L0, L1, L2 and L3.  find point (x, y, z) on
+       horizontal line between point (x1, y1, z) and (x2, y2, z).*/
+    pt[0] = x1* (1.0-a) + x2* a;
+    pt[1] = y1* (1.0-a) + y2* a;
+    pt[2] = z;
+#endif
 }
 
 /*-----------------------------------------------------------------
