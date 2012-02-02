@@ -153,11 +153,15 @@ namespace Opm
 class ReservoirState {
 public:
     ReservoirState(const UnstructuredGrid* g, const int num_phases = 2)
-        : press_ (g->number_of_cells),
-          fpress_(g->number_of_faces),
-          flux_  (g->number_of_faces),
-          sat_   (num_phases * g->number_of_cells)
-    {}
+        : press_ (g->number_of_cells, 0.0),
+          fpress_(g->number_of_faces, 0.0),
+          flux_  (g->number_of_faces, 0.0),
+          sat_   (num_phases * g->number_of_cells, 0.0)
+    {
+	for (int cell = 0; cell < g->number_of_cells; ++cell) {
+	    sat_[num_phases*cell + num_phases - 1] = 1.0;
+	}
+    }
 
     int numPhases() const { return sat_.size()/press_.size(); }
 
@@ -251,6 +255,29 @@ compute_porevolume(const UnstructuredGrid* g,
 }
 
 
+static void
+compute_totmob(const Opm::IncompPropertiesInterface& props,
+	       const std::vector<double>& s,
+	       std::vector<double>& totmob)
+{
+    int num_cells = props.numCells();
+    int num_phases = props.numPhases();
+    totmob.resize(num_cells);
+    ASSERT(int(s.size()) == num_cells*num_phases);
+    std::vector<int> cells(num_cells);
+    for (int cell = 0; cell < num_cells; ++cell) {
+	cells[cell] = cell;
+    }
+    std::vector<double> kr(num_cells*num_phases);
+    props.relperm(num_cells, &s[0], &cells[0], &kr[0], 0);
+    const double* mu = props.viscosity();
+    for (int cell = 0; cell < num_cells; ++cell) {
+	totmob[cell] = 0;
+	for (int phase = 0; phase < num_phases; ++phase) {	
+	    totmob[cell] += kr[2*cell + phase]/mu[phase];
+	}
+    }
+}
 
 
 template <class State>
@@ -730,8 +757,8 @@ main(int argc, char** argv)
     TransportSolver tsolver(model);
 
     // State-related and source-related variables init.
-    std::vector<double> totmob(grid->c_grid()->number_of_cells, 1.0);
-    ReservoirState state(grid->c_grid());
+    std::vector<double> totmob;
+    ReservoirState state(grid->c_grid(), props->numPhases());
     // We need a separate reorder_sat, because the reorder
     // code expects a scalar sw, not both sw and so.
     std::vector<double> reorder_sat(grid->c_grid()->number_of_cells);
@@ -787,6 +814,7 @@ main(int argc, char** argv)
 	    outputState(grid->c_grid(), state, pstep, output_dir);
 	}
 
+	compute_totmob(*props, state.saturation(), totmob);
 	psolver.solve(grid->c_grid(), totmob, src, state);
 
 	if (use_reorder) {
