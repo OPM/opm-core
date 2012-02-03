@@ -36,10 +36,6 @@ extern "C" {
 
 struct UnstructuredGrid;
 
-/* void                     destroy_cart_grid(struct UnstructuredGrid *G); */
-
-struct UnstructuredGrid *create_cart_grid(int nx, int ny, int nz);
-
 struct UnstructuredGrid *create_cart_grid_2d(int nx, int ny);
 struct UnstructuredGrid *create_cart_grid_3d(int nx, int ny, int nz);
 
