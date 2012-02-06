@@ -49,11 +49,14 @@ AC_TYPE_SIZE_T
 AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions.
-AC_CHECK_FUNCS([floor memmove pow sqrt strchr strtol])
+AC_CHECK_FUNCS([floor memset memmove strchr strtol])
 AC_FUNC_STRTOD
 
+AC_SEARCH_LIBS([sqrt], [m])
+AC_CHECK_FUNCS([sqrt pow])
+
 AC_SEARCH_LIBS([amd_free], [amd],
-               [amd_lib=yes], [amd_lib=no], [-lm])
+               [amd_lib=yes], [amd_lib=no])
 
 # From SuiteSparse version 3.7, umfpack may depend on more libs
 AC_SEARCH_LIBS([cholmod_l_start], [cholmod])
@@ -64,7 +67,7 @@ AC_SEARCH_LIBS([colamd_set_defaults], [colamd])
 # AC_SEARCH_LIBS([???], [ccolamd])
 
 AC_SEARCH_LIBS([umfpack_dl_solve], [umfpack],
-               [umfpack_lib=yes], [umfpack_lib=no], [-lamd -lm])
+               [umfpack_lib=yes], [umfpack_lib=no])
 
 AM_CONDITIONAL([UMFPACK],
   [test "x$umfpack_header" != "xno" -a "x$umfpack_lib" != "xno"])
