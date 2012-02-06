@@ -118,7 +118,6 @@ get_parameters(struct SolverData *d, int cell)
     p.cell    = cell;
     p.props   = d->props;
 
-    d->saturation[cell] = 0;
     for (i=g->cell_facepos[cell]; i<g->cell_facepos[cell+1]; ++i) {
         f = g->cell_faces[i];
 
