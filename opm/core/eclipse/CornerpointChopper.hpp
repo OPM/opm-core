@@ -21,7 +21,7 @@
 #define OPM_CORNERPOINTCHOPPER_HEADER_INCLUDED
 
 #include <opm/core/eclipse/EclipseGridParser.hpp>
-#include <opm/core/eclipse/param/ParameterGroup.hpp>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <iostream>
 #include <fstream>
 #include <string>
