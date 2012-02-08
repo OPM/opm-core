@@ -45,7 +45,7 @@ extern int interrupt_signal;
 
 static const char no_root_str[]=
     "  In %s:\n"
-    "  With G(0) =% 5f, G(1) =% 5f, G(s) cannot have a zero in [0,1]!\n";
+    "  With G(%5f) =% 5f, G(%5f) =% 5f, G(x) is not bracketed!\n";
 
 
 
@@ -100,7 +100,7 @@ ridders (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctr
 
     if (G0*G1 > 0)
     {
-        print(no_root_str, "ridder", G0, G1);
+        print(no_root_str, "ridder", s0, s1, G0, G1);
         return -1.0;
     }
 
@@ -201,7 +201,7 @@ regulafalsi (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl 
 
     if (G0*G1 > 0)
     {
-        print(no_root_str, "regulafalsi", G0, G1);
+        print(no_root_str, "regulafalsi", s0, s1, G0, G1);
         return -1.0;
     }
 
@@ -286,7 +286,7 @@ bisection (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *c
 
     if (G0*G1 > 0.0)
     {
-        print(no_root_str, "bisection", G0, G1);
+        print(no_root_str, "bisection", s0, s1, G0, G1);
         return -1.0;
     }
 
