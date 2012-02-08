@@ -100,7 +100,7 @@ ridders (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctr
 
     if (G0*G1 > 0)
     {
-        print(no_root_str, "ridder", s0, s1, G0, G1);
+        print(no_root_str, "ridder", s0, G0, s1, G1);
         return -1.0;
     }
 
@@ -201,7 +201,7 @@ regulafalsi (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl 
 
     if (G0*G1 > 0)
     {
-        print(no_root_str, "regulafalsi", s0, s1, G0, G1);
+        print(no_root_str, "regulafalsi", s0, G0, s1, G1);
         return -1.0;
     }
 
@@ -286,7 +286,7 @@ bisection (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *c
 
     if (G0*G1 > 0.0)
     {
-        print(no_root_str, "bisection", s0, s1, G0, G1);
+        print(no_root_str, "bisection", s0, G0, s1, G1);
         return -1.0;
     }
 
