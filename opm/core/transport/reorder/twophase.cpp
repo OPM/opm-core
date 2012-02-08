@@ -78,7 +78,6 @@ void solvecell(void *data, struct NonlinearSolverCtrl *ctrl, int cell)
 {
     struct SolverData   *d   = (struct SolverData*) data;
     struct Parameters   prm = get_parameters(d, cell);
-    
     d->saturation[cell] = find_zero(residual, &prm, ctrl);
     // double ff1 = fluxfun_props(d->saturation[cell], cell, d->props);
     // double ff2 = fluxfun(d->saturation[cell], -999);

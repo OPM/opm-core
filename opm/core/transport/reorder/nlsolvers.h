@@ -29,9 +29,11 @@ extern "C" {
 
 struct NonlinearSolverCtrl
 {
-   enum     Method {RIDDERS, REGULAFALSI, BISECTION} method;
+   enum Method {RIDDERS, REGULAFALSI, BISECTION} method;
    double  nltolerance;
    int     maxiterations;
+   double  min_bracket;
+   double  max_bracket;
    double  initialguess;
    int     iterations;    /* set by solver */
    double  residual;      /* set by solver */

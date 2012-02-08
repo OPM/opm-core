@@ -48,6 +48,8 @@ void twophasetransport(
     ctrl.nltolerance   = 1e-9;
     ctrl.method        = NonlinearSolverCtrl::REGULAFALSI;
     ctrl.initialguess  = 0.5;
+    ctrl.min_bracket   = 0.0;
+    ctrl.max_bracket   = 1.0;
 
     /* Assume all strong components are single-cell domains. */
     for(i=0; i<grid->number_of_cells; ++i)

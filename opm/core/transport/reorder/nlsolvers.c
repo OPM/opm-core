@@ -90,11 +90,11 @@ ridders (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctr
     G2 = G(s2, data);
     if (fabs(G2) < ctrl->nltolerance) { return s2; }
 
-    s0 = 0.0;
+    s0 = ctrl->min_bracket;
     G0 = G(s0, data);
     if (fabs(G0) < ctrl->nltolerance) { return s0; }
 
-    s1 = 1.0;
+    s1 = ctrl->max_bracket;
     G1 = G(s1, data);
     if (fabs(G1) < ctrl->nltolerance) { return s1; }
 
@@ -190,12 +190,12 @@ regulafalsi (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl 
     Gn = G(sn, data);
     if (fabs(Gn) < ctrl->nltolerance) { return sn; }
 
-    /* Initial guess is interval [0,1] of course */
-    s0 = 0.0;
+    /* Initial guess is interval [s0,s1] */
+    s0 = ctrl->min_bracket;
     G0 = G(s0, data);
     if (fabs(G0) < ctrl->nltolerance) { return s0; }
 
-    s1 = 1.0;
+    s1 = ctrl->max_bracket;
     G1 = G(s1, data);
     if (fabs(G1) < ctrl->nltolerance) { return s1; }
 
@@ -275,12 +275,12 @@ bisection (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *c
     Gn = G(sn, data);
     if (fabs(Gn) < ctrl->nltolerance) { return sn; }
 
-    /* Initial guess is interval [0,1] of course */
-    s0 = 0.0;
+    /* Initial guess is interval [s0,s1] */
+    s0 = ctrl->max_bracket;
     G0 = G(s0, data);
     if (fabs(G0) < ctrl->nltolerance) { return s0; }
 
-    s1 = 1.0;
+    s1 = ctrl->max_bracket;
     G1 = G(s1, data);
     if (fabs(G1) < ctrl->nltolerance) { return s1; }
 
