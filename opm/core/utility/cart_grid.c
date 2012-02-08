@@ -37,10 +37,16 @@
 
 static struct UnstructuredGrid *allocate_cart_grid_3d(int nx, int ny, int nz);
 static void fill_cart_topology_3d(struct UnstructuredGrid *G, int nx, int ny, int nz);
-static void fill_cart_geometry_3d(struct UnstructuredGrid *G, int nx, int ny, int nz);
+static void fill_cart_geometry_3d(struct UnstructuredGrid *G, int nx, int ny, int nz, double dx, double dy, double dz);
 
 struct UnstructuredGrid*
 create_cart_grid_3d(int nx, int ny, int nz)
+{
+    return create_hexa_grid_3d(nx, ny, nz, 1.0, 1.0, 1.0);
+}
+
+struct UnstructuredGrid*
+create_hexa_grid_3d(int nx, int ny, int nz, double dx, double dy, double dz)
 {
     struct UnstructuredGrid *G;
 
@@ -52,7 +58,7 @@ create_cart_grid_3d(int nx, int ny, int nz)
     }
 
     fill_cart_topology_3d(G, nx, ny, nz);
-    fill_cart_geometry_3d(G, nx, ny, nz);
+    fill_cart_geometry_3d(G, nx, ny, nz, dx, dy, dz);
 
     return G;
 }
@@ -337,11 +343,16 @@ fill_cart_topology_3d(struct UnstructuredGrid *G, int nx, int ny, int nz)
 /* --------------------------------------------------------------------- */
 
 static void
-fill_cart_geometry_3d(struct UnstructuredGrid *G, int nx, int ny, int nz)
+fill_cart_geometry_3d(struct UnstructuredGrid *G,
+		      int nx, int ny, int nz,
+		      double dx, double dy, double dz)
 {
     int Nx, Ny, Nz;
     int nxf, nyf, nzf;
     int i,j,k;
+
+    double areax, areay, areaz;
+    double cvol;
 
     double *coord, *ccentroids, *cvolumes;
     double *fnormals, *fcentroids, *fareas;
@@ -354,17 +365,21 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G, int nx, int ny, int nz)
     nyf = nx*Ny*nz;
     nzf = nx*ny*Nz;
 
+    areax = dy*dz;
+    areay = dx*dz;
+    areaz = dx*dy;
+    cvol = dx*dy*dz;
 
     ccentroids = G->cell_centroids;
     cvolumes   = G->cell_volumes;
     for (k=0; k<nz; ++k)  {
         for (j=0; j<ny; ++j) {
             for (i=0; i<nx; ++i) {
-                *ccentroids++ = i+0.5;
-                *ccentroids++ = j+0.5;
-                *ccentroids++ = k+0.5;
+                *ccentroids++ = (i+0.5)*dx;
+                *ccentroids++ = (j+0.5)*dy;
+                *ccentroids++ = (k+0.5)*dz;
 
-                *cvolumes++ = 1;
+                *cvolumes++ = cvol;
             }
         }
     }
@@ -382,11 +397,11 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G, int nx, int ny, int nz)
                 *fnormals++ = 0;
                 *fnormals++ = 0;
 
-                *fcentroids++ = i;
-                *fcentroids++ = j+0.5;
-                *fcentroids++ = k+0.5;
+                *fcentroids++ = i*dx;
+                *fcentroids++ = (j+0.5)*dy;
+                *fcentroids++ = (k+0.5)*dz;
 
-                *fareas++ = 1;
+                *fareas++ = areax;
             }
         }
     }
@@ -398,11 +413,11 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G, int nx, int ny, int nz)
                 *fnormals++ = 1;
                 *fnormals++ = 0;
 
-                *fcentroids++ = i+0.5;
-                *fcentroids++ = j;
-                *fcentroids++ = k+0.5;
+                *fcentroids++ = (i+0.5)*dx;
+                *fcentroids++ = j*dy;
+                *fcentroids++ = (k+0.5)*dz;
 
-                *fareas++ = 1;
+                *fareas++ = areay;
             }
         }
     }
@@ -414,11 +429,11 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G, int nx, int ny, int nz)
                 *fnormals++ = 0;
                 *fnormals++ = 1;
 
-                *fcentroids++ = i+0.5;
-                *fcentroids++ = j+0.5;
-                *fcentroids++ = k;
+                *fcentroids++ = (i+0.5)*dx;
+                *fcentroids++ = (j+0.5)*dy;
+                *fcentroids++ = k*dz;
 
-                *fareas++ = 1;
+                *fareas++ = areaz;
             }
         }
     }

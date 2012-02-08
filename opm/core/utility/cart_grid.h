@@ -38,6 +38,8 @@ struct UnstructuredGrid;
 
 struct UnstructuredGrid *create_cart_grid_2d(int nx, int ny);
 struct UnstructuredGrid *create_cart_grid_3d(int nx, int ny, int nz);
+struct UnstructuredGrid *create_hexa_grid_3d(int nx, int ny, int nz,
+					     double dx, double dy, double dz);
 
 struct UnstructuredGrid *create_tensor_grid_2d(int nx, int ny,
                                                double x[], double y[]);
