@@ -827,13 +827,13 @@ main(int argc, char** argv)
 	    // Also, for anything but noflow boundaries,
 	    // boundary flows must be accumulated into
 	    // source term following the same convention.
-	    twophasetransport(&porevol[0],
-			      &reorder_src[0],
-			      stepsize,
-			      const_cast<UnstructuredGrid*>(grid->c_grid()),
-			      props.get(),
-			      &state.faceflux()[0],
-			      &reorder_sat[0]);
+	    Opm::reorderTransportTwophase(&porevol[0],
+	    				  &reorder_src[0],
+	    				  stepsize,
+	    				  grid->c_grid(),
+	    				  props.get(),
+	    				  &state.faceflux()[0],
+	    				  &reorder_sat[0]);
 	    toBothSat(reorder_sat, state.saturation());
 	} else {
 	    tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
