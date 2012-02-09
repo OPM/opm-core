@@ -19,5 +19,17 @@ void twophasetransport(
     const double *darcyflux,
     double *saturation);
 
+namespace Opm
+{
+
+    void reorderTransportTwophase(const double *porevolume,
+				  const double *source,
+				  const double dt,
+				  const UnstructuredGrid *grid,
+				  const IncompPropertiesInterface* props,
+				  const double *darcyflux,
+				  double *saturation);
+} // namespace Opm
+
 
 #endif /* TWOPHASETRANSPORT_HPP_INCLUDED */
