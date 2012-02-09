@@ -89,8 +89,7 @@ void Opm::reorderTransportTwophase(const double            *porevolume,
     std::vector<int> sequence(grid->number_of_cells);
     std::vector<int> components(grid->number_of_cells + 1);
     int ncomponents;
-    compute_sequence(const_cast<UnstructuredGrid*>(grid),
-		     darcyflux, &sequence[0], &components[0], &ncomponents);
+    compute_sequence(grid, darcyflux, &sequence[0], &components[0], &ncomponents);
     assert(ncomponents == grid->number_of_cells);
 
 
