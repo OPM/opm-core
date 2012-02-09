@@ -38,10 +38,9 @@
 
 
 
-//#include <algorithm>
-//#include <limits>
-//#include <cmath>
-//#include <cstdlib>
+#include <algorithm>
+#include <limits>
+#include <cmath>
 #include <opm/core/utility/ErrorMacros.hpp>
 
 namespace Opm
