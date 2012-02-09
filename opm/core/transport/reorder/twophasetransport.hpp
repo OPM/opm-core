@@ -3,24 +3,13 @@
 #ifndef TWOPHASETRANSPORT_HPP_INCLUDED
 #define TWOPHASETRANSPORT_HPP_INCLUDED
 
-namespace Opm
-{
-    class IncompPropertiesInterface;
-}
 
 struct UnstructuredGrid;
 
-void twophasetransport(
-    const double *porevolume,
-    const double *source,
-    double dt,
-    struct UnstructuredGrid *grid,
-    const Opm::IncompPropertiesInterface* props,
-    const double *darcyflux,
-    double *saturation);
-
 namespace Opm
 {
+
+    class IncompPropertiesInterface;
 
     void reorderTransportTwophase(const double *porevolume,
 				  const double *source,
