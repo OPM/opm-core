@@ -41,6 +41,7 @@
 
 #include <opm/core/utility/cart_grid.h>
 #include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/cpgpreprocess/cgridinterface.h>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
@@ -801,6 +802,12 @@ main(int argc, char** argv)
     }
 
     // Main simulation loop.
+    Opm::time::StopWatch pressure_timer;
+    double ptime = 0.0;
+    Opm::time::StopWatch transport_timer;
+    double ttime = 0.0;
+    Opm::time::StopWatch total_timer;
+    total_timer.start();
     std::cout << "\n\n================    Starting main simulation loop     ===============" << std::endl;
     for (int pstep = 0; pstep < num_psteps; ++pstep) {
         std::cout << "\n\n---------------    Simulation step number " << pstep
@@ -815,7 +822,12 @@ main(int argc, char** argv)
 	}
 
 	compute_totmob(*props, state.saturation(), totmob);
+	pressure_timer.start();
 	psolver.solve(grid->c_grid(), totmob, src, state);
+	pressure_timer.stop();
+	double pt = pressure_timer.secsSinceStart();
+	std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
+	ptime += pt;
 
 	if (use_reorder) {
 	    toWaterSat(state.saturation(), reorder_sat);
@@ -827,6 +839,7 @@ main(int argc, char** argv)
 	    // Also, for anything but noflow boundaries,
 	    // boundary flows must be accumulated into
 	    // source term following the same convention.
+	    transport_timer.start();
 	    Opm::reorderTransportTwophase(&porevol[0],
 	    				  &reorder_src[0],
 	    				  stepsize,
@@ -834,14 +847,29 @@ main(int argc, char** argv)
 	    				  props.get(),
 	    				  &state.faceflux()[0],
 	    				  &reorder_sat[0]);
+	    transport_timer.stop();
+	    double tt = transport_timer.secsSinceStart();
+	    std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
+	    ttime += tt;
 	    toBothSat(reorder_sat, state.saturation());
 	} else {
+	    transport_timer.start();
 	    tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
+	    transport_timer.stop();
+	    double tt = transport_timer.secsSinceStart();
+	    std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
+	    ttime += tt;
 	    std::cout << rpt;
 	}
 
 	current_time += stepsize;
     }
+    total_timer.stop();
+
+    std::cout << "\n\n================    End of simulation     ===============\n"
+	      << "Total time taken: " << total_timer.secsSinceStart()
+	      << "\n  Pressure time:  " << ptime
+	      << "\n  Transport time: " << ttime << std::endl;
 
     if (output) {
 	outputState(grid->c_grid(), state, num_psteps, output_dir);
