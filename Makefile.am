@@ -17,12 +17,7 @@ lib_LTLIBRARIES = libopmcore.la
 libopmcore_la_SOURCES =                                 \
 opm/core/eclipse/EclipseGridInspector.cpp               \
 opm/core/eclipse/EclipseGridParser.cpp                  \
-opm/core/fluid/blackoil/BlackoilPVT.cpp                 \
 opm/core/fluid/blackoil/BlackoilPvtProperties.cpp       \
-opm/core/fluid/blackoil/MiscibilityDead.cpp             \
-opm/core/fluid/blackoil/MiscibilityLiveGas.cpp          \
-opm/core/fluid/blackoil/MiscibilityLiveOil.cpp          \
-opm/core/fluid/blackoil/MiscibilityProps.cpp            \
 opm/core/fluid/blackoil/SinglePvtDead.cpp               \
 opm/core/fluid/blackoil/SinglePvtLiveGas.cpp            \
 opm/core/fluid/blackoil/SinglePvtLiveOil.cpp            \
@@ -97,7 +92,6 @@ opm/core/eclipse/EclipseGridParser.hpp                  \
 opm/core/eclipse/EclipseGridParserHelpers.hpp           \
 opm/core/eclipse/EclipseUnits.hpp                       \
 opm/core/eclipse/SpecialEclipseFields.hpp               \
-opm/core/fluid/BlackoilFluid.hpp                        \
 opm/core/fluid/BlackoilPropertiesInterface.hpp          \
 opm/core/fluid/BlackoilPropertiesBasic.hpp              \
 opm/core/fluid/BlackoilPropertiesFromDeck.hpp           \
@@ -112,17 +106,8 @@ opm/core/fluid/SaturationPropsBasic.hpp                 \
 opm/core/fluid/SaturationPropsFromDeck.hpp              \
 opm/core/fluid/SimpleFluid2p.hpp                        \
 opm/core/fluid/blackoil/phaseUsageFromDeck.hpp          \
-opm/core/fluid/blackoil/BlackoilDefs.hpp                \
 opm/core/fluid/blackoil/BlackoilPhases.hpp              \
-opm/core/fluid/blackoil/BlackoilPVT.hpp                 \
 opm/core/fluid/blackoil/BlackoilPvtProperties.hpp       \
-opm/core/fluid/blackoil/FluidMatrixInteractionBlackoil.hpp \
-opm/core/fluid/blackoil/FluidStateBlackoil.hpp          \
-opm/core/fluid/blackoil/MiscibilityDead.hpp             \
-opm/core/fluid/blackoil/MiscibilityLiveGas.hpp          \
-opm/core/fluid/blackoil/MiscibilityLiveOil.hpp          \
-opm/core/fluid/blackoil/MiscibilityProps.hpp            \
-opm/core/fluid/blackoil/MiscibilityWater.hpp            \
 opm/core/fluid/blackoil/SinglePvtDead.hpp               \
 opm/core/fluid/blackoil/SinglePvtLiveGas.hpp            \
 opm/core/fluid/blackoil/SinglePvtLiveOil.hpp            \
