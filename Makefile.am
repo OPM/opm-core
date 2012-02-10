@@ -78,11 +78,11 @@ opm/core/pressure/mimetic/hybsys.c                      \
 opm/core/transport/spu_explicit.c                       \
 opm/core/transport/spu_implicit.c		\
 opm/core/transport/transport_source.c		\
+opm/core/transport/reorder/TransportModelInterface.cpp	\
 opm/core/transport/reorder/TransportModelTwophase.cpp	\
 opm/core/transport/reorder/reordersequence.c	\
 opm/core/transport/reorder/nlsolvers.c		\
-opm/core/transport/reorder/tarjan.c		\
-opm/core/transport/reorder/twophasetransport.cpp
+opm/core/transport/reorder/tarjan.c
 
 
 nobase_include_HEADERS =                                \
@@ -188,8 +188,8 @@ opm/core/transport/reorder/TransportModelInterface.hpp	\
 opm/core/transport/reorder/TransportModelTwophase.hpp	\
 opm/core/transport/reorder/nlsolvers.h		\
 opm/core/transport/reorder/reordersequence.h	\
-opm/core/transport/reorder/tarjan.h		\
-opm/core/transport/reorder/twophasetransport.hpp
+opm/core/transport/reorder/tarjan.h
+
 
 if UMFPACK
 libopmcore_la_SOURCES  += opm/core/linalg/call_umfpack.c

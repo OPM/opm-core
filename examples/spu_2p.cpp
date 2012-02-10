@@ -59,7 +59,7 @@
 #include <opm/core/transport/CSRMatrixBlockAssembler.hpp>
 #include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
 
-#include <opm/core/transport/reorder/twophasetransport.hpp>
+#include <opm/core/transport/reorder/TransportModelTwophase.hpp>
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -753,9 +753,14 @@ main(int argc, char** argv)
     TwophaseFluid fluid(*props);
 
     // Solvers init.
+    // Pressure solver.
     PressureSolver psolver(grid->c_grid(), *props);
+    // Non-reordering solver.
     TransportModel  model  (fluid, *grid->c_grid(), porevol, 0, guess_old_solution);
     TransportSolver tsolver(model);
+    // Reordering solver.
+    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), &porevol[0], *props);
+
 
     // State-related and source-related variables init.
     std::vector<double> totmob;
@@ -763,10 +768,13 @@ main(int argc, char** argv)
     // We need a separate reorder_sat, because the reorder
     // code expects a scalar sw, not both sw and so.
     std::vector<double> reorder_sat(grid->c_grid()->number_of_cells);
-    double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
+    // double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
+    double flow_per_sec = 0.1*porevol[0]/Opm::unit::day;
     std::vector<double> src   (grid->c_grid()->number_of_cells, 0.0);
-    src[0]                         =  flow_per_sec;
-    src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
+    // src[0] = flow_per_sec;
+    // src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
+    std::fill(src.begin(), src.begin() + src.size()/2, flow_per_sec);
+    std::fill(src.begin() + src.size()/2, src.end(), -flow_per_sec);
     TransportSource* tsrc = create_transport_source(2, 2);
     double ssrc[]   = { 1.0, 0.0 };
     double ssink[]  = { 0.0, 1.0 };
@@ -840,13 +848,7 @@ main(int argc, char** argv)
 	    // boundary flows must be accumulated into
 	    // source term following the same convention.
 	    transport_timer.start();
-	    Opm::reorderTransportTwophase(&porevol[0],
-	    				  &reorder_src[0],
-	    				  stepsize,
-	    				  grid->c_grid(),
-	    				  props.get(),
-	    				  &state.faceflux()[0],
-	    				  &reorder_sat[0]);
+	    reorder_model.solve(&state.faceflux()[0], &reorder_src[0], stepsize, &reorder_sat[0]);
 	    transport_timer.stop();
 	    double tt = transport_timer.secsSinceStart();
 	    std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
