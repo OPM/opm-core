@@ -29,6 +29,10 @@ AC_PROG_F77
 AC_F77_WRAPPERS
 
 # Checks for libraries.
+
+# Bring in numerics support (standard library component)
+AC_SEARCH_LIBS([sqrt], [m])
+
 AX_LAPACK
 AX_BOOST_BASE([1.37])
 AX_BOOST_SYSTEM
@@ -49,11 +53,8 @@ AC_TYPE_SIZE_T
 AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions.
-AC_CHECK_FUNCS([floor memset memmove strchr strtol])
+AC_CHECK_FUNCS([floor memset memmove strchr strtol sqrt pow])
 AC_FUNC_STRTOD
-
-AC_SEARCH_LIBS([sqrt], [m])
-AC_CHECK_FUNCS([sqrt pow])
 
 AC_SEARCH_LIBS([amd_free], [amd],
                [amd_lib=yes], [amd_lib=no])
@@ -61,7 +62,7 @@ AC_SEARCH_LIBS([amd_free], [amd],
 # From SuiteSparse version 3.7, umfpack may depend on more libs
 AC_SEARCH_LIBS([cholmod_l_start], [cholmod])
 AC_SEARCH_LIBS([colamd_set_defaults], [colamd])
-# According to docs, umfpack may depend on these, too,
+# According to docs, UMFPACK may depend on these, too,
 # but they seem unneeded for our usage.
 # AC_SEARCH_LIBS([???], [camd])
 # AC_SEARCH_LIBS([???], [ccolamd])
