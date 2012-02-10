@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
 #include <opm/core/utility/cpgpreprocess/geometry.h>
 #include <opm/core/utility/cpgpreprocess/preprocess.h>
 #include <opm/core/grid.h>
