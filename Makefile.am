@@ -80,7 +80,7 @@ opm/core/transport/spu_implicit.c		\
 opm/core/transport/transport_source.c		\
 opm/core/transport/reorder/TransportModelInterface.cpp	\
 opm/core/transport/reorder/TransportModelTwophase.cpp	\
-opm/core/transport/reorder/reordersequence.c	\
+opm/core/transport/reorder/reordersequence.cpp	\
 opm/core/transport/reorder/nlsolvers.c		\
 opm/core/transport/reorder/tarjan.c
 
