@@ -38,6 +38,7 @@
 
 #include <opm/core/pressure/tpfa/ifs_tpfa.h>
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
+#include <opm/core/pressure/mimetic/mimetic.h>
 
 #include <opm/core/utility/cart_grid.h>
 #include <opm/core/utility/ErrorMacros.hpp>
@@ -188,15 +189,23 @@ private:
 
 class PressureSolver {
 public:
-    PressureSolver(const UnstructuredGrid* g,
-		   const Opm::IncompPropertiesInterface& props)
-        : htrans_(g->cell_facepos[ g->number_of_cells ]),
-          trans_ (g->number_of_faces),
-          gpress_(g->cell_facepos[ g->number_of_cells ])
+    PressureSolver(const UnstructuredGrid& g,
+		   const Opm::IncompPropertiesInterface& props,
+		   const double* gravity)
+        : grid_(g),
+	  htrans_(g.cell_facepos[ g.number_of_cells ]),
+          trans_ (g.number_of_faces),
+          gpress_(g.cell_facepos[ g.number_of_cells ], 0.0),
+          gpress_omegaweighted_(g.cell_facepos[ g.number_of_cells ], 0.0)
     {
-	UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(g);
+	UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(&grid_);
         tpfa_htrans_compute(gg, props.permeability(), &htrans_[0]);
-
+	if (gravity) {
+	    mim_ip_compute_gpress(gg->number_of_cells, gg->dimensions, gravity,
+				  gg->cell_facepos, gg->cell_faces,
+				  gg->face_centroids, gg->cell_centroids,
+				  &gpress_[0]);
+	}
         h_ = ifs_tpfa_construct(gg);
     }
 
@@ -207,21 +216,23 @@ public:
 
     template <class State>
     void
-    solve(const UnstructuredGrid*      g     ,
-          const ::std::vector<double>& totmob,
-          const ::std::vector<double>& src   ,
-          State&                       state )
+    solve(const std::vector<double>& totmob,
+          const std::vector<double>& omega,
+	  const std::vector<double>& src,
+          State&                     state)
     {
-	UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(g);
+	UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(&grid_);
         tpfa_eff_trans_compute(gg, &totmob[0], &htrans_[0], &trans_[0]);
 
-        // No gravity
-        ::std::fill(gpress_.begin(), gpress_.end(), double(0.0));
+	if (!omega.empty()) {
+	    mim_ip_density_update(gg->number_of_cells, gg->cell_facepos,
+				  &omega[0],
+				  &gpress_[0], &gpress_omegaweighted_[0]);
+	}
 
-        ifs_tpfa_assemble(gg, &trans_[0], &src[0], &gpress_[0], h_);
+        ifs_tpfa_assemble(gg, &trans_[0], &src[0], &gpress_omegaweighted_[0], h_);
 
         using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
-
         CSRMatrixUmfpackSolver linsolve;
         linsolve.solve(h_->A, h_->b, h_->x);
 
@@ -231,9 +242,11 @@ public:
     }
 
 private:
+    const UnstructuredGrid& grid_;
     ::std::vector<double> htrans_;
     ::std::vector<double> trans_ ;
     ::std::vector<double> gpress_;
+    ::std::vector<double> gpress_omegaweighted_;
 
     struct ifs_tpfa_data* h_;
 };
@@ -276,6 +289,39 @@ compute_totmob(const Opm::IncompPropertiesInterface& props,
 	totmob[cell] = 0;
 	for (int phase = 0; phase < num_phases; ++phase) {	
 	    totmob[cell] += kr[2*cell + phase]/mu[phase];
+	}
+    }
+}
+
+static void
+compute_totmob_omega(const Opm::IncompPropertiesInterface& props,
+		     const std::vector<double>& s,
+		     std::vector<double>& totmob,
+		     std::vector<double>& omega)
+{
+    int num_cells = props.numCells();
+    int num_phases = props.numPhases();
+    totmob.resize(num_cells);
+    omega.resize(num_cells);
+    ASSERT(int(s.size()) == num_cells*num_phases);
+    std::vector<int> cells(num_cells);
+    for (int cell = 0; cell < num_cells; ++cell) {
+	cells[cell] = cell;
+    }
+    std::vector<double> kr(num_cells*num_phases);
+    props.relperm(num_cells, &s[0], &cells[0], &kr[0], 0);
+    const double* mu = props.viscosity();
+    for (int cell = 0; cell < num_cells; ++cell) {
+	totmob[cell] = 0.0;
+	for (int phase = 0; phase < num_phases; ++phase) {	
+	    totmob[cell] += kr[2*cell + phase]/mu[phase];
+	}
+    }
+    const double* rho = props.density();
+    for (int cell = 0; cell < num_cells; ++cell) {
+	omega[cell] = 0.0;
+	for (int phase = 0; phase < num_phases; ++phase) {	
+	    omega[cell] += rho[phase]*(kr[2*cell + phase]/mu[phase])/totmob[cell];
 	}
     }
 }
@@ -752,9 +798,20 @@ main(int argc, char** argv)
     // Extra fluid init for transport solver.
     TwophaseFluid fluid(*props);
 
+    // Gravity init.
+    double gravity[3] = { 0.0 };
+    double g = param.getDefault("gravity", 0.0);
+    bool use_gravity = g != 0.0;
+    if (use_gravity) {
+	gravity[grid->c_grid()->dimensions - 1] = g;
+	if (props->density()[0] == props->density()[1]) {
+	    std::cout << "**** Warning: nonzero gravity, but zero density difference." << std::endl;
+	}
+    }
+
     // Solvers init.
     // Pressure solver.
-    PressureSolver psolver(grid->c_grid(), *props);
+    PressureSolver psolver(*grid->c_grid(), *props, use_gravity ? gravity : 0);
     // Non-reordering solver.
     TransportModel  model  (fluid, *grid->c_grid(), porevol, 0, guess_old_solution);
     TransportSolver tsolver(model);
@@ -763,25 +820,67 @@ main(int argc, char** argv)
 
 
     // State-related and source-related variables init.
+    int num_cells = grid->c_grid()->number_of_cells;
     std::vector<double> totmob;
+    std::vector<double> omega;
     ReservoirState state(grid->c_grid(), props->numPhases());
     // We need a separate reorder_sat, because the reorder
     // code expects a scalar sw, not both sw and so.
-    std::vector<double> reorder_sat(grid->c_grid()->number_of_cells);
-    // double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
-    double flow_per_sec = 0.1*porevol[0]/Opm::unit::day;
-    std::vector<double> src   (grid->c_grid()->number_of_cells, 0.0);
-    // src[0] = flow_per_sec;
-    // src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
-    std::fill(src.begin(), src.begin() + src.size()/2, flow_per_sec);
-    std::fill(src.begin() + src.size()/2, src.end(), -flow_per_sec);
+    std::vector<double> reorder_sat(num_cells);
+    std::vector<double> src(num_cells, 0.0);
+    int scenario = param.getDefault("scenario", 0);
+    switch (scenario) {
+    case 0:
+	{
+	    std::cout << "==== Scenario 0: single-cell source and sink.";
+	    double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
+	    src[0] = flow_per_sec;
+	    src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
+	    break;
+	}
+    case 1:
+	{
+	    std::cout << "==== Scenario 1: half source, half sink.";
+	    double flow_per_sec = 0.1*porevol[0]/Opm::unit::day;
+	    std::fill(src.begin(), src.begin() + src.size()/2, flow_per_sec);
+	    std::fill(src.begin() + src.size()/2, src.end(), -flow_per_sec);
+	    break;
+	}
+    case 2:
+	{
+	    std::cout << "==== Scenario 2: gravity convection.";
+	    if (!use_gravity) {
+		std::cout << "**** Warning: running gravity convection scenario, but gravity is zero." << std::endl;
+	    }
+	    if (use_deck) {
+		std::cout << "**** Warning: running gravity convection scenario, which expects a cartesian grid."
+			  << std::endl;
+	    }
+	    std::vector<double>& sat = state.saturation();
+	    for (int cell = 0; cell < num_cells; ++cell) {
+		const int* cd = grid->c_grid()->cartdims;
+		bool left = cell%(cd[1]*cd[2]) < cd[0]/2;
+		sat[2*cell] = left ? 1.0 : 0.0;
+		sat[2*cell + 1] = 1.0 - sat[2*cell];
+	    }
+	    break;
+	}
+    default:
+	{
+	    THROW("==== Scenario " << scenario << " is unknown.");
+	}
+    }
     TransportSource* tsrc = create_transport_source(2, 2);
     double ssrc[]   = { 1.0, 0.0 };
     double ssink[]  = { 0.0, 1.0 };
     double zdummy[] = { 0.0, 0.0 };
-    append_transport_source(0, 2, 0, src[0], ssrc, zdummy, tsrc);
-    append_transport_source(grid->c_grid()->number_of_cells - 1, 2, 0,
-			    src.back(), ssink, zdummy, tsrc);
+    for (int cell = 0; cell < num_cells; ++cell) {
+	if (src[cell] > 0.0) {
+	    append_transport_source(cell, 2, 0, src[cell], ssrc, zdummy, tsrc);
+	} else if (src[cell] < 0.0) {
+	    append_transport_source(cell, 2, 0, src[cell], ssink, zdummy, tsrc);
+	}
+    }
     std::vector<double> reorder_src = src;
 
     // Control init.
@@ -829,9 +928,13 @@ main(int argc, char** argv)
 	    outputState(grid->c_grid(), state, pstep, output_dir);
 	}
 
-	compute_totmob(*props, state.saturation(), totmob);
+	if (use_gravity) {
+	    compute_totmob_omega(*props, state.saturation(), totmob, omega);
+	} else {
+	    compute_totmob(*props, state.saturation(), totmob);
+	}
 	pressure_timer.start();
-	psolver.solve(grid->c_grid(), totmob, src, state);
+	psolver.solve(totmob, omega, src, state);
 	pressure_timer.stop();
 	double pt = pressure_timer.secsSinceStart();
 	std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
