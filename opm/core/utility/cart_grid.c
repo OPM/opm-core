@@ -65,20 +65,31 @@ create_hexa_grid_3d(int nx, int ny, int nz, double dx, double dy, double dz)
 
 static struct UnstructuredGrid *allocate_cart_grid_2d(int nx, int ny);
 static void fill_cart_topology_2d(struct UnstructuredGrid *G);
-static void fill_cart_geometry_2d(struct UnstructuredGrid *G);
+static void fill_cart_geometry_2d(struct UnstructuredGrid *G,
+                                  const double            *x,
+                                  const double            *y);
 
 struct UnstructuredGrid*
 create_cart_grid_2d(int nx, int ny)
 {
+    int     i;
+    double *x, *y;
     struct UnstructuredGrid *G;
 
-    G = allocate_cart_grid_2d(nx, ny);
+    x = malloc((nx + 1) * sizeof *x);
+    y = malloc((ny + 1) * sizeof *y);
 
-    if (G != NULL)
-    {
-        fill_cart_topology_2d(G);
-        fill_cart_geometry_2d(G);
+    if ((x == NULL) || (y == NULL)) {
+        G = NULL;
+    } else {
+
+        for (i = 0; i < nx + 1; i++) { x[i] = i; }
+        for (i = 0; i < ny + 1; i++) { y[i] = i; }
+
+        G = create_tensor_grid_2d(nx, ny, x, y);
     }
+
+    free(y);  free(x);
 
     return G;
 }
@@ -88,9 +99,6 @@ create_cart_grid_2d(int nx, int ny)
 struct UnstructuredGrid *
 create_tensor_grid_2d(int nx, int ny, double x[], double y[])
 {
-    int    i,j;
-
-    double *coord;
     struct UnstructuredGrid *G;
 
     G = allocate_cart_grid_2d(nx, ny);
@@ -98,14 +106,7 @@ create_tensor_grid_2d(int nx, int ny, double x[], double y[])
     if (G != NULL)
     {
         fill_cart_topology_2d(G);
-
-        coord = G->node_coordinates;
-        for (j=0; j<ny+1; ++j) {
-            for (i=0; i<nx+1; ++i) {
-                *coord++ = x[i];
-                *coord++ = y[j];
-            }
-        }
+        fill_cart_geometry_2d(G, x, y);
     }
 
     return G;
@@ -600,12 +601,16 @@ fill_cart_topology_2d(struct UnstructuredGrid *G)
 /* --------------------------------------------------------------------- */
 
 static void
-fill_cart_geometry_2d(struct UnstructuredGrid *G)
+fill_cart_geometry_2d(struct UnstructuredGrid *G,
+                      const double            *x,
+                      const double            *y)
 {
     int    i,j;
     int    nx, ny;
     int    nxf, nyf;
     int    Nx, Ny;
+
+    double dx, dy;
 
     double *coord, *ccentroids, *cvolumes;
     double *fnormals, *fcentroids, *fareas;
@@ -624,8 +629,8 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G)
 
     for (j=0; j<ny; ++j) {
         for (i=0; i<nx; ++i) {
-            *ccentroids++ = i+0.5;
-            *ccentroids++ = j+0.5;
+            *ccentroids++ = (x[i] + x[i + 1]) / 2.0;
+            *ccentroids++ = (y[j] + y[j + 1]) / 2.0;
 
             *cvolumes++ = 1;
         }
@@ -643,10 +648,13 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G)
             *fnormals++ = 1;
             *fnormals++ = 0;
 
-            *fcentroids++ = i;
-            *fcentroids++ = j+0.5;
+            *fcentroids++ = x[i];
+            *fcentroids++ = (y[j] + y[j + 1]) / 2.0;
 
-            *fareas++ = 1;
+            dx = (i < nx) ? x[i + 1] - x[i] : x[i] - x[i - 1];
+            dy = (j < ny) ? y[j + 1] - y[j] : y[j] - y[j - 1];
+
+            *fareas++ = dx * dy;
         }
     }
 
@@ -656,18 +664,21 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G)
             *fnormals++ = 0;
             *fnormals++ = 1;
 
-            *fcentroids++ = i+0.5;
-            *fcentroids++ = j;
+            *fcentroids++ = (x[i] + x[i + 1]) / 2.0;
+            *fcentroids++ = y[j];
 
-            *fareas++ = 1;
+            dx = (i < nx) ? x[i + 1] - x[i] : x[i] - x[i - 1];
+            dy = (j < ny) ? y[j + 1] - y[j] : y[j] - y[j - 1];
+
+            *fareas++ = dx * dy;
         }
     }
 
     coord = G->node_coordinates;
     for (j=0; j<ny+1; ++j) {
         for (i=0; i<nx+1; ++i) {
-            *coord++ = i;
-            *coord++ = j;
+            *coord++ = x[i];
+            *coord++ = y[j];
         }
     }
 }
