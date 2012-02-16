@@ -466,7 +466,7 @@ allocate_cart_grid_2d(int nx, int ny)
         G->cartdims[0] = nx;
         G->cartdims[1] = ny;
         G->cartdims[2] = 1;
-        
+
         Nx  = nx+1;
         Ny  = ny+1;
 
@@ -670,7 +670,7 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G,
             *fcentroids++ = y[j];
 
             dx = x[i + 1] - x[i];
- 
+
             *fareas++ = dx;
         }
     }
