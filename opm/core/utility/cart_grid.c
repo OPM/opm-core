@@ -632,7 +632,10 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G,
             *ccentroids++ = (x[i] + x[i + 1]) / 2.0;
             *ccentroids++ = (y[j] + y[j + 1]) / 2.0;
 
-            *cvolumes++ = 1;
+            dx = x[i + 1] - x[i];
+            dy = y[j + 1] - y[j];
+
+            *cvolumes++ = dx * dy;
         }
     }
 
@@ -651,10 +654,9 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G,
             *fcentroids++ = x[i];
             *fcentroids++ = (y[j] + y[j + 1]) / 2.0;
 
-            dx = (i < nx) ? x[i + 1] - x[i] : x[i] - x[i - 1];
-            dy = (j < ny) ? y[j + 1] - y[j] : y[j] - y[j - 1];
+            dy = y[j + 1] - y[j];
 
-            *fareas++ = dx * dy;
+            *fareas++ = dy;
         }
     }
 
@@ -667,10 +669,9 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G,
             *fcentroids++ = (x[i] + x[i + 1]) / 2.0;
             *fcentroids++ = y[j];
 
-            dx = (i < nx) ? x[i + 1] - x[i] : x[i] - x[i - 1];
-            dy = (j < ny) ? y[j + 1] - y[j] : y[j] - y[j - 1];
-
-            *fareas++ = dx * dy;
+            dx = x[i + 1] - x[i];
+ 
+            *fareas++ = dx;
         }
     }
 
