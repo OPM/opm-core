@@ -51,14 +51,12 @@ create_hexa_grid_3d(int nx, int ny, int nz, double dx, double dy, double dz)
     struct UnstructuredGrid *G;
 
     G = allocate_cart_grid_3d(nx, ny, nz);
-    if (G == NULL)
-    {
-        fprintf(stderr, "Cannot allocate space for grid.\n");
-        exit(EXIT_FAILURE);
-    }
 
-    fill_cart_topology_3d(G);
-    fill_cart_geometry_3d(G, dx, dy, dz);
+    if (G != NULL)
+    {
+        fill_cart_topology_3d(G);
+        fill_cart_geometry_3d(G, dx, dy, dz);
+    }
 
     return G;
 }
@@ -75,14 +73,12 @@ create_cart_grid_2d(int nx, int ny)
     struct UnstructuredGrid *G;
 
     G = allocate_cart_grid_2d(nx, ny);
-    if (G == NULL)
-    {
-        fprintf(stderr, "Cannot allocate space for grid.\n");
-        exit(EXIT_FAILURE);
-    }
 
-    fill_cart_topology_2d(G);
-    fill_cart_geometry_2d(G);
+    if (G != NULL)
+    {
+        fill_cart_topology_2d(G);
+        fill_cart_geometry_2d(G);
+    }
 
     return G;
 }
@@ -99,19 +95,16 @@ create_tensor_grid_2d(int nx, int ny, double x[], double y[])
 
     G = allocate_cart_grid_2d(nx, ny);
 
-    if (G == NULL)
+    if (G != NULL)
     {
-        fprintf(stderr, "Cannot allocate space for grid.\n");
-        exit(EXIT_FAILURE);
-    }
+        fill_cart_topology_2d(G);
 
-    fill_cart_topology_2d(G);
-
-    coord = G->node_coordinates;
-    for (j=0; j<ny+1; ++j) {
-        for (i=0; i<nx+1; ++i) {
-            *coord++ = x[i];
-            *coord++ = y[j];
+        coord = G->node_coordinates;
+        for (j=0; j<ny+1; ++j) {
+            for (i=0; i<nx+1; ++i) {
+                *coord++ = x[i];
+                *coord++ = y[j];
+            }
         }
     }
 
@@ -130,21 +123,18 @@ create_tensor_grid_3d(int nx, int ny, int nz, double x[], double y[], double z[]
 
     G = allocate_cart_grid_3d(nx, ny, nz);
 
-    if (G == NULL)
+    if (G != NULL)
     {
-        fprintf(stderr, "Cannot allocate space for grid.\n");
-        exit(EXIT_FAILURE);
-    }
+        fill_cart_topology_3d(G);
 
-    fill_cart_topology_3d(G);
-
-    coord = G->node_coordinates;
-    for (k=0; k<nz+1; ++k) {
-        for (j=0; j<ny+1; ++j) {
-            for (i=0; i<nx+1; ++i) {
-                *coord++ = x[i];
-                *coord++ = y[j];
-                *coord++ = z[k];
+        coord = G->node_coordinates;
+        for (k=0; k<nz+1; ++k) {
+            for (j=0; j<ny+1; ++j) {
+                for (i=0; i<nx+1; ++i) {
+                    *coord++ = x[i];
+                    *coord++ = y[j];
+                    *coord++ = z[k];
+                }
             }
         }
     }
