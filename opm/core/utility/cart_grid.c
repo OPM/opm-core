@@ -37,26 +37,40 @@
 
 static struct UnstructuredGrid *allocate_cart_grid_3d(int nx, int ny, int nz);
 static void fill_cart_topology_3d(struct UnstructuredGrid *G);
-static void fill_cart_geometry_3d(struct UnstructuredGrid *G, double dx, double dy, double dz);
+static void fill_cart_geometry_3d(struct UnstructuredGrid *G,
+                                  const double            *x,
+                                  const double            *y,
+                                  const double            *z);
 
-struct UnstructuredGrid*
+struct UnstructuredGrid *
 create_cart_grid_3d(int nx, int ny, int nz)
 {
     return create_hexa_grid_3d(nx, ny, nz, 1.0, 1.0, 1.0);
 }
 
-struct UnstructuredGrid*
-create_hexa_grid_3d(int nx, int ny, int nz, double dx, double dy, double dz)
+struct UnstructuredGrid *
+create_hexa_grid_3d(int    nx, int    ny, int    nz,
+                    double dx, double dy, double dz)
 {
+    int     i;
+    double *x, *y, *z;
     struct UnstructuredGrid *G;
 
-    G = allocate_cart_grid_3d(nx, ny, nz);
+    x = malloc((nx + 1) * sizeof *x);
+    y = malloc((ny + 1) * sizeof *y);
+    z = malloc((nz + 1) * sizeof *z);
 
-    if (G != NULL)
-    {
-        fill_cart_topology_3d(G);
-        fill_cart_geometry_3d(G, dx, dy, dz);
+    if ((x == NULL) || (y == NULL) || (z == NULL)) {
+        G = NULL;
+    } else {
+        for (i = 0; i < nx + 1; i++) { x[i] = i * dx; }
+        for (i = 0; i < ny + 1; i++) { y[i] = i * dy; }
+        for (i = 0; i < nz + 1; i++) { z[i] = i * dz; }
+
+        G = create_tensor_grid_3d(nx, ny, nz, x, y, z);
     }
+
+    free(z);  free(y);  free(x);
 
     return G;
 }
@@ -115,11 +129,9 @@ create_tensor_grid_2d(int nx, int ny, double x[], double y[])
 /* --------------------------------------------------------------------- */
 
 struct UnstructuredGrid *
-create_tensor_grid_3d(int nx, int ny, int nz, double x[], double y[], double z[])
+create_tensor_grid_3d(int    nx,  int    ny , int    nz ,
+                      double x[], double y[], double z[])
 {
-    int    i,j,k;
-
-    double *coord;
     struct UnstructuredGrid *G;
 
     G = allocate_cart_grid_3d(nx, ny, nz);
@@ -127,17 +139,7 @@ create_tensor_grid_3d(int nx, int ny, int nz, double x[], double y[], double z[]
     if (G != NULL)
     {
         fill_cart_topology_3d(G);
-
-        coord = G->node_coordinates;
-        for (k=0; k<nz+1; ++k) {
-            for (j=0; j<ny+1; ++j) {
-                for (i=0; i<nx+1; ++i) {
-                    *coord++ = x[i];
-                    *coord++ = y[j];
-                    *coord++ = z[k];
-                }
-            }
-        }
+        fill_cart_geometry_3d(G, x, y, z);
     }
 
     return G;
@@ -340,15 +342,16 @@ fill_cart_topology_3d(struct UnstructuredGrid *G)
 
 static void
 fill_cart_geometry_3d(struct UnstructuredGrid *G,
-		      double dx, double dy, double dz)
+                      const double            *x,
+                      const double            *y,
+                      const double            *z)
 {
     int nx, ny, nz;
     int Nx, Ny, Nz;
     int nxf, nyf, nzf;
     int i,j,k;
 
-    double areax, areay, areaz;
-    double cvol;
+    double dx, dy, dz;
 
     double *coord, *ccentroids, *cvolumes;
     double *fnormals, *fcentroids, *fareas;
@@ -364,21 +367,20 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G,
     nyf = nx*Ny*nz;
     nzf = nx*ny*Nz;
 
-    areax = dy*dz;
-    areay = dx*dz;
-    areaz = dx*dy;
-    cvol = dx*dy*dz;
-
     ccentroids = G->cell_centroids;
     cvolumes   = G->cell_volumes;
     for (k=0; k<nz; ++k)  {
         for (j=0; j<ny; ++j) {
             for (i=0; i<nx; ++i) {
-                *ccentroids++ = (i+0.5)*dx;
-                *ccentroids++ = (j+0.5)*dy;
-                *ccentroids++ = (k+0.5)*dz;
+                *ccentroids++ = (x[i] + x[i + 1]) / 2.0;
+                *ccentroids++ = (y[j] + y[j + 1]) / 2.0;
+                *ccentroids++ = (z[k] + z[k + 1]) / 2.0;
 
-                *cvolumes++ = cvol;
+                dx = x[i + 1] - x[i];
+                dy = y[j + 1] - y[j];
+                dz = z[k + 1] - z[k];
+
+                *cvolumes++ = dx * dy * dz;
             }
         }
     }
@@ -396,11 +398,14 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G,
                 *fnormals++ = 0;
                 *fnormals++ = 0;
 
-                *fcentroids++ = i*dx;
-                *fcentroids++ = (j+0.5)*dy;
-                *fcentroids++ = (k+0.5)*dz;
+                *fcentroids++ = x[i];
+                *fcentroids++ = (y[j] + y[j + 1]) / 2.0;
+                *fcentroids++ = (z[k] + z[k + 1]) / 2.0;
 
-                *fareas++ = areax;
+                dy = y[j + 1] - y[j];
+                dz = z[k + 1] - z[k];
+
+                *fareas++ = dy * dz;
             }
         }
     }
@@ -412,11 +417,14 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G,
                 *fnormals++ = 1;
                 *fnormals++ = 0;
 
-                *fcentroids++ = (i+0.5)*dx;
-                *fcentroids++ = j*dy;
-                *fcentroids++ = (k+0.5)*dz;
+                *fcentroids++ = (x[i] + x[i + 1]) / 2.0;
+                *fcentroids++ = y[j];
+                *fcentroids++ = (z[k] + z[k + 1]) / 2.0;
 
-                *fareas++ = areay;
+                dx = x[i + 1] - x[i];
+                dz = z[k + 1] - z[k];
+
+                *fareas++ = dx * dz;
             }
         }
     }
@@ -428,11 +436,14 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G,
                 *fnormals++ = 0;
                 *fnormals++ = 1;
 
-                *fcentroids++ = (i+0.5)*dx;
-                *fcentroids++ = (j+0.5)*dy;
-                *fcentroids++ = k*dz;
+                *fcentroids++ = (x[i] + x[i + 1]) / 2.0;
+                *fcentroids++ = (y[j] + y[j + 1]) / 2.0;
+                *fcentroids++ = z[k];
 
-                *fareas++ = areaz;
+                dx = x[i + 1] - x[i];
+                dy = y[j + 1] - y[j];
+
+                *fareas++ = dx * dy;
             }
         }
     }
@@ -441,9 +452,9 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G,
     for (k=0; k<nz+1; ++k) {
         for (j=0; j<ny+1; ++j) {
             for (i=0; i<nx+1; ++i) {
-                *coord++ = i;
-                *coord++ = j;
-                *coord++ = k;
+                *coord++ = x[i];
+                *coord++ = y[j];
+                *coord++ = z[k];
             }
         }
     }
