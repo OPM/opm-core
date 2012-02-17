@@ -42,6 +42,7 @@ namespace Opm
             THROW("SaturationPropsFromDeck::init()   --  oil phase must be active.");
         }
         const int samples = 200;
+	double swco = 0.0;
         if (phase_usage_.phase_used[Aqua]) {
             const SWOF::table_t& swof_table = deck.getSWOF().swof_;
             if (swof_table.size() != 1) {
@@ -55,6 +56,9 @@ namespace Opm
             buildUniformMonotoneTable(sw, krow, samples, krow_);
             buildUniformMonotoneTable(sw, pcow, samples, pcow_);
             krocw_ = krow[0]; // At connate water -> ecl. SWOF
+	    swco = sw[0];
+	    smin_[phase_usage_.phase_pos[Aqua]] = sw[0];
+	    smax_[phase_usage_.phase_pos[Aqua]] = sw.back();
         }
         if (phase_usage_.phase_used[Vapour]) {
             const SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
@@ -68,7 +72,15 @@ namespace Opm
             buildUniformMonotoneTable(sg, krg,  samples, krg_);
             buildUniformMonotoneTable(sg, krog, samples, krog_);
             buildUniformMonotoneTable(sg, pcog, samples, pcog_);
+	    smin_[phase_usage_.phase_pos[Vapour]] = sg[0];
+	    if (std::fabs(sg.back() + swco - 1.0) > 1e-2) {
+		THROW("Gas maximum saturation in SGOF table = " << sg.back() <<
+		      ", should equal (1.0 - connate water sat) = " << (1.0 - swco));
+	    }
+	    smax_[phase_usage_.phase_pos[Vapour]] = sg.back();
         }
+	smin_[phase_usage_.phase_pos[Liquid]] = 0.0;
+	smax_[phase_usage_.phase_pos[Liquid]] = 1.0 - swco;
     }
 
 
@@ -141,6 +153,32 @@ namespace Opm
             }
         }
     }
+
+
+
+
+    /// Obtain the range of allowable saturation values.
+    /// \param[in]  n      Number of data points.
+    /// \param[out] smin   Array of nP minimum s values, array must be valid before calling.
+    /// \param[out] smax   Array of nP maximum s values, array must be valid before calling.
+    void SaturationPropsFromDeck::satRange(const int n,
+					   double* smin,
+					   double* smax) const
+    {
+	const int np = phase_usage_.num_phases;
+	for (int i = 0; i < n; ++i) {
+	    for (int p = 0; p < np; ++p) {
+		smin[np*i + p] = smin_[p];
+		smax[np*i + p] = smax_[p];
+	    }
+	}
+    }
+
+
+
+
+    // Private methods below.
+
 
     void SaturationPropsFromDeck::evalKr(const double* s, double* kr) const
     {
