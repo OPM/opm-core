@@ -816,7 +816,9 @@ main(int argc, char** argv)
     TransportModel  model  (fluid, *grid->c_grid(), porevol, 0, guess_old_solution);
     TransportSolver tsolver(model);
     // Reordering solver.
-    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), &porevol[0], *props);
+    const double nltol = param.getDefault("nl_tolerance", 1e-9);
+    const int maxit = param.getDefault("nl_maxiter", 30);
+    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), &porevol[0], *props, nltol, maxit);
 
 
     // State-related and source-related variables init.
@@ -888,9 +890,11 @@ main(int argc, char** argv)
     Opm::ImplicitTransportDetails::NRControl ctrl;
     double current_time = 0.0;
     double total_time = stepsize*num_psteps;
-    ctrl.max_it = param.getDefault("max_it", 20);
-    ctrl.verbosity = param.getDefault("verbosity", 0);
-    ctrl.max_it_ls = param.getDefault("max_it_ls", 5);
+    if (!use_reorder) {
+	ctrl.max_it = param.getDefault("max_it", 20);
+	ctrl.verbosity = param.getDefault("verbosity", 0);
+	ctrl.max_it_ls = param.getDefault("max_it_ls", 5);
+    }
 
     // Linear solver init.
     using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
