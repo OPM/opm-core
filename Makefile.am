@@ -51,6 +51,7 @@ opm/core/utility/cpgpreprocess/facetopology.c           \
 opm/core/utility/cpgpreprocess/uniquepoints.c           \
 opm/core/utility/StopWatch.cpp                          \
 opm/core/utility/newwells.c                             \
+opm/core/utility/writeVtkData.cpp                       \
 opm/core/linalg/sparse_sys.c                            \
 opm/core/pressure/cfsh.c                                \
 opm/core/pressure/flow_bc.c                             \
@@ -145,6 +146,7 @@ opm/core/utility/cpgpreprocess/geometry.h               \
 opm/core/utility/cpgpreprocess/facetopology.h           \
 opm/core/utility/cpgpreprocess/grdecl.h                 \
 opm/core/utility/cart_grid.h                            \
+opm/core/utility/writeVtkData.hpp                       \
 opm/core/well.h                                         \
 opm/core/linalg/sparse_sys.h                            \
 opm/core/linalg/blas_lapack.h                           \
