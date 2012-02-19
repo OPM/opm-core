@@ -139,9 +139,9 @@ namespace Opm
     int Tag::indent_ = 0;
 
 
-    void writeVtkDataGeneralGrid(const UnstructuredGrid* grid,
-				 const DataMap& data,
-				 std::ostream& os)
+    void writeVtkData(const UnstructuredGrid* grid,
+		      const DataMap& data,
+		      std::ostream& os)
     {
 	if (grid->dimensions != 3) {
 	    THROW("Vtk output for 3d grids only");
