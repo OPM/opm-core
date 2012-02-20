@@ -40,12 +40,12 @@
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
 #include <opm/core/pressure/mimetic/mimetic.h>
 
-#include <opm/core/utility/cart_grid.h>
+#include <opm/core/GridManager.hpp>
+#include <opm/core/grid.h>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/writeVtkData.hpp>
-#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
 #include <opm/core/fluid/SimpleFluid2p.hpp>
@@ -78,77 +78,6 @@
 #include <fstream>
 #include <iterator>
 #include <vector>
-
-
-
-
-namespace Opm
-{
-
-
-    /// Concrete grid class constructing a
-    /// corner point grid from a deck,
-    /// or a cartesian grid.
-    class Grid
-    {
-    public:
-	Grid(const Opm::EclipseGridParser& deck)
-	{
-	    // Extract data from deck.
-	    const std::vector<double>& zcorn = deck.getFloatingPointValue("ZCORN");
-	    const std::vector<double>& coord = deck.getFloatingPointValue("COORD");
-	    const std::vector<int>& actnum = deck.getIntegerValue("ACTNUM");
-	    std::vector<int> dims;
-	    if (deck.hasField("DIMENS")) {
-		dims = deck.getIntegerValue("DIMENS");
-	    } else if (deck.hasField("SPECGRID")) {
-		dims = deck.getSPECGRID().dimensions;
-	    } else {
-		THROW("Deck must have either DIMENS or SPECGRID.");
-	    }
-
-	    // Collect in input struct for preprocessing.
-	    struct grdecl grdecl;
-	    grdecl.zcorn = &zcorn[0];
-	    grdecl.coord = &coord[0];
-	    grdecl.actnum = &actnum[0];
-	    grdecl.dims[0] = dims[0];
-	    grdecl.dims[1] = dims[1];
-	    grdecl.dims[2] = dims[2];
-
-	    // Process and compute.
-	    ug_ = preprocess(&grdecl, 0.0);
-	    compute_geometry(ug_);
-	}
-
-	Grid(int nx, int ny)
-	{
-	    ug_ = create_cart_grid_2d(nx, ny);
-	}
-
-	Grid(int nx, int ny, int nz)
-	{
-	    ug_ = create_cart_grid_3d(nx, ny, nz);
-	}
-
-	~Grid()
-	{
-	    free_grid(ug_);
-	}
-
-	virtual const UnstructuredGrid* c_grid() const
-	{
-	    return ug_;
-	}
-
-    private:
-	// Disable copying and assignment.
-	Grid(const Grid& other);
-	Grid& operator=(const Grid& other);
-	struct UnstructuredGrid* ug_;
-    };
-
-} // namespace Opm
 
 
 
@@ -500,13 +429,13 @@ main(int argc, char** argv)
 
     // If we have a "deck_filename", grid and props will be read from that.
     bool use_deck = param.has("deck_filename");
-    boost::scoped_ptr<Opm::Grid> grid;
+    boost::scoped_ptr<Opm::GridManager> grid;
     boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
     if (use_deck) {
 	std::string deck_filename = param.get<std::string>("deck_filename");
 	Opm::EclipseGridParser deck(deck_filename);
 	// Grid init
-	grid.reset(new Opm::Grid(deck));
+	grid.reset(new Opm::GridManager(deck));
 	// Rock and fluid init
 	const int* gc = grid->c_grid()->global_cell;
 	std::vector<int> global_cell(gc, gc + grid->c_grid()->number_of_cells);
@@ -516,7 +445,7 @@ main(int argc, char** argv)
 	const int nx = param.getDefault("nx", 100);
 	const int ny = param.getDefault("ny", 100);
 	const int nz = param.getDefault("nz", 1);
-	grid.reset(new Opm::Grid(nx, ny, nz));
+	grid.reset(new Opm::GridManager(nx, ny, nz));
 	// Rock and fluid init.
 	props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
     }
