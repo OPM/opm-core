@@ -251,11 +251,19 @@ class SimpleFluid2pWrappingProps
 {
 public:
     SimpleFluid2pWrappingProps(const Opm::IncompPropertiesInterface& props)
-	: props_(props)
+	: props_(props),
+	  smin_(props.numCells()),
+	  smax_(props.numCells())
     {
 	if (props.numPhases() != 2) {
 	    THROW("SimpleFluid2pWrapper requires 2 phases.");
 	}
+	const int num_cells = props.numCells();
+	std::vector<int> cells(num_cells);
+	for (int c = 0; c < num_cells; ++c) {
+	    cells[c] = c;
+	}
+	props.satRange(num_cells, &cells[0], &smin_[0], &smax_[0]);
     }
 
     double density(int phase) const
@@ -299,14 +307,20 @@ public:
 	ASSERT(dpc[3] == 0.0);
     }
  
-    /// \todo Properly implement s_min() and s_max().
-    ///       We must think about how to do this in
-    ///       the *Properties* classes.
-    double s_min(int c) const { (void) c; return 0.0; }
-    double s_max(int c) const { (void) c; return 1.0; }
+    double s_min(int c) const
+    {
+	return smin_[c];
+    }
+
+    double s_max(int c) const
+    {
+	return smax_[c];
+    }
 
 private:
     const Opm::IncompPropertiesInterface& props_;
+    std::vector<double> smin_;
+    std::vector<double> smax_;
 };
 
 typedef SimpleFluid2pWrappingProps TwophaseFluid;
