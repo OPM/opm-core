@@ -36,9 +36,7 @@
 
 #include <opm/core/linalg/sparse_sys.h>
 
-#include <opm/core/pressure/tpfa/ifs_tpfa.h>
-#include <opm/core/pressure/tpfa/trans_tpfa.h>
-#include <opm/core/pressure/mimetic/mimetic.h>
+#include <opm/core/pressure/IncompTpfa.hpp>
 
 #include <opm/core/GridManager.hpp>
 #include <opm/core/grid.h>
@@ -114,72 +112,6 @@ private:
     ::std::vector<double> sat_   ;
 };
 
-
-
-
-class PressureSolver {
-public:
-    PressureSolver(const UnstructuredGrid& g,
-		   const Opm::IncompPropertiesInterface& props,
-		   const double* gravity)
-        : grid_(g),
-	  htrans_(g.cell_facepos[ g.number_of_cells ]),
-          trans_ (g.number_of_faces),
-          gpress_(g.cell_facepos[ g.number_of_cells ], 0.0),
-          gpress_omegaweighted_(g.cell_facepos[ g.number_of_cells ], 0.0)
-    {
-	UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(&grid_);
-        tpfa_htrans_compute(gg, props.permeability(), &htrans_[0]);
-	if (gravity) {
-	    mim_ip_compute_gpress(gg->number_of_cells, gg->dimensions, gravity,
-				  gg->cell_facepos, gg->cell_faces,
-				  gg->face_centroids, gg->cell_centroids,
-				  &gpress_[0]);
-	}
-        h_ = ifs_tpfa_construct(gg);
-    }
-
-    ~PressureSolver()
-    {
-        ifs_tpfa_destroy(h_);
-    }
-
-    template <class State>
-    void
-    solve(const std::vector<double>& totmob,
-          const std::vector<double>& omega,
-	  const std::vector<double>& src,
-          State&                     state)
-    {
-	UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(&grid_);
-        tpfa_eff_trans_compute(gg, &totmob[0], &htrans_[0], &trans_[0]);
-
-	if (!omega.empty()) {
-	    mim_ip_density_update(gg->number_of_cells, gg->cell_facepos,
-				  &omega[0],
-				  &gpress_[0], &gpress_omegaweighted_[0]);
-	}
-
-        ifs_tpfa_assemble(gg, &trans_[0], &src[0], &gpress_omegaweighted_[0], h_);
-
-        using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
-        CSRMatrixUmfpackSolver linsolve;
-        linsolve.solve(h_->A, h_->b, h_->x);
-
-        ifs_tpfa_press_flux(gg, &trans_[0], h_,
-                            &state.pressure()[0],
-                            &state.faceflux()[0]);
-    }
-
-private:
-    const UnstructuredGrid& grid_;
-    ::std::vector<double> htrans_;
-    ::std::vector<double> trans_ ;
-    ::std::vector<double> gpress_;
-    ::std::vector<double> gpress_omegaweighted_;
-
-    struct ifs_tpfa_data* h_;
-};
 
 
 
@@ -471,7 +403,7 @@ main(int argc, char** argv)
 
     // Solvers init.
     // Pressure solver.
-    PressureSolver psolver(*grid->c_grid(), *props, use_gravity ? gravity : 0);
+    Opm::IncompTpfa psolver(*grid->c_grid(), props->permeability(), use_gravity ? gravity : 0);
     // Non-reordering solver.
     TransportModel  model  (fluid, *grid->c_grid(), porevol, 0, guess_old_solution);
     TransportSolver tsolver(model);
@@ -484,7 +416,7 @@ main(int argc, char** argv)
     // State-related and source-related variables init.
     int num_cells = grid->c_grid()->number_of_cells;
     std::vector<double> totmob;
-    std::vector<double> omega;
+    std::vector<double> omega; // Will remain empty if no gravity.
     ReservoirState state(grid->c_grid(), props->numPhases());
     // We need a separate reorder_sat, because the reorder
     // code expects a scalar sw, not both sw and so.
@@ -598,7 +530,7 @@ main(int argc, char** argv)
 	    compute_totmob(*props, state.saturation(), totmob);
 	}
 	pressure_timer.start();
-	psolver.solve(totmob, omega, src, state);
+	psolver.solve(totmob, omega, src, state.pressure(), state.faceflux());
 	pressure_timer.stop();
 	double pt = pressure_timer.secsSinceStart();
 	std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
