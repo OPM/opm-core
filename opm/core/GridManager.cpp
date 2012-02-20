@@ -57,6 +57,9 @@ namespace Opm
 
 	// Process and compute.
 	ug_ = preprocess(&grdecl, 0.0);
+	if (!ug_) {
+	    THROW("Failed to construct grid.");
+	}
 	compute_geometry(ug_);
     }
 
@@ -67,6 +70,9 @@ namespace Opm
     GridManager::GridManager(int nx, int ny)
     {
 	ug_ = create_cart_grid_2d(nx, ny);
+	if (!ug_) {
+	    THROW("Failed to construct grid.");
+	}
     }
 
 
@@ -76,6 +82,9 @@ namespace Opm
     GridManager::GridManager(int nx, int ny, int nz)
     {
 	ug_ = create_cart_grid_3d(nx, ny, nz);
+	if (!ug_) {
+	    THROW("Failed to construct grid.");
+	}
     }
 
 
@@ -86,6 +95,9 @@ namespace Opm
 		double dx, double dy, double dz)
     {
 	ug_ = create_hexa_grid_3d(nx, ny, nz, dx, dy, dz);
+	if (!ug_) {
+	    THROW("Failed to construct grid.");
+	}
     }
 
 
