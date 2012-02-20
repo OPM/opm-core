@@ -74,6 +74,7 @@ opm/core/pressure/msmfem/ifsh_ms.c                      \
 opm/core/pressure/msmfem/dfs.c                          \
 opm/core/pressure/msmfem/coarse_sys.c                   \
 opm/core/pressure/ifsh.c                                \
+opm/core/pressure/IncompTpfa.cpp                        \
 opm/core/pressure/mimetic/mimetic.c                     \
 opm/core/pressure/mimetic/hybsys_global.c               \
 opm/core/pressure/mimetic/hybsys.c                      \
@@ -157,6 +158,7 @@ opm/core/GridAdapter.hpp                                \
 opm/core/GridManager.hpp                                \
 opm/core/pressure/fsh.h                                 \
 opm/core/pressure/HybridPressureSolver.hpp              \
+opm/core/pressure/IncompTpfa.hpp                        \
 opm/core/pressure/TPFAPressureSolver.hpp                \
 opm/core/pressure/tpfa/compr_quant.h                    \
 opm/core/pressure/tpfa/compr_source.h                   \
