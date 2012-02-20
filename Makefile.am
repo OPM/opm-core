@@ -52,6 +52,7 @@ opm/core/utility/cpgpreprocess/uniquepoints.c           \
 opm/core/utility/StopWatch.cpp                          \
 opm/core/utility/newwells.c                             \
 opm/core/utility/writeVtkData.cpp                       \
+opm/core/GridManager.cpp                                \
 opm/core/linalg/sparse_sys.c                            \
 opm/core/pressure/cfsh.c                                \
 opm/core/pressure/flow_bc.c                             \
@@ -137,7 +138,6 @@ opm/core/utility/Units.hpp                              \
 opm/core/utility/buildUniformMonotoneTable.hpp          \
 opm/core/utility/linInt.hpp                             \
 opm/core/utility/linearInterpolation.hpp                \
-opm/core/newwells.h                                     \
 opm/core/utility/cpgpreprocess/readvector.hpp           \
 opm/core/utility/cpgpreprocess/uniquepoints.h           \
 opm/core/utility/cpgpreprocess/preprocess.h             \
@@ -148,11 +148,13 @@ opm/core/utility/cpgpreprocess/facetopology.h           \
 opm/core/utility/cpgpreprocess/grdecl.h                 \
 opm/core/utility/cart_grid.h                            \
 opm/core/utility/writeVtkData.hpp                       \
-opm/core/well.h                                         \
 opm/core/linalg/sparse_sys.h                            \
 opm/core/linalg/blas_lapack.h                           \
 opm/core/grid.h                                         \
+opm/core/well.h                                         \
+opm/core/newwells.h                                     \
 opm/core/GridAdapter.hpp                                \
+opm/core/GridManager.hpp                                \
 opm/core/pressure/fsh.h                                 \
 opm/core/pressure/HybridPressureSolver.hpp              \
 opm/core/pressure/TPFAPressureSolver.hpp                \
