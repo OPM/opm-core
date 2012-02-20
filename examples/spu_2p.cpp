@@ -391,7 +391,10 @@ main(int argc, char** argv)
 	const int nx = param.getDefault("nx", 100);
 	const int ny = param.getDefault("ny", 100);
 	const int nz = param.getDefault("nz", 1);
-	grid.reset(new Opm::GridManager(nx, ny, nz));
+	const int dx = param.getDefault("dx", 1.0);
+	const int dy = param.getDefault("dy", 1.0);
+	const int dz = param.getDefault("dz", 1.0);
+	grid.reset(new Opm::GridManager(nx, ny, nz, dx, dy, dz));
 	// Rock and fluid init.
 	props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
     }
