@@ -137,6 +137,7 @@ opm/core/utility/Units.hpp                              \
 opm/core/utility/buildUniformMonotoneTable.hpp          \
 opm/core/utility/linInt.hpp                             \
 opm/core/utility/linearInterpolation.hpp                \
+opm/core/newwells.h                                     \
 opm/core/utility/cpgpreprocess/readvector.hpp           \
 opm/core/utility/cpgpreprocess/uniquepoints.h           \
 opm/core/utility/cpgpreprocess/preprocess.h             \
