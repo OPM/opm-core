@@ -97,7 +97,7 @@ opm/core/linalg/LinearSolverUmfpack.cpp
 
 target_link_libraries(opmcore
   ${UMFPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES} ${Boost_LIBRARIES}
- -lcholmod -lcamd -lccolamd -lmetis
+ -lcholmod -lcamd -lccolamd -lmetis -ldunecommon
 )
 
 add_executable(spu_2p examples/spu_2p.cpp)
