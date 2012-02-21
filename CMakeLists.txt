@@ -12,7 +12,7 @@ find_package(Boost 1.36.0 COMPONENTS date_time filesystem system unit_test_frame
 find_package(UmfPack)
 find_package(LAPACK)
 
-include_directories("${PROJECT_SOURCE_DIR} ${Boost_INCLUDE_DIRS}")
+include_directories(${PROJECT_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
 
 
 # The opmcore library
@@ -90,6 +90,9 @@ opm/core/transport/reorder/nlsolvers.c
 opm/core/transport/reorder/tarjan.c
 opm/core/linalg/call_umfpack.c
 opm/core/pressure/IncompTpfa.cpp
+opm/core/linalg/LinearSolverInterface.cpp
+opm/core/linalg/LinearSolverIstl.cpp
+opm/core/linalg/LinearSolverUmfpack.cpp
 )
 
 target_link_libraries(opmcore
@@ -103,4 +106,4 @@ target_link_libraries(spu_2p
   opmcore
 )
 
-set_target_properties(opmcore spu_2p PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64 )
+set_target_properties(opmcore spu_2p PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
