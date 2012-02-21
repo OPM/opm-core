@@ -40,6 +40,11 @@
 #include <opm/core/linalg/sparse_sys.h>
 #include <opm/core/linalg/LinearSolverUmfpack.hpp>
 
+// #define EXPERIMENT_ISTL
+#ifdef EXPERIMENT_ISTL
+#include <opm/core/linalg/LinearSolverIstl.hpp>
+#endif
+
 #include <opm/core/pressure/IncompTpfa.hpp>
 
 #include <opm/core/GridManager.hpp>
@@ -424,7 +429,11 @@ main(int argc, char** argv)
 
     // Solvers init.
     // Pressure solver.
+#ifdef EXPERIMENT_ISTL
+    Opm::LinearSolverIstl linsolver(param);
+#else
     Opm::LinearSolverUmfpack linsolver;
+#endif // EXPERIMENT_ISTL
     Opm::IncompTpfa psolver(*grid->c_grid(),
                             props->permeability(),
                             use_gravity ? gravity : 0,
