@@ -54,6 +54,7 @@ opm/core/utility/newwells.c                             \
 opm/core/utility/writeVtkData.cpp                       \
 opm/core/GridManager.cpp                                \
 opm/core/linalg/sparse_sys.c                            \
+opm/core/linalg/LinearSolverInterface.cpp               \
 opm/core/pressure/cfsh.c                                \
 opm/core/pressure/flow_bc.c                             \
 opm/core/pressure/well.c                                \
@@ -149,6 +150,7 @@ opm/core/utility/cart_grid.h                            \
 opm/core/utility/writeVtkData.hpp                       \
 opm/core/linalg/sparse_sys.h                            \
 opm/core/linalg/blas_lapack.h                           \
+opm/core/linalg/LinearSolverInterface.hpp               \
 opm/core/grid.h                                         \
 opm/core/well.h                                         \
 opm/core/newwells.h                                     \
@@ -199,7 +201,10 @@ opm/core/transport/reorder/tarjan.h
 if UMFPACK
 libopmcore_la_SOURCES  +=			\
 opm/core/linalg/call_umfpack.c			\
+opm/core/linalg/LinearSolverUmfpack.cpp		\
 opm/core/pressure/IncompTpfa.cpp
 
-nobase_include_HEADERS += opm/core/linalg/call_umfpack.h
+nobase_include_HEADERS +=			\
+opm/core/linalg/call_umfpack.h			\
+opm/core/linalg/LinearSolverUmfpack.hpp
 endif
