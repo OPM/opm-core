@@ -261,8 +261,8 @@ class SimpleFluid2pWrappingProps
 public:
     SimpleFluid2pWrappingProps(const Opm::IncompPropertiesInterface& props)
 	: props_(props),
-	  smin_(props.numCells()),
-	  smax_(props.numCells())
+	  smin_(props.numCells()*props.numPhases()),
+	  smax_(props.numCells()*props.numPhases())
     {
 	if (props.numPhases() != 2) {
 	    THROW("SimpleFluid2pWrapper requires 2 phases.");
