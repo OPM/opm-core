@@ -38,6 +38,7 @@
 #endif // HAVE_CONFIG_H
 
 #include <opm/core/linalg/sparse_sys.h>
+#include <opm/core/linalg/LinearSolverUmfpack.hpp>
 
 #include <opm/core/pressure/IncompTpfa.hpp>
 
@@ -52,7 +53,7 @@
 #include <opm/core/fluid/SimpleFluid2p.hpp>
 #include <opm/core/fluid/IncompPropertiesBasic.hpp>
 #include <opm/core/fluid/IncompPropertiesFromDeck.hpp>
-
+ 
 #include <opm/core/transport/transport_source.h>
 #include <opm/core/transport/CSRMatrixUmfpackSolver.hpp>
 #include <opm/core/transport/NormSupport.hpp>
@@ -423,7 +424,11 @@ main(int argc, char** argv)
 
     // Solvers init.
     // Pressure solver.
-    Opm::IncompTpfa psolver(*grid->c_grid(), props->permeability(), use_gravity ? gravity : 0);
+    Opm::LinearSolverUmfpack linsolver;
+    Opm::IncompTpfa psolver(*grid->c_grid(),
+                            props->permeability(),
+                            use_gravity ? gravity : 0,
+                            linsolver);
     // Non-reordering solver.
     TransportModel  model  (fluid, *grid->c_grid(), porevol, 0, guess_old_solution);
     TransportSolver tsolver(model);
