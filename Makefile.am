@@ -74,7 +74,6 @@ opm/core/pressure/msmfem/ifsh_ms.c                      \
 opm/core/pressure/msmfem/dfs.c                          \
 opm/core/pressure/msmfem/coarse_sys.c                   \
 opm/core/pressure/ifsh.c                                \
-opm/core/pressure/IncompTpfa.cpp                        \
 opm/core/pressure/mimetic/mimetic.c                     \
 opm/core/pressure/mimetic/hybsys_global.c               \
 opm/core/pressure/mimetic/hybsys.c                      \
@@ -86,7 +85,6 @@ opm/core/transport/reorder/TransportModelTwophase.cpp	\
 opm/core/transport/reorder/reordersequence.cpp	\
 opm/core/transport/reorder/nlsolvers.c		\
 opm/core/transport/reorder/tarjan.c
-
 
 nobase_include_HEADERS =                                \
 opm/core/eclipse/CornerpointChopper.hpp                 \
@@ -199,6 +197,9 @@ opm/core/transport/reorder/tarjan.h
 
 
 if UMFPACK
-libopmcore_la_SOURCES  += opm/core/linalg/call_umfpack.c
+libopmcore_la_SOURCES  +=			\
+opm/core/linalg/call_umfpack.c			\
+opm/core/pressure/IncompTpfa.cpp
+
 nobase_include_HEADERS += opm/core/linalg/call_umfpack.h
 endif
