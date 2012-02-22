@@ -32,25 +32,33 @@
   You should have received a copy of the GNU General Public License
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#if HAVE_CONFIG_H
 #include "config.h"
+#endif // HAVE_CONFIG_H
 
 #include <opm/core/linalg/sparse_sys.h>
+#include <opm/core/linalg/LinearSolverUmfpack.hpp>
 
-#include <opm/core/pressure/tpfa/ifs_tpfa.h>
-#include <opm/core/pressure/tpfa/trans_tpfa.h>
-#include <opm/core/pressure/mimetic/mimetic.h>
+// #define EXPERIMENT_ISTL
+#ifdef EXPERIMENT_ISTL
+#include <opm/core/linalg/LinearSolverIstl.hpp>
+#endif
 
-#include <opm/core/utility/cart_grid.h>
+#include <opm/core/pressure/IncompTpfa.hpp>
+
+#include <opm/core/GridManager.hpp>
+#include <opm/core/grid.h>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/Units.hpp>
-#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
+#include <opm/core/utility/writeVtkData.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
 #include <opm/core/fluid/SimpleFluid2p.hpp>
 #include <opm/core/fluid/IncompPropertiesBasic.hpp>
 #include <opm/core/fluid/IncompPropertiesFromDeck.hpp>
-
+ 
 #include <opm/core/transport/transport_source.h>
 #include <opm/core/transport/CSRMatrixUmfpackSolver.hpp>
 #include <opm/core/transport/NormSupport.hpp>
@@ -77,77 +85,6 @@
 #include <fstream>
 #include <iterator>
 #include <vector>
-
-
-
-
-namespace Opm
-{
-
-
-    /// Concrete grid class constructing a
-    /// corner point grid from a deck,
-    /// or a cartesian grid.
-    class Grid
-    {
-    public:
-	Grid(const Opm::EclipseGridParser& deck)
-	{
-	    // Extract data from deck.
-	    const std::vector<double>& zcorn = deck.getFloatingPointValue("ZCORN");
-	    const std::vector<double>& coord = deck.getFloatingPointValue("COORD");
-	    const std::vector<int>& actnum = deck.getIntegerValue("ACTNUM");
-	    std::vector<int> dims;
-	    if (deck.hasField("DIMENS")) {
-		dims = deck.getIntegerValue("DIMENS");
-	    } else if (deck.hasField("SPECGRID")) {
-		dims = deck.getSPECGRID().dimensions;
-	    } else {
-		THROW("Deck must have either DIMENS or SPECGRID.");
-	    }
-
-	    // Collect in input struct for preprocessing.
-	    struct grdecl grdecl;
-	    grdecl.zcorn = &zcorn[0];
-	    grdecl.coord = &coord[0];
-	    grdecl.actnum = &actnum[0];
-	    grdecl.dims[0] = dims[0];
-	    grdecl.dims[1] = dims[1];
-	    grdecl.dims[2] = dims[2];
-
-	    // Process and compute.
-	    ug_ = preprocess(&grdecl, 0.0);
-	    compute_geometry(ug_);
-	}
-
-	Grid(int nx, int ny)
-	{
-	    ug_ = create_cart_grid_2d(nx, ny);
-	}
-
-	Grid(int nx, int ny, int nz)
-	{
-	    ug_ = create_cart_grid_3d(nx, ny, nz);
-	}
-
-	~Grid()
-	{
-	    free_grid(ug_);
-	}
-
-	virtual const UnstructuredGrid* c_grid() const
-	{
-	    return ug_;
-	}
-
-    private:
-	// Disable copying and assignment.
-	Grid(const Grid& other);
-	Grid& operator=(const Grid& other);
-	struct UnstructuredGrid* ug_;
-    };
-
-} // namespace Opm
 
 
 
@@ -184,72 +121,6 @@ private:
     ::std::vector<double> sat_   ;
 };
 
-
-
-
-class PressureSolver {
-public:
-    PressureSolver(const UnstructuredGrid& g,
-		   const Opm::IncompPropertiesInterface& props,
-		   const double* gravity)
-        : grid_(g),
-	  htrans_(g.cell_facepos[ g.number_of_cells ]),
-          trans_ (g.number_of_faces),
-          gpress_(g.cell_facepos[ g.number_of_cells ], 0.0),
-          gpress_omegaweighted_(g.cell_facepos[ g.number_of_cells ], 0.0)
-    {
-	UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(&grid_);
-        tpfa_htrans_compute(gg, props.permeability(), &htrans_[0]);
-	if (gravity) {
-	    mim_ip_compute_gpress(gg->number_of_cells, gg->dimensions, gravity,
-				  gg->cell_facepos, gg->cell_faces,
-				  gg->face_centroids, gg->cell_centroids,
-				  &gpress_[0]);
-	}
-        h_ = ifs_tpfa_construct(gg);
-    }
-
-    ~PressureSolver()
-    {
-        ifs_tpfa_destroy(h_);
-    }
-
-    template <class State>
-    void
-    solve(const std::vector<double>& totmob,
-          const std::vector<double>& omega,
-	  const std::vector<double>& src,
-          State&                     state)
-    {
-	UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(&grid_);
-        tpfa_eff_trans_compute(gg, &totmob[0], &htrans_[0], &trans_[0]);
-
-	if (!omega.empty()) {
-	    mim_ip_density_update(gg->number_of_cells, gg->cell_facepos,
-				  &omega[0],
-				  &gpress_[0], &gpress_omegaweighted_[0]);
-	}
-
-        ifs_tpfa_assemble(gg, &trans_[0], &src[0], &gpress_omegaweighted_[0], h_);
-
-        using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
-        CSRMatrixUmfpackSolver linsolve;
-        linsolve.solve(h_->A, h_->b, h_->x);
-
-        ifs_tpfa_press_flux(gg, &trans_[0], h_,
-                            &state.pressure()[0],
-                            &state.faceflux()[0]);
-    }
-
-private:
-    const UnstructuredGrid& grid_;
-    ::std::vector<double> htrans_;
-    ::std::vector<double> trans_ ;
-    ::std::vector<double> gpress_;
-    ::std::vector<double> gpress_omegaweighted_;
-
-    struct ifs_tpfa_data* h_;
-};
 
 
 
@@ -333,298 +204,28 @@ void outputState(const UnstructuredGrid* grid,
 		 const int step,
 		 const std::string& output_dir)
 {
+    // Write data in VTK format.
     std::ostringstream vtkfilename;
     vtkfilename << output_dir << "/output-" << std::setw(3) << std::setfill('0') << step << ".vtu";
     std::ofstream vtkfile(vtkfilename.str().c_str());
     if (!vtkfile) {
 	THROW("Failed to open " << vtkfilename.str());
     }
-    writeVtkDataGeneralGrid(grid, state, vtkfile);
-}
+    Opm::DataMap dm;
+    dm["saturation"] = &state.saturation();
+    dm["pressure"] = &state.pressure();
+    Opm::writeVtkData(grid, dm, vtkfile);
 
-
-
-
-template <class State>
-void writeVtkDataAllCartesian(const std::tr1::array<int, 3>& dims,
-			      const std::tr1::array<double, 3>& cell_size,
-			      const State& state,
-			      std::ostream& vtk_file)
-{
-    // Dimension is hardcoded in the prototype and the next two lines,
-    // but the rest is flexible (allows dimension == 2 or 3).
-    int dimension = 3;
-    int num_cells = dims[0]*dims[1]*dims[2];
-
-    ASSERT(dimension == 2 || dimension == 3);
-    ASSERT(num_cells = dims[0]*dims[1]* (dimension == 2 ? 1 : dims[2]));
-
-    vtk_file << "# vtk DataFile Version 2.0\n";
-    vtk_file << "Structured Grid\n \n";
-    vtk_file << "ASCII \n";
-    vtk_file << "DATASET STRUCTURED_POINTS\n";
-
-    vtk_file << "DIMENSIONS "
-	     << dims[0] + 1 << " "
-	     << dims[1] + 1 << " ";
-    if (dimension == 3) {
-	vtk_file << dims[2] + 1;
-    } else {
-	vtk_file << 1;
-    }
-    vtk_file << "\n";
-	
-    vtk_file << "ORIGIN " << 0.0 << " " << 0.0 << " " << 0.0 << "\n";
-
-    vtk_file << "SPACING " << cell_size[0] << " " << cell_size[1];
-    if (dimension == 3) {
-	vtk_file << " " << cell_size[2];
-    } else {
-	vtk_file << " " << 0.0;
-    }
-    vtk_file << "\n";
-
-    vtk_file << "CELL_DATA " << num_cells << '\n';
-    vtk_file << "SCALARS pressure float" << '\n';
-    vtk_file << "LOOKUP_TABLE pressure_table " << '\n';
-    for (int i = 0; i < num_cells; ++i) {
-	vtk_file << state.pressure()[i] << '\n';
-    }
-
-    ASSERT(state.numPhases() == 2);
-    vtk_file << "SCALARS saturation float" << '\n';
-    vtk_file << "LOOKUP_TABLE saturation_table " << '\n';
-    for (int i = 0; i < num_cells; ++i) {
-	double s = state.saturation()[2*i];
-    	if (s > 1e-10) {
-    	    vtk_file << s << '\n';
-    	} else {
-    	    vtk_file << 0.0 << '\n';
-    	}
-    }
-}
-
-typedef std::map<std::string, std::string> PMap;
-
-
-struct Tag
-{
-    Tag(const std::string& tag, const PMap& props, std::ostream& os)
-	: name_(tag), os_(os)
-    {
-	indent(os);
-	os << "<" << tag;
-	for (PMap::const_iterator it = props.begin(); it != props.end(); ++it) {
-	    os << " " << it->first << "=\"" << it->second << "\""; 
+    // Write data (not grid) in Matlab format
+    for (Opm::DataMap::const_iterator it = dm.begin(); it != dm.end(); ++it) {
+	std::ostringstream fname;
+	fname << output_dir << "/" << it->first << "-" << std::setw(3) << std::setfill('0') << step << ".dat";
+	std::ofstream file(fname.str().c_str());
+	if (!file) {
+	    THROW("Failed to open " << fname.str());
 	}
-	os << ">\n";
-	++indent_;
-    }
-    Tag(const std::string& tag, std::ostream& os)
-	: name_(tag), os_(os)
-    {
-	indent(os);
-	os << "<" << tag << ">\n";
-	++indent_;
-    }
-    ~Tag()
-    {
-	--indent_;
-	indent(os_);
-	os_ << "</" << name_ << ">\n";
-    }
-    static void indent(std::ostream& os)
-    {
-	for (int i = 0; i < indent_; ++i) {
-	    os << "  ";
-	}
-    }
-private:
-    static int indent_;
-    std::string name_;
-    std::ostream& os_;
-};
-
-int Tag::indent_ = 0;
-
-
-template <class State>
-void writeVtkDataGeneralGrid(const UnstructuredGrid* grid,
-			     const State& state,
-			     std::ostream& os)
-{
-    if (grid->dimensions != 3) {
-	THROW("Vtk output for 3d grids only");
-    }
-    os.precision(12);
-    os << "<?xml version=\"1.0\"?>\n";
-    PMap pm;
-    pm["type"] = "UnstructuredGrid";
-    Tag vtkfiletag("VTKFile", pm, os);
-    Tag ugtag("UnstructuredGrid", os);
-    int num_pts = grid->number_of_nodes;
-    int num_cells = grid->number_of_cells;
-    pm.clear();
-    pm["NumberOfPoints"] = boost::lexical_cast<std::string>(num_pts);
-    pm["NumberOfCells"] = boost::lexical_cast<std::string>(num_cells);
-    Tag piecetag("Piece", pm, os);
-    {
-	Tag pointstag("Points", os);
-	pm.clear();
-	pm["type"] = "Float64";
-	pm["Name"] = "Coordinates";
-	pm["NumberOfComponents"] = "3";
-	pm["format"] = "ascii";
-	Tag datag("DataArray", pm, os);
-	for (int i = 0; i < num_pts; ++i) {
-	    Tag::indent(os);
-	    os << grid->node_coordinates[3*i + 0] << ' '
-	       << grid->node_coordinates[3*i + 1] << ' '
-	       << grid->node_coordinates[3*i + 2] << '\n';
-	}
-    }
-    {
-	Tag cellstag("Cells", os);
-	pm.clear();
-	pm["type"] = "Int32";
-	pm["NumberOfComponents"] = "1";
-	pm["format"] = "ascii";
-	std::vector<int> cell_numpts;
-	cell_numpts.reserve(num_cells);
-	{
-	    pm["Name"] = "connectivity";
-	    Tag t("DataArray", pm, os);
-	    int hf = 0;
-	    for (int c = 0; c < num_cells; ++c) {
-		std::set<int> cell_pts;
-		for (; hf < grid->cell_facepos[c+1]; ++hf) {
-		    int f = grid->cell_faces[hf];
-		    const int* fnbeg = grid->face_nodes + grid->face_nodepos[f];
-		    const int* fnend = grid->face_nodes + grid->face_nodepos[f+1];
-		    cell_pts.insert(fnbeg, fnend);
-		}
-		cell_numpts.push_back(cell_pts.size());
-		Tag::indent(os);
-		std::copy(cell_pts.begin(), cell_pts.end(),
-			  std::ostream_iterator<int>(os, " "));
-		os << '\n';
-	    }
-	}
-	{
-	    pm["Name"] = "offsets";
-	    Tag t("DataArray", pm, os);
-	    int offset = 0;
-	    const int num_per_line = 10;
-	    for (int c = 0; c < num_cells; ++c) {
-		if (c % num_per_line == 0) {
-		    Tag::indent(os);
-		}
-		offset += cell_numpts[c];
-		os << offset << ' ';
-		if (c % num_per_line == num_per_line - 1
-		    || c == num_cells - 1) {
-		    os << '\n';
-		}
-	    }
-	}
-	std::vector<int> cell_foffsets;
-	cell_foffsets.reserve(num_cells);
-	{
-	    pm["Name"] = "faces";
-	    Tag t("DataArray", pm, os);
-	    const int* fp = grid->cell_facepos;
-	    int offset = 0;
-	    for (int c = 0; c < num_cells; ++c) {
-		Tag::indent(os);
-		os << fp[c+1] - fp[c] << '\n';
-		++offset;
-		for (int hf = fp[c]; hf < fp[c+1]; ++hf) {
-		    int f = grid->cell_faces[hf];
-		    const int* np = grid->face_nodepos;
-		    int f_num_pts = np[f+1] - np[f];
-		    Tag::indent(os);
-		    os << f_num_pts << ' ';
-		    ++offset;
-		    std::copy(grid->face_nodes + np[f],
-			      grid->face_nodes + np[f+1],
-			      std::ostream_iterator<int>(os, " "));
-		    os << '\n';
-		    offset += f_num_pts;
-		}
-		cell_foffsets.push_back(offset);
-	    }
-	}
-	{
-	    pm["Name"] = "faceoffsets";
-	    Tag t("DataArray", pm, os);
-	    const int num_per_line = 10;
-	    for (int c = 0; c < num_cells; ++c) {
-		if (c % num_per_line == 0) {
-		    Tag::indent(os);
-		}
-		os << cell_foffsets[c] << ' ';
-		if (c % num_per_line == num_per_line - 1
-		    || c == num_cells - 1) {
-		    os << '\n';
-		}
-	    }
-	}
-	{
-	    pm["type"] = "UInt8";
-	    pm["Name"] = "types";
-	    Tag t("DataArray", pm, os);
-	    const int num_per_line = 10;
-	    for (int c = 0; c < num_cells; ++c) {
-		if (c % num_per_line == 0) {
-		    Tag::indent(os);
-		}
-		os << "42 ";
-		if (c % num_per_line == num_per_line - 1
-		    || c == num_cells - 1) {
-		    os << '\n';
-		}
-	    }
-	}
-    }
-    {
-	pm.clear();
-	pm["Scalars"] = "saturation";
-	Tag celldatatag("CellData", pm, os);
-	pm.clear();
-	pm["type"] = "Int32";
-	pm["NumberOfComponents"] = "1";
-	pm["format"] = "ascii";
-	pm["type"] = "Float64";
-	{
-	    pm["Name"] = "pressure";
-	    Tag ptag("DataArray", pm, os);
-	    const int num_per_line = 5;
-	    for (int c = 0; c < num_cells; ++c) {
-		if (c % num_per_line == 0) {
-		    Tag::indent(os);
-		}
-		os << state.pressure()[c] << ' ';
-		if (c % num_per_line == num_per_line - 1
-		    || c == num_cells - 1) {
-		    os << '\n';
-		}
-	    }	    
-	}
-	{
-	    pm["Name"] = "saturation";
-	    Tag ptag("DataArray", pm, os);
-	    const int num_per_line = 5;
-	    for (int c = 0; c < num_cells; ++c) {
-		if (c % num_per_line == 0) {
-		    Tag::indent(os);
-		}
-		os << state.saturation()[2*c] << ' ';
-		if (c % num_per_line == num_per_line - 1
-		    || c == num_cells - 1) {
-		    os << '\n';
-		}
-	    }	    
-	}
+	const std::vector<double>& d = *(it->second);
+	std::copy(d.begin(), d.end(), std::ostream_iterator<double>(file, "\n"));
     }
 }
 
@@ -659,11 +260,19 @@ class SimpleFluid2pWrappingProps
 {
 public:
     SimpleFluid2pWrappingProps(const Opm::IncompPropertiesInterface& props)
-	: props_(props)
+	: props_(props),
+	  smin_(props.numCells()*props.numPhases()),
+	  smax_(props.numCells()*props.numPhases())
     {
 	if (props.numPhases() != 2) {
 	    THROW("SimpleFluid2pWrapper requires 2 phases.");
 	}
+	const int num_cells = props.numCells();
+	std::vector<int> cells(num_cells);
+	for (int c = 0; c < num_cells; ++c) {
+	    cells[c] = c;
+	}
+	props.satRange(num_cells, &cells[0], &smin_[0], &smax_[0]);
     }
 
     double density(int phase) const
@@ -707,14 +316,20 @@ public:
 	ASSERT(dpc[3] == 0.0);
     }
  
-    /// \todo Properly implement s_min() and s_max().
-    ///       We must think about how to do this in
-    ///       the *Properties* classes.
-    double s_min(int c) const { (void) c; return 0.0; }
-    double s_max(int c) const { (void) c; return 1.0; }
+    double s_min(int c) const
+    {
+	return smin_[c];
+    }
+
+    double s_max(int c) const
+    {
+	return smax_[c];
+    }
 
 private:
     const Opm::IncompPropertiesInterface& props_;
+    std::vector<double> smin_;
+    std::vector<double> smax_;
 };
 
 typedef SimpleFluid2pWrappingProps TwophaseFluid;
@@ -769,13 +384,13 @@ main(int argc, char** argv)
 
     // If we have a "deck_filename", grid and props will be read from that.
     bool use_deck = param.has("deck_filename");
-    boost::scoped_ptr<Opm::Grid> grid;
+    boost::scoped_ptr<Opm::GridManager> grid;
     boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
     if (use_deck) {
 	std::string deck_filename = param.get<std::string>("deck_filename");
 	Opm::EclipseGridParser deck(deck_filename);
 	// Grid init
-	grid.reset(new Opm::Grid(deck));
+	grid.reset(new Opm::GridManager(deck));
 	// Rock and fluid init
 	const int* gc = grid->c_grid()->global_cell;
 	std::vector<int> global_cell(gc, gc + grid->c_grid()->number_of_cells);
@@ -785,7 +400,10 @@ main(int argc, char** argv)
 	const int nx = param.getDefault("nx", 100);
 	const int ny = param.getDefault("ny", 100);
 	const int nz = param.getDefault("nz", 1);
-	grid.reset(new Opm::Grid(nx, ny, nz));
+	const int dx = param.getDefault("dx", 1.0);
+	const int dy = param.getDefault("dy", 1.0);
+	const int dz = param.getDefault("dz", 1.0);
+	grid.reset(new Opm::GridManager(nx, ny, nz, dx, dy, dz));
 	// Rock and fluid init.
 	props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
     }
@@ -811,18 +429,28 @@ main(int argc, char** argv)
 
     // Solvers init.
     // Pressure solver.
-    PressureSolver psolver(*grid->c_grid(), *props, use_gravity ? gravity : 0);
+#ifdef EXPERIMENT_ISTL
+    Opm::LinearSolverIstl linsolver(param);
+#else
+    Opm::LinearSolverUmfpack linsolver;
+#endif // EXPERIMENT_ISTL
+    Opm::IncompTpfa psolver(*grid->c_grid(),
+                            props->permeability(),
+                            use_gravity ? gravity : 0,
+                            linsolver);
     // Non-reordering solver.
     TransportModel  model  (fluid, *grid->c_grid(), porevol, 0, guess_old_solution);
     TransportSolver tsolver(model);
     // Reordering solver.
-    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), &porevol[0], *props);
+    const double nltol = param.getDefault("nl_tolerance", 1e-9);
+    const int maxit = param.getDefault("nl_maxiter", 30);
+    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), &porevol[0], *props, nltol, maxit);
 
 
     // State-related and source-related variables init.
     int num_cells = grid->c_grid()->number_of_cells;
     std::vector<double> totmob;
-    std::vector<double> omega;
+    std::vector<double> omega; // Will remain empty if no gravity.
     ReservoirState state(grid->c_grid(), props->numPhases());
     // We need a separate reorder_sat, because the reorder
     // code expects a scalar sw, not both sw and so.
@@ -888,9 +516,11 @@ main(int argc, char** argv)
     Opm::ImplicitTransportDetails::NRControl ctrl;
     double current_time = 0.0;
     double total_time = stepsize*num_psteps;
-    ctrl.max_it = param.getDefault("max_it", 20);
-    ctrl.verbosity = param.getDefault("verbosity", 0);
-    ctrl.max_it_ls = param.getDefault("max_it_ls", 5);
+    if (!use_reorder) {
+	ctrl.max_it = param.getDefault("max_it", 20);
+	ctrl.verbosity = param.getDefault("verbosity", 0);
+	ctrl.max_it_ls = param.getDefault("max_it_ls", 5);
+    }
 
     // Linear solver init.
     using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
@@ -934,7 +564,7 @@ main(int argc, char** argv)
 	    compute_totmob(*props, state.saturation(), totmob);
 	}
 	pressure_timer.start();
-	psolver.solve(totmob, omega, src, state);
+	psolver.solve(totmob, omega, src, state.pressure(), state.faceflux());
 	pressure_timer.stop();
 	double pt = pressure_timer.secsSinceStart();
 	std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;

@@ -51,7 +51,10 @@ opm/core/utility/cpgpreprocess/facetopology.c           \
 opm/core/utility/cpgpreprocess/uniquepoints.c           \
 opm/core/utility/StopWatch.cpp                          \
 opm/core/utility/newwells.c                             \
+opm/core/utility/writeVtkData.cpp                       \
+opm/core/GridManager.cpp                                \
 opm/core/linalg/sparse_sys.c                            \
+opm/core/linalg/LinearSolverInterface.cpp               \
 opm/core/pressure/cfsh.c                                \
 opm/core/pressure/flow_bc.c                             \
 opm/core/pressure/well.c                                \
@@ -83,7 +86,6 @@ opm/core/transport/reorder/TransportModelTwophase.cpp	\
 opm/core/transport/reorder/reordersequence.cpp	\
 opm/core/transport/reorder/nlsolvers.c		\
 opm/core/transport/reorder/tarjan.c
-
 
 nobase_include_HEADERS =                                \
 opm/core/eclipse/CornerpointChopper.hpp                 \
@@ -145,13 +147,18 @@ opm/core/utility/cpgpreprocess/geometry.h               \
 opm/core/utility/cpgpreprocess/facetopology.h           \
 opm/core/utility/cpgpreprocess/grdecl.h                 \
 opm/core/utility/cart_grid.h                            \
-opm/core/well.h                                         \
+opm/core/utility/writeVtkData.hpp                       \
 opm/core/linalg/sparse_sys.h                            \
 opm/core/linalg/blas_lapack.h                           \
+opm/core/linalg/LinearSolverInterface.hpp               \
 opm/core/grid.h                                         \
+opm/core/well.h                                         \
+opm/core/newwells.h                                     \
 opm/core/GridAdapter.hpp                                \
+opm/core/GridManager.hpp                                \
 opm/core/pressure/fsh.h                                 \
 opm/core/pressure/HybridPressureSolver.hpp              \
+opm/core/pressure/IncompTpfa.hpp                        \
 opm/core/pressure/TPFAPressureSolver.hpp                \
 opm/core/pressure/tpfa/compr_quant.h                    \
 opm/core/pressure/tpfa/compr_source.h                   \
@@ -192,6 +199,12 @@ opm/core/transport/reorder/tarjan.h
 
 
 if UMFPACK
-libopmcore_la_SOURCES  += opm/core/linalg/call_umfpack.c
-nobase_include_HEADERS += opm/core/linalg/call_umfpack.h
+libopmcore_la_SOURCES  +=			\
+opm/core/linalg/call_umfpack.c			\
+opm/core/linalg/LinearSolverUmfpack.cpp		\
+opm/core/pressure/IncompTpfa.cpp
+
+nobase_include_HEADERS +=			\
+opm/core/linalg/call_umfpack.h			\
+opm/core/linalg/LinearSolverUmfpack.hpp
 endif

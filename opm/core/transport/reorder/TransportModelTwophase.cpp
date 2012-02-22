@@ -20,7 +20,7 @@
 #include <opm/core/transport/reorder/TransportModelTwophase.hpp>
 #include <opm/core/fluid/IncompPropertiesInterface.hpp>
 #include <opm/core/grid.h>
-#include <opm/core/transport/reorder/nlsolvers.h>
+#include <opm/core/transport/reorder/reordersequence.h>
 #include <opm/core/utility/RootFinders.hpp>
 
 #include <fstream>
@@ -32,20 +32,34 @@ namespace Opm
 
     TransportModelTwophase::TransportModelTwophase(const UnstructuredGrid& grid,
 						   const double* porevolume,
-						   const Opm::IncompPropertiesInterface& props)
+						   const Opm::IncompPropertiesInterface& props,
+						   const double tol,
+						   const int maxit)
 	: grid_(grid),
 	  porevolume_(porevolume),
 	  props_(props),
+	  tol_(tol),
+	  maxit_(maxit),
 	  darcyflux_(0),
 	  source_(0),
 	  dt_(0.0),
 	  saturation_(0),
 	  fractionalflow_(grid.number_of_cells, -1.0)
+	  // ia_(grid.number_of_cells + 1, -1),
+	  // ja_(grid.number_of_faces, -1)
     {
 	if (props.numPhases() != 2) {
 	    THROW("Property object must have 2 phases");
 	}
 	visc_ = props.viscosity();
+	int num_cells = props.numCells();
+	smin_.resize(props.numPhases()*num_cells);
+	smax_.resize(props.numPhases()*num_cells);
+	std::vector<int> cells(num_cells);
+	for (int i = 0; i < num_cells; ++i) {
+	    cells[i] = i;
+	}
+	props.satRange(props.numCells(), &cells[0], &smin_[0], &smax_[0]);
     }
 
     void TransportModelTwophase::solve(const double* darcyflux,
@@ -57,6 +71,15 @@ namespace Opm
 	source_ = source;
 	dt_ = dt;
 	saturation_ = saturation;
+
+	// std::vector<int> seq(grid_.number_of_cells);
+	// std::vector<int> comp(grid_.number_of_cells + 1);
+	// int ncomp;
+	// compute_sequence_graph(&grid_, darcyflux_,
+	// 		       &seq[0], &comp[0], &ncomp,
+	// 		       &ia_[0], &ja_[0]);
+
+
 	reorderAndTransport(grid_, darcyflux);
     }
 
@@ -117,17 +140,12 @@ namespace Opm
     void TransportModelTwophase::solveSingleCell(const int cell)
     {
 	Residual res(*this, cell);
-	const double tol = 1e-9;
 	// const double r0 = res(saturation_[cell]);
-	// if (std::fabs(r0) < tol) {
+	// if (std::fabs(r0) < tol_) {
 	//     return;
 	// }
-	const double a = 0.0;
-	const double b = 1.0;
-	const int maxit = 20;
 	int iters_used;
-	// saturation_[cell] = modifiedRegulaFalsi(res, a, b, saturation_[cell], maxit, tol, iters_used);
-	saturation_[cell] = modifiedRegulaFalsi(res, a, b, maxit, tol, iters_used);
+	saturation_[cell] = modifiedRegulaFalsi(res, smin_[2*cell], smax_[2*cell], maxit_, tol_, iters_used);
 	fractionalflow_[cell] = fracFlow(saturation_[cell], cell);
     }
 
@@ -135,6 +153,71 @@ namespace Opm
     {
 	// std::ofstream os("dump");
 	// std::copy(cells, cells + num_cells, std::ostream_iterator<double>(os, "\n"));
+
+	// Experiment: try a breath-first search to build a more suitable ordering.
+	// Verdict: failed to improve #iterations.
+	// {
+	//     std::vector<int> pos(grid_.number_of_cells, -1);
+	//     for (int i = 0; i < num_cells; ++i) {
+	// 	const int cell = cells[i];
+	// 	pos[cell] = i;
+	//     }
+	//     std::vector<int> done_pos(num_cells, 0);
+	//     std::vector<int> upstream_pos;
+	//     std::vector<int> new_pos;
+	//     upstream_pos.push_back(0);
+	//     done_pos[0] = 1;
+	//     int current = 0;
+	//     while (new_pos.size() < num_cells) {
+	// 	const int i = upstream_pos[current++];
+	// 	new_pos.push_back(i);
+	// 	const int cell = cells[i];
+	// 	for (int j = ia_[cell]; j < ia_[cell+1]; ++j) {
+	// 	    const int opos = pos[ja_[j]];
+	// 	    if (!done_pos[opos]) {
+	// 		upstream_pos.push_back(opos);
+	// 		done_pos[opos] = 1;
+	// 	    }
+	// 	}
+	//     }
+	//     std::reverse(new_pos.begin(), new_pos.end());
+	//     std::copy(new_pos.begin(), new_pos.end(), const_cast<int*>(cells));
+	// }
+
+	// Experiment: try a random ordering.
+	// Verdict: amazingly, reduced #iterations by approx. 25%!
+	// int* c = const_cast<int*>(cells);
+	// std::random_shuffle(c, c + num_cells);
+
+	// Experiment: implement a metric measuring badness of ordering
+	//             as average distance in (cyclic) ordering from
+	//             upstream neighbours.
+	// Verdict: does not seem to predict #iterations very well, if at all.
+	// std::vector<int> pos(grid_.number_of_cells, -1);
+	// for (int i = 0; i < num_cells; ++i) {
+	//     const int cell = cells[i];
+	//     pos[cell] = i;
+	// }
+	// double diffsum = 0;
+	// for (int i = 0; i < num_cells; ++i) {
+	//     const int cell = cells[i];
+	//     int num_upstream = 0;
+	//     int loc_diffsum = 0;
+	//     for (int j = ia_[cell]; j < ia_[cell+1]; ++j) {
+	// 	const int opos = pos[ja_[j]];
+	// 	if (opos == -1) {
+	// 	    std::cout << "Hmmm" << std::endl;
+	// 	    continue;
+	// 	}
+	// 	++num_upstream;
+	// 	const int diff = (i - opos + num_cells) % num_cells;
+	// 	loc_diffsum += diff;
+	//     }
+	//     diffsum += double(loc_diffsum)/double(num_upstream);
+	// }
+	// std::cout << "Average distance from upstream neighbours: " << diffsum/double(num_cells)
+	// 	  << std::endl;
+
 	double max_s_change = 0.0;
 	const double tol = 1e-9;
 	const int max_iters = 300;
@@ -155,7 +238,7 @@ namespace Opm
 		const double old_s = saturation_[cell];
 		saturation_[cell] = s0[i];
 		solveSingleCell(cell);
-		// std::cout << "delta s = " << saturation_[cell] - old_s << std::endl;
+		// std::cout << "cell = " << cell << "    delta s = " << saturation_[cell] - old_s << std::endl;
 		if (max_s_change < std::fabs(saturation_[cell] - old_s)) {
 		    max_change_cell = cell;
 		}
