@@ -43,8 +43,10 @@ struct UnstructuredGrid *create_hexa_grid_3d(int nx, int ny, int nz,
 
 struct UnstructuredGrid *create_tensor_grid_2d(int nx, int ny,
                                                double x[], double y[]);
-struct UnstructuredGrid *create_tensor_grid_3d(int nx, int ny, int nz,
-                                               double x[], double y[], double z[]);
+struct UnstructuredGrid *
+create_tensor_grid_3d(int nx, int ny, int nz,
+                      double x[], double y[], double z[],
+                      const double depthz[]);
 
 
 #ifdef __cplusplus

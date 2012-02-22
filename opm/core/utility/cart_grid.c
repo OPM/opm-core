@@ -41,6 +41,12 @@ static void fill_cart_geometry_3d(struct UnstructuredGrid *G,
                                   const double            *x,
                                   const double            *y,
                                   const double            *z);
+static void
+fill_layered_geometry_3d(struct UnstructuredGrid *G,
+                         const double            *x,
+                         const double            *y,
+                         const double            *z,
+                         const double            *depthz);
 
 struct UnstructuredGrid *
 create_cart_grid_3d(int nx, int ny, int nz)
@@ -67,7 +73,8 @@ create_hexa_grid_3d(int    nx, int    ny, int    nz,
         for (i = 0; i < ny + 1; i++) { y[i] = i * dy; }
         for (i = 0; i < nz + 1; i++) { z[i] = i * dz; }
 
-        G = create_tensor_grid_3d(nx, ny, nz, x, y, z);
+        G = create_tensor_grid_3d(nx, ny, nz, x, y, z,
+                                  (const double *) NULL);
     }
 
     free(z);  free(y);  free(x);
@@ -130,7 +137,8 @@ create_tensor_grid_2d(int nx, int ny, double x[], double y[])
 
 struct UnstructuredGrid *
 create_tensor_grid_3d(int    nx,  int    ny , int    nz ,
-                      double x[], double y[], double z[])
+                      double x[], double y[], double z[],
+                      const double depthz[])
 {
     struct UnstructuredGrid *G;
 
@@ -139,7 +147,13 @@ create_tensor_grid_3d(int    nx,  int    ny , int    nz ,
     if (G != NULL)
     {
         fill_cart_topology_3d(G);
-        fill_cart_geometry_3d(G, x, y, z);
+
+        if (depthz == NULL) {
+            fill_cart_geometry_3d(G, x, y, z);
+        }
+        else {
+            fill_layered_geometry_3d(G, x, y, z, depthz);
+        }
     }
 
     return G;
@@ -458,6 +472,40 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G,
             }
         }
     }
+}
+
+/* ---------------------------------------------------------------------- */
+
+static void
+fill_layered_geometry_3d(struct UnstructuredGrid *G,
+                         const double            *x,
+                         const double            *y,
+                         const double            *z,
+                         const double            *depthz)
+{
+    int i , j , k ;
+    int nx, ny, nz;
+
+    const double *depth;
+    double       *coord;
+
+    nx = G->cartdims[0];  ny = G->cartdims[1];  nz = G->cartdims[2];
+
+    coord = G->node_coordinates;
+    for (k = 0; k < nz + 1; k++) {
+
+        depth = depthz;
+
+        for (j = 0; j < ny + 1; j++) {
+            for (i = 0; i < nx + 1; i++) {
+                *coord++ = x[i];
+                *coord++ = y[j];
+                *coord++ = z[k] + *depth++;
+            }
+        }
+    }
+
+    compute_geometry(G);
 }
 
 /* --------------------------------------------------------------------- */
