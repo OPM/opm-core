@@ -408,16 +408,16 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G,
     for (k=0; k<nz; ++k) {
         for (j=0; j<ny; ++j) {
             for (i=0; i<nx+1; ++i) {
-                *fnormals++ = 1;
+                dy = y[j + 1] - y[j];
+                dz = z[k + 1] - z[k];
+
+                *fnormals++ = dy * dz;
                 *fnormals++ = 0;
                 *fnormals++ = 0;
 
                 *fcentroids++ = x[i];
                 *fcentroids++ = (y[j] + y[j + 1]) / 2.0;
                 *fcentroids++ = (z[k] + z[k + 1]) / 2.0;
-
-                dy = y[j + 1] - y[j];
-                dz = z[k + 1] - z[k];
 
                 *fareas++ = dy * dz;
             }
@@ -427,16 +427,16 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G,
     for (k=0; k<nz; ++k) {
         for (j=0; j<ny+1; ++j) {
             for (i=0; i<nx; ++i) {
+                dx = x[i + 1] - x[i];
+                dz = z[k + 1] - z[k];
+
                 *fnormals++ = 0;
-                *fnormals++ = 1;
+                *fnormals++ = dx * dz;
                 *fnormals++ = 0;
 
                 *fcentroids++ = (x[i] + x[i + 1]) / 2.0;
                 *fcentroids++ = y[j];
                 *fcentroids++ = (z[k] + z[k + 1]) / 2.0;
-
-                dx = x[i + 1] - x[i];
-                dz = z[k + 1] - z[k];
 
                 *fareas++ = dx * dz;
             }
@@ -446,16 +446,16 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G,
     for (k=0; k<nz+1; ++k) {
         for (j=0; j<ny; ++j) {
             for (i=0; i<nx; ++i) {
+                dx = x[i + 1] - x[i];
+                dy = y[j + 1] - y[j];
+
                 *fnormals++ = 0;
                 *fnormals++ = 0;
-                *fnormals++ = 1;
+                *fnormals++ = dx * dy;
 
                 *fcentroids++ = (x[i] + x[i + 1]) / 2.0;
                 *fcentroids++ = (y[j] + y[j + 1]) / 2.0;
                 *fcentroids++ = z[k];
-
-                dx = x[i + 1] - x[i];
-                dy = y[j + 1] - y[j];
 
                 *fareas++ = dx * dy;
             }
