@@ -197,6 +197,34 @@ compute_totmob_omega(const Opm::IncompPropertiesInterface& props,
     }
 }
 
+/// @brief Estimates a scalar cell velocity from face fluxes.
+/// @param[in]  grid            a grid
+/// @param[in]  face_flux       signed per-face fluxes
+/// @param[out] cell_velocity   the estimated velocities.
+void estimateCellVelocity(const UnstructuredGrid& grid,
+			  const std::vector<double>& face_flux,
+			  std::vector<double>& cell_velocity)
+{
+    const int dim = grid.dimensions;
+    cell_velocity.clear();
+    cell_velocity.resize(grid.number_of_cells*dim, 0.0);
+    for (int face = 0; face < grid.number_of_faces; ++face) {
+	int c[2] = { grid.face_cells[2*face], grid.face_cells[2*face + 1] };
+	const double* fc = &grid.face_centroids[face*dim];
+	double flux = face_flux[face];
+	for (int i = 0; i < 2; ++i) {
+	    if (c[i] >= 0) {
+		const double* cc = &grid.cell_centroids[c[i]*dim];
+		for (int d = 0; d < dim; ++d) {
+		    double v_contrib = fc[d] - cc[d];
+		    v_contrib *= flux/grid.cell_volumes[c[i]];
+		    cell_velocity[c[i]*dim + d] += (i == 0) ? v_contrib : -v_contrib;
+		}
+	    }
+	}
+    }
+}
+
 
 template <class State>
 void outputState(const UnstructuredGrid* grid,
@@ -214,6 +242,9 @@ void outputState(const UnstructuredGrid* grid,
     Opm::DataMap dm;
     dm["saturation"] = &state.saturation();
     dm["pressure"] = &state.pressure();
+    std::vector<double> cell_velocity;
+    estimateCellVelocity(*grid, state.faceflux(), cell_velocity);
+    dm["velocity"] = &cell_velocity;
     Opm::writeVtkData(grid, dm, vtkfile);
 
     // Write data (not grid) in Matlab format
