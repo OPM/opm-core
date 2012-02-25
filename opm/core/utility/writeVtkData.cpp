@@ -290,20 +290,17 @@ namespace Opm
 	    for (DataMap::const_iterator dit = data.begin(); dit != data.end(); ++dit) {
 		pm["Name"] = dit->first;
 		const std::vector<double>& field = *(dit->second);
-		// We always print only the first data item for every
-		// cell, using 'stride'.
-		// This is a hack to get water saturation nicely.
-		// \TODO: Extend to properly printing vector data.
-		const int stride = field.size()/grid->number_of_cells;
+		const int num_comps = field.size()/grid->number_of_cells;
+		pm["NumberOfComponents"] = boost::lexical_cast<std::string>(num_comps);
 		Tag ptag("DataArray", pm, os);
-		const int num_per_line = 5;
-		for (int c = 0; c < num_cells; ++c) {
-		    if (c % num_per_line == 0) {
+		const int num_per_line = num_comps == 1 ? 5 : num_comps;
+		for (int item = 0; item < num_cells*num_comps; ++item) {
+		    if (item % num_per_line == 0) {
 			Tag::indent(os);
 		    }
-		    os << field[stride*c] << ' ';
-		    if (c % num_per_line == num_per_line - 1
-			|| c == num_cells - 1) {
+		    os << field[item] << ' ';
+		    if (item % num_per_line == num_per_line - 1
+			|| item == num_cells - 1) {
 			os << '\n';
 		    }
 		}	    
