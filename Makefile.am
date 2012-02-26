@@ -49,6 +49,7 @@ opm/core/utility/cpgpreprocess/cgridinterface.c         \
 opm/core/utility/cpgpreprocess/sparsetable.c            \
 opm/core/utility/cpgpreprocess/facetopology.c           \
 opm/core/utility/cpgpreprocess/uniquepoints.c           \
+opm/core/utility/miscUtilities.cpp                      \
 opm/core/utility/StopWatch.cpp                          \
 opm/core/utility/newwells.c                             \
 opm/core/utility/writeVtkData.cpp                       \
@@ -138,6 +139,7 @@ opm/core/utility/Units.hpp                              \
 opm/core/utility/buildUniformMonotoneTable.hpp          \
 opm/core/utility/linInt.hpp                             \
 opm/core/utility/linearInterpolation.hpp                \
+opm/core/utility/miscUtilities.hpp                      \
 opm/core/utility/cpgpreprocess/readvector.hpp           \
 opm/core/utility/cpgpreprocess/uniquepoints.h           \
 opm/core/utility/cpgpreprocess/preprocess.h             \

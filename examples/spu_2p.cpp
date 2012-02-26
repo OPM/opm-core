@@ -53,6 +53,7 @@
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/writeVtkData.hpp>
+#include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
 #include <opm/core/fluid/SimpleFluid2p.hpp>
@@ -123,109 +124,6 @@ private:
 
 
 
-
-
-static void
-compute_porevolume(const UnstructuredGrid* g,
-                   const Opm::IncompPropertiesInterface& props,
-                   std::vector<double>& porevol)
-{
-    int num_cells = g->number_of_cells;
-    porevol.resize(num_cells);
-    const double* poro = props.porosity();
-    ::std::transform(poro, poro + num_cells,
-                     g->cell_volumes,
-                     porevol.begin(),
-                     ::std::multiplies<double>());
-}
-
-
-static void
-compute_totmob(const Opm::IncompPropertiesInterface& props,
-	       const std::vector<double>& s,
-	       std::vector<double>& totmob)
-{
-    int num_cells = props.numCells();
-    int num_phases = props.numPhases();
-    totmob.resize(num_cells);
-    ASSERT(int(s.size()) == num_cells*num_phases);
-    std::vector<int> cells(num_cells);
-    for (int cell = 0; cell < num_cells; ++cell) {
-	cells[cell] = cell;
-    }
-    std::vector<double> kr(num_cells*num_phases);
-    props.relperm(num_cells, &s[0], &cells[0], &kr[0], 0);
-    const double* mu = props.viscosity();
-    for (int cell = 0; cell < num_cells; ++cell) {
-	totmob[cell] = 0;
-	for (int phase = 0; phase < num_phases; ++phase) {	
-	    totmob[cell] += kr[2*cell + phase]/mu[phase];
-	}
-    }
-}
-
-static void
-compute_totmob_omega(const Opm::IncompPropertiesInterface& props,
-		     const std::vector<double>& s,
-		     std::vector<double>& totmob,
-		     std::vector<double>& omega)
-{
-    int num_cells = props.numCells();
-    int num_phases = props.numPhases();
-    totmob.resize(num_cells);
-    omega.resize(num_cells);
-    ASSERT(int(s.size()) == num_cells*num_phases);
-    std::vector<int> cells(num_cells);
-    for (int cell = 0; cell < num_cells; ++cell) {
-	cells[cell] = cell;
-    }
-    std::vector<double> kr(num_cells*num_phases);
-    props.relperm(num_cells, &s[0], &cells[0], &kr[0], 0);
-    const double* mu = props.viscosity();
-    for (int cell = 0; cell < num_cells; ++cell) {
-	totmob[cell] = 0.0;
-	for (int phase = 0; phase < num_phases; ++phase) {	
-	    totmob[cell] += kr[2*cell + phase]/mu[phase];
-	}
-    }
-    const double* rho = props.density();
-    for (int cell = 0; cell < num_cells; ++cell) {
-	omega[cell] = 0.0;
-	for (int phase = 0; phase < num_phases; ++phase) {	
-	    omega[cell] += rho[phase]*(kr[2*cell + phase]/mu[phase])/totmob[cell];
-	}
-    }
-}
-
-/// @brief Estimates a scalar cell velocity from face fluxes.
-/// @param[in]  grid            a grid
-/// @param[in]  face_flux       signed per-face fluxes
-/// @param[out] cell_velocity   the estimated velocities.
-void estimateCellVelocity(const UnstructuredGrid& grid,
-			  const std::vector<double>& face_flux,
-			  std::vector<double>& cell_velocity)
-{
-    const int dim = grid.dimensions;
-    cell_velocity.clear();
-    cell_velocity.resize(grid.number_of_cells*dim, 0.0);
-    for (int face = 0; face < grid.number_of_faces; ++face) {
-	int c[2] = { grid.face_cells[2*face], grid.face_cells[2*face + 1] };
-	const double* fc = &grid.face_centroids[face*dim];
-	double flux = face_flux[face];
-	for (int i = 0; i < 2; ++i) {
-	    if (c[i] >= 0) {
-		const double* cc = &grid.cell_centroids[c[i]*dim];
-		for (int d = 0; d < dim; ++d) {
-		    double v_contrib = fc[d] - cc[d];
-		    v_contrib *= flux/grid.cell_volumes[c[i]];
-		    cell_velocity[c[i]*dim + d] += (i == 0) ? v_contrib : -v_contrib;
-		}
-	    }
-	}
-    }
-}
-
-
 template <class State>
 void outputState(const UnstructuredGrid* grid,
 		 const State& state,
@@ -243,7 +141,7 @@ void outputState(const UnstructuredGrid* grid,
     dm["saturation"] = &state.saturation();
     dm["pressure"] = &state.pressure();
     std::vector<double> cell_velocity;
-    estimateCellVelocity(*grid, state.faceflux(), cell_velocity);
+    Opm::estimateCellVelocity(*grid, state.faceflux(), cell_velocity);
     dm["velocity"] = &cell_velocity;
     Opm::writeVtkData(grid, dm, vtkfile);
 
@@ -259,30 +157,6 @@ void outputState(const UnstructuredGrid* grid,
 	std::copy(d.begin(), d.end(), std::ostream_iterator<double>(file, "\n"));
     }
 }
-
-
-
-
-static void toWaterSat(const std::vector<double>& sboth, std::vector<double>& sw)
-{
-    int num = sboth.size()/2;
-    sw.resize(num);
-    for (int i = 0; i < num; ++i) {
-	sw[i] = sboth[2*i];
-    }
-}
-
-static void toBothSat(const std::vector<double>& sw, std::vector<double>& sboth)
-{
-    int num = sw.size();
-    sboth.resize(2*num);
-    for (int i = 0; i < num; ++i) {
-	sboth[2*i] = sw[i];
-	sboth[2*i + 1] = 1.0 - sw[i];
-    }
-}
-
-
 
 
 // --------------- Types needed to define transport solver ---------------
@@ -441,7 +315,7 @@ main(int argc, char** argv)
 
     // Extra rock init.
     std::vector<double> porevol;
-    compute_porevolume(grid->c_grid(), *props, porevol);
+    computePorevolume(*grid->c_grid(), *props, porevol);
     double tot_porevol = std::accumulate(porevol.begin(), porevol.end(), 0.0);
 
     // Extra fluid init for transport solver.
@@ -557,6 +431,13 @@ main(int argc, char** argv)
     using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
     CSRMatrixUmfpackSolver linsolve;
 
+    // The allcells vector is used in calls to computeTotalMobility()
+    // and computeTotalMobilityOmega().
+    std::vector<int> allcells(num_cells);
+    for (int cell = 0; cell < num_cells; ++cell) {
+	allcells[cell] = cell;
+    }
+
     // Warn if any parameters are unused.
     if (param.anyUnused()) {
 	std::cout << "--------------------   Unused parameters:   --------------------\n";
@@ -590,9 +471,9 @@ main(int argc, char** argv)
 	}
 
 	if (use_gravity) {
-	    compute_totmob_omega(*props, state.saturation(), totmob, omega);
+	    computeTotalMobilityOmega(*props, allcells, state.saturation(), totmob, omega);
 	} else {
-	    compute_totmob(*props, state.saturation(), totmob);
+	    computeTotalMobility(*props, allcells, state.saturation(), totmob);
 	}
 	pressure_timer.start();
 	psolver.solve(totmob, omega, src, state.pressure(), state.faceflux());
@@ -602,7 +483,7 @@ main(int argc, char** argv)
 	ptime += pt;
 
 	if (use_reorder) {
-	    toWaterSat(state.saturation(), reorder_sat);
+	    Opm::toWaterSat(state.saturation(), reorder_sat);
 	    // We must treat reorder_src here,
 	    // if we are to handle anything but simple water
 	    // injection, since it is expected to be
@@ -617,7 +498,7 @@ main(int argc, char** argv)
 	    double tt = transport_timer.secsSinceStart();
 	    std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
 	    ttime += tt;
-	    toBothSat(reorder_sat, state.saturation());
+	    Opm::toBothSat(reorder_sat, state.saturation());
 	} else {
 	    transport_timer.start();
 	    tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
