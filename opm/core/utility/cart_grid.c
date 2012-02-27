@@ -707,13 +707,13 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G,
     /* Faces with x-normal */
     for (j=0; j<ny; ++j) {
         for (i=0; i<nx+1; ++i) {
-            *fnormals++ = 1;
+            dy = y[j + 1] - y[j];
+
+            *fnormals++ = dy;
             *fnormals++ = 0;
 
             *fcentroids++ = x[i];
             *fcentroids++ = (y[j] + y[j + 1]) / 2.0;
-
-            dy = y[j + 1] - y[j];
 
             *fareas++ = dy;
         }
@@ -722,13 +722,13 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G,
     /* Faces with y-normal */
     for (j=0; j<ny+1; ++j) {
         for (i=0; i<nx; ++i) {
+            dx = x[i + 1] - x[i];
+
             *fnormals++ = 0;
-            *fnormals++ = 1;
+            *fnormals++ = dx;
 
             *fcentroids++ = (x[i] + x[i + 1]) / 2.0;
             *fcentroids++ = y[j];
-
-            dx = x[i + 1] - x[i];
 
             *fareas++ = dx;
         }
