@@ -393,7 +393,7 @@ main(int argc, char** argv)
 	    std::vector<double>& sat = state.saturation();
 	    for (int cell = 0; cell < num_cells; ++cell) {
 		const int* cd = grid->c_grid()->cartdims;
-		bool left = cell%(cd[1]*cd[2]) < cd[0]/2;
+		bool left = (cell % cd[0]) < cd[0]/2;
 		sat[2*cell] = left ? 1.0 : 0.0;
 		sat[2*cell + 1] = 1.0 - sat[2*cell];
 	    }
