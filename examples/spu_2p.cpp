@@ -339,12 +339,13 @@ main(int argc, char** argv)
 #else
     Opm::LinearSolverUmfpack linsolver;
 #endif // EXPERIMENT_ISTL
-    Opm::IncompTpfa psolver(*grid->c_grid(),
-                            props->permeability(),
-                            use_gravity ? gravity : 0,
-                            linsolver);
+    const double *grav = use_gravity ? &gravity[0] : 0;
+    Opm::IncompTpfa psolver(*grid->c_grid(), props->permeability(), grav, linsolver);
     // Non-reordering solver.
-    TransportModel  model  (fluid, *grid->c_grid(), porevol, 0, guess_old_solution);
+    TransportModel  model  (fluid, *grid->c_grid(), porevol, grav, guess_old_solution);
+    if (use_gravity) {
+        model.initGravityTrans(*grid->c_grid(), psolver.getHalfTrans());
+    }
     TransportSolver tsolver(model);
     // Reordering solver.
     const double nltol = param.getDefault("nl_tolerance", 1e-9);
