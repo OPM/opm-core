@@ -82,7 +82,6 @@ ridders (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctr
     double G0, G1, G2, G3;
     double s0, s1, s2, s3;
     double swap, sgn, root;
-    int it;
 
     ctrl->iterations = 0;
 
@@ -114,7 +113,6 @@ ridders (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctr
     s3 = 0;
     G3 = 10;
 
-    it = 0;
     while ( (fabs(G3) > ctrl->nltolerance)  &&
             (ctrl->iterations++ < ctrl->maxiterations))
     {
@@ -182,7 +180,6 @@ regulafalsi (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl 
     double Gn, G0, G1;
     double sn, s0, s1;
     double swap, gamma_pegasus;
-    int it;
 
     ctrl->iterations = 0;
 
@@ -212,7 +209,6 @@ regulafalsi (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl 
         G1   = swap;
     }
 
-    it = 0;
     while ( (fabs(Gn) > ctrl->nltolerance)  &&
             (ctrl->iterations++ < ctrl->maxiterations))
     {
@@ -267,7 +263,6 @@ bisection (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *c
     double Gn, G0, G1;
     double sn, s0, s1;
     double swap;
-    int it;
 
     ctrl->iterations = 0;
 
@@ -297,7 +292,6 @@ bisection (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *c
         G1   = swap;
     }
 
-    it=0;
     while ( (fabs(Gn)>ctrl->nltolerance) &&
             (ctrl->iterations++ < ctrl->maxiterations) )
     {

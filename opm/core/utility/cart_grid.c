@@ -232,8 +232,8 @@ static void
 fill_cart_topology_3d(struct UnstructuredGrid *G)
 {
     int nx, ny, nz;
-    int Nx, Ny, Nz;
-    int nxf, nyf, nzf;
+    int Nx, Ny;
+    int nxf, nyf;
     int i,j,k;
 
     int *cfaces, *cfacepos, *fnodes, *fnodepos, *fcells;
@@ -244,11 +244,9 @@ fill_cart_topology_3d(struct UnstructuredGrid *G)
 
     Nx  = nx+1;
     Ny  = ny+1;
-    Nz  = nz+1;
 
     nxf = Nx*ny*nz;
     nyf = nx*Ny*nz;
-    nzf = nx*ny*Nz;
 
     cfaces     = G->cell_faces;
     cfacepos   = G->cell_facepos;
@@ -361,8 +359,6 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G,
                       const double            *z)
 {
     int nx, ny, nz;
-    int Nx, Ny, Nz;
-    int nxf, nyf, nzf;
     int i,j,k;
 
     double dx, dy, dz;
@@ -373,13 +369,6 @@ fill_cart_geometry_3d(struct UnstructuredGrid *G,
     nx  = G->cartdims[0];
     ny  = G->cartdims[1];
     nz  = G->cartdims[2];
-    Nx  = nx+1;
-    Ny  = ny+1;
-    Nz  = nz+1;
-
-    nxf = Nx*ny*nz;
-    nyf = nx*Ny*nz;
-    nzf = nx*ny*Nz;
 
     ccentroids = G->cell_centroids;
     cvolumes   = G->cell_volumes;
@@ -666,8 +655,6 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G,
 {
     int    i,j;
     int    nx, ny;
-    int    nxf, nyf;
-    int    Nx, Ny;
 
     double dx, dy;
 
@@ -676,12 +663,6 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G,
 
     nx  = G->cartdims[0];
     ny  = G->cartdims[1];
-    Nx  = nx+1;
-    Ny  = ny+1;
-
-    nxf = Nx*ny;
-    nyf = nx*Ny;
-
 
     ccentroids = G->cell_centroids;
     cvolumes   = G->cell_volumes;

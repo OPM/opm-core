@@ -189,13 +189,12 @@ static void
 set_impl_pointers(struct UnstructuredGrid *G, struct ifsh_ms_data *h)
 /* ---------------------------------------------------------------------- */
 {
-    size_t nb, n_fs_gconn;
+    size_t nb;
     size_t nblkdof_tot, max_pairs, work_sz;
 
     nb          = h->pimpl->ct->nblocks;
     nblkdof_tot = h->pimpl->sys->blkdof_pos[nb];
     max_pairs   = h->pimpl->max_nblkdof * (h->pimpl->max_nblkdof + 1) / 2;
-    n_fs_gconn  = G->cell_facepos[ G->number_of_cells ];
 
     work_sz     = h->pimpl->max_bcells + max_pairs;
 

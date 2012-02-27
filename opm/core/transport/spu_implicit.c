@@ -49,7 +49,6 @@ static double
 differentiate(int n, double h, double x0, double *tab, double x)
 {
     int           i;
-    double        a;
 
     assert(h > 0);
     assert((x-x0) < h*INT_MAX);
@@ -67,8 +66,6 @@ differentiate(int n, double h, double x0, double *tab, double x)
     if (i+1 > n-1) { 
         return (tab[n-1]-tab[n-2])/h;
     }
-    
-    a = (x-x0 - i*h) / h;
     
     return (tab[i+1]-tab[i])/h;
 }
