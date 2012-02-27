@@ -17,6 +17,7 @@ sparsevector_test				\
 unit_test					\
 test_readvector					\
 test_sf2p					\
+test_readpolymer				\
 test_writeVtkData
 
 bo_resprop_test_SOURCES = bo_resprop_test.cpp
@@ -30,6 +31,7 @@ sparsevector_test_LDADD   = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LDADD)
 unit_test_SOURCES         = unit_test.cpp
 test_readvector_SOURCES   = test_readvector.cpp
 test_sf2p_SOURCES         = test_sf2p.cpp
+test_readpolymer_SOURCES  = test_readpolymer.cpp
 test_writeVtkData_SOURCES = test_writeVtkData.cpp
 
 if UMFPACK
