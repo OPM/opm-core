@@ -729,10 +729,10 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G,
 
 
 #if UNIT_TEST
-int main()
+int main(void)
 {
 
-    grid_t *g = create_cart_grid_2d(2,2);
+    struct UnstructuredGrid *g = create_cart_grid_2d(2,2);
     int i;
     int k;
     for(i=0; i<g->number_of_cells; ++i)
