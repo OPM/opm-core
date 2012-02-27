@@ -61,18 +61,18 @@ namespace Opm
 namespace EclipseKeywords
 {
     string integer_fields[] =
-	{ string("ACTNUM"),
-	  string("SATNUM"),
-	  string("EQLNUM"),
-	  string("REGNUM"),
-	  string("ROCKTYPE"),
-	  string("DIMENS"),
-	  string("REGDIMS"),
-	  string("WELLDIMS"),
-	  string("TABDIMS"),
+        { string("ACTNUM"),
+          string("SATNUM"),
+          string("EQLNUM"),
+          string("REGNUM"),
+          string("ROCKTYPE"),
+          string("DIMENS"),
+          string("REGDIMS"),
+          string("WELLDIMS"),
+          string("TABDIMS"),
           string("FIPNUM"),
           string("GRIDFILE")
-	};
+        };
     const int num_integer_fields = sizeof(integer_fields) / sizeof(integer_fields[0]);
 
     string floating_fields[] =
@@ -90,16 +90,16 @@ namespace EclipseKeywords
     string special_fields[] =
         { string("SPECGRID"), string("FAULTS"), string("MULTFLT"),
           string("TITLE"),    string("START"),  string("DATES"),
-	  string("DENSITY"),  string("PVDG"),   string("PVDO"),
-	  string("PVTG"),     string("PVTO"),   string("PVTW"),
-	  string("SGOF"),     string("SWOF"),   string("ROCK"),
-	  string("ROCKTAB"),  string("WELSPECS"), string("COMPDAT"),
-	  string("WCONINJE"), string("WCONPROD"), string("WELTARG"),
-	  string("EQUIL"),    string("PVCDO"),    string("TSTEP"),
-	  string("PLYVISC"),  string("PLYROCK"),  string("PLYADS"),
-	  string("PLYMAX"),   string("TLMIXPAR"), string("WPOLYMER"),
-	  // The following fields only have a dummy implementation
-	  // that allows us to ignore them.
+          string("DENSITY"),  string("PVDG"),   string("PVDO"),
+          string("PVTG"),     string("PVTO"),   string("PVTW"),
+          string("SGOF"),     string("SWOF"),   string("ROCK"),
+          string("ROCKTAB"),  string("WELSPECS"), string("COMPDAT"),
+          string("WCONINJE"), string("WCONPROD"), string("WELTARG"),
+          string("EQUIL"),    string("PVCDO"),    string("TSTEP"),
+          string("PLYVISC"),  string("PLYROCK"),  string("PLYADS"),
+          string("PLYMAX"),   string("TLMIXPAR"), string("WPOLYMER"),
+          // The following fields only have a dummy implementation
+          // that allows us to ignore them.
           string("SWFN"),
           string("SOF2"),
           string("TUNING")
@@ -108,28 +108,28 @@ namespace EclipseKeywords
     const int num_special_fields = sizeof(special_fields) / sizeof(special_fields[0]);
 
     string ignore_with_data[] =
-	{ string("MAPUNITS"), string("MAPAXES"),  string("GRIDUNIT"),
-	  string("NTG"),      string("REGDIMS"),  string("WELLDIMS"),
-	  string("NSTACK"),   string("SATNUM"),
-	  string("RPTRST"),   string("ROIP"),     string("RWIP"),
-	  string("RWSAT"),    string("RPR"),      string("WBHP"),
-	  string("WOIR"),     string("BOX"),
+        { string("MAPUNITS"), string("MAPAXES"),  string("GRIDUNIT"),
+          string("NTG"),      string("REGDIMS"),  string("WELLDIMS"),
+          string("NSTACK"),   string("SATNUM"),
+          string("RPTRST"),   string("ROIP"),     string("RWIP"),
+          string("RWSAT"),    string("RPR"),      string("WBHP"),
+          string("WOIR"),     string("BOX"),
           string("COORDSYS"), string("PBVD")
-	};
+        };
     const int num_ignore_with_data = sizeof(ignore_with_data) / sizeof(ignore_with_data[0]);
 
     string ignore_no_data[] =
-	{ string("RUNSPEC"), string("WATER"),    string("OIL"),
-	  string("METRIC"),  string("FMTIN"),    string("FMTOUT"),
-	  string("GRID"),    string("INIT"),     string("NOECHO"),
-	  string("ECHO"),    string("EDIT"),     string("PROPS"),
-	  string("REGIONS"), string("SOLUTION"), string("SUMMARY"),
-	  string("FPR"),     string("FOIP"),     string("FWIP"),
-	  string("RUNSUM"),  string("EXCEL"),    string("SCHEDULE"),
-	  string("END"),     string("ENDBOX"),   string("CONTINUE"),
+        { string("RUNSPEC"), string("WATER"),    string("OIL"),
+          string("METRIC"),  string("FMTIN"),    string("FMTOUT"),
+          string("GRID"),    string("INIT"),     string("NOECHO"),
+          string("ECHO"),    string("EDIT"),     string("PROPS"),
+          string("REGIONS"), string("SOLUTION"), string("SUMMARY"),
+          string("FPR"),     string("FOIP"),     string("FWIP"),
+          string("RUNSUM"),  string("EXCEL"),    string("SCHEDULE"),
+          string("END"),     string("ENDBOX"),   string("CONTINUE"),
           string("NONNC"),   string("GAS"),      string("DISGAS"),
           string("FIELD")
-	};
+        };
     const int num_ignore_no_data = sizeof(ignore_no_data) / sizeof(ignore_no_data[0]);
 
     string include_keywords[] = { string("INCLUDE") };
@@ -141,33 +141,33 @@ namespace EclipseKeywords
 namespace {
 
     enum FieldType {
-	Integer,
-	FloatingPoint,
-	SpecialField,
-	IgnoreWithData,
-	IgnoreNoData,
+        Integer,
+        FloatingPoint,
+        SpecialField,
+        IgnoreWithData,
+        IgnoreNoData,
         Include,
-	Unknown
+        Unknown
     };
 
     inline FieldType classifyKeyword(const string& keyword)
     {
-	using namespace EclipseKeywords;
-	if (count(integer_fields, integer_fields + num_integer_fields, keyword)) {
-	    return Integer;
-	} else if (count(floating_fields, floating_fields + num_floating_fields, keyword)) {
-	    return FloatingPoint;
-	} else if (count(special_fields, special_fields + num_special_fields, keyword)) {
-	    return SpecialField;
-	} else if (count(ignore_with_data, ignore_with_data + num_ignore_with_data, keyword)) {
-	    return IgnoreWithData;
-	} else if (count(ignore_no_data, ignore_no_data + num_ignore_no_data, keyword)) {
-	    return IgnoreNoData;
-	} else if (count(include_keywords, include_keywords + num_include_keywords, keyword)) {
-	    return Include;
-	} else {
-	    return Unknown;
-	}
+        using namespace EclipseKeywords;
+        if (count(integer_fields, integer_fields + num_integer_fields, keyword)) {
+            return Integer;
+        } else if (count(floating_fields, floating_fields + num_floating_fields, keyword)) {
+            return FloatingPoint;
+        } else if (count(special_fields, special_fields + num_special_fields, keyword)) {
+            return SpecialField;
+        } else if (count(ignore_with_data, ignore_with_data + num_ignore_with_data, keyword)) {
+            return IgnoreWithData;
+        } else if (count(ignore_no_data, ignore_no_data + num_ignore_no_data, keyword)) {
+            return IgnoreNoData;
+        } else if (count(include_keywords, include_keywords + num_include_keywords, keyword)) {
+            return Include;
+        } else {
+            return Unknown;
+        }
     }
 
 } // anon namespace
@@ -194,8 +194,8 @@ EclipseGridParser::EclipseGridParser(const string& filename, bool convert_to_SI)
     directory_ = p.parent_path().string();
     ifstream is(filename.c_str());
     if (!is) {
-	cerr << "Unable to open file " << filename << endl;
-	throw exception();
+        cerr << "Unable to open file " << filename << endl;
+        throw exception();
     }
     read(is, convert_to_SI);
 }
@@ -222,8 +222,8 @@ void EclipseGridParser::readImpl(istream& is)
 //---------------------------------------------------------------------------
 {
     if (!is) {
-	cerr << "Could not read given input stream." << endl;
-	throw exception();
+        cerr << "Could not read given input stream." << endl;
+        throw exception();
     }
 
     // Make temporary maps that will at the end be swapped with the
@@ -238,50 +238,50 @@ void EclipseGridParser::readImpl(istream& is)
     // Actually read the data
     is >> ignoreWhitespace;
     while (!is.eof()) {
-	string keyword = readKeyword(is);
+        string keyword = readKeyword(is);
 #ifdef VERBOSE
-	cout << "Keyword found: " << keyword << endl;
+        cout << "Keyword found: " << keyword << endl;
 #endif
-	FieldType type = classifyKeyword(keyword);
-	switch (type) {
-	case Integer:
-	    readVectorData(is, intmap[keyword]);
-	    break;
-	case FloatingPoint:
-	    readVectorData(is, floatmap[keyword]);
-	    break;
-	case SpecialField: {
-	    map<string, std::tr1::shared_ptr<SpecialBase> >::iterator pos =
-		specialmap.find(keyword);
-	    if (pos == specialmap.end()) {
-		std::tr1::shared_ptr<SpecialBase> sb_ptr =
-		    createSpecialField(is, keyword);
-		if (sb_ptr) {
-		    specialmap[keyword] = sb_ptr;
-		} else {
-		    THROW("Could not create field " << keyword);
-		}
-	    } else {
-		pos->second->read(is);
-	    }
-	    break;
-	}
-	case IgnoreWithData: {
+        FieldType type = classifyKeyword(keyword);
+        switch (type) {
+        case Integer:
+            readVectorData(is, intmap[keyword]);
+            break;
+        case FloatingPoint:
+            readVectorData(is, floatmap[keyword]);
+            break;
+        case SpecialField: {
+            map<string, std::tr1::shared_ptr<SpecialBase> >::iterator pos =
+                specialmap.find(keyword);
+            if (pos == specialmap.end()) {
+                std::tr1::shared_ptr<SpecialBase> sb_ptr =
+                    createSpecialField(is, keyword);
+                if (sb_ptr) {
+                    specialmap[keyword] = sb_ptr;
+                } else {
+                    THROW("Could not create field " << keyword);
+                }
+            } else {
+                pos->second->read(is);
+            }
+            break;
+        }
+        case IgnoreWithData: {
             ignored_fields_.insert(keyword);
             is >> ignoreSlashLine;
 #ifdef VERBOSE
             cout << "(ignored)" << endl;
 #endif
-	    break;
-	}
-	case IgnoreNoData: {
+            break;
+        }
+        case IgnoreNoData: {
             ignored_fields_.insert(keyword);
-	    is >> ignoreLine;
+            is >> ignoreLine;
 #ifdef VERBOSE
             cout << "(ignored)" << endl;
 #endif
-	    break;
-	}
+            break;
+        }
         case Include: {
             string include_filename = readString(is);
             if (!directory_.empty()) {
@@ -295,12 +295,12 @@ void EclipseGridParser::readImpl(istream& is)
             is >> ignoreSlashLine;
             break;
         }
-	case Unknown:
-	default:
-	    cerr << "Keyword " << keyword << " not recognized." << endl;
-	    throw exception();
-	}
-	is >> ignoreWhitespace;
+        case Unknown:
+        default:
+            cerr << "Keyword " << keyword << " not recognized." << endl;
+            throw exception();
+        }
+        is >> ignoreWhitespace;
     }
 
 #define VERBOSE_LIST_FIELDS 0
@@ -345,18 +345,18 @@ void EclipseGridParser::convertToSI()
         if (key == "COORD" || key == "ZCORN") {
             unit = units_.length;
         } else if (key == "PERMX"  || key == "PERMY"  || key == "PERMZ"  ||
-		   key == "PERMXX" || key == "PERMYY" || key == "PERMZZ" ||
-		   key == "PERMXY" || key == "PERMYZ" || key == "PERMZX") {
+                   key == "PERMXX" || key == "PERMYY" || key == "PERMZZ" ||
+                   key == "PERMXY" || key == "PERMYZ" || key == "PERMZX") {
             unit = units_.permeability;
         } else if (key == "PORO"     || key == "BULKMOD"  || key == "YOUNGMOD" ||
-		   key == "LAMEMOD"  || key == "SHEARMOD" || key == "POISSONMOD" ||
-		   key == "PWAVEMOD" || key == "MULTPV"   || key == "PWAVEMOD" ||
+                   key == "LAMEMOD"  || key == "SHEARMOD" || key == "POISSONMOD" ||
+                   key == "PWAVEMOD" || key == "MULTPV"   || key == "PWAVEMOD" ||
                    key == "SGAS"     || key == "SWAT"     || key == "SOIL"     ||
                    key == "RS") {
             unit = 1.0;
             do_convert = false; // Dimensionless keywords...
-	} else if (key == "PRESSURE") {
-	    unit = units_.pressure;	    
+        } else if (key == "PRESSURE") {
+            unit = units_.pressure;         
         } else {
             THROW("Units for field " << key << " not specified. Cannon convert to SI.");
         }
@@ -381,7 +381,7 @@ bool EclipseGridParser::hasField(const string& keyword) const
 {
     string ukey = upcase(keyword);
     return integer_field_map_.count(ukey) || floating_field_map_.count(ukey) ||
-	special_field_map_.count(ukey) || ignored_fields_.count(ukey);
+        special_field_map_.count(ukey) || ignored_fields_.count(ukey);
 }
 
 
@@ -393,9 +393,9 @@ bool EclipseGridParser::hasFields(const vector<string>& keywords) const
 {
     int num_keywords = keywords.size();
     for (int i = 0; i < num_keywords; ++i) {
-	if (!hasField(keywords[i])) {
-	    return false;
-	}
+        if (!hasField(keywords[i])) {
+            return false;
+        }
     }
     return true;
 }
@@ -410,28 +410,28 @@ vector<string> EclipseGridParser::fieldNames() const
                   special_field_map_.size() +
                   ignored_fields_.size());
     {
-	map<string, vector<int> >::const_iterator it = integer_field_map_.begin();
-	for (; it != integer_field_map_.end(); ++it) {
-	    names.push_back(it->first);
-	}
+        map<string, vector<int> >::const_iterator it = integer_field_map_.begin();
+        for (; it != integer_field_map_.end(); ++it) {
+            names.push_back(it->first);
+        }
     }
     {
-	map<string, vector<double> >::const_iterator it = floating_field_map_.begin();
-	for (; it != floating_field_map_.end(); ++it) {
-	    names.push_back(it->first);
-	}
+        map<string, vector<double> >::const_iterator it = floating_field_map_.begin();
+        for (; it != floating_field_map_.end(); ++it) {
+            names.push_back(it->first);
+        }
     }
     {
-	map<string, std::tr1::shared_ptr<SpecialBase> >::const_iterator it = special_field_map_.begin();
-	for (; it != special_field_map_.end(); ++it) {
-	    names.push_back(it->first);
-	}
+        map<string, std::tr1::shared_ptr<SpecialBase> >::const_iterator it = special_field_map_.begin();
+        for (; it != special_field_map_.end(); ++it) {
+            names.push_back(it->first);
+        }
     }
     {
-	set<string>::const_iterator it = ignored_fields_.begin();
-	for (; it != ignored_fields_.end(); ++it) {
-	    names.push_back(*it);
-	}
+        set<string>::const_iterator it = ignored_fields_.begin();
+        for (; it != ignored_fields_.end(); ++it) {
+            names.push_back(*it);
+        }
     }
     return names;
 }
@@ -441,20 +441,20 @@ const std::vector<int>& EclipseGridParser::getIntegerValue(const std::string& ke
 //---------------------------------------------------------------------------
 {
     if (keyword == "SPECGRID") {
-	cerr << "\nERROR. Interface has changed!\n"
-	     << "const vector<int>& dim = parser.getIntegerValue(""SPECGRID"") is deprecated.\n"
-	     << "Use:\n"
-	     << "const SPECGRID& specgrid = parser.getSPECGRID();\n"
-	     << "const vector<int>& dim = specgrid.dimensions;\n\n";
-	throw exception();
+        cerr << "\nERROR. Interface has changed!\n"
+             << "const vector<int>& dim = parser.getIntegerValue(""SPECGRID"") is deprecated.\n"
+             << "Use:\n"
+             << "const SPECGRID& specgrid = parser.getSPECGRID();\n"
+             << "const vector<int>& dim = specgrid.dimensions;\n\n";
+        throw exception();
     }
 
     map<string, vector<int> >::const_iterator it
-	= integer_field_map_.find(keyword);
+        = integer_field_map_.find(keyword);
     if (it == integer_field_map_.end()) {
- 	return empty_integer_field_;
+        return empty_integer_field_;
     } else {
-	return it->second;
+        return it->second;
     }
 }
 
@@ -463,11 +463,11 @@ const std::vector<double>& EclipseGridParser::getFloatingPointValue(const std::s
 //---------------------------------------------------------------------------
 {
     map<string, vector<double> >::const_iterator it
-	= floating_field_map_.find(keyword);
+        = floating_field_map_.find(keyword);
     if (it == floating_field_map_.end()) {
- 	return empty_floating_field_;
+        return empty_floating_field_;
     } else {
-	return it->second;
+        return it->second;
     }
 }
 
@@ -480,14 +480,14 @@ const std::tr1::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const
     if (it == special_field_map_.end()) {
         THROW("No such field: " << keyword);
     } else {
-	return it->second;
+        return it->second;
     }
 }
 
 //---------------------------------------------------------------------------
 std::tr1::shared_ptr<SpecialBase>
 EclipseGridParser::createSpecialField(std::istream& is,
-				      const std::string& fieldname)
+                                      const std::string& fieldname)
 //---------------------------------------------------------------------------
 {
     string ukey = upcase(fieldname);
