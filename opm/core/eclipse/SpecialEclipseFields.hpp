@@ -1672,7 +1672,9 @@ struct TLMIXPAR : public SpecialBase
     }
 
     virtual void convertToSI(const EclipseUnits& units)
-    {}
+    {
+        static_cast<void>(units); // Suppress "unused parameter" warning.
+    }
 };
 
 /// Class holding a data line of keyword WPOLYMER
