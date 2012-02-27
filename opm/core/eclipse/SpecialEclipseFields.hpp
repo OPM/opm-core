@@ -1282,7 +1282,7 @@ struct WELTARG : public SpecialBase
 /// Class holding a data line of keyword EQUIL
 struct EquilLine
 {
-    double datum_depth_;             // Well name or well name root.
+    double datum_depth_;             // Datum depth
     double datum_depth_pressure_;    // Pressure at datum depth.
     double water_oil_contact_depth_; // Depth of water oil contact.
     double oil_water_cap_pressure_;  // Oil-water capillary pressure at the
@@ -1502,6 +1502,255 @@ struct MultRec : public SpecialBase
     virtual void convertToSI(const EclipseUnits&)
     {}
 
+};
+
+
+struct PLYVISC : public SpecialBase
+{
+    std::vector<double> concentration_;
+    std::vector<double> factor_;
+
+    virtual std::string name() const {return std::string("PLYVISC");}
+
+    virtual void read(std::istream& is)
+    {
+	// Note. This function assumes that NTPVT = 1, and reads only one table.
+	std::vector<double> plyvisc;
+	readVectorData(is, plyvisc);
+	for (int i=0; i<(int)plyvisc.size(); i+=2) {
+	    concentration_.push_back(plyvisc[i]);
+	    factor_.push_back(plyvisc[i+1]);
+	}
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << '\n';
+	for (int i=0; i<(int)concentration_.size(); ++i) {
+	    os << concentration_[i] << " " << factor_[i] << '\n';
+	}
+	os << '\n';
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+	for (int i=0; i<(int)concentration_.size(); ++i) {
+	    concentration_[i] *= units.polymer_density;
+	}
+    }
+};
+
+
+struct PLYROCK : public SpecialBase
+{
+    std::vector<double> plyrock_;
+
+    virtual std::string name() const {return std::string("PLYROCK");}
+
+    virtual void read(std::istream& is)
+    {
+	// Note. This function assumes that NTSFUN = 1, and reads only one line.
+	plyrock_.resize(5,-1e00);
+	plyrock_[3] = 1;  // Default value
+	int num_to_read = 5;
+	int num_read = readDefaultedVectorData(is, plyrock_, num_to_read);
+	if (num_read == num_to_read) {
+	    ignoreSlashLine(is);
+	}
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << '\n';
+	for (int i=0; i<(int)plyrock_.size(); ++i) {
+	    os << plyrock_[i] << " ";
+	}
+	os << "\n\n";
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+	
+	plyrock_[2] *= units.polymer_density;
+    }
+};
+
+
+struct PLYADS : public SpecialBase
+{
+    std::vector<double> local_concentration_;
+    std::vector<double> adsorbed_concentration_;
+
+    virtual std::string name() const {return std::string("PLYADS");}
+
+    virtual void read(std::istream& is)
+    {
+	// Note. This function assumes that NTSFUN = 1, and reads only one table.
+	std::vector<double> plyads;
+	readVectorData(is, plyads);
+	for (int i=0; i<(int)plyads.size(); i+=2) {
+	    local_concentration_.push_back(plyads[i]);
+	    adsorbed_concentration_.push_back(plyads[i+1]);
+	}
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << '\n';
+	for (int i=0; i<(int)local_concentration_.size(); ++i) {
+	    os << local_concentration_[i] << " " << adsorbed_concentration_[i] << '\n';
+	}
+	os << '\n';
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+	for (int i=0; i<(int)local_concentration_.size(); ++i) {
+	    local_concentration_[i] *= units.polymer_density;
+	}
+    }
+};
+
+
+struct PLYMAX : public SpecialBase
+{
+    std::vector<double> plymax_;
+
+    virtual std::string name() const {return std::string("PLYMAX");}
+
+    virtual void read(std::istream& is)
+    {
+	// Note. This function assumes that NTMISC = 1, and reads only one line.
+	plymax_.resize(5);
+	readVectorData(is, plymax_);
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << '\n';
+	for (int i=0; i<(int)plymax_.size(); ++i) {
+	    os << plymax_[i] << " ";
+	}
+	os << "\n\n";
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+	plymax_[0] *= units.polymer_density;
+	plymax_[1] *= units.polymer_density;
+    }
+};
+
+
+struct TLMIXPAR : public SpecialBase
+{
+    std::vector<double> tlmixpar_;
+
+    virtual std::string name() const {return std::string("TLMIXPAR");}
+
+    virtual void read(std::istream& is)
+    {
+	// Note. This function assumes that NTMISC = 1, and reads only one record.
+	tlmixpar_.resize(2, -1e100);
+	int num_to_read = 2;
+	int num_read = readDefaultedVectorData(is, tlmixpar_, num_to_read);
+	if (tlmixpar_[1] < 0) { 
+	    tlmixpar_[1] = tlmixpar_[0];
+	}
+	if (num_read == num_to_read) {
+	    ignoreSlashLine(is);
+	}
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << '\n';
+	for (int i=0; i<(int)tlmixpar_.size(); ++i) {
+	    os << tlmixpar_[i] << " ";
+	}
+	os << "\n\n";
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {}
+};
+
+/// Class holding a data line of keyword WPOLYMER
+struct WpolymerLine
+{
+    std::string well_;  // Well name, well name template or well list template
+    double polymer_concentration_;
+    double salt_concentration_;
+    std::string polymer_group_;
+    std::string salt_group_; 
+
+    WpolymerLine()
+    {
+	well_ = polymer_group_ = salt_group_ = "";	
+    }
+};
+
+struct WPOLYMER : public SpecialBase
+{
+    std::vector<WpolymerLine> wpolymer_;
+
+    virtual std::string name() const {return std::string("WPOLYMER");}
+
+    virtual void read(std::istream& is)
+    {
+	while(is) {
+	    std::string wellname = readString(is);
+	    if (wellname[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    }
+	    while (wellname.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		wellname = readString(is);
+	    }
+	    WpolymerLine wpolymer_line;
+	    wpolymer_line.well_ = wellname;
+	    is >> wpolymer_line.polymer_concentration_;    
+	    is >> wpolymer_line.salt_concentration_;
+	    std::string group = readString(is);
+	    if (group[0] == '/') {
+		is >> ignoreLine;
+	    } else {
+		wpolymer_line.polymer_group_ = group;
+		group = readString(is);
+		if (group[0] == '/') {
+		    is >> ignoreLine;
+		} else {
+		    wpolymer_line.salt_group_ = group;
+		    is >> ignoreLine;
+		}
+	    }
+	    wpolymer_.push_back(wpolymer_line);
+	}
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << '\n';
+	for (int i=0; i<(int)wpolymer_.size(); ++i) {
+	    os << wpolymer_[i].well_
+	       <<  "  " << wpolymer_[i].polymer_concentration_
+	       <<  "  " << wpolymer_[i].salt_concentration_
+	       <<  "  " << wpolymer_[i].polymer_group_
+	       <<  "  " << wpolymer_[i].salt_group_;
+	    os << '\n';		    
+	}
+	os << '\n';
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+	for (int i=0; i<(int)wpolymer_.size(); ++i) {
+	    wpolymer_[i].polymer_concentration_ *= units.polymer_density;
+	    wpolymer_[i].salt_concentration_ *= units.polymer_density;
+	}
+    }
 };
 
 // The following fields only have a dummy implementation

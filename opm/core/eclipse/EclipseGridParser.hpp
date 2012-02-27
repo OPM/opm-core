@@ -143,6 +143,12 @@ public:                                                                         
     SPECIAL_FIELD(EQUIL);
     SPECIAL_FIELD(PVCDO);
     SPECIAL_FIELD(TSTEP);
+    SPECIAL_FIELD(PLYVISC);
+    SPECIAL_FIELD(PLYROCK);
+    SPECIAL_FIELD(PLYADS);
+    SPECIAL_FIELD(PLYMAX);
+    SPECIAL_FIELD(TLMIXPAR);
+    SPECIAL_FIELD(WPOLYMER);
 
     // The following fields only have a dummy implementation
     // that allows us to ignore them.

@@ -27,6 +27,7 @@ namespace Opm
         double length;
         double time;
         double density;
+	double polymer_density;
         double pressure;
         double compressibility;
         double viscosity;
@@ -42,6 +43,7 @@ namespace Opm
             length = 1.0;
             time = 1.0;
             density = 1.0;
+	    polymer_density = 1.0;
             pressure = 1.0;
             compressibility = 1.0;
             viscosity = 1.0;

@@ -96,6 +96,8 @@ namespace EclipseKeywords
 	  string("ROCKTAB"),  string("WELSPECS"), string("COMPDAT"),
 	  string("WCONINJE"), string("WCONPROD"), string("WELTARG"),
 	  string("EQUIL"),    string("PVCDO"),    string("TSTEP"),
+	  string("PLYVISC"),  string("PLYROCK"),  string("PLYADS"),
+	  string("PLYMAX"),   string("TLMIXPAR"), string("WPOLYMER"),
 	  // The following fields only have a dummy implementation
 	  // that allows us to ignore them.
           string("SWFN"),
@@ -545,6 +547,7 @@ void EclipseGridParser::computeUnits()
         units_.length = meter;
         units_.time = day;
         units_.density = kilogram/cubic(meter);
+        units_.polymer_density = kilogram/cubic(meter);
         units_.pressure = barsa;
         units_.compressibility = 1.0/barsa;
         units_.viscosity = centi*Poise;
@@ -559,6 +562,7 @@ void EclipseGridParser::computeUnits()
         units_.length = feet;
         units_.time = day;
         units_.density = pound/cubic(feet);
+        units_.polymer_density = pound/stb;
         units_.pressure = psia;
         units_.compressibility = 1.0/psia;
         units_.viscosity = centi*Poise;
