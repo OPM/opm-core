@@ -314,32 +314,37 @@ namespace Opm {
         void
         initGravityTrans(const Grid&  g    ,
                          const std::vector<double> &  htrans) {
-            // int n_hf =g.cell_facepos[ g.number_of_cells ];
-            if(htrans.size()>0){
-                for (int f = 0; f < g.number_of_faces; ++f) {
-                    store_.trans(f)=0;
-                }
-                for (int f = 0; f < g.number_of_faces; ++f) {
-                    for (int j=0;j < 2; ++j){
-                        int hf=f2hf_[2*f+j];
-                        if(!(hf==-1)){
-                            assert(hf>=0);
-                            store_.trans(f)+=1/htrans[hf];
-                        }
-                    }
-                }
-                for (int f = 0; f < g.number_of_faces; ++f) {
-                    store_.trans(f)=1/store_.trans(f);
-                    assert(store_.trans(f)>0);
+
+            assert (htrans.size() ==
+                    static_cast<std::vector<double>::size_type>(g.cell_facepos[ g.number_of_cells ]));
+
+            for (int f = 0; f < g.number_of_faces; ++f) {
+                store_.trans(f) = 0.0;
+            }
+
+            for (int c = 0, i = 0; c < g.number_of_cells; ++c) {
+                for (; i < g.cell_facepos[c + 1]; ++i) {
+                    int f = g.cell_faces[i];
+
+                    assert (htrans[i] > 0.0);
+
+                    store_.trans(f) += 1.0 / htrans[i];
                 }
             }
+
+            for (int f = 0; f < g.number_of_faces; ++f) {
+                store_.trans(f) = 1.0 / store_.trans(f);
+            }
+
             if (gravity_) {
                 this->computeStaticGravity(g, gravity_);
             }
         }
+
         // -----------------------------------------------------------------
         // Newton control
         // -----------------------------------------------------------------
+
         template <class ReservoirState,
                   class Grid          ,
                   class JacobianSystem>
