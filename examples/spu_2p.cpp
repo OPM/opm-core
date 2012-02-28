@@ -366,7 +366,7 @@ main(int argc, char** argv)
     switch (scenario) {
     case 0:
 	{
-	    std::cout << "==== Scenario 0: single-cell source and sink.";
+	    std::cout << "==== Scenario 0: single-cell source and sink.\n";
 	    double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
 	    src[0] = flow_per_sec;
 	    src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
@@ -374,7 +374,7 @@ main(int argc, char** argv)
 	}
     case 1:
 	{
-	    std::cout << "==== Scenario 1: half source, half sink.";
+	    std::cout << "==== Scenario 1: half source, half sink.\n";
 	    double flow_per_sec = 0.1*porevol[0]/Opm::unit::day;
 	    std::fill(src.begin(), src.begin() + src.size()/2, flow_per_sec);
 	    std::fill(src.begin() + src.size()/2, src.end(), -flow_per_sec);
@@ -382,7 +382,7 @@ main(int argc, char** argv)
 	}
     case 2:
 	{
-	    std::cout << "==== Scenario 2: gravity convection.";
+	    std::cout << "==== Scenario 2: gravity convection.\n";
 	    if (!use_gravity) {
 		std::cout << "**** Warning: running gravity convection scenario, but gravity is zero." << std::endl;
 	    }
