@@ -305,9 +305,9 @@ main(int argc, char** argv)
 	const int nx = param.getDefault("nx", 100);
 	const int ny = param.getDefault("ny", 100);
 	const int nz = param.getDefault("nz", 1);
-	const int dx = param.getDefault("dx", 1.0);
-	const int dy = param.getDefault("dy", 1.0);
-	const int dz = param.getDefault("dz", 1.0);
+	const double dx = param.getDefault("dx", 1.0);
+	const double dy = param.getDefault("dy", 1.0);
+	const double dz = param.getDefault("dz", 1.0);
 	grid.reset(new Opm::GridManager(nx, ny, nz, dx, dy, dz));
 	// Rock and fluid init.
 	props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
@@ -366,7 +366,7 @@ main(int argc, char** argv)
     switch (scenario) {
     case 0:
 	{
-	    std::cout << "==== Scenario 0: single-cell source and sink.";
+	    std::cout << "==== Scenario 0: single-cell source and sink.\n";
 	    double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
 	    src[0] = flow_per_sec;
 	    src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
@@ -374,7 +374,7 @@ main(int argc, char** argv)
 	}
     case 1:
 	{
-	    std::cout << "==== Scenario 1: half source, half sink.";
+	    std::cout << "==== Scenario 1: half source, half sink.\n";
 	    double flow_per_sec = 0.1*porevol[0]/Opm::unit::day;
 	    std::fill(src.begin(), src.begin() + src.size()/2, flow_per_sec);
 	    std::fill(src.begin() + src.size()/2, src.end(), -flow_per_sec);
@@ -382,7 +382,7 @@ main(int argc, char** argv)
 	}
     case 2:
 	{
-	    std::cout << "==== Scenario 2: gravity convection.";
+	    std::cout << "==== Scenario 2: gravity convection.\n";
 	    if (!use_gravity) {
 		std::cout << "**** Warning: running gravity convection scenario, but gravity is zero." << std::endl;
 	    }
@@ -391,9 +391,11 @@ main(int argc, char** argv)
 			  << std::endl;
 	    }
 	    std::vector<double>& sat = state.saturation();
+            const int *glob_cell = grid->c_grid()->global_cell;
 	    for (int cell = 0; cell < num_cells; ++cell) {
 		const int* cd = grid->c_grid()->cartdims;
-		bool left = cell%(cd[1]*cd[2]) < cd[0]/2;
+                const int gc = glob_cell == 0 ? cell : glob_cell[cell];
+		bool left = (gc % cd[0]) < cd[0]/2;
 		sat[2*cell] = left ? 1.0 : 0.0;
 		sat[2*cell + 1] = 1.0 - sat[2*cell];
 	    }
