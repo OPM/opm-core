@@ -136,7 +136,6 @@ namespace Opm {
 
             if (gravity_) {
                 store_.drho() = fluid_.density(0) - fluid_.density(1);
-                //this->computeStaticGravity(g, gravity_);
             }
 
             for (int c = 0, i = 0; c < g.number_of_cells; ++c) {
@@ -337,7 +336,7 @@ namespace Opm {
             }
 
             if (gravity_) {
-                this->computeStaticGravity(g, gravity_);
+                this->computeStaticGravity(g);
             }
         }
 
@@ -499,8 +498,8 @@ namespace Opm {
 
         template <class Grid>
         void
-        computeStaticGravity(const Grid&   g    ,
-                             const double* grav ){
+        computeStaticGravity(const Grid& g) {
+
             const int d = g.dimensions;
 
             for (int c = 0, i = 0; c < g.number_of_cells; ++c) {
