@@ -24,7 +24,7 @@ int main(int argc, char** argv)
     if (argc == 2) {
 	ecl_filename = argv[1];
     } else {
-	std::cout << "\nUsage: argc[0] filename.grdecl\n";
+	std::cout << "\nUsage: test_readpolymer  filename.grdecl\n";
 	exit( 1 );
     }
 
