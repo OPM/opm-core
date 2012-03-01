@@ -30,7 +30,8 @@ struct ExtractColumnCompare
 /// Extract each column of the grid.
 ///  \note Assumes the pillars of the grid are all vertically aligned.
 ///  \param grid The grid from which to extract the columns.
-///  \param columns will for each i + cartgrim[0]*j  contain the k values contained in the column
+///  \param columns will for each i + cartgrim[0]*j where (i, j) represents a non-empty column,
+////        contain the cell indices contained in the column
 ///         centered at (i, j).
 void extractColumn( const UnstructuredGrid& grid, std::map<int, std::vector<int> >& columns )
 {
