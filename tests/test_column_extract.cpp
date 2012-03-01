@@ -11,11 +11,19 @@
 
 BOOST_AUTO_TEST_CASE(SingleColumnTest)
 {
-    const int size_x = 1, size_y = 1, size_z = 10;
     using namespace Opm;
+
+    const int size_x = 1, size_y = 1, size_z = 10;
     GridManager manager(size_x, size_y, size_z);
 
-    std::vector<std::vector<int> > columns;
+    // We  do our own numbering
+    UnstructuredGrid* grid = const_cast<UnstructuredGrid*>(manager.c_grid());
+    grid->global_cell = (int*)malloc(sizeof(int) * size_x * size_y * size_z);
+    for(int i = 0; i < size_x * size_y * size_z; ++i) {
+        grid->global_cell[i] = i;
+    }
+
+    std::map<int, std::vector<int> > columns;
     extractColumn(*manager.c_grid(), columns);
 
     std::vector<int> correct_answer;
@@ -34,7 +42,14 @@ BOOST_AUTO_TEST_CASE(FourByFourColumnTest)
     using namespace Opm;
     GridManager manager(size_x, size_y, size_z);
 
-    std::vector<std::vector<int> > columns;
+    // We  do our own numbering
+    UnstructuredGrid* grid = const_cast<UnstructuredGrid*>(manager.c_grid());
+    grid->global_cell = (int*)malloc(sizeof(int) * size_x * size_y * size_z);
+    for(int i = 0; i < size_x * size_y * size_z; ++i) {
+        grid->global_cell[i] = i;
+    }
+
+    std::map<int, std::vector<int> > columns;
     extractColumn(*manager.c_grid(), columns);
 
     std::vector<std::vector<int> > correct_answer;
