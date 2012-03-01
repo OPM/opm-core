@@ -14,13 +14,12 @@ monotcubicinterpolator_test			\
 param_test					\
 sparsetable_test				\
 sparsevector_test				\
+test_column_extract				\
+test_lapack					\
 test_readpolymer				\
 test_readvector					\
 test_sf2p					\
 test_writeVtkData				\
-unit_test					\
-test_lapack					\
-test_column_extract				\
 unit_test
 
 bo_resprop_test_SOURCES = bo_resprop_test.cpp
@@ -31,14 +30,14 @@ sparsetable_test_SOURCES  = sparsetable_test.cpp
 sparsetable_test_LDADD    = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LDADD)
 sparsevector_test_SOURCES = sparsevector_test.cpp
 sparsevector_test_LDADD   = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LDADD)
+test_column_extract_LDADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LDADD)
+test_column_extract_SOURCES = test_column_extract.cpp
+test_lapack_SOURCES       = test_lapack.cpp
 test_readpolymer_SOURCES  = test_readpolymer.cpp
 test_readvector_SOURCES   = test_readvector.cpp
 test_sf2p_SOURCES         = test_sf2p.cpp
 test_writeVtkData_SOURCES = test_writeVtkData.cpp
-test_column_extract_SOURCES = test_column_extract.cpp
-test_column_extract_LDADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LDADD)
 unit_test_SOURCES         = unit_test.cpp
-test_lapack_SOURCES       = test_lapack.cpp
 
 if UMFPACK
 noinst_PROGRAMS    += test_cfs_tpfa
