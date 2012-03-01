@@ -33,6 +33,7 @@ sparsevector_test_LDADD   = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LDADD)
 test_column_extract_SOURCES = test_column_extract.cpp
 test_column_extract_LDADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LDADD)
 test_lapack_SOURCES       = test_lapack.cpp
+test_lapack_LDADD         = $(LAPACK_LIBS) $(LDADD)
 test_readpolymer_SOURCES  = test_readpolymer.cpp
 test_readvector_SOURCES   = test_readvector.cpp
 test_sf2p_SOURCES         = test_sf2p.cpp
