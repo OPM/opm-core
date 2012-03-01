@@ -28,7 +28,6 @@ int main()
     double D[N]    = { 3.0,   2.3,  -5.0,  -0.9,   7.1 };
     double DL[N-1] = { 3.4,   3.6,   7.0,  -6.0 };
     double B[N]    = { 2.7,  -0.5,   2.6,   0.6,   2.7 };
-    int ldb = 1;
     int info = 0;
     dgtsv_(&N, &nrhs, DL, D, DU, B, &N, &info);
     if (info == 0) {
