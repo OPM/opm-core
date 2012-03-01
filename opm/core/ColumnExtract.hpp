@@ -36,7 +36,6 @@ struct ExtractColumnCompare
 void extractColumn( const UnstructuredGrid& grid, std::map<int, std::vector<int> >& columns )
 {
     const int* dims = grid.cartdims;
-    const int* global = grid.global_cell;
     for (int i = 0; i < grid.number_of_cells; ++i) {
         // Extract Cartesian coordinates
         int index = grid.global_cell[i];
