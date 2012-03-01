@@ -41,6 +41,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 namespace Opm {
     namespace spu_2p {
