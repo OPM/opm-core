@@ -73,13 +73,13 @@ void dgetrs_(const char       *trans, const MAT_SIZE_T *n,
 
 /* B <- A \ B, tridiagonal A with bands DL, D, DU */
 void dgtsv_(const MAT_SIZE_T *n    ,
-	    const MAT_SIZE_T *nrhs ,
+            const MAT_SIZE_T *nrhs ,
                   double     *DL   ,
                   double     *D    ,
                   double     *DU   ,
                   double     *B    ,
             const MAT_SIZE_T *ldb  ,
-	    MAT_SIZE_T       *info);
+            MAT_SIZE_T       *info);
 
 /* A <- chol(A) */
 void dpotrf_(const char *uplo, const MAT_SIZE_T *n,
