@@ -331,6 +331,10 @@ main(int argc, char** argv)
 	    std::cout << "**** Warning: nonzero gravity, but zero density difference." << std::endl;
 	}
     }
+    bool use_segregation_split = false;
+    if (use_gravity && use_reorder) {
+	use_segregation_split = param.getDefault("use_segregation_split", use_segregation_split);
+    }
 
     // Solvers init.
     // Pressure solver.
@@ -424,7 +428,7 @@ main(int argc, char** argv)
     Opm::ImplicitTransportDetails::NRControl ctrl;
     double current_time = 0.0;
     double total_time = stepsize*num_psteps;
-    if (!use_reorder) {
+    if (!use_reorder || use_segregation_split) {
 	ctrl.max_it = param.getDefault("max_it", 20);
 	ctrl.verbosity = param.getDefault("verbosity", 0);
 	ctrl.max_it_ls = param.getDefault("max_it_ls", 5);
@@ -473,6 +477,7 @@ main(int argc, char** argv)
 	    outputState(grid->c_grid(), state, pstep, output_dir);
 	}
 
+	// Solve pressure.
 	if (use_gravity) {
 	    computeTotalMobilityOmega(*props, allcells, state.saturation(), totmob, omega);
 	} else {
@@ -485,8 +490,9 @@ main(int argc, char** argv)
 	std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
 	ptime += pt;
 
+	// Solve transport
+	transport_timer.start();
 	if (use_reorder) {
-	    Opm::toWaterSat(state.saturation(), reorder_sat);
 	    // We must treat reorder_src here,
 	    // if we are to handle anything but simple water
 	    // injection, since it is expected to be
@@ -495,22 +501,24 @@ main(int argc, char** argv)
 	    // Also, for anything but noflow boundaries,
 	    // boundary flows must be accumulated into
 	    // source term following the same convention.
-	    transport_timer.start();
+	    Opm::toWaterSat(state.saturation(), reorder_sat);
 	    reorder_model.solve(&state.faceflux()[0], &reorder_src[0], stepsize, &reorder_sat[0]);
-	    transport_timer.stop();
-	    double tt = transport_timer.secsSinceStart();
-	    std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
-	    ttime += tt;
 	    Opm::toBothSat(reorder_sat, state.saturation());
+	    if (use_segregation_split) {
+		std::vector<double> fluxes = state.faceflux();
+		std::fill(state.faceflux().begin(), state.faceflux().end(), 0.0);
+		tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
+		std::cout << rpt;
+		state.faceflux() = fluxes;
+	    }
 	} else {
-	    transport_timer.start();
 	    tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
-	    transport_timer.stop();
-	    double tt = transport_timer.secsSinceStart();
-	    std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
-	    ttime += tt;
 	    std::cout << rpt;
 	}
+	transport_timer.stop();
+	double tt = transport_timer.secsSinceStart();
+	std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
+	ttime += tt;
 
 	current_time += stepsize;
     }
