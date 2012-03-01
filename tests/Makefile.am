@@ -18,7 +18,9 @@ test_readpolymer				\
 test_readvector					\
 test_sf2p					\
 test_writeVtkData				\
-test_column_extract			\
+unit_test					\
+test_lapack					\
+test_column_extract				\
 unit_test
 
 bo_resprop_test_SOURCES = bo_resprop_test.cpp
@@ -36,6 +38,7 @@ test_writeVtkData_SOURCES = test_writeVtkData.cpp
 test_column_extract_SOURCES = test_column_extract.cpp
 test_column_extract_LDADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LDADD)
 unit_test_SOURCES         = unit_test.cpp
+test_lapack_SOURCES       = test_lapack.cpp
 
 if UMFPACK
 noinst_PROGRAMS    += test_cfs_tpfa
