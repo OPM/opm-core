@@ -81,7 +81,6 @@ opm/core/pressure/mimetic/hybsys_global.c               \
 opm/core/pressure/mimetic/hybsys.c                      \
 opm/core/transport/spu_explicit.c                       \
 opm/core/transport/spu_implicit.c			\
-opm/core/transport/GravitySolver.cpp			\
 opm/core/transport/transport_source.c			\
 opm/core/transport/reorder/TransportModelInterface.cpp	\
 opm/core/transport/reorder/TransportModelTwophase.cpp	\
