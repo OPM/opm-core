@@ -193,6 +193,8 @@ opm/core/transport/JacobianSystem.hpp                   \
 opm/core/transport/spu_implicit.h                       \
 opm/core/transport/ImplicitAssembly.hpp                 \
 opm/core/transport/transport_source.h		\
+opm/core/transport/GravityColumnSolver.hpp		\
+opm/core/transport/GravityColumnSolver_impl.hpp		\
 opm/core/transport/reorder/TransportModelInterface.hpp	\
 opm/core/transport/reorder/TransportModelTwophase.hpp	\
 opm/core/transport/reorder/nlsolvers.h		\
