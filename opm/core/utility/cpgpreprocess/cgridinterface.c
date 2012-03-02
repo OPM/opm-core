@@ -217,9 +217,9 @@ preprocess (const struct grdecl *in, double tol)
 
    /* allocate and fill g->cell_faces/g->cell_facepos and
     * g->cell_facetag */
-   fill_cell_topology(&pg, g);
+   ok =       fill_cell_topology(&pg, g);
+   ok = ok && allocate_geometry(g);
 
-   ok = allocate_geometry(g);
    if (!ok)
    {
        free_grid(g);
