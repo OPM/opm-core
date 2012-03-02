@@ -203,6 +203,14 @@ preprocess (const struct grdecl *in, double tol)
    g->face_nodepos     = pg.face_ptr;
    g->face_cells       = pg.face_neighbors;
 
+   /* Explicitly relinquish resource references conveyed to 'g'.  This
+    * is needed to avoid creating dangling references in the
+    * free_processed_grid() call. */
+   pg.node_coordinates = NULL;
+   pg.face_nodes       = NULL;
+   pg.face_ptr         = NULL;
+   pg.face_neighbors   = NULL;
+
    g->face_centroids   = NULL;
    g->face_normals     = NULL;
    g->face_areas       = NULL;
@@ -235,7 +243,14 @@ preprocess (const struct grdecl *in, double tol)
        g->cartdims[2]      = pg.dimensions[2];
 
        g->global_cell      = pg.local_cell_index;
+
+       /* Explicitly relinquish resource references conveyed to 'g'.
+        * This is needed to avoid creating dangling references in the
+        * free_processed_grid() call. */
+       pg.local_cell_index = NULL;
    }
+
+   free_processed_grid(&pg);
 
    return g;
 }
