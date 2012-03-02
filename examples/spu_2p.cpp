@@ -69,6 +69,9 @@
 #include <opm/core/transport/CSRMatrixBlockAssembler.hpp>
 #include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
 
+#include <opm/core/ColumnExtract.hpp>
+#include <opm/core/transport/GravityColumnSolver.hpp>
+
 #include <opm/core/transport/reorder/TransportModelTwophase.hpp>
 
 #include <boost/filesystem/convenience.hpp>
@@ -332,8 +335,12 @@ main(int argc, char** argv)
 	}
     }
     bool use_segregation_split = false;
+    bool use_column_solver = false;
     if (use_gravity && use_reorder) {
 	use_segregation_split = param.getDefault("use_segregation_split", use_segregation_split);
+	if (use_segregation_split) {
+	    use_column_solver = param.getDefault("use_column_solver", use_column_solver);
+	}
     }
 
     // Solvers init.
@@ -355,7 +362,13 @@ main(int argc, char** argv)
     const double nltol = param.getDefault("nl_tolerance", 1e-9);
     const int maxit = param.getDefault("nl_maxiter", 30);
     Opm::TransportModelTwophase reorder_model(*grid->c_grid(), &porevol[0], *props, nltol, maxit);
-
+    // Column-based gravity segregation solver.
+    typedef std::map<int, std::vector<int> > ColMap;
+    ColMap columns;
+    if (use_column_solver) {
+	Opm::extractColumn(*grid->c_grid(), columns);
+    }
+    Opm::GravityColumnSolver<TransportModel> colsolver(model, *grid->c_grid());
 
     // State-related and source-related variables init.
     int num_cells = grid->c_grid()->number_of_cells;
@@ -505,11 +518,15 @@ main(int argc, char** argv)
 	    reorder_model.solve(&state.faceflux()[0], &reorder_src[0], stepsize, &reorder_sat[0]);
 	    Opm::toBothSat(reorder_sat, state.saturation());
 	    if (use_segregation_split) {
-		std::vector<double> fluxes = state.faceflux();
-		std::fill(state.faceflux().begin(), state.faceflux().end(), 0.0);
-		tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
-		std::cout << rpt;
-		state.faceflux() = fluxes;
+		if (use_column_solver) {
+		    colsolver.solve(columns, stepsize, state.saturation());
+		} else {
+		    std::vector<double> fluxes = state.faceflux();
+		    std::fill(state.faceflux().begin(), state.faceflux().end(), 0.0);
+		    tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
+		    std::cout << rpt;
+		    state.faceflux() = fluxes;
+		}
 	    }
 	} else {
 	    tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
