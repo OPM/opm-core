@@ -54,7 +54,7 @@ fill_cell_topology(struct processed_grid  *pg,
 
         /* struct UnstructuredGrid member */
         g->cell_facetag  = malloc(nhf * sizeof *g->cell_facetag );
-        
+
         if ((g->cell_faces == NULL) || (g->cell_facetag == NULL)) {
             free(g->cell_facetag);  g->cell_facetag = NULL;
             free(g->cell_faces);    g->cell_faces   = NULL;
@@ -96,14 +96,14 @@ void free_grid(struct UnstructuredGrid *g)
         free(g->face_cells);
         free(g->cell_facepos);
         free(g->cell_faces);
-        
+
         free(g->node_coordinates);
         free(g->face_centroids);
         free(g->face_areas);
         free(g->face_normals);
         free(g->cell_centroids);
         free(g->cell_volumes);
-        
+
         free(g->global_cell);
         free(g->cell_facetag);
     }
@@ -147,18 +147,18 @@ void compute_geometry(struct UnstructuredGrid *g)
     if (g!=NULL)
     {
         assert (g->dimensions == 3);
-        
+
         assert (g->face_centroids != NULL);
         assert (g->face_normals   != NULL);
         assert (g->face_areas     != NULL);
         assert (g->cell_centroids != NULL);
         assert (g->cell_volumes   != NULL);
-        
+
         compute_face_geometry(g->dimensions  , g->node_coordinates,
                               g->number_of_faces, g->face_nodepos,
                               g->face_nodes, g->face_normals,
                               g->face_centroids, g->face_areas);
-        
+
         compute_cell_geometry(g->dimensions, g->node_coordinates,
                               g->face_nodepos, g->face_nodes,
                               g->face_cells, g->face_normals,
@@ -175,7 +175,7 @@ preprocess (const struct grdecl *in, double tol)
     struct UnstructuredGrid *g;
    int                      ok;
    struct processed_grid    pg;
-   
+
    g = malloc(1 * sizeof *g);
    if (g == NULL)
    {
@@ -227,13 +227,13 @@ preprocess (const struct grdecl *in, double tol)
    }
    else
    {
-   
+
        compute_geometry(g);
-       
+
        g->cartdims[0]      = pg.dimensions[0];
        g->cartdims[1]      = pg.dimensions[1];
        g->cartdims[2]      = pg.dimensions[2];
-       
+
        g->global_cell      = pg.local_cell_index;
    }
 
