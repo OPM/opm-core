@@ -211,6 +211,9 @@ preprocess (const struct grdecl *in, double tol)
    pg.face_ptr         = NULL;
    pg.face_neighbors   = NULL;
 
+   /* Initialise subsequently allocated fields to a defined state lest
+    * we free() random pointers in free_grid() if either of the
+    * fill_cell_topology() or allocate_geometry() functions fail. */
    g->face_centroids   = NULL;
    g->face_normals     = NULL;
    g->face_areas       = NULL;
@@ -218,13 +221,10 @@ preprocess (const struct grdecl *in, double tol)
    g->cell_centroids   = NULL;
    g->cell_volumes     = NULL;
 
-   /* Put ->global_cell in defined and harmless state to prevent
-    * freeing a random pointer in case of failing to allocate geometry
-    * resources. */
-   g->global_cell = NULL;
+   g->global_cell      = NULL;
 
    /* allocate and fill g->cell_faces/g->cell_facepos and
-    * g->cell_facetag */
+    * g->cell_facetag as well as the geometry-related fields. */
    ok =       fill_cell_topology(&pg, g);
    ok = ok && allocate_geometry(g);
 
