@@ -186,6 +186,10 @@ preprocess (const struct grdecl *in, double tol)
 
    /*
     *  Convert "struct processed_grid" to "struct UnstructuredGrid".
+    *
+    *  In particular, convey resource ownership from 'pg' to 'g'.
+    *  Consequently, memory resources obtained in process_grdecl()
+    *  will be released in free_grid().
     */
    g->dimensions = 3;
 
