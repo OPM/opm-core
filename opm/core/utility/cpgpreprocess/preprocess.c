@@ -457,8 +457,8 @@ void process_grdecl(const struct grdecl   *in,
           double z1 = sign*in->zcorn[i+2*nx*(j+2*ny*(k))];
           double z2 = sign*in->zcorn[i+2*nx*(j+2*ny*(k+1))];
 
-          int c1 = i/2 + nx*(j/2 + ny*k/2);
-          int c2 = i/2 + nx*(j/2 + ny*(k+1)/2);
+          int c1 = i/2 + nx*(j/2 + ny*(k/2));
+          int c2 = i/2 + nx*(j/2 + ny*((k+1)/2));
 
           if (in->actnum[c1] && in->actnum[c2] && (z2 < z1)){
             fprintf(stderr, "\nZCORN should be strictly nondecreasing along pillars!\n");
