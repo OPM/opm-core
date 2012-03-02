@@ -78,11 +78,28 @@ namespace Opm
 	StateWithZeroFlux state(s); // This holds s by reference.
 	JacSys sys(grid_.number_of_cells);
 	model_.initStep(state, grid_, sys);
-	model_.initIteration(state, grid_, sys);
 
-	std::map<int, std::vector<int> >::const_iterator it;
-	for (it = columns.begin(); it != columns.end(); ++it) {
-	    solveSingleColumn(it->second, dt, s, sys.vector().writableSolution());
+	const int max_iter = 40;
+	const double tol = 1e-4;
+	int iter = 0;
+	double max_delta = 1e100;
+	while (iter < max_iter) {
+	    model_.initIteration(state, grid_, sys);
+	    std::map<int, std::vector<int> >::const_iterator it;
+	    for (it = columns.begin(); it != columns.end(); ++it) {
+		solveSingleColumn(it->second, dt, s, sys.vector().writableSolution());
+	    }
+	    const double maxelem = *std::max_element(sys.vector().solution().begin(), sys.vector().solution().end());
+	    const double minelem = *std::min_element(sys.vector().solution().begin(), sys.vector().solution().end());
+	    max_delta = std::max(maxelem, -minelem);
+	    std::cout << "Iteration " << iter << "   max_delta = " << max_delta << std::endl;
+	    if (max_delta < tol) {
+		break;
+	    }
+	    ++iter;
+	}
+	if (max_delta >= tol) {
+	    THROW("Failed to converge!");
 	}
 	// Finalize.
 	// model_.finishIteration(); // Doesn't do anything in th 2p model.
