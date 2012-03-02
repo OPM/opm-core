@@ -206,6 +206,11 @@ preprocess (const struct grdecl *in, double tol)
    g->cell_centroids   = NULL;
    g->cell_volumes     = NULL;
 
+   /* Put ->global_cell in defined and harmless state to prevent
+    * freeing a random pointer in case of failing to allocate geometry
+    * resources. */
+   g->global_cell = NULL;
+
    /* allocate and fill g->cell_faces/g->cell_facepos and
     * g->cell_facetag */
    fill_cell_topology(&pg, g);
