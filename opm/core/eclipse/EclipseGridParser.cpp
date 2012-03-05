@@ -128,7 +128,7 @@ namespace EclipseKeywords
           string("RUNSUM"),  string("EXCEL"),    string("SCHEDULE"),
           string("END"),     string("ENDBOX"),   string("CONTINUE"),
           string("NONNC"),   string("GAS"),      string("DISGAS"),
-          string("FIELD")
+          string("FIELD"),   string("POLYMER")
         };
     const int num_ignore_no_data = sizeof(ignore_no_data) / sizeof(ignore_no_data[0]);
 
