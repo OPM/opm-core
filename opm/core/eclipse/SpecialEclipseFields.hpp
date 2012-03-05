@@ -1621,7 +1621,7 @@ struct PLYMAX : public SpecialBase
     virtual void read(std::istream& is)
     {
 	// Note. This function assumes that NTMISC = 1, and reads only one line.
-	plymax_.resize(5);
+	plymax_.resize(2);
 	readVectorData(is, plymax_);
     }
 
