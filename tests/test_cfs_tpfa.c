@@ -615,7 +615,7 @@ int
 main(void)
 {
     int       i, nphases, dim;
-    flowbc_t *bc;
+    struct FlowBoundaryConditions *bc;
     double    dt;
     double   *htrans, *trans, *perm, *totmob, *src;
     double   *gravcap_f, *porevol, *cpress0;
@@ -655,7 +655,7 @@ main(void)
     wpress = malloc(W->number_of_wells * sizeof *wpress);
     wflux  = malloc(W->well_connpos[ W->number_of_wells ] * sizeof *wflux);
 
-    bc = allocate_flowbc(G->number_of_faces);
+    bc = NULL;
 
     set_homoperm(G->number_of_cells, G->dimensions, perm);
 
@@ -690,7 +690,6 @@ main(void)
 
     cfs_tpfa_destroy(h);
     deallocate_cq(cq);
-    deallocate_flowbc(bc);
 
     free(wflux); free(wpress);
     free(fflux); free(fpress); free(cpress);
