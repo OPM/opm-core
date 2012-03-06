@@ -48,7 +48,7 @@ void
 cfs_tpfa_assemble(struct UnstructuredGrid                  *G,
                   double                   dt,
                   well_t                  *W,
-                  flowbc_t                *bc,
+                  struct FlowBoundaryConditions *bc,
                   const double            *src,
                   struct compr_quantities *cq,
                   const double            *trans,
@@ -61,7 +61,7 @@ cfs_tpfa_assemble(struct UnstructuredGrid                  *G,
 
 void
 cfs_tpfa_press_flux(struct UnstructuredGrid                 *G,
-                    flowbc_t               *bc,
+                    struct FlowBoundaryConditions *bc,
                     well_t                 *W,
                     int                     np,
                     const double           *trans,
@@ -76,7 +76,7 @@ cfs_tpfa_press_flux(struct UnstructuredGrid                 *G,
 
 void
 cfs_tpfa_fpress(struct UnstructuredGrid               *G,
-                flowbc_t             *bc,
+                struct FlowBoundaryConditions *bc,
                 int                   np,
                 const double         *htrans,
                 const double         *pmobf,

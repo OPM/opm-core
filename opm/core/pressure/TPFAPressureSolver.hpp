@@ -122,22 +122,6 @@ public:
         }
         UnstructuredGrid* g = grid_.c_grid();
 
-        // Boundary conditions.
-        int num_faces = g->number_of_faces;
-        assert(num_faces == int(bctypes.size()));
-        std::vector<flowbc_type> bctypes2(num_faces, UNSET);
-        for (int face = 0; face < num_faces; ++face) {
-            if (bctypes[face] != FBC_FLUX || bcvalues[face] != 0.0) {
-                throw std::logic_error("TPFAPressureSolver currently only supports noflow bcs.");
-            }
-            if (bctypes[face] == FBC_PRESSURE) {
-                bctypes2[face] = PRESSURE;
-            } else if (bctypes[face] == FBC_FLUX) {
-                bctypes2[face] = FLUX;
-            }
-        }
-        // flowbc_t bc = { &bctypes2[0], const_cast<double*>(&bcvalues[0]) };
-
         // Source terms from user.
         double* src = const_cast<double*>(&sources[0]); // Ugly? Yes. Safe? I think so.
 
@@ -147,7 +131,7 @@ public:
 //         double* wdp = 0;
 
         // Compute effective transmissibilities.
-        eff_trans_.resize(num_faces);
+        eff_trans_.resize(grid_.numFaces());
         tpfa_eff_trans_compute(g, &total_mobilities[0], &htrans_[0], &eff_trans_[0]);
 
         // Update gravity term.
@@ -162,8 +146,11 @@ public:
             data_->b[i] = 0.0;
         }
 
+        ifs_tpfa_forces f;
+        f.src = &src[0];
+
         // Assemble the embedded linear system.
-        ifs_tpfa_assemble(g, &eff_trans_[0], src, &gpress_[0], data_);
+        ifs_tpfa_assemble(g, &f, &eff_trans_[0], &gpress_[0], data_);
         state_ = Assembled;
     }
 

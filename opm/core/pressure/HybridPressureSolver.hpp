@@ -28,7 +28,6 @@
 #include <stdexcept>
 
 
-
 /// @brief
 /// Encapsulates the ifsh (= incompressible flow solver hybrid) solver modules.
 class HybridPressureSolver
@@ -137,17 +136,11 @@ public:
         }
 
         // Boundary conditions.
-        int num_faces = grid_.c_grid()->number_of_faces;
-        assert(num_faces == int(bctypes.size()));
-        std::vector<flowbc_type> bctypes2(num_faces, UNSET);
-        for (int face = 0; face < num_faces; ++face) {
-            if (bctypes[face] == FBC_PRESSURE) {
-                bctypes2[face] = PRESSURE;
-            } else if (bctypes[face] == FBC_FLUX) {
-                bctypes2[face] = FLUX;
-            }
-        }
-        flowbc_t bc = { &bctypes2[0], const_cast<double*>(&bcvalues[0]) };
+
+        assert (bctypes.size() ==
+                static_cast<std::vector<FlowBCTypes>::size_type>(grid_.numFaces()));
+
+        FlowBoundaryConditions *bc = gather_boundary_conditions(bctypes, bcvalues);
 
         // Source terms from user.
         double* src = const_cast<double*>(&sources[0]); // Ugly? Yes. Safe? I think so.
@@ -174,9 +167,11 @@ public:
         }
 
         // Assemble the embedded linear system.
-        ifsh_assemble(&bc, src, &Binv_mobilityweighted_[0], &gpress_omegaweighted_[0],
+        ifsh_assemble(bc, src, &Binv_mobilityweighted_[0], &gpress_omegaweighted_[0],
                       wctrl, WI, wdp, data_);
         state_ = Assembled;
+
+        flow_conditions_destroy(bc);
     }
 
     /// Encapsulate a sparse linear system in CSR format.
@@ -297,7 +292,37 @@ private:
     // Gravity contributions.
     std::vector<double> gpress_;
     std::vector<double> gpress_omegaweighted_;
-};
+
+
+    FlowBoundaryConditions*
+    gather_boundary_conditions(const std::vector<FlowBCTypes>& bctypes ,
+                               const std::vector<double>&      bcvalues)
+    {
+        FlowBoundaryConditions* fbc = flow_conditions_construct(0);
+
+        int ok = fbc != 0;
+        std::vector<FlowBCTypes>::size_type i;
+
+        for (i = 0; ok && (i < bctypes.size()); ++i) {
+            if (bctypes[ i ] == FBC_PRESSURE) {
+                ok = flow_conditions_append(BC_PRESSURE,
+                                            static_cast<int>(i),
+                                            bcvalues[ i ],
+                                            fbc);
+            }
+            else if (bctypes[ i ] == FBC_FLUX) {
+                ok = flow_conditions_append(BC_FLUX_TOTVOL,
+                                            static_cast<int>(i),
+                                            bcvalues[ i ],
+                                            fbc);
+            }
+        }
+
+        return fbc;
+    }
+
+
+}; // class HybridPressureSolver
 
 
 #endif // OPM_HYBRIDPRESSURESOLVER_HEADER_INCLUDED

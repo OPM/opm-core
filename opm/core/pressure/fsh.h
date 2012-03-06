@@ -79,7 +79,7 @@ cfsh_construct(struct UnstructuredGrid *G, well_t *W);
 /** Assembles the hybridized linear system for face pressures.
  */
 void
-cfsh_assemble(flowbc_t        *bc,
+cfsh_assemble(struct FlowBoundaryConditions *bc,
               const double    *src,
               const double    *Binv,
               const double    *Biv,
@@ -132,7 +132,7 @@ ifsh_construct(struct UnstructuredGrid *G, well_t *W);
  *          be modified). Must already be constructed.
  */
 void
-ifsh_assemble(flowbc_t        *bc,
+ifsh_assemble(struct FlowBoundaryConditions *bc,
               const double    *src,
               const double    *Binv,
               const double    *gpress,

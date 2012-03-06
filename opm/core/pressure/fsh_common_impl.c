@@ -157,23 +157,28 @@ fsh_count_grid_dof(struct UnstructuredGrid *G, int *max_ngdof, size_t *sum_ngdof
 /* Impose boundary conditions on local contribution to global system. */
 /* ---------------------------------------------------------------------- */
 int
-fsh_impose_bc(int nconn, int *conn, flowbc_t *bc,
+fsh_impose_bc(int nconn, int *conn, struct FlowBoundaryConditions *bc,
               struct fsh_impl *pimpl)
 /* ---------------------------------------------------------------------- */
 {
-    int i, npp, f;
+    int i, j, npp, f;
 
     npp = 0;
     for (i = 0; i < nconn; i++) {
         f = conn[i];
 
-        if (bc->type[f] == PRESSURE) {
-            pimpl->work [npp] = bc->bcval[f];
-            pimpl->iwork[npp] = i;
+        j = pimpl->bdry_condition[ f ];
 
-            npp += 1;
-        } else if (bc->type[f] == FLUX) {
-            pimpl->sys->r[i] -= bc->bcval[f];
+        if (j != -1) {
+
+            if (bc->type[j] == BC_PRESSURE) {
+                pimpl->work [npp] = bc->value[j];
+                pimpl->iwork[npp] = i;
+
+                npp += 1;
+            } else if (bc->type[j] == BC_FLUX_TOTVOL) {
+                pimpl->sys->r[i] -= bc->value[j];
+            }
         }
     }
 
@@ -191,7 +196,30 @@ fsh_impose_bc(int nconn, int *conn, flowbc_t *bc,
 
 /* ---------------------------------------------------------------------- */
 void
+fsh_map_bdry_condition(struct FlowBoundaryConditions *fbc  ,
+                       struct fsh_impl               *pimpl)
+/* ---------------------------------------------------------------------- */
+{
+    int f, i;
+
+    for (i = 0; i < pimpl->nf; i++) { pimpl->bdry_condition[ i ] = -1; }
+
+    if (fbc != NULL) {
+        for (i = 0; ((size_t) i) < fbc->nbc; i++) {
+            f =  fbc->face[ i ];
+
+            assert ((0 <= f) && (f < pimpl->nf));
+
+            pimpl->bdry_condition[ f ] = i;
+        }
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
+void
 fsh_define_impl_arrays(size_t           nc,
+                       size_t           nf,
                        size_t           nnu,
                        size_t           nhf,
                        size_t           max_ncf,
@@ -206,8 +234,10 @@ fsh_define_impl_arrays(size_t           nc,
     pimpl->gdof     = pimpl->gdof_pos + (nc + 1);
     pimpl->iwork    = pimpl->gdof     + nhf;
 
+    pimpl->bdry_condition = pimpl->iwork + max_ncf;
+
     if (W != NULL) {
-        pimpl->cwell_pos = pimpl->iwork     + max_ncf;
+        pimpl->cwell_pos = pimpl->bdry_condition + nf;
         pimpl->cwells    = pimpl->cwell_pos + nc + 1;
 
         pimpl->WI  = pimpl->work + max_ncf;
@@ -256,6 +286,7 @@ fsh_compute_table_sz(struct UnstructuredGrid *G, well_t *W, int max_ngconn,
 
     *idata_sz  = nc + 1;        /* gdof_pos */
     *idata_sz += ngconn_tot;    /* gdof */
+    *idata_sz += G->number_of_faces; /* bdry_condition */
     *idata_sz += max_ngconn;    /* iwork */
 
     *ddata_sz  = 2 * (*nnu);    /* rhs + soln */

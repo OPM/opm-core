@@ -34,7 +34,7 @@
 
 /* ---------------------------------------------------------------------- */
 static int
-cfsh_assemble_grid(flowbc_t        *bc,
+cfsh_assemble_grid(struct FlowBoundaryConditions *bc,
                    const double    *Binv,
                    const double    *gpress,
                    const double    *src,
@@ -126,8 +126,8 @@ cfsh_construct(struct UnstructuredGrid *G, well_t *W)
         ngconn_tot = G->cell_facepos[nc];
 
         fsh_define_linsys_arrays(new);
-        fsh_define_impl_arrays(nc, nnu, ngconn_tot, new->max_ngconn,
-                               W, new->pimpl);
+        fsh_define_impl_arrays(nc, G->number_of_faces, nnu,
+                               ngconn_tot, new->max_ngconn, W, new->pimpl);
 
         new->pimpl->sys = hybsys_allocate_unsymm(new->max_ngconn,
                                                  nc, ngconn_tot);
@@ -177,7 +177,7 @@ cfsh_construct(struct UnstructuredGrid *G, well_t *W)
  */
 /* ---------------------------------------------------------------------- */
 void
-cfsh_assemble(flowbc_t        *bc,
+cfsh_assemble(struct FlowBoundaryConditions *bc,
               const double    *src,
               const double    *Binv,
               const double    *Biv,
