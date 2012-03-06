@@ -36,7 +36,9 @@ namespace Opm
 	/// Note: the model will be changed since it stores computed
 	/// quantities in itself, such as mobilities.
 	GravityColumnSolver(Model& model,
-			    const UnstructuredGrid& grid);
+			    const UnstructuredGrid& grid,
+			    const double tol,
+			    const int maxit);
 
 	/// \param[in] columns         for each column (with logical cartesian indices as key),
 	///                            contains the cells on which to solve the segregation
@@ -51,10 +53,11 @@ namespace Opm
 			       const double dt,
 			       std::vector<double>& s,
 			       std::vector<double>& sol_vec);
-
 	Model& model_;
 	const UnstructuredGrid& grid_;
-    };
+	const double tol_;
+	const int maxit_;
+};
 
 } // namespace Opm
 
