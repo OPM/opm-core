@@ -41,7 +41,7 @@ public:
     /// @brief
     ///     Default constructor, does nothing.
     TPFACompressiblePressureSolver()
-        :  state_(Uninitialized), data_(0)
+        :  state_(Uninitialized), data_(0), bc_(0)
     {
         wells_.number_of_wells = 0;
     }
@@ -53,6 +53,7 @@ public:
     ///     Destructor.
     ~TPFACompressiblePressureSolver()
     {
+        flow_conditions_destroy(bc_);
         cfs_tpfa_destroy(data_);
     }
 
@@ -132,7 +133,9 @@ public:
 
 
     /// Boundary condition types.
-    enum FlowBCTypes { FBC_UNSET = UNSET, FBC_PRESSURE = PRESSURE, FBC_FLUX = FLUX};
+    enum FlowBCTypes { FBC_UNSET    = BC_NOFLOW      ,
+                       FBC_PRESSURE = BC_PRESSURE    ,
+                       FBC_FLUX     = BC_FLUX_TOTVOL };
 
     /// @brief
     /// Assemble the sparse system.
@@ -167,20 +170,7 @@ public:
         UnstructuredGrid* g = grid_.c_grid();
 
         // Boundary conditions.
-        int num_faces = g->number_of_faces;
-        // assert(num_faces == int(bctypes.size()));
-        bctypes_.clear();
-        bctypes_.resize(num_faces, UNSET);
-        for (int face = 0; face < num_faces; ++face) {
-            if (bctypes[face] == FBC_PRESSURE) {
-                bctypes_[face] = PRESSURE;
-            } else if (bctypes[face] == FBC_FLUX) {
-                bctypes_[face] = FLUX;
-            }
-        }
-        bcvalues_.resize(num_faces);
-        std::copy(bcvalues, bcvalues + num_faces, bcvalues_.begin());
-        flowbc_t bc = { &bctypes_[0], &bcvalues_[0] };
+        gather_boundary_conditions(bctypes, bcvalues);
 
         // Source terms from user.
         double* src = const_cast<double*>(sources); // Ugly? Yes. Safe? I think so.
@@ -208,7 +198,7 @@ public:
                                 const_cast<double *>(phasemobf) };
 
         // Call the assembly routine. After this, linearSystem() may be called.
-        cfs_tpfa_assemble(g, dt, wells, &bc, src,
+        cfs_tpfa_assemble(g, dt, wells, bc_, src,
                           &cq, &trans_[0], gravcapf,
                           wctrl, wcompl,
                           cell_pressure, &porevol_[0],
@@ -284,9 +274,7 @@ public:
         face_pressures.resize(num_faces, 0.0);
         face_fluxes.clear();
         face_fluxes.resize(num_faces, 0.0);
-//         ifs_tpfa_press_flux(grid_.c_grid(), &eff_trans_[0],
-//                             data_, &cell_pressures[0], &face_fluxes[0]);
-        flowbc_t bc = { &bctypes_[0], const_cast<double*>(&bcvalues_[0]) };
+
         int np = 3; // Number of phases.
 
         // Wells.
@@ -304,12 +292,12 @@ public:
         }
 
         cfs_tpfa_press_flux(grid_.c_grid(),
-                            &bc, wells,
+                            bc_, wells,
                             np, &trans_[0], &phasemobf_[0], &gravcapf_[0],
                             wcompl,
                             data_, &cell_pressures[0], &face_fluxes[0],
                             wpress, wflux);
-        cfs_tpfa_fpress(grid_.c_grid(), &bc, np, &htrans_[0],
+        cfs_tpfa_fpress(grid_.c_grid(), bc_, np, &htrans_[0],
                         &phasemobf_[0], &gravcapf_[0], data_, &cell_pressures[0],
                         &face_fluxes[0], &face_pressures[0]);
     }
@@ -430,8 +418,7 @@ private:
     double gravity_[3];
 
     // Boundary conditions.
-    std::vector<flowbc_type> bctypes_;
-    std::vector<double> bcvalues_;
+    FlowBoundaryConditions *bc_;
 
     // Well data
     well_t wells_;
@@ -496,7 +483,43 @@ private:
         wcompl_.phasemob = &well_phasemob_storage_[0];
     }
 
-};
+
+    void
+    gather_boundary_conditions(const FlowBCTypes* bctypes ,
+                               const double*      bcvalues)
+    {
+        if (bc_ == 0) {
+            bc_ = flow_conditions_construct(0);
+        }
+        else {
+            flow_conditions_clear(bc_);
+        }
+
+        int ok = bc_ != 0;
+
+        for (std::size_t i = 0, nf = grid_.numFaces(); ok && (i < nf); ++i) {
+            if (bctypes[ i ] == FBC_PRESSURE) {
+                ok = flow_conditions_append(BC_PRESSURE,
+                                            static_cast<int>(i),
+                                            bcvalues[ i ],
+                                            bc_);
+            }
+            else if (bctypes[ i ] == FBC_FLUX) {
+                ok = flow_conditions_append(BC_FLUX_TOTVOL,
+                                            static_cast<int>(i),
+                                            bcvalues[ i ],
+                                            bc_);
+            }
+        }
+
+        if (! ok) {
+            flow_conditions_destroy(bc_);
+            bc_ = 0;
+        }
+    }
+
+
+}; // class TPFACompressiblePressureSolver
 
 
 
