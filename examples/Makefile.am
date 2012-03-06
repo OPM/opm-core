@@ -15,5 +15,6 @@ spu_2p_SOURCES   = spu_2p.cpp
 spu_2p_LDADD     =				\
 $(BOOST_FILESYSTEM_LIB)				\
 $(BOOST_SYSTEM_LIB)				\
-$(LDADD)
+$(LDADD)					\
+$(LAPACK_LIBS)
 endif
