@@ -368,7 +368,7 @@ main(int argc, char** argv)
     if (use_column_solver) {
         Opm::extractColumn(*grid->c_grid(), columns);
     }
-    Opm::GravityColumnSolver<TransportModel> colsolver(model, *grid->c_grid());
+    Opm::GravityColumnSolver<TransportModel> colsolver(model, *grid->c_grid(), nltol, maxit);
 
     // State-related and source-related variables init.
     int num_cells = grid->c_grid()->number_of_cells;
@@ -382,69 +382,68 @@ main(int argc, char** argv)
     int scenario = param.getDefault("scenario", 0);
     switch (scenario) {
     case 0:
-    {
-        std::cout << "==== Scenario 0: single-cell source and sink.\n";
-        double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
-        src[0] = flow_per_sec;
-        src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
-        break;
-    }
+	{
+	    std::cout << "==== Scenario 0: single-cell source and sink.\n";
+	    double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
+	    src[0] = flow_per_sec;
+	    src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
+	    break;
+	}
     case 1:
-    {
-        std::cout << "==== Scenario 1: half source, half sink.\n";
-        double flow_per_sec = 0.1*porevol[0]/Opm::unit::day;
-        std::fill(src.begin(), src.begin() + src.size()/2, flow_per_sec);
-        std::fill(src.begin() + src.size()/2, src.end(), -flow_per_sec);
-        break;
-    }
+	{
+	    std::cout << "==== Scenario 1: half source, half sink.\n";
+	    double flow_per_sec = 0.1*porevol[0]/Opm::unit::day;
+	    std::fill(src.begin(), src.begin() + src.size()/2, flow_per_sec);
+	    std::fill(src.begin() + src.size()/2, src.end(), -flow_per_sec);
+	    break;
+	}
     case 2:
-    {
-        std::cout << "==== Scenario 2: gravity convection.\n";
-        if (!use_gravity) {
-            std::cout << "**** Warning: running gravity convection scenario, but gravity is zero." << std::endl;
-        }
-        if (use_deck) {
-            std::cout << "**** Warning: running gravity convection scenario, which expects a cartesian grid."
-                    << std::endl;
-        }
-        std::vector<double>& sat = state.saturation();
-        const int *glob_cell = grid->c_grid()->global_cell;
-        for (int cell = 0; cell < num_cells; ++cell) {
-            const int* cd = grid->c_grid()->cartdims;
-            const int gc = glob_cell == 0 ? cell : glob_cell[cell];
-            bool left = (gc % cd[0]) < cd[0]/2;
-            sat[2*cell] = left ? 1.0 : 0.0;
-            sat[2*cell + 1] = 1.0 - sat[2*cell];
-        }
-        break;
-    }
-    
+	{
+	    std::cout << "==== Scenario 2: gravity convection.\n";
+	    if (!use_gravity) {
+		std::cout << "**** Warning: running gravity convection scenario, but gravity is zero." << std::endl;
+	    }
+	    if (use_deck) {
+		std::cout << "**** Warning: running gravity convection scenario, which expects a cartesian grid."
+			  << std::endl;
+	    }
+	    std::vector<double>& sat = state.saturation();
+	    const int *glob_cell = grid->c_grid()->global_cell;
+	    for (int cell = 0; cell < num_cells; ++cell) {
+		const int* cd = grid->c_grid()->cartdims;
+		const int gc = glob_cell == 0 ? cell : glob_cell[cell];
+		bool left = (gc % cd[0]) < cd[0]/2;
+		sat[2*cell] = left ? 1.0 : 0.0;
+		sat[2*cell + 1] = 1.0 - sat[2*cell];
+	    }
+	    break;
+	}
     case 3:
-    {
-        std::cout << "==== Scenario 2: gravity convection.\n";
-        if (!use_gravity) {
-            std::cout << "**** Warning: running gravity convection scenario, but gravity is zero." << std::endl;
-        }
-        if (use_deck) {
-            std::cout << "**** Warning: running gravity convection scenario, which expects a cartesian grid."
-                    << std::endl;
-        }
-        std::vector<double>& sat = state.saturation();
-        const int *glob_cell = grid->c_grid()->global_cell;
-        // Heavy on top
-        for (int cell = 0; cell < num_cells; ++cell) {
-            const int* cd = grid->c_grid()->cartdims;
-            const int gc = glob_cell == 0 ? cell : glob_cell[cell];
-            bool top = (gc / cd[0] / cd[1]) < cd[2]/2;
-            sat[2*cell] = top ? 1.0 : 0.0;
-            sat[2*cell + 1 ] = 1.0 - sat[2*cell];
-        }
-        break;
-    }
+	{
+	    std::cout << "==== Scenario 3: gravity segregation.\n";
+	    if (!use_gravity) {
+		std::cout << "**** Warning: running gravity segregation scenario, but gravity is zero." << std::endl;
+	    }
+	    if (use_deck) {
+		std::cout << "**** Warning: running gravity segregation scenario, which expects a cartesian grid."
+			  << std::endl;
+	    }
+	    std::vector<double>& sat = state.saturation();
+	    const int *glob_cell = grid->c_grid()->global_cell;
+	    // Water on top
+	    for (int cell = 0; cell < num_cells; ++cell) {
+		const int* cd = grid->c_grid()->cartdims;
+		const int gc = glob_cell == 0 ? cell : glob_cell[cell];
+		bool top = (gc / cd[0] / cd[1]) < cd[2]/2;
+		sat[2*cell] = top ? 1.0 : 0.0;
+		sat[2*cell + 1 ] = 1.0 - sat[2*cell];
+	    }
+	    break;
+	}
     default:
-    {
-        THROW("==== Scenario " << scenario << " is unknown.");
-    }
+	{
+	    THROW("==== Scenario " << scenario << " is unknown.");
+	}
     }
     TransportSource* tsrc = create_transport_source(2, 2);
     double ssrc[]   = { 1.0, 0.0 };
