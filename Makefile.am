@@ -54,6 +54,7 @@ opm/core/utility/StopWatch.cpp                          \
 opm/core/utility/newwells.c                             \
 opm/core/utility/writeVtkData.cpp                       \
 opm/core/GridManager.cpp                                \
+opm/core/WellsManager.cpp                               \
 opm/core/linalg/sparse_sys.c                            \
 opm/core/linalg/LinearSolverInterface.cpp               \
 opm/core/pressure/cfsh.c                                \
@@ -158,6 +159,7 @@ opm/core/well.h                                         \
 opm/core/newwells.h                                     \
 opm/core/GridAdapter.hpp                                \
 opm/core/GridManager.hpp                                \
+opm/core/WellsManager.hpp                               \
 opm/core/pressure/fsh.h                                 \
 opm/core/pressure/HybridPressureSolver.hpp              \
 opm/core/pressure/IncompTpfa.hpp                        \
