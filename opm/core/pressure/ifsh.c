@@ -60,7 +60,7 @@ ifsh_set_effective_well_params(const double    *WI,
 
 /* ---------------------------------------------------------------------- */
 static int
-ifsh_assemble_grid(flowbc_t        *bc,
+ifsh_assemble_grid(struct FlowBoundaryConditions *bc,
                    const double    *Binv,
                    const double    *gpress,
                    const double    *src,
@@ -100,12 +100,12 @@ ifsh_assemble_grid(flowbc_t        *bc,
 /* ---------------------------------------------------------------------- */
 static void
 ifsh_impose_well_control(int              c,
-                         flowbc_t        *bc,
+                         struct FlowBoundaryConditions *bc,
                          well_control_t  *wctrl,
                          struct fsh_data *ifsh)
 /* ---------------------------------------------------------------------- */
 {
-    int  ngconn, nwconn, i, w1, w2, wg, f;
+    int  ngconn, nwconn, i, j, w1, w2, wg, f;
     int *pgconn, *gconn, *pwconn, *wconn;
 
     double bhp;
@@ -130,11 +130,12 @@ ifsh_impose_well_control(int              c,
     /* Adapt local system to prescribed boundary pressures (r->w) */
     for (i = 0; i < ngconn; i++) {
         f = gconn[i];
+        j = ifsh->pimpl->bdry_condition[ f ];
 
-        if (bc->type[f] == PRESSURE) {
+        if (j != -1) {
             for (w1 = 0; w1 < nwconn; w1++) {
                 /* Eliminate prescribed (boundary) pressure value */
-                r  [ngconn + w1]   -= r2w[i + w1*ngconn] * bc->bcval[f];
+                r  [ngconn + w1]   -= r2w[i + w1*ngconn] * bc->value[j];
                 r2w[i + w1*ngconn]  = 0.0;
             }
 
@@ -152,8 +153,13 @@ ifsh_impose_well_control(int              c,
 
             /* Well->reservoir */
             for (i = 0; i < ngconn; i++) {
-                assert ((bc->type[gconn[i]] != PRESSURE) ||
+#ifndef NDEBUG
+                j = ifsh->pimpl->bdry_condition[ gconn[i] ];
+
+                assert ((j == -1)                    ||
+                        (bc->type[j] != BC_PRESSURE) ||
                         !(fabs(r2w[i + w1*ngconn]) > 0.0));
+#endif
 
                 r  [i]             -= r2w[i + w1*ngconn] * bhp;
                 r2w[i + w1*ngconn]  = 0.0;
@@ -177,7 +183,7 @@ ifsh_impose_well_control(int              c,
 
 /* ---------------------------------------------------------------------- */
 static int
-ifsh_assemble_well(flowbc_t        *bc,
+ifsh_assemble_well(struct FlowBoundaryConditions *bc,
                    well_control_t  *wctrl,
                    struct fsh_data *ifsh)
 /* ---------------------------------------------------------------------- */
@@ -291,8 +297,8 @@ ifsh_construct(struct UnstructuredGrid *G, well_t *W)
         ngconn_tot = G->cell_facepos[nc];
 
         fsh_define_linsys_arrays(new);
-        fsh_define_impl_arrays(nc, nnu, ngconn_tot, new->max_ngconn,
-                               W, new->pimpl);
+        fsh_define_impl_arrays(nc, G->number_of_faces, nnu,
+                               ngconn_tot, new->max_ngconn, W, new->pimpl);
 
         new->pimpl->sys = hybsys_allocate_symm(new->max_ngconn,
                                                nc, ngconn_tot);
@@ -343,7 +349,7 @@ ifsh_construct(struct UnstructuredGrid *G, well_t *W)
  * pressure gpress, boundary conditions bc, and source terms src. */
 /* ---------------------------------------------------------------------- */
 void
-ifsh_assemble(flowbc_t         *bc,
+ifsh_assemble(struct FlowBoundaryConditions *bc,
               const double     *src,
               const double     *Binv,
               const double     *gpress,
@@ -354,6 +360,8 @@ ifsh_assemble(flowbc_t         *bc,
 /* ---------------------------------------------------------------------- */
 {
     int npp;                /* Number of prescribed pressure values */
+
+    fsh_map_bdry_condition(bc, ifsh->pimpl);
 
     hybsys_schur_comp_symm(ifsh->pimpl->nc,
                            ifsh->pimpl->gdof_pos,

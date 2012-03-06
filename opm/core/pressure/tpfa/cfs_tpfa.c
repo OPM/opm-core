@@ -36,6 +36,9 @@ struct densrat_util {
 
 
 struct cfs_tpfa_impl {
+    /* Mapping (cell,face) -> half-face */
+    int                 *f2hf;
+
     /* Reservoir flow */
     double              *ctrans;
     double              *accum;
@@ -140,7 +143,7 @@ static struct cfs_tpfa_impl *
 impl_allocate(struct UnstructuredGrid *G, well_t *W, int np)
 /* ---------------------------------------------------------------------- */
 {
-    size_t                nnu, ngconn, nwperf;
+    size_t                nnu, nf, ngconn, nwperf;
     struct cfs_tpfa_impl *new;
 
     size_t ddata_sz;
@@ -158,10 +161,11 @@ impl_allocate(struct UnstructuredGrid *G, well_t *W, int np)
     ddata_sz  = 2  * nnu;                /* b, x */
 
     /* Reservoir */
+    nf        = G->number_of_faces;
     ddata_sz += 1  * ngconn;             /* ctrans */
     ddata_sz += 1  * G->number_of_cells; /* accum */
-    ddata_sz += np * G->number_of_faces; /* masstrans_f */
-    ddata_sz += np * G->number_of_faces; /* gravtrans_f */
+    ddata_sz += np * nf;                 /* masstrans_f */
+    ddata_sz += np * nf;                 /* gravtrans_f */
 
     /* Wells */
     ddata_sz += 1  * nwperf;             /* wtrans */
@@ -169,15 +173,17 @@ impl_allocate(struct UnstructuredGrid *G, well_t *W, int np)
     ddata_sz += np * nwperf;             /* masstrans_p */
     ddata_sz += np * nwperf;             /* gravtrans_p */
 
-    ddata_sz += 1  * G->number_of_faces; /* scratch_f */
+    ddata_sz += 1  * nf;                 /* scratch_f */
 
     new = malloc(1 * sizeof *new);
 
     if (new != NULL) {
+        new->f2hf  = malloc(2 * nf   * sizeof *new->f2hf );
         new->ddata = malloc(ddata_sz * sizeof *new->ddata);
         new->ratio = allocate_densrat(G, W, np);
 
-        if (new->ddata == NULL || new->ratio == NULL) {
+        if (new->f2hf  == NULL ||
+            new->ddata == NULL || new->ratio == NULL) {
             impl_deallocate(new);
             new = NULL;
         }
@@ -392,7 +398,7 @@ set_dynamic_trans(struct UnstructuredGrid                  *G    ,
 /* ---------------------------------------------------------------------- */
 static void
 set_dynamic_grav(struct UnstructuredGrid                  *G        ,
-                 flowbc_t                *bc       ,
+                 struct FlowBoundaryConditions *bc       ,
                  const double            *trans    ,
                  const double            *gravcap_f,
                  struct compr_quantities *cq       ,
@@ -405,13 +411,25 @@ set_dynamic_grav(struct UnstructuredGrid                  *G        ,
         c1 = G->face_cells[2*f + 0];
         c2 = G->face_cells[2*f + 1];
 
-        if (((c1 >= 0) && (c2 >= 0)) || (bc->type[f] == PRESSURE)) {
+        if ((c1 >= 0) && (c2 >= 0)) {
             for (p = 0; p < cq->nphases; p++, i++) {
                 ratio->x[i] = trans[f] * gravcap_f[i] * cq->phasemobf[i];
             }
         } else {
             for (p = 0; p < cq->nphases; p++, i++) {
                 ratio->x[i] = 0.0;
+            }
+        }
+    }
+
+    if (bc != NULL) {
+        for (i = 0; ((size_t) i) < bc->nbc; i++) {
+            if (bc->type[ i ] == BC_PRESSURE) {
+                f = bc->face[ i ];
+
+                for (p = cq->nphases * f; p < cq->nphases * (f + 1); p++) {
+                    ratio->x[p] = trans[f] * gravcap_f[p] * cq->phasemobf[p];
+                }
             }
         }
     }
@@ -561,7 +579,7 @@ static void
 compute_psys_contrib(struct UnstructuredGrid                  *G,
                      well_t                  *W,
                      struct completion_data  *wdata,
-                     flowbc_t                *bc,
+                     struct FlowBoundaryConditions *bc,
                      struct compr_quantities *cq,
                      double                   dt,
                      const double            *trans,
@@ -626,19 +644,15 @@ compute_psys_contrib(struct UnstructuredGrid                  *G,
 
 
 /* ---------------------------------------------------------------------- */
-static int
-assemble_cell_contrib(struct UnstructuredGrid               *G,
-                      flowbc_t             *bc,
-                      const double         *src,
-                      struct cfs_tpfa_data *h)
+static void
+assemble_cell_contrib(struct UnstructuredGrid *G  ,
+                      const double            *src,
+                      struct cfs_tpfa_data    *h  )
 /* ---------------------------------------------------------------------- */
 {
     int c1, c2, c, i, f, j1, j2;
-    int is_neumann;
 
     const double *ctrans = h->pimpl->ctrans;
-
-    is_neumann = 1;
 
     for (c = i = 0; c < G->number_of_cells; c++) {
         j1 = csrmatrix_elm_index(c, c, h->A);
@@ -656,11 +670,6 @@ assemble_cell_contrib(struct UnstructuredGrid               *G,
 
                 h->A->sa[j1] += ctrans[i];
                 h->A->sa[j2] -= ctrans[i];
-            } else if (bc->type[f] == PRESSURE) {
-                is_neumann    = 0;
-
-                h->A->sa[j1] += ctrans[i];
-                h->b    [c ] += ctrans[i] * bc->bcval[f];
             }
         }
 
@@ -668,6 +677,47 @@ assemble_cell_contrib(struct UnstructuredGrid               *G,
 
         /* Compressible accumulation term */
         h->A->sa[j1] += h->pimpl->accum[c];
+    }
+}
+
+
+/* ---------------------------------------------------------------------- */
+static int
+assemble_bc_contrib(struct UnstructuredGrid       *G  ,
+                    struct FlowBoundaryConditions *fbc,
+                    struct cfs_tpfa_data          *h  )
+/* ---------------------------------------------------------------------- */
+{
+    int    c1, c2, c, f, hf;
+    int    is_neumann;
+
+    size_t p, j;
+
+    const double *ctrans = h->pimpl->ctrans;
+
+    is_neumann = 1;
+
+    for (p = 0; p < fbc->nbc; p++) {
+        f  = fbc->face[ p ];
+        c1 = G->face_cells[2*f + 0];
+        c2 = G->face_cells[2*f + 1];
+
+        assert ((c1 < 0) ^ (c2 < 0));
+
+        c  = (c1 >= 0) ? c1 : c2;
+
+        if (fbc->type[ p ] == BC_PRESSURE) {
+            is_neumann = 0;
+
+            hf = h->pimpl->f2hf[2*f + (c1 < 0)];
+
+            j  = csrmatrix_elm_index(c, c, h->A);
+
+            h->A->sa[ j ] += ctrans[ hf ];
+            h->b    [ c ] += ctrans[ hf ] * fbc->value[ p ];
+        }
+
+        /* Other boundary condition types not handled. */
     }
 
     return is_neumann;
@@ -735,7 +785,7 @@ assemble_well_contrib(size_t                nc,
 /* ---------------------------------------------------------------------- */
 static void
 compute_fpress(struct UnstructuredGrid       *G,
-               flowbc_t     *bc,
+               struct FlowBoundaryConditions *fbc,
                int           np,
                const double *htrans,
                const double *pmobf,
@@ -746,7 +796,7 @@ compute_fpress(struct UnstructuredGrid       *G,
                double       *scratch_f)
 /* ---------------------------------------------------------------------- */
 {
-    int    c, i, f, c1, c2;
+    int    c, i, f;
 
     /* Suppress warning about unused parameters. */
     (void) np;  (void) pmobf;  (void) gravcap_f;  (void) fflux;
@@ -777,12 +827,13 @@ compute_fpress(struct UnstructuredGrid       *G,
 
     for (f = 0; f < G->number_of_faces; f++) {
         fpress[f] /= scratch_f[f];
+    }
 
-        c1 = G->face_cells[2*f + 0];
-        c2 = G->face_cells[2*f + 1];
-
-        if (((c1 < 0) || (c2 < 0)) && (bc->type[f] == PRESSURE)) {
-            fpress[f] = bc->bcval[f];
+    if (fbc != NULL) {
+        for (i = 0; ((size_t) i) < fbc->nbc; i++) {
+            if (fbc->type[ i ] == BC_PRESSURE) {
+                fpress[ fbc->face[ i ] ] = fbc->value[ i ];
+            }
         }
     }
 }
@@ -791,7 +842,7 @@ compute_fpress(struct UnstructuredGrid       *G,
 /* ---------------------------------------------------------------------- */
 static void
 compute_flux(struct UnstructuredGrid       *G,
-             flowbc_t     *bc,
+             struct FlowBoundaryConditions *bc,
              int           np,
              const double *trans,
              const double *pmobf,
@@ -800,15 +851,14 @@ compute_flux(struct UnstructuredGrid       *G,
              double       *fflux)
 /* ---------------------------------------------------------------------- */
 {
-    int    f, c1, c2, p;
+    int    f, c1, c2, p, i;
     double t, dp, g;
 
     for (f = 0; f < G->number_of_faces; f++) {
         c1 = G->face_cells[2*f + 0];
         c2 = G->face_cells[2*f + 1];
 
-        if (((c1 < 0) || (c2 < 0)) && (bc->type[f] == FLUX)) {
-            fflux[f] = bc->bcval[f];
+        if ((c1 < 0) || (c2 < 0)) {
             continue;
         }
 
@@ -817,23 +867,41 @@ compute_flux(struct UnstructuredGrid       *G,
             t += pmobf[f*np + p];
             g += pmobf[f*np + p] * gravcap_f[f*np + p];
         }
-        /* t *= trans[f]; */
 
-        if ((c1 >= 0) && (c2 >= 0)) {
-            dp  = cpress[c1] - cpress[c2];
-        } else if (bc->type[f] == PRESSURE) {
-            if (c1 < 0) {
-                dp = bc->bcval[f] - cpress[c2];
-                /* g  = -g; */
-            } else {
-                dp = cpress[c1] - bc->bcval[f];
-            }
-        } else {
-            /* No BC -> no-flow (== pressure drop offsets gravity) */
-            dp = -g / t;
-        }
+        dp = cpress[c1] - cpress[c2];
 
         fflux[f] = trans[f] * (t*dp + g);
+    }
+
+    if (bc != NULL) {
+        for (i = 0; ((size_t) i) < bc->nbc; i++) {
+            f = bc->face[ i ];
+
+            if (bc->type[ i ] == BC_FLUX_TOTVOL) {
+                t = 2*(G->face_cells[2*f + 0] < 0) - 1.0;
+
+                fflux[ f ] = t * bc->value[ i ];
+            }
+            else if (bc->type[ i ] == BC_PRESSURE) {
+                c1 = G->face_cells[2*f + 0];
+                c2 = G->face_cells[2*f + 1];
+
+                t = g = 0.0;
+                for (p = 0; p < np; p++) {
+                    t += pmobf[f*np + p];
+                    g += pmobf[f*np + p] * gravcap_f[f*np + p];
+                }
+
+                if (c1 < 0) {
+                    dp = bc->value[ i ] - cpress[c1];
+                }
+                else {
+                    dp = cpress[c2] - bc->value[ i ];
+                }
+
+                fflux[f] = trans[f] * (t*dp + g);
+            }
+        }
     }
 }
 
@@ -889,6 +957,29 @@ is_incompr(int nc, struct compr_quantities *cq)
 }
 
 
+/* ---------------------------------------------------------------------- */
+static void
+compute_f2hf_mapping(struct UnstructuredGrid *G   ,
+                     struct cfs_tpfa_data    *data)
+/* ---------------------------------------------------------------------- */
+{
+    int c, nc, i, f, p;
+
+    for (i = 0; i < 2 * G->number_of_faces; i++) {
+        data->pimpl->f2hf[ i ] = -1;
+    }
+
+    for (c = i = 0, nc = G->number_of_cells; c < nc; c++) {
+        for (; i < G->cell_facepos[c + 1]; i++) {
+            f = G->cell_faces[ i ];
+            p = G->cell_faces[2*f + 0] != c;
+
+            data->pimpl->f2hf[2*f + p] = i;
+        }
+    }
+}
+
+
 
 /* ======================================================================
  * Public interface below separator.
@@ -924,6 +1015,8 @@ cfs_tpfa_construct(struct UnstructuredGrid *G, well_t *W, int nphases)
             nwconn = W->well_connpos[ W->number_of_wells ];
         }
 
+        compute_f2hf_mapping(G, new);
+
         /* Allocate linear system components */
         new->b                  = new->pimpl->ddata       + 0;
         new->x                  = new->b                  + new->A->m;
@@ -953,7 +1046,7 @@ void
 cfs_tpfa_assemble(struct UnstructuredGrid                  *G,
                   double                   dt,
                   well_t                  *W,
-                  flowbc_t                *bc,
+                  struct FlowBoundaryConditions *bc,
                   const double            *src,
                   struct compr_quantities *cq,
                   const double            *trans,
@@ -973,7 +1066,13 @@ cfs_tpfa_assemble(struct UnstructuredGrid                  *G,
     compute_psys_contrib(G, W, wdata, bc, cq, dt,
                          trans, gravcap_f, cpress0, porevol, h);
 
-    res_is_neumann = assemble_cell_contrib(G, bc, src, h);
+    res_is_neumann = 1;
+
+    assemble_cell_contrib(G, src, h);
+
+    if (bc != NULL) {
+        res_is_neumann = assemble_bc_contrib(G, bc, h);
+    }
 
     if ((W != NULL) && (wctrl != NULL)) {
         assert (wdata != NULL);
@@ -993,7 +1092,7 @@ cfs_tpfa_assemble(struct UnstructuredGrid                  *G,
 /* ---------------------------------------------------------------------- */
 void
 cfs_tpfa_press_flux(struct UnstructuredGrid                 *G,
-                    flowbc_t               *bc,
+                    struct FlowBoundaryConditions *bc,
                     well_t                 *W,
                     int                     np,
                     const double           *trans,
@@ -1028,7 +1127,7 @@ cfs_tpfa_press_flux(struct UnstructuredGrid                 *G,
 /* ---------------------------------------------------------------------- */
 void
 cfs_tpfa_fpress(struct UnstructuredGrid               *G,
-                flowbc_t             *bc,
+                struct FlowBoundaryConditions *bc,
                 int                   np,
                 const double         *htrans,
                 const double         *pmobf,

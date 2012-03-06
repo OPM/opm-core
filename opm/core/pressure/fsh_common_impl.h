@@ -44,6 +44,8 @@ struct fsh_impl {
     double *work;               /* Scratch array, floating point */
     int    *iwork;              /* Scratch array, integers */
 
+    int    *bdry_condition;     /* Map face->boundary condition ID */
+
     /* Linear storage goes here... */
     int    *idata;              /* Actual storage array, integers */
     double *ddata;              /* Actual storage array, floating point */
@@ -56,14 +58,19 @@ fsh_impl_allocate_basic(size_t idata_sz, size_t ddata_sz);
 void
 fsh_count_grid_dof(struct UnstructuredGrid *G, int *max_ngdof, size_t *sum_ngdof2);
 
+void
+fsh_map_bdry_condition(struct FlowBoundaryConditions *fbc  ,
+                       struct fsh_impl               *pimpl);
+
 int
 fsh_impose_bc(int              ndof,
               int             *dof,
-              flowbc_t        *bc,
+              struct FlowBoundaryConditions *bc,
               struct fsh_impl *pimpl);
 
 void
 fsh_define_impl_arrays(size_t           nc,
+                       size_t           nf,
                        size_t           nnu,
                        size_t           nhf,
                        size_t           max_ncf,
