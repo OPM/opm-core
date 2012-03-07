@@ -26,8 +26,10 @@ namespace Opm
 
     template <class Model>
     GravityColumnSolver<Model>::GravityColumnSolver(Model& model,
-						    const UnstructuredGrid& grid)
-	: model_(model), grid_(grid)
+						    const UnstructuredGrid& grid,
+						    const double tol,
+						    const int maxit)
+	: model_(model), grid_(grid), tol_(tol), maxit_(maxit)
     {
     }
 
@@ -77,28 +79,30 @@ namespace Opm
 	// Initialize model. These things are done for the whole grid!
 	StateWithZeroFlux state(s); // This holds s by reference.
 	JacSys sys(grid_.number_of_cells);
+	std::vector<double> increment(grid_.number_of_cells, 0.0);
 	model_.initStep(state, grid_, sys);
 
-	const int max_iter = 40;
-	const double tol = 1e-4;
 	int iter = 0;
 	double max_delta = 1e100;
-	while (iter < max_iter) {
+	while (iter < maxit_) {
 	    model_.initIteration(state, grid_, sys);
 	    std::map<int, std::vector<int> >::const_iterator it;
 	    for (it = columns.begin(); it != columns.end(); ++it) {
-		solveSingleColumn(it->second, dt, s, sys.vector().writableSolution());
+		solveSingleColumn(it->second, dt, s, increment);
 	    }
-	    const double maxelem = *std::max_element(sys.vector().solution().begin(), sys.vector().solution().end());
-	    const double minelem = *std::min_element(sys.vector().solution().begin(), sys.vector().solution().end());
+	    for (int cell = 0; cell < grid_.number_of_cells; ++cell) {
+		sys.vector().writableSolution()[cell] += increment[cell];
+	    }
+	    const double maxelem = *std::max_element(increment.begin(), increment.end());
+	    const double minelem = *std::min_element(increment.begin(), increment.end());
 	    max_delta = std::max(maxelem, -minelem);
 	    std::cout << "Iteration " << iter << "   max_delta = " << max_delta << std::endl;
-	    if (max_delta < tol) {
+	    if (max_delta < tol_) {
 		break;
 	    }
 	    ++iter;
 	}
-	if (max_delta >= tol) {
+	if (max_delta >= tol_) {
 	    THROW("Failed to converge!");
 	}
 	// Finalize.
@@ -168,7 +172,7 @@ namespace Opm
 	    THROW("Lapack reported error in dgtsv: " << info);
 	}
 	for (int ci = 0; ci < col_size; ++ci) {
-	    sol_vec[column_cells[ci]] = rhs[ci];
+	    sol_vec[column_cells[ci]] = -rhs[ci];
 	}
     }
 
