@@ -146,11 +146,11 @@ public:
             data_->b[i] = 0.0;
         }
 
-        ifs_tpfa_forces f;
-        f.src = &src[0];
+        forces_.src = &src[0];
+	forces_.bc = 0;
 
         // Assemble the embedded linear system.
-        ifs_tpfa_assemble(g, &f, &eff_trans_[0], &gpress_[0], data_);
+        ifs_tpfa_assemble(g, &forces_, &eff_trans_[0], &gpress_[0], data_);
         state_ = Assembled;
     }
 
@@ -209,7 +209,7 @@ public:
         cell_pressures.resize(num_cells, 0.0);
         face_fluxes.clear();
         face_fluxes.resize(num_faces, 0.0);
-        ifs_tpfa_press_flux(grid_.c_grid(), &eff_trans_[0],
+        ifs_tpfa_press_flux(grid_.c_grid(), &forces_, &eff_trans_[0],
                             data_, &cell_pressures[0], &face_fluxes[0]);
     }
 
@@ -262,6 +262,7 @@ private:
 
     // Solver data.
     ifs_tpfa_data* data_;
+    ifs_tpfa_forces forces_;
     // Grid.
     GridAdapter grid_;
     // Number of faces per cell.
