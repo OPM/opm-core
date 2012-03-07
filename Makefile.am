@@ -59,6 +59,7 @@ opm/core/linalg/sparse_sys.c                            \
 opm/core/linalg/LinearSolverInterface.cpp               \
 opm/core/pressure/cfsh.c                                \
 opm/core/pressure/flow_bc.c                             \
+opm/core/pressure/FlowBCManager.cpp                     \
 opm/core/pressure/well.c                                \
 opm/core/pressure/fsh_common_impl.c                     \
 opm/core/pressure/fsh.c                                 \
@@ -180,6 +181,7 @@ opm/core/pressure/msmfem/dfs.h                          \
 opm/core/pressure/msmfem/partition.h                    \
 opm/core/pressure/msmfem/coarse_conn.h                  \
 opm/core/pressure/flow_bc.h                             \
+opm/core/pressure/FlowBCManager.hpp                     \
 opm/core/pressure/fsh_common_impl.h                     \
 opm/core/pressure/mimetic/hybsys_global.h               \
 opm/core/pressure/mimetic/hybsys.h                      \
