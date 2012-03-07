@@ -199,6 +199,8 @@ cfsh_assemble(struct FlowBoundaryConditions *bc,
                              h->pimpl->gdof_pos,
                              Binv, Biv, P, h->pimpl->sys);
 
+    fsh_map_bdry_condition(bc, h->pimpl);
+
     npp = cfsh_assemble_grid(bc, Binv, gpress, src, h);
 
     if (npp == 0) {
