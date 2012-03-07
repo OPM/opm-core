@@ -46,6 +46,7 @@
 #endif
 
 #include <opm/core/pressure/IncompTpfa.hpp>
+#include <opm/core/pressure/FlowBCManager.hpp>
 
 #include <opm/core/GridManager.hpp>
 #include <opm/core/grid.h>
@@ -370,6 +371,9 @@ main(int argc, char** argv)
     }
     Opm::GravityColumnSolver<TransportModel> colsolver(model, *grid->c_grid(), nltol, maxit);
 
+    // Boundary conditions.
+    Opm::FlowBCManager bcs;
+
     // State-related and source-related variables init.
     int num_cells = grid->c_grid()->number_of_cells;
     std::vector<double> totmob;
@@ -519,7 +523,7 @@ main(int argc, char** argv)
             computeTotalMobility(*props, allcells, state.saturation(), totmob);
         }
         pressure_timer.start();
-        psolver.solve(totmob, omega, src, state.pressure(), state.faceflux());
+        psolver.solve(totmob, omega, src, bcs.c_bcs(), state.pressure(), state.faceflux());
         pressure_timer.stop();
         double pt = pressure_timer.secsSinceStart();
         std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
