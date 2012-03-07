@@ -405,7 +405,8 @@ set_dynamic_grav(struct UnstructuredGrid                  *G        ,
                  struct densrat_util     *ratio)
 /* ---------------------------------------------------------------------- */
 {
-    int f, p, i, c1, c2;
+    int    f, p, i, c1, c2;
+    size_t j;
 
     for (f = i = 0; f < G->number_of_faces; f++) {
         c1 = G->face_cells[2*f + 0];
@@ -425,10 +426,12 @@ set_dynamic_grav(struct UnstructuredGrid                  *G        ,
     if (bc != NULL) {
         for (i = 0; ((size_t) i) < bc->nbc; i++) {
             if (bc->type[ i ] == BC_PRESSURE) {
-                f = bc->face[ i ];
+                for (j = bc->cond_pos[i]; j < bc->cond_pos[i + 1]; j++) {
+                    f = bc->face[ j ];
 
-                for (p = cq->nphases * f; p < cq->nphases * (f + 1); p++) {
-                    ratio->x[p] = trans[f] * gravcap_f[p] * cq->phasemobf[p];
+                    for (p = cq->nphases * f; p < cq->nphases * (f + 1); p++) {
+                        ratio->x[p] = trans[f] * gravcap_f[p] * cq->phasemobf[p];
+                    }
                 }
             }
         }
@@ -691,30 +694,32 @@ assemble_bc_contrib(struct UnstructuredGrid       *G  ,
     int    c1, c2, c, f, hf;
     int    is_neumann;
 
-    size_t p, j;
+    size_t p, i, j;
 
     const double *ctrans = h->pimpl->ctrans;
 
     is_neumann = 1;
 
     for (p = 0; p < fbc->nbc; p++) {
-        f  = fbc->face[ p ];
-        c1 = G->face_cells[2*f + 0];
-        c2 = G->face_cells[2*f + 1];
-
-        assert ((c1 < 0) ^ (c2 < 0));
-
-        c  = (c1 >= 0) ? c1 : c2;
-
         if (fbc->type[ p ] == BC_PRESSURE) {
-            is_neumann = 0;
+            for (i = fbc->cond_pos[ p ]; i < fbc->cond_pos[p + 1]; i++) {
+                f  = fbc->face[ i ];
+                c1 = G->face_cells[2*f + 0];
+                c2 = G->face_cells[2*f + 1];
 
-            hf = h->pimpl->f2hf[2*f + (c1 < 0)];
+                assert ((c1 < 0) ^ (c2 < 0));
 
-            j  = csrmatrix_elm_index(c, c, h->A);
+                c  = (c1 >= 0) ? c1 : c2;
 
-            h->A->sa[ j ] += ctrans[ hf ];
-            h->b    [ c ] += ctrans[ hf ] * fbc->value[ p ];
+                is_neumann = 0;
+
+                hf = h->pimpl->f2hf[2*f + (c1 < 0)];
+
+                j  = csrmatrix_elm_index(c, c, h->A);
+
+                h->A->sa[ j ] += ctrans[ hf ];
+                h->b    [ c ] += ctrans[ hf ] * fbc->value[ p ];
+            }
         }
 
         /* Other boundary condition types not handled. */
@@ -797,6 +802,7 @@ compute_fpress(struct UnstructuredGrid       *G,
 /* ---------------------------------------------------------------------- */
 {
     int    c, i, f;
+    size_t j;
 
     /* Suppress warning about unused parameters. */
     (void) np;  (void) pmobf;  (void) gravcap_f;  (void) fflux;
@@ -832,7 +838,9 @@ compute_fpress(struct UnstructuredGrid       *G,
     if (fbc != NULL) {
         for (i = 0; ((size_t) i) < fbc->nbc; i++) {
             if (fbc->type[ i ] == BC_PRESSURE) {
-                fpress[ fbc->face[ i ] ] = fbc->value[ i ];
+                for (j = fbc->cond_pos[ i ]; j < fbc->cond_pos[i + 1]; j++) {
+                    fpress[ fbc->face[ j ] ] = fbc->value[ i ];
+                }
             }
         }
     }
@@ -852,6 +860,7 @@ compute_flux(struct UnstructuredGrid       *G,
 /* ---------------------------------------------------------------------- */
 {
     int    f, c1, c2, p, i;
+    size_t j;
     double t, dp, g;
 
     for (f = 0; f < G->number_of_faces; f++) {
@@ -874,32 +883,36 @@ compute_flux(struct UnstructuredGrid       *G,
     }
 
     if (bc != NULL) {
-        for (i = 0; ((size_t) i) < bc->nbc; i++) {
-            f = bc->face[ i ];
+        for (i = 0, j = 0; ((size_t) i) < bc->nbc; i++) {
+            for (; j < bc->cond_pos[i + 1]; j++) {
+                f = bc->face[ j ];
 
-            if (bc->type[ i ] == BC_FLUX_TOTVOL) {
-                t = 2*(G->face_cells[2*f + 0] < 0) - 1.0;
+                if (bc->type[ i ] == BC_FLUX_TOTVOL) {
+                    t = 2*(G->face_cells[2*f + 0] < 0) - 1.0;
 
-                fflux[ f ] = t * bc->value[ i ];
-            }
-            else if (bc->type[ i ] == BC_PRESSURE) {
-                c1 = G->face_cells[2*f + 0];
-                c2 = G->face_cells[2*f + 1];
+                    fflux[ f ] = t * bc->value[ i ];
+                }
+                else if (bc->type[ i ] == BC_PRESSURE) {
+                    c1 = G->face_cells[2*f + 0];
+                    c2 = G->face_cells[2*f + 1];
 
-                t = g = 0.0;
-                for (p = 0; p < np; p++) {
-                    t += pmobf[f*np + p];
-                    g += pmobf[f*np + p] * gravcap_f[f*np + p];
+                    t = g = 0.0;
+                    for (p = 0; p < np; p++) {
+                        t += pmobf[f*np + p];
+                        g += pmobf[f*np + p] * gravcap_f[f*np + p];
+                    }
+
+                    if (c1 < 0) {
+                        dp = bc->value[ i ] - cpress[c1];
+                    }
+                    else {
+                        dp = cpress[c2] - bc->value[ i ];
+                    }
+
+                    fflux[f] = trans[f] * (t*dp + g);
                 }
 
-                if (c1 < 0) {
-                    dp = bc->value[ i ] - cpress[c1];
-                }
-                else {
-                    dp = cpress[c2] - bc->value[ i ];
-                }
-
-                fflux[f] = trans[f] * (t*dp + g);
+                /* Other boundary conditions not handled */
             }
         }
     }

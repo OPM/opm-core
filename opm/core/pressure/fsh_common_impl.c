@@ -200,17 +200,22 @@ fsh_map_bdry_condition(struct FlowBoundaryConditions *fbc  ,
                        struct fsh_impl               *pimpl)
 /* ---------------------------------------------------------------------- */
 {
-    int f, i;
+    int    f, i;
+    size_t j;
 
     for (i = 0; i < pimpl->nf; i++) { pimpl->bdry_condition[ i ] = -1; }
 
     if (fbc != NULL) {
-        for (i = 0; ((size_t) i) < fbc->nbc; i++) {
-            f =  fbc->face[ i ];
+        assert (fbc->cond_pos[0] == 0);
 
-            assert ((0 <= f) && (f < pimpl->nf));
+        for (i = 0, j = 0; ((size_t) i) < fbc->nbc; i++) {
+            for (; j < fbc->cond_pos[i + 1]; j++) {
+                f = fbc->face[ j ];
 
-            pimpl->bdry_condition[ f ] = i;
+                assert ((0 <= f) && (f < pimpl->nf));
+
+                pimpl->bdry_condition[ f ] = i;
+            }
         }
     }
 }
