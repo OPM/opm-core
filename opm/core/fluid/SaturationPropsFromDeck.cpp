@@ -58,7 +58,7 @@ namespace Opm
             krocw_ = krow[0]; // At connate water -> ecl. SWOF
 	    swco = sw[0];
 	    smin_[phase_usage_.phase_pos[Aqua]] = sw[0];
-	    smax_[phase_usage_.phase_pos[Aqua]] = sw.back();
+	    smax_[phase_usage_.phase_pos[Aqua]] = 1.0;
         }
         if (phase_usage_.phase_used[Vapour]) {
             const SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
