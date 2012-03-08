@@ -52,7 +52,6 @@ fill_cell_topology(struct processed_grid  *pg,
 
         g->cell_faces = malloc(nhf * sizeof *g->cell_faces);
 
-        /* struct UnstructuredGrid member */
         g->cell_facetag  = malloc(nhf * sizeof *g->cell_facetag );
 
         if ((g->cell_faces == NULL) || (g->cell_facetag == NULL)) {
