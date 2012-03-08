@@ -50,9 +50,8 @@ fill_cell_topology(struct processed_grid  *pg,
         nhf = g->cell_facepos[0];
         g->cell_facepos[0] = 0;
 
-        g->cell_faces = malloc(nhf * sizeof *g->cell_faces);
-
-        g->cell_facetag  = malloc(nhf * sizeof *g->cell_facetag );
+        g->cell_faces   = malloc(nhf * sizeof *g->cell_faces  );
+        g->cell_facetag = malloc(nhf * sizeof *g->cell_facetag);
 
         if ((g->cell_faces == NULL) || (g->cell_facetag == NULL)) {
             free(g->cell_facetag);  g->cell_facetag = NULL;
