@@ -32,6 +32,8 @@ fill_cell_topology(struct processed_grid  *pg,
     g->cell_facepos = malloc((nc + 1) * sizeof *g->cell_facepos);
 
     if (g->cell_facepos != NULL) {
+        /* Allocate and initialise compressed cell-to-face topology. */
+
         for (c = 0; c < nc + 1; c++) { g->cell_facepos[c] = 0; }
 
         for (f = 0; f < g->number_of_faces; f++) {
@@ -61,6 +63,22 @@ fill_cell_topology(struct processed_grid  *pg,
     }
 
     if (g->cell_facepos != NULL) {
+        /* Compute final cell-to-face mapping and half-face tags.
+         *
+         * Process relies on preprocess() producing neighbourship
+         * definitions for which the normals point (logically) in the
+         * positive I,J,K directions *and* from ->face_cells[2*f+0] to
+         * ->face_cells[2*f+1] (i.e., from first to second cell of
+         * interface 'f'--be it internal or outer).
+         *
+         * For instance, a "LEFT" connection (pg->face_tag==LEFT==0)
+         * for which the normal points into the cell (i.e., when
+         * ->face_cells[2*f+1] >= 0), is a half-face of type 0.
+         *
+         * Simlarly, a "TOP" connection (pg->face_tag==TOP==2) for
+         * which the normal points out of the cell (i.e., when
+         * ->face_cells[2*f+0] >= 0), is a half-face of type 5. */
+
         for (f = 0; f < g->number_of_faces; f++) {
             tag = 2 * pg->face_tag[f];    /* [0, 2, 4] */
             c1  = g->face_cells[2*f + 0];
