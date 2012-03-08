@@ -96,15 +96,32 @@
 
 class ReservoirState {
 public:
-    ReservoirState(const UnstructuredGrid* g, const int num_phases = 2)
+    ReservoirState(const UnstructuredGrid* g, const double init_sat = 0.0)
     : press_ (g->number_of_cells, 0.0),
       fpress_(g->number_of_faces, 0.0),
       flux_  (g->number_of_faces, 0.0),
-      sat_   (num_phases * g->number_of_cells, 0.0)
+      sat_   (2 * g->number_of_cells, 0.0)
     {
-        for (int cell = 0; cell < g->number_of_cells; ++cell) {
-            sat_[num_phases*cell + num_phases - 1] = 1.0;
-        }
+	for (int cell = 0; cell < g->number_of_cells; ++cell) {
+	    sat_[2*cell] = init_sat;
+	    sat_[2*cell + 1] = 1.0 - init_sat;
+	}
+    }
+
+    void setToMinimumWaterSat(const Opm::IncompPropertiesInterface& props)
+    {
+	const int n = props.numCells();
+	std::vector<int> cells(n);
+	for (int i = 0; i < n; ++i) {
+	    cells[i] = i;
+	}
+	std::vector<double> smin(2*n);
+	std::vector<double> smax(2*n);
+	props.satRange(n, &cells[0], &smin[0], &smax[0]);
+	for (int cell = 0; cell < n; ++cell) {
+	    sat_[2*cell] = smin[2*cell];
+	    sat_[2*cell + 1] = 1.0 - smin[2*cell];
+	}
     }
 
     int numPhases() const { return sat_.size()/press_.size(); }
@@ -378,7 +395,11 @@ main(int argc, char** argv)
     int num_cells = grid->c_grid()->number_of_cells;
     std::vector<double> totmob;
     std::vector<double> omega; // Will remain empty if no gravity.
-    ReservoirState state(grid->c_grid(), props->numPhases());
+    double init_sat = param.getDefault("init_sat", 0.0);
+    ReservoirState state(grid->c_grid(), init_sat);
+    if (!param.has("init_sat")) {
+	state.setToMinimumWaterSat(*props);
+    }
     // We need a separate reorder_sat, because the reorder
     // code expects a scalar sw, not both sw and so.
     std::vector<double> reorder_sat(num_cells);
