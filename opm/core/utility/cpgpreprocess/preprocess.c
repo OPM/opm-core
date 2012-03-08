@@ -434,11 +434,17 @@ void process_grdecl(const struct grdecl   *in,
 
   /* Permute actnum */
   iptr = actnum;
-  for (j=0; j<ny; ++j){
-    for (i=0; i<nx; ++i){
-      for (k=0; k<nz; ++k){
-        *iptr++ = in->actnum[i+nx*(j+ny*k)];
+  if (in->actnum != NULL) {
+    for (j=0; j<ny; ++j){
+      for (i=0; i<nx; ++i){
+        for (k=0; k<nz; ++k){
+          *iptr++ = in->actnum[i+nx*(j+ny*k)];
+        }
       }
+    }
+  } else {
+    for (i=0; i<nx*ny*nz; ++i){
+      *iptr++ = 1;
     }
   }
   g.actnum = actnum;
@@ -460,7 +466,7 @@ void process_grdecl(const struct grdecl   *in,
           int c1 = i/2 + nx*(j/2 + ny*(k/2));
           int c2 = i/2 + nx*(j/2 + ny*((k+1)/2));
 
-          if (in->actnum[c1] && in->actnum[c2] && (z2 < z1)){
+          if (((in->actnum == NULL) || (in->actnum[c1] && in->actnum[c2])) && (z2 < z1)){
             fprintf(stderr, "\nZCORN should be strictly nondecreasing along pillars!\n");
 
             error = 1;
