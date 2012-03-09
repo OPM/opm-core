@@ -108,6 +108,8 @@ public:
 	}
     }
 
+    enum ExtremalSat { MinSat, MaxSat };
+
     void setToMinimumWaterSat(const Opm::IncompPropertiesInterface& props)
     {
 	const int n = props.numCells();
@@ -115,12 +117,22 @@ public:
 	for (int i = 0; i < n; ++i) {
 	    cells[i] = i;
 	}
+	setWaterSat(cells, props, MinSat);
+    }
+
+    void setWaterSat(const std::vector<int>& cells,
+		     const Opm::IncompPropertiesInterface& props,
+		     ExtremalSat es)
+    {
+	const int n = cells.size();
 	std::vector<double> smin(2*n);
 	std::vector<double> smax(2*n);
 	props.satRange(n, &cells[0], &smin[0], &smax[0]);
-	for (int cell = 0; cell < n; ++cell) {
-	    sat_[2*cell] = smin[2*cell];
-	    sat_[2*cell + 1] = 1.0 - smin[2*cell];
+	const double* svals = (es == MinSat) ? &smin[0] : &smax[0];
+	for (int ci = 0; ci < n; ++ci) {
+	    const int cell = cells[ci];
+	    sat_[2*cell] = svals[2*ci];
+	    sat_[2*cell + 1] = 1.0 - sat_[2*cell];
 	}
     }
 
@@ -244,12 +256,12 @@ public:
 
     double s_min(int c) const
     {
-        return smin_[c];
+        return smin_[2*c + 0];
     }
 
     double s_max(int c) const
     {
-        return smax_[c];
+        return smax_[2*c + 0];
     }
 
 private:
@@ -432,15 +444,18 @@ main(int argc, char** argv)
 		std::cout << "**** Warning: running gravity convection scenario, which expects a cartesian grid."
 			  << std::endl;
 	    }
-	    std::vector<double>& sat = state.saturation();
+	    std::vector<int> left_cells;
+	    left_cells.reserve(num_cells/2);
 	    const int *glob_cell = grid->c_grid()->global_cell;
 	    for (int cell = 0; cell < num_cells; ++cell) {
 		const int* cd = grid->c_grid()->cartdims;
 		const int gc = glob_cell == 0 ? cell : glob_cell[cell];
 		bool left = (gc % cd[0]) < cd[0]/2;
-		sat[2*cell] = left ? 1.0 : 0.0;
-		sat[2*cell + 1] = 1.0 - sat[2*cell];
+		if (left) {
+		    left_cells.push_back(cell);
+		}
 	    }
+	    state.setWaterSat(left_cells, *props, ReservoirState::MaxSat);
 	    break;
 	}
     case 3:
@@ -525,6 +540,9 @@ main(int argc, char** argv)
     Opm::time::StopWatch total_timer;
     total_timer.start();
     std::cout << "\n\n================    Starting main simulation loop     ===============" << std::endl;
+    double aver_sats[2] = { 0.0 };
+    Opm::computeAverageSat(porevol, state.saturation(), aver_sats);
+    std::cout << "\nInitial average saturations are    " << aver_sats[0] << "    " << aver_sats[1] << std::endl;
     for (int pstep = 0; pstep < num_psteps; ++pstep) {
         std::cout << "\n\n---------------    Simulation step number " << pstep
                 << "    ---------------"
@@ -583,6 +601,9 @@ main(int argc, char** argv)
         double tt = transport_timer.secsSinceStart();
         std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
         ttime += tt;
+
+	Opm::computeAverageSat(porevol, state.saturation(), aver_sats);
+	std::cout << "\nAverage saturations are    " << aver_sats[0] << "    " << aver_sats[1] << std::endl;
 
         current_time += stepsize;
     }
