@@ -193,6 +193,28 @@ void outputState(const UnstructuredGrid* grid,
     }
 }
 
+/// Create a src vector equivalent to a wells structure.
+/// For this to be valid, the wells must be all rate-controlled and
+/// single-perforation.
+void wellsToSrc(const Wells& wells, const int num_cells, std::vector<double>& src)
+{
+    src.resize(num_cells);
+    for (int w = 0; w < wells.number_of_wells; ++w) {
+	if (wells.ctrls[w]->num != 1) {
+	    THROW("In wellsToSrc(): well has more than one control.");
+	}
+	if (wells.ctrls[w]->type[0] != RATE) {
+	    THROW("In wellsToSrc(): well is BHP, not RATE.");
+	}
+	if (wells.well_connpos[w+1] - wells.well_connpos[w] != 1) {
+	    THROW("In wellsToSrc(): well has multiple perforations.");
+	}
+	const double flow = wells.ctrls[w]->target[0];
+	const double cell = wells.well_cells[wells.well_connpos[w]];
+	src[cell] = (wells.type[w] == INJECTOR) ? flow : -flow;
+    }
+}
+
 
 // --------------- Types needed to define transport solver ---------------
 
@@ -428,9 +450,13 @@ main(int argc, char** argv)
     case 0:
 	{
 	    std::cout << "==== Scenario 0: single-cell source and sink.\n";
-	    double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
-	    src[0] = flow_per_sec;
-	    src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
+	    if (wells->c_wells()) {
+		wellsToSrc(*wells->c_wells(), num_cells, src);
+	    } else {
+		double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
+		src[0] = flow_per_sec;
+		src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
+	    }
 	    break;
 	}
     case 1:
@@ -504,6 +530,13 @@ main(int argc, char** argv)
         }
     }
     std::vector<double> reorder_src = src;
+
+    // Dirichlet boundary conditions.
+    if (param.getDefault("use_pside", false)) {
+	int pside = param.get<int>("pside");
+	double pside_pressure = param.get<double>("pside_pressure");
+	bcs.pressureSide(*grid->c_grid(), Opm::FlowBCManager::Side(pside), pside_pressure);
+    }
 
     // Control init.
     Opm::ImplicitTransportDetails::NRReport  rpt;
