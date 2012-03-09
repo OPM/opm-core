@@ -50,6 +50,8 @@
 
 #include <opm/core/GridManager.hpp>
 #include <opm/core/grid.h>
+#include <opm/core/WellsManager.hpp>
+#include <opm/core/newwells.h>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/Units.hpp>
@@ -324,6 +326,7 @@ main(int argc, char** argv)
     bool use_deck = param.has("deck_filename");
     boost::scoped_ptr<Opm::GridManager> grid;
     boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
+    boost::scoped_ptr<Opm::WellsManager> wells;
     if (use_deck) {
         std::string deck_filename = param.get<std::string>("deck_filename");
         Opm::EclipseGridParser deck(deck_filename);
@@ -333,6 +336,8 @@ main(int argc, char** argv)
         const int* gc = grid->c_grid()->global_cell;
         std::vector<int> global_cell(gc, gc + grid->c_grid()->number_of_cells);
         props.reset(new Opm::IncompPropertiesFromDeck(deck, global_cell));
+	// Wells init.
+	wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
     } else {
         // Grid init.
         const int nx = param.getDefault("nx", 100);
@@ -344,6 +349,8 @@ main(int argc, char** argv)
         grid.reset(new Opm::GridManager(nx, ny, nz, dx, dy, dz));
         // Rock and fluid init.
         props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
+	// Wells init.
+	wells.reset(new Opm::WellsManager());
     }
 
     // Extra rock init.
