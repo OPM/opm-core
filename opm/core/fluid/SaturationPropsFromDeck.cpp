@@ -296,9 +296,27 @@ namespace Opm
         }
     }
 
-    void SaturationPropsFromDeck::evalPcDeriv(const double* /*s*/, double* /*pc*/, double* /*dpcds*/) const
+    void SaturationPropsFromDeck::evalPcDeriv(const double* s, double* pc, double* dpcds) const
     {
-        THROW("Evaluation of capillary pressure derivatives not yet implemented.");
+	// The problem of determining three-phase capillary pressures
+	// is very hard experimentally, usually one extends two-phase
+	// data (as for relative permeability).
+	// In our approach the derivative matrix is quite sparse, only
+	// the diagonal elements corresponding to non-oil phases are
+	// (potentially) nonzero.
+        const int np = phase_usage_.num_phases;
+	std::fill(dpcds, dpcds + np*np, 0.0);
+        pc[phase_usage_.phase_pos[Liquid]] = 0.0;
+        if (phase_usage_.phase_used[Aqua]) {
+            int pos = phase_usage_.phase_pos[Aqua];
+            pc[pos] = pcow_(s[pos]);
+            dpcds[np*pos + pos] = pcow_.derivative(s[pos]);
+        }
+        if (phase_usage_.phase_used[Vapour]) {
+            int pos = phase_usage_.phase_pos[Vapour];
+            pc[pos] = pcog_(s[pos]);
+            dpcds[np*pos + pos] = pcog_.derivative(s[pos]);
+        }
     }
 
 
