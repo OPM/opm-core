@@ -608,17 +608,23 @@ main(int argc, char** argv)
         std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
         ptime += pt;
 
+	// Process transport sources (to include bdy terms).
+	if (use_reorder) {
+	    Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0, reorder_src);
+	} else {
+	    clear_transport_source(tsrc);
+	    for (int cell = 0; cell < num_cells; ++cell) {
+		if (src[cell] > 0.0) {
+		    append_transport_source(cell, 2, 0, src[cell], ssrc, zdummy, tsrc);
+		} else if (src[cell] < 0.0) {
+		    append_transport_source(cell, 2, 0, src[cell], ssink, zdummy, tsrc);
+		}
+	    }
+	}
+
         // Solve transport
         transport_timer.start();
         if (use_reorder) {
-            // We must treat reorder_src here,
-            // if we are to handle anything but simple water
-            // injection, since it is expected to be
-            // equal to total outflow (if negative)
-            // and water inflow (if positive).
-            // Also, for anything but noflow boundaries,
-            // boundary flows must be accumulated into
-            // source term following the same convention.
             Opm::toWaterSat(state.saturation(), reorder_sat);
             reorder_model.solve(&state.faceflux()[0], &reorder_src[0], stepsize, &reorder_sat[0]);
             Opm::toBothSat(reorder_sat, state.saturation());
