@@ -507,6 +507,9 @@ main(int argc, char** argv)
 		std::cout << "**** Warning: running gravity segregation scenario, which expects a cartesian grid."
 			  << std::endl;
 	    }
+	    if (grid->c_grid()->cartdims[2] <= 1) {
+		std::cout << "**** Warning: running gravity segregation scenario, which expects nz > 1." << std::endl;
+	    }
 	    std::vector<double>& sat = state.saturation();
 	    const int *glob_cell = grid->c_grid()->global_cell;
 	    // Water on top
