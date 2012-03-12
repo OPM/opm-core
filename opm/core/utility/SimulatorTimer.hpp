@@ -51,6 +51,7 @@ namespace Opm
 	int currentStepNum() const;
 
 	/// Current step length.
+	/// Note: if done(), it is an error to call currentStepLength().
 	double currentStepLength() const;
 
 	/// Current time.
@@ -60,6 +61,7 @@ namespace Opm
 	double totalTime() const;
 
 	/// Print a report with current and total time etc.
+	/// Note: if done(), it is an error to call report().
 	void report(std::ostream& os) const;
 
 	/// Next step.

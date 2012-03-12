@@ -69,6 +69,7 @@ namespace Opm
     /// Current step length.
     double SimulatorTimer::currentStepLength() const
     {
+	ASSERT(!done());
 	return timesteps_[current_step_];
     }
 
@@ -97,6 +98,7 @@ namespace Opm
     /// Next step.
     SimulatorTimer& SimulatorTimer::operator++()
     {
+	ASSERT(!done());
 	current_time_ += timesteps_[current_step_];
 	++current_step_;
 	return *this;
