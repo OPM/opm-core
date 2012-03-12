@@ -159,11 +159,10 @@ private:
 
 
 
-template <class State>
-void outputState(const UnstructuredGrid* grid,
-        const State& state,
-        const int step,
-        const std::string& output_dir)
+void outputState(const UnstructuredGrid& grid,
+		 const ReservoirState& state,
+		 const int step,
+		 const std::string& output_dir)
 {
     // Write data in VTK format.
     std::ostringstream vtkfilename;
@@ -176,7 +175,7 @@ void outputState(const UnstructuredGrid* grid,
     dm["saturation"] = &state.saturation();
     dm["pressure"] = &state.pressure();
     std::vector<double> cell_velocity;
-    Opm::estimateCellVelocity(*grid, state.faceflux(), cell_velocity);
+    Opm::estimateCellVelocity(grid, state.faceflux(), cell_velocity);
     dm["velocity"] = &cell_velocity;
     Opm::writeVtkData(grid, dm, vtkfile);
 
@@ -592,7 +591,7 @@ main(int argc, char** argv)
         << "\n" << std::endl;
 
         if (output) {
-            outputState(grid->c_grid(), state, pstep, output_dir);
+            outputState(*grid->c_grid(), state, pstep, output_dir);
         }
 
         // Solve pressure.
@@ -661,7 +660,7 @@ main(int argc, char** argv)
             << "\n  Transport time: " << ttime << std::endl;
 
     if (output) {
-        outputState(grid->c_grid(), state, num_psteps, output_dir);
+        outputState(*grid->c_grid(), state, num_psteps, output_dir);
     }
 
     destroy_transport_source(tsrc);
