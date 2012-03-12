@@ -53,6 +53,7 @@
 #include <opm/core/WellsManager.hpp>
 #include <opm/core/newwells.h>
 #include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/SimulatorTimer.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/writeVtkData.hpp>
@@ -328,10 +329,7 @@ main(int argc, char** argv)
     Opm::parameter::ParameterGroup param(argc, argv, false);
     std::cout << "---------------    Reading parameters     ---------------" << std::endl;
 
-    // Reading various control parameters.
-    const int num_psteps = param.getDefault("num_psteps", 1);
-    const double stepsize_days = param.getDefault("stepsize_days", 1.0);
-    const double stepsize = Opm::unit::convert::from(stepsize_days, Opm::unit::day);
+    // Reading various control parameters.    
     const bool guess_old_solution = param.getDefault("guess_old_solution", false);
     const bool use_reorder = param.getDefault("use_reorder", true);
     const bool output = param.getDefault("output", true);
@@ -348,6 +346,7 @@ main(int argc, char** argv)
     boost::scoped_ptr<Opm::GridManager> grid;
     boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
     boost::scoped_ptr<Opm::WellsManager> wells;
+    Opm::SimulatorTimer simtimer;
     if (use_deck) {
         std::string deck_filename = param.get<std::string>("deck_filename");
         Opm::EclipseGridParser deck(deck_filename);
@@ -359,6 +358,12 @@ main(int argc, char** argv)
         props.reset(new Opm::IncompPropertiesFromDeck(deck, global_cell));
 	// Wells init.
 	wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
+	// Timer init.
+	if (deck.hasField("TSTEP")) {
+	    simtimer.init(deck);
+	} else {
+	    simtimer.init(param);
+	}
     } else {
         // Grid init.
         const int nx = param.getDefault("nx", 100);
@@ -372,6 +377,8 @@ main(int argc, char** argv)
         props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
 	// Wells init.
 	wells.reset(new Opm::WellsManager());
+	// Timer init.
+	simtimer.init(param);
     }
 
     // Extra rock init.
@@ -540,8 +547,6 @@ main(int argc, char** argv)
     // Control init.
     Opm::ImplicitTransportDetails::NRReport  rpt;
     Opm::ImplicitTransportDetails::NRControl ctrl;
-    double current_time = 0.0;
-    double total_time = stepsize*num_psteps;
     if (!use_reorder || use_segregation_split) {
         ctrl.max_it = param.getDefault("max_it", 20);
         ctrl.verbosity = param.getDefault("verbosity", 0);
@@ -582,16 +587,11 @@ main(int argc, char** argv)
     double aver_sats[2] = { 0.0 };
     Opm::computeAverageSat(porevol, state.saturation(), aver_sats);
     std::cout << "\nInitial average saturations are    " << aver_sats[0] << "    " << aver_sats[1] << std::endl;
-    for (int pstep = 0; pstep < num_psteps; ++pstep) {
-        std::cout << "\n\n---------------    Simulation step number " << pstep
-                << "    ---------------"
-                << "\n      Current time (days)     " << Opm::unit::convert::to(current_time, Opm::unit::day)
-        << "\n      Current stepsize (days) " << Opm::unit::convert::to(stepsize, Opm::unit::day)
-        << "\n      Total time (days)       " << Opm::unit::convert::to(total_time, Opm::unit::day)
-        << "\n" << std::endl;
-
+    for (; !simtimer.done(); ++simtimer) {
+	// Report timestep and (optionally) write state to disk.
+	simtimer.report(std::cout);
         if (output) {
-            outputState(*grid->c_grid(), state, pstep, output_dir);
+            outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
         }
 
         // Solve pressure.
@@ -625,21 +625,21 @@ main(int argc, char** argv)
         transport_timer.start();
         if (use_reorder) {
             Opm::toWaterSat(state.saturation(), reorder_sat);
-            reorder_model.solve(&state.faceflux()[0], &reorder_src[0], stepsize, &reorder_sat[0]);
+            reorder_model.solve(&state.faceflux()[0], &reorder_src[0], simtimer.currentStepLength(), &reorder_sat[0]);
             Opm::toBothSat(reorder_sat, state.saturation());
             if (use_segregation_split) {
                 if (use_column_solver) {
-                    colsolver.solve(columns, stepsize, state.saturation());
+                    colsolver.solve(columns, simtimer.currentStepLength(), state.saturation());
                 } else {
                     std::vector<double> fluxes = state.faceflux();
                     std::fill(state.faceflux().begin(), state.faceflux().end(), 0.0);
-                    tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
+                    tsolver.solve(*grid->c_grid(), tsrc, simtimer.currentStepLength(), ctrl, state, linsolve, rpt);
                     std::cout << rpt;
                     state.faceflux() = fluxes;
                 }
             }
         } else {
-            tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
+            tsolver.solve(*grid->c_grid(), tsrc, simtimer.currentStepLength(), ctrl, state, linsolve, rpt);
             std::cout << rpt;
         }
         transport_timer.stop();
@@ -647,10 +647,9 @@ main(int argc, char** argv)
         std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
         ttime += tt;
 
+	// Report average saturations. TODO: make complete mass balance reports.
 	Opm::computeAverageSat(porevol, state.saturation(), aver_sats);
 	std::cout << "\nAverage saturations are    " << aver_sats[0] << "    " << aver_sats[1] << std::endl;
-
-        current_time += stepsize;
     }
     total_timer.stop();
 
@@ -660,7 +659,7 @@ main(int argc, char** argv)
             << "\n  Transport time: " << ttime << std::endl;
 
     if (output) {
-        outputState(*grid->c_grid(), state, num_psteps, output_dir);
+        outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
     }
 
     destroy_transport_source(tsrc);
