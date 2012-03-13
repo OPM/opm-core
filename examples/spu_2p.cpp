@@ -139,6 +139,37 @@ public:
 	}
     }
 
+    // Initialize saturations so that there is water below woc,
+    // and oil above.
+    // TODO: add 'anitialiasing', obtaining a more precise woc
+    //       by f. ex. subdividing cells cut by the woc.
+    void initWaterOilContact(const UnstructuredGrid& grid,
+			     const Opm::IncompPropertiesInterface& props,
+			     const double woc)
+    {
+	// Find out which cells should have water and which should have oil.
+	std::vector<int> oil;
+	std::vector<int> water;
+	const int num_cells = grid.number_of_cells;
+	oil.reserve(num_cells);
+	water.reserve(num_cells);
+	const int dim = grid.dimensions;
+	for (int c = 0; c < num_cells; ++c) {
+	    const double z = grid.cell_centroids[dim*c + dim - 1];
+	    if (z > woc) {
+		// Z is depth, we put water in the deepest parts
+		// (even if oil is heavier...).
+		water.push_back(c);
+	    } else {
+		oil.push_back(c);
+	    }
+	}
+
+	// Set saturations.
+	setWaterSat(oil, props, MinSat);
+	setWaterSat(water, props, MaxSat);
+    }
+
     int numPhases() const { return sat_.size()/press_.size(); }
 
     ::std::vector<double>& pressure    () { return press_ ; }
@@ -347,6 +378,8 @@ main(int argc, char** argv)
     boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
     boost::scoped_ptr<Opm::WellsManager> wells;
     Opm::SimulatorTimer simtimer;
+    double water_oil_contact = 0.0;
+    bool woc_set = false;
     if (use_deck) {
         std::string deck_filename = param.get<std::string>("deck_filename");
         Opm::EclipseGridParser deck(deck_filename);
@@ -364,6 +397,14 @@ main(int argc, char** argv)
 	} else {
 	    simtimer.init(param);
 	}
+	// Water-oil contact.
+	if (deck.hasField("EQUIL")) {
+	    water_oil_contact = deck.getEQUIL().equil[0].water_oil_contact_depth_;
+	    woc_set = true;
+	} else if (param.has("water_oil_contact")) {
+	    water_oil_contact = param.get<double>("water_oil_contact");
+	    woc_set = true;
+	}
     } else {
         // Grid init.
         const int nx = param.getDefault("nx", 100);
@@ -379,6 +420,10 @@ main(int argc, char** argv)
 	wells.reset(new Opm::WellsManager());
 	// Timer init.
 	simtimer.init(param);
+	if (param.has("water_oil_contact")) {
+	    water_oil_contact = param.get<double>("water_oil_contact");
+	    woc_set = true;
+	}
     }
 
     // Extra rock init.
@@ -451,11 +496,11 @@ main(int argc, char** argv)
     // code expects a scalar sw, not both sw and so.
     std::vector<double> reorder_sat(num_cells);
     std::vector<double> src(num_cells, 0.0);
-    int scenario = param.getDefault("scenario", 0);
+    int scenario = param.getDefault("scenario", woc_set ? 4 : 0);
     switch (scenario) {
     case 0:
 	{
-	    std::cout << "==== Scenario 0: single-cell source and sink.\n";
+	    std::cout << "==== Scenario 0: simple wells or single-cell source and sink.\n";
 	    if (wells->c_wells()) {
 		wellsToSrc(*wells->c_wells(), num_cells, src);
 	    } else {
@@ -482,6 +527,9 @@ main(int argc, char** argv)
 	    if (use_deck) {
 		std::cout << "**** Warning: running gravity convection scenario, which expects a cartesian grid."
 			  << std::endl;
+	    }
+	    if (grid->c_grid()->cartdims[2] <= 1) {
+		std::cout << "**** Warning: running gravity convection scenario, which expects nz > 1." << std::endl;
 	    }
 	    std::vector<int> left_cells;
 	    left_cells.reserve(num_cells/2);
@@ -519,6 +567,22 @@ main(int argc, char** argv)
 		bool top = (gc / cd[0] / cd[1]) < cd[2]/2;
 		sat[2*cell] = top ? 1.0 : 0.0;
 		sat[2*cell + 1 ] = 1.0 - sat[2*cell];
+	    }
+	    break;
+	}
+    case 4:
+	{
+	    std::cout << "==== Scenario 4: water-oil contact and simple wells or sources\n";
+	    if (!use_gravity) {
+		std::cout << "**** Warning: initializing segregated water and oil zones, but gravity is zero." << std::endl;
+	    }
+	    state.initWaterOilContact(*grid->c_grid(), *props, water_oil_contact);
+	    if (wells->c_wells()) {
+		wellsToSrc(*wells->c_wells(), num_cells, src);
+	    } else {
+		double flow_per_sec = 0.01*tot_porevol/Opm::unit::day;
+		src[0] = flow_per_sec;
+		src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
 	    }
 	    break;
 	}
