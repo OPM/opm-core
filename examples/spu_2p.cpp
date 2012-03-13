@@ -191,7 +191,7 @@ private:
 
 
 
-void outputState(const UnstructuredGrid& grid,
+static void outputState(const UnstructuredGrid& grid,
 		 const ReservoirState& state,
 		 const int step,
 		 const std::string& output_dir)
@@ -227,7 +227,7 @@ void outputState(const UnstructuredGrid& grid,
 /// Create a src vector equivalent to a wells structure.
 /// For this to be valid, the wells must be all rate-controlled and
 /// single-perforation.
-void wellsToSrc(const Wells& wells, const int num_cells, std::vector<double>& src)
+static void wellsToSrc(const Wells& wells, const int num_cells, std::vector<double>& src)
 {
     src.resize(num_cells);
     for (int w = 0; w < wells.number_of_wells; ++w) {
@@ -268,7 +268,7 @@ private:
     std::vector<double> data_;
 };
 
-void outputWaterCut(const Watercut& watercut,
+static void outputWaterCut(const Watercut& watercut,
 		    const std::string& output_dir)
 {
     // Write water cut curve.
