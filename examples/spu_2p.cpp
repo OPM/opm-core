@@ -192,9 +192,9 @@ private:
 
 
 static void outputState(const UnstructuredGrid& grid,
-		 const ReservoirState& state,
-		 const int step,
-		 const std::string& output_dir)
+                        const ReservoirState& state,
+                        const int step,
+                        const std::string& output_dir)
 {
     // Write data in VTK format.
     std::ostringstream vtkfilename;
@@ -269,7 +269,7 @@ private:
 };
 
 static void outputWaterCut(const Watercut& watercut,
-		    const std::string& output_dir)
+                           const std::string& output_dir)
 {
     // Write water cut curve.
     std::string fname = output_dir  + "/watercut.txt";
