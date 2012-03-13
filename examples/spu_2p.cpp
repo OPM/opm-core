@@ -53,6 +53,7 @@
 #include <opm/core/WellsManager.hpp>
 #include <opm/core/newwells.h>
 #include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/SimulatorTimer.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/writeVtkData.hpp>
@@ -138,6 +139,37 @@ public:
 	}
     }
 
+    // Initialize saturations so that there is water below woc,
+    // and oil above.
+    // TODO: add 'anitialiasing', obtaining a more precise woc
+    //       by f. ex. subdividing cells cut by the woc.
+    void initWaterOilContact(const UnstructuredGrid& grid,
+			     const Opm::IncompPropertiesInterface& props,
+			     const double woc)
+    {
+	// Find out which cells should have water and which should have oil.
+	std::vector<int> oil;
+	std::vector<int> water;
+	const int num_cells = grid.number_of_cells;
+	oil.reserve(num_cells);
+	water.reserve(num_cells);
+	const int dim = grid.dimensions;
+	for (int c = 0; c < num_cells; ++c) {
+	    const double z = grid.cell_centroids[dim*c + dim - 1];
+	    if (z > woc) {
+		// Z is depth, we put water in the deepest parts
+		// (even if oil is heavier...).
+		water.push_back(c);
+	    } else {
+		oil.push_back(c);
+	    }
+	}
+
+	// Set saturations.
+	setWaterSat(oil, props, MinSat);
+	setWaterSat(water, props, MaxSat);
+    }
+
     int numPhases() const { return sat_.size()/press_.size(); }
 
     ::std::vector<double>& pressure    () { return press_ ; }
@@ -159,11 +191,10 @@ private:
 
 
 
-template <class State>
-void outputState(const UnstructuredGrid* grid,
-        const State& state,
-        const int step,
-        const std::string& output_dir)
+void outputState(const UnstructuredGrid& grid,
+		 const ReservoirState& state,
+		 const int step,
+		 const std::string& output_dir)
 {
     // Write data in VTK format.
     std::ostringstream vtkfilename;
@@ -176,7 +207,7 @@ void outputState(const UnstructuredGrid* grid,
     dm["saturation"] = &state.saturation();
     dm["pressure"] = &state.pressure();
     std::vector<double> cell_velocity;
-    Opm::estimateCellVelocity(*grid, state.faceflux(), cell_velocity);
+    Opm::estimateCellVelocity(grid, state.faceflux(), cell_velocity);
     dm["velocity"] = &cell_velocity;
     Opm::writeVtkData(grid, dm, vtkfile);
 
@@ -215,6 +246,39 @@ void wellsToSrc(const Wells& wells, const int num_cells, std::vector<double>& sr
     }
 }
 
+class Watercut
+{
+public:
+    void push(double time, double fraction, double produced)
+    {
+	data_.push_back(time);
+	data_.push_back(fraction);
+	data_.push_back(produced);
+    }
+    void write(std::ostream& os) const
+    {
+	int sz = data_.size()/3;
+	for (int i = 0; i < sz; ++i) {
+	    os << data_[3*i]/Opm::unit::day << "   "
+	       << data_[3*i+1] << "   "
+	       << data_[3*i+2] << '\n';
+	}
+    }
+private:
+    std::vector<double> data_;
+};
+
+void outputWaterCut(const Watercut& watercut,
+		    const std::string& output_dir)
+{
+    // Write water cut curve.
+    std::string fname = output_dir  + "/watercut.txt";
+    std::ofstream os(fname.c_str());
+    if (!os) {
+        THROW("Failed to open " << fname);
+    }
+    watercut.write(os);
+}
 
 // --------------- Types needed to define transport solver ---------------
 
@@ -329,10 +393,7 @@ main(int argc, char** argv)
     Opm::parameter::ParameterGroup param(argc, argv, false);
     std::cout << "---------------    Reading parameters     ---------------" << std::endl;
 
-    // Reading various control parameters.
-    const int num_psteps = param.getDefault("num_psteps", 1);
-    const double stepsize_days = param.getDefault("stepsize_days", 1.0);
-    const double stepsize = Opm::unit::convert::from(stepsize_days, Opm::unit::day);
+    // Reading various control parameters.    
     const bool guess_old_solution = param.getDefault("guess_old_solution", false);
     const bool use_reorder = param.getDefault("use_reorder", true);
     const bool output = param.getDefault("output", true);
@@ -349,6 +410,9 @@ main(int argc, char** argv)
     boost::scoped_ptr<Opm::GridManager> grid;
     boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
     boost::scoped_ptr<Opm::WellsManager> wells;
+    Opm::SimulatorTimer simtimer;
+    double water_oil_contact = 0.0;
+    bool woc_set = false;
     if (use_deck) {
         std::string deck_filename = param.get<std::string>("deck_filename");
         Opm::EclipseGridParser deck(deck_filename);
@@ -360,6 +424,20 @@ main(int argc, char** argv)
         props.reset(new Opm::IncompPropertiesFromDeck(deck, global_cell));
 	// Wells init.
 	wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
+	// Timer init.
+	if (deck.hasField("TSTEP")) {
+	    simtimer.init(deck);
+	} else {
+	    simtimer.init(param);
+	}
+	// Water-oil contact.
+	if (deck.hasField("EQUIL")) {
+	    water_oil_contact = deck.getEQUIL().equil[0].water_oil_contact_depth_;
+	    woc_set = true;
+	} else if (param.has("water_oil_contact")) {
+	    water_oil_contact = param.get<double>("water_oil_contact");
+	    woc_set = true;
+	}
     } else {
         // Grid init.
         const int nx = param.getDefault("nx", 100);
@@ -373,6 +451,12 @@ main(int argc, char** argv)
         props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
 	// Wells init.
 	wells.reset(new Opm::WellsManager());
+	// Timer init.
+	simtimer.init(param);
+	if (param.has("water_oil_contact")) {
+	    water_oil_contact = param.get<double>("water_oil_contact");
+	    woc_set = true;
+	}
     }
 
     // Extra rock init.
@@ -445,11 +529,11 @@ main(int argc, char** argv)
     // code expects a scalar sw, not both sw and so.
     std::vector<double> reorder_sat(num_cells);
     std::vector<double> src(num_cells, 0.0);
-    int scenario = param.getDefault("scenario", 0);
+    int scenario = param.getDefault("scenario", woc_set ? 4 : 0);
     switch (scenario) {
     case 0:
 	{
-	    std::cout << "==== Scenario 0: single-cell source and sink.\n";
+	    std::cout << "==== Scenario 0: simple wells or single-cell source and sink.\n";
 	    if (wells->c_wells()) {
 		wellsToSrc(*wells->c_wells(), num_cells, src);
 	    } else {
@@ -477,6 +561,9 @@ main(int argc, char** argv)
 		std::cout << "**** Warning: running gravity convection scenario, which expects a cartesian grid."
 			  << std::endl;
 	    }
+	    if (grid->c_grid()->cartdims[2] <= 1) {
+		std::cout << "**** Warning: running gravity convection scenario, which expects nz > 1." << std::endl;
+	    }
 	    std::vector<int> left_cells;
 	    left_cells.reserve(num_cells/2);
 	    const int *glob_cell = grid->c_grid()->global_cell;
@@ -501,6 +588,9 @@ main(int argc, char** argv)
 		std::cout << "**** Warning: running gravity segregation scenario, which expects a cartesian grid."
 			  << std::endl;
 	    }
+	    if (grid->c_grid()->cartdims[2] <= 1) {
+		std::cout << "**** Warning: running gravity segregation scenario, which expects nz > 1." << std::endl;
+	    }
 	    std::vector<double>& sat = state.saturation();
 	    const int *glob_cell = grid->c_grid()->global_cell;
 	    // Water on top
@@ -510,6 +600,22 @@ main(int argc, char** argv)
 		bool top = (gc / cd[0] / cd[1]) < cd[2]/2;
 		sat[2*cell] = top ? 1.0 : 0.0;
 		sat[2*cell + 1 ] = 1.0 - sat[2*cell];
+	    }
+	    break;
+	}
+    case 4:
+	{
+	    std::cout << "==== Scenario 4: water-oil contact and simple wells or sources\n";
+	    if (!use_gravity) {
+		std::cout << "**** Warning: initializing segregated water and oil zones, but gravity is zero." << std::endl;
+	    }
+	    state.initWaterOilContact(*grid->c_grid(), *props, water_oil_contact);
+	    if (wells->c_wells()) {
+		wellsToSrc(*wells->c_wells(), num_cells, src);
+	    } else {
+		double flow_per_sec = 0.01*tot_porevol/Opm::unit::day;
+		src[0] = flow_per_sec;
+		src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
 	    }
 	    break;
 	}
@@ -541,8 +647,6 @@ main(int argc, char** argv)
     // Control init.
     Opm::ImplicitTransportDetails::NRReport  rpt;
     Opm::ImplicitTransportDetails::NRControl ctrl;
-    double current_time = 0.0;
-    double total_time = stepsize*num_psteps;
     if (!use_reorder || use_segregation_split) {
         ctrl.max_it = param.getDefault("max_it", 20);
         ctrl.verbosity = param.getDefault("verbosity", 0);
@@ -580,19 +684,20 @@ main(int argc, char** argv)
     Opm::time::StopWatch total_timer;
     total_timer.start();
     std::cout << "\n\n================    Starting main simulation loop     ===============" << std::endl;
-    double aver_sats[2] = { 0.0 };
-    Opm::computeAverageSat(porevol, state.saturation(), aver_sats);
-    std::cout << "\nInitial average saturations are    " << aver_sats[0] << "    " << aver_sats[1] << std::endl;
-    for (int pstep = 0; pstep < num_psteps; ++pstep) {
-        std::cout << "\n\n---------------    Simulation step number " << pstep
-                << "    ---------------"
-                << "\n      Current time (days)     " << Opm::unit::convert::to(current_time, Opm::unit::day)
-        << "\n      Current stepsize (days) " << Opm::unit::convert::to(stepsize, Opm::unit::day)
-        << "\n      Total time (days)       " << Opm::unit::convert::to(total_time, Opm::unit::day)
-        << "\n" << std::endl;
-
+    double satvol[2] = { 0.0 };
+    double injected[2] = { 0.0 };
+    double produced[2] = { 0.0 };
+    double tot_injected[2] = { 0.0 };
+    double tot_produced[2] = { 0.0 };
+    Watercut watercut;
+    watercut.push(0.0, 0.0, 0.0);
+    Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
+    std::cout << "\nInitial saturated volumes are    " << satvol[0] << "    " << satvol[1] << std::endl;
+    for (; !simtimer.done(); ++simtimer) {
+	// Report timestep and (optionally) write state to disk.
+	simtimer.report(std::cout);
         if (output) {
-            outputState(grid->c_grid(), state, pstep, output_dir);
+            outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
         }
 
         // Solve pressure.
@@ -608,33 +713,39 @@ main(int argc, char** argv)
         std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
         ptime += pt;
 
+	// Process transport sources (to include bdy terms).
+	if (use_reorder) {
+	    Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0, reorder_src);
+	} else {
+	    clear_transport_source(tsrc);
+	    for (int cell = 0; cell < num_cells; ++cell) {
+		if (src[cell] > 0.0) {
+		    append_transport_source(cell, 2, 0, src[cell], ssrc, zdummy, tsrc);
+		} else if (src[cell] < 0.0) {
+		    append_transport_source(cell, 2, 0, src[cell], ssink, zdummy, tsrc);
+		}
+	    }
+	}
+
         // Solve transport
         transport_timer.start();
         if (use_reorder) {
-            // We must treat reorder_src here,
-            // if we are to handle anything but simple water
-            // injection, since it is expected to be
-            // equal to total outflow (if negative)
-            // and water inflow (if positive).
-            // Also, for anything but noflow boundaries,
-            // boundary flows must be accumulated into
-            // source term following the same convention.
             Opm::toWaterSat(state.saturation(), reorder_sat);
-            reorder_model.solve(&state.faceflux()[0], &reorder_src[0], stepsize, &reorder_sat[0]);
+            reorder_model.solve(&state.faceflux()[0], &reorder_src[0], simtimer.currentStepLength(), &reorder_sat[0]);
             Opm::toBothSat(reorder_sat, state.saturation());
             if (use_segregation_split) {
                 if (use_column_solver) {
-                    colsolver.solve(columns, stepsize, state.saturation());
+                    colsolver.solve(columns, simtimer.currentStepLength(), state.saturation());
                 } else {
                     std::vector<double> fluxes = state.faceflux();
                     std::fill(state.faceflux().begin(), state.faceflux().end(), 0.0);
-                    tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
+                    tsolver.solve(*grid->c_grid(), tsrc, simtimer.currentStepLength(), ctrl, state, linsolve, rpt);
                     std::cout << rpt;
                     state.faceflux() = fluxes;
                 }
             }
         } else {
-            tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
+            tsolver.solve(*grid->c_grid(), tsrc, simtimer.currentStepLength(), ctrl, state, linsolve, rpt);
             std::cout << rpt;
         }
         transport_timer.stop();
@@ -642,10 +753,38 @@ main(int argc, char** argv)
         std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
         ttime += tt;
 
-	Opm::computeAverageSat(porevol, state.saturation(), aver_sats);
-	std::cout << "\nAverage saturations are    " << aver_sats[0] << "    " << aver_sats[1] << std::endl;
+	Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
+	Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
+	tot_injected[0] += injected[0];
+	tot_injected[1] += injected[1];
+	tot_produced[0] += produced[0];
+	tot_produced[1] += produced[1];
+	std::cout.precision(5);
+	const int width = 18;
+	std::cout << "\nVolume balance report (all numbers relative to total pore volume).\n";
+	std::cout << "    Saturated volumes:     "
+		  << std::setw(width) << satvol[0]/tot_porevol
+		  << std::setw(width) << satvol[1]/tot_porevol << std::endl;
+	std::cout << "    Injected volumes:      "
+		  << std::setw(width) << injected[0]/tot_porevol
+		  << std::setw(width) << injected[1]/tot_porevol << std::endl;
+	std::cout << "    Produced volumes:      "
+		  << std::setw(width) << produced[0]/tot_porevol
+		  << std::setw(width) << produced[1]/tot_porevol << std::endl;
+	std::cout << "    Total inj volumes:     "
+		  << std::setw(width) << tot_injected[0]/tot_porevol
+		  << std::setw(width) << tot_injected[1]/tot_porevol << std::endl;
+	std::cout << "    Total prod volumes:    "
+		  << std::setw(width) << tot_produced[0]/tot_porevol
+		  << std::setw(width) << tot_produced[1]/tot_porevol << std::endl;
+	std::cout << "    In-place + prod - inj: "
+		  << std::setw(width) << (satvol[0] + tot_produced[0] - tot_injected[0])/tot_porevol
+		  << std::setw(width) << (satvol[1] + tot_produced[1] - tot_injected[1])/tot_porevol << std::endl;
+	std::cout.precision(8);
 
-        current_time += stepsize;
+	watercut.push(simtimer.currentTime() + simtimer.currentStepLength(),
+		      produced[0]/(produced[0] + produced[1]),
+		      tot_produced[0]/tot_porevol);
     }
     total_timer.stop();
 
@@ -655,7 +794,8 @@ main(int argc, char** argv)
             << "\n  Transport time: " << ttime << std::endl;
 
     if (output) {
-        outputState(grid->c_grid(), state, num_psteps, output_dir);
+        outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
+	outputWaterCut(watercut, output_dir);
     }
 
     destroy_transport_source(tsrc);

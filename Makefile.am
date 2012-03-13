@@ -50,6 +50,7 @@ opm/core/utility/cpgpreprocess/sparsetable.c            \
 opm/core/utility/cpgpreprocess/facetopology.c           \
 opm/core/utility/cpgpreprocess/uniquepoints.c           \
 opm/core/utility/miscUtilities.cpp                      \
+opm/core/utility/SimulatorTimer.cpp                     \
 opm/core/utility/StopWatch.cpp                          \
 opm/core/utility/newwells.c                             \
 opm/core/utility/writeVtkData.cpp                       \
@@ -133,6 +134,7 @@ opm/core/utility/parameters/ParameterXML.hpp            \
 opm/core/utility/parameters/tinyxml/tinystr.h           \
 opm/core/utility/parameters/tinyxml/tinyxml.h           \
 opm/core/utility/RootFinders.hpp                        \
+opm/core/utility/SimulatorTimer.hpp                     \
 opm/core/utility/SparseTable.hpp                        \
 opm/core/utility/SparseVector.hpp                       \
 opm/core/utility/StopWatch.hpp                          \
