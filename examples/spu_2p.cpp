@@ -246,6 +246,39 @@ void wellsToSrc(const Wells& wells, const int num_cells, std::vector<double>& sr
     }
 }
 
+class Watercut
+{
+public:
+    void push(double time, double fraction, double produced)
+    {
+	data_.push_back(time);
+	data_.push_back(fraction);
+	data_.push_back(produced);
+    }
+    void write(std::ostream& os) const
+    {
+	int sz = data_.size()/3;
+	for (int i = 0; i < sz; ++i) {
+	    os << data_[3*i]/Opm::unit::day << "   "
+	       << data_[3*i+1] << "   "
+	       << data_[3*i+2] << '\n';
+	}
+    }
+private:
+    std::vector<double> data_;
+};
+
+void outputWaterCut(const Watercut& watercut,
+		    const std::string& output_dir)
+{
+    // Write water cut curve.
+    std::string fname = output_dir  + "/watercut.txt";
+    std::ofstream os(fname.c_str());
+    if (!os) {
+        THROW("Failed to open " << fname);
+    }
+    watercut.write(os);
+}
 
 // --------------- Types needed to define transport solver ---------------
 
@@ -651,9 +684,15 @@ main(int argc, char** argv)
     Opm::time::StopWatch total_timer;
     total_timer.start();
     std::cout << "\n\n================    Starting main simulation loop     ===============" << std::endl;
-    double aver_sats[2] = { 0.0 };
-    Opm::computeAverageSat(porevol, state.saturation(), aver_sats);
-    std::cout << "\nInitial average saturations are    " << aver_sats[0] << "    " << aver_sats[1] << std::endl;
+    double satvol[2] = { 0.0 };
+    double injected[2] = { 0.0 };
+    double produced[2] = { 0.0 };
+    double tot_injected[2] = { 0.0 };
+    double tot_produced[2] = { 0.0 };
+    Watercut watercut;
+    watercut.push(0.0, 0.0, 0.0);
+    Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
+    std::cout << "\nInitial saturated volumes are    " << satvol[0] << "    " << satvol[1] << std::endl;
     for (; !simtimer.done(); ++simtimer) {
 	// Report timestep and (optionally) write state to disk.
 	simtimer.report(std::cout);
@@ -714,9 +753,38 @@ main(int argc, char** argv)
         std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
         ttime += tt;
 
-	// Report average saturations. TODO: make complete mass balance reports.
-	Opm::computeAverageSat(porevol, state.saturation(), aver_sats);
-	std::cout << "\nAverage saturations are    " << aver_sats[0] << "    " << aver_sats[1] << std::endl;
+	Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
+	Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
+	tot_injected[0] += injected[0];
+	tot_injected[1] += injected[1];
+	tot_produced[0] += produced[0];
+	tot_produced[1] += produced[1];
+	std::cout.precision(5);
+	const int width = 18;
+	std::cout << "\nVolume balance report (all numbers relative to total pore volume).\n";
+	std::cout << "    Saturated volumes:     "
+		  << std::setw(width) << satvol[0]/tot_porevol
+		  << std::setw(width) << satvol[1]/tot_porevol << std::endl;
+	std::cout << "    Injected volumes:      "
+		  << std::setw(width) << injected[0]/tot_porevol
+		  << std::setw(width) << injected[1]/tot_porevol << std::endl;
+	std::cout << "    Produced volumes:      "
+		  << std::setw(width) << produced[0]/tot_porevol
+		  << std::setw(width) << produced[1]/tot_porevol << std::endl;
+	std::cout << "    Total inj volumes:     "
+		  << std::setw(width) << tot_injected[0]/tot_porevol
+		  << std::setw(width) << tot_injected[1]/tot_porevol << std::endl;
+	std::cout << "    Total prod volumes:    "
+		  << std::setw(width) << tot_produced[0]/tot_porevol
+		  << std::setw(width) << tot_produced[1]/tot_porevol << std::endl;
+	std::cout << "    In-place + prod - inj: "
+		  << std::setw(width) << (satvol[0] + tot_produced[0] - tot_injected[0])/tot_porevol
+		  << std::setw(width) << (satvol[1] + tot_produced[1] - tot_injected[1])/tot_porevol << std::endl;
+	std::cout.precision(8);
+
+	watercut.push(simtimer.currentTime() + simtimer.currentStepLength(),
+		      produced[0]/(produced[0] + produced[1]),
+		      tot_produced[0]/tot_porevol);
     }
     total_timer.stop();
 
@@ -727,6 +795,7 @@ main(int argc, char** argv)
 
     if (output) {
         outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
+	outputWaterCut(watercut, output_dir);
     }
 
     destroy_transport_source(tsrc);
