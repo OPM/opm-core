@@ -14,8 +14,8 @@
 
 
 /*
-  Copyright 2011 SINTEF ICT, Applied Mathematics.
-  Copyright 2011 Statoil ASA.
+  Copyright 2011, 2012 SINTEF ICT, Applied Mathematics.
+  Copyright 2011, 2012 Statoil ASA.
 
   This file is part of the Open Porous Media Project (OPM).
 
@@ -31,13 +31,13 @@
 
   You should have received a copy of the GNU General Public License
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
- */
+*/
 
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include <opm/core/linalg/sparse_sys.h>
+//#include <opm/core/linalg/sparse_sys.h>
 #include <opm/core/linalg/LinearSolverUmfpack.hpp>
 
 // #define EXPERIMENT_ISTL
@@ -246,6 +246,9 @@ static void wellsToSrc(const Wells& wells, const int num_cells, std::vector<doub
     }
 }
 
+
+
+/// Encapsulates the watercut curves.
 class Watercut
 {
 public:
@@ -279,6 +282,8 @@ static void outputWaterCut(const Watercut& watercut,
     }
     watercut.write(os);
 }
+
+
 
 // --------------- Types needed to define transport solver ---------------
 
@@ -684,6 +689,7 @@ main(int argc, char** argv)
     Opm::time::StopWatch total_timer;
     total_timer.start();
     std::cout << "\n\n================    Starting main simulation loop     ===============" << std::endl;
+    double init_satvol[2] = { 0.0 };
     double satvol[2] = { 0.0 };
     double injected[2] = { 0.0 };
     double produced[2] = { 0.0 };
@@ -691,8 +697,9 @@ main(int argc, char** argv)
     double tot_produced[2] = { 0.0 };
     Watercut watercut;
     watercut.push(0.0, 0.0, 0.0);
-    Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
-    std::cout << "\nInitial saturated volumes are    " << satvol[0] << "    " << satvol[1] << std::endl;
+    Opm::computeSaturatedVol(porevol, state.saturation(), init_satvol);
+    std::cout << "\nInitial saturations are    " << init_satvol[0]/tot_porevol
+	      << "    " << init_satvol[1]/tot_porevol << std::endl;
     for (; !simtimer.done(); ++simtimer) {
 	// Report timestep and (optionally) write state to disk.
 	simtimer.report(std::cout);
@@ -780,6 +787,10 @@ main(int argc, char** argv)
 	std::cout << "    In-place + prod - inj: "
 		  << std::setw(width) << (satvol[0] + tot_produced[0] - tot_injected[0])/tot_porevol
 		  << std::setw(width) << (satvol[1] + tot_produced[1] - tot_injected[1])/tot_porevol << std::endl;
+	std::cout << "    Init - now - pr + inj: "
+		  << std::setw(width) << (init_satvol[0] - satvol[0] - tot_produced[0] + tot_injected[0])/tot_porevol
+		  << std::setw(width) << (init_satvol[1] - satvol[1] - tot_produced[1] + tot_injected[1])/tot_porevol
+		  << std::endl;
 	std::cout.precision(8);
 
 	watercut.push(simtimer.currentTime() + simtimer.currentStepLength(),
