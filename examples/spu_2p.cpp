@@ -37,21 +37,13 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-//#include <opm/core/linalg/sparse_sys.h>
-#include <opm/core/linalg/LinearSolverUmfpack.hpp>
-
-// #define EXPERIMENT_ISTL
-#ifdef EXPERIMENT_ISTL
-#include <opm/core/linalg/LinearSolverIstl.hpp>
-#endif
-
 #include <opm/core/pressure/IncompTpfa.hpp>
 #include <opm/core/pressure/FlowBCManager.hpp>
 
-#include <opm/core/GridManager.hpp>
 #include <opm/core/grid.h>
-#include <opm/core/WellsManager.hpp>
+#include <opm/core/GridManager.hpp>
 #include <opm/core/newwells.h>
+#include <opm/core/WellsManager.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/SimulatorTimer.hpp>
 #include <opm/core/utility/StopWatch.hpp>
@@ -63,6 +55,12 @@
 #include <opm/core/fluid/SimpleFluid2p.hpp>
 #include <opm/core/fluid/IncompPropertiesBasic.hpp>
 #include <opm/core/fluid/IncompPropertiesFromDeck.hpp>
+
+#include <opm/core/linalg/LinearSolverUmfpack.hpp>
+// #define EXPERIMENT_ISTL
+#ifdef EXPERIMENT_ISTL
+#include <opm/core/linalg/LinearSolverIstl.hpp>
+#endif
 
 #include <opm/core/transport/transport_source.h>
 #include <opm/core/transport/CSRMatrixUmfpackSolver.hpp>
@@ -223,29 +221,6 @@ static void outputState(const UnstructuredGrid& grid,
         std::copy(d.begin(), d.end(), std::ostream_iterator<double>(file, "\n"));
     }
 }
-
-/// Create a src vector equivalent to a wells structure.
-/// For this to be valid, the wells must be all rate-controlled and
-/// single-perforation.
-static void wellsToSrc(const Wells& wells, const int num_cells, std::vector<double>& src)
-{
-    src.resize(num_cells);
-    for (int w = 0; w < wells.number_of_wells; ++w) {
-	if (wells.ctrls[w]->num != 1) {
-	    THROW("In wellsToSrc(): well has more than one control.");
-	}
-	if (wells.ctrls[w]->type[0] != RATE) {
-	    THROW("In wellsToSrc(): well is BHP, not RATE.");
-	}
-	if (wells.well_connpos[w+1] - wells.well_connpos[w] != 1) {
-	    THROW("In wellsToSrc(): well has multiple perforations.");
-	}
-	const double flow = wells.ctrls[w]->target[0];
-	const double cell = wells.well_cells[wells.well_connpos[w]];
-	src[cell] = (wells.type[w] == INJECTOR) ? flow : -flow;
-    }
-}
-
 
 
 /// Encapsulates the watercut curves.
@@ -540,7 +515,7 @@ main(int argc, char** argv)
 	{
 	    std::cout << "==== Scenario 0: simple wells or single-cell source and sink.\n";
 	    if (wells->c_wells()) {
-		wellsToSrc(*wells->c_wells(), num_cells, src);
+		Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
 	    } else {
 		double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
 		src[0] = flow_per_sec;
@@ -616,7 +591,7 @@ main(int argc, char** argv)
 	    }
 	    state.initWaterOilContact(*grid->c_grid(), *props, water_oil_contact);
 	    if (wells->c_wells()) {
-		wellsToSrc(*wells->c_wells(), num_cells, src);
+		Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
 	    } else {
 		double flow_per_sec = 0.01*tot_porevol/Opm::unit::day;
 		src[0] = flow_per_sec;
