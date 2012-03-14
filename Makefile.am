@@ -53,7 +53,8 @@ opm/core/utility/miscUtilities.cpp                      \
 opm/core/utility/SimulatorTimer.cpp                     \
 opm/core/utility/StopWatch.cpp                          \
 opm/core/utility/newwells.c                             \
-opm/core/utility/writeVtkData.cpp                       \
+opm/core/utility/writeVtkData.cpp			\
+opm/core/ColumnExtract.hpp				\
 opm/core/GridManager.cpp                                \
 opm/core/WellsManager.cpp                               \
 opm/core/linalg/sparse_sys.c                            \
