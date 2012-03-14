@@ -103,38 +103,38 @@ public:
       flux_  (g->number_of_faces, 0.0),
       sat_   (2 * g->number_of_cells, 0.0)
     {
-	for (int cell = 0; cell < g->number_of_cells; ++cell) {
-	    sat_[2*cell] = init_sat;
-	    sat_[2*cell + 1] = 1.0 - init_sat;
-	}
+        for (int cell = 0; cell < g->number_of_cells; ++cell) {
+            sat_[2*cell] = init_sat;
+            sat_[2*cell + 1] = 1.0 - init_sat;
+        }
     }
 
     enum ExtremalSat { MinSat, MaxSat };
 
     void setToMinimumWaterSat(const Opm::IncompPropertiesInterface& props)
     {
-	const int n = props.numCells();
-	std::vector<int> cells(n);
-	for (int i = 0; i < n; ++i) {
-	    cells[i] = i;
-	}
-	setWaterSat(cells, props, MinSat);
+        const int n = props.numCells();
+        std::vector<int> cells(n);
+        for (int i = 0; i < n; ++i) {
+            cells[i] = i;
+        }
+        setWaterSat(cells, props, MinSat);
     }
 
     void setWaterSat(const std::vector<int>& cells,
-		     const Opm::IncompPropertiesInterface& props,
-		     ExtremalSat es)
+                     const Opm::IncompPropertiesInterface& props,
+                     ExtremalSat es)
     {
-	const int n = cells.size();
-	std::vector<double> smin(2*n);
-	std::vector<double> smax(2*n);
-	props.satRange(n, &cells[0], &smin[0], &smax[0]);
-	const double* svals = (es == MinSat) ? &smin[0] : &smax[0];
-	for (int ci = 0; ci < n; ++ci) {
-	    const int cell = cells[ci];
-	    sat_[2*cell] = svals[2*ci];
-	    sat_[2*cell + 1] = 1.0 - sat_[2*cell];
-	}
+        const int n = cells.size();
+        std::vector<double> smin(2*n);
+        std::vector<double> smax(2*n);
+        props.satRange(n, &cells[0], &smin[0], &smax[0]);
+        const double* svals = (es == MinSat) ? &smin[0] : &smax[0];
+        for (int ci = 0; ci < n; ++ci) {
+            const int cell = cells[ci];
+            sat_[2*cell] = svals[2*ci];
+            sat_[2*cell + 1] = 1.0 - sat_[2*cell];
+        }
     }
 
     // Initialize saturations so that there is water below woc,
@@ -142,30 +142,30 @@ public:
     // TODO: add 'anitialiasing', obtaining a more precise woc
     //       by f. ex. subdividing cells cut by the woc.
     void initWaterOilContact(const UnstructuredGrid& grid,
-			     const Opm::IncompPropertiesInterface& props,
-			     const double woc)
+                             const Opm::IncompPropertiesInterface& props,
+                             const double woc)
     {
-	// Find out which cells should have water and which should have oil.
-	std::vector<int> oil;
-	std::vector<int> water;
-	const int num_cells = grid.number_of_cells;
-	oil.reserve(num_cells);
-	water.reserve(num_cells);
-	const int dim = grid.dimensions;
-	for (int c = 0; c < num_cells; ++c) {
-	    const double z = grid.cell_centroids[dim*c + dim - 1];
-	    if (z > woc) {
-		// Z is depth, we put water in the deepest parts
-		// (even if oil is heavier...).
-		water.push_back(c);
-	    } else {
-		oil.push_back(c);
-	    }
-	}
+        // Find out which cells should have water and which should have oil.
+        std::vector<int> oil;
+        std::vector<int> water;
+        const int num_cells = grid.number_of_cells;
+        oil.reserve(num_cells);
+        water.reserve(num_cells);
+        const int dim = grid.dimensions;
+        for (int c = 0; c < num_cells; ++c) {
+            const double z = grid.cell_centroids[dim*c + dim - 1];
+            if (z > woc) {
+                // Z is depth, we put water in the deepest parts
+                // (even if oil is heavier...).
+                water.push_back(c);
+            } else {
+                oil.push_back(c);
+            }
+        }
 
-	// Set saturations.
-	setWaterSat(oil, props, MinSat);
-	setWaterSat(water, props, MaxSat);
+        // Set saturations.
+        setWaterSat(oil, props, MinSat);
+        setWaterSat(water, props, MaxSat);
     }
 
     int numPhases() const { return sat_.size()/press_.size(); }
@@ -229,18 +229,18 @@ class Watercut
 public:
     void push(double time, double fraction, double produced)
     {
-	data_.push_back(time);
-	data_.push_back(fraction);
-	data_.push_back(produced);
+        data_.push_back(time);
+        data_.push_back(fraction);
+        data_.push_back(produced);
     }
     void write(std::ostream& os) const
     {
-	int sz = data_.size()/3;
-	for (int i = 0; i < sz; ++i) {
-	    os << data_[3*i]/Opm::unit::day << "   "
-	       << data_[3*i+1] << "   "
-	       << data_[3*i+2] << '\n';
-	}
+        int sz = data_.size()/3;
+        for (int i = 0; i < sz; ++i) {
+            os << data_[3*i]/Opm::unit::day << "   "
+               << data_[3*i+1] << "   "
+               << data_[3*i+2] << '\n';
+        }
     }
 private:
     std::vector<double> data_;
@@ -373,7 +373,7 @@ main(int argc, char** argv)
     Opm::parameter::ParameterGroup param(argc, argv, false);
     std::cout << "---------------    Reading parameters     ---------------" << std::endl;
 
-    // Reading various control parameters.    
+    // Reading various control parameters.
     const bool guess_old_solution = param.getDefault("guess_old_solution", false);
     const bool use_reorder = param.getDefault("use_reorder", true);
     const bool output = param.getDefault("output", true);
@@ -402,22 +402,22 @@ main(int argc, char** argv)
         const int* gc = grid->c_grid()->global_cell;
         std::vector<int> global_cell(gc, gc + grid->c_grid()->number_of_cells);
         props.reset(new Opm::IncompPropertiesFromDeck(deck, global_cell));
-	// Wells init.
-	wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
-	// Timer init.
-	if (deck.hasField("TSTEP")) {
-	    simtimer.init(deck);
-	} else {
-	    simtimer.init(param);
-	}
-	// Water-oil contact.
-	if (deck.hasField("EQUIL")) {
-	    water_oil_contact = deck.getEQUIL().equil[0].water_oil_contact_depth_;
-	    woc_set = true;
-	} else if (param.has("water_oil_contact")) {
-	    water_oil_contact = param.get<double>("water_oil_contact");
-	    woc_set = true;
-	}
+        // Wells init.
+        wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
+        // Timer init.
+        if (deck.hasField("TSTEP")) {
+            simtimer.init(deck);
+        } else {
+            simtimer.init(param);
+        }
+        // Water-oil contact.
+        if (deck.hasField("EQUIL")) {
+            water_oil_contact = deck.getEQUIL().equil[0].water_oil_contact_depth_;
+            woc_set = true;
+        } else if (param.has("water_oil_contact")) {
+            water_oil_contact = param.get<double>("water_oil_contact");
+            woc_set = true;
+        }
     } else {
         // Grid init.
         const int nx = param.getDefault("nx", 100);
@@ -429,14 +429,14 @@ main(int argc, char** argv)
         grid.reset(new Opm::GridManager(nx, ny, nz, dx, dy, dz));
         // Rock and fluid init.
         props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
-	// Wells init.
-	wells.reset(new Opm::WellsManager());
-	// Timer init.
-	simtimer.init(param);
-	if (param.has("water_oil_contact")) {
-	    water_oil_contact = param.get<double>("water_oil_contact");
-	    woc_set = true;
-	}
+        // Wells init.
+        wells.reset(new Opm::WellsManager());
+        // Timer init.
+        simtimer.init(param);
+        if (param.has("water_oil_contact")) {
+            water_oil_contact = param.get<double>("water_oil_contact");
+            woc_set = true;
+        }
     }
 
     // Extra rock init.
@@ -503,7 +503,7 @@ main(int argc, char** argv)
     double init_sat = param.getDefault("init_sat", 0.0);
     ReservoirState state(grid->c_grid(), init_sat);
     if (!param.has("init_sat")) {
-	state.setToMinimumWaterSat(*props);
+        state.setToMinimumWaterSat(*props);
     }
     // We need a separate reorder_sat, because the reorder
     // code expects a scalar sw, not both sw and so.
@@ -512,97 +512,97 @@ main(int argc, char** argv)
     int scenario = param.getDefault("scenario", woc_set ? 4 : 0);
     switch (scenario) {
     case 0:
-	{
-	    std::cout << "==== Scenario 0: simple wells or single-cell source and sink.\n";
-	    if (wells->c_wells()) {
-		Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
-	    } else {
-		double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
-		src[0] = flow_per_sec;
-		src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
-	    }
-	    break;
-	}
+        {
+            std::cout << "==== Scenario 0: simple wells or single-cell source and sink.\n";
+            if (wells->c_wells()) {
+                Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
+            } else {
+                double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
+                src[0] = flow_per_sec;
+                src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
+            }
+            break;
+        }
     case 1:
-	{
-	    std::cout << "==== Scenario 1: half source, half sink.\n";
-	    double flow_per_sec = 0.1*porevol[0]/Opm::unit::day;
-	    std::fill(src.begin(), src.begin() + src.size()/2, flow_per_sec);
-	    std::fill(src.begin() + src.size()/2, src.end(), -flow_per_sec);
-	    break;
-	}
+        {
+            std::cout << "==== Scenario 1: half source, half sink.\n";
+            double flow_per_sec = 0.1*porevol[0]/Opm::unit::day;
+            std::fill(src.begin(), src.begin() + src.size()/2, flow_per_sec);
+            std::fill(src.begin() + src.size()/2, src.end(), -flow_per_sec);
+            break;
+        }
     case 2:
-	{
-	    std::cout << "==== Scenario 2: gravity convection.\n";
-	    if (!use_gravity) {
-		std::cout << "**** Warning: running gravity convection scenario, but gravity is zero." << std::endl;
-	    }
-	    if (use_deck) {
-		std::cout << "**** Warning: running gravity convection scenario, which expects a cartesian grid."
-			  << std::endl;
-	    }
-	    if (grid->c_grid()->cartdims[2] <= 1) {
-		std::cout << "**** Warning: running gravity convection scenario, which expects nz > 1." << std::endl;
-	    }
-	    std::vector<int> left_cells;
-	    left_cells.reserve(num_cells/2);
-	    const int *glob_cell = grid->c_grid()->global_cell;
-	    for (int cell = 0; cell < num_cells; ++cell) {
-		const int* cd = grid->c_grid()->cartdims;
-		const int gc = glob_cell == 0 ? cell : glob_cell[cell];
-		bool left = (gc % cd[0]) < cd[0]/2;
-		if (left) {
-		    left_cells.push_back(cell);
-		}
-	    }
-	    state.setWaterSat(left_cells, *props, ReservoirState::MaxSat);
-	    break;
-	}
+        {
+            std::cout << "==== Scenario 2: gravity convection.\n";
+            if (!use_gravity) {
+                std::cout << "**** Warning: running gravity convection scenario, but gravity is zero." << std::endl;
+            }
+            if (use_deck) {
+                std::cout << "**** Warning: running gravity convection scenario, which expects a cartesian grid."
+                          << std::endl;
+            }
+            if (grid->c_grid()->cartdims[2] <= 1) {
+                std::cout << "**** Warning: running gravity convection scenario, which expects nz > 1." << std::endl;
+            }
+            std::vector<int> left_cells;
+            left_cells.reserve(num_cells/2);
+            const int *glob_cell = grid->c_grid()->global_cell;
+            for (int cell = 0; cell < num_cells; ++cell) {
+                const int* cd = grid->c_grid()->cartdims;
+                const int gc = glob_cell == 0 ? cell : glob_cell[cell];
+                bool left = (gc % cd[0]) < cd[0]/2;
+                if (left) {
+                    left_cells.push_back(cell);
+                }
+            }
+            state.setWaterSat(left_cells, *props, ReservoirState::MaxSat);
+            break;
+        }
     case 3:
-	{
-	    std::cout << "==== Scenario 3: gravity segregation.\n";
-	    if (!use_gravity) {
-		std::cout << "**** Warning: running gravity segregation scenario, but gravity is zero." << std::endl;
-	    }
-	    if (use_deck) {
-		std::cout << "**** Warning: running gravity segregation scenario, which expects a cartesian grid."
-			  << std::endl;
-	    }
-	    if (grid->c_grid()->cartdims[2] <= 1) {
-		std::cout << "**** Warning: running gravity segregation scenario, which expects nz > 1." << std::endl;
-	    }
-	    std::vector<double>& sat = state.saturation();
-	    const int *glob_cell = grid->c_grid()->global_cell;
-	    // Water on top
-	    for (int cell = 0; cell < num_cells; ++cell) {
-		const int* cd = grid->c_grid()->cartdims;
-		const int gc = glob_cell == 0 ? cell : glob_cell[cell];
-		bool top = (gc / cd[0] / cd[1]) < cd[2]/2;
-		sat[2*cell] = top ? 1.0 : 0.0;
-		sat[2*cell + 1 ] = 1.0 - sat[2*cell];
-	    }
-	    break;
-	}
+        {
+            std::cout << "==== Scenario 3: gravity segregation.\n";
+            if (!use_gravity) {
+                std::cout << "**** Warning: running gravity segregation scenario, but gravity is zero." << std::endl;
+            }
+            if (use_deck) {
+                std::cout << "**** Warning: running gravity segregation scenario, which expects a cartesian grid."
+                          << std::endl;
+            }
+            if (grid->c_grid()->cartdims[2] <= 1) {
+                std::cout << "**** Warning: running gravity segregation scenario, which expects nz > 1." << std::endl;
+            }
+            std::vector<double>& sat = state.saturation();
+            const int *glob_cell = grid->c_grid()->global_cell;
+            // Water on top
+            for (int cell = 0; cell < num_cells; ++cell) {
+                const int* cd = grid->c_grid()->cartdims;
+                const int gc = glob_cell == 0 ? cell : glob_cell[cell];
+                bool top = (gc / cd[0] / cd[1]) < cd[2]/2;
+                sat[2*cell] = top ? 1.0 : 0.0;
+                sat[2*cell + 1 ] = 1.0 - sat[2*cell];
+            }
+            break;
+        }
     case 4:
-	{
-	    std::cout << "==== Scenario 4: water-oil contact and simple wells or sources\n";
-	    if (!use_gravity) {
-		std::cout << "**** Warning: initializing segregated water and oil zones, but gravity is zero." << std::endl;
-	    }
-	    state.initWaterOilContact(*grid->c_grid(), *props, water_oil_contact);
-	    if (wells->c_wells()) {
-		Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
-	    } else {
-		double flow_per_sec = 0.01*tot_porevol/Opm::unit::day;
-		src[0] = flow_per_sec;
-		src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
-	    }
-	    break;
-	}
+        {
+            std::cout << "==== Scenario 4: water-oil contact and simple wells or sources\n";
+            if (!use_gravity) {
+                std::cout << "**** Warning: initializing segregated water and oil zones, but gravity is zero." << std::endl;
+            }
+            state.initWaterOilContact(*grid->c_grid(), *props, water_oil_contact);
+            if (wells->c_wells()) {
+                Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
+            } else {
+                double flow_per_sec = 0.01*tot_porevol/Opm::unit::day;
+                src[0] = flow_per_sec;
+                src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
+            }
+            break;
+        }
     default:
-	{
-	    THROW("==== Scenario " << scenario << " is unknown.");
-	}
+        {
+            THROW("==== Scenario " << scenario << " is unknown.");
+        }
     }
     TransportSource* tsrc = create_transport_source(2, 2);
     double ssrc[]   = { 1.0, 0.0 };
@@ -619,9 +619,9 @@ main(int argc, char** argv)
 
     // Dirichlet boundary conditions.
     if (param.getDefault("use_pside", false)) {
-	int pside = param.get<int>("pside");
-	double pside_pressure = param.get<double>("pside_pressure");
-	bcs.pressureSide(*grid->c_grid(), Opm::FlowBCManager::Side(pside), pside_pressure);
+        int pside = param.get<int>("pside");
+        double pside_pressure = param.get<double>("pside_pressure");
+        bcs.pressureSide(*grid->c_grid(), Opm::FlowBCManager::Side(pside), pside_pressure);
     }
 
     // Control init.
@@ -674,10 +674,10 @@ main(int argc, char** argv)
     watercut.push(0.0, 0.0, 0.0);
     Opm::computeSaturatedVol(porevol, state.saturation(), init_satvol);
     std::cout << "\nInitial saturations are    " << init_satvol[0]/tot_porevol
-	      << "    " << init_satvol[1]/tot_porevol << std::endl;
+              << "    " << init_satvol[1]/tot_porevol << std::endl;
     for (; !simtimer.done(); ++simtimer) {
-	// Report timestep and (optionally) write state to disk.
-	simtimer.report(std::cout);
+        // Report timestep and (optionally) write state to disk.
+        simtimer.report(std::cout);
         if (output) {
             outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
         }
@@ -695,19 +695,19 @@ main(int argc, char** argv)
         std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
         ptime += pt;
 
-	// Process transport sources (to include bdy terms).
-	if (use_reorder) {
-	    Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0, reorder_src);
-	} else {
-	    clear_transport_source(tsrc);
-	    for (int cell = 0; cell < num_cells; ++cell) {
-		if (src[cell] > 0.0) {
-		    append_transport_source(cell, 2, 0, src[cell], ssrc, zdummy, tsrc);
-		} else if (src[cell] < 0.0) {
-		    append_transport_source(cell, 2, 0, src[cell], ssink, zdummy, tsrc);
-		}
-	    }
-	}
+        // Process transport sources (to include bdy terms).
+        if (use_reorder) {
+            Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0, reorder_src);
+        } else {
+            clear_transport_source(tsrc);
+            for (int cell = 0; cell < num_cells; ++cell) {
+                if (src[cell] > 0.0) {
+                    append_transport_source(cell, 2, 0, src[cell], ssrc, zdummy, tsrc);
+                } else if (src[cell] < 0.0) {
+                    append_transport_source(cell, 2, 0, src[cell], ssink, zdummy, tsrc);
+                }
+            }
+        }
 
         // Solve transport
         transport_timer.start();
@@ -735,42 +735,42 @@ main(int argc, char** argv)
         std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
         ttime += tt;
 
-	Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
-	Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
-	tot_injected[0] += injected[0];
-	tot_injected[1] += injected[1];
-	tot_produced[0] += produced[0];
-	tot_produced[1] += produced[1];
-	std::cout.precision(5);
-	const int width = 18;
-	std::cout << "\nVolume balance report (all numbers relative to total pore volume).\n";
-	std::cout << "    Saturated volumes:     "
-		  << std::setw(width) << satvol[0]/tot_porevol
-		  << std::setw(width) << satvol[1]/tot_porevol << std::endl;
-	std::cout << "    Injected volumes:      "
-		  << std::setw(width) << injected[0]/tot_porevol
-		  << std::setw(width) << injected[1]/tot_porevol << std::endl;
-	std::cout << "    Produced volumes:      "
-		  << std::setw(width) << produced[0]/tot_porevol
-		  << std::setw(width) << produced[1]/tot_porevol << std::endl;
-	std::cout << "    Total inj volumes:     "
-		  << std::setw(width) << tot_injected[0]/tot_porevol
-		  << std::setw(width) << tot_injected[1]/tot_porevol << std::endl;
-	std::cout << "    Total prod volumes:    "
-		  << std::setw(width) << tot_produced[0]/tot_porevol
-		  << std::setw(width) << tot_produced[1]/tot_porevol << std::endl;
-	std::cout << "    In-place + prod - inj: "
-		  << std::setw(width) << (satvol[0] + tot_produced[0] - tot_injected[0])/tot_porevol
-		  << std::setw(width) << (satvol[1] + tot_produced[1] - tot_injected[1])/tot_porevol << std::endl;
-	std::cout << "    Init - now - pr + inj: "
-		  << std::setw(width) << (init_satvol[0] - satvol[0] - tot_produced[0] + tot_injected[0])/tot_porevol
-		  << std::setw(width) << (init_satvol[1] - satvol[1] - tot_produced[1] + tot_injected[1])/tot_porevol
-		  << std::endl;
-	std::cout.precision(8);
+        Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
+        Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
+        tot_injected[0] += injected[0];
+        tot_injected[1] += injected[1];
+        tot_produced[0] += produced[0];
+        tot_produced[1] += produced[1];
+        std::cout.precision(5);
+        const int width = 18;
+        std::cout << "\nVolume balance report (all numbers relative to total pore volume).\n";
+        std::cout << "    Saturated volumes:     "
+                  << std::setw(width) << satvol[0]/tot_porevol
+                  << std::setw(width) << satvol[1]/tot_porevol << std::endl;
+        std::cout << "    Injected volumes:      "
+                  << std::setw(width) << injected[0]/tot_porevol
+                  << std::setw(width) << injected[1]/tot_porevol << std::endl;
+        std::cout << "    Produced volumes:      "
+                  << std::setw(width) << produced[0]/tot_porevol
+                  << std::setw(width) << produced[1]/tot_porevol << std::endl;
+        std::cout << "    Total inj volumes:     "
+                  << std::setw(width) << tot_injected[0]/tot_porevol
+                  << std::setw(width) << tot_injected[1]/tot_porevol << std::endl;
+        std::cout << "    Total prod volumes:    "
+                  << std::setw(width) << tot_produced[0]/tot_porevol
+                  << std::setw(width) << tot_produced[1]/tot_porevol << std::endl;
+        std::cout << "    In-place + prod - inj: "
+                  << std::setw(width) << (satvol[0] + tot_produced[0] - tot_injected[0])/tot_porevol
+                  << std::setw(width) << (satvol[1] + tot_produced[1] - tot_injected[1])/tot_porevol << std::endl;
+        std::cout << "    Init - now - pr + inj: "
+                  << std::setw(width) << (init_satvol[0] - satvol[0] - tot_produced[0] + tot_injected[0])/tot_porevol
+                  << std::setw(width) << (init_satvol[1] - satvol[1] - tot_produced[1] + tot_injected[1])/tot_porevol
+                  << std::endl;
+        std::cout.precision(8);
 
-	watercut.push(simtimer.currentTime() + simtimer.currentStepLength(),
-		      produced[0]/(produced[0] + produced[1]),
-		      tot_produced[0]/tot_porevol);
+        watercut.push(simtimer.currentTime() + simtimer.currentStepLength(),
+                      produced[0]/(produced[0] + produced[1]),
+                      tot_produced[0]/tot_porevol);
     }
     total_timer.stop();
 
@@ -781,7 +781,7 @@ main(int argc, char** argv)
 
     if (output) {
         outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
-	outputWaterCut(watercut, output_dir);
+        outputWaterCut(watercut, output_dir);
     }
 
     destroy_transport_source(tsrc);
