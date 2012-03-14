@@ -224,30 +224,7 @@ static void outputState(const UnstructuredGrid& grid,
 }
 
 
-/// Encapsulates the watercut curves.
-class Watercut
-{
-public:
-    void push(double time, double fraction, double produced)
-    {
-        data_.push_back(time);
-        data_.push_back(fraction);
-        data_.push_back(produced);
-    }
-    void write(std::ostream& os) const
-    {
-        int sz = data_.size()/3;
-        for (int i = 0; i < sz; ++i) {
-            os << data_[3*i]/Opm::unit::day << "   "
-               << data_[3*i+1] << "   "
-               << data_[3*i+2] << '\n';
-        }
-    }
-private:
-    std::vector<double> data_;
-};
-
-static void outputWaterCut(const Watercut& watercut,
+static void outputWaterCut(const Opm::Watercut& watercut,
                            const std::string& output_dir)
 {
     // Write water cut curve.
@@ -674,11 +651,11 @@ main(int argc, char** argv)
     double produced[2] = { 0.0 };
     double tot_injected[2] = { 0.0 };
     double tot_produced[2] = { 0.0 };
-    Watercut watercut;
-    watercut.push(0.0, 0.0, 0.0);
     Opm::computeSaturatedVol(porevol, state.saturation(), init_satvol);
     std::cout << "\nInitial saturations are    " << init_satvol[0]/tot_porevol
               << "    " << init_satvol[1]/tot_porevol << std::endl;
+    Opm::Watercut watercut;
+    watercut.push(0.0, 0.0, 0.0);
     for (; !simtimer.done(); ++simtimer) {
         // Report timestep and (optionally) write state to disk.
         simtimer.report(std::cout);
@@ -779,9 +756,9 @@ main(int argc, char** argv)
     total_timer.stop();
 
     std::cout << "\n\n================    End of simulation     ===============\n"
-            << "Total time taken: " << total_timer.secsSinceStart()
-            << "\n  Pressure time:  " << ptime
-            << "\n  Transport time: " << ttime << std::endl;
+              << "Total time taken: " << total_timer.secsSinceStart()
+              << "\n  Pressure time:  " << ptime
+              << "\n  Transport time: " << ttime << std::endl;
 
     if (output) {
         outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
