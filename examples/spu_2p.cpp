@@ -690,7 +690,7 @@ main(int argc, char** argv)
             }
         }
 
-        // Solve transport
+        // Solve transport.
         transport_timer.start();
         if (use_reorder) {
             Opm::toWaterSat(state.saturation(), reorder_sat);
@@ -716,6 +716,7 @@ main(int argc, char** argv)
         std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
         ttime += tt;
 
+        // Report volume balances.
         Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
         Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
         tot_injected[0] += injected[0];
