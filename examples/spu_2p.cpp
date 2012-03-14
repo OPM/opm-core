@@ -95,13 +95,14 @@
 
 
 
-class ReservoirState {
+class ReservoirState
+{
 public:
     ReservoirState(const UnstructuredGrid* g, const double init_sat = 0.0)
-    : press_ (g->number_of_cells, 0.0),
-      fpress_(g->number_of_faces, 0.0),
-      flux_  (g->number_of_faces, 0.0),
-      sat_   (2 * g->number_of_cells, 0.0)
+        : press_ (g->number_of_cells, 0.0),
+          fpress_(g->number_of_faces, 0.0),
+          flux_  (g->number_of_faces, 0.0),
+          sat_   (2 * g->number_of_cells, 0.0)
     {
         for (int cell = 0; cell < g->number_of_cells; ++cell) {
             sat_[2*cell] = init_sat;
@@ -170,21 +171,21 @@ public:
 
     int numPhases() const { return sat_.size()/press_.size(); }
 
-    ::std::vector<double>& pressure    () { return press_ ; }
-    ::std::vector<double>& facepressure() { return fpress_; }
-    ::std::vector<double>& faceflux    () { return flux_  ; }
-    ::std::vector<double>& saturation  () { return sat_   ; }
+    std::vector<double>& pressure    () { return press_ ; }
+    std::vector<double>& facepressure() { return fpress_; }
+    std::vector<double>& faceflux    () { return flux_  ; }
+    std::vector<double>& saturation  () { return sat_   ; }
 
-    const ::std::vector<double>& pressure    () const { return press_ ; }
-    const ::std::vector<double>& facepressure() const { return fpress_; }
-    const ::std::vector<double>& faceflux    () const { return flux_  ; }
-    const ::std::vector<double>& saturation  () const { return sat_   ; }
+    const std::vector<double>& pressure    () const { return press_ ; }
+    const std::vector<double>& facepressure() const { return fpress_; }
+    const std::vector<double>& faceflux    () const { return flux_  ; }
+    const std::vector<double>& saturation  () const { return sat_   ; }
 
 private:
-    ::std::vector<double> press_ ;
-    ::std::vector<double> fpress_;
-    ::std::vector<double> flux_  ;
-    ::std::vector<double> sat_   ;
+    std::vector<double> press_ ;
+    std::vector<double> fpress_;
+    std::vector<double> flux_  ;
+    std::vector<double> sat_   ;
 };
 
 
@@ -475,16 +476,16 @@ main(int argc, char** argv)
 #endif // EXPERIMENT_ISTL
     const double *grav = use_gravity ? &gravity[0] : 0;
     Opm::IncompTpfa psolver(*grid->c_grid(), props->permeability(), grav, linsolver);
+    // Reordering solver.
+    const double nltol = param.getDefault("nl_tolerance", 1e-9);
+    const int maxit = param.getDefault("nl_maxiter", 30);
+    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), &porevol[0], *props, nltol, maxit);
     // Non-reordering solver.
     TransportModel  model  (fluid, *grid->c_grid(), porevol, grav, guess_old_solution);
     if (use_gravity) {
         model.initGravityTrans(*grid->c_grid(), psolver.getHalfTrans());
     }
     TransportSolver tsolver(model);
-    // Reordering solver.
-    const double nltol = param.getDefault("nl_tolerance", 1e-9);
-    const int maxit = param.getDefault("nl_maxiter", 30);
-    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), &porevol[0], *props, nltol, maxit);
     // Column-based gravity segregation solver.
     typedef std::map<int, std::vector<int> > ColMap;
     ColMap columns;
@@ -518,8 +519,11 @@ main(int argc, char** argv)
                 Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
             } else {
                 double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
+                if (param.has("injection_rate_per_day")) {
+                    flow_per_sec = param.get<double>("injection_rate_per_day")/Opm::unit::day;
+                }
                 src[0] = flow_per_sec;
-                src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
+                src[num_cells - 1] = -flow_per_sec;
             }
             break;
         }
