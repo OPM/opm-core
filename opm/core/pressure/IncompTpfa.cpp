@@ -59,7 +59,7 @@ namespace Opm
 	// gpress_omegaweighted_ is sent to assembler always, and it dislikes
 	// getting a zero pointer.
 	gpress_omegaweighted_.resize(g.cell_facepos[ g.number_of_cells ], 0.0);
-	h_ = ifs_tpfa_construct(gg);
+	h_ = ifs_tpfa_construct(gg, 0);
     }
 
 
@@ -118,9 +118,11 @@ namespace Opm
 	pressure.resize(grid_.number_of_cells);
 	faceflux.resize(grid_.number_of_faces);
 
-	ifs_tpfa_press_flux(gg, &F, &trans_[0], h_,
-			    &pressure[0],
-			    &faceflux[0]);
+        ifs_tpfa_solution soln = { 0 };
+        soln.cell_press = &pressure[0];
+        soln.face_flux  = &faceflux[0];
+
+        ifs_tpfa_press_flux(gg, &F, &trans_[0], h_, &soln);
     }
 
 

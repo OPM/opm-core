@@ -137,11 +137,11 @@ namespace Opm
     int Tag::indent_ = 0;
 
 
-    void writeVtkData(const UnstructuredGrid* grid,
+    void writeVtkData(const UnstructuredGrid& grid,
 		      const DataMap& data,
 		      std::ostream& os)
     {
-	if (grid->dimensions != 3) {
+	if (grid.dimensions != 3) {
 	    THROW("Vtk output for 3d grids only");
 	}
 	os.precision(12);
@@ -150,8 +150,8 @@ namespace Opm
 	pm["type"] = "UnstructuredGrid";
 	Tag vtkfiletag("VTKFile", pm, os);
 	Tag ugtag("UnstructuredGrid", os);
-	int num_pts = grid->number_of_nodes;
-	int num_cells = grid->number_of_cells;
+	int num_pts = grid.number_of_nodes;
+	int num_cells = grid.number_of_cells;
 	pm.clear();
 	pm["NumberOfPoints"] = boost::lexical_cast<std::string>(num_pts);
 	pm["NumberOfCells"] = boost::lexical_cast<std::string>(num_cells);
@@ -166,9 +166,9 @@ namespace Opm
 	    Tag datag("DataArray", pm, os);
 	    for (int i = 0; i < num_pts; ++i) {
 		Tag::indent(os);
-		os << grid->node_coordinates[3*i + 0] << ' '
-		   << grid->node_coordinates[3*i + 1] << ' '
-		   << grid->node_coordinates[3*i + 2] << '\n';
+		os << grid.node_coordinates[3*i + 0] << ' '
+		   << grid.node_coordinates[3*i + 1] << ' '
+		   << grid.node_coordinates[3*i + 2] << '\n';
 	    }
 	}
 	{
@@ -185,10 +185,10 @@ namespace Opm
 		int hf = 0;
 		for (int c = 0; c < num_cells; ++c) {
 		    std::set<int> cell_pts;
-		    for (; hf < grid->cell_facepos[c+1]; ++hf) {
-			int f = grid->cell_faces[hf];
-			const int* fnbeg = grid->face_nodes + grid->face_nodepos[f];
-			const int* fnend = grid->face_nodes + grid->face_nodepos[f+1];
+		    for (; hf < grid.cell_facepos[c+1]; ++hf) {
+			int f = grid.cell_faces[hf];
+			const int* fnbeg = grid.face_nodes + grid.face_nodepos[f];
+			const int* fnend = grid.face_nodes + grid.face_nodepos[f+1];
 			cell_pts.insert(fnbeg, fnend);
 		    }
 		    cell_numpts.push_back(cell_pts.size());
@@ -220,21 +220,21 @@ namespace Opm
 	    {
 		pm["Name"] = "faces";
 		Tag t("DataArray", pm, os);
-		const int* fp = grid->cell_facepos;
+		const int* fp = grid.cell_facepos;
 		int offset = 0;
 		for (int c = 0; c < num_cells; ++c) {
 		    Tag::indent(os);
 		    os << fp[c+1] - fp[c] << '\n';
 		    ++offset;
 		    for (int hf = fp[c]; hf < fp[c+1]; ++hf) {
-			int f = grid->cell_faces[hf];
-			const int* np = grid->face_nodepos;
+			int f = grid.cell_faces[hf];
+			const int* np = grid.face_nodepos;
 			int f_num_pts = np[f+1] - np[f];
 			Tag::indent(os);
 			os << f_num_pts << ' ';
 			++offset;
-			std::copy(grid->face_nodes + np[f],
-				  grid->face_nodes + np[f+1],
+			std::copy(grid.face_nodes + np[f],
+				  grid.face_nodes + np[f+1],
 				  std::ostream_iterator<int>(os, " "));
 			os << '\n';
 			offset += f_num_pts;
@@ -290,7 +290,7 @@ namespace Opm
 	    for (DataMap::const_iterator dit = data.begin(); dit != data.end(); ++dit) {
 		pm["Name"] = dit->first;
 		const std::vector<double>& field = *(dit->second);
-		const int num_comps = field.size()/grid->number_of_cells;
+		const int num_comps = field.size()/grid.number_of_cells;
 		pm["NumberOfComponents"] = boost::lexical_cast<std::string>(num_comps);
 		Tag ptag("DataArray", pm, os);
 		const int num_per_line = num_comps == 1 ? 5 : num_comps;

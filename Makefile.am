@@ -50,9 +50,10 @@ opm/core/utility/cpgpreprocess/sparsetable.c            \
 opm/core/utility/cpgpreprocess/facetopology.c           \
 opm/core/utility/cpgpreprocess/uniquepoints.c           \
 opm/core/utility/miscUtilities.cpp                      \
+opm/core/utility/SimulatorTimer.cpp                     \
 opm/core/utility/StopWatch.cpp                          \
 opm/core/utility/newwells.c                             \
-opm/core/utility/writeVtkData.cpp                       \
+opm/core/utility/writeVtkData.cpp			\
 opm/core/GridManager.cpp                                \
 opm/core/WellsManager.cpp                               \
 opm/core/linalg/sparse_sys.c                            \
@@ -133,6 +134,7 @@ opm/core/utility/parameters/ParameterXML.hpp            \
 opm/core/utility/parameters/tinyxml/tinystr.h           \
 opm/core/utility/parameters/tinyxml/tinyxml.h           \
 opm/core/utility/RootFinders.hpp                        \
+opm/core/utility/SimulatorTimer.hpp                     \
 opm/core/utility/SparseTable.hpp                        \
 opm/core/utility/SparseVector.hpp                       \
 opm/core/utility/StopWatch.hpp                          \
@@ -158,6 +160,7 @@ opm/core/linalg/LinearSolverInterface.hpp               \
 opm/core/grid.h                                         \
 opm/core/well.h                                         \
 opm/core/newwells.h                                     \
+opm/core/ColumnExtract.hpp				\
 opm/core/GridAdapter.hpp                                \
 opm/core/GridManager.hpp                                \
 opm/core/WellsManager.hpp                               \

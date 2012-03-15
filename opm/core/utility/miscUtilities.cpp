@@ -18,6 +18,10 @@
 */
 
 #include <opm/core/utility/miscUtilities.hpp>
+#include <opm/core/utility/Units.hpp>
+#include <opm/core/grid.h>
+#include <opm/core/newwells.h>
+#include <opm/core/fluid/IncompPropertiesInterface.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <algorithm>
 #include <functional>
@@ -45,8 +49,33 @@ namespace Opm
     }
 
 
+    /// @brief Computes total saturated volumes over all grid cells.
+    /// @param[in]  pv        the pore volume by cell.
+    /// @param[in]  s         saturation values (for all P phases)
+    /// @param[out] sat_vol   must point to a valid array with P elements,
+    ///                       where P = s.size()/pv.size().
+    ///                       For each phase p, we compute
+    ///                       sat_vol_p = sum_i s_p_i pv_i
+    void computeSaturatedVol(const std::vector<double>& pv,
+			     const std::vector<double>& s,
+			     double* sat_vol)
+    {
+	const int num_cells = pv.size();
+	const int np = s.size()/pv.size();
+	if (int(s.size()) != num_cells*np) {
+	    THROW("Sizes of s and pv vectors do not match.");
+	}
+	std::fill(sat_vol, sat_vol + np, 0.0);
+	for (int c = 0; c < num_cells; ++c) {
+	    for (int p = 0; p < np; ++p) {
+		sat_vol[p] += pv[c]*s[np*c + p];
+	    }
+	}
+    }
+
+
     /// @brief Computes average saturations over all grid cells.
-    /// @param[out] pv        the pore volume by cell.
+    /// @param[in]  pv        the pore volume by cell.
     /// @param[in]  s         saturation values (for all P phases)
     /// @param[out] aver_sat  must point to a valid array with P elements,
     ///                       where P = s.size()/pv.size().
@@ -78,6 +107,54 @@ namespace Opm
     }
 
 
+    /// @brief Computes injected and produced volumes of all phases.
+    /// Note 1: assumes that only the first phase is injected.
+    /// Note 2: assumes that transport has been done with an
+    ///         implicit method, i.e. that the current state
+    ///         gives the mobilities used for the preceding timestep.
+    /// @param[in]  props     fluid and rock properties.
+    /// @param[in]  s         saturation values (for all P phases)
+    /// @param[in]  src       if < 0: total outflow, if > 0: first phase inflow.
+    /// @param[in]  dt        timestep used
+    /// @param[out] injected  must point to a valid array with P elements,
+    ///                       where P = s.size()/src.size().
+    /// @param[out] produced  must also point to a valid array with P elements.
+    void computeInjectedProduced(const IncompPropertiesInterface& props,
+				 const std::vector<double>& s,
+				 const std::vector<double>& src,
+				 const double dt,
+				 double* injected,
+				 double* produced)
+    {
+	const int num_cells = src.size();
+	const int np = s.size()/src.size();
+	if (int(s.size()) != num_cells*np) {
+	    THROW("Sizes of s and src vectors do not match.");
+	}
+	std::fill(injected, injected + np, 0.0);
+	std::fill(produced, produced + np, 0.0);
+	const double* visc = props.viscosity();
+	std::vector<double> mob(np);
+	for (int c = 0; c < num_cells; ++c) {
+	    if (src[c] > 0.0) {
+		injected[0] += src[c]*dt;
+	    } else if (src[c] < 0.0) {
+		const double flux = -src[c]*dt;
+		const double* sat = &s[np*c];
+		props.relperm(1, sat, &c, &mob[0], 0);
+		double totmob = 0.0;
+		for (int p = 0; p < np; ++p) {
+		    mob[p] /= visc[p];
+		    totmob += mob[p];
+		}
+		for (int p = 0; p < np; ++p) {
+		    produced[p] += (mob[p]/totmob)*flux;
+		}
+	    }
+	}
+    }
+
+
 
     /// @brief Computes total mobility for a set of saturation values.
     /// @param[in]  props     rock and fluid properties
@@ -89,19 +166,20 @@ namespace Opm
 			      const std::vector<double>& s,
 			      std::vector<double>& totmob)
     {
-	int num_cells = cells.size();
-	int num_phases = props.numPhases();
-	totmob.resize(num_cells);
-	ASSERT(int(s.size()) == num_cells*num_phases);
-	std::vector<double> kr(num_cells*num_phases);
-	props.relperm(num_cells, &s[0], &cells[0], &kr[0], 0);
-	const double* mu = props.viscosity();
-	for (int cell = 0; cell < num_cells; ++cell) {
-	    totmob[cell] = 0;
-	    for (int phase = 0; phase < num_phases; ++phase) {	
-		totmob[cell] += kr[num_phases*cell + phase]/mu[phase];
-	    }
-	}
+        std::vector<double> pmobc;
+
+        computePhaseMobilities(props, cells, s, pmobc);
+
+        const std::size_t                 np = props.numPhases();
+        const std::vector<int>::size_type nc = cells.size();
+
+        std::vector<double>(cells.size(), 0.0).swap(totmob);
+
+        for (std::vector<int>::size_type c = 0; c < nc; ++c) {
+            for (std::size_t p = 0; p < np; ++p) {
+                totmob[ c ] += pmobc[c*np + p];
+            }
+        }
     }
 
 
@@ -118,25 +196,89 @@ namespace Opm
 				   std::vector<double>& totmob,
 				   std::vector<double>& omega)
     {
-	int num_cells = cells.size();
-	int num_phases = props.numPhases();
-	totmob.resize(num_cells);
-	omega.resize(num_cells);
-	ASSERT(int(s.size()) == num_cells*num_phases);
-	std::vector<double> kr(num_cells*num_phases);
-	props.relperm(num_cells, &s[0], &cells[0], &kr[0], 0);
-	const double* mu = props.viscosity();
-	for (int cell = 0; cell < num_cells; ++cell) {
-	    totmob[cell] = 0.0;
-	    for (int phase = 0; phase < num_phases; ++phase) {	
-		totmob[cell] += kr[num_phases*cell + phase]/mu[phase];
-	    }
-	}
-	const double* rho = props.density();
-	for (int cell = 0; cell < num_cells; ++cell) {
-	    omega[cell] = 0.0;
-	    for (int phase = 0; phase < num_phases; ++phase) {	
-		omega[cell] += rho[phase]*(kr[num_phases*cell + phase]/mu[phase])/totmob[cell];
+        std::vector<double> pmobc;
+
+        computePhaseMobilities(props, cells, s, pmobc);
+
+        const std::size_t                 np = props.numPhases();
+        const std::vector<int>::size_type nc = cells.size();
+
+        std::vector<double>(cells.size(), 0.0).swap(totmob);
+        std::vector<double>(cells.size(), 0.0).swap(omega );
+
+        const double* rho = props.density();
+        for (std::vector<int>::size_type c = 0; c < nc; ++c) {
+            for (std::size_t p = 0; p < np; ++p) {
+                totmob[ c ] += pmobc[c*np + p];
+                omega [ c ] += pmobc[c*np + p] * rho[ p ];
+            }
+
+            omega[ c ] /= totmob[ c ];
+        }
+    }
+
+    void computePhaseMobilities(const Opm::IncompPropertiesInterface& props,
+                                const std::vector<int>&               cells,
+                                const std::vector<double>&            s    ,
+                                std::vector<double>&                  pmobc)
+    {
+        const std::vector<int>::size_type nc = cells.size();
+        const std::size_t                 np = props.numPhases();
+
+        ASSERT (s.size() == nc * np);
+
+        std::vector<double>(nc * np, 0.0).swap(pmobc );
+        double*                                dpmobc = 0;
+        props.relperm(static_cast<const int>(nc), &s[0], &cells[0],
+                      &pmobc[0], dpmobc);
+
+        const double*                 mu  = props.viscosity();
+        std::vector<double>::iterator lam = pmobc.begin();
+        for (std::vector<int>::size_type c = 0; c < nc; ++c) {
+            for (std::size_t p = 0; p < np; ++p, ++lam) {
+                *lam /= mu[ p ];
+            }
+        }
+    }
+
+    /// Compute two-phase transport source terms from face fluxes,
+    /// and pressure equation source terms. This puts boundary flows
+    /// into the source terms for the transport equation.
+    /// \param[in]  grid          The grid used.
+    /// \param[in]  src           Pressure eq. source terms. The sign convention is:
+    ///                           (+) positive  total inflow (positive velocity divergence)
+    ///                           (-) negative  total outflow
+    /// \param[in]  faceflux      Signed face fluxes, typically the result from a flow solver.
+    /// \param[in]  inflow_frac   Fraction of inflow that consists of first phase.
+    ///                           Example: if only water is injected, inflow_frac == 1.0.
+    ///                           Note: it is not possible (with this method) to use different fractions
+    ///                           for different inflow sources, be they source terms of boundary flows.
+    /// \param[out] transport_src The transport source terms. They are to be interpreted depending on sign:
+    ///                           (+) positive  inflow of first phase (water)
+    ///                           (-) negative  total outflow of both phases
+    void computeTransportSource(const UnstructuredGrid& grid,
+				const std::vector<double>& src,
+				const std::vector<double>& faceflux,
+				const double inflow_frac,
+				std::vector<double>& transport_src)
+    {
+	int nc = grid.number_of_cells;
+	transport_src.resize(nc);
+	for (int c = 0; c < nc; ++c) {
+	    transport_src[c] = 0.0;
+	    transport_src[c] += src[c] > 0.0 ? inflow_frac*src[c] : src[c];
+	    for (int hf = grid.cell_facepos[c]; hf < grid.cell_facepos[c + 1]; ++hf) {
+		int f = grid.cell_faces[hf];
+		const int* f2c = &grid.face_cells[2*f];
+		double bdy_influx = 0.0;
+		if (f2c[0] == c && f2c[1] == -1) {
+		    bdy_influx = -faceflux[f];
+		} else if (f2c[0] == -1 && f2c[1] == c) {
+		    bdy_influx = faceflux[f];
+		}
+		if (bdy_influx != 0.0) {
+		    transport_src[c] += bdy_influx > 0.0 ? inflow_frac*bdy_influx : bdy_influx;
+		}
 	    }
 	}
     }
@@ -195,6 +337,44 @@ namespace Opm
     }
 
 
+    /// Create a src vector equivalent to a wells structure.
+    /// For this to be valid, the wells must be all rate-controlled and
+    /// single-perforation.
+    void wellsToSrc(const Wells& wells, const int num_cells, std::vector<double>& src)
+    {
+	src.resize(num_cells);
+	for (int w = 0; w < wells.number_of_wells; ++w) {
+	    if (wells.ctrls[w]->num != 1) {
+		THROW("In wellsToSrc(): well has more than one control.");
+	    }
+	    if (wells.ctrls[w]->type[0] != RATE) {
+		THROW("In wellsToSrc(): well is BHP, not RATE.");
+	    }
+	    if (wells.well_connpos[w+1] - wells.well_connpos[w] != 1) {
+		THROW("In wellsToSrc(): well has multiple perforations.");
+	    }
+	    const double flow = wells.ctrls[w]->target[0];
+	    const double cell = wells.well_cells[wells.well_connpos[w]];
+	    src[cell] = (wells.type[w] == INJECTOR) ? flow : -flow;
+	}
+    }
+
+    void Watercut::push(double time, double fraction, double produced)
+    {
+        data_.push_back(time);
+        data_.push_back(fraction);
+        data_.push_back(produced);
+    }
+
+    void Watercut::write(std::ostream& os) const
+    {
+        int sz = data_.size()/3;
+        for (int i = 0; i < sz; ++i) {
+            os << data_[3*i]/Opm::unit::day << "   "
+               << data_[3*i+1] << "   "
+               << data_[3*i+2] << '\n';
+        }
+    }
 
 
 } // namespace Opm
