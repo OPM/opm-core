@@ -356,11 +356,13 @@ main(int argc, char** argv)
     const bool use_reorder = param.getDefault("use_reorder", true);
     const bool output = param.getDefault("output", true);
     std::string output_dir;
+    int output_interval = 1;
     if (output) {
         output_dir = param.getDefault("output_dir", std::string("output"));
         // Ensure that output dir exists
         boost::filesystem::path fpath(output_dir);
         create_directories(fpath);
+        output_interval = param.getDefault("output_interval", output_interval);
     }
 
     // If we have a "deck_filename", grid and props will be read from that.
@@ -659,7 +661,7 @@ main(int argc, char** argv)
     for (; !simtimer.done(); ++simtimer) {
         // Report timestep and (optionally) write state to disk.
         simtimer.report(std::cout);
-        if (output) {
+        if (output && (simtimer.currentStepNum() % output_interval == 0)) {
             outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
         }
 
@@ -696,6 +698,7 @@ main(int argc, char** argv)
             Opm::toWaterSat(state.saturation(), reorder_sat);
             reorder_model.solve(&state.faceflux()[0], &reorder_src[0], simtimer.currentStepLength(), &reorder_sat[0]);
             Opm::toBothSat(reorder_sat, state.saturation());
+            Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
             if (use_segregation_split) {
                 if (use_column_solver) {
                     colsolver.solve(columns, simtimer.currentStepLength(), state.saturation());
@@ -710,6 +713,7 @@ main(int argc, char** argv)
         } else {
             tsolver.solve(*grid->c_grid(), tsrc, simtimer.currentStepLength(), ctrl, state, linsolve, rpt);
             std::cout << rpt;
+            Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
         }
         transport_timer.stop();
         double tt = transport_timer.secsSinceStart();
@@ -718,7 +722,7 @@ main(int argc, char** argv)
 
         // Report volume balances.
         Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
-        Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
+        // Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
         tot_injected[0] += injected[0];
         tot_injected[1] += injected[1];
         tot_produced[0] += produced[0];
