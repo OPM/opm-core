@@ -91,7 +91,7 @@ namespace Opm
 	    iterations_used = 0;
 	    // In every iteraton, x1 is the last point computed,
 	    // and x0 is the last point computed that makes it a bracket.
-	    while (fabs(x1 - x0) >= 1e-2*eps) {
+	    while (fabs(x1 - x0) >= 1e-9*eps) {
 		double xnew = regulaFalsiStep(x0, x1, f0, f1);
 		double fnew = f(xnew);
 // 		cout << "xnew = " << xnew << "    fnew = " << fnew << endl;
