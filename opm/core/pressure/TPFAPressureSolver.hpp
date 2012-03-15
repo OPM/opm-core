@@ -67,7 +67,7 @@ public:
         // well_t* w = 0;
 
         // Initialize data.
-        data_ = ifs_tpfa_construct(grid_.c_grid());
+        data_ = ifs_tpfa_construct(grid_.c_grid(), 0);
         if (!data_) {
             throw std::runtime_error("Failed to initialize ifs_tpfa solver.");
         }
