@@ -709,7 +709,7 @@ main(int argc, char** argv)
             if (use_segregation_split) {
                 if (use_column_solver) {
                     if (use_gauss_seidel_gravity) {
-                        reorder_model.solveGravity(columns, simtimer.currentStepLength(), &reorder_sat[0]);
+                        reorder_model.solveGravity(columns, simtimer.currentStepLength(), reorder_sat);
                         Opm::toBothSat(reorder_sat, state.saturation());
                     } else {
                         colsolver.solve(columns, simtimer.currentStepLength(), state.saturation());
