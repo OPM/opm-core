@@ -209,8 +209,13 @@ public:
         cell_pressures.resize(num_cells, 0.0);
         face_fluxes.clear();
         face_fluxes.resize(num_faces, 0.0);
+
+        ifs_tpfa_solution soln;
+        soln.cell_press = &cell_pressures[0];
+        soln.face_flux  = &face_fluxes   [0];
+
         ifs_tpfa_press_flux(grid_.c_grid(), &forces_, &eff_trans_[0],
-                            data_, &cell_pressures[0], &face_fluxes[0]);
+                            data_, &soln);
     }
 
     /// @brief

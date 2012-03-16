@@ -34,6 +34,7 @@ extern "C" {
 #define MAT_SIZE_T int
 #endif
 
+
 /* C <- a1*op(A)*op(B) + a2*C  where  op(X) in {X, X.'} */
 void dgemm_(const char *transA  , const char *transB   ,
             const MAT_SIZE_T*  m, const MAT_SIZE_T* n  , const MAT_SIZE_T* k  ,
@@ -78,6 +79,18 @@ void dgtsv_(const MAT_SIZE_T *n    ,
                   double     *D    ,
                   double     *DU   ,
                   double     *B    ,
+            const MAT_SIZE_T *ldb  ,
+            MAT_SIZE_T       *info);
+
+/* B <- A \ B, band matrix A stored in AB with kl subdiagonals, ku superdiagonals */
+void dgbsv_(const MAT_SIZE_T *n    ,
+            const MAT_SIZE_T *kl   ,
+            const MAT_SIZE_T *ku   ,
+            const MAT_SIZE_T *nrhs ,
+            double     *AB   ,
+            const MAT_SIZE_T *ldab ,
+            MAT_SIZE_T *ipiv ,
+            double     *B    ,
             const MAT_SIZE_T *ldb  ,
             MAT_SIZE_T       *info);
 

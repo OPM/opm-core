@@ -74,12 +74,15 @@ namespace Opm
 				    const std::vector<T>& yv,
 				    double x)
     {
-	double epsilon = 1e-4; // @@ Ad hoc, should choose based on xv.
-	double x_low = std::max(xv[0], x - epsilon);
-	double x_high = std::min(xv.back(), x + epsilon);
-	T low = linearInterpolation(xv, yv, x_low);
-	T high = linearInterpolation(xv, yv, x_high);
-	return (high - low)/(x_high - x_low);
+	std::vector<double>::const_iterator lb = std::lower_bound(xv.begin(), xv.end(), x);
+	int lb_ix = lb - xv.begin();
+	if (lb_ix == 0) {
+	    return 0.;
+	} else if (lb_ix == int(xv.size())) {
+	    return 0.;
+	} else {
+	    return (yv[lb_ix] - yv[lb_ix - 1])/(xv[lb_ix] - xv[lb_ix - 1]);
+	}
     }
 
 
