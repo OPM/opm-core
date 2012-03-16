@@ -439,10 +439,14 @@ main(int argc, char** argv)
     }
     bool use_segregation_split = false;
     bool use_column_solver = false;
+    bool use_gauss_seidel_gravity = false;
     if (use_gravity && use_reorder) {
         use_segregation_split = param.getDefault("use_segregation_split", use_segregation_split);
         if (use_segregation_split) {
             use_column_solver = param.getDefault("use_column_solver", use_column_solver);
+            if (use_column_solver) {
+                use_gauss_seidel_gravity = param.getDefault("use_gauss_seidel_gravity", use_gauss_seidel_gravity);
+            }
         }
     }
 
@@ -459,6 +463,9 @@ main(int argc, char** argv)
     const double nltol = param.getDefault("nl_tolerance", 1e-9);
     const int maxit = param.getDefault("nl_maxiter", 30);
     Opm::TransportModelTwophase reorder_model(*grid->c_grid(), &porevol[0], *props, nltol, maxit);
+    if (use_gauss_seidel_gravity) {
+        reorder_model.initGravity(grav);
+    }
     // Non-reordering solver.
     TransportModel  model  (fluid, *grid->c_grid(), porevol, grav, guess_old_solution);
     if (use_gravity) {
@@ -701,7 +708,12 @@ main(int argc, char** argv)
             Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
             if (use_segregation_split) {
                 if (use_column_solver) {
-                    colsolver.solve(columns, simtimer.currentStepLength(), state.saturation());
+                    if (use_gauss_seidel_gravity) {
+                        reorder_model.solveGravity(columns, simtimer.currentStepLength(), &reorder_sat[0]);
+                        Opm::toBothSat(reorder_sat, state.saturation());
+                    } else {
+                        colsolver.solve(columns, simtimer.currentStepLength(), state.saturation());
+                    }
                 } else {
                     std::vector<double> fluxes = state.faceflux();
                     std::fill(state.faceflux().begin(), state.faceflux().end(), 0.0);
