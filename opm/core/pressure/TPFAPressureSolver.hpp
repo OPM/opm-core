@@ -210,7 +210,7 @@ public:
         face_fluxes.clear();
         face_fluxes.resize(num_faces, 0.0);
 
-        ifs_tpfa_solution soln;
+        ifs_tpfa_solution soln = { 0 };
         soln.cell_press = &cell_pressures[0];
         soln.face_flux  = &face_fluxes   [0];
 
