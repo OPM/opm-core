@@ -29,6 +29,7 @@ opm/core/fluid/IncompPropertiesFromDeck.cpp             \
 opm/core/fluid/PvtPropertiesBasic.cpp                   \
 opm/core/fluid/PvtPropertiesIncompFromDeck.cpp          \
 opm/core/fluid/RockBasic.cpp                            \
+opm/core/fluid/RockCompressibility.cpp                  \
 opm/core/fluid/RockFromDeck.cpp                         \
 opm/core/fluid/SaturationPropsBasic.cpp                 \
 opm/core/fluid/SaturationPropsFromDeck.cpp              \
@@ -107,6 +108,7 @@ opm/core/fluid/IncompPropertiesFromDeck.hpp             \
 opm/core/fluid/PvtPropertiesBasic.hpp                   \
 opm/core/fluid/PvtPropertiesIncompFromDeck.hpp          \
 opm/core/fluid/RockBasic.hpp                            \
+opm/core/fluid/RockCompressibility.hpp                  \
 opm/core/fluid/RockFromDeck.hpp                         \
 opm/core/fluid/SaturationPropsBasic.hpp                 \
 opm/core/fluid/SaturationPropsFromDeck.hpp              \
