@@ -21,6 +21,26 @@
 #include <iostream>
 #include <vector>
 
+namespace {
+    struct BandMatrixCoeff
+    {
+        BandMatrixCoeff(int N, int ku, int kl) : N_(N), ku_(ku), kl_(kl), nrow_(2*kl + ku + 1) {
+        }
+
+
+        // compute the position where to store the coefficient of a matrix A_{i,j} (i,j=0,...,N-1)
+        // in a array which is sent to the band matrix solver of LAPACK.
+
+        int operator ()(int i, int j) {
+            return kl_ + ku_ + i - j + j*nrow_;
+        }
+
+        const int ku_;
+        const int kl_;
+        const int nrow_;
+        const int N_;
+    };
+} //end anonymous namespace
 
 int main()
 {
@@ -43,11 +63,11 @@ int main()
     }
 
     //test of dgbsv_
-    const int kl = 1;
-    const int ku = 1;
-    const int nrowAB = 2*kl + ku + 1;
-    const int ldb = N;    
-    const int ldab = nrowAB;
+    int kl = 1;
+    int ku = 1;
+    int nrowAB = 2*kl + ku + 1;
+    int ldb = N;
+    int ldab = nrowAB;
     int ipiv;
     std::vector<double> AB(nrowAB*N, 0.);
     std::vector<double> BB(N, 0.);
@@ -64,14 +84,7 @@ int main()
     BB[2] = 2.6;
     BB[3] = 0.6;
     BB[4] = 2.7;
-    std::vector<double>::iterator it;
-    
-    std::cout << "myvector contains:";
-    for ( it=AB.begin() ; it < AB.end(); it++ ) {
-        std::cout << " " << *it;
-    }
-    
-    std::cout << std::endl;
+
 
     dgbsv_(&N, &kl, &ku, &nrhs, &AB[0], &ldab, &ipiv, &BB[0], &ldb, &info);
     if (info == 0) {
@@ -82,5 +95,43 @@ int main()
     } else {
 	std::cerr << "Something went wrong in dgbsv_()\n";
     }
+
+    int NN = 3;
+    kl = 1;
+    ku = 1;
+    nrowAB = 2*kl + ku + 1;
+    ldb = NN;
+    ldab = nrowAB;
+    AB.assign(NN*nrowAB, 0.);
+    BB.assign(NN, 0.);
+    BandMatrixCoeff bmc(NN, ku, kl);
+    AB[bmc(0, 0)] = 1.;
+    AB[bmc(1, 0)] = 1.;
+    AB[bmc(0, 1)] = 1.;
+    AB[bmc(1, 1)] = 2.;
+    AB[bmc(2, 1)] = 2.;
+    AB[bmc(1, 2)] = 1.;
+    AB[bmc(2, 2)] = 4.;
+    BB[0] = 3.;
+    BB[1] = 8.;
+    BB[2] = 16.;
+
+    // std::vector<double>::iterator it;
+    // std::cout << "myvector contains:";
+    // for ( it=AB.begin() ; it < AB.end(); it++ ) {
+    //     std::cout << " " << *it;
+    // }
+    // std::cout << std::endl;
+
+    dgbsv_(&NN ,&kl, &ku, &nrhs, &AB[0], &ldab, &ipiv, &BB[0], &ldb, &info);
+    if (info == 0) {
+        for (int i = 0; i < NN; ++i) {
+            std::cout << BB[i] << ' ';
+        }
+        std::cout << std::endl;
+    } else {
+        std::cerr << "Something went wrong in dgbsv_()\n";
+    }
+
 }
 

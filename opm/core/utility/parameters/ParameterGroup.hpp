@@ -47,7 +47,7 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace Opm {
     namespace parameter {
-	/// ParameterGroup is a class that is used to provide run-time paramters.
+	/// ParameterGroup is a class that is used to provide run-time parameters.
 	/// The standard use of the class is to call create it with the
 	/// (int argc, char** argv) constructor (where the arguments are those
 	/// given by main). This parses the command line, where each token
@@ -55,7 +55,7 @@ namespace Opm {
 	/// A) specifies a parameter (by a "param=value" token).
 	/// B) specifies a xml file to be read (by a "filename.xml" token).
 	/// C) specifies a param file to be read (by a "filename.param" token).
-	/// After the tokens are parsem they are stored in a tree structure
+	/// After the tokens are parsed they are stored in a tree structure
 	/// in the ParameterGroup object; it is worth mentioning that parameters
 	/// are inherited in this tree structure. Thus, if ``grid\_prefix'' is
 	/// given a value in the root node, this value will be visible in all
