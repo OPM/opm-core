@@ -99,7 +99,7 @@
 class ReservoirState
 {
 public:
-    ReservoirState(const UnstructuredGrid* g, const double init_sat = 0.0)
+    ReservoirState(const UnstructuredGrid* g, const double init_sat, const double init_p)
         : press_ (g->number_of_cells, 0.0),
           fpress_(g->number_of_faces, 0.0),
           flux_  (g->number_of_faces, 0.0),
@@ -108,6 +108,7 @@ public:
         for (int cell = 0; cell < g->number_of_cells; ++cell) {
             sat_[2*cell] = init_sat;
             sat_[2*cell + 1] = 1.0 - init_sat;
+            press_[cell] = init_p;
         }
     }
 
@@ -425,11 +426,6 @@ main(int argc, char** argv)
         rock_comp.reset(new Opm::RockCompressibility(param));
     }
 
-    // Extra rock init.
-    std::vector<double> porevol;
-    computePorevolume(*grid->c_grid(), *props, porevol);
-    double tot_porevol_init = std::accumulate(porevol.begin(), porevol.end(), 0.0);
-
     // Extra fluid init for transport solver.
     TwophaseFluid fluid(*props);
 
@@ -456,48 +452,39 @@ main(int argc, char** argv)
         }
     }
 
-    // Solvers init.
-    // Pressure solver.
-#ifdef EXPERIMENT_ISTL
-    Opm::LinearSolverIstl linsolver(param);
-#else
-    Opm::LinearSolverUmfpack linsolver;
-#endif // EXPERIMENT_ISTL
-    const double *grav = use_gravity ? &gravity[0] : 0;
-    Opm::IncompTpfa psolver(*grid->c_grid(), props->permeability(), grav, linsolver);
-    // Reordering solver.
-    const double nltol = param.getDefault("nl_tolerance", 1e-9);
-    const int maxit = param.getDefault("nl_maxiter", 30);
-    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), &porevol[0], *props, nltol, maxit);
-    if (use_gauss_seidel_gravity) {
-        reorder_model.initGravity(grav);
+    // Check that rock compressibility is not used with solvers that do not handle it.
+    if (rock_comp->isActive()) {
+        if (!use_reorder) {
+            THROW("Cannot run implicit (non-reordering) transport solver with rock compressibility yet.");
+        }
+        if (use_segregation_split) {
+            if (!use_gauss_seidel_gravity) {
+                THROW("For gravity segregation splitting, only use_gauss_seidel_gravity=true supports rock compressibility.");
+            }
+        }
     }
-    // Non-reordering solver.
-    TransportModel  model  (fluid, *grid->c_grid(), porevol, grav, guess_old_solution);
-    if (use_gravity) {
-        model.initGravityTrans(*grid->c_grid(), psolver.getHalfTrans());
-    }
-    TransportSolver tsolver(model);
-    // Column-based gravity segregation solver.
-    typedef std::map<int, std::vector<int> > ColMap;
-    ColMap columns;
-    if (use_column_solver) {
-        Opm::extractColumn(*grid->c_grid(), columns);
-    }
-    Opm::GravityColumnSolver<TransportModel> colsolver(model, *grid->c_grid(), nltol, maxit);
-
-    // Boundary conditions.
-    Opm::FlowBCManager bcs;
 
     // State-related and source-related variables init.
     int num_cells = grid->c_grid()->number_of_cells;
     std::vector<double> totmob;
     std::vector<double> omega; // Will remain empty if no gravity.
+    std::vector<double> rc; // Will remain empty if no rock compressibility.
     double init_sat = param.getDefault("init_sat", 0.0);
-    ReservoirState state(grid->c_grid(), init_sat);
+    double init_p = param.getDefault("init_p_bar", 235)*Opm::unit::barsa;
+    ReservoirState state(grid->c_grid(), init_sat, init_p);
     if (!param.has("init_sat")) {
         state.setToMinimumWaterSat(*props);
     }
+
+    // Extra rock init.
+    std::vector<double> porevol;
+    if (rock_comp->isActive()) {
+        computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
+    } else {
+        computePorevolume(*grid->c_grid(), *props, porevol);
+    }
+    double tot_porevol_init = std::accumulate(porevol.begin(), porevol.end(), 0.0);
+
     // We need a separate reorder_sat, because the reorder
     // code expects a scalar sw, not both sw and so.
     std::vector<double> reorder_sat(num_cells);
@@ -613,12 +600,43 @@ main(int argc, char** argv)
     }
     std::vector<double> reorder_src = src;
 
-    // Dirichlet boundary conditions.
+    // Boundary conditions.
+    Opm::FlowBCManager bcs;
     if (param.getDefault("use_pside", false)) {
         int pside = param.get<int>("pside");
         double pside_pressure = param.get<double>("pside_pressure");
         bcs.pressureSide(*grid->c_grid(), Opm::FlowBCManager::Side(pside), pside_pressure);
     }
+
+    // Solvers init.
+    // Pressure solver.
+#ifdef EXPERIMENT_ISTL
+    Opm::LinearSolverIstl linsolver(param);
+#else
+    Opm::LinearSolverUmfpack linsolver;
+#endif // EXPERIMENT_ISTL
+    const double *grav = use_gravity ? &gravity[0] : 0;
+    Opm::IncompTpfa psolver(*grid->c_grid(), props->permeability(), grav, linsolver);
+    // Reordering solver.
+    const double nltol = param.getDefault("nl_tolerance", 1e-9);
+    const int maxit = param.getDefault("nl_maxiter", 30);
+    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), *props, nltol, maxit);
+    if (use_gauss_seidel_gravity) {
+        reorder_model.initGravity(grav);
+    }
+    // Non-reordering solver.
+    TransportModel  model  (fluid, *grid->c_grid(), porevol, grav, guess_old_solution);
+    if (use_gravity) {
+        model.initGravityTrans(*grid->c_grid(), psolver.getHalfTrans());
+    }
+    TransportSolver tsolver(model);
+    // Column-based gravity segregation solver.
+    typedef std::map<int, std::vector<int> > ColMap;
+    ColMap columns;
+    if (use_column_solver) {
+        Opm::extractColumn(*grid->c_grid(), columns);
+    }
+    Opm::GravityColumnSolver<TransportModel> colsolver(model, *grid->c_grid(), nltol, maxit);
 
     // Control init.
     Opm::ImplicitTransportDetails::NRReport  rpt;
@@ -685,7 +703,17 @@ main(int argc, char** argv)
             computeTotalMobility(*props, allcells, state.saturation(), totmob);
         }
         pressure_timer.start();
-        psolver.solve(totmob, omega, src, bcs.c_bcs(), state.pressure(), state.faceflux());
+        if (rock_comp->isActive()) {
+            rc.resize(num_cells);
+            for (int cell = 0; cell < num_cells; ++cell) {
+                rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
+            }
+            psolver.solve(totmob, omega, src, bcs.c_bcs(), porevol, rc, simtimer.currentStepLength(),
+                          state.pressure(), state.faceflux());
+            computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
+        } else {
+            psolver.solve(totmob, omega, src, bcs.c_bcs(), state.pressure(), state.faceflux());
+        }
         pressure_timer.stop();
         double pt = pressure_timer.secsSinceStart();
         std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
@@ -709,13 +737,14 @@ main(int argc, char** argv)
         transport_timer.start();
         if (use_reorder) {
             Opm::toWaterSat(state.saturation(), reorder_sat);
-            reorder_model.solve(&state.faceflux()[0], &reorder_src[0], simtimer.currentStepLength(), &reorder_sat[0]);
+            reorder_model.solve(&state.faceflux()[0], &porevol[0], &reorder_src[0],
+                                simtimer.currentStepLength(), &reorder_sat[0]);
             Opm::toBothSat(reorder_sat, state.saturation());
             Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
             if (use_segregation_split) {
                 if (use_column_solver) {
                     if (use_gauss_seidel_gravity) {
-                        reorder_model.solveGravity(columns, simtimer.currentStepLength(), reorder_sat);
+                        reorder_model.solveGravity(columns, &porevol[0], simtimer.currentStepLength(), reorder_sat);
                         Opm::toBothSat(reorder_sat, state.saturation());
                     } else {
                         colsolver.solve(columns, simtimer.currentStepLength(), state.saturation());
