@@ -705,11 +705,23 @@ main(int argc, char** argv)
         pressure_timer.start();
         if (rock_comp->isActive()) {
             rc.resize(num_cells);
-            for (int cell = 0; cell < num_cells; ++cell) {
-                rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
+            std::vector<double> initial_pressure = state.pressure();
+            std::vector<double> prev_pressure;
+            const int num_pressure_iter = 10;
+            for (int iter = 0; iter < num_pressure_iter; ++iter) {
+                prev_pressure = state.pressure();
+                for (int cell = 0; cell < num_cells; ++cell) {
+                    rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
+                }
+                state.pressure() = initial_pressure;
+                psolver.solve(totmob, omega, src, bcs.c_bcs(), porevol, rc, simtimer.currentStepLength(),
+                              state.pressure(), state.faceflux());
+                double max_change = 0.0;
+                for (int cell = 0; cell < num_cells; ++cell) {
+                    max_change = std::max(max_change, std::fabs(state.pressure()[cell] - prev_pressure[cell]));
+                }
+                std::cout << "Pressure iter " << iter << "   max change = " << max_change << std::endl; 
             }
-            psolver.solve(totmob, omega, src, bcs.c_bcs(), porevol, rc, simtimer.currentStepLength(),
-                          state.pressure(), state.faceflux());
             computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
         } else {
             psolver.solve(totmob, omega, src, bcs.c_bcs(), state.pressure(), state.faceflux());
