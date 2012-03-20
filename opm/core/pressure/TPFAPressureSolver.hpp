@@ -148,6 +148,7 @@ public:
 
         forces_.src = &src[0];
 	forces_.bc = 0;
+        forces_.nphase = 0;     // Referenced only in models with wells.
         forces_.W = 0;
         forces_.Wdata = 0;
 
