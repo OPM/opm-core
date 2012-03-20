@@ -55,6 +55,7 @@
 #include <opm/core/fluid/SimpleFluid2p.hpp>
 #include <opm/core/fluid/IncompPropertiesBasic.hpp>
 #include <opm/core/fluid/IncompPropertiesFromDeck.hpp>
+#include <opm/core/fluid/RockCompressibility.hpp>
 
 #include <opm/core/linalg/LinearSolverUmfpack.hpp>
 // #define EXPERIMENT_ISTL
@@ -370,6 +371,7 @@ main(int argc, char** argv)
     boost::scoped_ptr<Opm::GridManager> grid;
     boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
     boost::scoped_ptr<Opm::WellsManager> wells;
+    boost::scoped_ptr<Opm::RockCompressibility> rock_comp;
     Opm::SimulatorTimer simtimer;
     double water_oil_contact = 0.0;
     bool woc_set = false;
@@ -398,6 +400,8 @@ main(int argc, char** argv)
             water_oil_contact = param.get<double>("water_oil_contact");
             woc_set = true;
         }
+        // Rock compressibility.
+        rock_comp.reset(new Opm::RockCompressibility(deck));
     } else {
         // Grid init.
         const int nx = param.getDefault("nx", 100);
@@ -417,12 +421,14 @@ main(int argc, char** argv)
             water_oil_contact = param.get<double>("water_oil_contact");
             woc_set = true;
         }
+        // Rock compressibility.
+        rock_comp.reset(new Opm::RockCompressibility(param));
     }
 
     // Extra rock init.
     std::vector<double> porevol;
     computePorevolume(*grid->c_grid(), *props, porevol);
-    double tot_porevol = std::accumulate(porevol.begin(), porevol.end(), 0.0);
+    double tot_porevol_init = std::accumulate(porevol.begin(), porevol.end(), 0.0);
 
     // Extra fluid init for transport solver.
     TwophaseFluid fluid(*props);
@@ -504,7 +510,7 @@ main(int argc, char** argv)
             if (wells->c_wells()) {
                 Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
             } else {
-                double flow_per_sec = 0.1*tot_porevol/Opm::unit::day;
+                double flow_per_sec = 0.1*tot_porevol_init/Opm::unit::day;
                 if (param.has("injection_rate_per_day")) {
                     flow_per_sec = param.get<double>("injection_rate_per_day")/Opm::unit::day;
                 }
@@ -583,7 +589,7 @@ main(int argc, char** argv)
             if (wells->c_wells()) {
                 Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
             } else {
-                double flow_per_sec = 0.01*tot_porevol/Opm::unit::day;
+                double flow_per_sec = 0.01*tot_porevol_init/Opm::unit::day;
                 src[0] = flow_per_sec;
                 src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
             }
@@ -661,8 +667,8 @@ main(int argc, char** argv)
     double tot_injected[2] = { 0.0 };
     double tot_produced[2] = { 0.0 };
     Opm::computeSaturatedVol(porevol, state.saturation(), init_satvol);
-    std::cout << "\nInitial saturations are    " << init_satvol[0]/tot_porevol
-              << "    " << init_satvol[1]/tot_porevol << std::endl;
+    std::cout << "\nInitial saturations are    " << init_satvol[0]/tot_porevol_init
+              << "    " << init_satvol[1]/tot_porevol_init << std::endl;
     Opm::Watercut watercut;
     watercut.push(0.0, 0.0, 0.0);
     for (; !simtimer.done(); ++simtimer) {
@@ -743,32 +749,32 @@ main(int argc, char** argv)
         const int width = 18;
         std::cout << "\nVolume balance report (all numbers relative to total pore volume).\n";
         std::cout << "    Saturated volumes:     "
-                  << std::setw(width) << satvol[0]/tot_porevol
-                  << std::setw(width) << satvol[1]/tot_porevol << std::endl;
+                  << std::setw(width) << satvol[0]/tot_porevol_init
+                  << std::setw(width) << satvol[1]/tot_porevol_init << std::endl;
         std::cout << "    Injected volumes:      "
-                  << std::setw(width) << injected[0]/tot_porevol
-                  << std::setw(width) << injected[1]/tot_porevol << std::endl;
+                  << std::setw(width) << injected[0]/tot_porevol_init
+                  << std::setw(width) << injected[1]/tot_porevol_init << std::endl;
         std::cout << "    Produced volumes:      "
-                  << std::setw(width) << produced[0]/tot_porevol
-                  << std::setw(width) << produced[1]/tot_porevol << std::endl;
+                  << std::setw(width) << produced[0]/tot_porevol_init
+                  << std::setw(width) << produced[1]/tot_porevol_init << std::endl;
         std::cout << "    Total inj volumes:     "
-                  << std::setw(width) << tot_injected[0]/tot_porevol
-                  << std::setw(width) << tot_injected[1]/tot_porevol << std::endl;
+                  << std::setw(width) << tot_injected[0]/tot_porevol_init
+                  << std::setw(width) << tot_injected[1]/tot_porevol_init << std::endl;
         std::cout << "    Total prod volumes:    "
-                  << std::setw(width) << tot_produced[0]/tot_porevol
-                  << std::setw(width) << tot_produced[1]/tot_porevol << std::endl;
+                  << std::setw(width) << tot_produced[0]/tot_porevol_init
+                  << std::setw(width) << tot_produced[1]/tot_porevol_init << std::endl;
         std::cout << "    In-place + prod - inj: "
-                  << std::setw(width) << (satvol[0] + tot_produced[0] - tot_injected[0])/tot_porevol
-                  << std::setw(width) << (satvol[1] + tot_produced[1] - tot_injected[1])/tot_porevol << std::endl;
+                  << std::setw(width) << (satvol[0] + tot_produced[0] - tot_injected[0])/tot_porevol_init
+                  << std::setw(width) << (satvol[1] + tot_produced[1] - tot_injected[1])/tot_porevol_init << std::endl;
         std::cout << "    Init - now - pr + inj: "
-                  << std::setw(width) << (init_satvol[0] - satvol[0] - tot_produced[0] + tot_injected[0])/tot_porevol
-                  << std::setw(width) << (init_satvol[1] - satvol[1] - tot_produced[1] + tot_injected[1])/tot_porevol
+                  << std::setw(width) << (init_satvol[0] - satvol[0] - tot_produced[0] + tot_injected[0])/tot_porevol_init
+                  << std::setw(width) << (init_satvol[1] - satvol[1] - tot_produced[1] + tot_injected[1])/tot_porevol_init
                   << std::endl;
         std::cout.precision(8);
 
         watercut.push(simtimer.currentTime() + simtimer.currentStepLength(),
                       produced[0]/(produced[0] + produced[1]),
-                      tot_produced[0]/tot_porevol);
+                      tot_produced[0]/tot_porevol_init);
     }
     total_timer.stop();
 
