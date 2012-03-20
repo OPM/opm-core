@@ -24,7 +24,7 @@
 namespace {
     struct BandMatrixCoeff
     {
-        BandMatrixCoeff(int N, int ku, int kl) : N_(N), ku_(ku), kl_(kl), nrow_(2*kl + ku + 1) {
+        BandMatrixCoeff(int N, int ku, int kl) : ku_(ku), kl_(kl), nrow_(2*kl + ku + 1), N_(N) {
         }
 
 
