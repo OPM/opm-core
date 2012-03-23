@@ -78,32 +78,6 @@ namespace
 	return is;
     }
 
-    inline std::string upcase(const std::string& s)
-    {
-	std::string us(s);
-	// Getting the character type facet for toupper().
-	// We use the classic (i.e. C) locale.
-	const std::ctype<char>& ct = std::use_facet< std::ctype<char> >(std::locale::classic());
-	for (int i = 0; i < int(s.size()); ++i) {
-	    us[i] = ct.toupper(s[i]);
-	}
-	return us;
-    }
-
-    inline std::string readKeyword(std::istream& is)
-    {
-	std::string keyword_candidate;
-	while (!is.eof()) {
-	    is >> keyword_candidate;
-	    if(keyword_candidate.find("--") == 0) {
-		is >> ignoreLine;  // This line is a comment
-	    } else {
-		return upcase(keyword_candidate);
-	    }
-	}
-	return "CONTINUE";  // Last line in included file is a comment
-    }
-
     inline std::string readString(std::istream& is)
     {
 	std::string string_candidate;
