@@ -61,77 +61,81 @@ int main()
     } else {
         std::cerr << "Something went wrong in dgtsv_()\n";
     }
+    std::cout << std::endl;
 
     //test of dgbsv_
+    int ldb = N;
+    int lda = N;
+    std::vector<int> ipiv(N, 0);
+    std::vector<double> AA(N*N, 0.);
+    std::vector<double> BB(N, 0.);
+    for (int i = 0; i < N; ++i) {
+        AA[i + i*N] = 10.;
+        if (i > 0) {
+            AA[i + (i - 1)*N] = i;
+            AA[i - 1 + i*N] = N - i;
+        }
+        BB[i] = i;
+    }
+
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            std::cout << " " << AA[i + j*N];
+        }
+        std::cout << " " << std::endl;
+    }
+    std::cout << std::endl;
+
     int kl = 1;
     int ku = 1;
     int nrowAB = 2*kl + ku + 1;
-    int ldb = N;
     int ldab = nrowAB;
-    int ipiv;
     std::vector<double> AB(nrowAB*N, 0.);
-    std::vector<double> BB(N, 0.);
-    double ABu[N] = { 0., 2.1,  -1.0,   1.9,   8.0};
-    double ABd[N] = { 3.0,   2.3,  -5.0,  -0.9,   7.1 };
-    double ABl[N] = { 3.4,   3.6,   7.0, - 6.0, 0. };
-    for (int i = 0; i<N; ++i) {
-        AB[kl + i*nrowAB] = ABu[i];
-        AB[kl + 1 + i*nrowAB] = ABd[i];
-        AB[kl + 2 + i*nrowAB] = ABl[i];
+    BandMatrixCoeff bmc(N, ku, kl);
+
+    // Rewrite AA matrix in band format AB 
+    for (int i = 0; i < N; ++i) {
+        for (int j = -1; j < 2; ++j) {
+            if (i + j > -1 && i + j < N)
+                AB[bmc(i, i + j)] = AA[i + N*(i + j)];
+        }
     }
-    BB[0] = 2.7;
-    BB[1] = -0.5;
-    BB[2] = 2.6;
-    BB[3] = 0.6;
-    BB[4] = 2.7;
+
+    for (int i = 0; i < nrowAB; ++i) {
+        for (int j = 0; j < N; ++j) {
+            std::cout << " " << AB[i + j*nrowAB];
+        }
+        std::cout << " " << std::endl;
+    }
+    std::cout << std::endl;
 
 
-    dgbsv_(&N, &kl, &ku, &nrhs, &AB[0], &ldab, &ipiv, &BB[0], &ldb, &info);
+    dgesv_(&N ,&nrhs, &AA[0], &lda, &ipiv[0], &BB[0], &ldb, &info);
+
     if (info == 0) {
 	for (int i = 0; i < N; ++i) {
 	    std::cout << BB[i] << ' ';
 	}
 	std::cout << std::endl;
     } else {
-	std::cerr << "Something went wrong in dgbsv_()\n";
+	std::cerr << "Something went wrong in debsv_()\n";
     }
 
-    int NN = 3;
-    kl = 1;
-    ku = 1;
-    nrowAB = 2*kl + ku + 1;
-    ldb = NN;
-    ldab = nrowAB;
-    AB.assign(NN*nrowAB, 0.);
-    BB.assign(NN, 0.);
-    BandMatrixCoeff bmc(NN, ku, kl);
-    AB[bmc(0, 0)] = 1.;
-    AB[bmc(1, 0)] = 1.;
-    AB[bmc(0, 1)] = 1.;
-    AB[bmc(1, 1)] = 2.;
-    AB[bmc(2, 1)] = 2.;
-    AB[bmc(1, 2)] = 1.;
-    AB[bmc(2, 2)] = 4.;
-    BB[0] = 3.;
-    BB[1] = 8.;
-    BB[2] = 16.;
+    for (int i = 0; i < N; ++i) {
+        BB[i] = i;
+    }
 
-    // std::vector<double>::iterator it;
-    // std::cout << "myvector contains:";
-    // for ( it=AB.begin() ; it < AB.end(); it++ ) {
-    //     std::cout << " " << *it;
-    // }
-    // std::cout << std::endl;
+    dgbsv_(&N, &kl, &ku, &nrhs, &AB[0], &ldab, &ipiv[0], &BB[0], &ldb, &info);
 
-    dgbsv_(&NN ,&kl, &ku, &nrhs, &AB[0], &ldab, &ipiv, &BB[0], &ldb, &info);
     if (info == 0) {
-        for (int i = 0; i < NN; ++i) {
+        for (int i = 0; i < N; ++i) {
             std::cout << BB[i] << ' ';
         }
         std::cout << std::endl;
     } else {
-        std::cerr << "Something went wrong in dgbsv_()\n";
+        std::cerr << "Something went wrong in debsv_()\n";
     }
+
 
 }
 

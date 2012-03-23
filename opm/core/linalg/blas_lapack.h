@@ -94,6 +94,16 @@ void dgbsv_(const MAT_SIZE_T *n    ,
             const MAT_SIZE_T *ldb  ,
             MAT_SIZE_T       *info);
 
+/* B <- A \ B, general solver */
+void dgesv_(const MAT_SIZE_T *n,
+            const MAT_SIZE_T *nrhs ,
+            double     *A   ,
+            const MAT_SIZE_T *lda ,
+            MAT_SIZE_T *piv ,
+            double     *B    ,
+            const MAT_SIZE_T *ldb  ,
+            MAT_SIZE_T *info);
+
 /* A <- chol(A) */
 void dpotrf_(const char *uplo, const MAT_SIZE_T *n,
              double     *A   , const MAT_SIZE_T *lda,
