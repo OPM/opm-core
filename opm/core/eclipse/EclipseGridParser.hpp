@@ -186,8 +186,6 @@ private:
     std::map<std::string, std::vector<double> > floating_field_map_;
     std::map<std::string, std::tr1::shared_ptr<SpecialBase> > special_field_map_;
     std::set<std::string> ignored_fields_;
-    std::vector<int> empty_integer_field_;
-    std::vector<double> empty_floating_field_;
     std::tr1::shared_ptr<SpecialBase> empty_special_field_;
     EclipseUnits units_;
 };

@@ -544,7 +544,7 @@ const std::vector<int>& EclipseGridParser::getIntegerValue(const std::string& ke
     map<string, vector<int> >::const_iterator it
         = integer_field_map_.find(keyword);
     if (it == integer_field_map_.end()) {
-        return empty_integer_field_;
+        THROW("No such field: " << keyword);
     } else {
         return it->second;
     }
@@ -557,7 +557,7 @@ const std::vector<double>& EclipseGridParser::getFloatingPointValue(const std::s
     map<string, vector<double> >::const_iterator it
         = floating_field_map_.find(keyword);
     if (it == floating_field_map_.end()) {
-        return empty_floating_field_;
+        THROW("No such field: " << keyword);
     } else {
         return it->second;
     }
