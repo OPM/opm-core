@@ -115,7 +115,7 @@ public:
                   const std::vector<double>& total_mobilities,
                   const std::vector<double>& omegas,
                   const std::vector<FlowBCTypes>& bctypes,
-                  const std::vector<double> bcvalues)
+                  const std::vector<double>& bcvalues)
     {
         if (state_ == Uninitialized) {
             throw std::runtime_error("Error in TPFAPressureSolver::assemble(): You must call init() prior to calling assemble().");
