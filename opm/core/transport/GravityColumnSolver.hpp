@@ -40,12 +40,12 @@ namespace Opm
 			    const double tol,
 			    const int maxit);
 
-	/// \param[in] columns         for each column (with logical cartesian indices as key),
+	/// \param[in] columns         for each column columns.second
 	///                            contains the cells on which to solve the segregation
 	///                            problem. For each column, its cells must be in a single
 	///                            vertical column, and ordered
 	///                            (direction doesn't matter).
-	void solve(const std::map<int, std::vector<int> >& columns,
+	void solve(const std::pair<std::vector<int>, std::vector<std::vector<int> > >& columns,
 		   const double dt,
 		   std::vector<double>& s);
     private:

@@ -20,7 +20,7 @@
 #include <opm/core/transport/GravityColumnSolver.hpp>
 #include <opm/core/linalg/blas_lapack.h>
 #include <opm/core/utility/ErrorMacros.hpp>
-
+#include <sys/time.h>
 namespace Opm
 {
 
@@ -65,14 +65,14 @@ namespace Opm
     } // anon namespace
 
 
-
-    /// \param[in] columns         for each column (with logical cartesian indices as key),
+    
+    /// \param[in] columns         for each column columns.second,
     ///                            contains the cells on which to solve the segregation
     ///                            problem. For each column, its cells must be in a single
     ///                            vertical column, and ordered
     ///                            (direction doesn't matter).
     template <class Model>
-    void GravityColumnSolver<Model>::solve(const std::map<int, std::vector<int> >& columns,
+    void GravityColumnSolver<Model>::solve(const std::pair<std::vector<int>, std::vector<std::vector<int> > >& columns,
 					   const double dt,
 					   std::vector<double>& s)
     {
@@ -84,15 +84,22 @@ namespace Opm
 
 	int iter = 0;
 	double max_delta = 1e100;
+
 	while (iter < maxit_) {
 	    model_.initIteration(state, grid_, sys);
-	    std::map<int, std::vector<int> >::const_iterator it;
-	    for (it = columns.begin(); it != columns.end(); ++it) {
-		solveSingleColumn(it->second, dt, s, increment);
-	    }
+            //   std::map<int, std::vector<int> >::const_iterator it;
+            //for (it = columns.begin(); it != columns.end(); ++it) {
+            int size = columns.second.size();
+            
+            #pragma omp parallel for schedule(dynamic)
+            for(int i = 0; i < size; ++i) {
+		solveSingleColumn(columns.second[i], dt, s, increment);
+	    }   
+
 	    for (int cell = 0; cell < grid_.number_of_cells; ++cell) {
 		sys.vector().writableSolution()[cell] += increment[cell];
 	    }
+  
 	    const double maxelem = *std::max_element(increment.begin(), increment.end());
 	    const double minelem = *std::min_element(increment.begin(), increment.end());
 	    max_delta = std::max(maxelem, -minelem);
