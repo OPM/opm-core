@@ -63,6 +63,7 @@ namespace Opm {
 
 	const std::string ID_path_root            = "";
 	const std::string ID_delimiter_path       = "/";
+	const std::string ID_comment              = "//";
 	const std::string ID_delimiter_assignment = "=";
     } // namespace parameter
 } // namespace Opm

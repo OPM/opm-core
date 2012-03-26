@@ -119,19 +119,25 @@ namespace Opm {
 	    int lineno = 0;
 	    while (samcode_readline(is, parameter)) {
 		++lineno;
-		int fpos = parameter.find(ID_delimiter_assignment);
-		if (fpos == int(std::string::npos)) {
-		    std::cerr << "WARNING: No '" << ID_delimiter_assignment << "' found on line " << lineno << ".\n";
-		}
-		int pos = fpos + ID_delimiter_assignment.size();
-		int spos = parameter.find(ID_delimiter_assignment, pos);
-		if (spos == int(std::string::npos)) {
-		    std::string name = parameter.substr(0, fpos);
-		    std::string value = parameter.substr(pos, spos);
-		    this->insertParameter(name, value);
-		} else {
-		    std::cerr << "WARNING: To many '" << ID_delimiter_assignment << "' found on line " << lineno << ".\n";
-		}
+                int commentpos = parameter.find(ID_comment);
+                if (commentpos != 0) {
+                    if (commentpos != int(std::string::npos)) {
+                        parameter = parameter.substr(0, commentpos);
+                    }
+                    int fpos = parameter.find(ID_delimiter_assignment);
+                    if (fpos == int(std::string::npos)) {
+                        std::cerr << "WARNING: No '" << ID_delimiter_assignment << "' found on line " << lineno << ".\n";
+                    }
+                    int pos = fpos + ID_delimiter_assignment.size();
+                    int spos = parameter.find(ID_delimiter_assignment, pos);
+                    if (spos == int(std::string::npos)) {
+                        std::string name = parameter.substr(0, fpos);
+                        std::string value = parameter.substr(pos, spos);
+                        this->insertParameter(name, value);
+                    } else {
+                        std::cerr << "WARNING: To many '" << ID_delimiter_assignment << "' found on line " << lineno << ".\n";
+                    }
+                }
 	    }
 	    #ifdef MATLAB_MEX_FILE
 	    fclose(is);
