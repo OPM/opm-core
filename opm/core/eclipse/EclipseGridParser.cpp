@@ -170,6 +170,98 @@ namespace {
         }
     }
 
+    inline std::string upcase(const std::string& s)
+    {
+        std::string us(s);
+        // Getting the character type facet for toupper().
+        // We use the classic (i.e. C) locale.
+        const std::ctype<char>& ct = std::use_facet< std::ctype<char> >(std::locale::classic());
+        for (int i = 0; i < int(s.size()); ++i) {
+            us[i] = ct.toupper(s[i]);
+        }
+        return us;
+    }
+
+    inline std::string readKeyword(std::istream& is)
+    {
+        std::string keyword_candidate;
+        while (!is.eof()) {
+            is >> keyword_candidate;
+            if(keyword_candidate.find("--") == 0) {
+                is >> ignoreLine;  // This line is a comment
+            } else {
+                return upcase(keyword_candidate);
+            }
+        }
+        return "CONTINUE";  // Last line in included file is a comment
+    }
+
+    inline bool readKeywordNew(std::istream& is, std::string& keyword)
+    {
+        char buf[9];
+        int i, j;
+        char c;
+        /* Clear buf */
+        for (i=0; i<9; ++i) {
+            buf[i] = '\0';
+        }
+
+        /* Read first character and check if it is uppercase*/
+        //buf[0] = fgetc(fp);
+        is.get(buf[0]);
+        if ( !isupper( buf[0] ) ) {
+            is.unget();
+            return false;          /* NOT VALID CHARACTER */
+        }
+
+        /* Scan as much as possible possible keyword, 8 characters long */
+        i = 1;
+        is.get(c);
+        while ( (is.good()) &&
+                (c != EOF     ) &&
+                (!isblank(c)   ) &&
+                (isupper(c) || isdigit(c)) &&
+                (c != '\n'    ) &&
+                (c != '/'     ) &&
+                (i < 8        )) {
+            buf[i++] = c;
+            is.get(c);
+        }
+
+        /* Skip rest of line */
+        if (c != '\n'){
+            is.get(c);
+            while ( (is.good()) &&
+                    (c != EOF     ) &&
+                    (c != '\n'    )) {
+                is.get(c);
+            }
+        }
+        if(c == '\n') {
+            is.unget();
+        }
+
+        /* Find first non-uppercase or non-digit character */
+        for (i=0; i<8; ++i) {
+            if ( !(isupper(buf[i]) || isdigit(buf[i])) ) {
+                break;
+            }
+        }
+
+        /* Check if remaining characters are blank */
+        for (j = i; j<8; ++j) {
+            if(!isspace(buf[j]) && buf[j] != '\0') {
+                return false; /* CHARACTER AFTER SPACE OR INVALID CHARACTER */
+            }
+            buf[j] = '\0';
+        }
+        keyword = std::string(buf);
+        std::string::size_type end = keyword.find_last_of('\0');
+        if(end != keyword.npos)
+        keyword = keyword.substr(0, end+1);
+        return true;
+    }
+
 } // anon namespace
 
 
@@ -228,7 +320,7 @@ void EclipseGridParser::readImpl(istream& is)
 
     // Make temporary maps that will at the end be swapped with the
     // member maps
-    // NOTE: Above is no longer true, for easier implementation of 
+    // NOTE: Above is no longer true, for easier implementation of
     //       the INCLUDE keyword. We lose the strong exception guarantee,
     //       though (of course retaining the basic guarantee).
     map<string, vector<int> >& intmap = integer_field_map_;
@@ -236,71 +328,71 @@ void EclipseGridParser::readImpl(istream& is)
     map<string, tr1::shared_ptr<SpecialBase> >& specialmap = special_field_map_;
 
     // Actually read the data
-    is >> ignoreWhitespace;
-    while (!is.eof()) {
-        string keyword = readKeyword(is);
-#ifdef VERBOSE
-        cout << "Keyword found: " << keyword << endl;
-#endif
-        FieldType type = classifyKeyword(keyword);
-        switch (type) {
-        case Integer:
-            readVectorData(is, intmap[keyword]);
-            break;
-        case FloatingPoint:
-            readVectorData(is, floatmap[keyword]);
-            break;
-        case SpecialField: {
-            map<string, std::tr1::shared_ptr<SpecialBase> >::iterator pos =
-                specialmap.find(keyword);
-            if (pos == specialmap.end()) {
-                std::tr1::shared_ptr<SpecialBase> sb_ptr =
-                    createSpecialField(is, keyword);
+    std::string keyword;
+    while (is.good()) {
+        is >> ignoreWhitespace;
+        bool ok = readKeywordNew(is, keyword);
+        if (ok) {
+            //#ifdef VERBOSE
+            cout << "Keyword found: " << keyword << endl;
+            //#endif
+            FieldType type = classifyKeyword(keyword);
+            switch (type) {
+            case Integer:
+                readVectorData(is, intmap[keyword]);
+                break;
+            case FloatingPoint:
+                readVectorData(is, floatmap[keyword]);
+                break;
+            case SpecialField: {
+                std::tr1::shared_ptr<SpecialBase> sb_ptr = createSpecialField(is, keyword);
                 if (sb_ptr) {
                     specialmap[keyword] = sb_ptr;
                 } else {
                     THROW("Could not create field " << keyword);
                 }
-            } else {
-                pos->second->read(is);
+                break;
             }
-            break;
-        }
-        case IgnoreWithData: {
-            ignored_fields_.insert(keyword);
-            is >> ignoreSlashLine;
-#ifdef VERBOSE
-            cout << "(ignored)" << endl;
-#endif
-            break;
-        }
-        case IgnoreNoData: {
-            ignored_fields_.insert(keyword);
+            case IgnoreWithData: {
+                ignored_fields_.insert(keyword);
+                //is >> ignoreSlashLine;
+                //#ifdef VERBOSE
+                // cout << "(ignored)" << endl;
+                //#endif
+                break;
+            }
+            case IgnoreNoData: {
+                ignored_fields_.insert(keyword);
+                //is >> ignoreLine;
+                //#ifdef VERBOSE
+                // cout << "(ignored)" << endl;
+                //#endif
+                break;
+            }
+            case Include: {
+                string include_filename = readString(is);
+                if (!directory_.empty()) {
+                    include_filename = directory_ + '/' + include_filename;
+                }
+                ifstream include_is(include_filename.c_str());
+                if (!include_is) {
+                    THROW("Unable to open INCLUDEd file " << include_filename);
+                }
+                readImpl(include_is);
+                //              is >> ignoreSlashLine;
+                break;
+            }
+            case Unknown:
+            default:
+                ignored_fields_.insert(keyword);
+                cout << "*** Warning: keyword " << keyword << " is unknown." << endl;
+                //is >> ignoreSlashLine;
+                //throw exception();
+            }
+        } else {
+            // if (!ok)
             is >> ignoreLine;
-#ifdef VERBOSE
-            cout << "(ignored)" << endl;
-#endif
-            break;
         }
-        case Include: {
-            string include_filename = readString(is);
-            if (!directory_.empty()) {
-                include_filename = directory_ + '/' + include_filename;
-            }
-            ifstream include_is(include_filename.c_str());
-            if (!include_is) {
-                THROW("Unable to open INCLUDEd file " << include_filename);
-            }
-            readImpl(include_is);
-            is >> ignoreSlashLine;
-            break;
-        }
-        case Unknown:
-        default:
-            cerr << "Keyword " << keyword << " not recognized." << endl;
-            throw exception();
-        }
-        is >> ignoreWhitespace;
     }
 
 #define VERBOSE_LIST_FIELDS 0
@@ -356,7 +448,7 @@ void EclipseGridParser::convertToSI()
             unit = 1.0;
             do_convert = false; // Dimensionless keywords...
         } else if (key == "PRESSURE") {
-            unit = units_.pressure;         
+            unit = units_.pressure;
         } else {
             THROW("Units for field " << key << " not specified. Cannon convert to SI.");
         }
@@ -452,7 +544,7 @@ const std::vector<int>& EclipseGridParser::getIntegerValue(const std::string& ke
     map<string, vector<int> >::const_iterator it
         = integer_field_map_.find(keyword);
     if (it == integer_field_map_.end()) {
-        return empty_integer_field_;
+        THROW("No such field: " << keyword);
     } else {
         return it->second;
     }
@@ -465,7 +557,7 @@ const std::vector<double>& EclipseGridParser::getFloatingPointValue(const std::s
     map<string, vector<double> >::const_iterator it
         = floating_field_map_.find(keyword);
     if (it == floating_field_map_.end()) {
-        return empty_floating_field_;
+        THROW("No such field: " << keyword);
     } else {
         return it->second;
     }
