@@ -585,6 +585,7 @@ EclipseGridParser::createSpecialField(std::istream& is,
     string ukey = upcase(fieldname);
     std::tr1::shared_ptr<SpecialBase> spec_ptr
         = Factory<SpecialBase>::createObject(fieldname);
+    is >> ignoreWhitespace;
     spec_ptr->read(is);
     return spec_ptr;
 }

@@ -5,7 +5,7 @@
 // Created: Tue Dec 22 11:35:32 2009
 //
 // Author(s): Atgeirr F Rasmussen <atgeirr@sintef.no>
-//            Bård Skaflestad     <bard.skaflestad@sintef.no>
+//            Bï¿½rd Skaflestad     <bard.skaflestad@sintef.no>
 //
 // $Date$
 //
@@ -107,6 +107,9 @@ namespace
 		} else if (dummy == '-') {  // "comment test"
 		    is >> ignoreLine; // This line is a comment
 		} else {
+                    char buffer[1000];
+                    is.getline(buffer, sizeof(buffer));
+                    std::cout << buffer<<std::endl;
                     THROW("Encountered format error while reading data values. Value = " << dummy);
 		}
 	    } else {
@@ -250,6 +253,7 @@ namespace
         is >> year;
         ignoreSlashLine(is);
         int month = getMonthNumber(month_name);
+
         return boost::gregorian::date(boost::gregorian::greg_year(year),
                                       boost::gregorian::greg_month(month),
                                       boost::gregorian::greg_day(day));

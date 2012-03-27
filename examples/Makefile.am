@@ -18,3 +18,10 @@ $(BOOST_SYSTEM_LIB)				\
 $(LDADD)					\
 $(LAPACK_LIBS)
 endif
+
+noinst_PROGRAMS += wells_example
+wells_example_SOURCES   = wells_example.cpp
+wells_example_LDADD     =				\
+$(BOOST_FILESYSTEM_LIB)				\
+$(BOOST_SYSTEM_LIB)				\
+$(LDADD)					
