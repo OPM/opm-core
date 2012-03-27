@@ -286,7 +286,40 @@ struct START : public SpecialBase
     {}
 };
 
+struct GRUPTREE : public SpecialBase {
+    std::map<std::string, std::string> tree;
 
+    virtual std::string name() const {
+        return std::string("GRUPTREE");
+    }
+
+    virtual void read(std::istream & is) {
+        // Not done:
+        return;
+        while (!is.eof()) {
+            std::string child = readString(is);
+            std::string parent = readString(is);
+
+            std::cout << "CHILD = " << child << std::endl << "PARENT = " << parent << std::endl;
+            tree[child] = parent;
+
+            int action = next_action(is); // 0:continue  1:return  2:throw
+            if (action == 1) {
+                return; // Alphabetic char. Read next keyword.
+            } else if (action == 2) {
+                THROW("Error reading GRUPTREE. Next character is "
+                        << (char) is.peek());
+            }
+        }
+    }
+
+    virtual void write(std::ostream & os) {
+        //os << name() << '\n' << tree << '\n';
+    }
+
+    virtual void convertToSI(const EclipseUnits&) {
+    }
+};
 
 
 struct DATES : public SpecialBase
