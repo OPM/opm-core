@@ -103,7 +103,7 @@ namespace Opm
 	    const double maxelem = *std::max_element(increment.begin(), increment.end());
 	    const double minelem = *std::min_element(increment.begin(), increment.end());
 	    max_delta = std::max(maxelem, -minelem);
-	    std::cout << "Iteration " << iter << "   max_delta = " << max_delta << std::endl;
+	    std::cout << "Gravity column solver iteration " << iter << "   max_delta = " << max_delta << std::endl;
 	    if (max_delta < tol_) {
 		break;
 	    }

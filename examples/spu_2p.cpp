@@ -453,6 +453,8 @@ main(int argc, char** argv)
     }
 
     // Check that rock compressibility is not used with solvers that do not handle it.
+    int nl_pressure_maxiter = 0;
+    double nl_pressure_tolerance = 0.0;
     if (rock_comp->isActive()) {
         if (!use_reorder) {
             THROW("Cannot run implicit (non-reordering) transport solver with rock compressibility yet.");
@@ -462,6 +464,8 @@ main(int argc, char** argv)
                 THROW("For gravity segregation splitting, only use_gauss_seidel_gravity=true supports rock compressibility.");
             }
         }
+        nl_pressure_maxiter = param.getDefault("nl_pressure_maxiter", 10);
+        nl_pressure_tolerance = param.getDefault("nl_pressure_tolerance", 1.0); // in Pascal
     }
 
     // State-related and source-related variables init.
@@ -554,16 +558,18 @@ main(int argc, char** argv)
             if (grid->c_grid()->cartdims[2] <= 1) {
                 std::cout << "**** Warning: running gravity segregation scenario, which expects nz > 1." << std::endl;
             }
-            std::vector<double>& sat = state.saturation();
+            std::vector<int> top_cells;
             const int *glob_cell = grid->c_grid()->global_cell;
             // Water on top
             for (int cell = 0; cell < num_cells; ++cell) {
                 const int* cd = grid->c_grid()->cartdims;
                 const int gc = glob_cell == 0 ? cell : glob_cell[cell];
                 bool top = (gc / cd[0] / cd[1]) < cd[2]/2;
-                sat[2*cell] = top ? 1.0 : 0.0;
-                sat[2*cell + 1 ] = 1.0 - sat[2*cell];
+                if (top) {
+                    top_cells.push_back(cell);
+                }
             }
+            state.setWaterSat(top_cells, *props, ReservoirState::MaxSat);
             break;
         }
     case 4:
@@ -618,9 +624,9 @@ main(int argc, char** argv)
     const double *grav = use_gravity ? &gravity[0] : 0;
     Opm::IncompTpfa psolver(*grid->c_grid(), props->permeability(), grav, linsolver);
     // Reordering solver.
-    const double nltol = param.getDefault("nl_tolerance", 1e-9);
-    const int maxit = param.getDefault("nl_maxiter", 30);
-    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), *props, nltol, maxit);
+    const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
+    const int nl_maxiter = param.getDefault("nl_maxiter", 30);
+    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), *props, nl_tolerance, nl_maxiter);
     if (use_gauss_seidel_gravity) {
         reorder_model.initGravity(grav);
     }
@@ -636,7 +642,7 @@ main(int argc, char** argv)
     if (use_column_solver) {
         Opm::extractColumn(*grid->c_grid(), columns);
     }
-    Opm::GravityColumnSolver<TransportModel> colsolver(model, *grid->c_grid(), nltol, maxit);
+    Opm::GravityColumnSolver<TransportModel> colsolver(model, *grid->c_grid(), nl_tolerance, nl_maxiter);
 
     // Control init.
     Opm::ImplicitTransportDetails::NRReport  rpt;
@@ -707,8 +713,7 @@ main(int argc, char** argv)
             rc.resize(num_cells);
             std::vector<double> initial_pressure = state.pressure();
             std::vector<double> prev_pressure;
-            const int num_pressure_iter = 10;
-            for (int iter = 0; iter < num_pressure_iter; ++iter) {
+            for (int iter = 0; iter < nl_pressure_maxiter; ++iter) {
                 prev_pressure = state.pressure();
                 for (int cell = 0; cell < num_cells; ++cell) {
                     rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
@@ -720,7 +725,10 @@ main(int argc, char** argv)
                 for (int cell = 0; cell < num_cells; ++cell) {
                     max_change = std::max(max_change, std::fabs(state.pressure()[cell] - prev_pressure[cell]));
                 }
-                std::cout << "Pressure iter " << iter << "   max change = " << max_change << std::endl; 
+                std::cout << "Pressure iter " << iter << "   max change = " << max_change << std::endl;
+                if (max_change < nl_pressure_tolerance) {
+                    break;
+                }
             }
             computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
         } else {

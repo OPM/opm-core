@@ -36,7 +36,10 @@ namespace Opm
 	// Extract data from deck.
 	const std::vector<double>& zcorn = deck.getFloatingPointValue("ZCORN");
 	const std::vector<double>& coord = deck.getFloatingPointValue("COORD");
-	const std::vector<int>& actnum = deck.getIntegerValue("ACTNUM");
+        const int* actnum = 0;
+        if (deck.hasField("ACTNUM")) {
+            actnum = &(deck.getIntegerValue("ACTNUM")[0]);
+        }
 	std::vector<int> dims;
 	if (deck.hasField("DIMENS")) {
 	    dims = deck.getIntegerValue("DIMENS");
@@ -50,7 +53,7 @@ namespace Opm
 	struct grdecl grdecl;
 	grdecl.zcorn = &zcorn[0];
 	grdecl.coord = &coord[0];
-	grdecl.actnum = actnum.empty() ? 0 : &actnum[0];
+	grdecl.actnum = actnum;
 	grdecl.dims[0] = dims[0];
 	grdecl.dims[1] = dims[1];
 	grdecl.dims[2] = dims[2];
