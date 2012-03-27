@@ -62,7 +62,8 @@ void extractColumn( const UnstructuredGrid& grid, std::pair<std::vector<int>, st
         columns.second[local_index].push_back(i);
     }
 
-    for(int i = 0; i < columns.second.size(); ++i) {
+    int num_cols = columns.second.size();
+    for(int i = 0; i < num_cols; ++i) {
         std::sort(columns.second[i].begin(), columns.second[i].end(), ExtractColumnCompare(grid));
     }
 }
