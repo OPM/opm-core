@@ -990,6 +990,102 @@ struct COMPDAT : public SpecialBase
     }
 };
 
+
+
+/// Class holding a data line of keyword WCONINJE
+struct GconinjeLine
+{
+    std::string group_;             // Well name or well name root
+    std::string injector_type_;    // Injector type
+    std::string control_mode_;     // Control mode
+    double surface_flow_max_rate_; // Surface flow rate target or upper limit
+
+    double reinjection_fraction_target_;
+    
+    // Default values
+    GconinjeLine() :
+	surface_flow_max_rate_(1.0E20), reinjection_fraction_target_(1E20)
+    {
+    }
+};
+
+/// Class for keyword WCONINJE
+struct GCONINJE : public SpecialBase
+{
+    std::vector<GconinjeLine> gconinje;
+
+    GCONINJE()
+    {
+    }
+
+    virtual ~GCONINJE()
+    {}
+
+    virtual std::string name() const {return std::string("GCONINJE");}
+
+    virtual void read(std::istream& is)
+    {
+	while(is) {
+            std::cout<< "here" << std::endl;
+	    std::string groupname = readString(is); 
+	    if (groupname[0] == '/') {
+                std::cout << "And we're out" << std::endl;
+		is >> ignoreLine;
+		break;
+	    }
+	    while (groupname.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		groupname = readString(is);
+	    }
+	    GconinjeLine gconinje_line;
+	    gconinje_line.group_ = groupname;
+	    gconinje_line.injector_type_ = readString(is);
+	    gconinje_line.control_mode_ = readString(is);
+	    std::vector<double> double_data(10, 1.0E20);
+            const int num_to_read = 10;
+	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
+	    gconinje_line.surface_flow_max_rate_ = double_data[0];
+            gconinje_line.reinjection_fraction_target_ = double_data[2];
+	    // HACK! Ignore any further items
+            if (num_read == num_to_read) {
+                ignoreSlashLine(is);
+            }
+	    gconinje.push_back(gconinje_line);
+            
+	}
+        
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << std::endl;
+	for (int i=0; i<(int) gconinje.size(); ++i) {
+	    os << gconinje[i].group_ << "  " 
+	       << gconinje[i].injector_type_ << "  " 
+	       << gconinje[i].control_mode_ << "  " 
+	       << gconinje[i].surface_flow_max_rate_ << "  " 
+	       << gconinje[i].reinjection_fraction_target_
+	       << std::endl; 
+	}
+	os << std::endl;
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+	for (int i=0; i<(int) gconinje.size(); ++i) {
+            if (gconinje[i].injector_type_ == "GAS") {
+                gconinje[i].surface_flow_max_rate_ *= units.gasvol_s/units.time;
+            } else {
+                gconinje[i].surface_flow_max_rate_ *= units.liqvol_s/units.time;
+            }
+	}
+    }
+};
+
+
+
+
 /// Class holding a data line of keyword WCONINJE
 struct WconinjeLine
 {
