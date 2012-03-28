@@ -294,27 +294,27 @@ struct GRUPTREE : public SpecialBase {
     }
 
     virtual void read(std::istream & is) {
-        // Not done:
-        return;
         while (!is.eof()) {
             std::string child = readString(is);
+            is >> ignoreWhitespace;
             std::string parent = readString(is);
 
             std::cout << "CHILD = " << child << std::endl << "PARENT = " << parent << std::endl;
             tree[child] = parent;
-
-            int action = next_action(is); // 0:continue  1:return  2:throw
-            if (action == 1) {
-                return; // Alphabetic char. Read next keyword.
-            } else if (action == 2) {
-                THROW("Error reading GRUPTREE. Next character is "
-                        << (char) is.peek());
+            
+            is >> ignoreSlashLine;
+            is >> ignoreWhitespace;
+            if(is.peek() == int('/')) {
+                is >> ignoreSlashLine;
+                return;
             }
         }
     }
 
     virtual void write(std::ostream & os) {
-        //os << name() << '\n' << tree << '\n';
+        for(std::map<std::string, std::string>::iterator it = tree.begin(); it != tree.end(); ++it) {
+            os << it->first << " "<< it->second<< std::endl;
+        }
     }
 
     virtual void convertToSI(const EclipseUnits&) {
