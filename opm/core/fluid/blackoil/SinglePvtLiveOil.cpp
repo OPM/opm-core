@@ -243,10 +243,10 @@ namespace Opm
 
 
     void SinglePvtLiveOil::evalBDeriv(const double press, const double* surfvol,
-                                      double& B, double& dBdp) const
+                                      double& Bval, double& dBdpval) const
     {
-	B = evalB(press, surfvol);
-	dBdp = -B*B*miscible_oil(press, surfvol, 1, true);
+	Bval = evalB(press, surfvol);
+	dBdpval = -Bval*Bval*miscible_oil(press, surfvol, 1, true);
     }
 
     double SinglePvtLiveOil::evalR(double press, const double* surfvol) const
@@ -254,36 +254,36 @@ namespace Opm
         if (surfvol[phase_pos_[Vapour]] == 0.0) {
             return 0.0;
         }	
-	double R = linearInterpolationExtrap(saturated_oil_table_[0],
+	double Rval = linearInterpolationExtrap(saturated_oil_table_[0],
 					     saturated_oil_table_[3], press);
 	double maxR = surfvol[phase_pos_[Vapour]]/surfvol[phase_pos_[Liquid]];
-	if (R < maxR ) {  // Saturated case
-	    return R;
+	if (Rval < maxR ) {  // Saturated case
+	    return Rval;
 	} else {
 	    return maxR;  // Undersaturated case
 	}
     }
 
     void SinglePvtLiveOil::evalRDeriv(const double press, const double* surfvol,
-                                      double& R, double& dRdp) const
+                                      double& Rval, double& dRdpval) const
     {
         if (surfvol[phase_pos_[Vapour]] == 0.0) {
-            R = 0.0;
-            dRdp = 0.0;
+            Rval = 0.0;
+            dRdpval = 0.0;
             return;
         }
-	R = linearInterpolationExtrap(saturated_oil_table_[0],
+	Rval = linearInterpolationExtrap(saturated_oil_table_[0],
                                       saturated_oil_table_[3], press);
 	double maxR = surfvol[phase_pos_[Vapour]]/surfvol[phase_pos_[Liquid]];
-	if (R < maxR ) {
+	if (Rval < maxR ) {
             // Saturated case
-	    dRdp = linearInterpolDerivative(saturated_oil_table_[0],
+	    dRdpval = linearInterpolDerivative(saturated_oil_table_[0],
 					    saturated_oil_table_[3],
 					    press);
 	} else {
             // Undersaturated case
-            R = maxR;
-	    dRdp = 0.0;
+            Rval = maxR;
+	    dRdpval = 0.0;
 	}
     }
 
@@ -294,12 +294,12 @@ namespace Opm
                                           const bool deriv) const
     {
 	int section;
-	double R = linearInterpolationExtrap(saturated_oil_table_[0],
-					     saturated_oil_table_[3],
-					     press, section);
+	double Rval = linearInterpolationExtrap(saturated_oil_table_[0],
+                                                saturated_oil_table_[3],
+                                                press, section);
 	double maxR = (surfvol[phase_pos_[Liquid]] == 0.0) ? 0.0 : surfvol[phase_pos_[Vapour]]/surfvol[phase_pos_[Liquid]];
 	if (deriv) {
-	    if (R < maxR ) {  // Saturated case
+	    if (Rval < maxR ) {  // Saturated case
 		return linearInterpolDerivative(saturated_oil_table_[0],
 						saturated_oil_table_[item],
 						press);
@@ -321,7 +321,7 @@ namespace Opm
 		return val;
 	    }
 	} else {
-	    if (R < maxR ) {  // Saturated case
+	    if (Rval < maxR ) {  // Saturated case
 		return linearInterpolationExtrap(saturated_oil_table_[0],
 						 saturated_oil_table_[item],
 						 press);

@@ -85,9 +85,9 @@ namespace Opm {
 	    return path_;
 	}
 
-	ParameterGroup::ParameterGroup(const std::string& path,
+	ParameterGroup::ParameterGroup(const std::string& patharg,
 				       const ParameterGroup* parent)
-	: path_(path), parent_(parent), output_is_enabled_(true)
+	: path_(patharg), parent_(parent), output_is_enabled_(true)
 	{
 	}
 

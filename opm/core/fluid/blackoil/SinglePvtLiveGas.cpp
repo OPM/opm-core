@@ -166,16 +166,16 @@ namespace Opm
     }
 
     void SinglePvtLiveGas::evalBDeriv(const double press, const double* surfvol,
-                                      double& B, double& dBdp) const
+                                      double& Bval, double& dBdpval) const
     {
         if (surfvol[phase_pos_[Vapour]] == 0.0) {
             // To handle no-gas case.
-            B = 1.0;
-            dBdp = 0.0;
+            Bval = 1.0;
+            dBdpval = 0.0;
             return;
         }
-        B = miscible_gas(press, surfvol, 1, false);
-        dBdp =  miscible_gas(press, surfvol, 1, true);
+        Bval = miscible_gas(press, surfvol, 1, false);
+        dBdpval =  miscible_gas(press, surfvol, 1, true);
     }
 
     double SinglePvtLiveGas::evalR(const double press, const double* surfvol) const
@@ -197,12 +197,12 @@ namespace Opm
     }
 
     void SinglePvtLiveGas::evalRDeriv(const double press, const double* surfvol,
-                                      double& R, double& dRdp) const
+                                      double& Rval, double& dRdpval) const
     {
         if (surfvol[phase_pos_[Liquid]] == 0.0) {
             // To handle no-gas case.
-            R = 0.0;
-            dRdp = 0.0;
+            Rval = 0.0;
+            dRdpval = 0.0;
             return;
         }
 	double satR = linearInterpolationExtrap(saturated_gas_table_[0],
@@ -210,14 +210,14 @@ namespace Opm
 	double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
 	if (satR < maxR ) {
             // Saturated case
-            R = satR;
-	    dRdp = linearInterpolDerivative(saturated_gas_table_[0],
+            Rval = satR;
+	    dRdpval = linearInterpolDerivative(saturated_gas_table_[0],
 					    saturated_gas_table_[3],
 					    press);
 	} else {
             // Undersaturated case
-            R = maxR;
-	    dRdp = 0.0;
+            Rval = maxR;
+	    dRdpval = 0.0;
 	}	
     }
 
@@ -227,12 +227,12 @@ namespace Opm
                                           const bool deriv) const
     {
 	int section;
-	double R = linearInterpolationExtrap(saturated_gas_table_[0],
-					     saturated_gas_table_[3], press,
-					     section);
+	double Rval = linearInterpolationExtrap(saturated_gas_table_[0],
+                                                saturated_gas_table_[3], press,
+                                                section);
 	double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
 	if (deriv) {
-	    if (R < maxR ) {  // Saturated case
+	    if (Rval < maxR ) {  // Saturated case
 		return linearInterpolDerivative(saturated_gas_table_[0],
 						saturated_gas_table_[item],
 						press);
@@ -258,7 +258,7 @@ namespace Opm
 		return val;
 	    }
 	} else {
-	    if (R < maxR ) {  // Saturated case
+	    if (Rval < maxR ) {  // Saturated case
 		return linearInterpolationExtrap(saturated_gas_table_[0],
 						 saturated_gas_table_[item],
 						 press);

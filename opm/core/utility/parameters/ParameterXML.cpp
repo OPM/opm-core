@@ -54,6 +54,8 @@ namespace Opm {
     namespace parameter {
 
 	namespace tinyxml {
+	    std::string getProperty(const std::string& property,
+                                    const TiXmlElement* node_ptr);
 	    void read_xml(ParameterGroup& pg, const std::string filename);
 	    void fill_tree(ParameterGroup& pg,
                            const TiXmlNode* root,
