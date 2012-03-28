@@ -98,7 +98,7 @@ namespace EclipseKeywords
           string("EQUIL"),    string("PVCDO"),    string("TSTEP"),
           string("PLYVISC"),  string("PLYROCK"),  string("PLYADS"),
           string("PLYMAX"),   string("TLMIXPAR"), string("WPOLYMER"),
-          string("GRUPTREE"),
+          string("GRUPTREE"), string("GCONINJE"), string("GCONPROD"),
           // The following fields only have a dummy implementation
           // that allows us to ignore them.
           string("SWFN"),

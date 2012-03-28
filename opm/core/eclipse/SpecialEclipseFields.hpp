@@ -990,6 +990,100 @@ struct COMPDAT : public SpecialBase
     }
 };
 
+
+
+/// Class holding a data line of keyword WCONINJE
+struct GconinjeLine
+{
+    std::string group_;             // Well name or well name root
+    std::string injector_type_;    // Injector type
+    std::string control_mode_;     // Control mode
+    double surface_flow_max_rate_; // Surface flow rate target or upper limit
+
+    double reinjection_fraction_target_;
+    
+    // Default values
+    GconinjeLine() :
+	surface_flow_max_rate_(1.0E20), reinjection_fraction_target_(1E20)
+    {
+    }
+};
+
+/// Class for keyword WCONINJE
+struct GCONINJE : public SpecialBase
+{
+    std::vector<GconinjeLine> gconinje;
+
+    GCONINJE()
+    {
+    }
+
+    virtual ~GCONINJE()
+    {}
+
+    virtual std::string name() const {return std::string("GCONINJE");}
+
+    virtual void read(std::istream& is)
+    {
+	while(is) {
+	    std::string groupname = readString(is); 
+	    if (groupname[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    }
+	    while (groupname.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		groupname = readString(is);
+	    }
+	    GconinjeLine gconinje_line;
+	    gconinje_line.group_ = groupname;
+	    gconinje_line.injector_type_ = readString(is);
+	    gconinje_line.control_mode_ = readString(is);
+	    std::vector<double> double_data(10, 1.0E20);
+            const int num_to_read = 10;
+	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
+	    gconinje_line.surface_flow_max_rate_ = double_data[0];
+            gconinje_line.reinjection_fraction_target_ = double_data[2];
+	    // HACK! Ignore any further items
+            if (num_read == num_to_read) {
+                ignoreSlashLine(is);
+            }
+	    gconinje.push_back(gconinje_line);
+            
+	}
+        
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << std::endl;
+	for (int i=0; i<(int) gconinje.size(); ++i) {
+	    os << gconinje[i].group_ << "  " 
+	       << gconinje[i].injector_type_ << "  " 
+	       << gconinje[i].control_mode_ << "  " 
+	       << gconinje[i].surface_flow_max_rate_ << "  " 
+	       << gconinje[i].reinjection_fraction_target_
+	       << std::endl; 
+	}
+	os << std::endl;
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+	for (int i=0; i<(int) gconinje.size(); ++i) {
+            if (gconinje[i].injector_type_ == "GAS") {
+                gconinje[i].surface_flow_max_rate_ *= units.gasvol_s/units.time;
+            } else {
+                gconinje[i].surface_flow_max_rate_ *= units.liqvol_s/units.time;
+            }
+	}
+    }
+};
+
+
+
+
 /// Class holding a data line of keyword WCONINJE
 struct WconinjeLine
 {
@@ -1102,6 +1196,118 @@ struct WCONINJE : public SpecialBase
 	}
     }
 };
+
+
+
+/// Class holding a data line of keyword WCONPROD
+struct GconprodLine
+{
+    std::string group_;             // Well name or well name root
+    std::string control_mode_;     // Control mode
+    double oil_max_rate_;          // Oil rate target or upper limit
+    double water_max_rate_;        // Water rate target or upper limit
+    double gas_max_rate_;          // Gas rate target or upper limit
+    double liquid_max_rate_;       // Liquid rate target or upper limit
+    std::string procedure_;        // Procedure on exceeding a maximum rate limit
+    // Default values
+    GconprodLine() :
+	oil_max_rate_(1.0E20), water_max_rate_(1.0E20),
+	gas_max_rate_(1.0E20), liquid_max_rate_(1.0E20)
+    {
+    }
+};
+
+/// Class for keyword WCONPROD
+struct GCONPROD : public SpecialBase
+{
+    std::vector<GconprodLine> gconprod;
+
+    GCONPROD()
+    {
+    }
+
+    virtual ~GCONPROD()
+    {}
+
+    virtual std::string name() const {return std::string("GCONPROD");}
+
+    virtual void read(std::istream& is)
+    {
+	while(is) {
+	    std::string groupname = readString(is); 
+	    if (groupname[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    }
+	    while (groupname.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		groupname = readString(is);
+	    }
+	    GconprodLine gconprod_line;
+	    gconprod_line.group_ = groupname;
+	    gconprod_line.control_mode_ = readString(is);
+	    std::vector<double> double_data(4, 1.0E20);
+            const int num_to_read = 4;
+	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
+	    gconprod_line.oil_max_rate_ = double_data[0];
+	    gconprod_line.water_max_rate_ = double_data[1];
+	    gconprod_line.gas_max_rate_ = double_data[2];
+	    gconprod_line.liquid_max_rate_ = double_data[3];
+            
+            
+            std::string procedure = readString(is); 
+	    if (procedure[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    }
+	    while (procedure.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		procedure = readString(is);
+	    }
+            
+            gconprod_line.procedure_ = procedure;
+	    
+	    gconprod.push_back(gconprod_line);
+	    // HACK! Ignore any further items
+            if (num_read == num_to_read) {
+                ignoreSlashLine(is);
+            }
+
+	}
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << std::endl;
+	for (int i=0; i<(int) gconprod.size(); ++i) {
+	    os << gconprod[i].group_ << "  " 
+	       << gconprod[i].control_mode_ << "  " 
+	       << gconprod[i].oil_max_rate_ << "  " 
+	       << gconprod[i].water_max_rate_ << "  " 
+	       << gconprod[i].gas_max_rate_ << "  " 
+	       << gconprod[i].liquid_max_rate_ << "  " 
+	       << gconprod[i].procedure_
+	       << std::endl; 
+	}
+	os << std::endl;
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+	double lrat = units.liqvol_s / units.time;
+	double grat = units.gasvol_s / units.time;
+	for (int i=0; i<(int) gconprod.size(); ++i) {
+	    gconprod[i].oil_max_rate_ *= lrat;
+	    gconprod[i].water_max_rate_ *= lrat;
+	    gconprod[i].gas_max_rate_ *= grat;
+	    gconprod[i].liquid_max_rate_ *= lrat;
+	}
+    }
+};
+
+
 
 /// Class holding a data line of keyword WCONPROD
 struct WconprodLine
