@@ -20,7 +20,8 @@ test_readpolymer				\
 test_readvector					\
 test_sf2p					\
 test_writeVtkData				\
-unit_test
+unit_test					\
+test_cartgrid
 
 bo_resprop_test_SOURCES = bo_resprop_test.cpp
 monotcubicinterpolator_test_SOURCES = monotcubicinterpolator_test.cpp
@@ -39,6 +40,7 @@ test_readvector_SOURCES   = test_readvector.cpp
 test_sf2p_SOURCES         = test_sf2p.cpp
 test_writeVtkData_SOURCES = test_writeVtkData.cpp
 unit_test_SOURCES         = unit_test.cpp
+test_cartgrid_SOURCES     = test_cartgrid.cpp
 
 if UMFPACK
 noinst_PROGRAMS    += test_cfs_tpfa
