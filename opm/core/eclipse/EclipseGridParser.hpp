@@ -151,6 +151,7 @@ public:                                                                         
     SPECIAL_FIELD(WPOLYMER);
     SPECIAL_FIELD(GRUPTREE);
     SPECIAL_FIELD(GCONINJE);
+    SPECIAL_FIELD(GCONPROD);
 
     // The following fields only have a dummy implementation
     // that allows us to ignore them.

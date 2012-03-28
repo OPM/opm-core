@@ -1026,10 +1026,8 @@ struct GCONINJE : public SpecialBase
     virtual void read(std::istream& is)
     {
 	while(is) {
-            std::cout<< "here" << std::endl;
 	    std::string groupname = readString(is); 
 	    if (groupname[0] == '/') {
-                std::cout << "And we're out" << std::endl;
 		is >> ignoreLine;
 		break;
 	    }
@@ -1198,6 +1196,118 @@ struct WCONINJE : public SpecialBase
 	}
     }
 };
+
+
+
+/// Class holding a data line of keyword WCONPROD
+struct GconprodLine
+{
+    std::string group_;             // Well name or well name root
+    std::string control_mode_;     // Control mode
+    double oil_max_rate_;          // Oil rate target or upper limit
+    double water_max_rate_;        // Water rate target or upper limit
+    double gas_max_rate_;          // Gas rate target or upper limit
+    double liquid_max_rate_;       // Liquid rate target or upper limit
+    std::string procedure_;        // Procedure on exceeding a maximum rate limit
+    // Default values
+    GconprodLine() :
+	oil_max_rate_(1.0E20), water_max_rate_(1.0E20),
+	gas_max_rate_(1.0E20), liquid_max_rate_(1.0E20)
+    {
+    }
+};
+
+/// Class for keyword WCONPROD
+struct GCONPROD : public SpecialBase
+{
+    std::vector<GconprodLine> gconprod;
+
+    GCONPROD()
+    {
+    }
+
+    virtual ~GCONPROD()
+    {}
+
+    virtual std::string name() const {return std::string("GCONPROD");}
+
+    virtual void read(std::istream& is)
+    {
+	while(is) {
+	    std::string groupname = readString(is); 
+	    if (groupname[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    }
+	    while (groupname.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		groupname = readString(is);
+	    }
+	    GconprodLine gconprod_line;
+	    gconprod_line.group_ = groupname;
+	    gconprod_line.control_mode_ = readString(is);
+	    std::vector<double> double_data(4, 1.0E20);
+            const int num_to_read = 4;
+	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
+	    gconprod_line.oil_max_rate_ = double_data[0];
+	    gconprod_line.water_max_rate_ = double_data[1];
+	    gconprod_line.gas_max_rate_ = double_data[2];
+	    gconprod_line.liquid_max_rate_ = double_data[3];
+            
+            
+            std::string procedure = readString(is); 
+	    if (procedure[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    }
+	    while (procedure.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		procedure = readString(is);
+	    }
+            
+            gconprod_line.procedure_ = procedure;
+	    
+	    gconprod.push_back(gconprod_line);
+	    // HACK! Ignore any further items
+            if (num_read == num_to_read) {
+                ignoreSlashLine(is);
+            }
+
+	}
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << std::endl;
+	for (int i=0; i<(int) gconprod.size(); ++i) {
+	    os << gconprod[i].group_ << "  " 
+	       << gconprod[i].control_mode_ << "  " 
+	       << gconprod[i].oil_max_rate_ << "  " 
+	       << gconprod[i].water_max_rate_ << "  " 
+	       << gconprod[i].gas_max_rate_ << "  " 
+	       << gconprod[i].liquid_max_rate_ << "  " 
+	       << gconprod[i].procedure_
+	       << std::endl; 
+	}
+	os << std::endl;
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+	double lrat = units.liqvol_s / units.time;
+	double grat = units.gasvol_s / units.time;
+	for (int i=0; i<(int) gconprod.size(); ++i) {
+	    gconprod[i].oil_max_rate_ *= lrat;
+	    gconprod[i].water_max_rate_ *= lrat;
+	    gconprod[i].gas_max_rate_ *= grat;
+	    gconprod[i].liquid_max_rate_ *= lrat;
+	}
+    }
+};
+
+
 
 /// Class holding a data line of keyword WCONPROD
 struct WconprodLine
