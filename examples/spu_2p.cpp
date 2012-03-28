@@ -291,15 +291,15 @@ public:
     class DPcap>
     void pc(int c, const Sat& s, Pcap& pcap, DPcap& dpcap) const
     {
-        double pc[2];
-        double dpc[4];
-        props_.capPress(1, &s[0], &c, pc, dpc);
-        pcap = pc[0];
-        ASSERT(pc[1] == 0.0);
-        dpcap = dpc[0];
-        ASSERT(dpc[1] == 0.0);
-        ASSERT(dpc[2] == 0.0);
-        ASSERT(dpc[3] == 0.0);
+        double pcow[2];
+        double dpcow[4];
+        props_.capPress(1, &s[0], &c, pcow, dpcow);
+        pcap = pcow[0];
+        ASSERT(pcow[1] == 0.0);
+        dpcap = dpcow[0];
+        ASSERT(dpcow[1] == 0.0);
+        ASSERT(dpcow[2] == 0.0);
+        ASSERT(dpcow[3] == 0.0);
     }
 
     double s_min(int c) const

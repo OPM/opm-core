@@ -9,8 +9,8 @@ namespace Opm {
 /// Compares the underlying k-index
 struct ExtractColumnCompare
 {
-    ExtractColumnCompare(const UnstructuredGrid& grid)
-        : grid(grid)
+    ExtractColumnCompare(const UnstructuredGrid& g)
+        : grid(g)
     {
         // empty
     }
@@ -35,7 +35,7 @@ struct ExtractColumnCompare
 ///  \param columns will for each (i, j) where (i, j) represents a non-empty column,
 ////        contain the cell indices contained in the column
 ///         centered at (i, j) in the second variable, and i+jN in the first variable.
-void extractColumn( const UnstructuredGrid& grid, std::pair<std::vector<int>, std::vector<std::vector<int> > >& columns )
+inline void extractColumn( const UnstructuredGrid& grid, std::pair<std::vector<int>, std::vector<std::vector<int> > >& columns )
 {
     const int* dims = grid.cartdims;
     
