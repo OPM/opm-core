@@ -296,7 +296,7 @@ ifsh_ms_impl_construct(struct UnstructuredGrid       *G     ,
                        LocalSolver   linsolve)
 /* ---------------------------------------------------------------------- */
 {
-    int max_nconn, nb, nconn_tot;
+    int max_nconn = -1, nb, nconn_tot;
     int expected_nconn, alloc_ok;
 
     struct ifsh_ms_impl *new;

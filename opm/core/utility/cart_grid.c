@@ -723,28 +723,3 @@ fill_cart_geometry_2d(struct UnstructuredGrid *G,
         }
     }
 }
-
-
-
-
-
-#if UNIT_TEST
-int main(void)
-{
-
-    struct UnstructuredGrid *g = create_cart_grid_2d(2,2);
-    int i;
-    int k;
-    for(i=0; i<g->number_of_cells; ++i)
-    {
-        fprintf(stderr, "%d: ", i);
-        for (k=g->cell_facepos[i]; k<g->cell_facepos[i+1]; ++k)
-        {
-            fprintf(stderr, "%d ", g->cell_faces[k]);
-        }
-        fprintf(stderr, "\n");
-    }
-    free_grid(g);
-    return 0;
-}
-#endif

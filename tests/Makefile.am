@@ -14,6 +14,7 @@ monotcubicinterpolator_test			\
 param_test					\
 sparsetable_test				\
 sparsevector_test				\
+test_cartgrid					\
 test_column_extract				\
 test_lapack					\
 test_readpolymer				\
@@ -30,6 +31,7 @@ sparsetable_test_SOURCES  = sparsetable_test.cpp
 sparsetable_test_LDADD    = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LDADD)
 sparsevector_test_SOURCES = sparsevector_test.cpp
 sparsevector_test_LDADD   = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LDADD)
+test_cartgrid_SOURCES     = test_cartgrid.cpp
 test_column_extract_SOURCES = test_column_extract.cpp
 test_column_extract_LDADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LDADD)
 test_lapack_SOURCES       = test_lapack.cpp

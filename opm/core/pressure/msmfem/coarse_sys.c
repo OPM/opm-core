@@ -718,7 +718,7 @@ blkdof_fill(struct coarse_topology *ct,
             struct coarse_sys      *sys)
 /* ---------------------------------------------------------------------- */
 {
-    int    p, ret, dof;
+    int    p, ret = 0, dof;
     size_t b, nb;
 
     nb = ct->nblocks;
@@ -749,7 +749,6 @@ blkdof_fill(struct coarse_topology *ct,
         if (sys->blkdof == NULL) {
             free(sys->blkdof_pos);
             sys->blkdof_pos = NULL;
-            ret = 0;
         } else {
             sys->blkdof_pos[0] = 0;
 

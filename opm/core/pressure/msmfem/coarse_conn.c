@@ -431,7 +431,7 @@ coarse_topology_build_final(int ncoarse_f, int nblk,
                             int *subfacepos, int *subfaces)
 /* ---------------------------------------------------------------------- */
 {
-    int              coarse_f, b1, b2, n, subpos, subface_valid;
+    int              coarse_f, b1, b2, n, subpos, subface_valid = 1;
     size_t           i;
     struct hash_set *set;
 
@@ -450,8 +450,6 @@ coarse_topology_build_final(int ncoarse_f, int nblk,
     if (subfacepos != NULL) {
         coarse_f = 0;
         subpos   = 0;
-
-        subface_valid = 1;
 
         for (b1 = 0; (b1 < nblk) && subface_valid; b1++) {
             if (bns[b1] != NULL) {
