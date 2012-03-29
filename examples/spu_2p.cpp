@@ -391,10 +391,9 @@ main(int argc, char** argv)
     if (wells->c_wells()) {
         Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
     } else {
-        double flow_per_sec = 0.1*tot_porevol_init/Opm::unit::day;
-        if (param.has("injection_rate_per_day")) {
-            flow_per_sec = param.get<double>("injection_rate_per_day")/Opm::unit::day;
-        }
+        const double default_injection = use_gravity ? 0.0 : 0.1;
+        const double flow_per_sec = param.getDefault<double>("injected_porevolumes_per_day", default_injection)
+            *tot_porevol_init/Opm::unit::day;
         src[0] = flow_per_sec;
         src[num_cells - 1] = -flow_per_sec;
     }
