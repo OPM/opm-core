@@ -63,8 +63,8 @@ namespace Opm
 
 	/// Constructs a SparseVector with a given size, but no nonzero
 	/// elements.
-	explicit SparseVector(int size)
-	    : size_(size), default_elem_()
+	explicit SparseVector(int sz)
+	    : size_(sz), default_elem_()
 	{
 	}
 
@@ -74,20 +74,20 @@ namespace Opm
 	/// \param rowsize_beg The start of the index data.
 	/// \param rowsize_end One beyond the end of the index data.
 	template <typename DataIter, typename IntegerIter>
-	SparseVector(int size,
+	SparseVector(int sz,
 		     DataIter data_beg, DataIter data_end,
 		     IntegerIter index_beg, IntegerIter index_end)
-	    : size_(size), data_(data_beg, data_end), indices_(index_beg, index_end),
+	    : size_(sz), data_(data_beg, data_end), indices_(index_beg, index_end),
 	      default_elem_()
 	{
 #ifndef NDEBUG
-	    ASSERT(size >= 0);
+	    ASSERT(sz >= 0);
 	    ASSERT(indices_.size() == data_.size());
 	    int last_index = -1;
 	    int num_ind = indices_.size();
 	    for (int i = 0; i < num_ind; ++i) {
 		int index = indices_[i];
-		if (index <= last_index || index >= size) {
+		if (index <= last_index || index >= sz) {
 		    THROW("Error in SparseVector construction, index is nonincreasing or out of range.");
 		}
 		last_index = index;
@@ -99,11 +99,11 @@ namespace Opm
 	/// Appends an element to the vector. Note that this function does not
 	/// increase the size() of the vector, it just adds another nonzero element.
 	/// Elements must be added in index order.
-	void addElement(const T& element, int index)
+	void addElement(const T& elem, int index)
 	{
 	    ASSERT(indices_.empty() || index > indices_.back());
 	    ASSERT(index < size_);
-	    data_.push_back(element);
+	    data_.push_back(elem);
 	    indices_.push_back(index);
 	}
 
