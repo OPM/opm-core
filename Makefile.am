@@ -57,7 +57,9 @@ opm/core/utility/newwells.c                             \
 opm/core/utility/writeVtkData.cpp			\
 opm/core/GridManager.cpp                                \
 opm/core/WellsManager.cpp                               \
-opm/core/InjectionSpecification.cpp                      \
+opm/core/WellsGroup.cpp					\
+opm/core/WellCollection.cpp				\
+opm/core/InjectionSpecification.cpp                     \
 opm/core/ProductionSpecification.cpp			\
 opm/core/linalg/sparse_sys.c                            \
 opm/core/linalg/LinearSolverInterface.cpp               \
@@ -164,6 +166,8 @@ opm/core/linalg/LinearSolverInterface.hpp               \
 opm/core/grid.h                                         \
 opm/core/well.h                                         \
 opm/core/newwells.h                                     \
+opm/core/WellsGroup.hpp					\
+opm/core/WellCollection.hpp				\
 opm/core/InjectionSpecification.hpp			\
 opm/core/ProductionSpecification.hpp			\
 opm/core/ColumnExtract.hpp				\
