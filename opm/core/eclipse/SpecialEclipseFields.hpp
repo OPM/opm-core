@@ -1247,6 +1247,10 @@ struct GCONPROD : public SpecialBase
 	    GconprodLine gconprod_line;
 	    gconprod_line.group_ = groupname;
 	    gconprod_line.control_mode_ = readString(is);
+            if (gconprod_line.control_mode_[gconprod_line.control_mode_.size() - 1] == '*') 
+            {
+                gconprod_line.control_mode_ = "NONE";
+            }
 	    std::vector<double> double_data(4, 1.0E20);
             const int num_to_read = 4;
 	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
