@@ -137,6 +137,108 @@ namespace Opm
 	}
 
 
+	/// Implements a modified regula falsi method as described in
+	/// "Improved algorithms of Illinois-type for the numerical
+	/// solution of nonlinear equations"
+	/// by J. A. Ford.
+	/// Current variant is the 'Pegasus' method.
+        /// This version takes an extra parameter for the initial guess.
+	template <class Functor>
+	inline double modifiedRegulaFalsi(const Functor& f,
+                                          const double initial_guess,
+                                          const double a,
+                                          const double b,
+                                          const int max_iter,
+                                          const double tolerance,
+                                          int& iterations_used)
+	{
+	    using namespace std;
+	    const double macheps = numeric_limits<double>::epsilon();
+	    const double eps = tolerance + macheps*max(max(fabs(a), fabs(b)), 1.0);
+
+            double f_initial = f(initial_guess);
+	    const double epsF = tolerance + macheps*max(fabs(f_initial), 1.0);
+            if (fabs(f_initial) < epsF) {
+                return initial_guess;
+            }
+	    double x0 = a;
+	    double x1 = b;
+            double f0 = f_initial;
+            double f1 = f_initial;
+            if (x0 != initial_guess) {
+                f0 = f(x0);
+                if (fabs(f0) < epsF) {
+                    return x0;
+                }
+	    }
+            if (x1 != initial_guess) {
+                f1 = f(x1);
+                if (fabs(f1) < epsF) {
+                    return x1;
+                }
+            }
+            if (f0*f_initial < 0.0) {
+                x1 = initial_guess;
+                f1 = f_initial;
+            } else {
+                x0 = initial_guess;
+                f0 = f_initial;
+            }
+	    if (f0*f1 > 0.0) {
+		THROW("Error in parameters, zero not bracketed: [a, b] = ["
+		      << a << ", " << b << "]    fa = " << f0 << "   fb = " << f1);
+	    }
+	    iterations_used = 0;
+	    // In every iteraton, x1 is the last point computed,
+	    // and x0 is the last point computed that makes it a bracket.
+	    while (fabs(x1 - x0) >= 1e-9*eps) {
+		double xnew = regulaFalsiStep(x0, x1, f0, f1);
+		double fnew = f(xnew);
+// 		cout << "xnew = " << xnew << "    fnew = " << fnew << endl;
+		++iterations_used;
+		if (iterations_used > max_iter) {
+		    THROW("Maximum number of iterations exceeded.\n"
+			  << "Current interval is [" << min(x0, x1) << ", "
+			  << max(x0, x1) << "]");
+		}
+		if (fabs(fnew) < epsF) {
+		    return xnew;
+		}
+		// Now we must check which point we must replace.
+		if ((fnew > 0.0) == (f0 > 0.0)) {
+		    // We must replace x0.
+		    x0 = x1;
+		    f0 = f1;
+		} else {
+		    // We must replace x1, this is the case where
+		    // the modification to regula falsi kicks in,
+		    // by modifying f0.
+		    // 1. The classic Illinois method
+//  		    const double gamma = 0.5;
+		    // @afr: The next two methods do not work??!!?
+		    // 2. The method called 'Method 3' in the paper.
+// 		    const double phi0 = f1/f0;
+// 		    const double phi1 = fnew/f1;
+// 		    const double gamma = 1.0 - phi1/(1.0 - phi0);
+		    // 3. The method called 'Method 4' in the paper.
+// 		    const double phi0 = f1/f0;
+// 		    const double phi1 = fnew/f1;
+// 		    const double gamma = 1.0 - phi0 - phi1;
+// 		    cout << "phi0 = " << phi0 <<" phi1 = " << phi1 <<
+// 		    " gamma = " << gamma << endl;
+		    // 4. The 'Pegasus' method
+ 		    const double gamma = f1/(f1 + fnew);
+		    f0 *= gamma;
+		}
+		x1 = xnew;
+		f1 = fnew;
+	    }
+	    return 0.5*(x0 + x1);
+	}
+
+
+
+
 	template <class Functor>
 	inline void bracketZero(const Functor& f,
                                 const double x0,
