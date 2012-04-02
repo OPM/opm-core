@@ -323,7 +323,7 @@ main(int argc, char** argv)
         // Rock compressibility.
         rock_comp.reset(new Opm::RockCompressibility(param));
         // Gravity.
-        gravity[grid->c_grid()->dimensions - 1] = param.getDefault("gravity", 0.0);
+        gravity[2] = param.getDefault("gravity", 0.0);
         // Init state variables (saturation and pressure).
         initStateTwophaseBasic(*grid->c_grid(), *props, param, gravity[2], state);
     }
