@@ -302,7 +302,7 @@ main(int argc, char** argv)
         // Rock compressibility.
         rock_comp.reset(new Opm::RockCompressibility(deck));
         // Gravity.
-        gravity[2] = deck.hasField("NOGRAVITY") ? 0.0 : Opm::unit::gravity;
+        gravity[2] = deck.hasField("NOGRAV") ? 0.0 : Opm::unit::gravity;
         // Init state variables (saturation and pressure).
         initStateTwophaseFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
     } else {
