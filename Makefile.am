@@ -1,3 +1,4 @@
+# Additional aclocal(1) macros located here.
 ACLOCAL_AMFLAGS = -I m4
 
 # Recurse to build examples after libraries
