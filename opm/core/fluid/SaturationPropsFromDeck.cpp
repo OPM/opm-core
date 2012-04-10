@@ -111,12 +111,12 @@ namespace Opm
     {
         const int np = phase_usage_.num_phases;
         if (dkrds) {
-#pragma omp parallel for
+// #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 evalKrDeriv(s + np*i, kr + np*i, dkrds + np*np*i);
             }
         } else {
-#pragma omp parallel for
+// #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 evalKr(s + np*i, kr + np*i);
             }
@@ -142,12 +142,12 @@ namespace Opm
     {
         const int np = phase_usage_.num_phases;
         if (dpcds) {
-#pragma omp parallel for
+// #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 evalPcDeriv(s + np*i, pc + np*i, dpcds + np*np*i);
             }
         } else {
-#pragma omp parallel for
+// #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 evalPc(s + np*i, pc + np*i);
             }

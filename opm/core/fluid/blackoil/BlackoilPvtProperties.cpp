@@ -134,7 +134,7 @@ namespace Opm
         data1_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
             props_[phase]->mu(n, p, z, &data1_[0]);
-#pragma omp parallel for
+// #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_mu[phase_usage_.num_phases*i + phase] = data1_[i];
             }
@@ -149,7 +149,7 @@ namespace Opm
         data1_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
             props_[phase]->B(n, p, z, &data1_[0]);
-#pragma omp parallel for
+// #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_B[phase_usage_.num_phases*i + phase] = data1_[i];
             }
@@ -166,7 +166,7 @@ namespace Opm
         data2_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
             props_[phase]->dBdp(n, p, z, &data1_[0], &data2_[0]);
-#pragma omp parallel for
+// #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_B[phase_usage_.num_phases*i + phase] = data1_[i];
                 output_dBdp[phase_usage_.num_phases*i + phase] = data2_[i];
@@ -183,7 +183,7 @@ namespace Opm
         data1_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
             props_[phase]->R(n, p, z, &data1_[0]);
-#pragma omp parallel for
+// #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_R[phase_usage_.num_phases*i + phase] = data1_[i];
             }
@@ -200,7 +200,7 @@ namespace Opm
         data2_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
             props_[phase]->dRdp(n, p, z, &data1_[0], &data2_[0]);
-#pragma omp parallel for
+// #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_R[phase_usage_.num_phases*i + phase] = data1_[i];
                 output_dRdp[phase_usage_.num_phases*i + phase] = data2_[i];

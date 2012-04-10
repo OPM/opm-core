@@ -91,7 +91,7 @@ namespace Opm
                               const double* z,
                               double* output_mu) const
     {
-#pragma omp parallel for
+// #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             output_mu[i] = miscible_gas(p[i], z + num_phases_*i, 2, false);
         }
@@ -104,7 +104,7 @@ namespace Opm
                              const double* z,
                              double* output_B) const
     {
-#pragma omp parallel for
+// #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             output_B[i] = evalB(p[i], z + num_phases_*i);
         }
@@ -119,7 +119,7 @@ namespace Opm
                                 double* output_B,
                                 double* output_dBdp) const
     {
-#pragma omp parallel for
+// #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             evalBDeriv(p[i], z + num_phases_*i, output_B[i], output_dBdp[i]);
         }
@@ -132,7 +132,7 @@ namespace Opm
                              const double* z,
                              double* output_R) const
     {
-#pragma omp parallel for
+// #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             output_R[i] = evalR(p[i], z + num_phases_*i);
         }
@@ -147,7 +147,7 @@ namespace Opm
                                 double* output_R,
                                 double* output_dRdp) const
     {
-#pragma omp parallel for
+// #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             evalRDeriv(p[i], z + num_phases_*i, output_R[i], output_dRdp[i]);
         }
