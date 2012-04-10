@@ -45,6 +45,7 @@
 #include <opm/core/newwells.h>
 #include <opm/core/WellsManager.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/initState.hpp>
 #include <opm/core/utility/SimulatorTimer.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/Units.hpp>
@@ -73,6 +74,7 @@
 #include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
 
 #include <opm/core/ColumnExtract.hpp>
+#include <opm/core/TwophaseState.hpp>
 #include <opm/core/transport/GravityColumnSolver.hpp>
 
 #include <opm/core/transport/reorder/TransportModelTwophase.hpp>
@@ -96,104 +98,8 @@
 
 
 
-class ReservoirState
-{
-public:
-    ReservoirState(const UnstructuredGrid* g, const double init_sat, const double init_p)
-        : press_ (g->number_of_cells, 0.0),
-          fpress_(g->number_of_faces, 0.0),
-          flux_  (g->number_of_faces, 0.0),
-          sat_   (2 * g->number_of_cells, 0.0)
-    {
-        for (int cell = 0; cell < g->number_of_cells; ++cell) {
-            sat_[2*cell] = init_sat;
-            sat_[2*cell + 1] = 1.0 - init_sat;
-            press_[cell] = init_p;
-        }
-    }
-
-    enum ExtremalSat { MinSat, MaxSat };
-
-    void setToMinimumWaterSat(const Opm::IncompPropertiesInterface& props)
-    {
-        const int n = props.numCells();
-        std::vector<int> cells(n);
-        for (int i = 0; i < n; ++i) {
-            cells[i] = i;
-        }
-        setWaterSat(cells, props, MinSat);
-    }
-
-    void setWaterSat(const std::vector<int>& cells,
-                     const Opm::IncompPropertiesInterface& props,
-                     ExtremalSat es)
-    {
-        const int n = cells.size();
-        std::vector<double> smin(2*n);
-        std::vector<double> smax(2*n);
-        props.satRange(n, &cells[0], &smin[0], &smax[0]);
-        const double* svals = (es == MinSat) ? &smin[0] : &smax[0];
-        for (int ci = 0; ci < n; ++ci) {
-            const int cell = cells[ci];
-            sat_[2*cell] = svals[2*ci];
-            sat_[2*cell + 1] = 1.0 - sat_[2*cell];
-        }
-    }
-
-    // Initialize saturations so that there is water below woc,
-    // and oil above.
-    // TODO: add 'anitialiasing', obtaining a more precise woc
-    //       by f. ex. subdividing cells cut by the woc.
-    void initWaterOilContact(const UnstructuredGrid& grid,
-                             const Opm::IncompPropertiesInterface& props,
-                             const double woc)
-    {
-        // Find out which cells should have water and which should have oil.
-        std::vector<int> oil;
-        std::vector<int> water;
-        const int num_cells = grid.number_of_cells;
-        oil.reserve(num_cells);
-        water.reserve(num_cells);
-        const int dim = grid.dimensions;
-        for (int c = 0; c < num_cells; ++c) {
-            const double z = grid.cell_centroids[dim*c + dim - 1];
-            if (z > woc) {
-                // Z is depth, we put water in the deepest parts
-                // (even if oil is heavier...).
-                water.push_back(c);
-            } else {
-                oil.push_back(c);
-            }
-        }
-
-        // Set saturations.
-        setWaterSat(oil, props, MinSat);
-        setWaterSat(water, props, MaxSat);
-    }
-
-    int numPhases() const { return sat_.size()/press_.size(); }
-
-    std::vector<double>& pressure    () { return press_ ; }
-    std::vector<double>& facepressure() { return fpress_; }
-    std::vector<double>& faceflux    () { return flux_  ; }
-    std::vector<double>& saturation  () { return sat_   ; }
-
-    const std::vector<double>& pressure    () const { return press_ ; }
-    const std::vector<double>& facepressure() const { return fpress_; }
-    const std::vector<double>& faceflux    () const { return flux_  ; }
-    const std::vector<double>& saturation  () const { return sat_   ; }
-
-private:
-    std::vector<double> press_ ;
-    std::vector<double> fpress_;
-    std::vector<double> flux_  ;
-    std::vector<double> sat_   ;
-};
-
-
-
 static void outputState(const UnstructuredGrid& grid,
-                        const ReservoirState& state,
+                        const Opm::TwophaseState& state,
                         const int step,
                         const std::string& output_dir)
 {
@@ -374,8 +280,8 @@ main(int argc, char** argv)
     boost::scoped_ptr<Opm::WellsManager> wells;
     boost::scoped_ptr<Opm::RockCompressibility> rock_comp;
     Opm::SimulatorTimer simtimer;
-    double water_oil_contact = 0.0;
-    bool woc_set = false;
+    Opm::TwophaseState state;
+    double gravity[3] = { 0.0 };
     if (use_deck) {
         std::string deck_filename = param.get<std::string>("deck_filename");
         Opm::EclipseGridParser deck(deck_filename);
@@ -393,16 +299,12 @@ main(int argc, char** argv)
         } else {
             simtimer.init(param);
         }
-        // Water-oil contact.
-        if (deck.hasField("EQUIL")) {
-            water_oil_contact = deck.getEQUIL().equil[0].water_oil_contact_depth_;
-            woc_set = true;
-        } else if (param.has("water_oil_contact")) {
-            water_oil_contact = param.get<double>("water_oil_contact");
-            woc_set = true;
-        }
         // Rock compressibility.
         rock_comp.reset(new Opm::RockCompressibility(deck));
+        // Gravity.
+        gravity[2] = deck.hasField("NOGRAV") ? 0.0 : Opm::unit::gravity;
+        // Init state variables (saturation and pressure).
+        initStateTwophaseFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
     } else {
         // Grid init.
         const int nx = param.getDefault("nx", 100);
@@ -418,23 +320,20 @@ main(int argc, char** argv)
         wells.reset(new Opm::WellsManager());
         // Timer init.
         simtimer.init(param);
-        if (param.has("water_oil_contact")) {
-            water_oil_contact = param.get<double>("water_oil_contact");
-            woc_set = true;
-        }
         // Rock compressibility.
         rock_comp.reset(new Opm::RockCompressibility(param));
+        // Gravity.
+        gravity[2] = param.getDefault("gravity", 0.0);
+        // Init state variables (saturation and pressure).
+        initStateTwophaseBasic(*grid->c_grid(), *props, param, gravity[2], state);
     }
 
     // Extra fluid init for transport solver.
     TwophaseFluid fluid(*props);
 
-    // Gravity init.
-    double gravity[3] = { 0.0 };
-    double g = param.getDefault("gravity", 0.0);
-    bool use_gravity = g != 0.0;
+    // Warn if gravity but no density difference.
+    bool use_gravity = (gravity[0] != 0.0 || gravity[1] != 0.0 || gravity[2] != 0.0);
     if (use_gravity) {
-        gravity[grid->c_grid()->dimensions - 1] = g;
         if (props->density()[0] == props->density()[1]) {
             std::cout << "**** Warning: nonzero gravity, but zero density difference." << std::endl;
         }
@@ -468,17 +367,11 @@ main(int argc, char** argv)
         nl_pressure_tolerance = param.getDefault("nl_pressure_tolerance", 1.0); // in Pascal
     }
 
-    // State-related and source-related variables init.
+    // Source-related variables init.
     int num_cells = grid->c_grid()->number_of_cells;
     std::vector<double> totmob;
     std::vector<double> omega; // Will remain empty if no gravity.
     std::vector<double> rc; // Will remain empty if no rock compressibility.
-    double init_sat = param.getDefault("init_sat", 0.0);
-    double init_p = param.getDefault("init_p_bar", 235)*Opm::unit::barsa;
-    ReservoirState state(grid->c_grid(), init_sat, init_p);
-    if (!param.has("init_sat")) {
-        state.setToMinimumWaterSat(*props);
-    }
 
     // Extra rock init.
     std::vector<double> porevol;
@@ -493,106 +386,18 @@ main(int argc, char** argv)
     // code expects a scalar sw, not both sw and so.
     std::vector<double> reorder_sat(num_cells);
     std::vector<double> src(num_cells, 0.0);
-    int scenario = param.getDefault("scenario", woc_set ? 4 : 0);
-    switch (scenario) {
-    case 0:
-        {
-            std::cout << "==== Scenario 0: simple wells or single-cell source and sink.\n";
-            if (wells->c_wells()) {
-                Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
-            } else {
-                double flow_per_sec = 0.1*tot_porevol_init/Opm::unit::day;
-                if (param.has("injection_rate_per_day")) {
-                    flow_per_sec = param.get<double>("injection_rate_per_day")/Opm::unit::day;
-                }
-                src[0] = flow_per_sec;
-                src[num_cells - 1] = -flow_per_sec;
-            }
-            break;
-        }
-    case 1:
-        {
-            std::cout << "==== Scenario 1: half source, half sink.\n";
-            double flow_per_sec = 0.1*porevol[0]/Opm::unit::day;
-            std::fill(src.begin(), src.begin() + src.size()/2, flow_per_sec);
-            std::fill(src.begin() + src.size()/2, src.end(), -flow_per_sec);
-            break;
-        }
-    case 2:
-        {
-            std::cout << "==== Scenario 2: gravity convection.\n";
-            if (!use_gravity) {
-                std::cout << "**** Warning: running gravity convection scenario, but gravity is zero." << std::endl;
-            }
-            if (use_deck) {
-                std::cout << "**** Warning: running gravity convection scenario, which expects a cartesian grid."
-                          << std::endl;
-            }
-            if (grid->c_grid()->cartdims[2] <= 1) {
-                std::cout << "**** Warning: running gravity convection scenario, which expects nz > 1." << std::endl;
-            }
-            std::vector<int> left_cells;
-            left_cells.reserve(num_cells/2);
-            const int *glob_cell = grid->c_grid()->global_cell;
-            for (int cell = 0; cell < num_cells; ++cell) {
-                const int* cd = grid->c_grid()->cartdims;
-                const int gc = glob_cell == 0 ? cell : glob_cell[cell];
-                bool left = (gc % cd[0]) < cd[0]/2;
-                if (left) {
-                    left_cells.push_back(cell);
-                }
-            }
-            state.setWaterSat(left_cells, *props, ReservoirState::MaxSat);
-            break;
-        }
-    case 3:
-        {
-            std::cout << "==== Scenario 3: gravity segregation.\n";
-            if (!use_gravity) {
-                std::cout << "**** Warning: running gravity segregation scenario, but gravity is zero." << std::endl;
-            }
-            if (use_deck) {
-                std::cout << "**** Warning: running gravity segregation scenario, which expects a cartesian grid."
-                          << std::endl;
-            }
-            if (grid->c_grid()->cartdims[2] <= 1) {
-                std::cout << "**** Warning: running gravity segregation scenario, which expects nz > 1." << std::endl;
-            }
-            std::vector<int> top_cells;
-            const int *glob_cell = grid->c_grid()->global_cell;
-            // Water on top
-            for (int cell = 0; cell < num_cells; ++cell) {
-                const int* cd = grid->c_grid()->cartdims;
-                const int gc = glob_cell == 0 ? cell : glob_cell[cell];
-                bool top = (gc / cd[0] / cd[1]) < cd[2]/2;
-                if (top) {
-                    top_cells.push_back(cell);
-                }
-            }
-            state.setWaterSat(top_cells, *props, ReservoirState::MaxSat);
-            break;
-        }
-    case 4:
-        {
-            std::cout << "==== Scenario 4: water-oil contact and simple wells or sources\n";
-            if (!use_gravity) {
-                std::cout << "**** Warning: initializing segregated water and oil zones, but gravity is zero." << std::endl;
-            }
-            state.initWaterOilContact(*grid->c_grid(), *props, water_oil_contact);
-            if (wells->c_wells()) {
-                Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
-            } else {
-                double flow_per_sec = 0.01*tot_porevol_init/Opm::unit::day;
-                src[0] = flow_per_sec;
-                src[grid->c_grid()->number_of_cells - 1] = -flow_per_sec;
-            }
-            break;
-        }
-    default:
-        {
-            THROW("==== Scenario " << scenario << " is unknown.");
-        }
+
+    // Initialising src
+    if (wells->c_wells()) {
+        Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
+    } else {
+        const double default_injection = use_gravity ? 0.0 : 0.1;
+        const double flow_per_sec = param.getDefault<double>("injected_porevolumes_per_day", default_injection)
+            *tot_porevol_init/Opm::unit::day;
+        src[0] = flow_per_sec;
+        src[num_cells - 1] = -flow_per_sec;
     }
+
     TransportSource* tsrc = create_transport_source(2, 2);
     double ssrc[]   = { 1.0, 0.0 };
     double ssink[]  = { 0.0, 1.0 };

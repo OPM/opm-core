@@ -147,6 +147,8 @@ opm/core/utility/StopWatch.hpp                          \
 opm/core/utility/UniformTableLinear.hpp                 \
 opm/core/utility/Units.hpp                              \
 opm/core/utility/buildUniformMonotoneTable.hpp          \
+opm/core/utility/initState.hpp                          \
+opm/core/utility/initState_impl.hpp                     \
 opm/core/utility/linInt.hpp                             \
 opm/core/utility/linearInterpolation.hpp                \
 opm/core/utility/miscUtilities.hpp                      \
@@ -173,6 +175,7 @@ opm/core/ProductionSpecification.hpp			\
 opm/core/ColumnExtract.hpp				\
 opm/core/GridAdapter.hpp                                \
 opm/core/GridManager.hpp                                \
+opm/core/TwophaseState.hpp                              \
 opm/core/WellsManager.hpp                               \
 opm/core/pressure/fsh.h                                 \
 opm/core/pressure/HybridPressureSolver.hpp              \
