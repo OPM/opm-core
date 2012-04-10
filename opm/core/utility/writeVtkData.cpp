@@ -22,6 +22,7 @@
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <boost/lexical_cast.hpp>
 #include <set>
+#include <cmath>
 #include <algorithm>
 #include <iostream>
 #include <iterator>
