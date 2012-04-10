@@ -12,8 +12,6 @@ stamp-*
 
 Makefile
 Makefile.in
-Doxyfile
-Doxyfile.in
 aclocal.m4
 am
 autom4te.cache
