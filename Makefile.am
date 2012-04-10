@@ -3,8 +3,19 @@ ACLOCAL_AMFLAGS = -I m4
 # Recurse to build examples after libraries
 SUBDIRS = . tests examples
 
+# ----------------------------------------------------------------------
+# Declare products (i.e., the library)
+lib_LTLIBRARIES = libopmcore.la
+
+# ----------------------------------------------------------------------
+# Build-time flags needed to build libopmcore.la
+
 AM_CPPFLAGS =					\
 $(BOOST_CPPFLAGS)
+
+# ----------------------------------------------------------------------
+# Link-time flags needed both to successfully link the library and to
+# (transitively) convey inter-library dependency information.
 
 libopmcore_la_LDFLAGS =				\
 $(BOOST_LDFLAGS)				\
@@ -14,8 +25,10 @@ $(BOOST_DATE_TIME_LIB)				\
 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)		\
 $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
-# Declare libraries
-lib_LTLIBRARIES = libopmcore.la
+# ----------------------------------------------------------------------
+# Library constituents.  SOURCES followed by HEADERS.
+#
+# Please try to keep the list sorted.
 
 libopmcore_la_SOURCES =                                 \
 opm/core/eclipse/EclipseGridInspector.cpp               \
@@ -224,6 +237,8 @@ opm/core/transport/reorder/nlsolvers.h		\
 opm/core/transport/reorder/reordersequence.h	\
 opm/core/transport/reorder/tarjan.h
 
+# ----------------------------------------------------------------------
+# Optional library constituents.
 
 if UMFPACK
 libopmcore_la_SOURCES  +=			\
