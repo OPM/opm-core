@@ -283,7 +283,6 @@ namespace Opm
 	    }
 	    Tag celldatatag("CellData", pm, os);
 	    pm.clear();
-	    pm["type"] = "Int32";
 	    pm["NumberOfComponents"] = "1";
 	    pm["format"] = "ascii";
 	    pm["type"] = "Float64";
@@ -298,7 +297,13 @@ namespace Opm
 		    if (item % num_per_line == 0) {
 			Tag::indent(os);
 		    }
-		    os << field[item] << ' ';
+                    double value = field[item];
+                    if (std::fabs(value) < std::numeric_limits<double>::min()) {
+                        // Avoiding denormal numbers to work around
+                        // bug in Paraview.
+                        value = 0.0;
+                    }
+		    os << value << ' ';
 		    if (item % num_per_line == num_per_line - 1
 			|| item == num_cells - 1) {
 			os << '\n';
