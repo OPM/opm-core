@@ -3,13 +3,16 @@ ACLOCAL_AMFLAGS = -I m4
 # Recurse to build examples after libraries
 SUBDIRS = . tests examples
 
-CPPFLAGS += $(BOOST_CPPFLAGS)
-LIBS +=  $(BOOST_LDFLAGS)                               \
-         $(BOOST_FILESYSTEM_LIB)                        \
-         $(BOOST_SYSTEM_LIB)                            \
-         $(BOOST_DATE_TIME_LIB)                         \
-         $(BOOST_UNIT_TEST_FRAMEWORK_LIB)               \
-         $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+AM_CPPFLAGS =					\
+$(BOOST_CPPFLAGS)
+
+libopmcore_la_LDFLAGS =				\
+$(BOOST_LDFLAGS)				\
+$(BOOST_FILESYSTEM_LIB)				\
+$(BOOST_SYSTEM_LIB)				\
+$(BOOST_DATE_TIME_LIB)				\
+$(BOOST_UNIT_TEST_FRAMEWORK_LIB)		\
+$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 # Declare libraries
 lib_LTLIBRARIES = libopmcore.la
