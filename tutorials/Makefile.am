@@ -6,7 +6,7 @@ LDFLAGS = $(BOOST_LDFLAGS)
 
 LDADD =	$(top_builddir)/libopmcore.la
 
-noinst_PROGRAMS = tutorial1                    
-tutorial1_SOURCES   = tutorial1.cpp         
-tutorial1_LDADD     =		 	\
-$(LDADD)					
+noinst_PROGRAMS = tutorial1
+tutorial1_SOURCES   = tutorial1.cpp
+tutorial1_LDADD     =				\
+$(LDADD)
