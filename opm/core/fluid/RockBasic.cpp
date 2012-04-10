@@ -42,7 +42,7 @@ namespace Opm
 	permeability_.clear();
 	const int dsq = dimensions*dimensions;
 	permeability_.resize(num_cells*dsq, 0.0);
-#pragma omp parallel for
+// #pragma omp parallel for
 	for (int i = 0; i < num_cells; ++i) {
 	    for (int d = 0; d < dimensions; ++d) {
 		permeability_[dsq*i + dimensions*d + d] = perm;
