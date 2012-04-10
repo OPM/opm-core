@@ -81,7 +81,7 @@ namespace Opm
                        double* output_B) const
         {
             if (comp_) {
-#pragma omp parallel for
+// #pragma omp parallel for
                 for (int i = 0; i < n; ++i) {
                     // Computing a polynomial approximation to the exponential.
                     double x = comp_*(p[i] - ref_press_);
@@ -100,7 +100,7 @@ namespace Opm
         {
             B(n, p, 0, output_B);
             if (comp_) {
-#pragma omp parallel for
+// #pragma omp parallel for
                 for (int i = 0; i < n; ++i) {
                     output_dBdp[i] = -comp_*output_B[i];
                 }

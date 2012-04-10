@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 # Recurse to build examples after libraries
-SUBDIRS = . tests examples
+SUBDIRS = . tests examples tutorials
 
 # ----------------------------------------------------------------------
 # Declare products (i.e., the library)

@@ -75,7 +75,7 @@ namespace Opm
                            const double* /*z*/,
                            double* output_mu) const
     {
-#pragma omp parallel for
+// #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             output_mu[i] = viscosity_(p[i]);
         }
@@ -86,7 +86,7 @@ namespace Opm
                           const double* /*z*/,
                           double* output_B) const
     {
-#pragma omp parallel for
+// #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             output_B[i] = 1.0/one_over_B_(p[i]);
         }
@@ -99,7 +99,7 @@ namespace Opm
                              double* output_dBdp) const
     {
         B(n, p, 0, output_B);
-#pragma omp parallel for
+// #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             double Bg = output_B[i];
             output_dBdp[i] = -Bg*Bg*one_over_B_.derivative(p[i]);

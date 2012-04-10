@@ -84,6 +84,7 @@ AC_CONFIG_FILES([
  Makefile
  tests/Makefile
  examples/Makefile
+ tutorials/Makefile
 ])
 
 AC_OUTPUT
