@@ -1,11 +1,11 @@
 from subprocess import call
 from paraview.simple import *
 from paraview import servermanager
+from os import remove
 
-call("examples/tutorial1")
+call("tutorials/tutorial1")
 connection = servermanager.Connect()
 grid = servermanager.sources.XMLUnstructuredGridReader(FileName="tutorial1.vtu")
-call("rm tutorial1.vtu")
 grid.UpdatePipeline()
 Show(grid)
 
@@ -24,3 +24,5 @@ camera.SetFocalPoint(1,1,0.5)
 Render()
 
 WriteImage("Figure/tutorial1.png")
+
+remove("tutorial1.vtu")
