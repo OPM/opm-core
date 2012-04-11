@@ -150,7 +150,7 @@ SHORT_NAMES            = NO
 # comments will behave just like regular Qt-style comments
 # (thus requiring an explicit @brief command for a brief description.)
 
-JAVADOC_AUTOBRIEF      = NO
+JAVADOC_AUTOBRIEF      = YES
 
 # If the QT_AUTOBRIEF tag is set to YES then Doxygen will
 # interpret the first line (until the first dot) of a Qt-style
@@ -158,7 +158,7 @@ JAVADOC_AUTOBRIEF      = NO
 # will behave just like regular Qt-style comments (thus requiring
 # an explicit \brief command for a brief description.)
 
-QT_AUTOBRIEF           = NO
+QT_AUTOBRIEF           = YES
 
 # The MULTILINE_CPP_IS_BRIEF tag can be set to YES to make Doxygen
 # treat a multi-line C++ special comment block (i.e. a block of //! or ///
@@ -610,7 +610,8 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = tutorials/tutorial1.cpp opm/core/GridManager.hpp opm/core/utility/writeVtkData.hpp opm/core/utility/writeVtkData.cpp
+# INPUT                  = tutorials/tutorial1.cpp opm/core/GridManager.hpp opm/core/utility/writeVtkData.hpp opm/core/utility/writeVtkData.cpp
+INPUT                  = opm/core examples tutorials
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
