@@ -18,7 +18,6 @@
 */
 
 
-#include <opm/core/grid/cornerpoint_grid.h>
 #include <opm/core/grid/cart_grid.h>
 #include <opm/core/grid.h>
 #include <cstdio>
