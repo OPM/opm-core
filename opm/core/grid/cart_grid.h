@@ -36,17 +36,17 @@ extern "C" {
 
 struct UnstructuredGrid;
 
-struct UnstructuredGrid *create_cart_grid_2d(int nx, int ny);
-struct UnstructuredGrid *create_cart_grid_3d(int nx, int ny, int nz);
-struct UnstructuredGrid *create_hexa_grid_3d(int nx, int ny, int nz,
+struct UnstructuredGrid *create_grid_cart2d(int nx, int ny);
+struct UnstructuredGrid *create_grid_cart3d(int nx, int ny, int nz);
+struct UnstructuredGrid *create_grid_hexa3d(int nx, int ny, int nz,
 					     double dx, double dy, double dz);
 
-struct UnstructuredGrid *create_tensor_grid_2d(int nx, int ny,
-                                               double x[], double y[]);
+struct UnstructuredGrid *create_grid_tensor2d(int nx, int ny,
+                                              double x[], double y[]);
 struct UnstructuredGrid *
-create_tensor_grid_3d(int nx, int ny, int nz,
-                      double x[], double y[], double z[],
-                      const double depthz[]);
+create_grid_tensor3d(int nx, int ny, int nz,
+                     double x[], double y[], double z[],
+                     const double depthz[]);
 
 
 #ifdef __cplusplus

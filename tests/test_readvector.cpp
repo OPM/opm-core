@@ -3,10 +3,10 @@
 #include <vector>
 
 #include <opm/core/grid.h>
-#include <opm/core/utility/cpgpreprocess/preprocess.h>
-#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
+#include <opm/core/grid/cpgpreprocess/preprocess.h>
+#include <opm/core/grid/cornerpoint_grid.h>
 
-#include <opm/core/utility/cpgpreprocess/readvector.hpp>
+#include <opm/core/grid/cpgpreprocess/readvector.hpp>
 
 static struct UnstructuredGrid*
 read_grid(const std::string& dir)
@@ -38,7 +38,7 @@ read_grid(const std::string& dir)
     grdecl.dims[1] = dimens[1];
     grdecl.dims[2] = dimens[2];
 
-    struct UnstructuredGrid *g= preprocess(&grdecl, 0.0);
+    struct UnstructuredGrid *g = create_grid_cornerpoint(&grdecl, 0.0);
 
     double vol = 0.0;
     for (int c = 0; c < g->number_of_cells; c++) {
@@ -61,7 +61,7 @@ int main()
 
     g = read_grid(std::string("example"));
 
-    free_grid(g);
+    destroy_grid(g);
     
     return 0;
 }

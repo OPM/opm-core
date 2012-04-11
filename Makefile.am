@@ -1,18 +1,35 @@
+# Additional aclocal(1) macros located here.
 ACLOCAL_AMFLAGS = -I m4
 
 # Recurse to build examples after libraries
-SUBDIRS = . tests examples
+SUBDIRS = . tests examples tutorials
 
-CPPFLAGS += $(BOOST_CPPFLAGS)
-LIBS +=  $(BOOST_LDFLAGS)                               \
-         $(BOOST_FILESYSTEM_LIB)                        \
-         $(BOOST_SYSTEM_LIB)                            \
-         $(BOOST_DATE_TIME_LIB)                         \
-         $(BOOST_UNIT_TEST_FRAMEWORK_LIB)               \
-         $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
-# Declare libraries
+# ----------------------------------------------------------------------
+# Declare products (i.e., the library)
 lib_LTLIBRARIES = libopmcore.la
+
+# ----------------------------------------------------------------------
+# Build-time flags needed to build libopmcore.la
+
+AM_CPPFLAGS =					\
+$(BOOST_CPPFLAGS)
+
+# ----------------------------------------------------------------------
+# Link-time flags needed both to successfully link the library and to
+# (transitively) convey inter-library dependency information.
+
+libopmcore_la_LDFLAGS =				\
+$(BOOST_LDFLAGS)				\
+$(BOOST_FILESYSTEM_LIB)				\
+$(BOOST_SYSTEM_LIB)				\
+$(BOOST_DATE_TIME_LIB)				\
+$(BOOST_UNIT_TEST_FRAMEWORK_LIB)		\
+$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+
+# ----------------------------------------------------------------------
+# Library constituents.  SOURCES followed by HEADERS.
+#
+# Please try to keep the list sorted.
 
 libopmcore_la_SOURCES =                                 \
 opm/core/eclipse/EclipseGridInspector.cpp               \
@@ -33,6 +50,15 @@ opm/core/fluid/RockCompressibility.cpp                  \
 opm/core/fluid/RockFromDeck.cpp                         \
 opm/core/fluid/SaturationPropsBasic.cpp                 \
 opm/core/fluid/SaturationPropsFromDeck.cpp              \
+opm/core/grid.c                                         \
+opm/core/grid/cart_grid.c                               \
+opm/core/grid/cornerpoint_grid.c                        \
+opm/core/grid/cpgpreprocess/geometry.c                  \
+opm/core/grid/cpgpreprocess/preprocess.c                \
+opm/core/grid/cpgpreprocess/readvector.cpp              \
+opm/core/grid/cpgpreprocess/sparsetable.c               \
+opm/core/grid/cpgpreprocess/facetopology.c              \
+opm/core/grid/cpgpreprocess/uniquepoints.c              \
 opm/core/utility/MonotCubicInterpolator.cpp             \
 opm/core/utility/parameters/Parameter.cpp               \
 opm/core/utility/parameters/ParameterGroup.cpp          \
@@ -42,14 +68,6 @@ opm/core/utility/parameters/tinyxml/tinystr.cpp         \
 opm/core/utility/parameters/tinyxml/tinyxml.cpp         \
 opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp    \
 opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp   \
-opm/core/utility/cart_grid.c                            \
-opm/core/utility/cpgpreprocess/geometry.c               \
-opm/core/utility/cpgpreprocess/preprocess.c             \
-opm/core/utility/cpgpreprocess/readvector.cpp           \
-opm/core/utility/cpgpreprocess/cgridinterface.c         \
-opm/core/utility/cpgpreprocess/sparsetable.c            \
-opm/core/utility/cpgpreprocess/facetopology.c           \
-opm/core/utility/cpgpreprocess/uniquepoints.c           \
 opm/core/utility/miscUtilities.cpp                      \
 opm/core/utility/SimulatorTimer.cpp                     \
 opm/core/utility/StopWatch.cpp                          \
@@ -125,6 +143,15 @@ opm/core/fluid/blackoil/SinglePvtLiveGas.hpp            \
 opm/core/fluid/blackoil/SinglePvtLiveOil.hpp            \
 opm/core/fluid/blackoil/SinglePvtInterface.hpp          \
 opm/core/fluid/blackoil/SinglePvtConstCompr.hpp         \
+opm/core/grid/cart_grid.h                               \
+opm/core/grid/cornerpoint_grid.h                        \
+opm/core/grid/cpgpreprocess/readvector.hpp              \
+opm/core/grid/cpgpreprocess/uniquepoints.h              \
+opm/core/grid/cpgpreprocess/preprocess.h                \
+opm/core/grid/cpgpreprocess/sparsetable.h               \
+opm/core/grid/cpgpreprocess/geometry.h                  \
+opm/core/grid/cpgpreprocess/facetopology.h              \
+opm/core/grid/cpgpreprocess/grdecl.h                    \
 opm/core/utility/Average.hpp                            \
 opm/core/utility/ErrorMacros.hpp                        \
 opm/core/utility/Factory.hpp                            \
@@ -152,15 +179,6 @@ opm/core/utility/initState_impl.hpp                     \
 opm/core/utility/linInt.hpp                             \
 opm/core/utility/linearInterpolation.hpp                \
 opm/core/utility/miscUtilities.hpp                      \
-opm/core/utility/cpgpreprocess/readvector.hpp           \
-opm/core/utility/cpgpreprocess/uniquepoints.h           \
-opm/core/utility/cpgpreprocess/preprocess.h             \
-opm/core/utility/cpgpreprocess/sparsetable.h            \
-opm/core/utility/cpgpreprocess/cgridinterface.h         \
-opm/core/utility/cpgpreprocess/geometry.h               \
-opm/core/utility/cpgpreprocess/facetopology.h           \
-opm/core/utility/cpgpreprocess/grdecl.h                 \
-opm/core/utility/cart_grid.h                            \
 opm/core/utility/writeVtkData.hpp                       \
 opm/core/linalg/sparse_sys.h                            \
 opm/core/linalg/blas_lapack.h                           \
@@ -221,6 +239,8 @@ opm/core/transport/reorder/nlsolvers.h		\
 opm/core/transport/reorder/reordersequence.h	\
 opm/core/transport/reorder/tarjan.h
 
+# ----------------------------------------------------------------------
+# Optional library constituents.
 
 if UMFPACK
 libopmcore_la_SOURCES  +=			\

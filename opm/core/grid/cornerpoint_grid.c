@@ -14,9 +14,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
-#include <opm/core/utility/cpgpreprocess/geometry.h>
-#include <opm/core/utility/cpgpreprocess/preprocess.h>
+#include <opm/core/grid/cornerpoint_grid.h>
+#include <opm/core/grid/cpgpreprocess/geometry.h>
+#include <opm/core/grid/cpgpreprocess/preprocess.h>
 #include <opm/core/grid.h>
 
 
@@ -103,30 +103,6 @@ fill_cell_topology(struct processed_grid  *pg,
     return g->cell_facepos != NULL;
 }
 
-void free_grid(struct UnstructuredGrid *g)
-{
-    if (g!=NULL)
-    {
-        free(g->face_nodes);
-        free(g->face_nodepos);
-        free(g->face_cells);
-        free(g->cell_facepos);
-        free(g->cell_faces);
-
-        free(g->node_coordinates);
-        free(g->face_centroids);
-        free(g->face_areas);
-        free(g->face_normals);
-        free(g->cell_centroids);
-        free(g->cell_volumes);
-
-        free(g->global_cell);
-        free(g->cell_facetag);
-    }
-
-    free(g);
-}
-
 static int
 allocate_geometry(struct UnstructuredGrid *g)
 {
@@ -186,7 +162,7 @@ void compute_geometry(struct UnstructuredGrid *g)
 
 
 struct UnstructuredGrid *
-preprocess (const struct grdecl *in, double tol)
+create_grid_cornerpoint(const struct grdecl *in, double tol)
 {
     struct UnstructuredGrid *g;
    int                      ok;
@@ -205,7 +181,7 @@ preprocess (const struct grdecl *in, double tol)
     *
     *  In particular, convey resource ownership from 'pg' to 'g'.
     *  Consequently, memory resources obtained in process_grdecl()
-    *  will be released in free_grid().
+    *  will be released in destroy_grid().
     */
    g->dimensions = 3;
 
@@ -228,7 +204,7 @@ preprocess (const struct grdecl *in, double tol)
    pg.face_neighbors   = NULL;
 
    /* Initialise subsequently allocated fields to a defined state lest
-    * we free() random pointers in free_grid() if either of the
+    * we free() random pointers in destroy_grid() if either of the
     * fill_cell_topology() or allocate_geometry() functions fail. */
    g->face_centroids   = NULL;
    g->face_normals     = NULL;
@@ -246,7 +222,7 @@ preprocess (const struct grdecl *in, double tol)
 
    if (!ok)
    {
-       free_grid(g);
+       destroy_grid(g);
        g = NULL;
    }
    else

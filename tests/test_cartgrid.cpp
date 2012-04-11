@@ -18,15 +18,14 @@
 */
 
 
-#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
-#include <opm/core/utility/cart_grid.h>
+#include <opm/core/grid/cart_grid.h>
 #include <opm/core/grid.h>
 #include <cstdio>
 
 int main(void)
 {
     using namespace std;
-    struct UnstructuredGrid *g = create_cart_grid_2d(2, 2);
+    struct UnstructuredGrid *g = create_grid_cart2d(2, 2);
     int i;
     int k;
     for (i = 0; i < g->number_of_cells; ++i) {
@@ -36,6 +35,6 @@ int main(void)
         }
         fprintf(stderr, "\n");
     }
-    free_grid(g);
+    destroy_grid(g);
     return 0;
 }

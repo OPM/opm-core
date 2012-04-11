@@ -17,38 +17,30 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opm/core/fluid/RockBasic.hpp>
+#include <opm/core/grid.h>
+#include <stdlib.h>
 
-namespace Opm
+void destroy_grid(struct UnstructuredGrid *g)
 {
-
-
-    /// Default constructor.
-    RockBasic::RockBasic()
-	: dimensions_(-1)
+    if (g!=NULL)
     {
+        free(g->face_nodes);
+        free(g->face_nodepos);
+        free(g->face_cells);
+        free(g->cell_facepos);
+        free(g->cell_faces);
+
+        free(g->node_coordinates);
+        free(g->face_centroids);
+        free(g->face_areas);
+        free(g->face_normals);
+        free(g->cell_centroids);
+        free(g->cell_volumes);
+
+        free(g->global_cell);
+        free(g->cell_facetag);
     }
 
+    free(g);
+}
 
-    /// Initialize with homogenous porosity and permeability.
-    void RockBasic::init(const int dimensions,
-			 const int num_cells,
-			 const double poro,
-			 const double perm)
-    {
-	dimensions_ = dimensions;
-	porosity_.clear();
-	porosity_.resize(num_cells, poro);
-	permeability_.clear();
-	const int dsq = dimensions*dimensions;
-	permeability_.resize(num_cells*dsq, 0.0);
-// #pragma omp parallel for
-	for (int i = 0; i < num_cells; ++i) {
-	    for (int d = 0; d < dimensions; ++d) {
-		permeability_[dsq*i + dimensions*d + d] = perm;
-	    }
-	}
-    }
-
-
-} // namespace Opm

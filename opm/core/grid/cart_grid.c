@@ -31,9 +31,9 @@
 #include <stdio.h>
 
 #include <opm/core/grid.h>
-#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
+#include <opm/core/grid/cornerpoint_grid.h>
 
-#include "cart_grid.h"
+#include <opm/core/grid/cart_grid.h>
 
 static struct UnstructuredGrid *allocate_cart_grid_3d(int nx, int ny, int nz);
 static void fill_cart_topology_3d(struct UnstructuredGrid *G);
@@ -49,14 +49,14 @@ fill_layered_geometry_3d(struct UnstructuredGrid *G,
                          const double            *depthz);
 
 struct UnstructuredGrid *
-create_cart_grid_3d(int nx, int ny, int nz)
+create_grid_cart3d(int nx, int ny, int nz)
 {
-    return create_hexa_grid_3d(nx, ny, nz, 1.0, 1.0, 1.0);
+    return create_grid_hexa3d(nx, ny, nz, 1.0, 1.0, 1.0);
 }
 
 struct UnstructuredGrid *
-create_hexa_grid_3d(int    nx, int    ny, int    nz,
-                    double dx, double dy, double dz)
+create_grid_hexa3d(int    nx, int    ny, int    nz,
+                   double dx, double dy, double dz)
 {
     int     i;
     double *x, *y, *z;
@@ -73,8 +73,8 @@ create_hexa_grid_3d(int    nx, int    ny, int    nz,
         for (i = 0; i < ny + 1; i++) { y[i] = i * dy; }
         for (i = 0; i < nz + 1; i++) { z[i] = i * dz; }
 
-        G = create_tensor_grid_3d(nx, ny, nz, x, y, z,
-                                  (const double *) NULL);
+        G = create_grid_tensor3d(nx, ny, nz, x, y, z,
+                                 (const double *) NULL);
     }
 
     free(z);  free(y);  free(x);
@@ -91,7 +91,7 @@ static void fill_cart_geometry_2d(struct UnstructuredGrid *G,
                                   const double            *y);
 
 struct UnstructuredGrid*
-create_cart_grid_2d(int nx, int ny)
+create_grid_cart2d(int nx, int ny)
 {
     int     i;
     double *x, *y;
@@ -107,7 +107,7 @@ create_cart_grid_2d(int nx, int ny)
         for (i = 0; i < nx + 1; i++) { x[i] = i; }
         for (i = 0; i < ny + 1; i++) { y[i] = i; }
 
-        G = create_tensor_grid_2d(nx, ny, x, y);
+        G = create_grid_tensor2d(nx, ny, x, y);
     }
 
     free(y);  free(x);
@@ -118,7 +118,7 @@ create_cart_grid_2d(int nx, int ny)
 /* --------------------------------------------------------------------- */
 
 struct UnstructuredGrid *
-create_tensor_grid_2d(int nx, int ny, double x[], double y[])
+create_grid_tensor2d(int nx, int ny, double x[], double y[])
 {
     struct UnstructuredGrid *G;
 
@@ -136,7 +136,7 @@ create_tensor_grid_2d(int nx, int ny, double x[], double y[])
 /* --------------------------------------------------------------------- */
 
 struct UnstructuredGrid *
-create_tensor_grid_3d(int    nx,  int    ny , int    nz ,
+create_grid_tensor3d(int    nx,  int    ny , int    nz ,
                       double x[], double y[], double z[],
                       const double depthz[])
 {
@@ -218,7 +218,7 @@ allocate_cart_grid_3d(int nx, int ny, int nz)
             (G->cell_centroids   == NULL ) ||
             (G->cell_volumes     == NULL )  )
         {
-            free_grid(G);
+            destroy_grid(G);
             G = NULL;
         }
     }
@@ -553,7 +553,7 @@ allocate_cart_grid_2d(int nx, int ny)
             (G->cell_centroids   == NULL ) ||
             (G->cell_volumes     == NULL )  )
         {
-            free_grid(G);
+            destroy_grid(G);
             G = NULL;
         }
     }
