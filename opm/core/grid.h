@@ -20,6 +20,12 @@
 #ifndef OPM_GRID_HEADER_INCLUDED
 #define OPM_GRID_HEADER_INCLUDED
 
+/**
+ * \file
+ *
+ * Main OPM-Core grid data structure along with destructor and default
+ * constructor.
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -221,6 +227,17 @@ struct UnstructuredGrid
  */
 void destroy_grid(struct UnstructuredGrid *g);
 
+/**
+   Allocate and initialise an empty UnstructuredGrid.
+
+   This is the moral equivalent of a C++ default constructor.
+
+   \return Fully formed UnstructuredGrid with all fields zero or
+   <code>NULL</code> as appropriate.  <code>NULL</code> in case of
+   allocation failure.
+ */
+struct UnstructuredGrid *
+create_grid_empty(void);
 
 #ifdef __cplusplus
 }

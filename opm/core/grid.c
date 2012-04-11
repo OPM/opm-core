@@ -44,3 +44,17 @@ void destroy_grid(struct UnstructuredGrid *g)
     free(g);
 }
 
+
+struct UnstructuredGrid *
+create_grid_empty(void)
+{
+    struct UnstructuredGrid *G, g = { 0 };
+
+    G = malloc(1 * sizeof *G);
+
+    if (G != NULL) {
+        *G = g;
+    }
+
+    return G;
+}
