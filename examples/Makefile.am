@@ -2,7 +2,7 @@ AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
 $(BOOST_CPPFLAGS)
 
-LDADD =	$(top_builddir)/libopmcore.la
+LDADD = $(top_builddir)/libopmcore.la $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(LAPACK_LIBS)
 
 noinst_PROGRAMS =				\
 scaneclipsedeck
