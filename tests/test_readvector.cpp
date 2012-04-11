@@ -38,7 +38,7 @@ read_grid(const std::string& dir)
     grdecl.dims[1] = dimens[1];
     grdecl.dims[2] = dimens[2];
 
-    struct UnstructuredGrid *g= preprocess(&grdecl, 0.0);
+    struct UnstructuredGrid *g = create_grid_cornerpoint(&grdecl, 0.0);
 
     double vol = 0.0;
     for (int c = 0; c < g->number_of_cells; c++) {

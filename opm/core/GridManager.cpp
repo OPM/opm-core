@@ -59,7 +59,7 @@ namespace Opm
 	grdecl.dims[2] = dims[2];
 
 	// Process and compute.
-	ug_ = preprocess(&grdecl, 0.0);
+	ug_ = create_grid_cornerpoint(&grdecl, 0.0);
 	if (!ug_) {
 	    THROW("Failed to construct grid.");
 	}
@@ -72,7 +72,7 @@ namespace Opm
     /// Construct a 2d cartesian grid with cells of unit size.
     GridManager::GridManager(int nx, int ny)
     {
-	ug_ = create_cart_grid_2d(nx, ny);
+	ug_ = create_grid_cart2d(nx, ny);
 	if (!ug_) {
 	    THROW("Failed to construct grid.");
 	}
@@ -84,7 +84,7 @@ namespace Opm
     /// Construct a 3d cartesian grid with cells of unit size.
     GridManager::GridManager(int nx, int ny, int nz)
     {
-	ug_ = create_cart_grid_3d(nx, ny, nz);
+	ug_ = create_grid_cart3d(nx, ny, nz);
 	if (!ug_) {
 	    THROW("Failed to construct grid.");
 	}
@@ -95,9 +95,9 @@ namespace Opm
 
     /// Construct a 3d cartesian grid with cells of size [dx, dy, dz].
     GridManager::GridManager(int nx, int ny, int nz,
-		double dx, double dy, double dz)
+                             double dx, double dy, double dz)
     {
-	ug_ = create_hexa_grid_3d(nx, ny, nz, dx, dy, dz);
+	ug_ = create_grid_hexa3d(nx, ny, nz, dx, dy, dz);
 	if (!ug_) {
 	    THROW("Failed to construct grid.");
 	}

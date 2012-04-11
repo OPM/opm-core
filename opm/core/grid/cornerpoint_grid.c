@@ -162,7 +162,7 @@ void compute_geometry(struct UnstructuredGrid *g)
 
 
 struct UnstructuredGrid *
-preprocess (const struct grdecl *in, double tol)
+create_grid_cornerpoint(const struct grdecl *in, double tol)
 {
     struct UnstructuredGrid *g;
    int                      ok;
