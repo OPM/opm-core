@@ -58,12 +58,11 @@ namespace Opm
 	grdecl.dims[1] = dims[1];
 	grdecl.dims[2] = dims[2];
 
-	// Process and compute.
+	// Process grid.
 	ug_ = create_grid_cornerpoint(&grdecl, 0.0);
 	if (!ug_) {
 	    THROW("Failed to construct grid.");
 	}
-	compute_geometry(ug_);
     }
 
 
