@@ -20,7 +20,7 @@
 #include <opm/core/grid.h>
 #include <stdlib.h>
 
-void free_grid(struct UnstructuredGrid *g)
+void destroy_grid(struct UnstructuredGrid *g)
 {
     if (g!=NULL)
     {

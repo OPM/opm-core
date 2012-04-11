@@ -35,6 +35,6 @@ int main(void)
         }
         fprintf(stderr, "\n");
     }
-    free_grid(g);
+    destroy_grid(g);
     return 0;
 }

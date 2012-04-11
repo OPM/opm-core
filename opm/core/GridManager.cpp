@@ -109,7 +109,7 @@ namespace Opm
     /// Destructor.
     GridManager::~GridManager()
     {
-	free_grid(ug_);
+	destroy_grid(ug_);
     }
 
 

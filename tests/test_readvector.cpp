@@ -61,7 +61,7 @@ int main()
 
     g = read_grid(std::string("example"));
 
-    free_grid(g);
+    destroy_grid(g);
     
     return 0;
 }

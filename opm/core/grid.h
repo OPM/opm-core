@@ -57,7 +57,7 @@ struct UnstructuredGrid {
 };
 
 
-void free_grid(struct UnstructuredGrid *g);
+void destroy_grid(struct UnstructuredGrid *g);
 
 
 #ifdef __cplusplus

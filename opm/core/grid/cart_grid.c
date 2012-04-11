@@ -218,7 +218,7 @@ allocate_cart_grid_3d(int nx, int ny, int nz)
             (G->cell_centroids   == NULL ) ||
             (G->cell_volumes     == NULL )  )
         {
-            free_grid(G);
+            destroy_grid(G);
             G = NULL;
         }
     }
@@ -553,7 +553,7 @@ allocate_cart_grid_2d(int nx, int ny)
             (G->cell_centroids   == NULL ) ||
             (G->cell_volumes     == NULL )  )
         {
-            free_grid(G);
+            destroy_grid(G);
             G = NULL;
         }
     }

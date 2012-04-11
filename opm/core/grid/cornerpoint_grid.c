@@ -181,7 +181,7 @@ preprocess (const struct grdecl *in, double tol)
     *
     *  In particular, convey resource ownership from 'pg' to 'g'.
     *  Consequently, memory resources obtained in process_grdecl()
-    *  will be released in free_grid().
+    *  will be released in destroy_grid().
     */
    g->dimensions = 3;
 
@@ -204,7 +204,7 @@ preprocess (const struct grdecl *in, double tol)
    pg.face_neighbors   = NULL;
 
    /* Initialise subsequently allocated fields to a defined state lest
-    * we free() random pointers in free_grid() if either of the
+    * we free() random pointers in destroy_grid() if either of the
     * fill_cell_topology() or allocate_geometry() functions fail. */
    g->face_centroids   = NULL;
    g->face_normals     = NULL;
@@ -222,7 +222,7 @@ preprocess (const struct grdecl *in, double tol)
 
    if (!ok)
    {
-       free_grid(g);
+       destroy_grid(g);
        g = NULL;
    }
    else
