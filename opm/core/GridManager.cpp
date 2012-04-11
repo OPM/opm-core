@@ -20,8 +20,8 @@
 #include <opm/core/GridManager.hpp>
 #include <opm/core/eclipse/EclipseGridParser.hpp>
 #include <opm/core/grid.h>
-#include <opm/core/utility/cart_grid.h>
-#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
+#include <opm/core/grid/cart_grid.h>
+#include <opm/core/grid/cornerpoint_grid.h>
 
 
 

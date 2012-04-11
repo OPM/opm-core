@@ -31,9 +31,9 @@
 #include <stdio.h>
 
 #include <opm/core/grid.h>
-#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
+#include <opm/core/grid/cornerpoint_grid.h>
 
-#include "cart_grid.h"
+#include <opm/core/grid/cart_grid.h>
 
 static struct UnstructuredGrid *allocate_cart_grid_3d(int nx, int ny, int nz);
 static void fill_cart_topology_3d(struct UnstructuredGrid *G);

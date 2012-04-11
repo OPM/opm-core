@@ -3,10 +3,10 @@
 #include <vector>
 
 #include <opm/core/grid.h>
-#include <opm/core/utility/cpgpreprocess/preprocess.h>
-#include <opm/core/utility/cpgpreprocess/cgridinterface.h>
+#include <opm/core/grid/cpgpreprocess/preprocess.h>
+#include <opm/core/grid/cornerpoint_grid.h>
 
-#include <opm/core/utility/cpgpreprocess/readvector.hpp>
+#include <opm/core/grid/cpgpreprocess/readvector.hpp>
 
 static struct UnstructuredGrid*
 read_grid(const std::string& dir)
