@@ -103,30 +103,6 @@ fill_cell_topology(struct processed_grid  *pg,
     return g->cell_facepos != NULL;
 }
 
-void free_grid(struct UnstructuredGrid *g)
-{
-    if (g!=NULL)
-    {
-        free(g->face_nodes);
-        free(g->face_nodepos);
-        free(g->face_cells);
-        free(g->cell_facepos);
-        free(g->cell_faces);
-
-        free(g->node_coordinates);
-        free(g->face_centroids);
-        free(g->face_areas);
-        free(g->face_normals);
-        free(g->cell_centroids);
-        free(g->cell_volumes);
-
-        free(g->global_cell);
-        free(g->cell_facetag);
-    }
-
-    free(g);
-}
-
 static int
 allocate_geometry(struct UnstructuredGrid *g)
 {

@@ -50,6 +50,7 @@ opm/core/fluid/RockCompressibility.cpp                  \
 opm/core/fluid/RockFromDeck.cpp                         \
 opm/core/fluid/SaturationPropsBasic.cpp                 \
 opm/core/fluid/SaturationPropsFromDeck.cpp              \
+opm/core/grid.c                                         \
 opm/core/grid/cart_grid.c                               \
 opm/core/grid/cornerpoint_grid.c                        \
 opm/core/grid/cpgpreprocess/geometry.c                  \

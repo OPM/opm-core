@@ -56,6 +56,10 @@ struct UnstructuredGrid {
     int    *cell_facetag;
 };
 
+
+void free_grid(struct UnstructuredGrid *g);
+
+
 #ifdef __cplusplus
 }
 #endif
