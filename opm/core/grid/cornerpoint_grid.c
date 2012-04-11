@@ -168,7 +168,7 @@ create_grid_cornerpoint(const struct grdecl *in, double tol)
    int                      ok;
    struct processed_grid    pg;
 
-   g = malloc(1 * sizeof *g);
+   g = create_grid_empty();
    if (g == NULL)
    {
        return NULL;
@@ -202,18 +202,6 @@ create_grid_cornerpoint(const struct grdecl *in, double tol)
    pg.face_nodes       = NULL;
    pg.face_ptr         = NULL;
    pg.face_neighbors   = NULL;
-
-   /* Initialise subsequently allocated fields to a defined state lest
-    * we free() random pointers in destroy_grid() if either of the
-    * fill_cell_topology() or allocate_geometry() functions fail. */
-   g->face_centroids   = NULL;
-   g->face_normals     = NULL;
-   g->face_areas       = NULL;
-
-   g->cell_centroids   = NULL;
-   g->cell_volumes     = NULL;
-
-   g->global_cell      = NULL;
 
    /* allocate and fill g->cell_faces/g->cell_facepos and
     * g->cell_facetag as well as the geometry-related fields. */
