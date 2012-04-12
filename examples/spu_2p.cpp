@@ -510,6 +510,7 @@ main(int argc, char** argv)
         } else {
             computeTotalMobility(*props, allcells, state.saturation(), totmob);
         }
+        std::vector<double> empty_vector_for_wells;
         pressure_timer.start();
         if (rock_comp->isActive()) {
             rc.resize(num_cells);
@@ -521,8 +522,10 @@ main(int argc, char** argv)
                     rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
                 }
                 state.pressure() = initial_pressure;
+                
+
                 psolver.solve(totmob, omega, src, bcs.c_bcs(), porevol, rc, simtimer.currentStepLength(),
-                              state.pressure(), state.faceflux());
+                              state.pressure(), state.faceflux(), empty_vector_for_wells, empty_vector_for_wells);
                 double max_change = 0.0;
                 for (int cell = 0; cell < num_cells; ++cell) {
                     max_change = std::max(max_change, std::fabs(state.pressure()[cell] - prev_pressure[cell]));
@@ -534,7 +537,8 @@ main(int argc, char** argv)
             }
             computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
         } else {
-            psolver.solve(totmob, omega, src, bcs.c_bcs(), state.pressure(), state.faceflux());
+            psolver.solve(totmob, omega, src, bcs.c_bcs(), state.pressure(), state.faceflux(), empty_vector_for_wells,
+                          empty_vector_for_wells);
         }
         pressure_timer.stop();
         double pt = pressure_timer.secsSinceStart();
