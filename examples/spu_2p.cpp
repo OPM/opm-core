@@ -94,6 +94,7 @@
 #include <fstream>
 #include <iterator>
 #include <vector>
+#include <numeric>
 
 
 
