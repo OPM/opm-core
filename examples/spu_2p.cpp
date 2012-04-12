@@ -359,11 +359,6 @@ main(int argc, char** argv)
         if (!use_reorder) {
             THROW("Cannot run implicit (non-reordering) transport solver with rock compressibility yet.");
         }
-        if (use_segregation_split) {
-            if (!use_gauss_seidel_gravity) {
-                THROW("For gravity segregation splitting, only use_gauss_seidel_gravity=true supports rock compressibility.");
-            }
-        }
         nl_pressure_maxiter = param.getDefault("nl_pressure_maxiter", 10);
         nl_pressure_tolerance = param.getDefault("nl_pressure_tolerance", 1.0); // in Pascal
     }
