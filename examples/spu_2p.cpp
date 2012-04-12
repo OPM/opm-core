@@ -524,7 +524,7 @@ main(int argc, char** argv)
                 state.pressure() = initial_pressure;
                 
 
-                psolver.solve(totmob, omega, src, bcs.c_bcs(), porevol, rc, simtimer.currentStepLength(),
+                psolver.solve(totmob, omega, src, empty_vector_for_wells, bcs.c_bcs(), porevol, rc, simtimer.currentStepLength(),
                               state.pressure(), state.faceflux(), empty_vector_for_wells, empty_vector_for_wells);
                 double max_change = 0.0;
                 for (int cell = 0; cell < num_cells; ++cell) {
@@ -537,7 +537,7 @@ main(int argc, char** argv)
             }
             computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
         } else {
-            psolver.solve(totmob, omega, src, bcs.c_bcs(), state.pressure(), state.faceflux(), empty_vector_for_wells,
+            psolver.solve(totmob, omega, src, empty_vector_for_wells, bcs.c_bcs(), state.pressure(), state.faceflux(), empty_vector_for_wells,
                           empty_vector_for_wells);
         }
         pressure_timer.stop();
