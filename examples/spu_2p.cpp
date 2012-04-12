@@ -273,6 +273,7 @@ main(int argc, char** argv)
         create_directories(fpath);
         output_interval = param.getDefault("output_interval", output_interval);
     }
+    const int num_transport_substeps = param.getDefault("num_transport_substeps", 1);
 
     // If we have a "deck_filename", grid and props will be read from that.
     bool use_deck = param.has("deck_filename");
@@ -556,32 +557,39 @@ main(int argc, char** argv)
 
         // Solve transport.
         transport_timer.start();
-        if (use_reorder) {
-            Opm::toWaterSat(state.saturation(), reorder_sat);
-            reorder_model.solve(&state.faceflux()[0], &porevol[0], &reorder_src[0],
-                                simtimer.currentStepLength(), &reorder_sat[0]);
-            Opm::toBothSat(reorder_sat, state.saturation());
-            Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
-            if (use_segregation_split) {
-                if (use_column_solver) {
-                    if (use_gauss_seidel_gravity) {
-                        reorder_model.solveGravity(columns, &porevol[0], simtimer.currentStepLength(), reorder_sat);
-                        Opm::toBothSat(reorder_sat, state.saturation());
+        double stepsize = simtimer.currentStepLength();
+        if (num_transport_substeps != 1) {
+            stepsize /= double(num_transport_substeps);
+            std::cout << "Making " << num_transport_substeps << " transport substeps." << std::endl;
+        }
+        for (int tr_substep = 0; tr_substep < num_transport_substeps; ++tr_substep) {
+            if (use_reorder) {
+                Opm::toWaterSat(state.saturation(), reorder_sat);
+                reorder_model.solve(&state.faceflux()[0], &porevol[0], &reorder_src[0],
+                                    stepsize, &reorder_sat[0]);
+                Opm::toBothSat(reorder_sat, state.saturation());
+                Opm::computeInjectedProduced(*props, state.saturation(), src, stepsize, injected, produced);
+                if (use_segregation_split) {
+                    if (use_column_solver) {
+                        if (use_gauss_seidel_gravity) {
+                            reorder_model.solveGravity(columns, &porevol[0], stepsize, reorder_sat);
+                            Opm::toBothSat(reorder_sat, state.saturation());
+                        } else {
+                            colsolver.solve(columns, stepsize, state.saturation());
+                        }
                     } else {
-                        colsolver.solve(columns, simtimer.currentStepLength(), state.saturation());
+                        std::vector<double> fluxes = state.faceflux();
+                        std::fill(state.faceflux().begin(), state.faceflux().end(), 0.0);
+                        tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
+                        std::cout << rpt;
+                        state.faceflux() = fluxes;
                     }
-                } else {
-                    std::vector<double> fluxes = state.faceflux();
-                    std::fill(state.faceflux().begin(), state.faceflux().end(), 0.0);
-                    tsolver.solve(*grid->c_grid(), tsrc, simtimer.currentStepLength(), ctrl, state, linsolve, rpt);
-                    std::cout << rpt;
-                    state.faceflux() = fluxes;
                 }
+            } else {
+                tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
+                std::cout << rpt;
+                Opm::computeInjectedProduced(*props, state.saturation(), src, stepsize, injected, produced);
             }
-        } else {
-            tsolver.solve(*grid->c_grid(), tsrc, simtimer.currentStepLength(), ctrl, state, linsolve, rpt);
-            std::cout << rpt;
-            Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
         }
         transport_timer.stop();
         double tt = transport_timer.secsSinceStart();
