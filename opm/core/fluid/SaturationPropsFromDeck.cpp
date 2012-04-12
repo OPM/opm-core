@@ -43,6 +43,7 @@ namespace Opm
         }
         const int samples = 200;
 	double swco = 0.0;
+        double swmax = 1.0;
         if (phase_usage_.phase_used[Aqua]) {
             const SWOF::table_t& swof_table = deck.getSWOF().swof_;
             if (swof_table.size() != 1) {
@@ -58,7 +59,8 @@ namespace Opm
             krocw_ = krow[0]; // At connate water -> ecl. SWOF
 	    swco = sw[0];
 	    smin_[phase_usage_.phase_pos[Aqua]] = sw[0];
-	    smax_[phase_usage_.phase_pos[Aqua]] = 1.0;
+            swmax = sw.back();
+	    smax_[phase_usage_.phase_pos[Aqua]] = sw.back();
         }
         if (phase_usage_.phase_used[Vapour]) {
             const SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
@@ -79,7 +81,8 @@ namespace Opm
 	    }
 	    smax_[phase_usage_.phase_pos[Vapour]] = sg.back();
         }
-	smin_[phase_usage_.phase_pos[Liquid]] = 0.0;
+        // These only consider water min/max sats. Consider gas sats?
+	smin_[phase_usage_.phase_pos[Liquid]] = 1.0 - swmax;
 	smax_[phase_usage_.phase_pos[Liquid]] = 1.0 - swco;
     }
 
