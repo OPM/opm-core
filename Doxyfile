@@ -611,7 +611,8 @@ WARN_LOGFILE           =
 # with spaces.
 
 # INPUT                  = tutorials/tutorial1.cpp opm/core/GridManager.hpp opm/core/utility/writeVtkData.hpp opm/core/utility/writeVtkData.cpp
-INPUT                  = opm/core examples tutorials
+INPUT                  = tutorials opm/core/linalg/LinearSolverUmfpack.hpp opm/core/pressure/IncompTpfa.hpp opm/core/pressure/FlowBCManager.hpp opm/core/utility/miscUtilities.hpp opm/core/GridManager.hpp opm/core/utility/writeVtkData.hpp opm/core/grid.h
+
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -852,7 +853,7 @@ HTML_FOOTER            =
 # the style sheet file to the HTML output directory, so don't put your own
 # stylesheet in the HTML output directory as well, or it will be erased!
 
-HTML_STYLESHEET        =
+HTML_STYLESHEET        = style.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -1104,7 +1105,7 @@ EXT_LINKS_IN_WINDOW    = NO
 # to manually remove any form_*.png images from the HTML output directory
 # to force them to be regenerated.
 
-FORMULA_FONTSIZE       = 10
+FORMULA_FONTSIZE       = 14
 
 # Use the FORMULA_TRANPARENT tag to determine whether or not the images
 # generated for formulas are transparent PNGs. Transparent PNGs are
@@ -1198,7 +1199,7 @@ PAPER_TYPE             = a4
 # The EXTRA_PACKAGES tag can be to specify one or more names of LaTeX
 # packages that should be included in the LaTeX output.
 
-EXTRA_PACKAGES         =
+EXTRA_PACKAGES         = amsmath
 
 # The LATEX_HEADER tag can be used to specify a personal LaTeX header for
 # the generated latex document. The header should contain everything until
