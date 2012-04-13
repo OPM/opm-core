@@ -152,6 +152,7 @@ public:                                                                         
     SPECIAL_FIELD(GRUPTREE);
     SPECIAL_FIELD(GCONINJE);
     SPECIAL_FIELD(GCONPROD);
+    SPECIAL_FIELD(WGRUPCON);
 
     // The following fields only have a dummy implementation
     // that allows us to ignore them.

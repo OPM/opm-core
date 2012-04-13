@@ -1311,7 +1311,97 @@ struct GCONPROD : public SpecialBase
     }
 };
 
+/// Class holding a data line of keyword WCONPROD
+struct WgrupconLine
+{
+    std::string well_;             // Well name
+    bool available_for_group_control_;
+    double guide_rate_;
+    std::string phase_;
+    WgrupconLine() :
+    available_for_group_control_(true)
+    {
+    }
+};
 
+struct WGRUPCON : public SpecialBase
+{
+    std::vector<WgrupconLine> wgrupcon;
+
+    WGRUPCON()
+    {
+    }
+
+    virtual ~WGRUPCON()
+    {}
+
+    virtual std::string name() const {return std::string("WGRUPCON");}
+
+    virtual void read(std::istream& is)
+    {
+	while(is) {
+	    std::string name = readString(is); 
+	    if (name[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    }
+	    while (name.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		name = readString(is);
+	    }
+	    WgrupconLine wgrupcon_line;
+	    wgrupcon_line.well_ = name;
+            std::string available = readString(is);
+            if (available[available.size()-1] == '*') 
+            {
+                available = "YES";
+            }
+            wgrupcon_line.available_for_group_control_ = (available == "YES");
+	    std::vector<double> double_data(1, 1.0E20);
+            const int num_to_read = 1;
+	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
+            wgrupcon_line.guide_rate_ = double_data[0];
+            
+            std::string phase = readString(is); 
+	    if (phase[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    }
+	    while (phase.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		phase = readString(is);
+	    }
+            
+            wgrupcon_line.phase_ = phase;
+	    
+	    wgrupcon.push_back(wgrupcon_line);
+	    // HACK! Ignore any further items
+            if (num_read == num_to_read) {
+                ignoreSlashLine(is);
+            }
+
+	}
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << std::endl;
+	for (int i=0; i<(int) wgrupcon.size(); ++i) {
+	    os << wgrupcon[i].well_ << "  " 
+	       << wgrupcon[i].available_for_group_control_ << "  " 
+	       << wgrupcon[i].guide_rate_ << "  " 
+	       << wgrupcon[i].phase_ << "  " 
+	       << std::endl; 
+	}
+	os << std::endl;
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+    }
+};
 
 /// Class holding a data line of keyword WCONPROD
 struct WconprodLine
