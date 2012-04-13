@@ -1467,7 +1467,7 @@ struct WCONPROD : public SpecialBase
 	    double_data[7] = wconprod_line.VFP_table_number_; 
 	    double_data[8] = wconprod_line.artif_lift_quantity_;
             const int num_to_read = 9;
-	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
+	    readDefaultedVectorData(is, double_data, num_to_read);
 	    wconprod_line.oil_max_rate_ = double_data[0];
 	    wconprod_line.water_max_rate_ = double_data[1];
 	    wconprod_line.gas_max_rate_ = double_data[2];
