@@ -81,6 +81,7 @@ opm/core/InjectionSpecification.cpp                     \
 opm/core/ProductionSpecification.cpp			\
 opm/core/linalg/sparse_sys.c                            \
 opm/core/linalg/LinearSolverInterface.cpp               \
+opm/core/linalg/LinearSolverFactory.cpp                 \
 opm/core/pressure/cfsh.c                                \
 opm/core/pressure/flow_bc.c                             \
 opm/core/pressure/FlowBCManager.cpp                     \
@@ -184,6 +185,7 @@ opm/core/utility/writeVtkData.hpp                       \
 opm/core/linalg/sparse_sys.h                            \
 opm/core/linalg/blas_lapack.h                           \
 opm/core/linalg/LinearSolverInterface.hpp               \
+opm/core/linalg/LinearSolverFactory.hpp                 \
 opm/core/grid.h                                         \
 opm/core/well.h                                         \
 opm/core/newwells.h                                     \
