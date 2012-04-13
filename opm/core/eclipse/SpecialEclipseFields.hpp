@@ -1340,18 +1340,18 @@ struct WGRUPCON : public SpecialBase
     virtual void read(std::istream& is)
     {
 	while(is) {
-	    std::string name = readString(is); 
-	    if (name[0] == '/') {
+	    std::string wname = readString(is); 
+	    if (wname[0] == '/') {
 		is >> ignoreLine;
 		break;
 	    }
-	    while (name.find("--") == 0) {
+	    while (wname.find("--") == 0) {
 		// This line is a comment
 		is >> ignoreLine;
-		name = readString(is);
+		wname = readString(is);
 	    }
 	    WgrupconLine wgrupcon_line;
-	    wgrupcon_line.well_ = name;
+	    wgrupcon_line.well_ = wname;
             std::string available = readString(is);
             if (available[available.size()-1] == '*') 
             {
