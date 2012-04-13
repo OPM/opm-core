@@ -171,9 +171,9 @@ namespace Opm {
 	    ///        b) this method throws an appropriate exception.
 	    ///
 	    /// \param name is the name of the parameter in question.
-	    /// \param default_value the defualt value of the parameter in
+	    /// \param default_value the default value of the parameter in
 	    ///        question.
-	    /// \return The value associated with then name in this parameter
+	    /// \return The value associated with this name in this parameter
 	    ///         group.
 	    template<typename T>
 	    T getDefault(const std::string& name,
