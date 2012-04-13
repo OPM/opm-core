@@ -81,12 +81,14 @@ opm/core/InjectionSpecification.cpp                     \
 opm/core/ProductionSpecification.cpp			\
 opm/core/linalg/sparse_sys.c                            \
 opm/core/linalg/LinearSolverInterface.cpp               \
+opm/core/linalg/LinearSolverFactory.cpp                 \
 opm/core/pressure/cfsh.c                                \
 opm/core/pressure/flow_bc.c                             \
 opm/core/pressure/FlowBCManager.cpp                     \
 opm/core/pressure/well.c                                \
 opm/core/pressure/fsh_common_impl.c                     \
 opm/core/pressure/fsh.c                                 \
+opm/core/pressure/IncompTpfa.cpp                        \
 opm/core/pressure/tpfa/ifs_tpfa.c                       \
 opm/core/pressure/tpfa/compr_source.c                   \
 opm/core/pressure/tpfa/cfs_tpfa.c                       \
@@ -183,6 +185,7 @@ opm/core/utility/writeVtkData.hpp                       \
 opm/core/linalg/sparse_sys.h                            \
 opm/core/linalg/blas_lapack.h                           \
 opm/core/linalg/LinearSolverInterface.hpp               \
+opm/core/linalg/LinearSolverFactory.hpp                 \
 opm/core/grid.h                                         \
 opm/core/well.h                                         \
 opm/core/newwells.h                                     \
@@ -245,10 +248,18 @@ opm/core/transport/reorder/tarjan.h
 if UMFPACK
 libopmcore_la_SOURCES  +=			\
 opm/core/linalg/call_umfpack.c			\
-opm/core/linalg/LinearSolverUmfpack.cpp		\
-opm/core/pressure/IncompTpfa.cpp
+opm/core/linalg/LinearSolverUmfpack.cpp
 
 nobase_include_HEADERS +=			\
 opm/core/linalg/call_umfpack.h			\
 opm/core/linalg/LinearSolverUmfpack.hpp
+endif
+
+
+if DUNE_ISTL
+libopmcore_la_SOURCES  +=			\
+opm/core/linalg/LinearSolverIstl.cpp
+
+nobase_include_HEADERS +=			\
+opm/core/linalg/LinearSolverIstl.hpp
 endif
