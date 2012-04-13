@@ -1478,10 +1478,8 @@ struct WCONPROD : public SpecialBase
 	    wconprod_line.VFP_table_number_ = (int)double_data[7];
 	    wconprod_line.artif_lift_quantity_ = double_data[8];
 	    wconprod.push_back(wconprod_line);
-	    // HACK! Ignore any further items
-            if (num_read == num_to_read) {
-                ignoreSlashLine(is);
-            }
+
+            ignoreSlashLine(is);
 
 	}
     }
