@@ -87,6 +87,7 @@ opm/core/pressure/FlowBCManager.cpp                     \
 opm/core/pressure/well.c                                \
 opm/core/pressure/fsh_common_impl.c                     \
 opm/core/pressure/fsh.c                                 \
+opm/core/pressure/IncompTpfa.cpp                        \
 opm/core/pressure/tpfa/ifs_tpfa.c                       \
 opm/core/pressure/tpfa/compr_source.c                   \
 opm/core/pressure/tpfa/cfs_tpfa.c                       \
@@ -245,10 +246,18 @@ opm/core/transport/reorder/tarjan.h
 if UMFPACK
 libopmcore_la_SOURCES  +=			\
 opm/core/linalg/call_umfpack.c			\
-opm/core/linalg/LinearSolverUmfpack.cpp		\
-opm/core/pressure/IncompTpfa.cpp
+opm/core/linalg/LinearSolverUmfpack.cpp
 
 nobase_include_HEADERS +=			\
 opm/core/linalg/call_umfpack.h			\
 opm/core/linalg/LinearSolverUmfpack.hpp
+endif
+
+
+if DUNE_ISTL
+libopmcore_la_SOURCES  +=			\
+opm/core/linalg/LinearSolverIstl.cpp
+
+nobase_include_HEADERS +=			\
+opm/core/linalg/LinearSolverIstl.hpp
 endif
