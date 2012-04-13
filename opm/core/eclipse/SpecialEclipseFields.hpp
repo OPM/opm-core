@@ -1400,6 +1400,7 @@ struct WGRUPCON : public SpecialBase
 
     virtual void convertToSI(const EclipseUnits& units)
     {
+        static_cast<void>(units);
     }
 };
 
