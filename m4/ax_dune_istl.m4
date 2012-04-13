@@ -1,6 +1,6 @@
 AC_DEFUN([AX_DUNE_ISTL],
 [
-   AX_DUNE_COMMON
+   AC_REQUIRE([AX_DUNE_COMMON])
 
    AC_MSG_CHECKING(for installed dune-istl headers)
 
