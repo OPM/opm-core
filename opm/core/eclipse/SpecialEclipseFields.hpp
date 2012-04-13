@@ -1424,7 +1424,7 @@ struct WconprodLine
     WconprodLine() :
 	open_shut_flag_("OPEN"), oil_max_rate_(1.0E20), water_max_rate_(1.0E20),
 	gas_max_rate_(1.0E20), liquid_max_rate_(1.0E20),
-	fluid_volume_max_rate_(1.0E20), BHP_limit_(-1.0), THP_limit_(0.0),
+	fluid_volume_max_rate_(1.0E20), BHP_limit_(1e100), THP_limit_(0.0),
 	VFP_table_number_(0), artif_lift_quantity_(0.0)
     {
     }
