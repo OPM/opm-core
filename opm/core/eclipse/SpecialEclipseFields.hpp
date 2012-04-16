@@ -1255,31 +1255,30 @@ struct GCONPROD : public SpecialBase
             }
 	    std::vector<double> double_data(4, 1.0E20);
             const int num_to_read = 4;
-	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
-	    gconprod_line.oil_max_rate_ = double_data[0];
-	    gconprod_line.water_max_rate_ = double_data[1];
-	    gconprod_line.gas_max_rate_ = double_data[2];
-	    gconprod_line.liquid_max_rate_ = double_data[3];
-            
-            
-            std::string procedure = readString(is); 
-	    if (procedure[0] == '/') {
-		is >> ignoreLine;
-		break;
-	    }
-	    while (procedure.find("--") == 0) {
-		// This line is a comment
-		is >> ignoreLine;
-		procedure = readString(is);
-	    }
-            
+            int num_read = readDefaultedVectorData(is, double_data, num_to_read);
+            gconprod_line.oil_max_rate_ = double_data[0];
+            gconprod_line.water_max_rate_ = double_data[1];
+            gconprod_line.gas_max_rate_ = double_data[2];
+            gconprod_line.liquid_max_rate_ = double_data[3];
+
+            std::string procedure;
+            if (num_read == num_to_read) {
+                procedure = readString(is);
+                if (procedure[0] == '/') {
+                    is.putback('/');
+                    procedure = "NONE";
+                }
+            } else {
+                procedure = "NONE";
+            }
             gconprod_line.procedure_ = procedure;
-	    
-	    gconprod.push_back(gconprod_line);
-	    // HACK! Ignore any further items
+
+            gconprod.push_back(gconprod_line);
+            // HACK! Ignore any further items
             if (num_read == num_to_read) {
                 ignoreSlashLine(is);
             }
+            
 
 	}
     }
