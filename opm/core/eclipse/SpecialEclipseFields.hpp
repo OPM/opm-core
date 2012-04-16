@@ -999,12 +999,13 @@ struct GconinjeLine
     std::string injector_type_;    // Injector type
     std::string control_mode_;     // Control mode
     double surface_flow_max_rate_; // Surface flow rate target or upper limit
-
+    double resv_flow_max_rate_;    // Reservoir flow rate target or upper limit
     double reinjection_fraction_target_;
     
     // Default values
     GconinjeLine() :
-	surface_flow_max_rate_(1.0E20), reinjection_fraction_target_(1E20)
+	surface_flow_max_rate_(1.0E20), reinjection_fraction_target_(1E20),
+        resv_flow_max_rate_(1E20)
     {
     }
 };
@@ -1044,6 +1045,7 @@ struct GCONINJE : public SpecialBase
             const int num_to_read = 10;
 	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
 	    gconinje_line.surface_flow_max_rate_ = double_data[0];
+            gconinje_line.resv_flow_max_rate_ = double_data[1];
             gconinje_line.reinjection_fraction_target_ = double_data[2];
 	    // HACK! Ignore any further items
             if (num_read == num_to_read) {
