@@ -139,9 +139,10 @@ namespace Opm
         /// @{
         ///
         /// A porous medium with a permeability of 1 darcy permits a
-        /// flow (flux) of \f$1\,cm^3/s\f$ of a fluid with viscosity \f$1\,cP\f$ (
-        /// \f$1\,mPa\cdot s\f$) under a pressure gradient of \f$1\,atm/cm\f$ acting across
-        /// an area of \f$1\,cm^2\f$.
+        /// flow (flux) of \f$1\,cm^3/s\f$ of a fluid with viscosity
+        /// \f$1\,cP\f$ ( \f$1\,mPa\cdot s\f$) under a pressure
+        /// gradient of \f$1\,atm/cm\f$ acting across an area of
+        /// \f$1\,cm^2\f$.
         ///
         namespace perm_details {
             const double p_grad   = atm / (prefix::centi*meter);
