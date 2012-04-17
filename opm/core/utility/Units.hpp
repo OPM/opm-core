@@ -93,7 +93,8 @@ namespace Opm
 
         /// \name Volume
         /// @{
-        const double stb    = 0.158987294928 * cubic(meter);
+        const double gallon = 231 * cubic(inch);
+        const double stb    =  42 * gallon;
         /// @}
 
         /// \name Mass
