@@ -51,8 +51,9 @@ namespace Opm
 
     namespace unit
     /// Definition of various units.
-    /// All the units are defined in terms of international standard units (SI). 
-    /// Example of use: We define a variable \c k which gives a permeability. We want to set \c k to  \f$1\,mD\f$.
+    /// All the units are defined in terms of international standard
+    /// units (SI).  Example of use: We define a variable \c k which
+    /// gives a permeability. We want to set \c k to \f$1\,mD\f$.
     /// \code
     /// using namespace Opm::unit
     /// double k = 0.001*darcy;
