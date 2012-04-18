@@ -4,9 +4,11 @@ from paraview import servermanager
 from os import remove, mkdir, curdir
 from os.path import join, isdir
 
-figure_path = curdir
+figure_path = "../Documentation/Figure"
 tutorial_data_path = curdir
 tutorial_path = "tutorials"
+
+collected_garbage_file = []
 
 if not isdir(figure_path):
     mkdir(figure_path)
@@ -14,8 +16,10 @@ if not isdir(figure_path):
 connection = servermanager.Connect()
 
 # tutorial 1
-call(join(tutorial_path,"tutorial1"))
-grid = servermanager.sources.XMLUnstructuredGridReader(FileName=join(tutorial_data_path,"tutorial1.vtu"))
+call(join(tutorial_path, "tutorial1"))
+data_file_name = join(tutorial_data_path, "tutorial1.vtu")
+grid = servermanager.sources.XMLUnstructuredGridReader(FileName = data_file_name)
+collected_garbage_file.append(data_file_name)
 grid.UpdatePipeline()
 Show(grid)
 dp = GetDisplayProperties(grid)
@@ -30,13 +34,14 @@ camera.SetViewUp(-0.19, 0.4, 0.9)
 camera.SetViewAngle(30)
 camera.SetFocalPoint(1.5, 1.5, 1)
 Render()
-WriteImage(join(figure_path,"tutorial1.png"))
+WriteImage(join(figure_path, "tutorial1.png"))
 Hide(grid)
-remove(join(tutorial_data_path,"tutorial1.vtu"))
 
 # tutorial 2
-call(join(tutorial_path,"tutorial2"))
-grid = servermanager.sources.XMLUnstructuredGridReader(FileName=join(tutorial_data_path,"tutorial2.vtu"))
+call(join(tutorial_path, "tutorial2"))
+data_file_name = join(tutorial_data_path, "tutorial2.vtu")
+grid = servermanager.sources.XMLUnstructuredGridReader(FileName = data_file_name)
+collected_garbage_file.append(data_file_name)
 grid.UpdatePipeline()
 Show(grid)
 dp = GetDisplayProperties(grid)
@@ -53,15 +58,19 @@ camera.SetViewUp(0, 1, 0)
 camera.SetViewAngle(30)
 camera.SetFocalPoint(20, 20, 0.5)
 Render()
-WriteImage(join(figure_path,"tutorial2.png"))
+WriteImage(join(figure_path, "tutorial2.png"))
 Hide(grid)
-remove(join(tutorial_data_path,"tutorial2.vtu"))
 
 # tutorial 3
-call(join(tutorial_path,"tutorial3"))
+call(join(tutorial_path, "tutorial3"))
+for case in range(0,20):
+    data_file_name = join(tutorial_data_path, "tutorial3-"+"%(case)03d"%{"case": case}+".vtu")
+    collected_garbage_file.append(data_file_name)
+
 cases = ["000", "005", "010", "015", "019"]
 for case in cases:
-    grid = servermanager.sources.XMLUnstructuredGridReader(FileName=join(tutorial_data_path,"tutorial3-"+case+".vtu"))
+    data_file_name = join(tutorial_data_path, "tutorial3-"+case+".vtu")
+    grid = servermanager.sources.XMLUnstructuredGridReader(FileName = data_file_name)
     grid.UpdatePipeline()
     Show(grid)
     dp = GetDisplayProperties(grid)
@@ -77,7 +86,10 @@ for case in cases:
     camera.SetViewAngle(30)
     camera.SetFocalPoint(100, 100, 5)
     Render()
-    WriteImage(join(figure_path,"tutorial3-"+case+".png"))
+    WriteImage(join(figure_path, "tutorial3-"+case+".png"))
 Hide(grid)
-# remove(join(tutorial_data_path,"tutorial3.vtu"))
+
+# remove temporary files
+for f in collected_garbage_file:
+    remove(f)
 
