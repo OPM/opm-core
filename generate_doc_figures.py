@@ -1,13 +1,21 @@
 from subprocess import call
 from paraview.simple import *
 from paraview import servermanager
-from os import remove
+from os import remove, mkdir, curdir
+from os.path import join, isdir
 
+figure_path = curdir
+tutorial_data_path = curdir
+tutorial_path = "tutorials"
+
+if not isdir(figure_path):
+    mkdir(figure_path)
+    
 connection = servermanager.Connect()
 
 # tutorial 1
-call("tutorials/tutorial1")
-grid = servermanager.sources.XMLUnstructuredGridReader(FileName="tutorial1.vtu")
+call(join(tutorial_path,"tutorial1"))
+grid = servermanager.sources.XMLUnstructuredGridReader(FileName=join(tutorial_data_path,"tutorial1.vtu"))
 grid.UpdatePipeline()
 Show(grid)
 dp = GetDisplayProperties(grid)
@@ -22,13 +30,13 @@ camera.SetViewUp(-0.19, 0.4, 0.9)
 camera.SetViewAngle(30)
 camera.SetFocalPoint(1.5, 1.5, 1)
 Render()
-WriteImage("Figure/tutorial1.png")
+WriteImage(join(figure_path,"tutorial1.png"))
 Hide(grid)
-remove("tutorial1.vtu")
+remove(join(tutorial_data_path,"tutorial1.vtu"))
 
 # tutorial 2
-call("tutorials/tutorial2")
-grid = servermanager.sources.XMLUnstructuredGridReader(FileName="tutorial2.vtu")
+call(join(tutorial_path,"tutorial2"))
+grid = servermanager.sources.XMLUnstructuredGridReader(FileName=join(tutorial_data_path,"tutorial2.vtu"))
 grid.UpdatePipeline()
 Show(grid)
 dp = GetDisplayProperties(grid)
@@ -45,15 +53,15 @@ camera.SetViewUp(0, 1, 0)
 camera.SetViewAngle(30)
 camera.SetFocalPoint(20, 20, 0.5)
 Render()
-WriteImage("Figure/tutorial2.png")
+WriteImage(join(figure_path,"tutorial2.png"))
 Hide(grid)
-# remove("tutorial2.vtu")
+remove(join(tutorial_data_path,"tutorial2.vtu"))
 
-# # tutorial 3
-call("tutorials/tutorial3")
+# tutorial 3
+call(join(tutorial_path,"tutorial3"))
 cases = ["000", "005", "010", "015", "019"]
 for case in cases:
-    grid = servermanager.sources.XMLUnstructuredGridReader(FileName="tutorial3-"+case+".vtu")
+    grid = servermanager.sources.XMLUnstructuredGridReader(FileName=join(tutorial_data_path,"tutorial3-"+case+".vtu"))
     grid.UpdatePipeline()
     Show(grid)
     dp = GetDisplayProperties(grid)
@@ -69,7 +77,7 @@ for case in cases:
     camera.SetViewAngle(30)
     camera.SetFocalPoint(100, 100, 5)
     Render()
-    WriteImage("Figure/tutorial3-"+case+".png")
+    WriteImage(join(figure_path,"tutorial3-"+case+".png"))
 Hide(grid)
-#  remove("tutorial3.vtu")
+# remove(join(tutorial_data_path,"tutorial3.vtu"))
 
