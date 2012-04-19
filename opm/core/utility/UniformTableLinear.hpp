@@ -251,6 +251,12 @@ namespace Opm {
             return os;
         }
 
+    namespace utils
+    {
+        using Opm::UniformTableLinear;
+    }
+
+
 } // namespace Opm
 
 #endif // OPM_UNIFORMTABLELINEAR_HEADER_INCLUDED
