@@ -24,27 +24,25 @@
 #include <opm/core/utility/UniformTableLinear.hpp>
 
 namespace Opm {
-    namespace utils {
 
-        template <typename T>
-        void buildUniformMonotoneTable(const std::vector<double>& xv,
-                                       const std::vector<T>& yv,
-                                       const int samples,
-                                       UniformTableLinear<T>& table)
-        {
-            MonotCubicInterpolator interp(xv, yv);
-            std::vector<T> uniform_yv(samples);
-            double xmin = xv[0];
-            double xmax = xv.back();
-            for (int i = 0; i < samples; ++i) {
-                double w = double(i)/double(samples - 1);
-                double x = (1.0 - w)*xmin + w*xmax;
-                uniform_yv[i] = interp(x);
-            }
-            table = UniformTableLinear<T>(xmin, xmax, uniform_yv);
+    template <typename T>
+    void buildUniformMonotoneTable(const std::vector<double>& xv,
+                                   const std::vector<T>& yv,
+                                   const int samples,
+                                   UniformTableLinear<T>& table)
+    {
+        MonotCubicInterpolator interp(xv, yv);
+        std::vector<T> uniform_yv(samples);
+        double xmin = xv[0];
+        double xmax = xv.back();
+        for (int i = 0; i < samples; ++i) {
+            double w = double(i)/double(samples - 1);
+            double x = (1.0 - w)*xmin + w*xmax;
+            uniform_yv[i] = interp(x);
         }
+        table = UniformTableLinear<T>(xmin, xmax, uniform_yv);
+    }
 
-    } // namespace utils
 } // namespace Opm
 
 
