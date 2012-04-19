@@ -32,7 +32,8 @@ namespace Opm
     }
 
     /// Initialize from deck.
-    void SaturationPropsFromDeck::init(const EclipseGridParser& deck)
+    void SaturationPropsFromDeck::init(const EclipseGridParser& deck,
+                                       const std::vector<int>& global_cell)
     {
         phase_usage_ = phaseUsageFromDeck(deck);
 
@@ -42,15 +43,17 @@ namespace Opm
             THROW("SaturationPropsFromDeck::init()   --  oil phase must be active.");
         }
 
-        // Obtain SATNUM, if it exists.
+        // Obtain SATNUM, if it exists, and create cell_to_func_.
         // Otherwise, let the cell_to_func_ mapping be just empty.
         int satfuncs_expected = 1;
         if (deck.hasField("SATNUM")) {
-            cell_to_func_ = deck.getIntegerValue("SATNUM");
-            satfuncs_expected = *std::max_element(cell_to_func_.begin(), cell_to_func_.end());
-            // Must subtract 1 to get numbering from 0.
-            std::transform(cell_to_func_.begin(), cell_to_func_.end(),
-                           cell_to_func_.begin(), std::bind2nd(std::plus<double>(), -1));
+            const std::vector<int>& satnum = deck.getIntegerValue("SATNUM");
+            satfuncs_expected = *std::max_element(satnum.begin(), satnum.end());
+            int num_cells = global_cell.size();
+            cell_to_func_.resize(num_cells);
+            for (int cell = 0; cell < num_cells; ++cell) {
+                cell_to_func_[cell] = satnum[global_cell[cell]] - 1;
+            }
         }
 
         // Find number of tables, check for consistency.
