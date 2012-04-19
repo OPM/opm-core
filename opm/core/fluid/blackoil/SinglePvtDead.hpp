@@ -74,8 +74,8 @@ namespace Opm
                           double* output_dRdp) const;
     private:
 	// PVT properties of dry gas or dead oil
-        utils::UniformTableLinear<double> one_over_B_;
-        utils::UniformTableLinear<double> viscosity_;
+        UniformTableLinear<double> one_over_B_;
+        UniformTableLinear<double> viscosity_;
     };
 
 }
