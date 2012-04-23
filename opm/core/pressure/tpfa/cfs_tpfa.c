@@ -985,7 +985,7 @@ compute_f2hf_mapping(struct UnstructuredGrid *G   ,
     for (c = i = 0, nc = G->number_of_cells; c < nc; c++) {
         for (; i < G->cell_facepos[c + 1]; i++) {
             f = G->cell_faces[ i ];
-            p = G->cell_faces[2*f + 0] != c;
+            p = G->face_cells[2*f + 0] != c;
 
             data->pimpl->f2hf[2*f + p] = i;
         }
