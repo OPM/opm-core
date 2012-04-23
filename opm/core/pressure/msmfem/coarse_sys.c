@@ -723,6 +723,8 @@ blkdof_fill(struct coarse_topology *ct,
 
     nb = ct->nblocks;
 
+    assert(nb > 0);
+
     sys->blkdof_pos = malloc((nb + 1) * sizeof *sys->blkdof_pos);
 
     if (sys->blkdof_pos != NULL) {
@@ -823,6 +825,8 @@ coarse_sys_allocate(struct coarse_topology *ct,
 
     if (new != NULL) {
         nb = ct->nblocks;
+
+        assert(nb > 0);
 
         alloc_ok = blkdof_fill(ct, m, new);
 
