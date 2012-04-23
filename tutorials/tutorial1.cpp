@@ -26,43 +26,41 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-/// \page tutorial1 A simple carthesian grid
-/// This tutorial explains how to construct a simple carthesian grid.\n\n
-/// We construct a 2x2 two dimensional carthesian grid with 4 blocks of equal size.
+/// \page tutorial1 A simple cartesian grid
+/// This tutorial explains how to construct a simple cartesian grid.
 
 #include <opm/core/grid.h>
 #include <opm/core/GridManager.hpp>
 #include <opm/core/utility/writeVtkData.hpp>
-#include <cassert>
-#include <cstddef>
 #include <iostream>
-#include <iomanip>
 #include <fstream>
 #include <vector>
 
 // ----------------- Main program -----------------
 
-/// \page tutorial1 
+/// \page tutorial1
+/// \section commentedsource1 Commented source code:
 /// \code
 int main()
 {
     /// \endcode
     /// \page tutorial1
-    /// By setting <code>nz = 1</code>, we make the grid two dimensional
+    /// We set the number of blocks in each direction.
     /// \code
-    int nx = 3;
+    int nx = 4;
     int ny = 3;
-    int nz = 1;
+    int nz = 2;
     /// \endcode
-    /// The size of each block is 1x1x1. We use standard units (SI)
+    /// The size of each block is 1x1x1. The default units are allways the
+    /// standard units (SI). But other units can easily be dealt with, see Opm::unit.
     /// \code
     double dx = 1.0;
     double dy = 1.0;
     double dz = 1.0;
-    /// \endcode 
-    /// \page tutorial1 
-    /// One of the constructors of the class Opm::GridManager takes <code>nx,ny,nz,dx,dy,dz</code> 
-    /// and construct the corresponding carthesian grid.
+    /// \endcode
+    /// \page tutorial1
+    /// One of the constructors of the class Opm::GridManager takes <code>nx,ny,nz,dx,dy,dz</code>
+    /// and construct the corresponding cartesian grid.
     /// \code
     Opm::GridManager grid(nx, ny, nz, dx, dy, dz);
     /// \endcode
@@ -84,10 +82,10 @@ int main()
 }
 /// \endcode
 /// \page tutorial1
-/// We read the the vtu output file in \a Paraview and obtain the following grid.
+/// We read the vtu output file in \a Paraview and obtain the following grid.
 /// \image html tutorial1.png
 
-/// \page tutorial1 
-/// \section sourcecode Source code.
-/// \include tutorial1.cpp 
+/// \page tutorial1
+/// \section completecode1 Complete source code:
+/// \include tutorial1.cpp
 

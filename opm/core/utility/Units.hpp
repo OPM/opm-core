@@ -13,8 +13,8 @@
 //===========================================================================
 
 /*
-  Copyright 2009, 2010 SINTEF ICT, Applied Mathematics.
-  Copyright 2009, 2010 Statoil ASA.
+  Copyright 2009, 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
+  Copyright 2009, 2010, 2011, 2012 Statoil ASA.
 
   This file is part of The Open Reservoir Simulator Project (OpenRS).
 
@@ -38,6 +38,7 @@
 namespace Opm
 {
     namespace prefix
+    /// Conversion prefix for units.
     {
         const double micro = 1.0e-6;
         const double milli = 1.0e-3;
@@ -49,68 +50,102 @@ namespace Opm
     } // namespace prefix
 
     namespace unit
+    /// Definition of various units.
+    /// All the units are defined in terms of international standard
+    /// units (SI).  Example of use: We define a variable \c k which
+    /// gives a permeability. We want to set \c k to \f$1\,mD\f$.
+    /// \code
+    /// using namespace Opm::unit
+    /// double k = 0.001*darcy;
+    /// \endcode
+    /// We can also use one of the prefixes defined in Opm::prefix
+    /// \code
+    /// using namespace Opm::unit
+    /// using namespace Opm::prefix
+    /// double k = 1.0*milli*darcy;
+    /// \endcode
     {
-        // Common powers
+        ///\name Common powers
+        /// @{
         inline double square(double v) { return v * v;     }
         inline double cubic (double v) { return v * v * v; }
+        /// @}
 
         // --------------------------------------------------------------
         // Basic (fundamental) units and conversions
         // --------------------------------------------------------------
 
-        // Length:
+        /// \name Length
+        /// @{
         const double meter =  1;
         const double inch  =  2.54 * prefix::centi*meter;
         const double feet  = 12    * inch;
+        /// @}
 
-        // Time:
+        /// \name Time
+        /// @{
         const double second =   1;
         const double minute =  60 * second;
         const double hour   =  60 * minute;
         const double day    =  24 * hour;
         const double year   = 365 * day;
+        /// @}
 
-        // Volume
-        const double stb    = 0.158987294928 * cubic(meter);
+        /// \name Volume
+        /// @{
+        const double gallon = 231 * cubic(inch);
+        const double stb    =  42 * gallon;
+        /// @}
 
-
-        // Mass:
+        /// \name Mass
+        /// @{
         const double kilogram = 1;
-
         // http://en.wikipedia.org/wiki/Pound_(mass)#Avoirdupois_pound
         const double pound    = 0.45359237 * kilogram;
+        /// @}
 
         // --------------------------------------------------------------
         // Standardised constants
         // --------------------------------------------------------------
 
+        /// \name Standardised constant
+        /// @{
         const double gravity = 9.80665 * meter/square(second);
+        /// @}
 
         // --------------------------------------------------------------
         // Derived units and conversions
         // --------------------------------------------------------------
 
-        // Force:
+        /// \name Force
+        /// @{
         const double Newton = kilogram*meter / square(second); // == 1
         const double lbf    = pound * gravity; // Pound-force
+        /// @}
 
-        // Pressure:
+        /// \name Pressure
+        /// @{
         const double Pascal = Newton / square(meter); // == 1
         const double barsa  = 100000 * Pascal;
         const double atm    = 101325 * Pascal;
         const double psia   = lbf / square(inch);
+        /// @}
 
-        // Viscosity:
+        /// \name Viscosity
+        /// @{
         const double Pas   = Pascal * second; // == 1
         const double Poise = prefix::deci*Pas;
+        /// @}
 
-        // Permeability:
-        //
-        // A porous medium with a permeability of 1 darcy permits a
-        // flow (flux) of 1 cm³/s of a fluid with viscosity 1 cP (1
-        // mPa·s) under a pressure gradient of 1 atm/cm acting across
-        // an area of 1 cm².
-        //
+        /// \name Permeability
+        /// @{
+        ///
+        /// A porous medium with a permeability of 1 darcy permits a
+        /// flow (flux) of \f$1\,cm^3/s\f$ of a fluid with viscosity
+        /// \f$1\,cP\f$ (\f$1\,mPa\cdot s\f$) under a pressure
+        /// gradient of \f$1\,atm/cm\f$ acting across an area of
+        /// \f$1\,cm^2\f$.
+        ///
         namespace perm_details {
             const double p_grad   = atm / (prefix::centi*meter);
             const double area     = square(prefix::centi*meter);
@@ -122,6 +157,7 @@ namespace Opm
             //                    == 9.869232667160130e-13 [m^2]
         }
         const double darcy = perm_details::darcy;
+        /// @}
 
         // Unit conversion support.
         //

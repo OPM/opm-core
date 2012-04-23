@@ -29,8 +29,6 @@
 #include <opm/core/utility/ErrorMacros.hpp>
 
 namespace Opm {
-    namespace utils {
-
 
 	/// @brief This class uses linear interpolation to compute the value
 	///        (and its derivative) of a function f sampled at uniform points.
@@ -253,7 +251,12 @@ namespace Opm {
             return os;
         }
 
-    } // namespace utils
+    namespace utils
+    {
+        using Opm::UniformTableLinear;
+    }
+
+
 } // namespace Opm
 
 #endif // OPM_UNIFORMTABLELINEAR_HEADER_INCLUDED

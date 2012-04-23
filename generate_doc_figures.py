@@ -1,13 +1,25 @@
 from subprocess import call
 from paraview.simple import *
 from paraview import servermanager
-from os import remove
+from os import remove, mkdir, curdir
+from os.path import join, isdir
 
+figure_path = "../Documentation/Figure"
+tutorial_data_path = curdir
+tutorial_path = "tutorials"
+
+collected_garbage_file = []
+
+if not isdir(figure_path):
+    mkdir(figure_path)
+    
 connection = servermanager.Connect()
 
 # tutorial 1
-call("tutorials/tutorial1")
-grid = servermanager.sources.XMLUnstructuredGridReader(FileName="tutorial1.vtu")
+call(join(tutorial_path, "tutorial1"))
+data_file_name = join(tutorial_data_path, "tutorial1.vtu")
+grid = servermanager.sources.XMLUnstructuredGridReader(FileName = data_file_name)
+collected_garbage_file.append(data_file_name)
 grid.UpdatePipeline()
 Show(grid)
 dp = GetDisplayProperties(grid)
@@ -17,28 +29,27 @@ dp.AmbientColor = [1, 0, 0]
 view = GetActiveView()
 view.Background = [1, 1, 1]
 camera = GetActiveCamera()
-camera.SetPosition(20, 20, 110)
-camera.SetViewUp(0.5,0.3,0.7)
+camera.SetPosition(4, -6, 5)
+camera.SetViewUp(-0.19, 0.4, 0.9)
 camera.SetViewAngle(30)
-camera.SetFocalPoint(1,1,0.5)
+camera.SetFocalPoint(1.5, 1.5, 1)
 Render()
-WriteImage("Figure/tutorial1.png")
+WriteImage(join(figure_path, "tutorial1.png"))
 Hide(grid)
-# remove("tutorial1.vtu")
 
 # tutorial 2
-call("tutorials/tutorial2")
-grid = servermanager.sources.XMLUnstructuredGridReader(FileName="tutorial2.vtu")
+call(join(tutorial_path, "tutorial2"))
+data_file_name = join(tutorial_data_path, "tutorial2.vtu")
+grid = servermanager.sources.XMLUnstructuredGridReader(FileName = data_file_name)
+collected_garbage_file.append(data_file_name)
 grid.UpdatePipeline()
 Show(grid)
 dp = GetDisplayProperties(grid)
 dp.Representation = 'Surface'
-data = grid.GetCellDataInformation()
-pressure = data.GetArray('pressure')
-pmin = pressure.GetRange()[0]
-pmax = pressure.GetRange()[1]
-dp.LookupTable = MakeBlueToRedLT(0.5*(pmin+pmax)-0.2*(pmax-pmin), 0.5*(pmin+pmax)-0.2*(pmax+pmin))
 dp.ColorArrayName = 'pressure'
+pres = grid.CellData.GetArray(0)
+pres_lookuptable = GetLookupTableForArray( "pressure", 1, RGBPoints=[pres.GetRange()[0], 1, 0, 0, pres.GetRange()[1], 0, 0, 1] )
+dp.LookupTable = pres_lookuptable
 view = GetActiveView()
 view.Background = [1, 1, 1]
 camera = GetActiveCamera()
@@ -47,5 +58,38 @@ camera.SetViewUp(0, 1, 0)
 camera.SetViewAngle(30)
 camera.SetFocalPoint(20, 20, 0.5)
 Render()
-WriteImage("Figure/tutorial2.png")
-# remove("tutorial2.vtu")
+WriteImage(join(figure_path, "tutorial2.png"))
+Hide(grid)
+
+# tutorial 3
+call(join(tutorial_path, "tutorial3"))
+for case in range(0,20):
+    data_file_name = join(tutorial_data_path, "tutorial3-"+"%(case)03d"%{"case": case}+".vtu")
+    collected_garbage_file.append(data_file_name)
+
+cases = ["000", "005", "010", "015", "019"]
+for case in cases:
+    data_file_name = join(tutorial_data_path, "tutorial3-"+case+".vtu")
+    grid = servermanager.sources.XMLUnstructuredGridReader(FileName = data_file_name)
+    grid.UpdatePipeline()
+    Show(grid)
+    dp = GetDisplayProperties(grid)
+    dp.Representation = 'Surface'
+    dp.ColorArrayName = 'saturation'
+    sat = grid.CellData.GetArray(1)
+    sat_lookuptable = GetLookupTableForArray( "saturation", 1, RGBPoints=[0, 1, 0, 0, 1, 0, 0, 1])
+    dp.LookupTable = sat_lookuptable
+    view.Background = [1, 1, 1]
+    camera = GetActiveCamera()
+    camera.SetPosition(100, 100, 550)
+    camera.SetViewUp(0, 1, 0)
+    camera.SetViewAngle(30)
+    camera.SetFocalPoint(100, 100, 5)
+    Render()
+    WriteImage(join(figure_path, "tutorial3-"+case+".png"))
+Hide(grid)
+
+# remove temporary files
+for f in collected_garbage_file:
+    remove(f)
+
