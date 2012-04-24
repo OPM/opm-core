@@ -543,7 +543,8 @@ allocate_cart_grid_2d(int nx, int ny)
         G->global_cell      = NULL;
         G->cell_facetag     = NULL;
 
-        if ((G->face_nodes       == NULL ) ||
+        if ((G->node_coordinates == NULL ) ||
+            (G->face_nodes       == NULL ) ||
             (G->face_nodepos     == NULL ) ||
             (G->face_cells       == NULL ) ||
             (G->face_centroids   == NULL ) ||
