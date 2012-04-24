@@ -510,7 +510,9 @@ main(int argc, char** argv)
             computeTotalMobility(*props, allcells, state.saturation(), totmob);
         }
         std::vector<double> wdp;
-        Opm::computeWDP(*wells->c_wells(), *grid->c_grid(), state.saturation(), props->density(), wdp, true);
+        if (wells->c_wells()) {
+            Opm::computeWDP(*wells->c_wells(), *grid->c_grid(), state.saturation(), props->density(), wdp, true);
+        }
         std::vector<double> well_bhp;
         std::vector<double> well_perfrates;
         pressure_timer.start();
@@ -546,15 +548,15 @@ main(int argc, char** argv)
         ptime += pt;
 
         // Process transport sources (to include bdy terms and well flows).
-        if (use_reorder) {
-            Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0, reorder_src);
-        } else {
+        Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0,
+                                    wells->c_wells(), well_perfrates, reorder_src);
+        if (!use_reorder) {
             clear_transport_source(tsrc);
             for (int cell = 0; cell < num_cells; ++cell) {
-                if (src[cell] > 0.0) {
-                    append_transport_source(cell, 2, 0, src[cell], ssrc, zdummy, tsrc);
-                } else if (src[cell] < 0.0) {
-                    append_transport_source(cell, 2, 0, src[cell], ssink, zdummy, tsrc);
+                if (reorder_src[cell] > 0.0) {
+                    append_transport_source(cell, 2, 0, reorder_src[cell], ssrc, zdummy, tsrc);
+                } else if (reorder_src[cell] < 0.0) {
+                    append_transport_source(cell, 2, 0, reorder_src[cell], ssink, zdummy, tsrc);
                 }
             }
         }
