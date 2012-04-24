@@ -903,10 +903,10 @@ compute_flux(struct UnstructuredGrid       *G,
                     }
 
                     if (c1 < 0) {
-                        dp = bc->value[ i ] - cpress[c1];
+                        dp = bc->value[ i ] - cpress[c2];
                     }
                     else {
-                        dp = cpress[c2] - bc->value[ i ];
+                        dp = cpress[c1] - bc->value[ i ];
                     }
 
                     fflux[f] = trans[f] * (t*dp + g);
