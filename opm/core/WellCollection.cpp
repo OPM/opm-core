@@ -88,16 +88,24 @@ namespace Opm
         return NULL;
     }
     
-    bool WellCollection::conditionsMet(const std::vector<double>& well_bhp, const std::vector<double>& well_rate, 
-                           const UnstructuredGrid& grid, const std::vector<double>& saturations, double epsilon) const {
-        for(size_t i = 0; i < leaf_nodes_.size(); i++) {
-            if(! static_cast<WellNode*>(leaf_nodes_[i].get())->conditionsMet(well_bhp, well_rate, grid, saturations, epsilon) ) {
-                return false;
+    const WellsGroupInterface* WellCollection::findNode(std::string name) const
+    {
+
+        for (size_t i = 0; i < roots_.size(); i++) {
+            WellsGroupInterface* result = roots_[i]->findGroup(name);
+            if (result) {
+                return result;
             }
         }
-        
-        return true;
-        
+        return NULL;
+    }
+    
+    void WellCollection::conditionsMet(const std::vector<double>& well_bhp, const std::vector<double>& well_rate, 
+                           const UnstructuredGrid& grid, const std::vector<double>& saturations, 
+                           WellControlResult& result, double epsilon) const {
+        for(size_t i = 0; i < leaf_nodes_.size(); i++) {
+            static_cast<WellNode*>(leaf_nodes_[i].get())->conditionsMet(well_bhp, well_rate, grid, saturations, result, epsilon);
+        }        
     }
 
     void WellCollection::calculateGuideRates()

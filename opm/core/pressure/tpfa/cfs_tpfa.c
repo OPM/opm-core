@@ -970,6 +970,32 @@ is_incompr(int nc, struct compr_quantities *cq)
 }
 
 
+#if !defined(NDEBUG)
+static int
+f2hf_structure_ok(struct UnstructuredGrid *G    ,
+                  struct cfs_tpfa_impl    *pimpl)
+{
+    int    c, p, ok;
+    size_t i, n;
+
+    n = 2 * G->number_of_faces;
+
+    for (i = 0, ok = 1; ok && (i < n); i++) {
+        ok = (G->face_cells[ i ] < 0) == (pimpl->f2hf[ i ] < 0);
+
+        if (ok && ((c = G->face_cells[ i ]) >= 0)) {
+            assert (c < G->number_of_cells);
+
+            p  = pimpl->f2hf[ i ];
+            ok = (G->cell_facepos[c] <= p) && (p < G->cell_facepos[c + 1]);
+        }
+    }
+
+    return ok;
+}
+#endif
+
+
 /* ---------------------------------------------------------------------- */
 static void
 compute_f2hf_mapping(struct UnstructuredGrid *G   ,
@@ -985,11 +1011,13 @@ compute_f2hf_mapping(struct UnstructuredGrid *G   ,
     for (c = i = 0, nc = G->number_of_cells; c < nc; c++) {
         for (; i < G->cell_facepos[c + 1]; i++) {
             f = G->cell_faces[ i ];
-            p = G->cell_faces[2*f + 0] != c;
+            p = G->face_cells[2*f + 0] != c;
 
             data->pimpl->f2hf[2*f + p] = i;
         }
     }
+
+    assert (f2hf_structure_ok(G, data->pimpl));
 }
 
 

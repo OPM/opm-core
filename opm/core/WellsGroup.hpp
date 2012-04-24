@@ -11,6 +11,18 @@
 namespace Opm
 {
 
+    struct ExceedInformation {
+        std::string group_name_;
+        int well_index_;
+        double surplus_;
+    };
+    
+    struct WellControlResult {
+        std::vector<ExceedInformation> oil_rate_;
+        std::vector<ExceedInformation> fluid_rate_;
+        std::vector<ExceedInformation> bhp_;
+        
+    };
     class WellsGroupInterface
     {
     public:
@@ -74,9 +86,9 @@ namespace Opm
 
         void addChild(std::tr1::shared_ptr<WellsGroupInterface> child);
         
-        bool conditionsMet(const std::vector<double>& well_bhp, const std::vector<double>& well_rate,
+        void conditionsMet(const std::vector<double>& well_bhp, const std::vector<double>& well_rate,
                            const UnstructuredGrid& grid, const std::vector<double>& saturations, const struct Wells* wells,
-                                   int index_of_well, double epsilon = 1e-8);
+                                   int index_of_well, WellControlResult& result, double epsilon = 1e-8);
         
         virtual void calculateGuideRates();
         
@@ -96,8 +108,9 @@ namespace Opm
                 InjectionSpecification inj_spec);
 
         virtual WellsGroupInterface* findGroup(std::string name_of_node);
-        virtual bool conditionsMet(const std::vector<double>& well_bhp, const std::vector<double>& well_rate, 
-                           const UnstructuredGrid& grid, const std::vector<double>& saturations, double epsilon=1e-8);
+        virtual void conditionsMet(const std::vector<double>& well_bhp, const std::vector<double>& well_rate, 
+                           const UnstructuredGrid& grid, const std::vector<double>& saturations, 
+                           WellControlResult& result, double epsilon=1e-8);
         virtual bool isLeafNode() const;
         
         void setWellsPointer(const struct Wells* wells, int self_index);
