@@ -868,6 +868,7 @@ compute_flux(struct UnstructuredGrid       *G,
         c2 = G->face_cells[2*f + 1];
 
         if ((c1 < 0) || (c2 < 0)) {
+            fflux[ f ] = 0.0;   /* No-flow on ext. faces unless active BC. */
             continue;
         }
 
