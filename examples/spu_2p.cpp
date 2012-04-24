@@ -387,7 +387,8 @@ main(int argc, char** argv)
 
     // Initialising src
     if (wells->c_wells()) {
-        Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
+        // Do nothing, wells will be the driving force, not source terms.
+        // Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
     } else {
         const double default_injection = use_gravity ? 0.0 : 0.1;
         const double flow_per_sec = param.getDefault<double>("injected_porevolumes_per_day", default_injection)
@@ -422,7 +423,7 @@ main(int argc, char** argv)
     Opm::LinearSolverFactory linsolver(param);
     // Pressure solver.
     const double *grav = use_gravity ? &gravity[0] : 0;
-    Opm::IncompTpfa psolver(*grid->c_grid(), props->permeability(), grav, linsolver);
+    Opm::IncompTpfa psolver(*grid->c_grid(), props->permeability(), grav, linsolver, wells->c_wells());
     // Reordering solver.
     const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
     const int nl_maxiter = param.getDefault("nl_maxiter", 30);
@@ -508,7 +509,10 @@ main(int argc, char** argv)
         } else {
             computeTotalMobility(*props, allcells, state.saturation(), totmob);
         }
-        std::vector<double> empty_vector_for_wells;
+        std::vector<double> wdp;
+        Opm::computeWDP(*wells->c_wells(), *grid->c_grid(), state.saturation(), props->density(), wdp, true);
+        std::vector<double> well_bhp;
+        std::vector<double> well_perfrates;
         pressure_timer.start();
         if (rock_comp->isActive()) {
             rc.resize(num_cells);
@@ -520,10 +524,8 @@ main(int argc, char** argv)
                     rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
                 }
                 state.pressure() = initial_pressure;
-                
-
-                psolver.solve(totmob, omega, src, empty_vector_for_wells, bcs.c_bcs(), porevol, rc, simtimer.currentStepLength(),
-                              state.pressure(), state.faceflux(), empty_vector_for_wells, empty_vector_for_wells);
+                psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), porevol, rc, simtimer.currentStepLength(),
+                              state.pressure(), state.faceflux(), well_bhp, well_perfrates);
                 double max_change = 0.0;
                 for (int cell = 0; cell < num_cells; ++cell) {
                     max_change = std::max(max_change, std::fabs(state.pressure()[cell] - prev_pressure[cell]));
@@ -535,15 +537,15 @@ main(int argc, char** argv)
             }
             computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
         } else {
-            psolver.solve(totmob, omega, src, empty_vector_for_wells, bcs.c_bcs(), state.pressure(), state.faceflux(), empty_vector_for_wells,
-                          empty_vector_for_wells);
+            psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
+                          well_bhp, well_perfrates);
         }
         pressure_timer.stop();
         double pt = pressure_timer.secsSinceStart();
         std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
         ptime += pt;
 
-        // Process transport sources (to include bdy terms).
+        // Process transport sources (to include bdy terms and well flows).
         if (use_reorder) {
             Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0, reorder_src);
         } else {
