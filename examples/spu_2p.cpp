@@ -142,6 +142,19 @@ static void outputWaterCut(const Opm::Watercut& watercut,
 }
 
 
+static void outputWellReport(const Opm::WellReport& wellreport,
+                             const std::string& output_dir)
+{
+    // Write well report.
+    std::string fname = output_dir  + "/wellreport.txt";
+    std::ofstream os(fname.c_str());
+    if (!os) {
+        THROW("Failed to open " << fname);
+    }
+    wellreport.write(os);
+}
+
+
 
 // --------------- Types needed to define transport solver ---------------
 
@@ -496,6 +509,15 @@ main(int argc, char** argv)
               << "    " << init_satvol[1]/tot_porevol_init << std::endl;
     Opm::Watercut watercut;
     watercut.push(0.0, 0.0, 0.0);
+    Opm::WellReport wellreport;
+    std::vector<double> well_bhp;
+    std::vector<double> well_perfrates;
+    if (wells->c_wells()) {
+        const int nw = wells->c_wells()->number_of_wells;
+        well_bhp.resize(nw, 0.0);
+        well_perfrates.resize(wells->c_wells()->well_connpos[nw], 0.0);
+        wellreport.push(*props, *wells->c_wells(), state.saturation(), 0.0, well_bhp, well_perfrates);
+    }
     for (; !simtimer.done(); ++simtimer) {
         // Report timestep and (optionally) write state to disk.
         simtimer.report(std::cout);
@@ -511,10 +533,8 @@ main(int argc, char** argv)
         }
         std::vector<double> wdp;
         if (wells->c_wells()) {
-            Opm::computeWDP(*wells->c_wells(), *grid->c_grid(), state.saturation(), props->density(), wdp, true);
+            Opm::computeWDP(*wells->c_wells(), *grid->c_grid(), state.saturation(), props->density(), gravity[2], true, wdp);
         }
-        std::vector<double> well_bhp;
-        std::vector<double> well_perfrates;
         pressure_timer.start();
         if (rock_comp->isActive()) {
             rc.resize(num_cells);
@@ -639,6 +659,11 @@ main(int argc, char** argv)
         watercut.push(simtimer.currentTime() + simtimer.currentStepLength(),
                       produced[0]/(produced[0] + produced[1]),
                       tot_produced[0]/tot_porevol_init);
+        if (wells->c_wells()) {
+            wellreport.push(*props, *wells->c_wells(), state.saturation(),
+                            simtimer.currentTime() + simtimer.currentStepLength(),
+                            well_bhp, well_perfrates);
+        }
     }
     total_timer.stop();
 
@@ -650,6 +675,9 @@ main(int argc, char** argv)
     if (output) {
         outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
         outputWaterCut(watercut, output_dir);
+        if (wells->c_wells()) {
+            outputWellReport(wellreport, output_dir);
+        }
     }
 
     destroy_transport_source(tsrc);
