@@ -163,65 +163,111 @@ create_grid_tensor3d(int    nx,  int    ny , int    nz ,
 /* Static functions follow:                                              */
 /* --------------------------------------------------------------------- */
 
+
+static struct UnstructuredGrid *
+allocate_cart_grid(size_t ndims ,
+                   size_t ncells,
+                   size_t nfaces,
+                   size_t nnodes)
+{
+    size_t nel;
+    struct UnstructuredGrid *G;
+
+    G = create_grid_empty();
+
+    if (G != NULL) {
+        /* Node fields ---------------------------------------- */
+        nel                 = nnodes * ndims;
+        G->node_coordinates = malloc(nel * sizeof *G->node_coordinates);
+
+
+        /* Face fields ---------------------------------------- */
+        nel               = nfaces * (2 * (ndims - 1));
+        G->face_nodes     = malloc(nel * sizeof *G->face_nodes);
+
+        nel               = nfaces + 1;
+        G->face_nodepos   = malloc(nel * sizeof *G->face_nodepos);
+
+        nel               = 2 * nfaces;
+        G->face_cells     = malloc(nel * sizeof *G->face_cells);
+
+        nel               = nfaces * ndims;
+        G->face_centroids = malloc(nel * sizeof *G->face_centroids);
+
+        nel               = nfaces * ndims;
+        G->face_normals   = malloc(nel * sizeof *G->face_normals);
+
+        nel               = nfaces * 1;
+        G->face_areas     = malloc(nel * sizeof *G->face_areas);
+
+
+        /* Cell fields ---------------------------------------- */
+        nel               = ncells * (2 * ndims);
+        G->cell_faces     = malloc(nel * sizeof *G->cell_faces);
+
+        nel               = ncells + 1;
+        G->cell_facepos   = malloc(nel * sizeof *G->cell_facepos);
+
+        nel               = ncells * ndims;
+        G->cell_centroids = malloc(nel * sizeof *G->cell_centroids);
+
+        nel               = ncells * 1;
+        G->cell_volumes   = malloc(nel * sizeof *G->cell_volumes);
+
+        if ((G->node_coordinates == NULL) ||
+            (G->face_nodes       == NULL) ||
+            (G->face_nodepos     == NULL) ||
+            (G->face_cells       == NULL) ||
+            (G->face_centroids   == NULL) ||
+            (G->face_normals     == NULL) ||
+            (G->face_areas       == NULL) ||
+            (G->cell_faces       == NULL) ||
+            (G->cell_facepos     == NULL) ||
+            (G->cell_centroids   == NULL) ||
+            (G->cell_volumes     == NULL)  )
+        {
+            destroy_grid(G);
+            G = NULL;
+        }
+    }
+
+    return G;
+}
+
+
 static struct UnstructuredGrid*
 allocate_cart_grid_3d(int nx, int ny, int nz)
 {
     struct UnstructuredGrid *G;
     int Nx, Ny, Nz;
     int nxf, nyf, nzf;
-    G = malloc(1 * sizeof *G);
+
+    int ncells, nfaces, nnodes;
+
+    Nx  = nx + 1;
+    Ny  = ny + 1;
+    Nz  = nz  +1;
+
+    nxf = Nx * ny * nz;
+    nyf = nx * Ny * nz;
+    nzf = nx * ny * Nz;
+
+    ncells = nx  * ny  * nz ;
+    nfaces = nxf + nyf + nzf;
+    nnodes = Nx  * Ny  * Nz ;
+
+    G = allocate_cart_grid(3, ncells, nfaces, nnodes);
+
     if (G != NULL)
     {
-
-        G->dimensions = 3;
+        G->dimensions  = 3 ;
         G->cartdims[0] = nx;
         G->cartdims[1] = ny;
         G->cartdims[2] = nz;
 
-        Nx  = nx+1;
-        Ny  = ny+1;
-        Nz  = nz+1;
-
-        nxf = Nx*ny*nz;
-        nyf = nx*Ny*nz;
-        nzf = nx*ny*Nz;
-
-        G->number_of_cells  = nx*ny*nz;
-        G->number_of_faces  = nxf+nyf+nzf;
-        G->number_of_nodes  = Nx*Ny*Nz;
-
-        G->node_coordinates = malloc(G->number_of_nodes * 3 * sizeof *(G->node_coordinates));
-
-        G->face_nodes       = malloc(G->number_of_faces * 4 * sizeof *(G->face_nodes));
-        G->face_nodepos     = malloc((G->number_of_faces+1) * sizeof *(G->face_nodepos));
-        G->face_cells       = malloc(G->number_of_faces * 2 * sizeof *(G->face_cells));
-        G->face_centroids   = malloc(G->number_of_faces * 3 * sizeof *(G->face_centroids));
-        G->face_normals     = malloc(G->number_of_faces * 3 * sizeof *(G->face_normals));
-        G->face_areas       = malloc(G->number_of_faces * 1 * sizeof *(G->face_areas));
-
-        G->cell_faces       = malloc(G->number_of_cells * 6 * sizeof *(G->cell_faces));
-        G->cell_facepos     = malloc((G->number_of_cells+1) * sizeof *(G->cell_facepos));
-        G->cell_centroids   = malloc(G->number_of_cells * 3 * sizeof *(G->cell_centroids));
-        G->cell_volumes     = malloc(G->number_of_cells * 1 * sizeof *(G->cell_volumes));
-
-        G->global_cell      = NULL;
-        G->cell_facetag     = NULL;
-
-        if ((G->node_coordinates == NULL ) ||
-            (G->face_nodes       == NULL ) ||
-            (G->face_nodepos     == NULL ) ||
-            (G->face_cells       == NULL ) ||
-            (G->face_centroids   == NULL ) ||
-            (G->face_normals     == NULL ) ||
-            (G->face_areas       == NULL ) ||
-            (G->cell_faces       == NULL ) ||
-            (G->cell_facepos     == NULL ) ||
-            (G->cell_centroids   == NULL ) ||
-            (G->cell_volumes     == NULL )  )
-        {
-            destroy_grid(G);
-            G = NULL;
-        }
+        G->number_of_cells  = ncells;
+        G->number_of_faces  = nfaces;
+        G->number_of_nodes  = nnodes;
     }
 
     return G;
@@ -503,61 +549,35 @@ fill_layered_geometry_3d(struct UnstructuredGrid *G,
 static struct UnstructuredGrid*
 allocate_cart_grid_2d(int nx, int ny)
 {
-    int    nxf, nyf;
-    int    Nx, Ny;
+    int nxf, nyf;
+    int Nx , Ny ;
+
+    int ncells, nfaces, nnodes;
 
     struct UnstructuredGrid *G;
 
-    G = malloc(1 * sizeof *G);
+    Nx     = nx + 1;
+    Ny     = ny + 1;
+
+    nxf    = Nx * ny;
+    nyf    = nx * Ny;
+
+    ncells = nx  * ny ;
+    nfaces = nxf + nyf;
+    nnodes = Nx  * Ny ;
+
+    G = allocate_cart_grid(2, ncells, nfaces, nnodes);
+
     if (G != NULL)
     {
-        G->dimensions = 2;
+        G->dimensions  = 2 ;
         G->cartdims[0] = nx;
         G->cartdims[1] = ny;
-        G->cartdims[2] = 1;
+        G->cartdims[2] = 1 ;
 
-        Nx  = nx+1;
-        Ny  = ny+1;
-
-        nxf = Nx*ny;
-        nyf = nx*Ny;
-
-        G->number_of_cells  = nx*ny;
-        G->number_of_faces  = nxf+nyf;
-        G->number_of_nodes  = Nx*Ny;
-
-        G->node_coordinates = malloc(G->number_of_nodes * 2 * sizeof *(G->node_coordinates));
-
-        G->face_nodes       = malloc(G->number_of_faces * 2 * sizeof *(G->face_nodes));
-        G->face_nodepos     = malloc((G->number_of_faces+1) * sizeof *(G->face_nodepos));
-        G->face_cells       = malloc(G->number_of_faces * 2 * sizeof *(G->face_cells));
-        G->face_centroids   = malloc(G->number_of_faces * 2 * sizeof *(G->face_centroids));
-        G->face_normals     = malloc(G->number_of_faces * 2 * sizeof *(G->face_normals));
-        G->face_areas       = malloc(G->number_of_faces * 1 * sizeof *(G->face_areas));
-
-        G->cell_faces       = malloc(G->number_of_cells * 4 * sizeof *(G->cell_faces));
-        G->cell_facepos     = malloc((G->number_of_cells+1) * sizeof *(G->cell_facepos));
-        G->cell_centroids   = malloc(G->number_of_cells * 2 * sizeof *(G->cell_centroids));
-        G->cell_volumes     = malloc(G->number_of_cells * 1 * sizeof *(G->cell_volumes));
-
-        G->global_cell      = NULL;
-        G->cell_facetag     = NULL;
-
-        if ((G->node_coordinates == NULL ) ||
-            (G->face_nodes       == NULL ) ||
-            (G->face_nodepos     == NULL ) ||
-            (G->face_cells       == NULL ) ||
-            (G->face_centroids   == NULL ) ||
-            (G->face_normals     == NULL ) ||
-            (G->face_areas       == NULL ) ||
-            (G->cell_faces       == NULL ) ||
-            (G->cell_facepos     == NULL ) ||
-            (G->cell_centroids   == NULL ) ||
-            (G->cell_volumes     == NULL )  )
-        {
-            destroy_grid(G);
-            G = NULL;
-        }
+        G->number_of_cells = ncells;
+        G->number_of_faces = nfaces;
+        G->number_of_nodes = nnodes;
     }
 
     return G;
