@@ -151,7 +151,10 @@ public:
         forces_.W = 0;
 
         // Assemble the embedded linear system.
-        ifs_tpfa_assemble(g, &forces_, &eff_trans_[0], &gpress_[0], data_);
+        int ok = ifs_tpfa_assemble(g, &forces_, &eff_trans_[0], &gpress_[0], data_);
+        if (!ok) {
+            THROW("Assembly of pressure system failed.");
+        }
         state_ = Assembled;
     }
 
