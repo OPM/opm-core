@@ -992,7 +992,7 @@ struct COMPDAT : public SpecialBase
 
 
 
-/// Class holding a data line of keyword WCONINJE
+/// Class holding a data line of keyword GCONINJE
 struct GconinjeLine
 {
     std::string group_;             // Well name or well name root
@@ -1004,14 +1004,14 @@ struct GconinjeLine
     
     // Default values
     GconinjeLine() :
-	surface_flow_max_rate_(1.0E20),
-        resv_flow_max_rate_(1E20),
-        reinjection_fraction_target_(1E20)
+	surface_flow_max_rate_(-1.0E20),
+        resv_flow_max_rate_(-1E20),
+        reinjection_fraction_target_(-1E20)
     {
     }
 };
 
-/// Class for keyword WCONINJE
+/// Class for keyword GCONINJE
 struct GCONINJE : public SpecialBase
 {
     std::vector<GconinjeLine> gconinje;
@@ -1042,7 +1042,7 @@ struct GCONINJE : public SpecialBase
 	    gconinje_line.group_ = groupname;
 	    gconinje_line.injector_type_ = readString(is);
 	    gconinje_line.control_mode_ = readString(is);
-	    std::vector<double> double_data(10, 1.0E20);
+	    std::vector<double> double_data(10, -1.0E20);
             const int num_to_read = 10;
 	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
 	    gconinje_line.surface_flow_max_rate_ = double_data[0];
@@ -1095,7 +1095,7 @@ struct WconinjeLine
     std::string open_shut_flag_;   // Open/shut flag for the well
     std::string control_mode_;     // Control mode
     double surface_flow_max_rate_; // Surface flow rate target or upper limit
-    double fluid_volume_max_rate_; // Reservoir fluid volume rate target or
+    double reservoir_flow_max_rate_; // Reservoir fluid volume rate target or
                                    // upper limit
     double BHP_limit_;             // BHP target or upper limit
     double THP_limit_;             // THP target or upper limit
@@ -1106,8 +1106,8 @@ struct WconinjeLine
 
     // Default values
     WconinjeLine() :
-	open_shut_flag_("OPEN"), surface_flow_max_rate_(1.0E20),
-	fluid_volume_max_rate_(1.0E20), BHP_limit_(6895), THP_limit_(1.0E20),
+	open_shut_flag_("OPEN"), surface_flow_max_rate_(-1.0E20),
+	reservoir_flow_max_rate_(-1.0E20), BHP_limit_(6891), THP_limit_(-1.0E20),
 	VFP_table_number_(0), concentration_(0.0)
     {
     }
@@ -1145,14 +1145,14 @@ struct WCONINJE : public SpecialBase
 	    wconinje_line.injector_type_ = readString(is);
 	    wconinje_line.open_shut_flag_ = readString(is);
 	    wconinje_line.control_mode_ = readString(is);
-	    std::vector<double> double_data(6, 1.0E20);
+	    std::vector<double> double_data(6, -1.0E20);
 	    double_data[2] = wconinje_line.BHP_limit_; 
 	    double_data[4] = wconinje_line.VFP_table_number_; 
 	    double_data[5] = wconinje_line.concentration_;
             const int num_to_read = 6;
 	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
 	    wconinje_line.surface_flow_max_rate_ = double_data[0];
-	    wconinje_line.fluid_volume_max_rate_ = double_data[1];
+	    wconinje_line.reservoir_flow_max_rate_ = double_data[1];
 	    wconinje_line.BHP_limit_ = double_data[2];
 	    wconinje_line.THP_limit_ = double_data[3];
 	    wconinje_line.VFP_table_number_ = (int)double_data[4];
@@ -1174,7 +1174,7 @@ struct WCONINJE : public SpecialBase
 	       << wconinje[i].open_shut_flag_ << "  " 
 	       << wconinje[i].control_mode_ << "  " 
 	       << wconinje[i].surface_flow_max_rate_ << "  " 
-	       << wconinje[i].fluid_volume_max_rate_ << "  " 
+	       << wconinje[i].reservoir_flow_max_rate_ << "  " 
 	       << wconinje[i].BHP_limit_ << "  " 
 	       << wconinje[i].THP_limit_ << "  " 
 	       << wconinje[i].VFP_table_number_ << "  " 
@@ -1192,7 +1192,7 @@ struct WCONINJE : public SpecialBase
             } else {
                 wconinje[i].surface_flow_max_rate_ *= units.liqvol_s/units.time;
             }
-	    wconinje[i].fluid_volume_max_rate_ *= units.liqvol_r/units.time;
+	    wconinje[i].reservoir_flow_max_rate_ *= units.liqvol_r/units.time;
 	    wconinje[i].BHP_limit_ *= units.pressure;
 	    wconinje[i].THP_limit_ *= units.pressure;
 	    wconinje[i].concentration_ *= units.gasvol_s/units.liqvol_s; // ??? @bsp 10
@@ -1202,7 +1202,7 @@ struct WCONINJE : public SpecialBase
 
 
 
-/// Class holding a data line of keyword WCONPROD
+/// Class holding a data line of keyword GCONPROD
 struct GconprodLine
 {
     std::string group_;             // Well name or well name root
@@ -1214,13 +1214,13 @@ struct GconprodLine
     std::string procedure_;        // Procedure on exceeding a maximum rate limit
     // Default values
     GconprodLine() :
-	oil_max_rate_(1.0E20), water_max_rate_(1.0E20),
-	gas_max_rate_(1.0E20), liquid_max_rate_(1.0E20)
+	oil_max_rate_(-1.0E20), water_max_rate_(-1.0E20),
+	gas_max_rate_(-1.0E20), liquid_max_rate_(-1.0E20)
     {
     }
 };
 
-/// Class for keyword WCONPROD
+/// Class for keyword GCONPROD
 struct GCONPROD : public SpecialBase
 {
     std::vector<GconprodLine> gconprod;
@@ -1254,7 +1254,7 @@ struct GCONPROD : public SpecialBase
             {
                 gconprod_line.control_mode_ = "NONE";
             }
-	    std::vector<double> double_data(4, 1.0E20);
+	    std::vector<double> double_data(4, -1.0E20);
             const int num_to_read = 4;
             int num_read = readDefaultedVectorData(is, double_data, num_to_read);
             gconprod_line.oil_max_rate_ = double_data[0];
@@ -1416,18 +1416,21 @@ struct WconprodLine
     double water_max_rate_;        // Water rate target or upper limit
     double gas_max_rate_;          // Gas rate target or upper limit
     double liquid_max_rate_;       // Liquid rate target or upper limit
-    double fluid_volume_max_rate_; // Reservoir fluid volume rate target or
+    double reservoir_flow_max_rate_; // Reservoir fluid volume rate target or
                                    // upper limit
     double BHP_limit_;             // BHP target or upper limit
     double THP_limit_;             // THP target or upper limit
     int VFP_table_number_;         // Injection well VFP table number
     double artif_lift_quantity_;   // Artificial lift quantity in THP calculations
 
-    // Default values
+    // Default values. Negative means no target or limit.
+    // Note that the BHP default (1.0) will change meaning
+    // depending on units used, but it is recommended practice
+    // to not leave the BHP limit defaulted.
     WconprodLine() :
-	open_shut_flag_("OPEN"), oil_max_rate_(1.0E20), water_max_rate_(1.0E20),
-	gas_max_rate_(1.0E20), liquid_max_rate_(1.0E20),
-	fluid_volume_max_rate_(1.0E20), BHP_limit_(1e100), THP_limit_(0.0),
+	open_shut_flag_("OPEN"), oil_max_rate_(-1.0E20), water_max_rate_(-1.0E20),
+	gas_max_rate_(-1.0E20), liquid_max_rate_(-1.0E20),
+	reservoir_flow_max_rate_(-1.0E20), BHP_limit_(1.0), THP_limit_(0.0),
 	VFP_table_number_(0), artif_lift_quantity_(0.0)
     {
     }
@@ -1464,7 +1467,7 @@ struct WCONPROD : public SpecialBase
 	    wconprod_line.well_ = wellname;
 	    wconprod_line.open_shut_flag_ = readString(is);
 	    wconprod_line.control_mode_ = readString(is);
-	    std::vector<double> double_data(9, 1.0E20);
+	    std::vector<double> double_data(9, -1.0E20);
 	    double_data[5] = wconprod_line.BHP_limit_; 
 	    double_data[6] = wconprod_line.THP_limit_; 
 	    double_data[7] = wconprod_line.VFP_table_number_; 
@@ -1475,7 +1478,7 @@ struct WCONPROD : public SpecialBase
 	    wconprod_line.water_max_rate_ = double_data[1];
 	    wconprod_line.gas_max_rate_ = double_data[2];
 	    wconprod_line.liquid_max_rate_ = double_data[3];
-	    wconprod_line.fluid_volume_max_rate_ = double_data[4];
+	    wconprod_line.reservoir_flow_max_rate_ = double_data[4];
 	    wconprod_line.BHP_limit_ = double_data[5];
 	    wconprod_line.THP_limit_ = double_data[6];
 	    wconprod_line.VFP_table_number_ = (int)double_data[7];
@@ -1500,7 +1503,7 @@ struct WCONPROD : public SpecialBase
 	       << wconprod[i].water_max_rate_ << "  " 
 	       << wconprod[i].gas_max_rate_ << "  " 
 	       << wconprod[i].liquid_max_rate_ << "  " 
-	       << wconprod[i].fluid_volume_max_rate_ << "  " 
+	       << wconprod[i].reservoir_flow_max_rate_ << "  " 
 	       << wconprod[i].BHP_limit_ << "  " 
 	       << wconprod[i].THP_limit_ << "  " 
 	       << wconprod[i].VFP_table_number_ << "  " 
@@ -1520,7 +1523,7 @@ struct WCONPROD : public SpecialBase
 	    wconprod[i].water_max_rate_ *= lrat;
 	    wconprod[i].gas_max_rate_ *= grat;
 	    wconprod[i].liquid_max_rate_ *= lrat;
-	    wconprod[i].fluid_volume_max_rate_ *= resv;
+	    wconprod[i].reservoir_flow_max_rate_ *= resv;
 	    wconprod[i].BHP_limit_ *= units.pressure;
 	    wconprod[i].THP_limit_ *= units.pressure;
 	}
