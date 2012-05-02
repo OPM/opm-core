@@ -1313,7 +1313,7 @@ struct GCONPROD : public SpecialBase
     }
 };
 
-/// Class holding a data line of keyword WCONPROD
+/// Class holding a data line of keyword WGRUPCON
 struct WgrupconLine
 {
     std::string well_;             // Well name
@@ -1467,12 +1467,12 @@ struct WCONPROD : public SpecialBase
 	    wconprod_line.well_ = wellname;
 	    wconprod_line.open_shut_flag_ = readString(is);
 	    wconprod_line.control_mode_ = readString(is);
-	    std::vector<double> double_data(9, -1.0E20);
+	    std::vector<double> double_data(14, -1.0E20);
 	    double_data[5] = wconprod_line.BHP_limit_; 
 	    double_data[6] = wconprod_line.THP_limit_; 
 	    double_data[7] = wconprod_line.VFP_table_number_; 
 	    double_data[8] = wconprod_line.artif_lift_quantity_;
-            const int num_to_read = 9;
+            const int num_to_read = 14;
 	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
 	    wconprod_line.oil_max_rate_ = double_data[0];
 	    wconprod_line.water_max_rate_ = double_data[1];
