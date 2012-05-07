@@ -1327,7 +1327,8 @@ struct GCONPROD : public SpecialBase
 	       << gconprod[i].water_max_rate_ << "  " 
 	       << gconprod[i].gas_max_rate_ << "  " 
 	       << gconprod[i].liquid_max_rate_ << "  " 
-	       << gconprod[i].procedure_
+	       << gconprod[i].procedure_ << " " 
+               << gconprod[i].resv_max_rate_
 	       << std::endl; 
 	}
 	os << std::endl;
@@ -1337,11 +1338,14 @@ struct GCONPROD : public SpecialBase
     {
 	double lrat = units.liqvol_s / units.time;
 	double grat = units.gasvol_s / units.time;
+      	double resv = units.liqvol_r / units.time;
+
 	for (int i=0; i<(int) gconprod.size(); ++i) {
 	    gconprod[i].oil_max_rate_ *= lrat;
 	    gconprod[i].water_max_rate_ *= lrat;
 	    gconprod[i].gas_max_rate_ *= grat;
 	    gconprod[i].liquid_max_rate_ *= lrat;
+            gconprod[i].resv_max_rate_ *= resv;
 	}
     }
 };
