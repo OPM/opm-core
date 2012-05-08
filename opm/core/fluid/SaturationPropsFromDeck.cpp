@@ -114,6 +114,8 @@ namespace Opm
                                           double* kr,
                                           double* dkrds) const
     {
+        ASSERT (cells != 0);
+
         const int np = phase_usage_.num_phases;
         if (dkrds) {
 // #pragma omp parallel for
@@ -147,6 +149,8 @@ namespace Opm
                                            double* pc,
                                            double* dpcds) const
     {
+        ASSERT (cells != 0);
+
         const int np = phase_usage_.num_phases;
         if (dpcds) {
 // #pragma omp parallel for
@@ -174,6 +178,8 @@ namespace Opm
 					   double* smin,
 					   double* smax) const
     {
+        ASSERT (cells != 0);
+
 	const int np = phase_usage_.num_phases;
 	for (int i = 0; i < n; ++i) {
 	    for (int p = 0; p < np; ++p) {
