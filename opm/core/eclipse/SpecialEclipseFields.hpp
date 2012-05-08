@@ -1211,11 +1211,13 @@ struct GconprodLine
     double water_max_rate_;        // Water rate target or upper limit
     double gas_max_rate_;          // Gas rate target or upper limit
     double liquid_max_rate_;       // Liquid rate target or upper limit
+    double resv_max_rate_;         // Reservoir liquid rate target or upper limit
     std::string procedure_;        // Procedure on exceeding a maximum rate limit
     // Default values
     GconprodLine() :
 	oil_max_rate_(-1.0E20), water_max_rate_(-1.0E20),
-	gas_max_rate_(-1.0E20), liquid_max_rate_(-1.0E20)
+	gas_max_rate_(-1.0E20), liquid_max_rate_(-1.0E20),
+        resv_max_rate_(-1.0E20)
     {
     }
 };
@@ -1269,11 +1271,42 @@ struct GCONPROD : public SpecialBase
                     is.putback('/');
                     procedure = "NONE";
                 }
+                int read_ignored = 0;
+                int to_read = 6;
+                for (; read_ignored < to_read; ++read_ignored) {
+                    std::string ignored_value = readString(is);
+                    if (ignored_value[ignored_value.size()-1]=='*') {
+                        // we've got defaulted argument, increment
+                        
+                        int num_defaulted;
+                        std::string num_defaulted_str = ignored_value.substr(0, ignored_value.size()-1);
+                        std::istringstream(num_defaulted_str) >> num_defaulted;
+                        read_ignored += num_defaulted;
+                        if (read_ignored >= to_read) {
+                            break;
+                        }
+                    } else if(ignored_value[0] == '/') {
+                        is.putback('/');
+                        break;
+                    }
+                }
+                if ( read_ignored <= to_read) {
+                    // Not defaulted, we can read
+                    std::string reservoir_volume = readString(is);
+                    if (reservoir_volume[reservoir_volume.size()-1] == '*') {
+                        // Defaulted, we're not doing anything
+                    } else if(reservoir_volume[0] == '/') {
+                        is.putback('/');
+                    } else {
+                        std::istringstream(reservoir_volume) >> gconprod_line.resv_max_rate_;
+                    }
+                }
             } else {
                 procedure = "NONE";
             }
             gconprod_line.procedure_ = procedure;
 
+            
             gconprod.push_back(gconprod_line);
             // HACK! Ignore any further items
             if (num_read == num_to_read) {
@@ -1294,7 +1327,8 @@ struct GCONPROD : public SpecialBase
 	       << gconprod[i].water_max_rate_ << "  " 
 	       << gconprod[i].gas_max_rate_ << "  " 
 	       << gconprod[i].liquid_max_rate_ << "  " 
-	       << gconprod[i].procedure_
+	       << gconprod[i].procedure_ << " " 
+               << gconprod[i].resv_max_rate_
 	       << std::endl; 
 	}
 	os << std::endl;
@@ -1304,11 +1338,14 @@ struct GCONPROD : public SpecialBase
     {
 	double lrat = units.liqvol_s / units.time;
 	double grat = units.gasvol_s / units.time;
+      	double resv = units.liqvol_r / units.time;
+
 	for (int i=0; i<(int) gconprod.size(); ++i) {
 	    gconprod[i].oil_max_rate_ *= lrat;
 	    gconprod[i].water_max_rate_ *= lrat;
 	    gconprod[i].gas_max_rate_ *= grat;
 	    gconprod[i].liquid_max_rate_ *= lrat;
+            gconprod[i].resv_max_rate_ *= resv;
 	}
     }
 };
