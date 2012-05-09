@@ -555,58 +555,69 @@ main(int argc, char** argv)
             if (rock_comp->isActive()) {
                 rc.resize(num_cells);
                 std::vector<double> initial_pressure = state.pressure();
+		std::vector<double> initial_porevolume(num_cells);
+		computePorevolume(*grid->c_grid(), *props, *rock_comp, initial_pressure, initial_porevolume);
+		std::vector<double> pressure_increment(num_cells);
                 std::vector<double> prev_pressure;
-                for (int iter = 0; iter < nl_pressure_maxiter; ++iter) {
-                    prev_pressure = state.pressure();
-                    for (int cell = 0; cell < num_cells; ++cell) {
-                        rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
-                    }
-                    state.pressure() = initial_pressure;
-                    psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), porevol, rc, simtimer.currentStepLength(),
-                                  state.pressure(), state.faceflux(), well_bhp, well_perfrates);
-                    double max_change = 0.0;
-                    for (int cell = 0; cell < num_cells; ++cell) {
-                        max_change = std::max(max_change, std::fabs(state.pressure()[cell] - prev_pressure[cell]));
-                    }
-                    std::cout << "Pressure iter " << iter << "   max change = " << max_change << std::endl;
-                    if (max_change < nl_pressure_tolerance) {
-                        break;
-                    }
-                }
-                computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
-            } else {
-                psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
-                              well_bhp, well_perfrates);
-            }
-            pressure_timer.stop();
-            double pt = pressure_timer.secsSinceStart();
-            std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
-            ptime += pt;
+		for (int iter = 0; iter < nl_pressure_maxiter; ++iter) {
+		
+		    for (int cell = 0; cell < num_cells; ++cell) {
+			rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
+		    }
+		    computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
+		    prev_pressure = state.pressure();
+		
+		    // compute pressure increment
+		    psolver.solveIncrement(totmob, omega, src, wdp, bcs.c_bcs(), porevol, rc, 
+					   prev_pressure, initial_porevolume, simtimer.currentStepLength(), 
+					   pressure_increment);
 
-            if (check_well_controls) {
-                Opm::computePhaseFlowRatesPerWell(*wells->c_wells(),
-                                                  fractional_flows,
-                                                  well_perfrates,
-                                                  well_resflows_phase);
-                std::cout << "Checking well conditions." << std::endl;
-                // For testing we set surface := reservoir
-                well_control_passed = wells->conditionsMet(well_bhp, well_resflows_phase, well_resflows_phase);
-                ++well_control_iteration;
-                if (!well_control_passed && well_control_iteration > max_well_control_iterations) {
-                    THROW("Could not satisfy well conditions in " << max_well_control_iterations << " tries.");
-                }
-                if (!well_control_passed) {
-                    std::cout << "Well controls not passed, solving again." << std::endl;
-                } else {
-                    std::cout << "Well conditions met." << std::endl;
-                }
-            }
-        } while (!well_control_passed);
+		    double max_change = 0.0;
+		    for (int cell = 0; cell < num_cells; ++cell) {
+			state.pressure()[cell] += pressure_increment[cell];
+			max_change = std::max(max_change, std::fabs(pressure_increment[cell]));
+		    }
+		
+		    std::cout << "Pressure iter " << iter << "   max change = " << max_change << std::endl;
+		    if (max_change < nl_pressure_tolerance) {
+			break;
+		    }
+		}
+		psolver.computeFaceFlux(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
+					well_bhp, well_perfrates);
+	    } else {
+		psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
+			      well_bhp, well_perfrates);
+	    }
+	    pressure_timer.stop();
+	    double pt = pressure_timer.secsSinceStart();
+	    std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
+	    ptime += pt;
+
+	    if (check_well_controls) {
+		Opm::computePhaseFlowRatesPerWell(*wells->c_wells(),
+						  fractional_flows,
+						  well_perfrates,
+						  well_resflows_phase);
+		std::cout << "Checking well conditions." << std::endl;
+		// For testing we set surface := reservoir
+		well_control_passed = wells->conditionsMet(well_bhp, well_resflows_phase, well_resflows_phase);
+		++well_control_iteration;
+		if (!well_control_passed && well_control_iteration > max_well_control_iterations) {
+		    THROW("Could not satisfy well conditions in " << max_well_control_iterations << " tries.");
+		}
+		if (!well_control_passed) {
+		    std::cout << "Well controls not passed, solving again." << std::endl;
+		} else {
+		    std::cout << "Well conditions met." << std::endl;
+		}
+	    }
+	} while (!well_control_passed);
         
-        // Process transport sources (to include bdy terms and well flows).
-        Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0,
-                                    wells->c_wells(), well_perfrates, reorder_src);
-        if (!use_reorder) {
+	// Process transport sources (to include bdy terms and well flows).
+	Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0,
+				    wells->c_wells(), well_perfrates, reorder_src);
+	if (!use_reorder) {
             clear_transport_source(tsrc);
             for (int cell = 0; cell < num_cells; ++cell) {
                 if (reorder_src[cell] > 0.0) {
