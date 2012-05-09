@@ -1007,7 +1007,8 @@ struct GconinjeLine
     GconinjeLine() :
 	surface_flow_max_rate_(-1.0E20),
         resv_flow_max_rate_(-1E20),
-        reinjection_fraction_target_(-1E20)
+        reinjection_fraction_target_(1),
+        voidage_replacement_fraction_(1)
     {
     }
 };
