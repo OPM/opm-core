@@ -297,6 +297,8 @@ main(int argc, char** argv)
     boost::scoped_ptr<Opm::RockCompressibility> rock_comp;
     Opm::SimulatorTimer simtimer;
     Opm::TwophaseState state;
+    bool check_well_controls = false;
+    int max_well_control_iterations = 0;
     double gravity[3] = { 0.0 };
     if (use_deck) {
         std::string deck_filename = param.get<std::string>("deck_filename");
@@ -309,6 +311,8 @@ main(int argc, char** argv)
         props.reset(new Opm::IncompPropertiesFromDeck(deck, global_cell));
         // Wells init.
         wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
+        check_well_controls = param.getDefault("check_well_controls", false);
+        max_well_control_iterations = param.getDefault("max_well_control_iterations", 0);
         // Timer init.
         if (deck.hasField("TSTEP")) {
             simtimer.init(deck);
