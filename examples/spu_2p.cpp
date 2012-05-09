@@ -312,7 +312,7 @@ main(int argc, char** argv)
         // Wells init.
         wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
         check_well_controls = param.getDefault("check_well_controls", false);
-        max_well_control_iterations = param.getDefault("max_well_control_iterations", 0);
+        max_well_control_iterations = param.getDefault("max_well_control_iterations", 10);
         // Timer init.
         if (deck.hasField("TSTEP")) {
             simtimer.init(deck);
@@ -593,6 +593,8 @@ main(int argc, char** argv)
                 }
                 if (!well_control_passed) {
                     std::cout << "Well controls not passed, solving again." << std::endl;
+                } else {
+                    std::cout << "Well conditions met." << std::endl;
                 }
             }
         } while (!well_control_passed);
