@@ -1001,6 +1001,7 @@ struct GconinjeLine
     double surface_flow_max_rate_; // Surface flow rate target or upper limit
     double resv_flow_max_rate_;    // Reservoir flow rate target or upper limit
     double reinjection_fraction_target_;
+    double voidage_replacement_fraction_;
     
     // Default values
     GconinjeLine() :
@@ -1048,6 +1049,7 @@ struct GCONINJE : public SpecialBase
 	    gconinje_line.surface_flow_max_rate_ = double_data[0];
             gconinje_line.resv_flow_max_rate_ = double_data[1];
             gconinje_line.reinjection_fraction_target_ = double_data[2];
+            gconinje_line.voidage_replacement_fraction_ = double_data[3];
 	    // HACK! Ignore any further items
             if (num_read == num_to_read) {
                 ignoreSlashLine(is);
