@@ -539,25 +539,39 @@ main(int argc, char** argv)
         if (rock_comp->isActive()) {
             rc.resize(num_cells);
             std::vector<double> initial_pressure = state.pressure();
+            std::vector<double> initial_porevolume(num_cells);
+	    computePorevolume(*grid->c_grid(), *props, *rock_comp, initial_pressure, initial_porevolume);
+	    std::vector<double> pressure_increment(num_cells);
             std::vector<double> prev_pressure;
-            for (int iter = 0; iter < nl_pressure_maxiter; ++iter) {
-                prev_pressure = state.pressure();
-                for (int cell = 0; cell < num_cells; ++cell) {
-                    rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
-                }
-                state.pressure() = initial_pressure;
-                psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), porevol, rc, simtimer.currentStepLength(),
-                              state.pressure(), state.faceflux(), well_bhp, well_perfrates);
+
+
+	    for (int iter = 0; iter < nl_pressure_maxiter; ++iter) {
+		
+	    	for (int cell = 0; cell < num_cells; ++cell) {
+	    	    rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
+	    	}
+	    	computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
+	    	prev_pressure = state.pressure();
+		
+	    	// compute pressure increment
+                psolver.solveIncrement(totmob, omega, src, wdp, bcs.c_bcs(), porevol, rc, 
+	    			       prev_pressure, initial_porevolume, simtimer.currentStepLength(), 
+	    			       pressure_increment);
+
                 double max_change = 0.0;
                 for (int cell = 0; cell < num_cells; ++cell) {
-                    max_change = std::max(max_change, std::fabs(state.pressure()[cell] - prev_pressure[cell]));
+	    	    state.pressure()[cell] += pressure_increment[cell];
+                    max_change = std::max(max_change, std::fabs(pressure_increment[cell]));
                 }
+		
                 std::cout << "Pressure iter " << iter << "   max change = " << max_change << std::endl;
                 if (max_change < nl_pressure_tolerance) {
                     break;
                 }
             }
-            computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
+	    psolver.computeFaceFlux(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
+				    well_bhp, well_perfrates);
+
         } else {
             psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
                           well_bhp, well_perfrates);
