@@ -625,7 +625,7 @@ main(int argc, char** argv)
                 reorder_model.solve(&state.faceflux()[0], &porevol[0], &reorder_src[0],
                                     stepsize, &reorder_sat[0]);
                 Opm::toBothSat(reorder_sat, state.saturation());
-                Opm::computeInjectedProduced(*props, state.saturation(), src, stepsize, injected, produced);
+                Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
                 if (use_segregation_split) {
                     if (use_column_solver) {
                         if (use_gauss_seidel_gravity) {
@@ -645,7 +645,7 @@ main(int argc, char** argv)
             } else {
                 tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
                 std::cout << rpt;
-                Opm::computeInjectedProduced(*props, state.saturation(), src, stepsize, injected, produced);
+                Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
             }
         }
         transport_timer.stop();
@@ -655,7 +655,6 @@ main(int argc, char** argv)
 
         // Report volume balances.
         Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
-        // Opm::computeInjectedProduced(*props, state.saturation(), src, simtimer.currentStepLength(), injected, produced);
         tot_injected[0] += injected[0];
         tot_injected[1] += injected[1];
         tot_produced[0] += produced[0];
