@@ -517,11 +517,12 @@ main(int argc, char** argv)
     std::vector<double> well_bhp;
     std::vector<double> well_perfrates;
     std::vector<double> fractional_flows;
-    std::vector<double> well_resflows;
+    std::vector<double> well_resflows_phase;
     if (wells->c_wells()) {
         const int nw = wells->c_wells()->number_of_wells;
         well_bhp.resize(nw, 0.0);
         well_perfrates.resize(wells->c_wells()->well_connpos[nw], 0.0);
+        well_resflows_phase.resize((wells->c_wells()->number_of_phases)*(wells->c_wells()->number_of_wells), 0.0);
         wellreport.push(*props, *wells->c_wells(), state.saturation(), 0.0, well_bhp, well_perfrates);
     }
     for (; !simtimer.done(); ++simtimer) {
@@ -543,6 +544,9 @@ main(int argc, char** argv)
         }
         if (check_well_controls) {
             computeFractionalFlow(*props, allcells, state.saturation(), fractional_flows);
+        }
+        if (check_well_controls) {
+            wells->applyExplicitReinjectionControls(well_resflows_phase, well_resflows_phase);
         }
         bool well_control_passed = !check_well_controls;
         int well_control_iteration = 0;
@@ -583,10 +587,10 @@ main(int argc, char** argv)
                 Opm::computePhaseFlowRatesPerWell(*wells->c_wells(),
                                                   fractional_flows,
                                                   well_perfrates,
-                                                  well_resflows);
+                                                  well_resflows_phase);
                 std::cout << "Checking well conditions." << std::endl;
                 // For testing we set surface := reservoir
-                well_control_passed = wells->conditionsMet(well_bhp, well_resflows, well_resflows);
+                well_control_passed = wells->conditionsMet(well_bhp, well_resflows_phase, well_resflows_phase);
                 ++well_control_iteration;
                 if (!well_control_passed && well_control_iteration > max_well_control_iterations) {
                     THROW("Could not satisfy well conditions in " << max_well_control_iterations << " tries.");
@@ -598,6 +602,7 @@ main(int argc, char** argv)
                 }
             }
         } while (!well_control_passed);
+        
         // Process transport sources (to include bdy terms and well flows).
         Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0,
                                     wells->c_wells(), well_perfrates, reorder_src);
