@@ -324,7 +324,11 @@ main(int argc, char** argv)
         // Gravity.
         gravity[2] = deck.hasField("NOGRAV") ? 0.0 : Opm::unit::gravity;
         // Init state variables (saturation and pressure).
-        initStateTwophaseFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
+	if (param.has("init_saturation")) {
+	    initStateTwophaseBasic(*grid->c_grid(), *props, param, gravity[2], state);
+	} else {
+	    initStateTwophaseFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
+	}
     } else {
         // Grid init.
         const int nx = param.getDefault("nx", 100);
@@ -518,10 +522,11 @@ main(int argc, char** argv)
     std::vector<double> well_perfrates;
     std::vector<double> fractional_flows;
     std::vector<double> well_resflows_phase;
+    int num_wells = 0;
     if (wells->c_wells()) {
-        const int nw = wells->c_wells()->number_of_wells;
-        well_bhp.resize(nw, 0.0);
-        well_perfrates.resize(wells->c_wells()->well_connpos[nw], 0.0);
+        num_wells = wells->c_wells()->number_of_wells;
+        well_bhp.resize(num_wells, 0.0);
+        well_perfrates.resize(wells->c_wells()->well_connpos[num_wells], 0.0);
         well_resflows_phase.resize((wells->c_wells()->number_of_phases)*(wells->c_wells()->number_of_wells), 0.0);
         wellreport.push(*props, *wells->c_wells(), state.saturation(), 0.0, well_bhp, well_perfrates);
     }
@@ -557,15 +562,17 @@ main(int argc, char** argv)
                 std::vector<double> initial_pressure = state.pressure();
 		std::vector<double> initial_porevolume(num_cells);
 		computePorevolume(*grid->c_grid(), *props, *rock_comp, initial_pressure, initial_porevolume);
-		std::vector<double> pressure_increment(num_cells);
-                std::vector<double> prev_pressure;
+		std::vector<double> pressure_increment(num_cells + num_wells);
+                std::vector<double> prev_pressure(num_cells + num_wells);
 		for (int iter = 0; iter < nl_pressure_maxiter; ++iter) {
 		
 		    for (int cell = 0; cell < num_cells; ++cell) {
 			rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
 		    }
 		    computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
-		    prev_pressure = state.pressure();
+		    std::copy(state.pressure().begin(), state.pressure().end(), prev_pressure.begin());
+		    std::copy(well_bhp.begin(), well_bhp.end(), prev_pressure.begin() + num_cells);
+		    // prev_pressure = state.pressure();
 		
 		    // compute pressure increment
 		    psolver.solveIncrement(totmob, omega, src, wdp, bcs.c_bcs(), porevol, rc, 
@@ -576,6 +583,10 @@ main(int argc, char** argv)
 		    for (int cell = 0; cell < num_cells; ++cell) {
 			state.pressure()[cell] += pressure_increment[cell];
 			max_change = std::max(max_change, std::fabs(pressure_increment[cell]));
+		    }
+		    for (int well = 0; well < num_wells; ++well) {
+			well_bhp[well] += pressure_increment[num_cells + well];
+			max_change = std::max(max_change, std::fabs(pressure_increment[num_cells + well]));
 		    }
 		
 		    std::cout << "Pressure iter " << iter << "   max change = " << max_change << std::endl;
