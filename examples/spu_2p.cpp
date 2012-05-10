@@ -162,9 +162,9 @@ class SimpleFluid2pWrappingProps
 {
 public:
     SimpleFluid2pWrappingProps(const Opm::IncompPropertiesInterface& props)
-    : props_(props),
-      smin_(props.numCells()*props.numPhases()),
-      smax_(props.numCells()*props.numPhases())
+  : props_(props),
+    smin_(props.numCells()*props.numPhases()),
+    smax_(props.numCells()*props.numPhases())
     {
         if (props.numPhases() != 2) {
             THROW("SimpleFluid2pWrapper requires 2 phases.");
@@ -183,8 +183,8 @@ public:
     }
 
     template <class Sat,
-    class Mob,
-    class DMob>
+              class Mob,
+              class DMob>
     void mobility(int c, const Sat& s, Mob& mob, DMob& dmob) const
     {
         props_.relperm(1, &s[0], &c, &mob[0], &dmob[0]);
@@ -203,8 +203,8 @@ public:
     }
 
     template <class Sat,
-    class Pcap,
-    class DPcap>
+              class Pcap,
+              class DPcap>
     void pc(int c, const Sat& s, Pcap& pcap, DPcap& dpcap) const
     {
         double pcow[2];
@@ -252,12 +252,12 @@ public:
 };
 
 typedef Opm::ImplicitTransport<TransportModel,
-        JacSys        ,
-        MaxNorm       ,
-        VectorNegater ,
-        VectorZero    ,
-        MatrixZero    ,
-        VectorAssign  > TransportSolver;
+                               JacSys        ,
+                               MaxNorm       ,
+                               VectorNegater ,
+                               VectorZero    ,
+                               MatrixZero    ,
+                               VectorAssign  > TransportSolver;
 
 
 
@@ -324,11 +324,11 @@ main(int argc, char** argv)
         // Gravity.
         gravity[2] = deck.hasField("NOGRAV") ? 0.0 : Opm::unit::gravity;
         // Init state variables (saturation and pressure).
-	if (param.has("init_saturation")) {
-	    initStateTwophaseBasic(*grid->c_grid(), *props, param, gravity[2], state);
-	} else {
-	    initStateTwophaseFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
-	}
+        if (param.has("init_saturation")) {
+            initStateTwophaseBasic(*grid->c_grid(), *props, param, gravity[2], state);
+        } else {
+            initStateTwophaseFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
+        }
     } else {
         // Grid init.
         const int nx = param.getDefault("nx", 100);
@@ -560,75 +560,76 @@ main(int argc, char** argv)
             if (rock_comp->isActive()) {
                 rc.resize(num_cells);
                 std::vector<double> initial_pressure = state.pressure();
-		std::vector<double> initial_porevolume(num_cells);
-		computePorevolume(*grid->c_grid(), *props, *rock_comp, initial_pressure, initial_porevolume);
-		std::vector<double> pressure_increment(num_cells + num_wells);
+                std::vector<double> initial_porevolume(num_cells);
+                computePorevolume(*grid->c_grid(), *props, *rock_comp, initial_pressure, initial_porevolume);
+                std::vector<double> pressure_increment(num_cells + num_wells);
                 std::vector<double> prev_pressure(num_cells + num_wells);
-		for (int iter = 0; iter < nl_pressure_maxiter; ++iter) {
-		
-		    for (int cell = 0; cell < num_cells; ++cell) {
-			rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
-		    }
-		    computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
-		    std::copy(state.pressure().begin(), state.pressure().end(), prev_pressure.begin());
-		    std::copy(well_bhp.begin(), well_bhp.end(), prev_pressure.begin() + num_cells);
-		    // prev_pressure = state.pressure();
-		
-		    // compute pressure increment
-		    psolver.solveIncrement(totmob, omega, src, wdp, bcs.c_bcs(), porevol, rc, 
-					   prev_pressure, initial_porevolume, simtimer.currentStepLength(), 
-					   pressure_increment);
+                for (int iter = 0; iter < nl_pressure_maxiter; ++iter) {
 
-		    double max_change = 0.0;
-		    for (int cell = 0; cell < num_cells; ++cell) {
-			state.pressure()[cell] += pressure_increment[cell];
-			max_change = std::max(max_change, std::fabs(pressure_increment[cell]));
-		    }
-		    for (int well = 0; well < num_wells; ++well) {
-			well_bhp[well] += pressure_increment[num_cells + well];
-			max_change = std::max(max_change, std::fabs(pressure_increment[num_cells + well]));
-		    }
-		
-		    std::cout << "Pressure iter " << iter << "   max change = " << max_change << std::endl;
-		    if (max_change < nl_pressure_tolerance) {
-			break;
-		    }
-		}
-		psolver.computeFaceFlux(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
-					well_bhp, well_perfrates);
-	    } else {
-		psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
-			      well_bhp, well_perfrates);
-	    }
-	    pressure_timer.stop();
-	    double pt = pressure_timer.secsSinceStart();
-	    std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
-	    ptime += pt;
+                    for (int cell = 0; cell < num_cells; ++cell) {
+                        rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
+                    }
+                    computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
+                    std::copy(state.pressure().begin(), state.pressure().end(), prev_pressure.begin());
+                    std::copy(well_bhp.begin(), well_bhp.end(), prev_pressure.begin() + num_cells);
+                    // prev_pressure = state.pressure();
 
-	    if (check_well_controls) {
-		Opm::computePhaseFlowRatesPerWell(*wells->c_wells(),
-						  fractional_flows,
-						  well_perfrates,
-						  well_resflows_phase);
-		std::cout << "Checking well conditions." << std::endl;
-		// For testing we set surface := reservoir
-		well_control_passed = wells->conditionsMet(well_bhp, well_resflows_phase, well_resflows_phase);
-		++well_control_iteration;
-		if (!well_control_passed && well_control_iteration > max_well_control_iterations) {
-		    THROW("Could not satisfy well conditions in " << max_well_control_iterations << " tries.");
-		}
-		if (!well_control_passed) {
-		    std::cout << "Well controls not passed, solving again." << std::endl;
-		} else {
-		    std::cout << "Well conditions met." << std::endl;
-		}
-	    }
-	} while (!well_control_passed);
-        
-	// Process transport sources (to include bdy terms and well flows).
-	Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0,
-				    wells->c_wells(), well_perfrates, reorder_src);
-	if (!use_reorder) {
+                    // compute pressure increment
+                    psolver.solveIncrement(totmob, omega, src, wdp, bcs.c_bcs(), porevol, rc,
+                                           prev_pressure, initial_porevolume, simtimer.currentStepLength(),
+                                           pressure_increment);
+
+                    double max_change = 0.0;
+                    for (int cell = 0; cell < num_cells; ++cell) {
+                        state.pressure()[cell] += pressure_increment[cell];
+                        max_change = std::max(max_change, std::fabs(pressure_increment[cell]));
+                    }
+                    for (int well = 0; well < num_wells; ++well) {
+                        well_bhp[well] += pressure_increment[num_cells + well];
+                        max_change = std::max(max_change, std::fabs(pressure_increment[num_cells + well]));
+                    }
+
+                    std::cout << "Pressure iter " << iter << "   max change = " << max_change << std::endl;
+                    if (max_change < nl_pressure_tolerance) {
+                        break;
+                    }
+                }
+                psolver.computeFaceFlux(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
+                                        well_bhp, well_perfrates);
+            } else {
+                psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
+                              well_bhp, well_perfrates);
+            }
+            pressure_timer.stop();
+            double pt = pressure_timer.secsSinceStart();
+            std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
+            ptime += pt;
+
+
+            if (check_well_controls) {
+                Opm::computePhaseFlowRatesPerWell(*wells->c_wells(),
+                                                  fractional_flows,
+                                                  well_perfrates,
+                                                  well_resflows_phase);
+                std::cout << "Checking well conditions." << std::endl;
+                // For testing we set surface := reservoir
+                well_control_passed = wells->conditionsMet(well_bhp, well_resflows_phase, well_resflows_phase);
+                ++well_control_iteration;
+                if (!well_control_passed && well_control_iteration > max_well_control_iterations) {
+                    THROW("Could not satisfy well conditions in " << max_well_control_iterations << " tries.");
+                }
+                if (!well_control_passed) {
+                    std::cout << "Well controls not passed, solving again." << std::endl;
+                } else {
+                    std::cout << "Well conditions met." << std::endl;
+                }
+            }
+        } while (!well_control_passed);
+
+        // Process transport sources (to include bdy terms and well flows).
+        Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0,
+                                    wells->c_wells(), well_perfrates, reorder_src);
+        if (!use_reorder) {
             clear_transport_source(tsrc);
             for (int cell = 0; cell < num_cells; ++cell) {
                 if (reorder_src[cell] > 0.0) {
