@@ -133,6 +133,10 @@ namespace Opm
 	// This is written only to work with SinglePointUpwindTwoPhase,
 	// not with arbitrary problem models.
 	const int col_size = column_cells.size();
+        if (col_size == 1) {
+            sol_vec[column_cells[0]] = 0.0;
+            return;
+        }
 	StateWithZeroFlux state(s); // This holds s by reference.
 
 	// Assemble.
