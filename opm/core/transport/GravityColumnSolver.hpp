@@ -40,16 +40,16 @@ namespace Opm
 			    const double tol,
 			    const int maxit);
 
-	/// \param[in] columns         for each column columns.second
+	/// \param[in] columns         for each column col, columns[col]
 	///                            contains the cells on which to solve the segregation
 	///                            problem. For each column, its cells must be in a single
-	///                            vertical column, and ordered
+	///                            vertical column, connected and ordered
 	///                            (direction doesn't matter).
-	void solve(const std::pair<std::vector<int>, std::vector<std::vector<int> > >& columns,
+	void solve(const std::vector<std::vector<int> >& columns,
 		   const double dt,
 		   std::vector<double>& s);
     private:
-	void solveSingleColumn(const std::vector<int>& column_cells,
+	void solveSingleColumn(const std::vector<int>& columns,
 			       const double dt,
 			       std::vector<double>& s,
 			       std::vector<double>& sol_vec);

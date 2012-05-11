@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(SingleColumnTest)
         grid->global_cell[i] = i;
     }
 
-    std::pair<std::vector<int>, std::vector<std::vector<int> > > columns;
+    std::vector<std::vector<int> > columns;
     extractColumn(*manager.c_grid(), columns);
 
     std::vector<int> correct_answer;
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(SingleColumnTest)
         correct_answer.push_back(i);
     }
     BOOST_CHECK_EQUAL_COLLECTIONS(correct_answer.begin(), correct_answer.end(),
-                                  columns.second[0].begin(), columns.second[0].end());
+                                  columns[0].begin(), columns[0].end());
 
 }
 
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(FourByFourColumnTest)
         grid->global_cell[i] = i;
     }
 
-    std::pair<std::vector<int>, std::vector<std::vector<int> > > columns;
+    std::vector<std::vector<int> > columns;
     extractColumn(*manager.c_grid(), columns);
 
     std::vector<std::vector<int> > correct_answer;
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(FourByFourColumnTest)
 
     for(int i = 0; i < size_x * size_y; i++) {
         BOOST_CHECK_EQUAL_COLLECTIONS(correct_answer[i].begin(), correct_answer[i].end(),
-                                      columns.second[i].begin(), columns.second[i].end());
+                                      columns[i].begin(), columns[i].end());
     }
 
 }

@@ -72,7 +72,7 @@ namespace Opm
     ///                            vertical column, and ordered
     ///                            (direction doesn't matter).
     template <class Model>
-    void GravityColumnSolver<Model>::solve(const std::pair<std::vector<int>, std::vector<std::vector<int> > >& columns,
+    void GravityColumnSolver<Model>::solve(const std::vector<std::vector<int> >& columns,
 					   const double dt,
 					   std::vector<double>& s)
     {
@@ -89,11 +89,11 @@ namespace Opm
 	    model_.initIteration(state, grid_, sys);
             //   std::map<int, std::vector<int> >::const_iterator it;
             //for (it = columns.begin(); it != columns.end(); ++it) {
-            int size = columns.second.size();
+            int size = columns.size();
             
             #pragma omp parallel for schedule(dynamic)
             for(int i = 0; i < size; ++i) {
-		solveSingleColumn(columns.second[i], dt, s, increment);
+		solveSingleColumn(columns[i], dt, s, increment);
 	    }   
 
 	    for (int cell = 0; cell < grid_.number_of_cells; ++cell) {
