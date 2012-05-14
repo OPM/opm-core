@@ -136,6 +136,8 @@ static void outputWellReport(const Opm::WellReport& wellreport,
 int
 main(int argc, char** argv)
 {
+    using namespace Opm;
+
     std::cout << "\n================    Test program for weakly compressible two-phase flow     ===============\n\n";
     Opm::parameter::ParameterGroup param(argc, argv, false);
     std::cout << "---------------    Reading parameters     ---------------" << std::endl;
@@ -230,7 +232,7 @@ main(int argc, char** argv)
     // Warn if gravity but no density difference.
     bool use_gravity = (gravity[0] != 0.0 || gravity[1] != 0.0 || gravity[2] != 0.0);
     if (use_gravity) {
-        if (props->density()[0] == props->density()[1]) {
+        if (props->surfaceDensity()[0] == props->surfaceDensity()[1]) {
             std::cout << "**** Warning: nonzero gravity, but zero density difference." << std::endl;
         }
     }
@@ -268,9 +270,9 @@ main(int argc, char** argv)
     // Extra rock init.
     std::vector<double> porevol;
     if (rock_comp->isActive()) {
-        computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
+        computePorevolume(*grid->c_grid(), props->porosity(), *rock_comp, state.pressure(), porevol);
     } else {
-        computePorevolume(*grid->c_grid(), *props, porevol);
+        computePorevolume(*grid->c_grid(), props->porosity(), porevol);
     }
     double tot_porevol_init = std::accumulate(porevol.begin(), porevol.end(), 0.0);
 
@@ -398,7 +400,7 @@ main(int argc, char** argv)
                 rc.resize(num_cells);
                 std::vector<double> initial_pressure = state.pressure();
                 std::vector<double> initial_porevolume(num_cells);
-                computePorevolume(*grid->c_grid(), *props, *rock_comp, initial_pressure, initial_porevolume);
+                computePorevolume(*grid->c_grid(), props->porosity(), *rock_comp, initial_pressure, initial_porevolume);
                 std::vector<double> pressure_increment(num_cells + num_wells);
                 std::vector<double> prev_pressure(num_cells + num_wells);
                 for (int iter = 0; iter < nl_pressure_maxiter; ++iter) {
@@ -406,7 +408,7 @@ main(int argc, char** argv)
                     for (int cell = 0; cell < num_cells; ++cell) {
                         rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
                     }
-                    computePorevolume(*grid->c_grid(), *props, *rock_comp, state.pressure(), porevol);
+                    computePorevolume(*grid->c_grid(), props->porosity(), *rock_comp, state.pressure(), porevol);
                     std::copy(state.pressure().begin(), state.pressure().end(), prev_pressure.begin());
                     std::copy(well_bhp.begin(), well_bhp.end(), prev_pressure.begin() + num_cells);
                     // prev_pressure = state.pressure();
