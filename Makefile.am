@@ -89,6 +89,7 @@ opm/core/pressure/well.c                                \
 opm/core/pressure/fsh_common_impl.c                     \
 opm/core/pressure/fsh.c                                 \
 opm/core/pressure/IncompTpfa.cpp                        \
+opm/core/pressure/CompressibleTpfa.cpp                  \
 opm/core/pressure/tpfa/ifs_tpfa.c                       \
 opm/core/pressure/tpfa/compr_source.c                   \
 opm/core/pressure/tpfa/cfs_tpfa.c                       \
@@ -201,6 +202,7 @@ opm/core/WellsManager.hpp                               \
 opm/core/pressure/fsh.h                                 \
 opm/core/pressure/HybridPressureSolver.hpp              \
 opm/core/pressure/IncompTpfa.hpp                        \
+opm/core/pressure/CompressibleTpfa.hpp                  \
 opm/core/pressure/TPFAPressureSolver.hpp                \
 opm/core/pressure/tpfa/compr_quant.h                    \
 opm/core/pressure/tpfa/compr_source.h                   \
