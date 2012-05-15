@@ -18,3 +18,8 @@ if UMFPACK
 noinst_PROGRAMS   += tutorial3
 tutorial3_SOURCES  = tutorial3.cpp
 endif
+
+if UMFPACK
+noinst_PROGRAMS += tutorial4
+tutorial4_SOURCES = tutorial4.cpp
+endif
