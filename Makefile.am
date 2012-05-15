@@ -196,6 +196,7 @@ opm/core/WellsGroup.hpp					\
 opm/core/WellCollection.hpp				\
 opm/core/InjectionSpecification.hpp			\
 opm/core/ProductionSpecification.hpp			\
+opm/core/BlackoilState.hpp                              \
 opm/core/ColumnExtract.hpp				\
 opm/core/GridAdapter.hpp                                \
 opm/core/GridManager.hpp                                \
