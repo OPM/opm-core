@@ -44,7 +44,7 @@
 #include <opm/core/linalg/LinearSolverFactory.hpp>
 
 #include <opm/core/ColumnExtract.hpp>
-#include <opm/core/TwophaseState.hpp>
+#include <opm/core/BlackoilState.hpp>
 #include <opm/core/transport/GravityColumnSolver.hpp>
 
 #include <opm/core/transport/reorder/TransportModelTwophase.hpp>
@@ -71,9 +71,9 @@
 #define TRANSPORT_SOLVER_FIXED 0
 
 
-
+template <class State>
 static void outputState(const UnstructuredGrid& grid,
-                        const Opm::TwophaseState& state,
+                        const State& state,
                         const int step,
                         const std::string& output_dir)
 {
@@ -169,7 +169,7 @@ main(int argc, char** argv)
     boost::scoped_ptr<Opm::WellsManager> wells;
     boost::scoped_ptr<Opm::RockCompressibility> rock_comp;
     Opm::SimulatorTimer simtimer;
-    Opm::TwophaseState state;
+    Opm::BlackoilState state;
     bool check_well_controls = false;
     int max_well_control_iterations = 0;
     double gravity[3] = { 0.0 };
@@ -366,7 +366,9 @@ main(int argc, char** argv)
         well_bhp.resize(num_wells, 0.0);
         well_perfrates.resize(wells->c_wells()->well_connpos[num_wells], 0.0);
         well_resflows_phase.resize((wells->c_wells()->number_of_phases)*(wells->c_wells()->number_of_wells), 0.0);
-        wellreport.push(*props, *wells->c_wells(), state.saturation(), 0.0, well_bhp, well_perfrates);
+        wellreport.push(*props, *wells->c_wells(),
+                        state.pressure(), state.surfacevol(), state.saturation(),
+                        0.0, well_bhp, well_perfrates);
     }
     for (; !simtimer.done(); ++simtimer) {
         // Report timestep and (optionally) write state to disk.
@@ -376,6 +378,7 @@ main(int argc, char** argv)
         }
 
         // Solve pressure.
+#if PRESSURE_SOLVER_FIXED
         if (use_gravity) {
             computeTotalMobilityOmega(*props, allcells, state.saturation(), totmob, omega);
         } else {
@@ -395,7 +398,6 @@ main(int argc, char** argv)
         int well_control_iteration = 0;
         do { // Well control outer loop.
             pressure_timer.start();
-#if PRESSURE_SOLVER_FIXED
             if (rock_comp->isActive()) {
                 rc.resize(num_cells);
                 std::vector<double> initial_pressure = state.pressure();
@@ -439,12 +441,10 @@ main(int argc, char** argv)
                 psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
                               well_bhp, well_perfrates);
             }
-#endif // PRESSURE_SOLVER_FIXED
             pressure_timer.stop();
             double pt = pressure_timer.secsSinceStart();
             std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
             ptime += pt;
-
 
             if (check_well_controls) {
                 Opm::computePhaseFlowRatesPerWell(*wells->c_wells(),
@@ -465,6 +465,7 @@ main(int argc, char** argv)
                 }
             }
         } while (!well_control_passed);
+#endif // PRESSURE_SOLVER_FIXED
 
         // Process transport sources (to include bdy terms and well flows).
         Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0,
@@ -532,7 +533,8 @@ main(int argc, char** argv)
                       produced[0]/(produced[0] + produced[1]),
                       tot_produced[0]/tot_porevol_init);
         if (wells->c_wells()) {
-            wellreport.push(*props, *wells->c_wells(), state.saturation(),
+            wellreport.push(*props, *wells->c_wells(),
+                            state.pressure(), state.surfacevol(), state.saturation(),
                             simtimer.currentTime() + simtimer.currentStepLength(),
                             well_bhp, well_perfrates);
         }
