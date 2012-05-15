@@ -391,7 +391,9 @@ args_ok(int nlhs, int nrhs, const mxArray *prhs[])
     ok = ok && (mxGetFieldNumber(prhs[0], "cartDims") >= 0);
     ok = ok && (mxGetFieldNumber(prhs[0], "COORD"   ) >= 0);
     ok = ok && (mxGetFieldNumber(prhs[0], "ZCORN"   ) >= 0);
+#if 0
     ok = ok && (mxGetFieldNumber(prhs[0], "ACTNUM"  ) >= 0);
+#endif
 
     if (ok && (nrhs == 2)) {
         ok = mxIsDouble(prhs[1]) && (mxGetNumberOfElements(prhs[1]) == 1);
@@ -454,7 +456,7 @@ mexFunction(int nlhs,       mxArray *plhs[],
                 "G = %s(grdecl)\t%%or\n\t"
                 "G = %s(grdecl, tolerance)\n"
                 "The 'grdecl' must be a valid structure with fields\n"
-                "\t'cartDims', 'COORD', 'ZCORN', and 'ACTNUM'",
+                "\t'cartDims', 'COORD', 'ZCORN'",
                 mexFunctionName(), mexFunctionName());
         mexErrMsgTxt(errmsg);
     }

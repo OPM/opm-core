@@ -451,20 +451,30 @@ copy_and_permute_actnum(int nx, int ny, int nz, const int *in, int *out)
 {
     int i,j,k;
     int *ptr = out;
+
     /* Permute actnum such that values of each vertical stack of cells
      * are adjacent in memory, i.e.,
-
-     out = [in(0,0,:), in(1,0,:),..., in(nx-1, ny-1,:)]
-
-     in Matlab pseudo-code.
-    */
-    for (j=0; j<ny; ++j){
-        for (i=0; i<nx; ++i){
-            for (k=0; k<nz; ++k){
-                *ptr++ = in[i+nx*(j+ny*k)];
+     *
+     *    out = [in(0,0,:), in(1,0,:),..., in(nx-1, ny-1,:)]
+     *
+     * in MATLAB pseudo-code.
+     */
+    if (in != NULL) {
+        for (j = 0; j < ny; ++j) {
+            for (i = 0; i < nx; ++i) {
+                for (k = 0; k < nz; ++k) {
+                    *ptr++ = in[i + nx*(j + ny*k)];
+                }
             }
         }
     }
+    else {
+        /* No explicit ACTNUM.  Assume all cells active. */
+        for (i = 0; i < nx * ny * nz; i++) {
+            out[ i ] = 1;
+        }
+    }
+
     return out;
 }
 
@@ -527,7 +537,10 @@ get_zcorn_sign(int nx, int ny, int nz, const int *actnum,
                     c1 = i/2 + nx*(j/2 + ny*k/2);
                     c2 = i/2 + nx*(j/2 + ny*(k+1)/2);
 
-                    if (actnum[c1] && actnum[c2] && (z2 < z1)){
+                    if (((actnum == NULL) ||
+                         (actnum[c1] && actnum[c2]))
+                        && (z2 < z1)) {
+
                         fprintf(stderr, "\nZCORN should be strictly "
                                 "nondecreasing along pillars!\n");
                         *error = 1;

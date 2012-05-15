@@ -32,37 +32,33 @@
   along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
 #include <assert.h>
+#include <math.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <mex.h>
 
-
 #include "grdecl.h"
-
-
-void mx_init_grdecl(struct grdecl *g, const mxArray *s);
+#include "mxgrdecl.h"
 
 /* Get COORD, ZCORN, ACTNUM and DIMS from mxArray.       */
 /*-------------------------------------------------------*/
 void mx_init_grdecl(struct grdecl *g, const mxArray *s)
 {
     int i,n;
-    mxArray *field;
-    int numel;
-    double *tmp;
+    size_t numel;
     mxArray *cartdims=NULL, *actnum=NULL, *coord=NULL, *zcorn=NULL;
 
     if (!mxIsStruct(s)
         || !(cartdims = mxGetField(s, 0, "cartDims"))
-        || !(actnum   = mxGetField(s, 0, "ACTNUM"))
         || !(coord    = mxGetField(s, 0, "COORD"))
-        || !(zcorn     = mxGetField(s, 0, "ZCORN"))
+        || !(zcorn    = mxGetField(s, 0, "ZCORN"))
         )
     {
-        char str[]="Input must be a single Matlab struct with fields\n"
-            "cartDims, ACTNUM, COORD and ZCORN\n";
+        char str[]="Input must be a single MATLAB struct with fields\n"
+            "'cartDims', 'COORD' and 'ZCORN'. ACTNUM may be included.\n";
         mexErrMsgTxt(str);
     }
 
@@ -72,35 +68,44 @@ void mx_init_grdecl(struct grdecl *g, const mxArray *s)
         mexErrMsgTxt("cartDims field must be 3 numbers");
     }
 
-    tmp = mxGetPr(cartdims);
-    n = 1;
-    for (i=0; i<3; ++i){
-        g->dims[i] = tmp[i];
-        n      *= tmp[i];
+    if (mxIsDouble(cartdims)) {
+        double *tmp = mxGetPr(cartdims);
+        for (i = 0; i < 3; ++i) {
+            g->dims[i] = (int) tmp[i];
+        }
+    }
+    else if (mxIsInt32(cartdims)) {
+        int *tmp = mxGetData(cartdims);
+        memcpy(g->dims, tmp, 3 * sizeof *g->dims);
+    }
+
+    n = g->dims[0];
+    for (i = 1; i < 3; i++) { n *= g->dims[ i ]; }
+
+
+    if ((actnum = mxGetField(s, 0, "ACTNUM")) != NULL) {
+        numel = mxGetNumberOfElements(actnum);
+        if ((! mxIsInt32(actnum)) || (numel != (size_t)(n))) {
+            mexErrMsgTxt("ACTNUM field must be nx*ny*nz numbers int32");
+        }
+        g->actnum = mxGetData(actnum);
+    }
+    else {
+        g->actnum = NULL;
     }
 
 
-    numel = mxGetNumberOfElements(actnum);
-    if (mxGetClassID(actnum) != mxINT32_CLASS ||
-        numel != g->dims[0]*g->dims[1]*g->dims[2] ){
-        mexErrMsgTxt("ACTNUM field must be nx*ny*nz numbers int32");
-    }
-    g->actnum = mxGetData(actnum);
-
-
-
-    field = mxGetField(s, 0, "COORD");
     numel = mxGetNumberOfElements(coord);
-    if (mxGetClassID(coord) != mxDOUBLE_CLASS ||
-        numel != 6*(g->dims[0]+1)*(g->dims[1]+1)){
+    if ((! mxIsDouble(coord)) ||
+        numel != (size_t)(6*(g->dims[0]+1)*(g->dims[1]+1))) {
         mexErrMsgTxt("COORD field must have 6*(nx+1)*(ny+1) doubles.");
     }
     g->coord = mxGetPr(coord);
 
 
     numel = mxGetNumberOfElements(zcorn);
-    if (mxGetClassID(zcorn) != mxDOUBLE_CLASS ||
-        numel != 8*g->dims[0]*g->dims[1]*g->dims[2]){
+    if ((! mxIsDouble(zcorn)) ||
+        numel != (size_t)(8*g->dims[0]*g->dims[1]*g->dims[2])) {
         mexErrMsgTxt("ZCORN field must have 8*nx*ny*nz doubles.");
     }
     g->zcorn = mxGetPr(zcorn);
