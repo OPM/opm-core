@@ -266,6 +266,7 @@ main(int argc, char** argv)
     // Extra rock init.
     std::vector<double> porevol;
     if (rock_comp->isActive()) {
+        THROW("CompressibleTpfa solver does not handle this.");
         computePorevolume(*grid->c_grid(), props->porosity(), *rock_comp, state.pressure(), porevol);
     } else {
         computePorevolume(*grid->c_grid(), props->porosity(), porevol);
@@ -296,7 +297,7 @@ main(int argc, char** argv)
     Opm::LinearSolverFactory linsolver(param);
     // Pressure solver.
     const double *grav = use_gravity ? &gravity[0] : 0;
-    Opm::CompressibleTpfa psolver(*grid->c_grid(), props->permeability(), grav,
+    Opm::CompressibleTpfa psolver(*grid->c_grid(), props->permeability(), &porevol[0], grav,
                                   linsolver, wells->c_wells(), props->numPhases());
     // Reordering solver.
     const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
