@@ -202,6 +202,7 @@ opm/core/GridAdapter.hpp                                \
 opm/core/GridManager.hpp                                \
 opm/core/TwophaseState.hpp                              \
 opm/core/WellsManager.hpp                               \
+opm/core/WellState.hpp                                  \
 opm/core/pressure/fsh.h                                 \
 opm/core/pressure/HybridPressureSolver.hpp              \
 opm/core/pressure/IncompTpfa.hpp                        \
