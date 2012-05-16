@@ -66,7 +66,6 @@
 #include <vector>
 #include <numeric>
 
-#define COMPR_INIT_FIXED 1
 #define PRESSURE_SOLVER_FIXED 0
 #define TRANSPORT_SOLVER_FIXED 0
 
@@ -197,13 +196,11 @@ main(int argc, char** argv)
         // Gravity.
         gravity[2] = deck.hasField("NOGRAV") ? 0.0 : Opm::unit::gravity;
         // Init state variables (saturation and pressure).
-#if COMPR_INIT_FIXED
         if (param.has("init_saturation")) {
             initStateBasic(*grid->c_grid(), *props, param, gravity[2], state);
         } else {
             initStateFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
         }
-#endif // COMPR_INIT_FIXED
     } else {
         // Grid init.
         const int nx = param.getDefault("nx", 100);
@@ -224,9 +221,7 @@ main(int argc, char** argv)
         // Gravity.
         gravity[2] = param.getDefault("gravity", 0.0);
         // Init state variables (saturation and pressure).
-#if COMPR_INIT_FIXED
         initStateBasic(*grid->c_grid(), *props, param, gravity[2], state);
-#endif // COMPR_INIT_FIXED
     }
 
     // Warn if gravity but no density difference.
