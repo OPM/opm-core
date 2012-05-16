@@ -1,23 +1,7 @@
-/*===========================================================================
-//
-// File: spu_2p.cpp
-//
-// Created: 2011-10-05 10:29:01+0200
-//
-// Authors: Ingeborg S. Ligaarden <Ingeborg.Ligaarden@sintef.no>
-//          Jostein R. Natvig     <Jostein.R.Natvig@sintef.no>
-//          Halvor M. Nilsen      <HalvorMoll.Nilsen@sintef.no>
-//          Atgeirr F. Rasmussen  <atgeirr@sintef.no>
-//          Bård Skaflestad       <Bard.Skaflestad@sintef.no>
-//
-//==========================================================================*/
-
-
 /*
-  Copyright 2011, 2012 SINTEF ICT, Applied Mathematics.
-  Copyright 2011, 2012 Statoil ASA.
+  Copyright 2012 SINTEF ICT, Applied Mathematics.
 
-  This file is part of the Open Porous Media Project (OPM).
+  This file is part of the Open Porous Media project (OPM).
 
   OPM is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,12 +17,12 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include <opm/core/pressure/IncompTpfa.hpp>
-#include <opm/core/pressure/FlowBCManager.hpp>
+#include <opm/core/pressure/CompressibleTpfa.hpp>
 
 #include <opm/core/grid.h>
 #include <opm/core/GridManager.hpp>
@@ -53,24 +37,15 @@
 #include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
-#include <opm/core/fluid/SimpleFluid2p.hpp>
-#include <opm/core/fluid/IncompPropertiesBasic.hpp>
-#include <opm/core/fluid/IncompPropertiesFromDeck.hpp>
+#include <opm/core/fluid/BlackoilPropertiesBasic.hpp>
+#include <opm/core/fluid/BlackoilPropertiesFromDeck.hpp>
 #include <opm/core/fluid/RockCompressibility.hpp>
 
 #include <opm/core/linalg/LinearSolverFactory.hpp>
 
-#include <opm/core/transport/transport_source.h>
-#include <opm/core/transport/CSRMatrixUmfpackSolver.hpp>
-#include <opm/core/transport/NormSupport.hpp>
-#include <opm/core/transport/ImplicitAssembly.hpp>
-#include <opm/core/transport/ImplicitTransport.hpp>
-#include <opm/core/transport/JacobianSystem.hpp>
-#include <opm/core/transport/CSRMatrixBlockAssembler.hpp>
-#include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
-
 #include <opm/core/ColumnExtract.hpp>
-#include <opm/core/TwophaseState.hpp>
+#include <opm/core/BlackoilState.hpp>
+#include <opm/core/WellState.hpp>
 #include <opm/core/transport/GravityColumnSolver.hpp>
 
 #include <opm/core/transport/reorder/TransportModelTwophase.hpp>
@@ -92,11 +67,13 @@
 #include <vector>
 #include <numeric>
 
+#define PRESSURE_SOLVER_FIXED 0
+#define TRANSPORT_SOLVER_FIXED 0
 
 
-
+template <class State>
 static void outputState(const UnstructuredGrid& grid,
-                        const Opm::TwophaseState& state,
+                        const State& state,
                         const int step,
                         const std::string& output_dir)
 {
@@ -155,124 +132,17 @@ static void outputWellReport(const Opm::WellReport& wellreport,
 }
 
 
-
-// --------------- Types needed to define transport solver ---------------
-
-class SimpleFluid2pWrappingProps
-{
-public:
-    SimpleFluid2pWrappingProps(const Opm::IncompPropertiesInterface& props)
-  : props_(props),
-    smin_(props.numCells()*props.numPhases()),
-    smax_(props.numCells()*props.numPhases())
-    {
-        if (props.numPhases() != 2) {
-            THROW("SimpleFluid2pWrapper requires 2 phases.");
-        }
-        const int num_cells = props.numCells();
-        std::vector<int> cells(num_cells);
-        for (int c = 0; c < num_cells; ++c) {
-            cells[c] = c;
-        }
-        props.satRange(num_cells, &cells[0], &smin_[0], &smax_[0]);
-    }
-
-    double density(int phase) const
-    {
-        return props_.density()[phase];
-    }
-
-    template <class Sat,
-              class Mob,
-              class DMob>
-    void mobility(int c, const Sat& s, Mob& mob, DMob& dmob) const
-    {
-        props_.relperm(1, &s[0], &c, &mob[0], &dmob[0]);
-        const double* mu = props_.viscosity();
-        mob[0] /= mu[0];
-        mob[1] /= mu[1];
-        // Recall that we use Fortran ordering for kr derivatives,
-        // therefore dmob[i*2 + j] is row j and column i of the
-        // matrix.
-        // Each row corresponds to a kr function, so which mu to
-        // divide by also depends on the row, j.
-        dmob[0*2 + 0] /= mu[0];
-        dmob[0*2 + 1] /= mu[1];
-        dmob[1*2 + 0] /= mu[0];
-        dmob[1*2 + 1] /= mu[1];
-    }
-
-    template <class Sat,
-              class Pcap,
-              class DPcap>
-    void pc(int c, const Sat& s, Pcap& pcap, DPcap& dpcap) const
-    {
-        double pcow[2];
-        double dpcow[4];
-        props_.capPress(1, &s[0], &c, pcow, dpcow);
-        pcap = pcow[0];
-        ASSERT(pcow[1] == 0.0);
-        dpcap = dpcow[0];
-        ASSERT(dpcow[1] == 0.0);
-        ASSERT(dpcow[2] == 0.0);
-        ASSERT(dpcow[3] == 0.0);
-    }
-
-    double s_min(int c) const
-    {
-        return smin_[2*c + 0];
-    }
-
-    double s_max(int c) const
-    {
-        return smax_[2*c + 0];
-    }
-
-private:
-    const Opm::IncompPropertiesInterface& props_;
-    std::vector<double> smin_;
-    std::vector<double> smax_;
-};
-
-typedef SimpleFluid2pWrappingProps TwophaseFluid;
-typedef Opm::SinglePointUpwindTwoPhase<TwophaseFluid> TransportModel;
-
-using namespace Opm::ImplicitTransportDefault;
-
-typedef NewtonVectorCollection< ::std::vector<double> >      NVecColl;
-typedef JacobianSystem        < struct CSRMatrix, NVecColl > JacSys;
-
-template <class Vector>
-class MaxNorm {
-public:
-    static double
-    norm(const Vector& v) {
-        return AccumulationNorm <Vector, MaxAbs>::norm(v);
-    }
-};
-
-typedef Opm::ImplicitTransport<TransportModel,
-                               JacSys        ,
-                               MaxNorm       ,
-                               VectorNegater ,
-                               VectorZero    ,
-                               MatrixZero    ,
-                               VectorAssign  > TransportSolver;
-
-
-
 // ----------------- Main program -----------------
 int
 main(int argc, char** argv)
 {
     using namespace Opm;
 
-    std::cout << "\n================    Test program for incompressible two-phase flow     ===============\n\n";
+    std::cout << "\n================    Test program for weakly compressible two-phase flow     ===============\n\n";
     Opm::parameter::ParameterGroup param(argc, argv, false);
     std::cout << "---------------    Reading parameters     ---------------" << std::endl;
 
     // Reading various control parameters.
-    const bool guess_old_solution = param.getDefault("guess_old_solution", false);
     const bool use_reorder = param.getDefault("use_reorder", true);
     const bool output = param.getDefault("output", true);
     std::string output_dir;
@@ -289,18 +159,18 @@ main(int argc, char** argv)
         }
         output_interval = param.getDefault("output_interval", output_interval);
     }
-    const int num_transport_substeps = param.getDefault("num_transport_substeps", 1);
+    // const int num_transport_substeps = param.getDefault("num_transport_substeps", 1);
 
     // If we have a "deck_filename", grid and props will be read from that.
     bool use_deck = param.has("deck_filename");
     boost::scoped_ptr<Opm::GridManager> grid;
-    boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
+    boost::scoped_ptr<Opm::BlackoilPropertiesInterface> props;
     boost::scoped_ptr<Opm::WellsManager> wells;
     boost::scoped_ptr<Opm::RockCompressibility> rock_comp;
     Opm::SimulatorTimer simtimer;
-    Opm::TwophaseState state;
-    bool check_well_controls = false;
-    int max_well_control_iterations = 0;
+    Opm::BlackoilState state;
+    // bool check_well_controls = false;
+    // int max_well_control_iterations = 0;
     double gravity[3] = { 0.0 };
     if (use_deck) {
         std::string deck_filename = param.get<std::string>("deck_filename");
@@ -310,11 +180,11 @@ main(int argc, char** argv)
         // Rock and fluid init
         const int* gc = grid->c_grid()->global_cell;
         std::vector<int> global_cell(gc, gc + grid->c_grid()->number_of_cells);
-        props.reset(new Opm::IncompPropertiesFromDeck(deck, global_cell));
+        props.reset(new Opm::BlackoilPropertiesFromDeck(deck, global_cell));
         // Wells init.
         wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
-        check_well_controls = param.getDefault("check_well_controls", false);
-        max_well_control_iterations = param.getDefault("max_well_control_iterations", 10);
+        // check_well_controls = param.getDefault("check_well_controls", false);
+        // max_well_control_iterations = param.getDefault("max_well_control_iterations", 10);
         // Timer init.
         if (deck.hasField("TSTEP")) {
             simtimer.init(deck);
@@ -341,7 +211,7 @@ main(int argc, char** argv)
         const double dz = param.getDefault("dz", 1.0);
         grid.reset(new Opm::GridManager(nx, ny, nz, dx, dy, dz));
         // Rock and fluid init.
-        props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
+        props.reset(new Opm::BlackoilPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
         // Wells init.
         wells.reset(new Opm::WellsManager());
         // Timer init.
@@ -354,13 +224,10 @@ main(int argc, char** argv)
         initStateBasic(*grid->c_grid(), *props, param, gravity[2], state);
     }
 
-    // Extra fluid init for transport solver.
-    TwophaseFluid fluid(*props);
-
     // Warn if gravity but no density difference.
     bool use_gravity = (gravity[0] != 0.0 || gravity[1] != 0.0 || gravity[2] != 0.0);
     if (use_gravity) {
-        if (props->density()[0] == props->density()[1]) {
+        if (props->surfaceDensity()[0] == props->surfaceDensity()[1]) {
             std::cout << "**** Warning: nonzero gravity, but zero density difference." << std::endl;
         }
     }
@@ -378,14 +245,15 @@ main(int argc, char** argv)
     }
 
     // Check that rock compressibility is not used with solvers that do not handle it.
-    int nl_pressure_maxiter = 0;
-    double nl_pressure_tolerance = 0.0;
+    // int nl_pressure_maxiter = 0;
+    // double nl_pressure_tolerance = 0.0;
     if (rock_comp->isActive()) {
+        THROW("No rock compressibility in comp. pressure solver yet.");
         if (!use_reorder) {
             THROW("Cannot run implicit (non-reordering) transport solver with rock compressibility yet.");
         }
-        nl_pressure_maxiter = param.getDefault("nl_pressure_maxiter", 10);
-        nl_pressure_tolerance = param.getDefault("nl_pressure_tolerance", 1.0); // in Pascal
+        // nl_pressure_maxiter = param.getDefault("nl_pressure_maxiter", 10);
+        // nl_pressure_tolerance = param.getDefault("nl_pressure_tolerance", 1.0); // in Pascal
     }
 
     // Source-related variables init.
@@ -397,6 +265,7 @@ main(int argc, char** argv)
     // Extra rock init.
     std::vector<double> porevol;
     if (rock_comp->isActive()) {
+        THROW("CompressibleTpfa solver does not handle this.");
         computePorevolume(*grid->c_grid(), props->porosity(), *rock_comp, state.pressure(), porevol);
     } else {
         computePorevolume(*grid->c_grid(), props->porosity(), porevol);
@@ -420,65 +289,29 @@ main(int argc, char** argv)
         src[num_cells - 1] = -flow_per_sec;
     }
 
-    TransportSource* tsrc = create_transport_source(2, 2);
-    double ssrc[]   = { 1.0, 0.0 };
-    double ssink[]  = { 0.0, 1.0 };
-    double zdummy[] = { 0.0, 0.0 };
-    for (int cell = 0; cell < num_cells; ++cell) {
-        if (src[cell] > 0.0) {
-            append_transport_source(cell, 2, 0, src[cell], ssrc, zdummy, tsrc);
-        } else if (src[cell] < 0.0) {
-            append_transport_source(cell, 2, 0, src[cell], ssink, zdummy, tsrc);
-        }
-    }
     std::vector<double> reorder_src = src;
-
-    // Boundary conditions.
-    Opm::FlowBCManager bcs;
-    if (param.getDefault("use_pside", false)) {
-        int pside = param.get<int>("pside");
-        double pside_pressure = param.get<double>("pside_pressure");
-        bcs.pressureSide(*grid->c_grid(), Opm::FlowBCManager::Side(pside), pside_pressure);
-    }
 
     // Solvers init.
     // Linear solver.
     Opm::LinearSolverFactory linsolver(param);
     // Pressure solver.
     const double *grav = use_gravity ? &gravity[0] : 0;
-    Opm::IncompTpfa psolver(*grid->c_grid(), props->permeability(), grav, linsolver, wells->c_wells());
+    Opm::CompressibleTpfa psolver(*grid->c_grid(), props->permeability(), &porevol[0], grav,
+                                  linsolver, wells->c_wells(), props->numPhases());
     // Reordering solver.
+#if TRANSPORT_SOLVER_FIXED
     const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
     const int nl_maxiter = param.getDefault("nl_maxiter", 30);
     Opm::TransportModelTwophase reorder_model(*grid->c_grid(), *props, nl_tolerance, nl_maxiter);
     if (use_gauss_seidel_gravity) {
         reorder_model.initGravity(grav);
     }
-    // Non-reordering solver.
-    TransportModel  model  (fluid, *grid->c_grid(), porevol, grav, guess_old_solution);
-    if (use_gravity) {
-        model.initGravityTrans(*grid->c_grid(), psolver.getHalfTrans());
-    }
-    TransportSolver tsolver(model);
+#endif // TRANSPORT_SOLVER_FIXED
     // Column-based gravity segregation solver.
     std::vector<std::vector<int> > columns;
     if (use_column_solver) {
         Opm::extractColumn(*grid->c_grid(), columns);
     }
-    Opm::GravityColumnSolver<TransportModel> colsolver(model, *grid->c_grid(), nl_tolerance, nl_maxiter);
-
-    // Control init.
-    Opm::ImplicitTransportDetails::NRReport  rpt;
-    Opm::ImplicitTransportDetails::NRControl ctrl;
-    if (!use_reorder || use_segregation_split) {
-        ctrl.max_it = param.getDefault("max_it", 20);
-        ctrl.verbosity = param.getDefault("verbosity", 0);
-        ctrl.max_it_ls = param.getDefault("max_it_ls", 5);
-    }
-
-    // Linear solver init.
-    using Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver;
-    CSRMatrixUmfpackSolver linsolve;
 
     // The allcells vector is used in calls to computeTotalMobility()
     // and computeTotalMobilityOmega().
@@ -519,17 +352,17 @@ main(int argc, char** argv)
     Opm::Watercut watercut;
     watercut.push(0.0, 0.0, 0.0);
     Opm::WellReport wellreport;
-    std::vector<double> well_bhp;
-    std::vector<double> well_perfrates;
+    Opm::WellState well_state;
     std::vector<double> fractional_flows;
     std::vector<double> well_resflows_phase;
     int num_wells = 0;
     if (wells->c_wells()) {
         num_wells = wells->c_wells()->number_of_wells;
-        well_bhp.resize(num_wells, 0.0);
-        well_perfrates.resize(wells->c_wells()->well_connpos[num_wells], 0.0);
-        well_resflows_phase.resize((wells->c_wells()->number_of_phases)*(wells->c_wells()->number_of_wells), 0.0);
-        wellreport.push(*props, *wells->c_wells(), state.saturation(), 0.0, well_bhp, well_perfrates);
+        well_state.init(wells->c_wells());
+        well_resflows_phase.resize((wells->c_wells()->number_of_phases)*(num_wells), 0.0);
+        wellreport.push(*props, *wells->c_wells(),
+                        state.pressure(), state.surfacevol(), state.saturation(),
+                        0.0, well_state.bhp(), well_state.perfRates());
     }
     for (; !simtimer.done(); ++simtimer) {
         // Report timestep and (optionally) write state to disk.
@@ -539,6 +372,7 @@ main(int argc, char** argv)
         }
 
         // Solve pressure.
+#if PRESSURE_SOLVER_FIXED
         if (use_gravity) {
             computeTotalMobilityOmega(*props, allcells, state.saturation(), totmob, omega);
         } else {
@@ -556,7 +390,7 @@ main(int argc, char** argv)
         }
         bool well_control_passed = !check_well_controls;
         int well_control_iteration = 0;
-        do {
+        do { // Well control outer loop.
             pressure_timer.start();
             if (rock_comp->isActive()) {
                 rc.resize(num_cells);
@@ -572,7 +406,7 @@ main(int argc, char** argv)
                     }
                     computePorevolume(*grid->c_grid(), props->porosity(), *rock_comp, state.pressure(), porevol);
                     std::copy(state.pressure().begin(), state.pressure().end(), prev_pressure.begin());
-                    std::copy(well_bhp.begin(), well_bhp.end(), prev_pressure.begin() + num_cells);
+                    std::copy(well_state.bhp().begin(), well_state.bhp().end(), prev_pressure.begin() + num_cells);
                     // prev_pressure = state.pressure();
 
                     // compute pressure increment
@@ -586,7 +420,7 @@ main(int argc, char** argv)
                         max_change = std::max(max_change, std::fabs(pressure_increment[cell]));
                     }
                     for (int well = 0; well < num_wells; ++well) {
-                        well_bhp[well] += pressure_increment[num_cells + well];
+                        well_state.bhp()[well] += pressure_increment[num_cells + well];
                         max_change = std::max(max_change, std::fabs(pressure_increment[num_cells + well]));
                     }
 
@@ -596,25 +430,24 @@ main(int argc, char** argv)
                     }
                 }
                 psolver.computeFaceFlux(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
-                                        well_bhp, well_perfrates);
+                                        well_state.bhp(), well_state.perfRates());
             } else {
                 psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
-                              well_bhp, well_perfrates);
+                              well_state.bhp(), well_state.perfRates());
             }
             pressure_timer.stop();
             double pt = pressure_timer.secsSinceStart();
             std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
             ptime += pt;
 
-
             if (check_well_controls) {
                 Opm::computePhaseFlowRatesPerWell(*wells->c_wells(),
                                                   fractional_flows,
-                                                  well_perfrates,
+                                                  well_state.perfRates(),
                                                   well_resflows_phase);
                 std::cout << "Checking well conditions." << std::endl;
                 // For testing we set surface := reservoir
-                well_control_passed = wells->conditionsMet(well_bhp, well_resflows_phase, well_resflows_phase);
+                well_control_passed = wells->conditionsMet(well_state.bhp(), well_resflows_phase, well_resflows_phase);
                 ++well_control_iteration;
                 if (!well_control_passed && well_control_iteration > max_well_control_iterations) {
                     THROW("Could not satisfy well conditions in " << max_well_control_iterations << " tries.");
@@ -626,57 +459,32 @@ main(int argc, char** argv)
                 }
             }
         } while (!well_control_passed);
+#endif // PRESSURE_SOLVER_FIXED
 
         // Process transport sources (to include bdy terms and well flows).
         Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0,
-                                    wells->c_wells(), well_perfrates, reorder_src);
-        if (!use_reorder) {
-            clear_transport_source(tsrc);
-            for (int cell = 0; cell < num_cells; ++cell) {
-                if (reorder_src[cell] > 0.0) {
-                    append_transport_source(cell, 2, 0, reorder_src[cell], ssrc, zdummy, tsrc);
-                } else if (reorder_src[cell] < 0.0) {
-                    append_transport_source(cell, 2, 0, reorder_src[cell], ssink, zdummy, tsrc);
-                }
-            }
-        }
+                                    wells->c_wells(), well_state.perfRates(), reorder_src);
 
         // Solve transport.
         transport_timer.start();
+#if TRANSPORT_SOLVER_FIXED
         double stepsize = simtimer.currentStepLength();
         if (num_transport_substeps != 1) {
             stepsize /= double(num_transport_substeps);
             std::cout << "Making " << num_transport_substeps << " transport substeps." << std::endl;
         }
         for (int tr_substep = 0; tr_substep < num_transport_substeps; ++tr_substep) {
-            if (use_reorder) {
-                Opm::toWaterSat(state.saturation(), reorder_sat);
-                reorder_model.solve(&state.faceflux()[0], &porevol[0], &reorder_src[0],
-                                    stepsize, &reorder_sat[0]);
+            Opm::toWaterSat(state.saturation(), reorder_sat);
+            reorder_model.solve(&state.faceflux()[0], &porevol[0], &reorder_src[0],
+                                stepsize, &reorder_sat[0]);
+            Opm::toBothSat(reorder_sat, state.saturation());
+            Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
+            if (use_segregation_split) {
+                reorder_model.solveGravity(columns, &porevol[0], stepsize, reorder_sat);
                 Opm::toBothSat(reorder_sat, state.saturation());
-                Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
-                if (use_segregation_split) {
-                    if (use_column_solver) {
-                        if (use_gauss_seidel_gravity) {
-                            reorder_model.solveGravity(columns, &porevol[0], stepsize, reorder_sat);
-                            Opm::toBothSat(reorder_sat, state.saturation());
-                        } else {
-                            colsolver.solve(columns, stepsize, state.saturation());
-                        }
-                    } else {
-                        std::vector<double> fluxes = state.faceflux();
-                        std::fill(state.faceflux().begin(), state.faceflux().end(), 0.0);
-                        tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
-                        std::cout << rpt;
-                        state.faceflux() = fluxes;
-                    }
-                }
-            } else {
-                tsolver.solve(*grid->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
-                std::cout << rpt;
-                Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
             }
         }
+#endif // TRANSPORT_SOLVER_FIXED
         transport_timer.stop();
         double tt = transport_timer.secsSinceStart();
         std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
@@ -719,9 +527,10 @@ main(int argc, char** argv)
                       produced[0]/(produced[0] + produced[1]),
                       tot_produced[0]/tot_porevol_init);
         if (wells->c_wells()) {
-            wellreport.push(*props, *wells->c_wells(), state.saturation(),
+            wellreport.push(*props, *wells->c_wells(),
+                            state.pressure(), state.surfacevol(), state.saturation(),
                             simtimer.currentTime() + simtimer.currentStepLength(),
-                            well_bhp, well_perfrates);
+                            well_state.bhp(), well_state.perfRates());
         }
     }
     total_timer.stop();
@@ -738,6 +547,4 @@ main(int argc, char** argv)
             outputWellReport(wellreport, output_dir);
         }
     }
-
-    destroy_transport_source(tsrc);
 }

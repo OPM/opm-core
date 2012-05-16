@@ -69,6 +69,7 @@ opm/core/utility/parameters/tinyxml/tinyxml.cpp         \
 opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp    \
 opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp   \
 opm/core/utility/miscUtilities.cpp                      \
+opm/core/utility/miscUtilitiesBlackoil.cpp              \
 opm/core/utility/SimulatorTimer.cpp                     \
 opm/core/utility/StopWatch.cpp                          \
 opm/core/utility/newwells.c                             \
@@ -89,6 +90,7 @@ opm/core/pressure/well.c                                \
 opm/core/pressure/fsh_common_impl.c                     \
 opm/core/pressure/fsh.c                                 \
 opm/core/pressure/IncompTpfa.cpp                        \
+opm/core/pressure/CompressibleTpfa.cpp                  \
 opm/core/pressure/tpfa/ifs_tpfa.c                       \
 opm/core/pressure/tpfa/compr_source.c                   \
 opm/core/pressure/tpfa/cfs_tpfa.c                       \
@@ -181,6 +183,7 @@ opm/core/utility/initState_impl.hpp                     \
 opm/core/utility/linInt.hpp                             \
 opm/core/utility/linearInterpolation.hpp                \
 opm/core/utility/miscUtilities.hpp                      \
+opm/core/utility/miscUtilitiesBlackoil.hpp              \
 opm/core/utility/writeVtkData.hpp                       \
 opm/core/linalg/sparse_sys.h                            \
 opm/core/linalg/blas_lapack.h                           \
@@ -193,14 +196,17 @@ opm/core/WellsGroup.hpp					\
 opm/core/WellCollection.hpp				\
 opm/core/InjectionSpecification.hpp			\
 opm/core/ProductionSpecification.hpp			\
+opm/core/BlackoilState.hpp                              \
 opm/core/ColumnExtract.hpp				\
 opm/core/GridAdapter.hpp                                \
 opm/core/GridManager.hpp                                \
 opm/core/TwophaseState.hpp                              \
 opm/core/WellsManager.hpp                               \
+opm/core/WellState.hpp                                  \
 opm/core/pressure/fsh.h                                 \
 opm/core/pressure/HybridPressureSolver.hpp              \
 opm/core/pressure/IncompTpfa.hpp                        \
+opm/core/pressure/CompressibleTpfa.hpp                  \
 opm/core/pressure/TPFAPressureSolver.hpp                \
 opm/core/pressure/tpfa/compr_quant.h                    \
 opm/core/pressure/tpfa/compr_source.h                   \
