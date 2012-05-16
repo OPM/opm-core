@@ -143,7 +143,6 @@ main(int argc, char** argv)
     std::cout << "---------------    Reading parameters     ---------------" << std::endl;
 
     // Reading various control parameters.
-    const bool guess_old_solution = param.getDefault("guess_old_solution", false);
     const bool use_reorder = param.getDefault("use_reorder", true);
     const bool output = param.getDefault("output", true);
     std::string output_dir;
@@ -160,7 +159,7 @@ main(int argc, char** argv)
         }
         output_interval = param.getDefault("output_interval", output_interval);
     }
-    const int num_transport_substeps = param.getDefault("num_transport_substeps", 1);
+    // const int num_transport_substeps = param.getDefault("num_transport_substeps", 1);
 
     // If we have a "deck_filename", grid and props will be read from that.
     bool use_deck = param.has("deck_filename");
@@ -170,8 +169,8 @@ main(int argc, char** argv)
     boost::scoped_ptr<Opm::RockCompressibility> rock_comp;
     Opm::SimulatorTimer simtimer;
     Opm::BlackoilState state;
-    bool check_well_controls = false;
-    int max_well_control_iterations = 0;
+    // bool check_well_controls = false;
+    // int max_well_control_iterations = 0;
     double gravity[3] = { 0.0 };
     if (use_deck) {
         std::string deck_filename = param.get<std::string>("deck_filename");
@@ -184,8 +183,8 @@ main(int argc, char** argv)
         props.reset(new Opm::BlackoilPropertiesFromDeck(deck, global_cell));
         // Wells init.
         wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
-        check_well_controls = param.getDefault("check_well_controls", false);
-        max_well_control_iterations = param.getDefault("max_well_control_iterations", 10);
+        // check_well_controls = param.getDefault("check_well_controls", false);
+        // max_well_control_iterations = param.getDefault("max_well_control_iterations", 10);
         // Timer init.
         if (deck.hasField("TSTEP")) {
             simtimer.init(deck);
@@ -246,15 +245,15 @@ main(int argc, char** argv)
     }
 
     // Check that rock compressibility is not used with solvers that do not handle it.
-    int nl_pressure_maxiter = 0;
-    double nl_pressure_tolerance = 0.0;
+    // int nl_pressure_maxiter = 0;
+    // double nl_pressure_tolerance = 0.0;
     if (rock_comp->isActive()) {
         THROW("No rock compressibility in comp. pressure solver yet.");
         if (!use_reorder) {
             THROW("Cannot run implicit (non-reordering) transport solver with rock compressibility yet.");
         }
-        nl_pressure_maxiter = param.getDefault("nl_pressure_maxiter", 10);
-        nl_pressure_tolerance = param.getDefault("nl_pressure_tolerance", 1.0); // in Pascal
+        // nl_pressure_maxiter = param.getDefault("nl_pressure_maxiter", 10);
+        // nl_pressure_tolerance = param.getDefault("nl_pressure_tolerance", 1.0); // in Pascal
     }
 
     // Source-related variables init.
@@ -300,9 +299,9 @@ main(int argc, char** argv)
     Opm::CompressibleTpfa psolver(*grid->c_grid(), props->permeability(), &porevol[0], grav,
                                   linsolver, wells->c_wells(), props->numPhases());
     // Reordering solver.
+#if TRANSPORT_SOLVER_FIXED
     const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
     const int nl_maxiter = param.getDefault("nl_maxiter", 30);
-#if TRANSPORT_SOLVER_FIXED
     Opm::TransportModelTwophase reorder_model(*grid->c_grid(), *props, nl_tolerance, nl_maxiter);
     if (use_gauss_seidel_gravity) {
         reorder_model.initGravity(grav);
@@ -360,7 +359,7 @@ main(int argc, char** argv)
     if (wells->c_wells()) {
         num_wells = wells->c_wells()->number_of_wells;
         well_state.init(wells->c_wells());
-        well_resflows_phase.resize((wells->c_wells()->number_of_phases)*(wells->c_wells()->number_of_wells), 0.0);
+        well_resflows_phase.resize((wells->c_wells()->number_of_phases)*(num_wells), 0.0);
         wellreport.push(*props, *wells->c_wells(),
                         state.pressure(), state.surfacevol(), state.saturation(),
                         0.0, well_state.bhp(), well_state.perfRates());
