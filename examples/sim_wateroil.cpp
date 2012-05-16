@@ -45,6 +45,7 @@
 
 #include <opm/core/ColumnExtract.hpp>
 #include <opm/core/BlackoilState.hpp>
+#include <opm/core/WellState.hpp>
 #include <opm/core/transport/GravityColumnSolver.hpp>
 
 #include <opm/core/transport/reorder/TransportModelTwophase.hpp>
@@ -351,19 +352,17 @@ main(int argc, char** argv)
     Opm::Watercut watercut;
     watercut.push(0.0, 0.0, 0.0);
     Opm::WellReport wellreport;
-    std::vector<double> well_bhp;
-    std::vector<double> well_perfrates;
+    Opm::WellState well_state;
     std::vector<double> fractional_flows;
     std::vector<double> well_resflows_phase;
     int num_wells = 0;
     if (wells->c_wells()) {
         num_wells = wells->c_wells()->number_of_wells;
-        well_bhp.resize(num_wells, 0.0);
-        well_perfrates.resize(wells->c_wells()->well_connpos[num_wells], 0.0);
+        well_state.init(wells->c_wells());
         well_resflows_phase.resize((wells->c_wells()->number_of_phases)*(wells->c_wells()->number_of_wells), 0.0);
         wellreport.push(*props, *wells->c_wells(),
                         state.pressure(), state.surfacevol(), state.saturation(),
-                        0.0, well_bhp, well_perfrates);
+                        0.0, well_state.bhp(), well_state.perfRates());
     }
     for (; !simtimer.done(); ++simtimer) {
         // Report timestep and (optionally) write state to disk.
@@ -407,7 +406,7 @@ main(int argc, char** argv)
                     }
                     computePorevolume(*grid->c_grid(), props->porosity(), *rock_comp, state.pressure(), porevol);
                     std::copy(state.pressure().begin(), state.pressure().end(), prev_pressure.begin());
-                    std::copy(well_bhp.begin(), well_bhp.end(), prev_pressure.begin() + num_cells);
+                    std::copy(well_state.bhp().begin(), well_state.bhp().end(), prev_pressure.begin() + num_cells);
                     // prev_pressure = state.pressure();
 
                     // compute pressure increment
@@ -421,7 +420,7 @@ main(int argc, char** argv)
                         max_change = std::max(max_change, std::fabs(pressure_increment[cell]));
                     }
                     for (int well = 0; well < num_wells; ++well) {
-                        well_bhp[well] += pressure_increment[num_cells + well];
+                        well_state.bhp()[well] += pressure_increment[num_cells + well];
                         max_change = std::max(max_change, std::fabs(pressure_increment[num_cells + well]));
                     }
 
@@ -431,10 +430,10 @@ main(int argc, char** argv)
                     }
                 }
                 psolver.computeFaceFlux(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
-                                        well_bhp, well_perfrates);
+                                        well_state.bhp(), well_state.perfRates());
             } else {
                 psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
-                              well_bhp, well_perfrates);
+                              well_state.bhp(), well_state.perfRates());
             }
             pressure_timer.stop();
             double pt = pressure_timer.secsSinceStart();
@@ -444,11 +443,11 @@ main(int argc, char** argv)
             if (check_well_controls) {
                 Opm::computePhaseFlowRatesPerWell(*wells->c_wells(),
                                                   fractional_flows,
-                                                  well_perfrates,
+                                                  well_state.perfRates(),
                                                   well_resflows_phase);
                 std::cout << "Checking well conditions." << std::endl;
                 // For testing we set surface := reservoir
-                well_control_passed = wells->conditionsMet(well_bhp, well_resflows_phase, well_resflows_phase);
+                well_control_passed = wells->conditionsMet(well_state.bhp(), well_resflows_phase, well_resflows_phase);
                 ++well_control_iteration;
                 if (!well_control_passed && well_control_iteration > max_well_control_iterations) {
                     THROW("Could not satisfy well conditions in " << max_well_control_iterations << " tries.");
@@ -464,7 +463,7 @@ main(int argc, char** argv)
 
         // Process transport sources (to include bdy terms and well flows).
         Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0,
-                                    wells->c_wells(), well_perfrates, reorder_src);
+                                    wells->c_wells(), well_state.perfRates(), reorder_src);
 
         // Solve transport.
         transport_timer.start();
@@ -531,7 +530,7 @@ main(int argc, char** argv)
             wellreport.push(*props, *wells->c_wells(),
                             state.pressure(), state.surfacevol(), state.saturation(),
                             simtimer.currentTime() + simtimer.currentStepLength(),
-                            well_bhp, well_perfrates);
+                            well_state.bhp(), well_state.perfRates());
         }
     }
     total_timer.stop();
