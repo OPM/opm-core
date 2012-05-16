@@ -199,7 +199,7 @@ main(int argc, char** argv)
         // Init state variables (saturation and pressure).
 #if COMPR_INIT_FIXED
         if (param.has("init_saturation")) {
-            initStateBlackoilBasic(*grid->c_grid(), *props, param, gravity[2], state);
+            initStateBasic(*grid->c_grid(), *props, param, gravity[2], state);
         } else {
             initStateFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
         }
@@ -225,7 +225,7 @@ main(int argc, char** argv)
         gravity[2] = param.getDefault("gravity", 0.0);
         // Init state variables (saturation and pressure).
 #if COMPR_INIT_FIXED
-        initStateBlackoilBasic(*grid->c_grid(), *props, param, gravity[2], state);
+        initStateBasic(*grid->c_grid(), *props, param, gravity[2], state);
 #endif // COMPR_INIT_FIXED
     }
 
