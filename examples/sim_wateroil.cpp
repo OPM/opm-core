@@ -66,7 +66,7 @@
 #include <vector>
 #include <numeric>
 
-#define COMPR_INIT_FIXED 0
+#define COMPR_INIT_FIXED 1
 #define PRESSURE_SOLVER_FIXED 0
 #define TRANSPORT_SOLVER_FIXED 0
 
@@ -199,9 +199,9 @@ main(int argc, char** argv)
         // Init state variables (saturation and pressure).
 #if COMPR_INIT_FIXED
         if (param.has("init_saturation")) {
-            initStateTwophaseBasic(*grid->c_grid(), *props, param, gravity[2], state);
+            initStateBlackoilBasic(*grid->c_grid(), *props, param, gravity[2], state);
         } else {
-            initStateTwophaseFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
+            initStateFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
         }
 #endif // COMPR_INIT_FIXED
     } else {
@@ -225,7 +225,7 @@ main(int argc, char** argv)
         gravity[2] = param.getDefault("gravity", 0.0);
         // Init state variables (saturation and pressure).
 #if COMPR_INIT_FIXED
-        initStateTwophaseBasic(*grid->c_grid(), *props, param, gravity[2], state);
+        initStateBlackoilBasic(*grid->c_grid(), *props, param, gravity[2], state);
 #endif // COMPR_INIT_FIXED
     }
 

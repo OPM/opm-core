@@ -329,7 +329,7 @@ main(int argc, char** argv)
         if (param.has("init_saturation")) {
             initStateTwophaseBasic(*grid->c_grid(), *props, param, gravity[2], state);
         } else {
-            initStateTwophaseFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
+            initStateFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
         }
     } else {
         // Grid init.
