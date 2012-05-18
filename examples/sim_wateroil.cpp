@@ -296,8 +296,7 @@ main(int argc, char** argv)
     Opm::LinearSolverFactory linsolver(param);
     // Pressure solver.
     const double *grav = use_gravity ? &gravity[0] : 0;
-    Opm::CompressibleTpfa psolver(*grid->c_grid(), props->permeability(), &porevol[0], grav,
-                                  linsolver, wells->c_wells(), props->numPhases());
+    Opm::CompressibleTpfa psolver(*grid->c_grid(), *props, linsolver, grav, wells->c_wells());
     // Reordering solver.
 #if TRANSPORT_SOLVER_FIXED
     const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
