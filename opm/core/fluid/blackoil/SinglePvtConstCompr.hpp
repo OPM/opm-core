@@ -50,16 +50,15 @@ namespace Opm
             ref_B_     = pvtw[region_number][1];
             comp_      = pvtw[region_number][2];
             viscosity_ = pvtw[region_number][3];
-            if (pvtw[region_number].size() > 4 && pvtw[region_number][4] != 0.0) {
-                THROW("SinglePvtConstCompr does not support 'viscosibility'.");
-            }
+            visc_comp_ = pvtw[region_number][4];
         }
 
 	SinglePvtConstCompr(double visc)
             : ref_press_(0.0),
               ref_B_(1.0),
               comp_(0.0),
-              viscosity_(visc)
+              viscosity_(visc),
+              visc_comp_(0.0)
         {
         }
 
@@ -68,11 +67,20 @@ namespace Opm
         }
 
         virtual void mu(const int n,
-                        const double* /*p*/,
+                        const double* p,
                         const double* /*z*/,
                         double* output_mu) const
         {
-            std::fill(output_mu, output_mu + n, viscosity_);
+            if (visc_comp_) {
+// #pragma omp parallel for
+                for (int i = 0; i < n; ++i) {
+                    // Computing a polynomial approximation to the exponential.
+                    double x = -visc_comp_*(p[i] - ref_press_);
+                    output_mu[i] = viscosity_/(1.0 + x + 0.5*x*x);
+                }
+            } else {
+                std::fill(output_mu, output_mu + n, viscosity_);
+            }
         }
 
         virtual void B(const int n,
@@ -132,6 +140,7 @@ namespace Opm
         double ref_B_;
         double comp_;
         double viscosity_;
+        double visc_comp_;
     };
 
 }
