@@ -295,8 +295,13 @@ main(int argc, char** argv)
     // Linear solver.
     Opm::LinearSolverFactory linsolver(param);
     // Pressure solver.
+    const double nl_press_res_tol = param.getDefault("nl_press_res_tol", 1e-6);
+    const double nl_press_change_tol = param.getDefault("nl_press_change_tol", 10.0);
+    const int nl_press_maxiter = param.getDefault("nl_press_maxiter", 20);
     const double *grav = use_gravity ? &gravity[0] : 0;
-    Opm::CompressibleTpfa psolver(*grid->c_grid(), *props, linsolver, grav, wells->c_wells());
+    Opm::CompressibleTpfa psolver(*grid->c_grid(), *props, linsolver,
+                                  nl_press_res_tol, nl_press_change_tol, nl_press_maxiter,
+                                  grav, wells->c_wells());
     // Reordering solver.
 #if TRANSPORT_SOLVER_FIXED
     const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
