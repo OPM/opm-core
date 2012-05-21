@@ -363,7 +363,7 @@ main(int argc, char** argv)
     int num_wells = 0;
     if (wells->c_wells()) {
         num_wells = wells->c_wells()->number_of_wells;
-        well_state.init(wells->c_wells());
+        well_state.init(wells->c_wells(), state);
         well_resflows_phase.resize((wells->c_wells()->number_of_phases)*(num_wells), 0.0);
         wellreport.push(*props, *wells->c_wells(),
                         state.pressure(), state.surfacevol(), state.saturation(),
