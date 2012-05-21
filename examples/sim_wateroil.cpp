@@ -201,6 +201,7 @@ main(int argc, char** argv)
         } else {
             initStateFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
         }
+        initBlackoilSurfvol(*grid->c_grid(), *props, state);
     } else {
         // Grid init.
         const int nx = param.getDefault("nx", 100);
