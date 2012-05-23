@@ -1,3 +1,17 @@
+AC_DEFUN([OPM_DUNE_ISTL_PROGRAM_TEXT],
+[AC_LANG_PROGRAM(
+  [[#include <dune/common/deprecated.hh>
+    #include <dune/istl/bcrsmatrix.hh>
+    #include <dune/common/fmatrix.hh>
+  ]],dnl
+  [[typedef Dune::BCRSMatrix<Dune::FieldMatrix<double,1,1> > Matrix;
+    Matrix matrix( 3, 3, Matrix::random );
+    for (int i = 0; i < 3; ++i) matrix.setrowsize(i, 2);
+    matrix.endrowsizes();
+  ]])[]dnl
+])
+
+
 AC_DEFUN([AX_DUNE_ISTL],
 [
    AC_REQUIRE([AX_DUNE_COMMON])
@@ -6,21 +20,9 @@ AC_DEFUN([AX_DUNE_ISTL],
 
    AC_LANG_PUSH([C++])[]dnl
 
-   AC_LINK_IFELSE(dnl
-     [AC_LANG_PROGRAM(
-       [[#include <dune/common/deprecated.hh>
-         #include <dune/istl/bcrsmatrix.hh>
-         #include <dune/common/fmatrix.hh>
-       ]],dnl
-       [[typedef Dune::BCRSMatrix<Dune::FieldMatrix<double,1,1> > Matrix;
-         Matrix matrix( 3, 3, Matrix::random );
-         for (int i = 0; i < 3; ++i) matrix.setrowsize(i, 2);
-         matrix.endrowsizes();
-       ]])[]dnl
-     ],dnl
-     [ax_cv_dune_istl_available=yes],dnl
-     [ax_cv_dune_istl_available=no]dnl
-   )
+   AC_LINK_IFELSE([OPM_DUNE_ISTL_PROGRAM_TEXT],dnl
+                  [ax_cv_dune_istl_available=yes],dnl
+                  [ax_cv_dune_istl_available=no])
 
    AC_LANG_POP([C++])[]dnl
 
