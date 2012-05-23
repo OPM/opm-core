@@ -1,23 +1,26 @@
+AC_DEFUN([OPM_DUNE_COMMON_PROGRAM_TEXT],
+[AC_LANG_PROGRAM(
+  [[#include <dune/common/fvector.hh>
+    #include <dune/common/fmatrix.hh>
+  ]],dnl
+  [[Dune::FieldVector<double,1>   v;
+    Dune::FieldMatrix<double,1,1> m;
+    m[0][0] = 1.0;
+    v[0]    = 1.0;
+    Dune::FieldVector<double,1> w = m*v;
+  ]])[]dnl
+])
+
+
 AC_DEFUN([AX_DUNE_COMMON],
 [
    AC_MSG_CHECKING(for installed dune-common headers)
 
    AC_LANG_PUSH([C++])[]dnl
 
-   AC_LINK_IFELSE(dnl
-     [AC_LANG_PROGRAM(
-       [[#include <dune/common/fvector.hh>
-         #include <dune/common/fmatrix.hh>
-       ]],dnl
-       [[Dune::FieldVector<double,1>   v;
-         Dune::FieldMatrix<double,1,1> m;
-         m[0][0] = 1.0;
-         v[0]    = 1.0;
-         Dune::FieldVector<double,1> w = m*v;
-       ]])[]dnl
-     ],dnl
-     [ax_cv_dune_common_available=yes],dnl
-     [ax_cv_dune_common_available=no]dnl
+   AC_LINK_IFELSE([OPM_DUNE_COMMON_PROGRAM_TEXT],dnl
+                  [ax_cv_dune_common_available=yes],dnl
+                  [ax_cv_dune_common_available=no]dnl
    )
 
    AC_LANG_POP([C++])[]dnl
