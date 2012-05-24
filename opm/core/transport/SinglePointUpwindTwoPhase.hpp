@@ -449,8 +449,12 @@ namespace Opm {
                 s[0] += x[c];
                 double s_min = fluid_.s_min(c);
                 double s_max = fluid_.s_max(c);
+
+#if 0
                 assert(s[0] >= s_min - sat_tol_);
                 assert(s[0] <= s_max + sat_tol_);
+#endif
+
                 s[0] = std::max(s_min, s[0]);
                 s[0] = std::min(s_max, s[0]);
                 s[1]  = 1.0 - s[0];
