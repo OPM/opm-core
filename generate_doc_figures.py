@@ -1,6 +1,6 @@
 from subprocess import call
 from paraview.simple import *
-from paraview import servermanager
+# from paraview import servermanager
 from os import remove, mkdir, curdir
 from os.path import join, isdir
 
@@ -13,12 +13,13 @@ collected_garbage_file = []
 if not isdir(figure_path):
     mkdir(figure_path)
     
-connection = servermanager.Connect()
+# connection = servermanager.Connect()
 
 # tutorial 1
 call(join(tutorial_path, "tutorial1"))
 data_file_name = join(tutorial_data_path, "tutorial1.vtu")
-grid = servermanager.sources.XMLUnstructuredGridReader(FileName = data_file_name)
+# grid = servermanager.sources.XMLUnstructuredGridReader(FileName = data_file_name)
+grid = XMLUnstructuredGridReader(FileName = data_file_name)
 collected_garbage_file.append(data_file_name)
 grid.UpdatePipeline()
 Show(grid)
@@ -40,7 +41,7 @@ Hide(grid)
 # tutorial 2
 call(join(tutorial_path, "tutorial2"))
 data_file_name = join(tutorial_data_path, "tutorial2.vtu")
-grid = servermanager.sources.XMLUnstructuredGridReader(FileName = data_file_name)
+grid = XMLUnstructuredGridReader(FileName = data_file_name)
 collected_garbage_file.append(data_file_name)
 grid.UpdatePipeline()
 Show(grid)
@@ -70,7 +71,7 @@ for case in range(0,20):
 cases = ["000", "005", "010", "015", "019"]
 for case in cases:
     data_file_name = join(tutorial_data_path, "tutorial3-"+case+".vtu")
-    grid = servermanager.sources.XMLUnstructuredGridReader(FileName = data_file_name)
+    grid = XMLUnstructuredGridReader(FileName = data_file_name)
     grid.UpdatePipeline()
     Show(grid)
     dp = GetDisplayProperties(grid)
