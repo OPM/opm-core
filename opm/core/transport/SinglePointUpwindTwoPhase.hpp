@@ -52,7 +52,7 @@ namespace Opm {
                   porevol_(0), dg_(0), ds_(0), pc_(0), dpc_(0), trans_(0),
                   data_()
             {
-                size_t alloc_sz;
+                std::size_t alloc_sz;
 
                 alloc_sz  = 2 * nc;      // mob_
                 alloc_sz += 2 * nc;      // dmob_
