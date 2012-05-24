@@ -863,9 +863,9 @@ struct WELSPECS : public SpecialBase
 	       << welspecs[i].pressure_table_number_ << "  "
 	       << welspecs[i].density_calc_type_ << "  "
 	       << welspecs[i].fluids_in_place_reg_numb_ << "  "
-	       << std::endl;
+               << "/\n";
 	}
-	os << std::endl;
+	os << '/' << std::endl;
     }
 
     virtual void convertToSI(const EclipseUnits& units)
@@ -973,10 +973,10 @@ struct COMPDAT : public SpecialBase
 	       << compdat[i].skin_factor_ << "  "
 	       << compdat[i].D_factor_ << "  "
 	       << compdat[i].penetration_direct_ << "  "
-	       << compdat[i].r0_
-	       << std::endl;
+	       << compdat[i].r0_ << "  "
+               << "/\n";
 	}
-	os << std::endl;
+	os << '/' << std::endl;
     }
 
     virtual void convertToSI(const EclipseUnits& units)
