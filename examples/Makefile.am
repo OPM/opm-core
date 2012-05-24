@@ -5,11 +5,11 @@ $(BOOST_CPPFLAGS)
 LDADD = $(top_builddir)/libopmcore.la 
 
 noinst_PROGRAMS =				\
+refine_wells					\
 scaneclipsedeck					\
-spu_2p						\
-wells_example					\
 sim_wateroil					\
-refine_wells
+spu_2p						\
+wells_example
 
 spu_2p_SOURCES        = spu_2p.cpp
 spu_2p_LDADD          =  $(LDADD) $(LIBS) $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(LAPACK_LIBS) $(LIBS) $(LIBS)
