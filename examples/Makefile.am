@@ -2,7 +2,7 @@ AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
 $(BOOST_CPPFLAGS)
 
-LDADD = $(top_builddir)/libopmcore.la 
+LDADD = $(top_builddir)/libopmcore.la
 
 noinst_PROGRAMS =				\
 refine_wells					\
