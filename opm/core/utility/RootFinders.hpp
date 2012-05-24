@@ -59,12 +59,40 @@ namespace Opm
             THROW("Maximum number of iterations exceeded: " << maxiter << "\n"
                   << "Current interval is [" << std::min(x0, x1) << ", "
                   << std::max(x0, x1) << "]");
+            return -1e100; // Never reached.
+        }
+    };
+
+
+    struct WarnAndContinueOnError
+    {
+        static double handleBracketingFailure(const double x0, const double x1, const double f0, const double f1)
+        {
+            MESSAGE("Error in parameters, zero not bracketed: [a, b] = ["
+                    << x0 << ", " << x1 << "]    f(a) = " << f0 << "   f(b) = " << f1
+                    << "");
+            return std::fabs(f0) < std::fabs(f1) ? x0 : x1;
+        }
+        static double handleTooManyIterations(const double x0, const double x1, const int maxiter)
+        {
+            MESSAGE("Maximum number of iterations exceeded: " << maxiter
+                    << ", current interval is [" << std::min(x0, x1) << ", "
+                    << std::max(x0, x1) << "]");
+            return 0.5*(x0 + x1);
         }
     };
 
 
     struct ContinueOnError
     {
+        static double handleBracketingFailure(const double x0, const double x1, const double f0, const double f1)
+        {
+            return std::fabs(f0) < std::fabs(f1) ? x0 : x1;
+        }
+        static double handleTooManyIterations(const double x0, const double x1, const int /*maxiter*/)
+        {
+            return 0.5*(x0 + x1);
+        }
     };
 
 
@@ -82,11 +110,11 @@ namespace Opm
 	/// Current variant is the 'Pegasus' method.
         template <class Functor>
 	inline static double solve(const Functor& f,
-                            const double a,
-                            const double b,
-                            const int max_iter,
-                            const double tolerance,
-                            int& iterations_used)
+                                   const double a,
+                                   const double b,
+                                   const int max_iter,
+                                   const double tolerance,
+                                   int& iterations_used)
 	{
 	    using namespace std;
 	    const double macheps = numeric_limits<double>::epsilon();
@@ -161,12 +189,12 @@ namespace Opm
         /// This version takes an extra parameter for the initial guess.
 	template <class Functor>
 	inline static double solve(const Functor& f,
-                            const double initial_guess,
-                            const double a,
-                            const double b,
-                            const int max_iter,
-                            const double tolerance,
-                            int& iterations_used)
+                                   const double initial_guess,
+                                   const double a,
+                                   const double b,
+                                   const int max_iter,
+                                   const double tolerance,
+                                   int& iterations_used)
 	{
 	    using namespace std;
 	    const double macheps = numeric_limits<double>::epsilon();
@@ -201,8 +229,7 @@ namespace Opm
                 f0 = f_initial;
             }
 	    if (f0*f1 > 0.0) {
-		THROW("Error in parameters, zero not bracketed: [a, b] = ["
-		      << a << ", " << b << "]    fa = " << f0 << "   fb = " << f1);
+                return ErrorPolicy::handleBracketingFailure(a, b, f0, f1);
 	    }
 	    iterations_used = 0;
 	    // In every iteraton, x1 is the last point computed,
@@ -213,9 +240,7 @@ namespace Opm
 // 		cout << "xnew = " << xnew << "    fnew = " << fnew << endl;
 		++iterations_used;
 		if (iterations_used > max_iter) {
-		    THROW("Maximum number of iterations exceeded.\n"
-			  << "Current interval is [" << min(x0, x1) << ", "
-			  << max(x0, x1) << "]");
+                    return ErrorPolicy::handleTooManyIterations(x0, x1, max_iter);
 		}
 		if (fabs(fnew) < epsF) {
 		    return xnew;
