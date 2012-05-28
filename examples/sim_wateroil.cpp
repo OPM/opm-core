@@ -49,7 +49,7 @@
 #include <opm/core/WellState.hpp>
 #include <opm/core/transport/GravityColumnSolver.hpp>
 
-#include <opm/core/transport/reorder/TransportModelTwophase.hpp>
+#include <opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp>
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -68,7 +68,7 @@
 #include <vector>
 #include <numeric>
 
-#define TRANSPORT_SOLVER_FIXED 0
+#define TRANSPORT_SOLVER_FIXED 1
 
 
 template <class State>
@@ -159,7 +159,7 @@ main(int argc, char** argv)
         }
         output_interval = param.getDefault("output_interval", output_interval);
     }
-    // const int num_transport_substeps = param.getDefault("num_transport_substeps", 1);
+    const int num_transport_substeps = param.getDefault("num_transport_substeps", 1);
 
     // If we have a "deck_filename", grid and props will be read from that.
     bool use_deck = param.has("deck_filename");
@@ -307,7 +307,7 @@ main(int argc, char** argv)
 #if TRANSPORT_SOLVER_FIXED
     const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
     const int nl_maxiter = param.getDefault("nl_maxiter", 30);
-    Opm::TransportModelTwophase reorder_model(*grid->c_grid(), *props, nl_tolerance, nl_maxiter);
+    Opm::TransportModelCompressibleTwophase reorder_model(*grid->c_grid(), *props, nl_tolerance, nl_maxiter);
     if (use_gauss_seidel_gravity) {
         reorder_model.initGravity(grav);
     }
@@ -427,12 +427,13 @@ main(int argc, char** argv)
         }
         for (int tr_substep = 0; tr_substep < num_transport_substeps; ++tr_substep) {
             Opm::toWaterSat(state.saturation(), reorder_sat);
-            reorder_model.solve(&state.faceflux()[0], &porevol[0], &reorder_src[0],
-                                stepsize, &reorder_sat[0]);
+            reorder_model.solve(&state.faceflux()[0], &state.pressure()[0], &state.surfacevol()[0],
+                                &porevol[0], &reorder_src[0], stepsize, &reorder_sat[0]);
             Opm::toBothSat(reorder_sat, state.saturation());
-            Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
+            // Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
             if (use_segregation_split) {
-                reorder_model.solveGravity(columns, &porevol[0], stepsize, reorder_sat);
+                THROW("Segregation not implemented yet.");
+                // reorder_model.solveGravity(columns, &porevol[0], stepsize, reorder_sat);
                 Opm::toBothSat(reorder_sat, state.saturation());
             }
         }

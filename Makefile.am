@@ -113,6 +113,7 @@ opm/core/transport/spu_explicit.c                       \
 opm/core/transport/spu_implicit.c			\
 opm/core/transport/transport_source.c			\
 opm/core/transport/reorder/TransportModelInterface.cpp	\
+opm/core/transport/reorder/TransportModelCompressibleTwophase.cpp	\
 opm/core/transport/reorder/TransportModelTwophase.cpp	\
 opm/core/transport/reorder/reordersequence.cpp		\
 opm/core/transport/reorder/nlsolvers.c			\
@@ -243,6 +244,7 @@ opm/core/transport/transport_source.h		\
 opm/core/transport/GravityColumnSolver.hpp		\
 opm/core/transport/GravityColumnSolver_impl.hpp		\
 opm/core/transport/reorder/TransportModelInterface.hpp	\
+opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp	\
 opm/core/transport/reorder/TransportModelTwophase.hpp	\
 opm/core/transport/reorder/nlsolvers.h		\
 opm/core/transport/reorder/reordersequence.h	\
