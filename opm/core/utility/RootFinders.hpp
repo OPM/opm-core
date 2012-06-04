@@ -293,37 +293,41 @@ namespace Opm
 
 
 
-
-        template <class Functor>
-        inline void bracketZero(const Functor& f,
-                                const double x0,
-                                const double dx,
-                                double& a,
-                                double& b)
-        {
-            const int max_iters = 100;
-            double f0 = f(x0);
-            double cur_dx = dx;
-            int i = 0;
-            for (; i < max_iters; ++i) {
-                double x = x0 + cur_dx;
-                double f_new = f(x);
-                if (f0*f_new <= 0.0) {
-                    break;
-                }
-                cur_dx = -2.0*cur_dx;
+    /// Attempts to find an interval bracketing a zero by successive
+    /// enlargement of search interval.
+    template <class Functor>
+    inline void bracketZero(const Functor& f,
+                            const double x0,
+                            const double dx,
+                            double& a,
+                            double& b)
+    {
+        const int max_iters = 100;
+        double f0 = f(x0);
+        double cur_dx = dx;
+        int i = 0;
+        for (; i < max_iters; ++i) {
+            double x = x0 + cur_dx;
+            double f_new = f(x);
+            if (f0*f_new <= 0.0) {
+                break;
             }
-            if (i == max_iters) {
-                THROW("Could not bracket zero in " << max_iters << "iterations.");
-            }
-            if (cur_dx < 0.0) {
-                a = x0 + cur_dx;
-                b = i < 2 ? x0 : x0 + 0.25*cur_dx;
-            } else {
-                a = i < 2 ? x0 : x0 + 0.25*cur_dx;
-                b = x0 + cur_dx;
-            }
+            cur_dx = -2.0*cur_dx;
         }
+        if (i == max_iters) {
+            THROW("Could not bracket zero in " << max_iters << "iterations.");
+        }
+        if (cur_dx < 0.0) {
+            a = x0 + cur_dx;
+            b = i < 2 ? x0 : x0 + 0.25*cur_dx;
+        } else {
+            a = i < 2 ? x0 : x0 + 0.25*cur_dx;
+            b = x0 + cur_dx;
+        }
+    }
+
+
+
 
 
 } // namespace Opm
