@@ -150,6 +150,7 @@ public:                                                                         
     SPECIAL_FIELD(WCONINJE);
     SPECIAL_FIELD(WCONPROD);
     SPECIAL_FIELD(WELTARG);
+    SPECIAL_FIELD(WELOPEN);
     SPECIAL_FIELD(EQUIL);
     SPECIAL_FIELD(PVCDO);
     SPECIAL_FIELD(TSTEP);
@@ -205,7 +206,8 @@ private:
     // For SCHEDULE handling.
     enum ReadingMode { Regular, Timesteps };
     ReadingMode current_reading_mode_;
-    boost::gregorian::date current_reading_date_;
+    boost::gregorian::date start_date_;
+    double current_time_days_;
     int current_epoch_;
     typedef std::map<std::string, SpecialFieldPtr> SpecialMap;
     std::vector<SpecialMap> special_field_by_epoch_;

@@ -41,6 +41,7 @@
 #include <exception>
 #include <algorithm>
 #include <limits>
+#include <numeric>
 #include <cfloat>
 #include <opm/core/eclipse/EclipseGridParser.hpp>
 #include <opm/core/eclipse/EclipseGridParserHelpers.hpp>
@@ -97,6 +98,7 @@ namespace EclipseKeywords
           string("SGOF"),     string("SWOF"),   string("ROCK"),
           string("ROCKTAB"),  string("WELSPECS"), string("COMPDAT"),
           string("WCONINJE"), string("WCONPROD"), string("WELTARG"),
+          string("WELOPEN"),
           string("EQUIL"),    string("PVCDO"),    string("TSTEP"),
           string("PLYVISC"),  string("PLYROCK"),  string("PLYADS"),
           string("PLYMAX"),   string("TLMIXPAR"), string("WPOLYMER"),
@@ -280,6 +282,8 @@ namespace {
 EclipseGridParser::EclipseGridParser()
 //---------------------------------------------------------------------------
     : current_reading_mode_(Regular),
+      start_date_(boost::date_time::not_a_date_time),
+      current_time_days_(0.0),
       current_epoch_(0)
 {
 }
@@ -290,6 +294,8 @@ EclipseGridParser::EclipseGridParser()
 EclipseGridParser::EclipseGridParser(const string& filename, bool convert_to_SI)
 //---------------------------------------------------------------------------
     : current_reading_mode_(Regular),
+      start_date_(boost::date_time::not_a_date_time),
+      current_time_days_(0.0),
       current_epoch_(0)
 {
     // Store directory of filename
@@ -384,22 +390,50 @@ void EclipseGridParser::readImpl(istream& is)
                 break;
             }
             case Timestepping: {
+                SpecialMap& sm = special_field_by_epoch_[current_epoch_];
+                if (start_date_.is_not_a_date()) {
+                    // Set it to START date, or default if no START.
+                    // This will only ever happen in the first epoch,
+                    // upon first encountering a timestepping keyword.
+                    SpecialMap::const_iterator it = sm.find("START");
+                    if (hasField("START")) {
+                        start_date_ = getSTART().date;
+                    } else {
+                        start_date_ = boost::gregorian::date(1983, 1, 1);
+                    }
+                }
                 if (current_reading_mode_ == Regular) {
                     current_reading_mode_ = Timesteps;
                 }
-                SpecialMap& sm = special_field_by_epoch_[current_epoch_];
-                // Append to current epoch's TSTEP, if it exists.
+                // Get current epoch's TSTEP, if it exists, create new if not.
                 SpecialMap::iterator it = sm.find("TSTEP");
+                TSTEP* tstep = 0;
                 if (it != sm.end()) {
-                    it->second->read(is); // This will append to the TSTEP object.
+                    tstep = dynamic_cast<TSTEP*>(it->second.get());
                 } else {
-                    // There is no existing TSTEP for this epoch, create it.
-                    SpecialFieldPtr sb_ptr = createSpecialField(is, keyword);
-                    if (sb_ptr) {
-                        sm[keyword] = sb_ptr;
-                    } else {
-                        THROW("Could not create field " << keyword);
+                    SpecialFieldPtr sb_ptr(new TSTEP());
+                    tstep = dynamic_cast<TSTEP*>(sb_ptr.get());
+                    sm["TSTEP"] = sb_ptr;
+                }
+                ASSERT(tstep != 0);
+                // Append new steps to current TSTEP object
+                if (keyword == "TSTEP") {
+                    const int num_steps_old = tstep->tstep_.size();
+                    tstep->read(is); // This will append to the TSTEP object.
+                    const double added_days
+                        = std::accumulate(tstep->tstep_.begin() + num_steps_old, tstep->tstep_.end(), 0.0);
+                    current_time_days_ += added_days;
+                } else if (keyword == "DATES") {
+                    DATES dates;
+                    dates.read(is);
+                    for (std::size_t dix = 0; dix < dates.dates.size(); ++dix) {
+                        boost::gregorian::date_duration since_start = dates.dates[dix] - start_date_;
+                        double step = double(since_start.days()) - current_time_days_;
+                        tstep->tstep_.push_back(step);
+                        current_time_days_ = double(since_start.days());
                     }
+                } else {
+                    THROW("Keyword " << keyword << " cannot be handled here.");
                 }
                 break;
             }
