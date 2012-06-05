@@ -147,6 +147,7 @@ namespace {
     enum FieldType {
         Integer,
         FloatingPoint,
+        Timestepping,
         SpecialField,
         IgnoreWithData,
         IgnoreNoData,
@@ -161,6 +162,8 @@ namespace {
             return Integer;
         } else if (count(floating_fields, floating_fields + num_floating_fields, keyword)) {
             return FloatingPoint;
+        } else if (keyword == "TSTEP" || keyword == "DATES") {
+            return Timestepping;
         } else if (count(special_fields, special_fields + num_special_fields, keyword)) {
             return SpecialField;
         } else if (count(ignore_with_data, ignore_with_data + num_ignore_with_data, keyword)) {
@@ -276,6 +279,8 @@ namespace {
 //---------------------------------------------------------------------------
 EclipseGridParser::EclipseGridParser()
 //---------------------------------------------------------------------------
+    : current_reading_mode_(NonTimesteps),
+      current_epoch_(0)
 {
 }
 
@@ -284,6 +289,8 @@ EclipseGridParser::EclipseGridParser()
 //---------------------------------------------------------------------------
 EclipseGridParser::EclipseGridParser(const string& filename, bool convert_to_SI)
 //---------------------------------------------------------------------------
+    : current_reading_mode_(NonTimesteps),
+      current_epoch_(0)
 {
     // Store directory of filename
     boost::filesystem::path p(filename);
@@ -304,13 +311,39 @@ void EclipseGridParser::read(istream& is, bool convert_to_SI)
 {
     integer_field_map_.clear();
     floating_field_map_.clear();
-    special_field_map_.clear();
+    special_field_by_epoch_.clear();
+    special_field_by_epoch_.push_back(SpecialMap());
 
     readImpl(is);
+
+    current_epoch_ = 0;
+
     computeUnits();
     if (convert_to_SI) {
         convertToSI();
     }
+
+#define VERBOSE_LIST_FIELDS 1
+#if VERBOSE_LIST_FIELDS
+    std::cout << "\nInteger fields:\n";
+    for (std::map<string, std::vector<int> >::iterator
+             i = integer_field_map_.begin(); i != integer_field_map_.end(); ++i)
+        std::cout << '\t' << i->first << '\n';
+
+    std::cout << "\nFloat fields:\n";
+    for (std::map<string, std::vector<double> >::iterator
+             i = floating_field_map_.begin(); i != floating_field_map_.end(); ++i)
+        std::cout << '\t' << i->first << '\n';
+
+    std::cout << "\nSpecial fields:\n";
+    for (int epoch = 0; epoch < numberOfEpochs(); ++epoch) {
+        std::cout << "Epoch " << epoch << '\n';
+        const SpecialMap& sm = special_field_by_epoch_[epoch];
+        for (SpecialMap::const_iterator i = sm.begin(); i != sm.end(); ++i) {
+            std::cout << '\t' << i->first << '\n';
+        }
+    }
+#endif
 }
 
 //---------------------------------------------------------------------------
@@ -329,7 +362,6 @@ void EclipseGridParser::readImpl(istream& is)
     //       though (of course retaining the basic guarantee).
     map<string, vector<int> >& intmap = integer_field_map_;
     map<string, vector<double> >& floatmap = floating_field_map_;
-    map<string, tr1::shared_ptr<SpecialBase> >& specialmap = special_field_map_;
 
     // Actually read the data
     std::string keyword;
@@ -341,6 +373,7 @@ void EclipseGridParser::readImpl(istream& is)
             cout << "Keyword found: " << keyword << endl;
             //#endif
             FieldType type = classifyKeyword(keyword);
+            // std::cout << "Classification: " << type << std::endl;
             switch (type) {
             case Integer:
                 readVectorData(is, intmap[keyword]);
@@ -348,14 +381,42 @@ void EclipseGridParser::readImpl(istream& is)
             case FloatingPoint:
                 readVectorData(is, floatmap[keyword]);
                 break;
-            case SpecialField: {
-                std::tr1::shared_ptr<SpecialBase> sb_ptr = createSpecialField(is, keyword);
-                if (sb_ptr) {
-                    specialmap[keyword] = sb_ptr;
-                } else {
-                    THROW("Could not create field " << keyword);
+            case Timestepping:
+                if (current_reading_mode_ == NonTimesteps) {
+                    current_reading_mode_ = Timesteps;
+                }
+                // Append to current epoch's TSTEP.
+                // Update current_reading_date_?
+                // Currently do neither...
+                { // A scope to isolate sb_ptr.
+                    SpecialFieldPtr sb_ptr = createSpecialField(is, keyword);
+                    if (sb_ptr) {
+                        special_field_by_epoch_[current_epoch_][keyword] = sb_ptr;
+                    } else {
+                        THROW("Could not create field " << keyword);
+                    }
                 }
                 break;
+            case SpecialField: {
+                if (current_reading_mode_ == Timesteps) {
+                    // We have been reading timesteps, but have
+                    // now encountered something else.
+                    // That means we are in a new epoch.
+                    current_reading_mode_ = NonTimesteps;
+                    // New epoch starts out as a copy of old epoch.
+                    special_field_by_epoch_.push_back(special_field_by_epoch_.back());
+                    ++current_epoch_;
+                    ASSERT(int(special_field_by_epoch_.size()) == current_epoch_ + 1);
+                }
+                { // A scope to isolate sb_ptr.
+                    SpecialFieldPtr sb_ptr = createSpecialField(is, keyword);
+                    if (sb_ptr) {
+                        special_field_by_epoch_[current_epoch_][keyword] = sb_ptr;
+                    } else {
+                        THROW("Could not create field " << keyword);
+                    }
+                    break;
+                }
             }
             case IgnoreWithData: {
                 ignored_fields_.insert(keyword);
@@ -398,24 +459,6 @@ void EclipseGridParser::readImpl(istream& is)
             is >> ignoreLine;
         }
     }
-
-#define VERBOSE_LIST_FIELDS 0
-#if VERBOSE_LIST_FIELDS
-    std::cout << "\nInteger fields:\n";
-    for (std::map<string, std::vector<int> >::iterator
-             i = intmap.begin(); i != intmap.end(); ++i)
-        std::cout << '\t' << i->first << '\n';
-
-    std::cout << "\nFloat fields:\n";
-    for (std::map<string, std::vector<double> >::iterator
-             i = floatmap.begin(); i != floatmap.end(); ++i)
-        std::cout << '\t' << i->first << '\n';
-
-    std::cout << "\nSpecial fields:\n";
-    for (std::map<string, std::tr1::shared_ptr<SpecialBase> >::iterator
-              i = specialmap.begin(); i != specialmap.end(); ++i)
-        std::cout << '\t' << i->first << '\n';
-#endif
 }
 
 
@@ -425,9 +468,12 @@ void EclipseGridParser::convertToSI()
 //---------------------------------------------------------------------------
 {
     // Convert all special fields.
-    typedef std::map<string, std::tr1::shared_ptr<SpecialBase> >::iterator SpecialIt;
-    for (SpecialIt i = special_field_map_.begin(); i != special_field_map_.end(); ++i) {
-        i->second->convertToSI(units_);
+    typedef SpecialMap::iterator SpecialIt;
+    for (int epoch = 0; epoch < numberOfEpochs(); ++epoch) {
+        SpecialMap& sm = special_field_by_epoch_[epoch];
+        for (SpecialIt i = sm.begin(); i != sm.end(); ++i) {
+            i->second->convertToSI(units_);
+        }
     }
 
     // Convert all floating point fields.
@@ -479,7 +525,7 @@ bool EclipseGridParser::hasField(const string& keyword) const
 {
     string ukey = upcase(keyword);
     return integer_field_map_.count(ukey) || floating_field_map_.count(ukey) ||
-        special_field_map_.count(ukey) || ignored_fields_.count(ukey);
+        special_field_by_epoch_[current_epoch_].count(ukey) || ignored_fields_.count(ukey);
 }
 
 
@@ -505,7 +551,7 @@ vector<string> EclipseGridParser::fieldNames() const
     vector<string> names;
     names.reserve(integer_field_map_.size() +
                   floating_field_map_.size() +
-                  special_field_map_.size() +
+                  special_field_by_epoch_[current_epoch_].size() +
                   ignored_fields_.size());
     {
         map<string, vector<int> >::const_iterator it = integer_field_map_.begin();
@@ -520,8 +566,8 @@ vector<string> EclipseGridParser::fieldNames() const
         }
     }
     {
-        map<string, std::tr1::shared_ptr<SpecialBase> >::const_iterator it = special_field_map_.begin();
-        for (; it != special_field_map_.end(); ++it) {
+        SpecialMap::const_iterator it = special_field_by_epoch_[current_epoch_].begin();
+        for (; it != special_field_by_epoch_[current_epoch_].end(); ++it) {
             names.push_back(it->first);
         }
     }
@@ -533,6 +579,24 @@ vector<string> EclipseGridParser::fieldNames() const
     }
     return names;
 }
+
+
+//---------------------------------------------------------------------------
+int EclipseGridParser::numberOfEpochs() const
+//---------------------------------------------------------------------------
+{
+    return special_field_by_epoch_.size();
+}
+
+
+//---------------------------------------------------------------------------
+void EclipseGridParser::setCurrentEpoch(int epoch)
+//---------------------------------------------------------------------------
+{
+    ASSERT(epoch >= 0 && epoch < numberOfEpochs());
+    current_epoch_ = epoch;
+}
+
 
 //---------------------------------------------------------------------------
 const std::vector<int>& EclipseGridParser::getIntegerValue(const std::string& keyword) const
@@ -574,8 +638,8 @@ const std::vector<double>& EclipseGridParser::getFloatingPointValue(const std::s
 const std::tr1::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const std::string& keyword) const
 //---------------------------------------------------------------------------
 {
-    map<string, std::tr1::shared_ptr<SpecialBase> >::const_iterator it = special_field_map_.find(keyword);
-    if (it == special_field_map_.end()) {
+    SpecialMap::const_iterator it = special_field_by_epoch_[current_epoch_].find(keyword);
+    if (it == special_field_by_epoch_[current_epoch_].end()) {
         THROW("No such field: " << keyword);
     } else {
         return it->second;
@@ -617,7 +681,7 @@ void EclipseGridParser::setSpecialField(const std::string& keyword,
                                         std::tr1::shared_ptr<SpecialBase> field)
 //---------------------------------------------------------------------------
 {
-    special_field_map_[keyword] = field;
+    special_field_by_epoch_[current_epoch_][keyword] = field;
 }
 
 //---------------------------------------------------------------------------

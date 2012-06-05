@@ -94,6 +94,14 @@ public:
     /// The keywords/fields found in the file.
     std::vector<std::string> fieldNames() const;
 
+    /// Returns the number of distinct epochs found in the deck SCHEDULE.
+    int numberOfEpochs() const;
+
+    /// Sets the current epoch.
+    /// Valid arguments are in [0, ..., numberOfEpochs() - 1].
+    /// After reading, current epoch always starts at 0.
+    void setCurrentEpoch(int epoch);
+
     /// Returns a reference to a vector containing the values
     /// corresponding to the given integer keyword.
     const std::vector<int>& getIntegerValue(const std::string& keyword) const;
@@ -102,10 +110,12 @@ public:
     /// corresponding to the given floating-point keyword.
     const std::vector<double>& getFloatingPointValue(const std::string& keyword) const;
 
+    typedef std::tr1::shared_ptr<SpecialBase> SpecialFieldPtr;
+
     /// Returns a reference to a vector containing pointers to the values 
     /// corresponding to the given keyword when the values are not only integers
     /// or floats.
-    const std::tr1::shared_ptr<SpecialBase> getSpecialValue(const std::string& keyword) const;
+    const SpecialFieldPtr getSpecialValue(const std::string& keyword) const;
 
     // This macro implements support for a special field keyword. It requires that a subclass
     // of SpecialBase exists, that has the same name as the keyword.
@@ -170,7 +180,7 @@ public:                                                                         
     void setFloatingPointField(const std::string& keyword, const std::vector<double>& field);
 
     /// Sets a special field to have a particular value.
-    void setSpecialField(const std::string& keyword, std::tr1::shared_ptr<SpecialBase> field);
+    void setSpecialField(const std::string& keyword, SpecialFieldPtr field);
 
     /// Compute the units used by the deck, depending on the presence
     /// of keywords such as METRIC, FIELD etc.  It is an error to call
@@ -181,17 +191,24 @@ public:                                                                         
     const EclipseUnits& units() const;
 
 private:
-    std::tr1::shared_ptr<SpecialBase> createSpecialField(std::istream& is, const std::string& fieldname);
+    SpecialFieldPtr createSpecialField(std::istream& is, const std::string& fieldname);
     void readImpl(std::istream& is);
 
 
     std::string directory_;
     std::map<std::string, std::vector<int> > integer_field_map_;
     std::map<std::string, std::vector<double> > floating_field_map_;
-    std::map<std::string, std::tr1::shared_ptr<SpecialBase> > special_field_map_;
+    // std::map<std::string, SpecialFieldPtr> special_field_map_;
     std::set<std::string> ignored_fields_;
-    std::tr1::shared_ptr<SpecialBase> empty_special_field_;
     EclipseUnits units_;
+
+    // For SCHEDULE handling.
+    enum ReadingMode { NonTimesteps, Timesteps };
+    ReadingMode current_reading_mode_;
+    boost::gregorian::date current_reading_date_;
+    int current_epoch_;
+    typedef std::map<std::string, SpecialFieldPtr> SpecialMap;
+    std::vector<SpecialMap> special_field_by_epoch_;
 };
 
 
