@@ -1,9 +1,3 @@
-AC_DEFUN([OPM_F90_COMPILATION_SYSTEM],
-[AC_REQUIRE([AC_PROG_FC_C_O])dnl
- AC_REQUIRE([AC_FC_WRAPPERS])dnl
- AC_REQUIRE([AC_FC_LIBRARY_LDFLAGS])dnl
-])[]dnl
-
 AC_DEFUN([OPM_AGMG],dnl
 [AC_ARG_WITH([agmg],dnl
  [AS_HELP_STRING([--with-agmg=SRCDIR],dnl
@@ -23,7 +17,10 @@ AC_DEFUN([OPM_AGMG],dnl
  [build_agmg="no"])[]dnl
 
  AS_IF([test x"$build_agmg" = x"yes"],dnl
-   [AC_REQUIRE([OPM_F90_COMPILATION_SYSTEM])], [:])[]dnl
+   [AC_PROG_FC_C_O[]dnl
+    AC_FC_WRAPPERS[]dnl
+    AC_FC_LIBRARY_LDFLAGS[]dnl
+   ], [:])[]dnl
 
  AM_CONDITIONAL([BUILD_AGMG], [test x"$build_agmg" = x"yes"])
 ])[]dnl
