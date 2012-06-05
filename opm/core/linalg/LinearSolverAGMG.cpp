@@ -38,7 +38,7 @@
 // Note that both the matrix entries and column indices are writable.
 // The solver may permute the matrix entries within each row during
 // the setup phase.
-#define DAGMG_ F77_FUNC(dagmg, DAGMG)
+#define DAGMG_ FC_FUNC(dagmg, DAGMG)
 
 extern "C"
 void
