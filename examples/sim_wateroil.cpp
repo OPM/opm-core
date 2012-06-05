@@ -27,7 +27,7 @@
 #include <opm/core/grid.h>
 #include <opm/core/GridManager.hpp>
 #include <opm/core/newwells.h>
-#include <opm/core/WellsManager.hpp>
+#include <opm/core/wells/WellsManager.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/initState.hpp>
 #include <opm/core/utility/SimulatorTimer.hpp>
@@ -44,9 +44,9 @@
 
 #include <opm/core/linalg/LinearSolverFactory.hpp>
 
-#include <opm/core/ColumnExtract.hpp>
-#include <opm/core/BlackoilState.hpp>
-#include <opm/core/WellState.hpp>
+#include <opm/core/utility/ColumnExtract.hpp>
+#include <opm/core/simulator/BlackoilState.hpp>
+#include <opm/core/simulator/WellState.hpp>
 #include <opm/core/transport/GravityColumnSolver.hpp>
 
 #include <opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp>
