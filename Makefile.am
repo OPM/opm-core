@@ -271,3 +271,13 @@ opm/core/linalg/LinearSolverIstl.cpp
 nobase_include_HEADERS +=			\
 opm/core/linalg/LinearSolverIstl.hpp
 endif
+
+
+if BUILD_AGMG
+libopmcore_la_SOURCES +=			\
+$(AGMG_SRCDIR)/dagmg.f90			\
+$(AGMG_SRCDIR)/dagmg_mumps.f90
+
+libopmcore_la_LDFLAGS +=			\
+$(FCLIBS)
+endif

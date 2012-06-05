@@ -42,6 +42,7 @@ AX_BOOST_FILESYSTEM
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
 AX_DUNE_ISTL
+OPM_AGMG
 
 # Checks for header files.
 AC_CHECK_HEADERS([float.h limits.h stddef.h stdlib.h string.h])
