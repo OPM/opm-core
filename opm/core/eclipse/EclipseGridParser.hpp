@@ -203,7 +203,7 @@ private:
     EclipseUnits units_;
 
     // For SCHEDULE handling.
-    enum ReadingMode { NonTimesteps, Timesteps };
+    enum ReadingMode { Regular, Timesteps };
     ReadingMode current_reading_mode_;
     boost::gregorian::date current_reading_date_;
     int current_epoch_;

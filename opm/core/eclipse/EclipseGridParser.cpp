@@ -279,7 +279,7 @@ namespace {
 //---------------------------------------------------------------------------
 EclipseGridParser::EclipseGridParser()
 //---------------------------------------------------------------------------
-    : current_reading_mode_(NonTimesteps),
+    : current_reading_mode_(Regular),
       current_epoch_(0)
 {
 }
@@ -289,7 +289,7 @@ EclipseGridParser::EclipseGridParser()
 //---------------------------------------------------------------------------
 EclipseGridParser::EclipseGridParser(const string& filename, bool convert_to_SI)
 //---------------------------------------------------------------------------
-    : current_reading_mode_(NonTimesteps),
+    : current_reading_mode_(Regular),
       current_epoch_(0)
 {
     // Store directory of filename
@@ -375,48 +375,51 @@ void EclipseGridParser::readImpl(istream& is)
             FieldType type = classifyKeyword(keyword);
             // std::cout << "Classification: " << type << std::endl;
             switch (type) {
-            case Integer:
+            case Integer: {
                 readVectorData(is, intmap[keyword]);
                 break;
-            case FloatingPoint:
+            }
+            case FloatingPoint: {
                 readVectorData(is, floatmap[keyword]);
                 break;
-            case Timestepping:
-                if (current_reading_mode_ == NonTimesteps) {
+            }
+            case Timestepping: {
+                if (current_reading_mode_ == Regular) {
                     current_reading_mode_ = Timesteps;
                 }
-                // Append to current epoch's TSTEP.
-                // Update current_reading_date_?
-                // Currently do neither...
-                { // A scope to isolate sb_ptr.
+                SpecialMap& sm = special_field_by_epoch_[current_epoch_];
+                // Append to current epoch's TSTEP, if it exists.
+                SpecialMap::iterator it = sm.find("TSTEP");
+                if (it != sm.end()) {
+                    it->second->read(is); // This will append to the TSTEP object.
+                } else {
+                    // There is no existing TSTEP for this epoch, create it.
                     SpecialFieldPtr sb_ptr = createSpecialField(is, keyword);
                     if (sb_ptr) {
-                        special_field_by_epoch_[current_epoch_][keyword] = sb_ptr;
+                        sm[keyword] = sb_ptr;
                     } else {
                         THROW("Could not create field " << keyword);
                     }
                 }
                 break;
+            }
             case SpecialField: {
                 if (current_reading_mode_ == Timesteps) {
                     // We have been reading timesteps, but have
                     // now encountered something else.
                     // That means we are in a new epoch.
-                    current_reading_mode_ = NonTimesteps;
-                    // New epoch starts out as a copy of old epoch.
-                    special_field_by_epoch_.push_back(special_field_by_epoch_.back());
+                    current_reading_mode_ = Regular;
+                    special_field_by_epoch_.push_back(SpecialMap());
                     ++current_epoch_;
                     ASSERT(int(special_field_by_epoch_.size()) == current_epoch_ + 1);
                 }
-                { // A scope to isolate sb_ptr.
-                    SpecialFieldPtr sb_ptr = createSpecialField(is, keyword);
-                    if (sb_ptr) {
-                        special_field_by_epoch_[current_epoch_][keyword] = sb_ptr;
-                    } else {
-                        THROW("Could not create field " << keyword);
-                    }
-                    break;
+                SpecialFieldPtr sb_ptr = createSpecialField(is, keyword);
+                if (sb_ptr) {
+                    special_field_by_epoch_[current_epoch_][keyword] = sb_ptr;
+                } else {
+                    THROW("Could not create field " << keyword);
                 }
+                break;
             }
             case IgnoreWithData: {
                 ignored_fields_.insert(keyword);
