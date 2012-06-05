@@ -276,7 +276,11 @@ endif
 if BUILD_AGMG
 libopmcore_la_SOURCES +=			\
 $(AGMG_SRCDIR)/dagmg.f90			\
-$(AGMG_SRCDIR)/dagmg_mumps.f90
+$(AGMG_SRCDIR)/dagmg_mumps.f90			\
+opm/core/linalg/LinearSolverAGMG.cpp
+
+nobase_include_HEADERS +=			\
+opm/core/linalg/LinearSolverAGMG.hpp
 
 libopmcore_la_LDFLAGS +=			\
 $(FCLIBS)
