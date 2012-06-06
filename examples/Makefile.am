@@ -14,17 +14,17 @@ $(LAPACK_LIBS) $(LIBS) $(LIBS)
 noinst_PROGRAMS =				\
 refine_wells					\
 scaneclipsedeck					\
+sim_2p_incomp_reorder				\
 sim_wateroil					\
-wells_example					\
-sim_2p_incomp_reorder
+wells_example
 
 refine_wells_SOURCES  = refine_wells.cpp
 
-sim_wateroil_SOURCES  = sim_wateroil.cpp
-sim_wateroil_LDADD    = $(FULL_LDADD)
-
 sim_2p_incomp_reorder_SOURCES  = sim_2p_incomp_reorder.cpp
 sim_2p_incomp_reorder_LDADD    = $(FULL_LDADD)
+
+sim_wateroil_SOURCES  = sim_wateroil.cpp
+sim_wateroil_LDADD    = $(FULL_LDADD)
 
 wells_example_SOURCES = wells_example.cpp
 
