@@ -109,6 +109,7 @@ opm/core/pressure/ifsh.c                                \
 opm/core/pressure/mimetic/mimetic.c                     \
 opm/core/pressure/mimetic/hybsys_global.c               \
 opm/core/pressure/mimetic/hybsys.c                      \
+opm/core/simulator/SimulatorTwophase.cpp                \
 opm/core/transport/spu_explicit.c                       \
 opm/core/transport/spu_implicit.c			\
 opm/core/transport/transport_source.c			\
@@ -201,9 +202,6 @@ opm/core/wells/InjectionSpecification.hpp		\
 opm/core/wells/ProductionSpecification.hpp		\
 opm/core/GridAdapter.hpp                                \
 opm/core/GridManager.hpp                                \
-opm/core/simulator/BlackoilState.hpp                    \
-opm/core/simulator/TwophaseState.hpp                    \
-opm/core/simulator/WellState.hpp                        \
 opm/core/pressure/fsh.h                                 \
 opm/core/pressure/HybridPressureSolver.hpp              \
 opm/core/pressure/IncompTpfa.hpp                        \
@@ -230,6 +228,10 @@ opm/core/pressure/fsh_common_impl.h                     \
 opm/core/pressure/mimetic/hybsys_global.h               \
 opm/core/pressure/mimetic/hybsys.h                      \
 opm/core/pressure/mimetic/mimetic.h                     \
+opm/core/simulator/BlackoilState.hpp                    \
+opm/core/simulator/SimulatorTwophase.hpp                \
+opm/core/simulator/TwophaseState.hpp                    \
+opm/core/simulator/WellState.hpp                        \
 opm/core/transport/ImplicitTransport.hpp                \
 opm/core/transport/CSRMatrixUmfpackSolver.hpp           \
 opm/core/transport/CSRMatrixBlockAssembler.hpp          \
