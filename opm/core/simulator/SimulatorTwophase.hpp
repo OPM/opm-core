@@ -71,7 +71,7 @@ namespace Opm
                          const Wells* wells,
                          const std::vector<double>& src,
                          const FlowBoundaryConditions* bcs,
-                         const LinearSolverInterface& linsolver,
+                         LinearSolverInterface& linsolver,
                          const double* gravity);
 
         /// Run the simulation.

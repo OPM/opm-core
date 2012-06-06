@@ -65,7 +65,7 @@ namespace Opm
              const Wells* wells,
              const std::vector<double>& src,
              const FlowBoundaryConditions* bcs,
-             const LinearSolverInterface& linsolver,
+             LinearSolverInterface& linsolver,
              const double* gravity);
 
         void run(SimulatorTimer& timer,
@@ -115,7 +115,7 @@ namespace Opm
                                          const Wells* wells,
                                          const std::vector<double>& src,
                                          const FlowBoundaryConditions* bcs,
-                                         const LinearSolverInterface& linsolver,
+                                         LinearSolverInterface& linsolver,
                                          const double* gravity)
     {
         pimpl_.reset(new Impl(param, grid, props, rock_comp, wells, src, bcs, linsolver, gravity));
@@ -204,7 +204,7 @@ namespace Opm
                                   const Wells* wells,
                                   const std::vector<double>& src,
                                   const FlowBoundaryConditions* bcs,
-                                  const LinearSolverInterface& linsolver,
+                                  LinearSolverInterface& linsolver,
                                   const double* gravity)
         : grid_(grid),
           props_(props),
