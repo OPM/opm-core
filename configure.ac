@@ -8,32 +8,33 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
-m4_ifdef([LT_INIT], [LT_INIT])
-
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([opm/core/grid.h])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
-AC_PROG_CXX
 AC_PROG_CC
 AM_PROG_CC_C_O
-m4_ifdef([LT_INIT], [], [AC_PROG_LIBTOOL])
-AC_PROG_RANLIB
 
-# AX_LAPACK requires a working F77 compiler or, rather, its runtime
-# support libraries.
-AC_PROG_F77
-
-# F77 name mangling
-AC_F77_WRAPPERS
+m4_ifdef([LT_INIT],
+         [LT_INIT[]dnl
+          LT_LANG([C++])dnl
+          LT_LANG([Fortran 77])dnl
+          LT_LANG([Fortran])dnl
+         ],dnl
+         [AC_PROG_LIBTOOL[]dnl
+          AC_PROG_CXX[]dnl
+          AC_PROG_F77[]dnl
+          AC_PROG_FC[]dnl
+         ])[]dnl
 
 # Checks for libraries.
 
 # Bring in numerics support (standard library component)
 AC_SEARCH_LIBS([sqrt], [m])
 
-AX_LAPACK
+OPM_LAPACK
+
 AX_BOOST_BASE([1.37])
 AX_BOOST_SYSTEM
 AX_BOOST_DATE_TIME
@@ -41,6 +42,7 @@ AX_BOOST_FILESYSTEM
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
 AX_DUNE_ISTL
+OPM_AGMG
 
 # Checks for header files.
 AC_CHECK_HEADERS([float.h limits.h stddef.h stdlib.h string.h])
