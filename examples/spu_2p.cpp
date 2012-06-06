@@ -567,9 +567,10 @@ main(int argc, char** argv)
                         rc[cell] = rock_comp->rockComp(state.pressure()[cell]);
                     }
                     computePorevolume(*grid->c_grid(), props->porosity(), *rock_comp, state.pressure(), porevol);
+
+                    // prev_pressure = state.pressure();
                     std::copy(state.pressure().begin(), state.pressure().end(), prev_pressure.begin());
                     std::copy(well_bhp.begin(), well_bhp.end(), prev_pressure.begin() + num_cells);
-                    // prev_pressure = state.pressure();
 
                     // compute pressure increment
                     psolver.solveIncrement(totmob, omega, src, wdp, bcs.c_bcs(), porevol, rc,
@@ -594,8 +595,30 @@ main(int argc, char** argv)
                 psolver.computeFaceFlux(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
                                         well_bhp, well_perfrates);
             } else {
+
+                std::vector<double> initial_pressure = state.pressure();
                 psolver.solve(totmob, omega, src, wdp, bcs.c_bcs(), state.pressure(), state.faceflux(),
                               well_bhp, well_perfrates);
+
+                // Compute average pressures of previous and last
+                // step, and total volume.
+                double av_prev_press = 0.;
+                double av_press = 0.;
+                double tot_vol = 0.;
+                for (int cell = 0; cell < num_cells; ++cell) {
+                    av_prev_press += initial_pressure[cell]*grid->c_grid()->cell_volumes[cell];
+                    av_press      += state.pressure()[cell]*grid->c_grid()->cell_volumes[cell];
+                    tot_vol       += grid->c_grid()->cell_volumes[cell];
+                }
+
+                // Renormalization constant
+                const double ren_const = (av_prev_press - av_press)/tot_vol;
+                for (int cell = 0; cell < num_cells; ++cell) {
+                    state.pressure()[cell] += ren_const;
+                }
+                for (int well = 0; well < num_wells; ++well) {
+                    well_bhp[well] += ren_const;
+                }
             }
             pressure_timer.stop();
             double pt = pressure_timer.secsSinceStart();
