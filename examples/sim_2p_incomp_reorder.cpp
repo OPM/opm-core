@@ -48,7 +48,6 @@
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/simulator/SimulatorTwophase.hpp>
 
-#include <boost/filesystem/convenience.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 
