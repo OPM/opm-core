@@ -70,6 +70,8 @@ namespace Opm
 #endif  // HAVE_AGMG
     }
 
+    LinearSolverAGMG::~LinearSolverAGMG() {}
+    
     LinearSolverInterface::LinearSolverReport
     LinearSolverAGMG::solve(const int     size    ,
                             const int     nonzeros,
