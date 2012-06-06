@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <iomanip>
@@ -10,10 +11,26 @@
 #include <opm/core/linalg/LinearSolverAGMG.hpp>
 
 namespace {
+    std::size_t
+    compute_nnz(const std::size_t m)
+    {
+        assert (m > 0);
+
+        std::size_t nnz = m;              // A(i,i)
+
+        nnz += (m > 1) ? 2           : 0; // A(0,1), A(m-1,m-2)
+        nnz += (m > 2) ? 2 * (m - 2) : 0; // A(i,i-1), A(i,i+1)
+
+        return nnz;
+    }
+
+
     boost::shared_ptr<CSRMatrix>
     build_laplace_1d(const std::size_t m)
     {
-        const std::size_t nnz = 3*(m - 2) + 2*2;
+        assert (m >= 2);
+
+        const std::size_t nnz = compute_nnz(m);
 
         boost::shared_ptr<CSRMatrix>
             A(csrmatrix_new_known_nnz(m, nnz), csrmatrix_delete);
