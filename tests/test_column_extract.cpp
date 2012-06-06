@@ -6,7 +6,7 @@
 
 #define BOOST_TEST_MODULE ColumnExtractTest
 #include <boost/test/unit_test.hpp>
-#include <opm/core/ColumnExtract.hpp>
+#include <opm/core/utility/ColumnExtract.hpp>
 #include <opm/core/GridManager.hpp>
 #include <opm/core/eclipse/EclipseGridParser.hpp>
 

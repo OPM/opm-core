@@ -47,3 +47,9 @@ noinst_PROGRAMS    += test_cfs_tpfa
 noinst_PROGRAMS    += test_jacsys
 test_jacsys_SOURCES = test_jacsys.cpp
 endif
+
+
+if BUILD_AGMG
+noinst_PROGRAMS   += test_agmg
+test_agmg_SOURCES  = test_agmg.cpp
+endif

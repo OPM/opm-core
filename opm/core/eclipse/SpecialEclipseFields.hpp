@@ -1658,6 +1658,67 @@ struct WELTARG : public SpecialBase
 };
 
 
+
+struct WelopenLine
+{
+    std::string well_;             // Well name or well name root
+    std::string openshutflag_;     // What to do with the well.
+};
+
+/// Class for keyword WELOPEN
+struct WELOPEN : public SpecialBase
+{
+    std::vector<WelopenLine> welopen;
+
+    WELOPEN()
+    {
+    }
+
+    virtual ~WELOPEN()
+    {}
+
+    virtual std::string name() const {return std::string("WELOPEN");}
+
+    virtual void read(std::istream& is)
+    {
+	while(is) {
+	    std::string wellname = readString(is); 
+	    if (wellname[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    }
+	    while (wellname.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		wellname = readString(is);
+	    }
+	    WelopenLine welopen_line;
+	    welopen_line.well_ = wellname;
+	    welopen_line.openshutflag_ = readString(is);
+	    ignoreSlashLine(is);
+	    welopen.push_back(welopen_line);
+	}
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+	os << name() << std::endl;
+	for (int i=0; i<(int)welopen.size(); ++i) {
+	    os << welopen[i].well_ << "  " 
+	       << welopen[i].openshutflag_
+	       << std::endl;
+	}
+	os << std::endl;
+    }
+
+    virtual void convertToSI(const EclipseUnits& /*units*/)
+    {
+    }
+};
+
+
+
+
 /// Class holding a data line of keyword EQUIL
 struct EquilLine
 {
