@@ -8,12 +8,19 @@ noinst_PROGRAMS =				\
 refine_wells					\
 scaneclipsedeck					\
 sim_wateroil					\
-wells_example
+wells_example					\
+sim_2p_incomp_reorder
 
 refine_wells_SOURCES  = refine_wells.cpp
 
 sim_wateroil_SOURCES  = sim_wateroil.cpp
 sim_wateroil_LDADD    =				\
+$(LDADD) $(LIBS)				\
+$(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB)	\
+$(LAPACK_LIBS) $(LIBS) $(LIBS)
+
+sim_2p_incomp_reorder_SOURCES  = sim_2p_incomp_reorder.cpp
+sim_2p_incomp_reorder_LDADD    =		\
 $(LDADD) $(LIBS)				\
 $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB)	\
 $(LAPACK_LIBS) $(LIBS) $(LIBS)
