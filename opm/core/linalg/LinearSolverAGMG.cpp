@@ -121,4 +121,16 @@ namespace Opm
         rpt.converged = rpt.iterations <= max_it_;
         return rpt;
     }
+
+    void
+    LinearSolverAGMG::setTolerance(const double tol)
+    {
+        rtol_ = tol;
+    }
+
+    double
+    LinearSolverAGMG::getTolerance() const
+    {
+        return rtol_;
+    }
 } // namespace Opm

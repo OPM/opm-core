@@ -82,6 +82,14 @@ namespace Opm
               const int* ia, const int* ja, const double* sa,
               const double* rhs, double* solution) const;
 
+        /// Set tolerance for the linear solver.
+        /// \param[in] tol         tolerance value
+        virtual void setTolerance(const double tol);
+
+        /// Get tolerance for the linear solver.
+        /// \return tolerance value
+        virtual double getTolerance() const;
+
     private:
         int    max_it_;
         double rtol_  ;
