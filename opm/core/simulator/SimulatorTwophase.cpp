@@ -214,7 +214,7 @@ namespace Opm
           bcs_(bcs),
           linsolver_(linsolver),
           gravity_(gravity),
-          psolver_(grid, props.permeability(), gravity, linsolver),
+          psolver_(grid, props.permeability(), gravity, linsolver, wells),
           tsolver_(grid, props, 1e-9, 30)
     {
         // For output.
