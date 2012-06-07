@@ -193,6 +193,8 @@ public:                                                                         
 
 private:
     SpecialFieldPtr createSpecialField(std::istream& is, const std::string& fieldname);
+    SpecialFieldPtr cloneSpecialField(const std::string& fieldname,
+                                      const std::tr1::shared_ptr<SpecialBase> original);
     void readImpl(std::istream& is);
 
 
