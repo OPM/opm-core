@@ -4,7 +4,10 @@ AM_CPPFLAGS =					\
 $(BOOST_CPPFLAGS)
 
 # All targets link to the library
-LDADD = $(top_builddir)/libopmcore.la
+LDADD =						\
+$(top_builddir)/libopmcore.la			\
+$(BOOST_FILESYSTEM_LIB)				\
+$(BOOST_SYSTEM_LIB)
 
 # ----------------------------------------------------------------------
 # Declare products (i.e., the example programs).
@@ -37,4 +40,7 @@ if UMFPACK
 noinst_PROGRAMS += spu_2p
 
 spu_2p_SOURCES   = spu_2p.cpp
+spu_2p_LDADD     =				\
+$(LDADD)					\
+$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 endif
