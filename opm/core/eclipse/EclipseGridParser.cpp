@@ -678,7 +678,7 @@ const std::vector<double>& EclipseGridParser::getFloatingPointValue(const std::s
 
 
 //---------------------------------------------------------------------------
-const SpecialBasePtr EclipseGridParser::getSpecialValue(const std::string& keyword) const
+const std::tr1::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const std::string& keyword) const
 //---------------------------------------------------------------------------
 {
     SpecialMap::const_iterator it = special_field_by_epoch_[current_epoch_].find(keyword);
@@ -690,13 +690,13 @@ const SpecialBasePtr EclipseGridParser::getSpecialValue(const std::string& keywo
 }
 
 //---------------------------------------------------------------------------
-SpecialBasePtr
+std::tr1::shared_ptr<SpecialBase>
 EclipseGridParser::createSpecialField(std::istream& is,
                                       const std::string& fieldname)
 //---------------------------------------------------------------------------
 {
     string ukey = upcase(fieldname);
-    SpecialBasePtr spec_ptr
+    std::tr1::shared_ptr<SpecialBase> spec_ptr
         = Factory<SpecialBase>::createObject(fieldname);
     is >> ignoreWhitespace;
     spec_ptr->read(is);
