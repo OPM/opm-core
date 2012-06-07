@@ -447,11 +447,17 @@ void EclipseGridParser::readImpl(istream& is)
                     ++current_epoch_;
                     ASSERT(int(special_field_by_epoch_.size()) == current_epoch_ + 1);
                 }
-                SpecialFieldPtr sb_ptr = createSpecialField(is, keyword);
-                if (sb_ptr) {
-                    special_field_by_epoch_[current_epoch_][keyword] = sb_ptr;
+                // Check if the keyword already exists. If so, append. Otherwise, create new.
+                SpecialMap::iterator it = special_field_by_epoch_[current_epoch_].find(keyword);
+                if (it != special_field_by_epoch_[current_epoch_].end()) {
+                    it->second->read(is);
                 } else {
-                    THROW("Could not create field " << keyword);
+                    SpecialFieldPtr sb_ptr = createSpecialField(is, keyword);
+                    if (sb_ptr) {
+                        special_field_by_epoch_[current_epoch_][keyword] = sb_ptr;
+                    } else {
+                        THROW("Could not create field " << keyword);
+                    }
                 }
                 break;
             }
@@ -672,7 +678,7 @@ const std::vector<double>& EclipseGridParser::getFloatingPointValue(const std::s
 
 
 //---------------------------------------------------------------------------
-const std::tr1::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const std::string& keyword) const
+const SpecialBasePtr EclipseGridParser::getSpecialValue(const std::string& keyword) const
 //---------------------------------------------------------------------------
 {
     SpecialMap::const_iterator it = special_field_by_epoch_[current_epoch_].find(keyword);
@@ -684,18 +690,19 @@ const std::tr1::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const
 }
 
 //---------------------------------------------------------------------------
-std::tr1::shared_ptr<SpecialBase>
+SpecialBasePtr
 EclipseGridParser::createSpecialField(std::istream& is,
                                       const std::string& fieldname)
 //---------------------------------------------------------------------------
 {
     string ukey = upcase(fieldname);
-    std::tr1::shared_ptr<SpecialBase> spec_ptr
+    SpecialBasePtr spec_ptr
         = Factory<SpecialBase>::createObject(fieldname);
     is >> ignoreWhitespace;
     spec_ptr->read(is);
     return spec_ptr;
 }
+
 
 //---------------------------------------------------------------------------
 void EclipseGridParser::setIntegerField(const std::string& keyword,
