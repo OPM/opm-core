@@ -67,9 +67,12 @@ static int *computeFaceTopology(int *a1,
                                 int intersect[4],
                                 int *faces)
 {
-    int mask[8] = {-1};
+    int mask[8];
     int k;
     int *f;
+
+    for (k = 0; k < 8; k++) { mask[k] = -1; }
+
     /* Which pillar points should we use? */
     if (a1[1] > b1[1]){ mask[0] = b1[1]; } else { mask[0] = a1[1]; }
     if (a2[1] > b2[1]){ mask[2] = b2[1]; } else { mask[2] = a2[1]; }
