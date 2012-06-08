@@ -53,8 +53,13 @@
   Compare function passed to qsortx  */
 static int compare(const void *a, const void *b)
 {
-    if (*(double*)a < *(double*) b) return -1;
-    else return 1;
+    const double a0 = *(const double*) a;
+    const double b0 = *(const double*) b;
+
+    /*                { -1, a < b
+     * compare(a,b) = {  0, a = b
+     *                {  1, a > b */
+    return (a0 > b0) - (a0 < b0);
 }
 
 /*-----------------------------------------------------------------
