@@ -37,6 +37,7 @@
 #include <string>
 #include <cstdlib>
 #include <opm/core/vag_format/vag.hpp>
+#include <opm/core/grid.h>
 //#include "../config.h"
 /* test reading of vag grid format */
 int main(int argc, char** argv)
@@ -55,4 +56,14 @@ int main(int argc, char** argv)
     //std::ofstream is("");
     VAG vag_grid;
     readVagGrid(is,vag_grid);
+    UnstructuredGrid *grid;// make a pointer, can it be avoided??
+    grid = allocate_grid(3,
+		       vag_grid.number_of_volumes,
+		       vag_grid.number_of_faces,
+		       vag_grid.faces_to_vertices.value.size(),
+		       vag_grid.volumes_to_faces.value.size(),
+		       vag_grid.number_of_vertices);
+    vagToUnstructuredGrid(vag_grid,*grid);
+    destroy_grid(grid);
+    
 }

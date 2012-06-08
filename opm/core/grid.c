@@ -19,7 +19,7 @@
 
 #include <opm/core/grid.h>
 #include <stdlib.h>
-
+#include <stdio.h>
 void destroy_grid(struct UnstructuredGrid *g)
 {
     if (g!=NULL)
@@ -58,3 +58,77 @@ create_grid_empty(void)
 
     return G;
 }
+
+struct UnstructuredGrid *
+allocate_grid(size_t ndims ,
+	      size_t ncells,
+	      size_t nfaces,
+	      size_t nfacenodes,
+	      size_t ncellfaces,
+	      size_t nnodes)
+{
+    size_t nel;
+    struct UnstructuredGrid *G;
+    
+    G = create_grid_empty();
+    
+    if (G != NULL) {
+	/* Node fields ---------------------------------------- */
+	nel                 = nnodes * ndims;
+	G->node_coordinates = malloc(nel * sizeof *G->node_coordinates);	    
+	
+	/* Face fields ---------------------------------------- */
+	nel               = nfacenodes;
+	G->face_nodes     = malloc(nel * sizeof *G->face_nodes);
+	    
+	nel               = nfaces + 1;
+	G->face_nodepos   = malloc(nel * sizeof *G->face_nodepos);
+	
+	nel               = 2 * nfaces;
+	G->face_cells     = malloc(nel * sizeof *G->face_cells);
+	
+	nel               = nfaces * ndims;
+	G->face_centroids = malloc(nel * sizeof *G->face_centroids);
+	
+	nel               = nfaces * ndims;
+	G->face_normals   = malloc(nel * sizeof *G->face_normals);
+	
+	nel               = nfaces * 1;
+	G->face_areas     = malloc(nel * sizeof *G->face_areas);
+	
+	
+	/* Cell fields ---------------------------------------- */
+	nel               = ncellfaces;
+	G->cell_faces     = malloc(nel * sizeof *G->cell_faces);
+	    
+	nel               = ncells + 1;
+	G->cell_facepos   = malloc(nel * sizeof *G->cell_facepos);
+	
+	nel               = ncells * ndims;
+	G->cell_centroids = malloc(nel * sizeof *G->cell_centroids);
+	
+	nel               = ncells * 1;
+	G->cell_volumes   = malloc(nel * sizeof *G->cell_volumes);
+	
+	if ((G->node_coordinates == NULL) ||
+	    (G->face_nodes       == NULL) ||
+	    (G->face_nodepos     == NULL) ||
+		(G->face_cells       == NULL) ||
+	    (G->face_centroids   == NULL) ||
+	    (G->face_normals     == NULL) ||
+	    (G->face_areas       == NULL) ||
+	    (G->cell_faces       == NULL) ||
+	    (G->cell_facepos     == NULL) ||
+		(G->cell_centroids   == NULL) ||
+	    (G->cell_volumes     == NULL)  )
+	    {
+		destroy_grid(G);
+		G = NULL;
+	    }
+    }
+    
+    return G;
+}
+
+
+

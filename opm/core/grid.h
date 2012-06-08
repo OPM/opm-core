@@ -26,7 +26,7 @@
  * Main OPM-Core grid data structure along with destructor and default
  * constructor.
  */
-
+#include <stdlib.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -238,6 +238,14 @@ void destroy_grid(struct UnstructuredGrid *g);
  */
 struct UnstructuredGrid *
 create_grid_empty(void);
+    
+struct UnstructuredGrid *
+    allocate_grid(size_t ndims ,
+		  size_t ncells,
+		  size_t nfaces,
+		  size_t nfacenodes,
+		  size_t ncellfaces,
+		  size_t nnodes);
 
 #ifdef __cplusplus
 }

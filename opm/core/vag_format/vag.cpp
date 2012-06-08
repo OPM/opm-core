@@ -34,9 +34,11 @@
 */
 
 #include <opm/core/vag_format/vag.hpp>
+#include <opm/core/grid/cornerpoint_grid.h>	 	      
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <stdlib.h>
 namespace OPM
 {
     void readPosStruct(std::istream& is,int n,PosStruct& pos_struct){
@@ -57,12 +59,12 @@ namespace OPM
 	    }
 	    //cout << endl;
 	}
-	if(!(pos_struct.value.size()==pos_struct.pos[n])){
+	if(!(int(pos_struct.value.size())==pos_struct.pos[n])){
 	    cerr << "Failed to read pos structure" << endl;
 	    cerr << "pos_struct.value.size()" << pos_struct.value.size() << endl;
 	    cerr << "pos_struct.pos[n+1]" << pos_struct.pos[n] << endl;
 	}
-    };
+    }
     void readVagGrid(std::istream& is,OPM::VAG& vag_grid){
 	using namespace std;
 	using namespace OPM;
@@ -166,5 +168,45 @@ namespace OPM
 		//cout << "Found" << keyword << "Number of " << number << endl;
 	    }
 	}
-    };
+    }
+    void vagToUnstructuredGrid(OPM::VAG& vag_grid,UnstructuredGrid& grid){
+	using namespace std;
+	using namespace OPM;
+	cout << "Converting grid" << endl;
+	grid.dimensions=3;
+	grid.number_of_cells=vag_grid.number_of_volumes;
+	grid.number_of_faces=vag_grid.number_of_faces;
+	grid.number_of_faces=vag_grid.number_of_faces;
+	// fill face_nodes
+	for(int i=0;i< int(vag_grid.faces_to_vertices.pos.size());++i){
+	    grid.face_nodepos[i] = vag_grid.faces_to_vertices.pos[i];
+	}	    
+	for(int i=0;i< int(vag_grid.faces_to_vertices.value.size());++i){
+	    grid.face_nodes[i] = vag_grid.faces_to_vertices.value[i]-1;
+	}
+	// fill cell_face
+	for(int i=0;i< int(vag_grid.volumes_to_faces.pos.size());++i){
+	    grid.cell_facepos[i] = vag_grid.volumes_to_faces.pos[i];
+	}	    
+	for(int i=0;i< int(vag_grid.volumes_to_faces.value.size());++i){
+	    grid.cell_faces[i] = vag_grid.volumes_to_faces.value[i]-1;
+	}
+	// fill face_cells
+	for(int i=0;i< int(vag_grid.faces_to_volumes.size());++i){
+	    grid.face_cells[i] = vag_grid.faces_to_volumes[i]-1;
+	}
+
+	// fill node_cordinates. This is the only geometry given in the vag
+	for(int i=0;i< int(vag_grid.vertices.size());++i){
+	    grid.node_coordinates[i] = vag_grid.vertices[i];
+	}
+	// informations in edges, faces_to_eges, faces_to_vertices, volume_to_vertices and materials
+	// is not used
+	cout << "Computing geometry" << endl;
+	compute_geometry(&grid);
+	
+
+
+    }
+
 }

@@ -38,7 +38,7 @@
 
 
 
-
+#include <opm/core/grid.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -81,13 +81,14 @@ namespace OPM
     template <typename T>
     void readVector(std::istream& is,std::vector<T>& vec){
 	using namespace std;
-	for(int i=0;i< vec.size();++i){
+	for(int i=0;i< int(vec.size());++i){
 	    is >> vec[i];
 	}
     }
        
     //PosStruct readPosStruct(std::istream& is,int n){
-    void readPosStruct(std::istream& is,int n,PosStruct& pos_struct);	
+    void readPosStruct(std::istream& is,int n,PosStruct& pos_struct);
+    void vagToUnstructuredGrid(OPM::VAG& vag_grid,UnstructuredGrid& grid);
 }
 #endif  /* OPM_VAG_HPP_HEADER */	
 
