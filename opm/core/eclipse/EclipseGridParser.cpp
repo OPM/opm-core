@@ -395,7 +395,6 @@ void EclipseGridParser::readImpl(istream& is)
                     // Set it to START date, or default if no START.
                     // This will only ever happen in the first epoch,
                     // upon first encountering a timestepping keyword.
-                    SpecialMap::const_iterator it = sm.find("START");
                     if (hasField("START")) {
                         start_date_ = getSTART().date;
                     } else {
