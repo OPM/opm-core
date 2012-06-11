@@ -118,7 +118,8 @@ opm/core/transport/reorder/TransportModelCompressibleTwophase.cpp	\
 opm/core/transport/reorder/TransportModelTwophase.cpp	\
 opm/core/transport/reorder/reordersequence.cpp		\
 opm/core/transport/reorder/nlsolvers.c			\
-opm/core/transport/reorder/tarjan.c
+opm/core/transport/reorder/tarjan.c                     \
+opm/core/vag_format/vag.cpp
 
 nobase_include_HEADERS =                                \
 opm/core/eclipse/CornerpointChopper.hpp                 \
@@ -250,8 +251,8 @@ opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp	\
 opm/core/transport/reorder/TransportModelTwophase.hpp	\
 opm/core/transport/reorder/nlsolvers.h		\
 opm/core/transport/reorder/reordersequence.h	\
-opm/core/transport/reorder/tarjan.h
-
+opm/core/transport/reorder/tarjan.h             \
+opm/core/vag_format/vag.hpp
 # ----------------------------------------------------------------------
 # Optional library constituents.
 
