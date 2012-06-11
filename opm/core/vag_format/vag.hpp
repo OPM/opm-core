@@ -126,8 +126,9 @@ namespace OPM
         assert(vec.size()%n==0);
 	for(int j=0;j< lines;++j){
             for(int i=0;i< n;++i){
-	    os << vec[j*n+i];
+                os << vec[j*n+i] << " ";
             }
+            os << endl;
         }
     }
 
@@ -144,13 +145,20 @@ namespace OPM
        \param[in] pos_struct to write
      */
     void writePosStruct(std::ostream& os,PosStruct& pos_struct);
+    
     /**
        Fill a UnstructuredGrid from a vag_grid.
        \param[out] vag_grid s is a valid vag_grid struct.
        \param[in] grid is a grid with have allocated correct size to each pointer.
      */
-
     void vagToUnstructuredGrid(OPM::VAG& vag_grid,UnstructuredGrid& grid);
+    
+    /**
+       Fill a  vag_grid from UnstructuredGrid 
+       \param[out] vag_grid s is a valid vag_grid struct.
+       \param[in] grid is a grid with have allocated correct size to each pointer.
+     */    
+    void unstructuredGridToVag(UnstructuredGrid& grid, OPM::VAG& vag_grid);
 }
 #endif  /* OPM_VAG_HPP_HEADER */	
 
