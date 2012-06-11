@@ -261,9 +261,9 @@ create_grid_empty(void);
                          (i.e., the number of `half-faces')
    \param[in] nnodes     Number of Nodes.
 
-   \return Fully formed UnstructuredGrid with all fields allocated,
-   but not filled with usefull numbers.  <code>NULL</code> in case of
-   allocation failure.
+   \return Fully formed UnstructuredGrid with all fields except
+   <code>global_cell</code> allocated, but not filled with meaningful
+   values.  <code>NULL</code> in case of allocation failure.
  */
 struct UnstructuredGrid *
 allocate_grid(size_t ndims     ,
