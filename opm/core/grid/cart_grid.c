@@ -174,7 +174,7 @@ allocate_cart_grid(size_t ndims ,
 
     nfacenodes = nfaces * (2 * (ndims - 1));
     ncellfaces = ncells * (2 * ndims);
-    
+
     return allocate_grid(ndims, ncells, nfaces,
                          nfacenodes, ncellfaces, nnodes);
 }
