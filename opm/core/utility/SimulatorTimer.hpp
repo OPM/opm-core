@@ -50,6 +50,9 @@ namespace Opm
 	/// Current step number.
 	int currentStepNum() const;
 
+        /// Set current step number.
+        void setCurrentStepNum(int step);
+
 	/// Current step length.
 	/// Note: if done(), it is an error to call currentStepLength().
 	double currentStepLength() const;

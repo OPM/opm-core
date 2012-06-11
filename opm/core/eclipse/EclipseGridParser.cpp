@@ -395,7 +395,6 @@ void EclipseGridParser::readImpl(istream& is)
                     // Set it to START date, or default if no START.
                     // This will only ever happen in the first epoch,
                     // upon first encountering a timestepping keyword.
-                    SpecialMap::const_iterator it = sm.find("START");
                     if (hasField("START")) {
                         start_date_ = getSTART().date;
                     } else {
@@ -446,12 +445,27 @@ void EclipseGridParser::readImpl(istream& is)
                     special_field_by_epoch_.push_back(SpecialMap());
                     ++current_epoch_;
                     ASSERT(int(special_field_by_epoch_.size()) == current_epoch_ + 1);
+                    // Add clones of all existing special fields to new map.
+                    SpecialMap& oldmap = special_field_by_epoch_[current_epoch_ - 1];
+                    SpecialMap& newmap = special_field_by_epoch_[current_epoch_];
+                    for (SpecialMap::iterator it = oldmap.begin(); it != oldmap.end(); ++it) {
+                        // if (it->first != "TSTEP") {
+                            newmap[it->first] = cloneSpecialField(it->first, it->second);
+                            //}
+                    }
+                    //ASSERT(newmap.count("TSTEP") == 0);
                 }
-                SpecialFieldPtr sb_ptr = createSpecialField(is, keyword);
-                if (sb_ptr) {
-                    special_field_by_epoch_[current_epoch_][keyword] = sb_ptr;
+                // Check if the keyword already exists. If so, append. Otherwise, create new.
+                SpecialMap::iterator it = special_field_by_epoch_[current_epoch_].find(keyword);
+                if (it != special_field_by_epoch_[current_epoch_].end()) {
+                    it->second->read(is);
                 } else {
-                    THROW("Could not create field " << keyword);
+                    SpecialFieldPtr sb_ptr = createSpecialField(is, keyword);
+                    if (sb_ptr) {
+                        special_field_by_epoch_[current_epoch_][keyword] = sb_ptr;
+                    } else {
+                        THROW("Could not create field " << keyword);
+                    }
                 }
                 break;
             }
@@ -696,6 +710,19 @@ EclipseGridParser::createSpecialField(std::istream& is,
     spec_ptr->read(is);
     return spec_ptr;
 }
+
+//---------------------------------------------------------------------------
+std::tr1::shared_ptr<SpecialBase>
+EclipseGridParser::cloneSpecialField(const std::string& fieldname,
+                                     const std::tr1::shared_ptr<SpecialBase> original)
+//---------------------------------------------------------------------------
+{
+    string ukey = upcase(fieldname);
+    std::tr1::shared_ptr<SpecialBase> spec_ptr
+        = Factory<SpecialBase>::cloneObject(fieldname, original);
+    return spec_ptr;
+}
+
 
 //---------------------------------------------------------------------------
 void EclipseGridParser::setIntegerField(const std::string& keyword,

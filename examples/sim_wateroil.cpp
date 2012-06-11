@@ -273,12 +273,9 @@ main(int argc, char** argv)
     }
     double tot_porevol_init = std::accumulate(porevol.begin(), porevol.end(), 0.0);
 
-    // We need a separate reorder_sat, because the reorder
-    // code expects a scalar sw, not both sw and so.
-    std::vector<double> reorder_sat(num_cells);
-    std::vector<double> src(num_cells, 0.0);
 
     // Initialising src
+    std::vector<double> src(num_cells, 0.0);
     if (wells->c_wells()) {
         // Do nothing, wells will be the driving force, not source terms.
         // Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
@@ -426,15 +423,12 @@ main(int argc, char** argv)
             std::cout << "Making " << num_transport_substeps << " transport substeps." << std::endl;
         }
         for (int tr_substep = 0; tr_substep < num_transport_substeps; ++tr_substep) {
-            Opm::toWaterSat(state.saturation(), reorder_sat);
             reorder_model.solve(&state.faceflux()[0], &state.pressure()[0], &state.surfacevol()[0],
-                                &porevol[0], &reorder_src[0], stepsize, &reorder_sat[0]);
-            Opm::toBothSat(reorder_sat, state.saturation());
+                                &porevol[0], &reorder_src[0], stepsize, state.saturation());
             // Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
             if (use_segregation_split) {
                 THROW("Segregation not implemented yet.");
-                // reorder_model.solveGravity(columns, &porevol[0], stepsize, reorder_sat);
-                Opm::toBothSat(reorder_sat, state.saturation());
+                // reorder_model.solveGravity(columns, &porevol[0], stepsize, state.saturation());
             }
         }
 #endif // TRANSPORT_SOLVER_FIXED

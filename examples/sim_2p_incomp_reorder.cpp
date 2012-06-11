@@ -79,43 +79,34 @@ main(int argc, char** argv)
 
     // If we have a "deck_filename", grid and props will be read from that.
     bool use_deck = param.has("deck_filename");
+    boost::scoped_ptr<Opm::EclipseGridParser> deck;
     boost::scoped_ptr<Opm::GridManager> grid;
     boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
-    boost::scoped_ptr<Opm::WellsManager> wells;
     boost::scoped_ptr<Opm::RockCompressibility> rock_comp;
-    Opm::SimulatorTimer simtimer;
     Opm::TwophaseState state;
     // bool check_well_controls = false;
     // int max_well_control_iterations = 0;
     double gravity[3] = { 0.0 };
     if (use_deck) {
         std::string deck_filename = param.get<std::string>("deck_filename");
-        Opm::EclipseGridParser deck(deck_filename);
+        deck.reset(new Opm::EclipseGridParser(deck_filename));
         // Grid init
-        grid.reset(new Opm::GridManager(deck));
+        grid.reset(new Opm::GridManager(*deck));
         // Rock and fluid init
         const int* gc = grid->c_grid()->global_cell;
         std::vector<int> global_cell(gc, gc + grid->c_grid()->number_of_cells);
-        props.reset(new Opm::IncompPropertiesFromDeck(deck, global_cell));
-        // Wells init.
-        wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
+        props.reset(new Opm::IncompPropertiesFromDeck(*deck, global_cell));
         // check_well_controls = param.getDefault("check_well_controls", false);
         // max_well_control_iterations = param.getDefault("max_well_control_iterations", 10);
-        // Timer init.
-        if (deck.hasField("TSTEP")) {
-            simtimer.init(deck);
-        } else {
-            simtimer.init(param);
-        }
         // Rock compressibility.
-        rock_comp.reset(new Opm::RockCompressibility(deck));
+        rock_comp.reset(new Opm::RockCompressibility(*deck));
         // Gravity.
-        gravity[2] = deck.hasField("NOGRAV") ? 0.0 : Opm::unit::gravity;
+        gravity[2] = deck->hasField("NOGRAV") ? 0.0 : Opm::unit::gravity;
         // Init state variables (saturation and pressure).
         if (param.has("init_saturation")) {
             initStateBasic(*grid->c_grid(), *props, param, gravity[2], state);
         } else {
-            initStateFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
+            initStateFromDeck(*grid->c_grid(), *props, *deck, gravity[2], state);
         }
     } else {
         // Grid init.
@@ -128,10 +119,6 @@ main(int argc, char** argv)
         grid.reset(new Opm::GridManager(nx, ny, nz, dx, dy, dz));
         // Rock and fluid init.
         props.reset(new Opm::IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
-        // Wells init.
-        wells.reset(new Opm::WellsManager());
-        // Timer init.
-        simtimer.init(param);
         // Rock compressibility.
         rock_comp.reset(new Opm::RockCompressibility(param));
         // Gravity.
@@ -165,9 +152,8 @@ main(int argc, char** argv)
 
     // Initialising src
     std::vector<double> src(num_cells, 0.0);
-    if (wells->c_wells()) {
+    if (use_deck) {
         // Do nothing, wells will be the driving force, not source terms.
-        // Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
     } else {
         const double default_injection = use_gravity ? 0.0 : 0.1;
         const double flow_per_sec = param.getDefault<double>("injected_porevolumes_per_day", default_injection)
@@ -190,30 +176,69 @@ main(int argc, char** argv)
     const double *grav = use_gravity ? &gravity[0] : 0;
 
 
-    Opm::SimulatorTwophase simulator(param,
-                                     *grid->c_grid(),
-                                     *props,
-                                     rock_comp->isActive() ? rock_comp.get() : 0,
-                                     wells->c_wells(),
-                                     src,
-                                     bcs.c_bcs(),
-                                     linsolver,
-                                     grav);
-
     // Warn if any parameters are unused.
-    if (param.anyUnused()) {
-        std::cout << "--------------------   Unused parameters:   --------------------\n";
-        param.displayUsage();
-        std::cout << "----------------------------------------------------------------" << std::endl;
-    }
+    // if (param.anyUnused()) {
+    //     std::cout << "--------------------   Unused parameters:   --------------------\n";
+    //     param.displayUsage();
+    //     std::cout << "----------------------------------------------------------------" << std::endl;
+    // }
 
     // Write parameters used for later reference.
     // if (output) {
     //     param.writeParam(output_dir + "/spu_2p.param");
     // }
 
-    WellState well_state;
-    well_state.init(wells->c_wells(), state);
 
-    simulator.run(simtimer, state, well_state);
+    if (!use_deck) {
+        // Simple simulation without a deck.
+        Opm::SimulatorTwophase simulator(param,
+                                         *grid->c_grid(),
+                                         *props,
+                                         rock_comp->isActive() ? rock_comp.get() : 0,
+                                         0, // wells
+                                         src,
+                                         bcs.c_bcs(),
+                                         linsolver,
+                                         grav);
+        Opm::SimulatorTimer simtimer;
+        simtimer.init(param);
+        WellState well_state;
+        well_state.init(0, state);
+        simulator.run(simtimer, state, well_state);
+    } else {
+        // With a deck, we may have more epochs etc.
+        WellState well_state;
+        int step = 0;
+        for (int epoch = 0; epoch < deck->numberOfEpochs(); ++epoch) {
+            deck->setCurrentEpoch(epoch);
+            Opm::WellsManager wells(*deck, *grid->c_grid(), props->permeability());
+            Opm::SimulatorTwophase simulator(param,
+                                             *grid->c_grid(),
+                                             *props,
+                                             rock_comp->isActive() ? rock_comp.get() : 0,
+                                             wells.c_wells(),
+                                             src,
+                                             bcs.c_bcs(),
+                                             linsolver,
+                                             grav);
+            // @@@ HACK: we should really make a new well state and
+            // properly transfer old well state to it every epoch,
+            // since number of wells may change etc.
+            if (epoch == 0) {
+                well_state.init(wells.c_wells(), state);
+            }
+            Opm::SimulatorTimer simtimer;
+            if (deck->hasField("TSTEP")) {
+                simtimer.init(*deck);
+            } else {
+                if (epoch != 0) {
+                    THROW("No TSTEP in deck for epoch " << epoch);
+                }
+                simtimer.init(param);
+            }
+            simtimer.setCurrentStepNum(step);
+            simulator.run(simtimer, state, well_state);
+            step = simtimer.currentStepNum();
+        }
+    }
 }

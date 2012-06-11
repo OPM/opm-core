@@ -65,6 +65,18 @@ namespace Opm
 	    return instance().doCreateObject(type);
 	}
 
+	/// Clones an new object of the class associated with the given type string,
+        /// and returns a pointer to it.
+	/// \param type the type string of the class that the user wants to have
+	///             constructed.
+	/// \param original (smart) pointer to object to be cloned.
+        /// \return (smart) pointer to the created object.
+	static ProductPtr cloneObject(const std::string& type,
+                                      const ProductPtr original)
+	{
+	    return instance().doCloneObject(type, original);
+	}
+
 	/// Add a creator to the Factory.
         /// After the call, the user may obtain new objects of the Derived type by
         /// calling createObject() with the given type string as an argument.
@@ -97,6 +109,7 @@ namespace Opm
         {
         public:
             virtual ProductPtr create() = 0;
+            virtual ProductPtr clone(ProductPtr original) = 0;
             virtual ~Creator() {}
         };
 
@@ -108,6 +121,11 @@ namespace Opm
             virtual ProductPtr create()
             {
                 return ProductPtr(new Derived);
+            }
+            virtual ProductPtr clone(const ProductPtr original)
+            {
+                const Derived& orig = dynamic_cast<const Derived&>(*original);
+                return ProductPtr(new Derived(orig));
             }
         };
 
@@ -126,6 +144,19 @@ namespace Opm
 		      << " is not registered in the factory.");
 	    }
 	    return it->second->create();
+	}
+
+        // Actually clones the product object.
+	ProductPtr doCloneObject(const std::string& type,
+                                 const ProductPtr original)
+	{
+	    typename CreatorMap::iterator it;
+	    it = string_to_creator_.find(type);
+	    if (it == string_to_creator_.end()) {
+		THROW("Creator type " << type
+		      << " is not registered in the factory.");
+	    }
+	    return it->second->clone(original);
 	}
 
         // Actually adds the creator.
