@@ -20,6 +20,8 @@
 #ifndef OPM_GRID_HEADER_INCLUDED
 #define OPM_GRID_HEADER_INCLUDED
 
+#include <stddef.h>
+
 /**
  * \file
  *

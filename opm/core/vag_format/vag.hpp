@@ -92,13 +92,12 @@ namespace OPM
        \param[out] is a reference to a vag_grid struct.
     */
     void readVagGrid(std::istream& is,OPM::VAG& vag_grid);
-    /** Function to write vag format.
-        
-     */
+    /* Function to write vag format.        
     void writeVagFormat(std::ostream& os){
 	using namespace std;
 	os << "File in the Vag grid format" << endl;
-    };
+    }
+    */
     /**
        Function to read of some type from a stream.
        \param[in]  is is stream of the file.
