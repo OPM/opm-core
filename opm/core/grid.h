@@ -250,18 +250,20 @@ struct UnstructuredGrid *
 create_grid_empty(void);
 
 /**
-   Allocate and initialise an UnstructuredGrid where pointers are set to
-   location with correct size.
+   Allocate and initialise an UnstructuredGrid where pointers are set
+   to location with correct size.
 
    \param[in] ndims      Number of physical dimensions.
    \param[in] ncells     Number of cells.
    \param[in] nfaces     Number of faces.
    \param[in] nfacenodes Size of mapping from faces to nodes.
-   \param[in] ncellfaces Size of mapping from cells to faces.(i.e Number of halffaces)
-   \param[in] nnodes     Number of Nodes
-   \return Fully formed UnstructuredGrid with all fields allocated, but not filled with
-   usefull numbers.
-   <code>NULL</code> in case of allocation failure.
+   \param[in] ncellfaces Size of mapping from cells to faces.
+                         (i.e., the number of `half-faces')
+   \param[in] nnodes     Number of Nodes.
+
+   \return Fully formed UnstructuredGrid with all fields allocated,
+   but not filled with usefull numbers.  <code>NULL</code> in case of
+   allocation failure.
  */
 struct UnstructuredGrid *
 allocate_grid(size_t ndims     ,
