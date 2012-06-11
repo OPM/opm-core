@@ -26,7 +26,7 @@
  * Main OPM-Core grid data structure along with destructor and default
  * constructor.
  */
-#include <stdlib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -57,6 +57,14 @@ struct UnstructuredGrid
 };
 
 void destroy_grid(struct UnstructuredGrid *g);
+
+struct UnstructuredGrid *
+allocate_grid(size_t ndims     ,
+              size_t ncells    ,
+              size_t nfaces    ,
+              size_t nfacenodes,
+              size_t ncellfaces,
+              size_t nnodes    );
 
  ---- end of synopsis of grid.h ----
 */
@@ -238,14 +246,28 @@ void destroy_grid(struct UnstructuredGrid *g);
  */
 struct UnstructuredGrid *
 create_grid_empty(void);
-    
+
+/**
+   Allocate and initialise an UnstructuredGrid where pointers are set to
+   location with correct size.
+
+   \param[in] ndims      Number of physical dimensions.
+   \param[in] ncells     Number of cells.
+   \param[in] nfaces     Number of faces.
+   \param[in] nfacenodes Size of mapping from faces to nodes.
+   \param[in] ncellfaces Size of mapping from cells to faces.(i.e Number of halffaces)
+   \param[in] nnodes     Number of Nodes
+   \return Fully formed UnstructuredGrid with all fields allocated, but not filled with
+   usefull numbers.
+   <code>NULL</code> in case of allocation failure.
+ */
 struct UnstructuredGrid *
-    allocate_grid(size_t ndims ,
-		  size_t ncells,
-		  size_t nfaces,
-		  size_t nfacenodes,
-		  size_t ncellfaces,
-		  size_t nnodes);
+allocate_grid(size_t ndims     ,
+              size_t ncells    ,
+              size_t nfaces    ,
+              size_t nfacenodes,
+              size_t ncellfaces,
+              size_t nnodes    );
 
 #ifdef __cplusplus
 }
