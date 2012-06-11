@@ -39,6 +39,8 @@
 #include <fstream>
 #include <string>
 #include <stdlib.h>
+#include <cmath>
+#include <cassert>
 namespace OPM
 {
     void readPosStruct(std::istream& is,int n,PosStruct& pos_struct){
@@ -63,6 +65,21 @@ namespace OPM
 	    cerr << "Failed to read pos structure" << endl;
 	    cerr << "pos_struct.value.size()" << pos_struct.value.size() << endl;
 	    cerr << "pos_struct.pos[n+1]" << pos_struct.pos[n] << endl;
+	}
+    }
+    void writePosStruct(std::ostream& os,PosStruct& pos_struct){
+	using namespace std;
+	//PosStruct pos_struct;
+        int n=pos_struct.pos.size()-1;
+	pos_struct.pos.resize(n+1);
+	pos_struct.pos[0]=0;
+	for(int i=0;i< n;++i){
+	    int number=pos_struct.pos[i+1]-pos_struct.pos[i];
+	    os << number ;
+	    for(int j=0;j< number;++j){
+		os << pos_struct.value[pos_struct.pos[i]+j];
+	    }
+	    os << endl;
 	}
     }
     void readVagGrid(std::istream& is,OPM::VAG& vag_grid){
@@ -205,8 +222,38 @@ namespace OPM
 	cout << "Computing geometry" << endl;
 	compute_geometry(&grid);
 	
-
+    }
+    void writeVagFormat(std::ostream& os,OPM::VAG& vag_grid){
+	using namespace std;
+	os << "File in the Vag grid format";
+        os << "Number of vertices" << endl;
+        os << vag_grid.number_of_vertices;
+        os <<"Number of control volume " << endl;
+        os << vag_grid.number_of_volumes;
+        os <<"Number of faces" << endl;
+        os << vag_grid.number_of_faces;
+        os <<"Number of edges" << endl;
+        os << vag_grid.number_of_edges;
+        os <<"Vertices      "   << vag_grid.vertices.size() << endl;
+        writeVector(os, vag_grid.vertices,3);
+        os << "Volumes->faces   " << vag_grid.volumes_to_faces.pos.size()-1 << endl;
+        writePosStruct(os, vag_grid.volumes_to_faces);
+        os << "Volumes->Vertices   " << vag_grid.volumes_to_vertices.pos.size()-1 << endl;
+        writePosStruct(os, vag_grid.volumes_to_vertices);
+        os << "Faces->edges   " << vag_grid.faces_to_edges.pos.size()-1 << endl;
+        writePosStruct(os, vag_grid.faces_to_edges);
+        os << "Faces->Control volumes   " << vag_grid.faces_to_volumes.size() << endl;
+        writeVector(os,vag_grid.faces_to_volumes,2);
+        os << "Edges   " << vag_grid.edges.size() << endl;
+        writeVector(os,vag_grid.edges,2);
+        /*
+        assert(vag_grid.material.size()%vag_grid.number_of_volumes==0);
+        int lines= floor(vag_grid.material.size()/vag_grid.number_of_volumes);  
+        os << "Material number   " << 1 << endl;
+        writeVector(os,vag_grid.material,lines);
+        */
 
     }
+
 
 }
