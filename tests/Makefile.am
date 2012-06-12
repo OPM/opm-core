@@ -26,23 +26,35 @@ unit_test
 
 
 bo_resprop_test_SOURCES = bo_resprop_test.cpp
+
 monotcubicinterpolator_test_SOURCES = monotcubicinterpolator_test.cpp
+
 param_test_SOURCES        = param_test.cpp
 param_test_LDADD          = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
 sparsetable_test_SOURCES  = sparsetable_test.cpp
 sparsetable_test_LDADD    = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
 sparsevector_test_SOURCES = sparsevector_test.cpp
 sparsevector_test_LDADD   = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
 test_cartgrid_SOURCES     = test_cartgrid.cpp
+
 test_column_extract_SOURCES = test_column_extract.cpp
 test_column_extract_LDADD = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
 test_lapack_SOURCES       = test_lapack.cpp
 test_lapack_LDADD         = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+
 test_readpolymer_SOURCES  = test_readpolymer.cpp
 test_read_vag_SOURCES     = test_read_vag.cpp
+
 test_readvector_SOURCES   = test_readvector.cpp
+
 test_sf2p_SOURCES         = test_sf2p.cpp
+
 test_writeVtkData_SOURCES = test_writeVtkData.cpp
+
 unit_test_SOURCES         = unit_test.cpp
 
 
