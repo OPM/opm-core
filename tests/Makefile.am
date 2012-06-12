@@ -40,7 +40,6 @@ test_lapack_SOURCES       = test_lapack.cpp
 test_lapack_LDADD         = $(LAPACK_LIBS) $(LDADD)
 test_readpolymer_SOURCES  = test_readpolymer.cpp
 test_read_vag_SOURCES     = test_read_vag.cpp
-test_read_vag_LDADD       = $(LDADD)
 test_readvector_SOURCES   = test_readvector.cpp
 test_sf2p_SOURCES         = test_sf2p.cpp
 test_writeVtkData_SOURCES = test_writeVtkData.cpp
