@@ -79,12 +79,7 @@ namespace Opm
         bool output_;
         std::string output_dir_;
         int output_interval_;
-        // Parameters for pressure solver.
-        int nl_pressure_maxiter_;
-        double nl_pressure_tolerance_;
         // Parameters for transport solver.
-        int nl_maxiter_;
-        double nl_tolerance_;
         int num_transport_substeps_;
         bool use_segregation_split_;
         // Observed objects.
@@ -214,8 +209,14 @@ namespace Opm
           bcs_(bcs),
           linsolver_(linsolver),
           gravity_(gravity),
-          psolver_(grid, props.permeability(), gravity, linsolver, wells),
-          tsolver_(grid, props, 1e-9, 30)
+          psolver_(grid, props, rock_comp, linsolver,
+                   param.getDefault("nl_pressure_residual_tolerance", 1e-8),
+                   param.getDefault("nl_pressure_change_tolerance", 1.0),
+                   param.getDefault("nl_pressure_maxiter", 10),
+                   gravity, wells, src, bcs),
+          tsolver_(grid, props,
+                   param.getDefault("nl_tolerance", 1e-9),
+                   param.getDefault("nl_maxiter", 30))
     {
         // For output.
         output_ = param.getDefault("output", true);
@@ -232,13 +233,7 @@ namespace Opm
             output_interval_ = param.getDefault("output_interval", 1);
         }
 
-        // For pressure solver
-        nl_pressure_maxiter_ = param.getDefault("nl_pressure_maxiter", 10);
-        nl_pressure_tolerance_ = param.getDefault("nl_pressure_tolerance", 1.0); // Pascal
-
-        // For transport solver.
-        nl_maxiter_ = param.getDefault("nl_maxiter", 30);
-        nl_tolerance_ = param.getDefault("nl_tolerance", 1e-9);
+        // Transport related init.
         num_transport_substeps_ = param.getDefault("num_transport_substeps", 1);
         use_segregation_split_ = param.getDefault("use_segregation_split", false);
         if (gravity != 0 && use_segregation_split_){
@@ -325,48 +320,7 @@ namespace Opm
             }
             do {
                 pressure_timer.start();
-                if (rock_comp_ && rock_comp_->isActive()) {
-                    rc.resize(num_cells);
-                    std::vector<double> initial_pressure = state.pressure();
-                    std::vector<double> initial_porevolume(num_cells);
-                    computePorevolume(grid_, props_.porosity(), *rock_comp_, initial_pressure, initial_porevolume);
-                    std::vector<double> pressure_increment(num_cells + num_wells);
-                    std::vector<double> prev_pressure(num_cells + num_wells);
-                    for (int iter = 0; iter < nl_pressure_maxiter_; ++iter) {
-                        for (int cell = 0; cell < num_cells; ++cell) {
-                            rc[cell] = rock_comp_->rockComp(state.pressure()[cell]);
-                        }
-                        computePorevolume(grid_, props_.porosity(), *rock_comp_, state.pressure(), porevol);
-                        std::copy(state.pressure().begin(), state.pressure().end(), prev_pressure.begin());
-                        std::copy(well_state.bhp().begin(), well_state.bhp().end(), prev_pressure.begin() + num_cells);
-                        // prev_pressure = state.pressure();
-
-                        // compute pressure increment
-                        psolver_.solveIncrement(totmob, omega, src_, wdp, bcs_, porevol, rc,
-                                                prev_pressure, initial_porevolume, timer.currentStepLength(),
-                                                pressure_increment);
-
-                        double max_change = 0.0;
-                        for (int cell = 0; cell < num_cells; ++cell) {
-                            state.pressure()[cell] += pressure_increment[cell];
-                            max_change = std::max(max_change, std::fabs(pressure_increment[cell]));
-                        }
-                        for (int well = 0; well < num_wells; ++well) {
-                            well_state.bhp()[well] += pressure_increment[num_cells + well];
-                            max_change = std::max(max_change, std::fabs(pressure_increment[num_cells + well]));
-                        }
-
-                        std::cout << "Pressure iter " << iter << "   max change = " << max_change << std::endl;
-                        if (max_change < nl_pressure_tolerance_) {
-                            break;
-                        }
-                    }
-                    psolver_.computeFaceFlux(totmob, omega, src_, wdp, bcs_, state.pressure(), state.faceflux(),
-                                             well_state.bhp(), well_state.perfRates());
-                } else {
-                    psolver_.solve(totmob, omega, src_, wdp, bcs_, state.pressure(), state.faceflux(),
-                                   well_state.bhp(), well_state.perfRates());
-                }
+                psolver_.solve(timer.currentStepLength(), state, well_state);
                 pressure_timer.stop();
                 double pt = pressure_timer.secsSinceStart();
                 std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
