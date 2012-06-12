@@ -196,6 +196,8 @@ namespace OPM
 	using namespace std;
 	using namespace OPM;
 	cout << "Converting grid" << endl;
+        cout << "Warning:: orignial grid may not be edge confomal" << endl;
+        cout << "          inverse mappings from edges will be wrong" << endl;
 	grid.dimensions=3;
 	grid.number_of_cells=vag_grid.number_of_volumes;
 	grid.number_of_faces=vag_grid.number_of_faces;
@@ -285,54 +287,87 @@ namespace OPM
             int nlf=grid.cell_facepos[i+1]-grid.cell_facepos[i];
             std::set<int> nodes;
             for(int j=0; j < nlf; ++j){
-                int face = grid.cell_faces[grid.cell_faces[grid.cell_facepos[i]+j]];
+                int face = grid.cell_faces[grid.cell_facepos[i]+j];
                 int nlv = grid.face_nodepos[face+1]-grid.face_nodepos[face];
                 for(int k=0; k< nlv; ++k){
-                    int node = grid.face_nodes[grid.face_nodepos[face]+k];
+                    int node = grid.face_nodes[grid.face_nodepos[face]+k]+1;
                     nodes.insert(node);
                 }
             }
-            volumes_to_vertices.push_back(nodes);
+            volumes_to_vertices[i]=nodes;
         }
+        
+        
         vag_grid.volumes_to_vertices.pos.resize(grid.number_of_cells+1);
         vag_grid.volumes_to_vertices.value.resize(0);
-        vag_grid.volumes_to_vertices.pos[0]=1;
+        vag_grid.volumes_to_vertices.pos[0]=0;
         for(int i=0;i < grid.number_of_cells;++i){
             int nv=volumes_to_vertices[i].size();
             vag_grid.volumes_to_vertices.pos[i+1]=vag_grid.volumes_to_vertices.pos[i]+nv;
             std::set<int>::iterator it;
             for(it=volumes_to_vertices[i].begin();it!=volumes_to_vertices[i].end();++it){
-                vag_grid.volumes_to_vertices.value.push_back(*it); 
+                vag_grid.volumes_to_vertices.value.push_back(*it);
             }
-            /*
-            for(int j=0;j < nv; ++j){
-            vag_grid.volume_to_vertices.push_back(volume_to_vertices[i][j]);                
-            } */           
         }
+
         std::set< std::set<int> > edges;
-        std::map<std::set<int>, int> edge_to_face;        
+	std::vector< std::vector< std::set<int> > > faces_spares;
+        //std::map<std::set<int>, int> edge_to_face;
+	int nfe=0;
+	faces_spares.resize(grid.number_of_faces);
         for(int i=0;i < grid.number_of_faces;++i){
             int ne=grid.face_nodepos[i+1]-grid.face_nodepos[i];
-            std::set<int> spair;
-            for(int j=0; i < ne-1;++j){
-                int node1=grid.face_nodepos[i]+j;
-                int node2=grid.face_nodepos[i]+j;
+	    nfe=nfe+ne;
+
+            for(int j=0; j < ne-1;++j){
+                int node1=grid.face_nodes[grid.face_nodepos[i]+j]+1;
+                int node2=grid.face_nodes[grid.face_nodepos[i]+j+1]+1;
+                std::set<int> spair;
                 spair.insert(node1);
                 spair.insert(node2);    
                 edges.insert(spair);
+		faces_spares[i].push_back(spair);     
             }
-             int node1=grid.face_nodepos[i]+ne-1;
-             int node2=grid.face_nodepos[i];
-             spair.insert(node1);
-             spair.insert(node2);    
-             edges.insert(spair);
-             edge_to_face.insert(std::pair< std::set<int> , int >(spair,i));
+            {
+                std::set<int> spair;
+                int node1=grid.face_nodes[grid.face_nodepos[i]+ne-1]+1;
+                int node2=grid.face_nodes[grid.face_nodepos[i]]+1;
+                spair.insert(node1);
+                spair.insert(node2);    
+                edges.insert(spair);
+                faces_spares[i].push_back(spair);     
+            }
+             //edge_to_face.insert(std::pair< std::set<int> , int >(spair,i));
         }
+	// make edge numbering
+	std::map<std::set<int>, int> edge_map;
+	std::set< std::set<int> >::iterator it;
+	vag_grid.edges.resize(0);
+	int k=0;
+	for(it=edges.begin(); it!=edges.end();++it){
+	  edge_map.insert(std::pair< std::set<int> , int >(*it,k));
+	  k=k+1;
+	  std::set<int>::iterator sit;
+	  for(sit=(*it).begin();sit!=(*it).end();++sit){
+	    vag_grid.edges.push_back(*sit);
+	  }
+        }
+	// make missing maps.
+        //	std::map<std::set<int>, int>::key_compare mycomp=edge_map.key_comp(); 
+	vag_grid.number_of_edges=edges.size();
+	vag_grid.faces_to_edges.pos.resize(vag_grid.number_of_faces+1);
+	for(int i=0;i < grid.number_of_faces;++i){
+            int ne=grid.face_nodepos[i+1]-grid.face_nodepos[i];
+	    vag_grid.faces_to_edges.pos[i+1]=vag_grid.faces_to_edges.pos[i]+ne;	    
+	    for(int j=0;j<faces_spares[i].size();++j){
+	      int edge_num=edge_map[faces_spares[i][j]];
+	      vag_grid.faces_to_edges.value.push_back(edge_num+1);
+	    }   
+	}   
+        // vag_grid.edges(0);//not known
+        // vag_grid.faces_to_edges// not known
         
-        //        vag_grid.edges(0);//not known
-        //vag_grid.face_to_edges// not known
-        
-        //material // can not be extracted from the grid
+        //  material // can not be extracted from the grid
     }
     
     void writeVagFormat(std::ostream& os,OPM::VAG& vag_grid){
@@ -353,10 +388,12 @@ namespace OPM
         os << "Volumes->Vertices   " << vag_grid.volumes_to_vertices.pos.size()-1 << endl;
         writePosStruct(os, vag_grid.volumes_to_vertices);       
         os << "Faces->edges   " << vag_grid.faces_to_edges.pos.size()-1 << endl;
-        writePosStruct(os, vag_grid.faces_to_edges);        
-        os << "Faces->Control volumes   " << vag_grid.faces_to_volumes.size() << endl;
+        writePosStruct(os, vag_grid.faces_to_edges);
+        os << "Faces->vertices   " << vag_grid.faces_to_vertices.pos.size()-1 << endl;
+        writePosStruct(os, vag_grid.faces_to_vertices);
+        os << "Faces->Control volumes   " << floor(vag_grid.faces_to_volumes.size()/2) << endl;
         writeVector(os,vag_grid.faces_to_volumes,2);        
-        os << "Edges   " << vag_grid.edges.size() << endl;
+        os << "Edges   " << floor(vag_grid.edges.size()/2) << endl;
         writeVector(os,vag_grid.edges,2);
         /*
         assert(vag_grid.material.size()%vag_grid.number_of_volumes==0);
