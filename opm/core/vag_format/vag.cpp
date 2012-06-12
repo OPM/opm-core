@@ -297,7 +297,7 @@ namespace OPM
             volumes_to_vertices[i]=nodes;
         }
         
-        
+        // fill volume to vertice map
         vag_grid.volumes_to_vertices.pos.resize(grid.number_of_cells+1);
         vag_grid.volumes_to_vertices.value.resize(0);
         vag_grid.volumes_to_vertices.pos[0]=0;
@@ -312,13 +312,12 @@ namespace OPM
 
         std::set< std::set<int> > edges;
 	std::vector< std::vector< std::set<int> > > faces_spares;
-        //std::map<std::set<int>, int> edge_to_face;
 	int nfe=0;
 	faces_spares.resize(grid.number_of_faces);
         for(int i=0;i < grid.number_of_faces;++i){
             int ne=grid.face_nodepos[i+1]-grid.face_nodepos[i];
 	    nfe=nfe+ne;
-
+            
             for(int j=0; j < ne-1;++j){
                 int node1=grid.face_nodes[grid.face_nodepos[i]+j]+1;
                 int node2=grid.face_nodes[grid.face_nodepos[i]+j+1]+1;
@@ -328,6 +327,7 @@ namespace OPM
                 edges.insert(spair);
 		faces_spares[i].push_back(spair);     
             }
+            // add end segment
             {
                 std::set<int> spair;
                 int node1=grid.face_nodes[grid.face_nodepos[i]+ne-1]+1;
@@ -337,9 +337,9 @@ namespace OPM
                 edges.insert(spair);
                 faces_spares[i].push_back(spair);     
             }
-             //edge_to_face.insert(std::pair< std::set<int> , int >(spair,i));
         }
-	// make edge numbering
+        
+	// make edge numbering and fill edges
 	std::map<std::set<int>, int> edge_map;
 	std::set< std::set<int> >::iterator it;
 	vag_grid.edges.resize(0);
@@ -352,8 +352,7 @@ namespace OPM
 	    vag_grid.edges.push_back(*sit);
 	  }
         }
-	// make missing maps.
-        //	std::map<std::set<int>, int>::key_compare mycomp=edge_map.key_comp(); 
+        // fill face_to_egdes
 	vag_grid.number_of_edges=edges.size();
 	vag_grid.faces_to_edges.pos.resize(vag_grid.number_of_faces+1);
 	for(int i=0;i < grid.number_of_faces;++i){
