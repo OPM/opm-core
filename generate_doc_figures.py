@@ -90,6 +90,34 @@ for case in cases:
     WriteImage(join(figure_path, "tutorial3-"+case+".png"))
 Hide(grid)
 
+# tutorial 4
+call(join(tutorial_path, "tutorial4"))
+for case in range(0,20):
+    data_file_name = join(tutorial_data_path, "tutorial4-"+"%(case)03d"%{"case": case}+".vtu")
+    collected_garbage_file.append(data_file_name)
+
+cases = ["000", "005", "010", "015", "019"]
+for case in cases:
+    data_file_name = join(tutorial_data_path, "tutorial4-"+case+".vtu")
+    grid = XMLUnstructuredGridReader(FileName = data_file_name)
+    grid.UpdatePipeline()
+    Show(grid)
+    dp = GetDisplayProperties(grid)
+    dp.Representation = 'Surface'
+    dp.ColorArrayName = 'saturation'
+    sat = grid.CellData.GetArray(1)
+    sat_lookuptable = GetLookupTableForArray( "saturation", 1, RGBPoints=[0, 1, 0, 0, 1, 0, 0, 1])
+    dp.LookupTable = sat_lookuptable
+    view.Background = [1, 1, 1]
+    camera = GetActiveCamera()
+    camera.SetPosition(100, 100, 550)
+    camera.SetViewUp(0, 1, 0)
+    camera.SetViewAngle(30)
+    camera.SetFocalPoint(100, 100, 5)
+    Render()
+    WriteImage(join(figure_path, "tutorial4-"+case+".png"))
+Hide(grid)
+
 # remove temporary files
 for f in collected_garbage_file:
     remove(f)
