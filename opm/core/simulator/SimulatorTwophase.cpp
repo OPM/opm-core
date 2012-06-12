@@ -293,13 +293,10 @@ namespace Opm
         Opm::WellReport wellreport;
         std::vector<double> fractional_flows;
         std::vector<double> well_resflows_phase;
-        int num_wells = 0;
         if (wells_) {
-            num_wells = wells_->number_of_wells;
             well_resflows_phase.resize((wells_->number_of_phases)*(wells_->number_of_wells), 0.0);
             wellreport.push(props_, *wells_, state.saturation(), 0.0, well_state.bhp(), well_state.perfRates());
         }
-        const int num_cells = grid_.number_of_cells;
         for (; !timer.done(); ++timer) {
             // Report timestep and (optionally) write state to disk.
             timer.report(std::cout);
