@@ -358,7 +358,7 @@ namespace OPM
 	for(int i=0;i < grid.number_of_faces;++i){
             int ne=grid.face_nodepos[i+1]-grid.face_nodepos[i];
 	    vag_grid.faces_to_edges.pos[i+1]=vag_grid.faces_to_edges.pos[i]+ne;	    
-	    for(int j=0;j<faces_spares[i].size();++j){
+	    for(int j=0;j<int(faces_spares[i].size());++j){
 	      int edge_num=edge_map[faces_spares[i][j]];
 	      vag_grid.faces_to_edges.value.push_back(edge_num+1);
 	    }   
