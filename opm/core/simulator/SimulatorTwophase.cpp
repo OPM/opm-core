@@ -256,9 +256,6 @@ namespace Opm
                                       TwophaseState& state,
                                       WellState& well_state)
     {
-        std::vector<double> totmob;
-        std::vector<double> omega; // Will remain empty if no gravity.
-        std::vector<double> rc; // Will remain empty if no rock compressibility.
         std::vector<double> transport_src;
 
         // Initialisation.
@@ -305,16 +302,6 @@ namespace Opm
             }
 
             // Solve pressure.
-            if (gravity_) {
-                computeTotalMobilityOmega(props_, allcells_, state.saturation(), totmob, omega);
-            } else {
-                computeTotalMobility(props_, allcells_, state.saturation(), totmob);
-            }
-            std::vector<double> wdp;
-            if (wells_) {
-                Opm::computeWDP(*wells_, grid_, state.saturation(), props_.density(),
-                                gravity_ ? gravity_[2] : 0.0, true, wdp);
-            }
             do {
                 pressure_timer.start();
                 psolver_.solve(timer.currentStepLength(), state, well_state);
