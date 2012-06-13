@@ -43,6 +43,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <cassert>
 namespace OPM
 {
     /**
@@ -88,20 +89,21 @@ namespace OPM
     /**
        Function the vag grid format and make a vag_grid struct. This structure
        is intended to be converted to a grid.
-       \param[in]  is is stream of the file.
-       \param[out] is a reference to a vag_grid struct.
+       \param[in]  is is is stream of the file.
+       \param[out] vag_grid is a reference to a vag_grid struct.
     */
     void readVagGrid(std::istream& is,OPM::VAG& vag_grid);
-    /* Function to write vag format.        
-    void writeVagFormat(std::ostream& os){
-	using namespace std;
-	os << "File in the Vag grid format" << endl;
-    }
-    */
     /**
-       Function to read of some type from a stream.
-       \param[in]  is is stream of the file.
-       \param[out] is a resized and filled vector containing the quantiy read.
+       Function to write vag format.
+       \param[out]  is is is stream of the file.
+       \param[in] vag_grid is a reference to a vag_grid struct.
+
+    */
+    void writeVagFormat(std::ostream& os,OPM::VAG& vag_grid);
+    /**
+       Function to read a vector of some type from a stream.
+       \param[in]  os is is stream of the file.
+       \param[out] vag_grid is a resized and filled vector containing the quantiy read.
     */   
     template <typename T>
     void readVector(std::istream& is,std::vector<T>& vec){
@@ -110,20 +112,53 @@ namespace OPM
 	    is >> vec[i];
 	}
     }
-       
+    /**
+       Function to write a vector of some type from a stream.
+       \param[in]  os is is stream of the file.
+       \param[out] vag_grid is a resized and filled vector containing the quantiy read.
+       \param[in]  n number of doubles on each line.
+       The function will only write full lines an potentially skip numbers at end of the vector.
+    */  
+    template <typename T>
+    void writeVector(std::ostream& os,std::vector<T>& vec,int n){
+	using namespace std;
+        int lines = floor(vec.size()/n);
+        assert(vec.size()%n==0);
+	for(int j=0;j< lines;++j){
+            for(int i=0;i< n;++i){
+                os << vec[j*n+i] << " ";
+            }
+            os << endl;
+        }
+    }
+
     /**
        Read pos struct type mapping from a stream
-       \param[in] stream
-       \param[in] number of lines to read
-       \param[out] reference to PosStruct
+       \param[in] is is stream
+       \param[in] n number of lines to read
+       \param[out] pos_struct reference to PosStruct
      */
     void readPosStruct(std::istream& is,int n,PosStruct& pos_struct);
     /**
+       Read pos struct type mapping from a stream
+       \param[in] os is stream to write to
+       \param[in] pos_struct to write
+     */
+    void writePosStruct(std::ostream& os,PosStruct& pos_struct);
+    
+    /**
        Fill a UnstructuredGrid from a vag_grid.
-       \param[in] a valid vag_grid struct.
-       \param[out] a grid with have allocated correct size to each pointer.
+       \param[out] vag_grid s is a valid vag_grid struct.
+       \param[in] grid is a grid with have allocated correct size to each pointer.
      */
     void vagToUnstructuredGrid(OPM::VAG& vag_grid,UnstructuredGrid& grid);
+    
+    /**
+       Fill a  vag_grid from UnstructuredGrid 
+       \param[out] vag_grid s is a valid vag_grid struct.
+       \param[in] grid is a grid with have allocated correct size to each pointer.
+     */    
+    void unstructuredGridToVag(UnstructuredGrid& grid, OPM::VAG& vag_grid);
 }
 #endif  /* OPM_VAG_HPP_HEADER */	
 

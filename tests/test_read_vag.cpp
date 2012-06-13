@@ -54,16 +54,31 @@ int main(int argc, char** argv)
     ifstream is(filename.c_str());//"/home/hnil/heim/SVN/simmatlab/projects/clastic/utils/unstructuredgrids/data/3x3_w_layered-vag.dat");
     //ifstream is("/home/hnil/heim/SVN/simmatlab/projects/clastic/utils/unstructuredgrids/data/test.txt");
     //std::ofstream is("");
-    VAG vag_grid;
-    readVagGrid(is,vag_grid);
     UnstructuredGrid *grid;// make a pointer, can it be avoided??
-    grid = allocate_grid(3,
-		       vag_grid.number_of_volumes,
-		       vag_grid.number_of_faces,
-		       vag_grid.faces_to_vertices.value.size(),
-		       vag_grid.volumes_to_faces.value.size(),
-		       vag_grid.number_of_vertices);
-    vagToUnstructuredGrid(vag_grid,*grid);
+    //{
+        VAG vag_grid;
+        readVagGrid(is,vag_grid);
+        // Size of mappings found
+        std::cout << " faces_to_vertices  " <<   vag_grid.faces_to_vertices.value.size() << endl;
+        std::cout << " volumes_to_faces " <<   vag_grid.volumes_to_vertices.value.size() << endl;
+        
+        grid = allocate_grid(3,
+                             vag_grid.number_of_volumes,
+                             vag_grid.number_of_faces,
+                             vag_grid.faces_to_vertices.value.size(),
+                             vag_grid.volumes_to_faces.value.size(),
+                             vag_grid.number_of_vertices);
+        vagToUnstructuredGrid(vag_grid,*grid);
+
+        
+        
+        //}
+        // {
+        std::cout << "*************************************************************\n";
+        VAG vag_grid_new;
+        unstructuredGridToVag(*grid,vag_grid_new);
+        writeVagFormat(std::cout,vag_grid_new);        
+        // }
     destroy_grid(grid);
     
 }
