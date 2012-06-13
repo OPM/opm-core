@@ -48,8 +48,9 @@ namespace Opm
         ///     output (true)                  write output to files?
         ///     output_dir ("output")          output directoty
         ///     output_interval (1)            output every nth step
+        ///     nl_pressure_residual_tolerance (0.0) pressure solver residual tolerance (in Pascal)
+        ///     nl_pressure_change_tolerance (1.0)   pressure solver change tolerance (in Pascal)
         ///     nl_pressure_maxiter (10)       max nonlinear iterations in pressure
-        ///     nl_pressure_tolerance (1.0)    pressure solver nonlinear tolerance (in Pascal)
         ///     nl_maxiter (30)                max nonlinear iterations in transport
         ///     nl_tolerance (1e-9)            transport solver absolute residual tolerance
         ///     num_transport_substeps (1)     number of transport steps per pressure step
