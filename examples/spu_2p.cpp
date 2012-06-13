@@ -386,7 +386,7 @@ main(int argc, char** argv)
         if (!use_reorder) {
             THROW("Cannot run implicit (non-reordering) transport solver with rock compressibility yet.");
         }
-        nl_pressure_residual_tolerance = param.getDefault("nl_pressure_residual_tolerance", 1e-8);
+        nl_pressure_residual_tolerance = param.getDefault("nl_pressure_residual_tolerance", 0.0);
         nl_pressure_change_tolerance = param.getDefault("nl_pressure_change_tolerance", 1.0); // In Pascal.
         nl_pressure_maxiter = param.getDefault("nl_pressure_maxiter", 10);
     }
