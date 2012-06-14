@@ -63,6 +63,12 @@ namespace Opm
 	/// Total time.
 	double totalTime() const;
 
+        /// Set total time.
+        /// This is primarily intended for multi-epoch schedules,
+        /// where a timer for a given epoch does not have
+        /// access to later timesteps.
+	void setTotalTime(double time);
+
 	/// Print a report with current and total time etc.
 	/// Note: if done(), it is an error to call report().
 	void report(std::ostream& os) const;

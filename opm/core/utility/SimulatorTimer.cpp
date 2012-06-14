@@ -69,7 +69,13 @@ namespace Opm
     /// Set current step number.
     void SimulatorTimer::setCurrentStepNum(int step)
     {
+        if (current_step_ < 0 || current_step_ > int(timesteps_.size())) {
+            // Note that we do allow current_step_ == timesteps_.size(),
+            // that is the done() state.
+            THROW("Trying to set invalid step number: " << step);
+        }
         current_step_ = step;
+        current_time_ = std::accumulate(timesteps_.begin(), timesteps_.begin() + step, 0.0);
     }
 
 
@@ -90,6 +96,15 @@ namespace Opm
     double SimulatorTimer::totalTime() const
     {
 	return total_time_;
+    }
+
+    /// Set total time.
+    /// This is primarily intended for multi-epoch schedules,
+    /// where a timer for a given epoch does not have
+    /// access to later timesteps.
+    void SimulatorTimer::setTotalTime(double time)
+    {
+	total_time_ = time;
     }
 
     /// Print a report with current and total time etc.
