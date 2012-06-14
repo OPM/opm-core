@@ -1,0 +1,7 @@
+#dune module information file#
+##############################
+
+#Name of the module
+Module: opm-core
+Version: 0.1
+Maintainer: atgeirr@sintef.no
