@@ -68,9 +68,9 @@ namespace Opm
              LinearSolverInterface& linsolver,
              const double* gravity);
 
-        void run(SimulatorTimer& timer,
-                 TwophaseState& state,
-                 WellState& well_state);
+        SimulatorReport run(SimulatorTimer& timer,
+                            TwophaseState& state,
+                            WellState& well_state);
 
     private:
         // Data.
@@ -120,11 +120,12 @@ namespace Opm
 
 
 
-    void SimulatorTwophase::run(SimulatorTimer& timer,
-                                TwophaseState& state,
-                                WellState& well_state)
+    SimulatorTwophase::SimulatorReport
+    SimulatorTwophase::run(SimulatorTimer& timer,
+                           TwophaseState& state,
+                           WellState& well_state)
     {
-        pimpl_->run(timer, state, well_state);
+        return pimpl_->run(timer, state, well_state);
     }
 
 
@@ -210,7 +211,7 @@ namespace Opm
           linsolver_(linsolver),
           gravity_(gravity),
           psolver_(grid, props, rock_comp, linsolver,
-                   param.getDefault("nl_pressure_residual_tolerance", 1e-8),
+                   param.getDefault("nl_pressure_residual_tolerance", 0.0),
                    param.getDefault("nl_pressure_change_tolerance", 1.0),
                    param.getDefault("nl_pressure_maxiter", 10),
                    gravity, wells, src, bcs),
@@ -252,9 +253,10 @@ namespace Opm
 
 
 
-    void SimulatorTwophase::Impl::run(SimulatorTimer& timer,
-                                      TwophaseState& state,
-                                      WellState& well_state)
+    SimulatorTwophase::SimulatorReport
+    SimulatorTwophase::Impl::run(SimulatorTimer& timer,
+                                 TwophaseState& state,
+                                 WellState& well_state)
     {
         std::vector<double> transport_src;
 
@@ -275,7 +277,6 @@ namespace Opm
         double ttime = 0.0;
         Opm::time::StopWatch total_timer;
         total_timer.start();
-        std::cout << "\n\n================    Starting main simulation loop     ===============" << std::endl;
         double init_satvol[2] = { 0.0 };
         double satvol[2] = { 0.0 };
         double injected[2] = { 0.0 };
@@ -377,12 +378,6 @@ namespace Opm
                                 well_state.bhp(), well_state.perfRates());
             }
         }
-        total_timer.stop();
-
-        std::cout << "\n\n================    End of simulation     ===============\n"
-                  << "Total time taken: " << total_timer.secsSinceStart()
-                  << "\n  Pressure time:  " << ptime
-                  << "\n  Transport time: " << ttime << std::endl;
 
         if (output_) {
             outputState(grid_, state, timer.currentStepNum(), output_dir_);
@@ -392,8 +387,39 @@ namespace Opm
             }
         }
 
+        total_timer.stop();
 
-
+        SimulatorReport report;
+        report.pressure_time = ptime;
+        report.transport_time = ttime;
+        report.total_time = total_timer.secsSinceStart();
+        return report;
     }
+
+
+
+    // Methods for SimulatorReport.
+
+    SimulatorTwophase::SimulatorReport::SimulatorReport()
+        : pressure_time(0.0),
+          transport_time(0.0),
+          total_time(0.0)
+    {
+    }
+
+    void SimulatorTwophase::SimulatorReport::operator+=(const SimulatorReport& sr)
+    {
+        pressure_time += sr.pressure_time;
+        transport_time += sr.transport_time;
+        total_time += sr.total_time;
+    }
+
+    void SimulatorTwophase::SimulatorReport::report(std::ostream& os)
+    {
+        os << "Total time taken: " << total_time
+           << "\n  Pressure time:  " << pressure_time
+           << "\n  Transport time: " << total_time << std::endl;
+    }
+
 
 } // namespace Opm
