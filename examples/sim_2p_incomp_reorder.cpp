@@ -30,6 +30,7 @@
 #include <opm/core/wells/WellsManager.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/initState.hpp>
+#include <opm/core/simulator/SimulatorReport.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
@@ -173,7 +174,7 @@ main(int argc, char** argv)
               << "                        (number of epochs: "
               << (use_deck ? deck->numberOfEpochs() : 1) << ")\n\n" << std::flush;
 
-    SimulatorTwophase::SimulatorReport rep;
+    SimulatorReport rep;
     if (!use_deck) {
         // Simple simulation without a deck.
         SimulatorTwophase simulator(param,
@@ -239,8 +240,7 @@ main(int argc, char** argv)
                                         bcs.c_bcs(),
                                         linsolver,
                                         grav);
-            SimulatorTwophase::SimulatorReport epoch_rep
-                = simulator.run(simtimer, state, well_state);
+            SimulatorReport epoch_rep = simulator.run(simtimer, state, well_state);
 
             // Update total timing report and remember step number.
             rep += epoch_rep;

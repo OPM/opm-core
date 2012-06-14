@@ -108,6 +108,7 @@ opm/core/pressure/ifsh.c                                \
 opm/core/pressure/mimetic/mimetic.c                     \
 opm/core/pressure/mimetic/hybsys_global.c               \
 opm/core/pressure/mimetic/hybsys.c                      \
+opm/core/simulator/SimulatorReport.cpp                  \
 opm/core/simulator/SimulatorTimer.cpp                   \
 opm/core/simulator/SimulatorTwophase.cpp                \
 opm/core/transport/spu_explicit.c                       \
@@ -229,6 +230,7 @@ opm/core/pressure/mimetic/hybsys_global.h               \
 opm/core/pressure/mimetic/hybsys.h                      \
 opm/core/pressure/mimetic/mimetic.h                     \
 opm/core/simulator/BlackoilState.hpp                    \
+opm/core/simulator/SimulatorReport.hpp                  \
 opm/core/simulator/SimulatorTimer.hpp                   \
 opm/core/simulator/SimulatorTwophase.hpp                \
 opm/core/simulator/TwophaseState.hpp                    \

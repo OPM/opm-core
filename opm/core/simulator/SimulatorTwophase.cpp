@@ -31,6 +31,7 @@
 #include <opm/core/newwells.h>
 #include <opm/core/pressure/flow_bc.h>
 
+#include <opm/core/simulator/SimulatorReport.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/writeVtkData.hpp>
@@ -120,10 +121,9 @@ namespace Opm
 
 
 
-    SimulatorTwophase::SimulatorReport
-    SimulatorTwophase::run(SimulatorTimer& timer,
-                           TwophaseState& state,
-                           WellState& well_state)
+    SimulatorReport SimulatorTwophase::run(SimulatorTimer& timer,
+                                           TwophaseState& state,
+                                           WellState& well_state)
     {
         return pimpl_->run(timer, state, well_state);
     }
@@ -253,10 +253,9 @@ namespace Opm
 
 
 
-    SimulatorTwophase::SimulatorReport
-    SimulatorTwophase::Impl::run(SimulatorTimer& timer,
-                                 TwophaseState& state,
-                                 WellState& well_state)
+    SimulatorReport SimulatorTwophase::Impl::run(SimulatorTimer& timer,
+                                                 TwophaseState& state,
+                                                 WellState& well_state)
     {
         std::vector<double> transport_src;
 
@@ -394,31 +393,6 @@ namespace Opm
         report.transport_time = ttime;
         report.total_time = total_timer.secsSinceStart();
         return report;
-    }
-
-
-
-    // Methods for SimulatorReport.
-
-    SimulatorTwophase::SimulatorReport::SimulatorReport()
-        : pressure_time(0.0),
-          transport_time(0.0),
-          total_time(0.0)
-    {
-    }
-
-    void SimulatorTwophase::SimulatorReport::operator+=(const SimulatorReport& sr)
-    {
-        pressure_time += sr.pressure_time;
-        transport_time += sr.transport_time;
-        total_time += sr.total_time;
-    }
-
-    void SimulatorTwophase::SimulatorReport::report(std::ostream& os)
-    {
-        os << "Total time taken: " << total_time
-           << "\n  Pressure time:  " << pressure_time
-           << "\n  Transport time: " << total_time << std::endl;
     }
 
 
