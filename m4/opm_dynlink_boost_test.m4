@@ -38,7 +38,7 @@ dnl -------------------------------------------------------------------
 # system uses dynamic linking of Boost.Test .
 AC_DEFUN([OPM_DYNLINK_BOOST_TEST],
 [
-AC_REQUIRE([AX_BOOST_BASE])
+AC_REQUIRE([OPM_BOOST_BASE])
 AC_REQUIRE([AX_BOOST_UNIT_TEST_FRAMEWORK])
 
 _opm_LIBS_SAVE="${LIBS}"
