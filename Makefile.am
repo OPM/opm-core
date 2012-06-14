@@ -72,7 +72,6 @@ opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp    \
 opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp   \
 opm/core/utility/miscUtilities.cpp                      \
 opm/core/utility/miscUtilitiesBlackoil.cpp              \
-opm/core/utility/SimulatorTimer.cpp                     \
 opm/core/utility/StopWatch.cpp                          \
 opm/core/utility/writeVtkData.cpp			\
 opm/core/wells/WellsManager.cpp                         \
@@ -109,6 +108,7 @@ opm/core/pressure/ifsh.c                                \
 opm/core/pressure/mimetic/mimetic.c                     \
 opm/core/pressure/mimetic/hybsys_global.c               \
 opm/core/pressure/mimetic/hybsys.c                      \
+opm/core/simulator/SimulatorTimer.cpp                   \
 opm/core/simulator/SimulatorTwophase.cpp                \
 opm/core/transport/spu_explicit.c                       \
 opm/core/transport/spu_implicit.c			\
@@ -175,7 +175,6 @@ opm/core/utility/parameters/ParameterXML.hpp            \
 opm/core/utility/parameters/tinyxml/tinystr.h           \
 opm/core/utility/parameters/tinyxml/tinyxml.h           \
 opm/core/utility/RootFinders.hpp                        \
-opm/core/utility/SimulatorTimer.hpp                     \
 opm/core/utility/SparseTable.hpp                        \
 opm/core/utility/SparseVector.hpp                       \
 opm/core/utility/StopWatch.hpp                          \
@@ -230,6 +229,7 @@ opm/core/pressure/mimetic/hybsys_global.h               \
 opm/core/pressure/mimetic/hybsys.h                      \
 opm/core/pressure/mimetic/mimetic.h                     \
 opm/core/simulator/BlackoilState.hpp                    \
+opm/core/simulator/SimulatorTimer.hpp                   \
 opm/core/simulator/SimulatorTwophase.hpp                \
 opm/core/simulator/TwophaseState.hpp                    \
 opm/core/simulator/WellState.hpp                        \

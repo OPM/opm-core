@@ -31,7 +31,7 @@
 #include <opm/core/newwells.h>
 #include <opm/core/pressure/flow_bc.h>
 
-#include <opm/core/utility/SimulatorTimer.hpp>
+#include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/writeVtkData.hpp>
 #include <opm/core/utility/miscUtilities.hpp>

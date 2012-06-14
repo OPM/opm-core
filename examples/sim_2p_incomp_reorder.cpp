@@ -30,7 +30,7 @@
 #include <opm/core/wells/WellsManager.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/initState.hpp>
-#include <opm/core/utility/SimulatorTimer.hpp>
+#include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 

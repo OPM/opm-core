@@ -17,7 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opm/core/utility/SimulatorTimer.hpp>
+#include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/eclipse/EclipseGridParser.hpp>
