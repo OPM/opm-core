@@ -284,7 +284,8 @@ EclipseGridParser::EclipseGridParser()
     : current_reading_mode_(Regular),
       start_date_(boost::date_time::not_a_date_time),
       current_time_days_(0.0),
-      current_epoch_(0)
+      current_epoch_(0),
+      special_field_by_epoch_(1)
 {
 }
 
@@ -296,7 +297,8 @@ EclipseGridParser::EclipseGridParser(const string& filename, bool convert_to_SI)
     : current_reading_mode_(Regular),
       start_date_(boost::date_time::not_a_date_time),
       current_time_days_(0.0),
-      current_epoch_(0)
+      current_epoch_(0),
+      special_field_by_epoch_(1)
 {
     // Store directory of filename
     boost::filesystem::path p(filename);
@@ -319,6 +321,8 @@ void EclipseGridParser::read(istream& is, bool convert_to_SI)
     floating_field_map_.clear();
     special_field_by_epoch_.clear();
     special_field_by_epoch_.push_back(SpecialMap());
+    current_time_days_ = 0.0;
+    current_epoch_ = 0;
 
     readImpl(is);
 
