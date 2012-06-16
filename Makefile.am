@@ -255,6 +255,7 @@ opm/core/transport/reorder/nlsolvers.h		\
 opm/core/transport/reorder/reordersequence.h	\
 opm/core/transport/reorder/tarjan.h             \
 opm/core/vag_format/vag.hpp
+
 # ----------------------------------------------------------------------
 # Optional library constituents.
 
