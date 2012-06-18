@@ -220,9 +220,11 @@ void findconnections(int n, int *pts[4],
     int k2  = 0;
 
     int i,j=0;
-    int intersect[4]= {-1};
+    int intersect[4];
     int *tmp;
     /* for (i=0; i<2*n; work[i++]=-1); */
+
+    for (i = 0; i < 4; i++) { intersect[i] = -1; }
 
     for (i = 0; i<n-1; ++i){
 
