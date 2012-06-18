@@ -588,7 +588,7 @@ void process_grdecl(const struct grdecl   *in,
 {
     struct grdecl g;
 
-    int    i;
+    size_t i;
     int    sign, error;
     int    cellnum;
 
@@ -597,11 +597,11 @@ void process_grdecl(const struct grdecl   *in,
 
     double *zcorn;
 
-    const int BIGNUM = 64;
-    const int nx = in->dims[0];
-    const int ny = in->dims[1];
-    const int nz = in->dims[2];
-    const int nc = nx*ny*nz;
+    const size_t BIGNUM = 64;
+    const int    nx = in->dims[0];
+    const int    ny = in->dims[1];
+    const int    nz = in->dims[2];
+    const size_t nc = ((size_t) nx) * ((size_t) ny) * ((size_t) nz);
 
     /* internal work arrays */
     int    *work;
@@ -617,8 +617,8 @@ void process_grdecl(const struct grdecl   *in,
           increased)
        2) set Cartesian imensions
     */
-    out->m                = BIGNUM/3;
-    out->n                = BIGNUM;
+    out->m                = (int) (BIGNUM / 3);
+    out->n                = (int) BIGNUM;
 
     out->face_neighbors   = malloc( BIGNUM      * sizeof *out->face_neighbors);
     out->face_nodes       = malloc( out->n      * sizeof *out->face_nodes);
@@ -626,15 +626,15 @@ void process_grdecl(const struct grdecl   *in,
     out->face_tag         = malloc( out->m      * sizeof *out->face_tag);
     out->face_ptr[0]      = 0;
 
-    out->dimensions[0]    = nx;
-    out->dimensions[1]    = ny;
-    out->dimensions[2]    = nz;
+    out->dimensions[0]    = in->dims[0];
+    out->dimensions[1]    = in->dims[1];
+    out->dimensions[2]    = in->dims[2];
     out->number_of_faces  = 0;
     out->number_of_nodes  = 0;
     out->number_of_cells  = 0;
 
     out->node_coordinates = NULL;
-    out->local_cell_index = malloc(nx*ny*nz * sizeof *out->local_cell_index);
+    out->local_cell_index = malloc(nc * sizeof *out->local_cell_index);
 
 
 
@@ -649,9 +649,9 @@ void process_grdecl(const struct grdecl   *in,
 
     /* initialize grdecl structure "g" that will be processd by
      * "finduniquepoints" */
-    g.dims[0] = nx;
-    g.dims[1] = ny;
-    g.dims[2] = nz;
+    g.dims[0] = in->dims[0];
+    g.dims[1] = in->dims[1];
+    g.dims[2] = in->dims[2];
 
     actnum    = malloc (nc *     sizeof *actnum);
     g.actnum  = copy_and_permute_actnum(nx, ny, nz, in->actnum, actnum);
@@ -665,7 +665,7 @@ void process_grdecl(const struct grdecl   *in,
 
     /* allocate space for cornerpoint numbers plus INT_MIN (INT_MAX)
      * padding */
-    plist = malloc( 4*nx*ny*(2*nz+2) * sizeof *plist);
+    plist = malloc(8 * (nc + ((size_t)nx)*((size_t)ny)) * sizeof *plist);
 
     finduniquepoints(&g, plist, tolerance, out);
 
@@ -676,8 +676,8 @@ void process_grdecl(const struct grdecl   *in,
     /* Find face topology and face-to-cell connections */
 
     /* internal */
-    work = malloc(2* (2*nz+2)*   sizeof(*work));
-    for(i=0; i<4*(nz+1); ++i) { work[i] = -1; }
+    work = malloc(2 * ((size_t) (2*nz + 2)) * sizeof *work);
+    for(i = 0; i < ((size_t)4) * (nz + 1); ++i) { work[i] = -1; }
 
     /* internal array to store intersections */
     intersections = malloc(BIGNUM* sizeof(*intersections));
@@ -704,20 +704,19 @@ void process_grdecl(const struct grdecl   *in,
        -make [0...nx*ny*nz-1] array of local cell numbers,
        lexicographically ordered, used to remap out->face_neighbors
     */
-    global_cell_index = malloc(out->number_of_cells *
-                               sizeof (*global_cell_index));
+    global_cell_index = malloc(nc * sizeof *global_cell_index);
     cellnum = 0;
-    for (i=0; i<nx*ny*nz; ++i){
-        if(out->local_cell_index[i]!=-1){
-            global_cell_index[cellnum] = i;
+    for (i = 0; i < nc; ++i) {
+        if (out->local_cell_index[i] != -1) {
+            global_cell_index[cellnum] = (int) i;
             out->local_cell_index[i]   = cellnum;
             cellnum++;
         }
     }
 
     /* Remap out->face_neighbors */
-    iptr=out->face_neighbors;
-    for (i=0; i<out->number_of_faces*2; ++i, ++iptr){
+    iptr = out->face_neighbors;
+    for (i = 0; i < (((size_t) 2) * out->number_of_faces; ++i, ++iptr) {
         if (*iptr != -1){
             *iptr = out->local_cell_index[*iptr];
         }
@@ -731,8 +730,8 @@ void process_grdecl(const struct grdecl   *in,
      * z-coordinate need to change before we finish */
     if (sign == -1)
     {
-        for (i=2; i<3*out->number_of_nodes; i = i+3)
-            out->node_coordinates[i]=sign*out->node_coordinates[i];
+        for (i = 2; i < (((size_t) 3) * out->number_of_nodes); i += 3)
+            out->node_coordinates[i] *= sign;
     }
 
 }
