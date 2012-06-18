@@ -46,15 +46,22 @@
 #define min(i,j) ((i)<(j) ? (i) : (j))
 #define max(i,j) ((i)>(j) ? (i) : (j))
 
-void compute_cell_index(const int dims[3], int i, int j, int *neighbors, int len);
-int checkmemory(int nz, struct processed_grid *out, int **intersections);
-void process_vertical_faces(int direction,
-                            int **intersections,
-                            int *plist, int *work,
-                            struct processed_grid *out);
-void process_horizontal_faces(int **intersections,
-                              int *plist,
-                              struct processed_grid *out);
+static void
+compute_cell_index(const int dims[3], int i, int j, int *neighbors, int len);
+
+static int
+checkmemory(int nz, struct processed_grid *out, int **intersections);
+
+static void
+process_vertical_faces(int direction,
+                       int **intersections,
+                       int *plist, int *work,
+                       struct processed_grid *out);
+
+static void
+process_horizontal_faces(int **intersections,
+                         int *plist,
+                         struct processed_grid *out);
 
 /*-----------------------------------------------------------------
   Given a vector <field> with k index running faster than i running
@@ -87,7 +94,8 @@ static void igetvectors(int dims[3], int i, int j, int *field, int *v[])
   other element in neighbors.
 
 */
-void compute_cell_index(const int dims[3], int i, int j, int *neighbors, int len)
+static void
+compute_cell_index(const int dims[3], int i, int j, int *neighbors, int len)
 {
 
     int k;
@@ -108,7 +116,8 @@ void compute_cell_index(const int dims[3], int i, int j, int *neighbors, int len
 
 /*-----------------------------------------------------------------
   Ensure there's sufficient memory */
-int checkmemory(int nz, struct processed_grid *out, int **intersections)
+static int
+checkmemory(int nz, struct processed_grid *out, int **intersections)
 {
 
     /* Ensure there is enough space */
@@ -163,10 +172,11 @@ int checkmemory(int nz, struct processed_grid *out, int **intersections)
   direction == 0 : constant-i faces.
   direction == 1 : constant-j faces.
 */
-void process_vertical_faces(int direction,
-                            int **intersections,
-                            int *plist, int *work,
-                            struct processed_grid *out)
+static void
+process_vertical_faces(int direction,
+                       int **intersections,
+                       int *plist, int *work,
+                       struct processed_grid *out)
 {
     int i,j;
     int *cornerpts[4];
@@ -249,9 +259,10 @@ static int linearindex(const int dims[3], int i, int j, int k)
   ACTNUM==0)
 
 */
-void process_horizontal_faces(int **intersections,
-                              int *plist,
-                              struct processed_grid *out)
+static void
+process_horizontal_faces(int **intersections,
+                         int *plist,
+                         struct processed_grid *out)
 {
     int i,j,k;
 
