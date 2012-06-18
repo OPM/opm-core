@@ -283,13 +283,14 @@ int finduniquepoints(const struct grdecl *g,
     int     len    = 0;
     double  *zout  = zlist;
     int     pos    = 0;
-    double *coord = (double*)g->coord;
     double *pt;
     const double *z[4];
     const int *a[4];
     int *p;
     int pix, cix;
     int zix;
+
+    const double *coord = g->coord;
 
     d1[0] = 2*g->dims[0];
     d1[1] = 2*g->dims[1];
