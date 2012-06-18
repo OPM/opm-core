@@ -389,14 +389,18 @@ static void approximate_intersection_pt(int *L, double *c, double *pt)
 
     /* find parameter a where lines L0L1 and L2L3 have same
      * z-coordinate */
-    a = (z2-z0)/(z1-z0 - (z3-z2));
-    if (isinf(a) || isnan(a)){
+    if (fabs((z1 - z0) - (z3 - z2)) > 0.0) {
+
+        a = (z2 - z0) / ((z1 - z0) - (z3 - z2));
+
+    } else {
+
         a = 0;
+
     }
 
     /* the corresponding z-coordinate is */
-    z =  z0* (1.0-a) + z1* a;
-
+    z =  z0*(1.0 - a) + z1*a;
 
 
     /* find point (x1, y1, z) on pillar 1 */
