@@ -226,10 +226,18 @@ static void dgetvectors(const int dims[3], int i, int j,
   */
 static void interpolate_pillar(const double *coord, double *pt)
 {
-    double a = (pt[2]-coord[2])/(coord[5]-coord[2]);
-    if (isinf(a) || isnan(a)){
+    double a;
+
+    if (fabs(coord[5] - coord[2]) > 0) {
+
+        a = (pt[2] - coord[2]) / (coord[5] - coord[2]);
+
+    } else {
+
         a = 0;
+
     }
+
 #if 0
     pt[0]       = coord[0] + a*(coord[3]-coord[0]);
     pt[1]       = coord[1] + a*(coord[4]-coord[1]);
