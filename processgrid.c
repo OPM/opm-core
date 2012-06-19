@@ -36,10 +36,11 @@
 /* Mex gateway by Jostein R. Natvig, SINTEF ICT.   */
 
 
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
 #include <assert.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <mex.h>
 
 #include "preprocess.h"
