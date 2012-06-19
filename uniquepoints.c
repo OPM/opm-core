@@ -44,10 +44,8 @@
 #include "preprocess.h"
 #include "uniquepoints.h"
 
-#define min(i,j) ((i)<(j) ? (i) : (j))
-#define max(i,j) ((i)>(j) ? (i) : (j))
-#define overlap(a1,a2,b1,b2) max(a1,b1) < min(a2,b2)
-
+#define MIN(i,j) (((i) < (j)) ? (i) : (j))
+#define MAX(i,j) (((i) > (j)) ? (i) : (j))
 
 /*-----------------------------------------------------------------
   Compare function passed to qsortx  */
@@ -187,10 +185,10 @@ vector_positions(const int dims[3] ,
 {
     size_t im, ip, jm, jp;
 
-    im = max(1,       i  ) - 1;
-    ip = min(dims[0], i+1) - 1;
-    jm = max(1,       j  ) - 1;
-    jp = min(dims[1], j+1) - 1;
+    im = MAX(1,       i  ) - 1;
+    jm = MAX(1,       j  ) - 1;
+    ip = MIN(dims[0], i+1) - 1;
+    jp = MIN(dims[1], j+1) - 1;
 
     start[ 0 ] = dims[2] * (im + dims[0]*jm);
     start[ 1 ] = dims[2] * (im + dims[0]*jp);
