@@ -716,7 +716,7 @@ void process_grdecl(const struct grdecl   *in,
 
     /* Remap out->face_neighbors */
     iptr = out->face_neighbors;
-    for (i = 0; i < (((size_t) 2) * out->number_of_faces; ++i, ++iptr) {
+    for (i = 0; i < ((size_t) 2) * out->number_of_faces; ++i, ++iptr) {
         if (*iptr != -1){
             *iptr = out->local_cell_index[*iptr];
         }
@@ -730,7 +730,7 @@ void process_grdecl(const struct grdecl   *in,
      * z-coordinate need to change before we finish */
     if (sign == -1)
     {
-        for (i = 2; i < (((size_t) 3) * out->number_of_nodes); i += 3)
+        for (i = 2; i < ((size_t) 3) * out->number_of_nodes; i += 3)
             out->node_coordinates[i] *= sign;
     }
 
