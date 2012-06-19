@@ -186,7 +186,7 @@ wells_allocate(int nwells, struct Wells *W)
     int   ok, np;
     void *type, *depth_ref, *comp_frac;
     void *well_connpos;
-    void *ctrls;
+    void *ctrls, *name;
 
     np = W->number_of_phases;
 
@@ -194,6 +194,7 @@ wells_allocate(int nwells, struct Wells *W)
     depth_ref = realloc(W->depth_ref,  1 * nwells * sizeof *W->depth_ref);
     comp_frac = realloc(W->comp_frac, np * nwells * sizeof *W->comp_frac);
     ctrls     = realloc(W->ctrls    ,  1 * nwells * sizeof *W->ctrls);
+    name      = realloc(W->name     ,  1 * nwells * sizeof *W->name);
 
     well_connpos = realloc(W->well_connpos,
                            (nwells + 1) * sizeof *W->well_connpos);
@@ -204,8 +205,9 @@ wells_allocate(int nwells, struct Wells *W)
     if (comp_frac    != NULL) { W->comp_frac    = comp_frac   ; ok++; }
     if (well_connpos != NULL) { W->well_connpos = well_connpos; ok++; }
     if (ctrls        != NULL) { W->ctrls        = ctrls       ; ok++; }
+    if (name         != NULL) { W->name         = name        ; ok++; }
 
-    return ok == 5;
+    return ok == 6;
 }
 
 
@@ -242,6 +244,7 @@ initialise_new_wells(int nwells, struct Wells *W)
     for (w = m->well_cpty; w < nwells; w++) {
         W->type     [w]        = PRODUCER;
         W->depth_ref[w]        = -1.0;
+        W->name     [w]        = NULL;
 
         for (p = 0; p < W->number_of_phases; ++p) {
             W->comp_frac[W->number_of_phases*w + p] = 0.0;
@@ -325,6 +328,25 @@ wells_reserve(int nwells, int nperf, struct Wells *W)
 }
 
 
+/* ---------------------------------------------------------------------- */
+static char *
+dup_string(const char *s)
+/* ---------------------------------------------------------------------- */
+{
+    char *t;
+
+    assert (s != NULL);
+
+    t = malloc((strlen(s) + 1) * sizeof *t);
+
+    if (t != NULL) {
+        strcpy(t, s);
+    }
+
+    return t;
+}
+
+
 /* ======================================================================
  * Public entry points below separator.
  * ====================================================================== */
@@ -353,6 +375,7 @@ create_wells(int nphases, int nwells, int nperf)
         W->WI              = NULL;
 
         W->ctrls           = NULL;
+        W->name            = NULL;
 
         W->data            = create_well_mgmt();
 
@@ -391,8 +414,13 @@ destroy_wells(struct Wells *W)
             well_controls_destroy(W->ctrls[w]);
         }
 
+        for (w = 0; w < m->well_cpty; w++) {
+            free(W->name[w]);
+        }
+
         destroy_well_mgmt(m);
 
+        free(W->name);
         free(W->ctrls);
         free(W->WI);
         free(W->well_cells);
@@ -431,6 +459,7 @@ add_well(enum WellType  type     ,
          const double  *comp_frac, /* Injection fraction or NULL */
          const int     *cells    ,
          const double  *WI       , /* Well index per perf (or NULL) */
+         const char    *name     , /* Well name (or NULL) */
          struct Wells  *W        )
 /* ---------------------------------------------------------------------- */
 {
@@ -469,6 +498,12 @@ add_well(enum WellType  type     ,
     if (ok) {
         W->type     [nw] = type     ;
         W->depth_ref[nw] = depth_ref;
+
+        if (name != NULL) {
+             /* May return NULL, but that's fine for the current
+              * purpose. */
+            W->name [nw] = dup_string(name);
+        }
 
         np = W->number_of_phases;
         if (comp_frac != NULL) {
