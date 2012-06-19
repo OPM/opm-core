@@ -9,6 +9,10 @@ syntax: glob
 *.pc
 stamp-*
 .dirstamp
+.autotools
+.cproject
+.project
+.settings/*
 
 Makefile
 Makefile.in
