@@ -177,6 +177,27 @@ static int assignPointNumbers(int    begin,
 }
 
 
+/* ---------------------------------------------------------------------- */
+static void
+vector_positions(const int dims[3] ,
+                 const int i       ,
+                 const int j       ,
+                 size_t    start[4])
+/* ---------------------------------------------------------------------- */
+{
+    size_t im, ip, jm, jp;
+
+    im = max(1,       i  ) - 1;
+    ip = min(dims[0], i+1) - 1;
+    jm = max(1,       j  ) - 1;
+    jp = min(dims[1], j+1) - 1;
+
+    start[ 0 ] = dims[2] * (im + dims[0]*jm);
+    start[ 1 ] = dims[2] * (im + dims[0]*jp);
+    start[ 2 ] = dims[2] * (ip + dims[0]*jm);
+    start[ 3 ] = dims[2] * (ip + dims[0]*jp);
+}
+
 
 /*-----------------------------------------------------------------
   Given a vector <field> with k index running faster than i running
@@ -186,16 +207,13 @@ static int assignPointNumbers(int    begin,
 static void igetvectors(const int dims[3], int i, int j,
                         const int *field, const int *v[])
 {
+    size_t p, start[4];
 
-    int im = max(1,       i  ) - 1;
-    int ip = min(dims[0], i+1) - 1;
-    int jm = max(1,       j  ) - 1;
-    int jp = min(dims[1], j+1) - 1;
+    vector_positions(dims, i, j, start);
 
-    v[0] = field + dims[2]*(im + dims[0]* jm);
-    v[1] = field + dims[2]*(im + dims[0]* jp);
-    v[2] = field + dims[2]*(ip + dims[0]* jm);
-    v[3] = field + dims[2]*(ip + dims[0]* jp);
+    for (p = 0; p < 4; p++) {
+        v[p] = field + start[p];
+    }
 }
 
 
@@ -207,16 +225,13 @@ static void igetvectors(const int dims[3], int i, int j,
 static void dgetvectors(const int dims[3], int i, int j,
                         const double *field, const double *v[])
 {
+    size_t p, start[4];
 
-    int im = max(1,       i  ) - 1;
-    int ip = min(dims[0], i+1) - 1;
-    int jm = max(1,       j  ) - 1;
-    int jp = min(dims[1], j+1) - 1;
+    vector_positions(dims, i, j, start);
 
-    v[0] = field + dims[2]*(im + dims[0]* jm);
-    v[1] = field + dims[2]*(im + dims[0]* jp);
-    v[2] = field + dims[2]*(ip + dims[0]* jm);
-    v[3] = field + dims[2]*(ip + dims[0]* jp);
+    for (p = 0; p < 4; p++) {
+        v[p] = field + start[p];
+    }
 }
 
 
