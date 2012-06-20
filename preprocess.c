@@ -149,10 +149,10 @@ checkmemory(int nz, struct processed_grid *out, int **intersections)
     n = out->n;
 
     if (out->number_of_faces +  r > m) {
-        m += MAX(m*0.5, 2*r);
+        m += MAX(m / 2,  2 * r);
     }
     if (out->face_ptr[out->number_of_faces] + 6*r > n) {
-        n += MAX(n*0.5, 12*r);
+        n += MAX(n / 2, 12 * r);
     }
 
     ok = m == out->m;
