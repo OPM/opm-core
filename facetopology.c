@@ -43,8 +43,8 @@
 #include "facetopology.h"
 
 /* No checking of input arguments in this code! */
-#define min(i,j) ((i)<(j) ? (i) : (j))
-#define max(i,j) ((i)>(j) ? (i) : (j))
+#define MIN(i,j) ((i)<(j) ? (i) : (j))
+#define MAX(i,j) ((i)>(j) ? (i) : (j))
 
 #define DEBUG 1
 
@@ -182,18 +182,23 @@ static int *computeFaceTopology(int *a1,
 
 */
 
-#define lineintersection(a1,a2,b1,b2)(((a1>b1)&&(a2<b2))||((a1<b1)&&(a2>b2)))
-static int faceintersection(int *a1, int *a2, int *b1, int *b2)
+#define LINE_INTERSECTION(a1, a2, b1, b2)       \
+    (((a1 > b1) && (a2 < b2)) ||                \
+     ((a1 < b1) && (a2 > b2)))
+
+static int
+faceintersection(const int *a1, const int *a2,
+                 const int *b1, const int *b2)
 {
     return
-        max(a1[0],b1[0]) < min(a1[1],b1[1]) ||
-        max(a2[0],b2[0]) < min(a2[1],b2[1]) ||
-        lineintersection(a1[0], a2[0], b1[0], b2[0]) ||
-        lineintersection(a1[1], a2[1], b1[1], b2[1]);
+        MAX(a1[0], b1[0]) < MIN(a1[1], b1[1]) ||
+        MAX(a2[0], b2[0]) < MIN(a2[1], b2[1]) ||
+        LINE_INTERSECTION(a1[0], a2[0], b1[0], b2[0]) ||
+        LINE_INTERSECTION(a1[1], a2[1], b1[1], b2[1]);
 }
 
 
-#define meaningful_face(i,j)                            \
+#define MEANINGFUL_FACE(i,j)                            \
     !((a1[i]  ==INT_MIN) && (b1[j]  ==INT_MIN)) &&      \
     !((a1[i+1]==INT_MAX) && (b1[j+1]==INT_MAX))
 
@@ -253,10 +258,10 @@ void findconnections(int n, int *pts[4],
 
 
                 /* Completely matching faces */
-                if (a1[i]==b1[j] && a1[i+1]==b1[j+1] &&
-                    a2[i]==b2[j] && a2[i+1]==b2[j+1]){
+                if (((a1[i] == b1[j]) && (a1[i+1] == b1[j+1])) &&
+                    ((a2[i] == b2[j]) && (a2[i+1] == b2[j+1]))) {
 
-                    if (meaningful_face(i,j)){
+                    if (MEANINGFUL_FACE(i, j)) {
 
                         int cell_a = i%2 != 0 ? (i-1)/2 : -1;
                         int cell_b = j%2 != 0 ? (j-1)/2 : -1;
@@ -286,7 +291,8 @@ void findconnections(int n, int *pts[4],
                 else{
 
                     /* Find new intersection */
-                    if (lineintersection(a1[i+1],a2[i+1],b1[j+1],b2[j+1])) {
+                    if (LINE_INTERSECTION(a1[i+1], a2[i+1],
+                                          b1[j+1], b2[j+1])) {
                         itop[j+1] = out->number_of_nodes++;
 
                         /* store point numbers of intersecting lines */
@@ -309,7 +315,7 @@ void findconnections(int n, int *pts[4],
 
                     /* Add face to list of faces if no INT_MIN or
                      * INT_MAX appear in a or b. */
-                    if (meaningful_face(i,j)){
+                    if (MEANINGFUL_FACE(i,j)) {
 
                         /*
                            Even indices refer to space between cells,
@@ -352,7 +358,7 @@ void findconnections(int n, int *pts[4],
         for(j=0;j<n; ++j) { itop[j]=-1; }
 
         /* Set j to appropriate start position for next i */
-        j = min(k1, k2);
+        j = MIN(k1, k2);
     }
 }
 
