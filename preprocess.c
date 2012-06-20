@@ -63,6 +63,13 @@ process_horizontal_faces(int **intersections,
                          int *plist,
                          struct processed_grid *out);
 
+static int
+linearindex(const int dims[3], int i, int j, int k)
+{
+    return i + dims[0]*(j + dims[1]*k);
+}
+
+
 /*-----------------------------------------------------------------
   Given a vector <field> with k index running faster than i running
   faster than j, and Cartesian dimensions <dims>, find pointers to the
@@ -95,19 +102,22 @@ static void igetvectors(int dims[3], int i, int j, int *field, int *v[])
 
 */
 static void
-compute_cell_index(const int dims[3], int i, int j, int *neighbors, int len)
+compute_cell_index(const int dims[3], int i, int j,
+                   int *neighbors, int len)
 {
-
     int k;
-    if (i<0 || i>=dims[0] || j<0 || j >= dims[1]){
-        for(k=0; k<len; k+=2){
-            neighbors[k] = -1;
+
+    if (((i < 0) || (i >= dims[0])) || /* 'i' outside [0, dims[0]) */
+        ((j < 0) || (j >= dims[1]))) { /* 'j' outside [0, dims[1]) */
+
+        for (k = 0; k < len; k += 2) {
+            neighbors[k] = -1;  /* Neighbour is outside domain */
         }
-    }else{
-        for(k=0; k<len; k+=2){
-            if (neighbors[k] != -1){
-                int tmp = i + dims[0]*(j + dims[1]*neighbors[k]);
-                neighbors[k] = tmp;
+    }
+    else {
+        for (k = 0; k < len; k += 2) {
+            if (neighbors[k] != -1) {
+                neighbors[k] = linearindex(dims, i, j, neighbors[k]);
             }
         }
     }
@@ -205,7 +215,7 @@ process_vertical_faces(int direction,
             d[2] = 2+2*nz;
             igetvectors(d, 2*i+direction, 2*j+1-direction, plist, cornerpts);
 
-            if(direction==1){
+            if (direction == 1) {
                 /* 1   3       0   1    */
                 /*       --->           */
                 /* 0   2       2   3    */
@@ -223,15 +233,23 @@ process_vertical_faces(int direction,
             num_intersections = out->number_of_nodes -
                 out->number_of_nodes_on_pillars;
 
-            findconnections(2*nz+2, cornerpts,
-                            *intersections+4*num_intersections,
+            /* Establish new connections (faces) along pillar pair. */
+            findconnections(2*nz + 2, cornerpts,
+                            *intersections + 4*num_intersections,
                             work, out);
 
+            /* Start of ->face_neighbors[] for this set of connections. */
             ptr = out->face_neighbors + 2*startface;
+
+            /* Total number of cells (both sides) connected by this
+             * set of connections (faces). */
             len = 2*out->number_of_faces - 2*startface;
 
-            compute_cell_index(out->dimensions, i-1+direction, j-direction, ptr,   len);
-            compute_cell_index(out->dimensions, i,   j, ptr+1, len);
+            /* Derive inter-cell connectivity (i.e. ->face_neighbors)
+             * of global (uncompressed) cells for this set of
+             * connections (faces). */
+            compute_cell_index(out->dimensions, i-1+direction, j-direction, ptr    , len);
+            compute_cell_index(out->dimensions, i            , j          , ptr + 1, len);
 
             /* Tag the new faces */
             f = startface;
@@ -240,11 +258,6 @@ process_vertical_faces(int direction,
             }
         }
     }
-}
-
-static int linearindex(const int dims[3], int i, int j, int k)
-{
-    return i + dims[0]*(j + dims[1]*k);
 }
 
 
