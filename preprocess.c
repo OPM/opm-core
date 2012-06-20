@@ -215,11 +215,14 @@ process_vertical_faces(int direction,
     int num_intersections;
     int *ptr;
     int len;
+
     for (j=0; j<ny+direction; ++j) {
         for (i=0; i<nx+1-direction; ++i){
 
-            if (!checkmemory(nz, out, intersections)){
-                fprintf(stderr, "Could not allocat enough space in process_vertical_faces\n");
+            if (! checkmemory(nz, out, intersections)) {
+                fprintf(stderr,
+                        "Could not allocate enough space in "
+                        "process_vertical_faces()\n");
                 exit(1);
             }
 
@@ -314,8 +317,10 @@ process_horizontal_faces(int **intersections,
         for (i=0; i<nx; ++i) {
 
 
-            if (!checkmemory(nz, out, intersections)){
-                fprintf(stderr, "Could not allocat enough space in process_horizontal_faces\n");
+            if (! checkmemory(nz, out, intersections)) {
+                fprintf(stderr,
+                        "Could not allocate enough space in "
+                        "process_horizontal_faces()\n");
                 exit(1);
             }
 
