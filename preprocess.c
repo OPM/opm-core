@@ -225,8 +225,8 @@ process_vertical_faces(int direction,
     d[1] = 2 * (ny + 0);
     d[2] = 2 * (nz + 1);
 
-    for (j=0; j<ny+direction; ++j) {
-        for (i=0; i<nx+1-direction; ++i){
+    for (j = 0; j < ny + direction; ++j) {
+        for (i = 0; i < nx + (1 - direction); ++i) {
 
             if (! checkmemory(nz, out, intersections)) {
                 fprintf(stderr,
@@ -236,7 +236,8 @@ process_vertical_faces(int direction,
             }
 
             /* Vectors of point numbers */
-            igetvectors(d, 2*i+direction, 2*j+1-direction, plist, cornerpts);
+            igetvectors(d, 2*i + direction, 2*j + (1 - direction),
+                        plist, cornerpts);
 
             if (direction == 1) {
                 /* 1   3       0   1    */
