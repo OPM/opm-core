@@ -44,8 +44,8 @@
 #include "facetopology.h"
 
 
-#define min(i,j) ((i)<(j) ? (i) : (j))
-#define max(i,j) ((i)>(j) ? (i) : (j))
+#define MIN(i,j) ((i)<(j) ? (i) : (j))
+#define MAX(i,j) ((i)>(j) ? (i) : (j))
 
 static void
 compute_cell_index(const int dims[3], int i, int j, int *neighbors, int len);
@@ -87,10 +87,10 @@ linearindex(const int dims[3], int i, int j, int k)
 static void
 igetvectors(int dims[3], int i, int j, int *field, int *v[])
 {
-    int im = max(1,       i  ) - 1;
-    int ip = min(dims[0], i+1) - 1;
-    int jm = max(1,       j  ) - 1;
-    int jp = min(dims[1], j+1) - 1;
+    int im = MAX(1,       i  ) - 1;
+    int ip = MIN(dims[0], i+1) - 1;
+    int jm = MAX(1,       j  ) - 1;
+    int jp = MIN(dims[1], j+1) - 1;
 
     v[0] = field + dims[2]*(im + dims[0]* jm);
     v[1] = field + dims[2]*(im + dims[0]* jp);
@@ -146,10 +146,10 @@ checkmemory(int nz, struct processed_grid *out, int **intersections)
     n = out->n;
 
     if (out->number_of_faces +  r > m) {
-        m += max(m*0.5, 2*r);
+        m += MAX(m*0.5, 2*r);
     }
     if (out->face_ptr[out->number_of_faces] + 6*r > n) {
-        n += max(n*0.5, 12*r);
+        n += MAX(n*0.5, 12*r);
     }
 
     ok = m == out->m;
