@@ -53,8 +53,8 @@ extern "C" {
 
     /* Output structure holding grid topology */
     struct processed_grid{
-        int m;
-        int n;
+        int m;                    /** Upper bound on "number_of_faces" */
+        int n;                    /** Upper bound on "number_of_nodes" */
         int    dimensions[3];     /* Cartesian dimension                                */
         int    number_of_faces;
         int    *face_nodes;       /* Nodes numbers of each face sequentially.           */
