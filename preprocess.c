@@ -138,48 +138,53 @@ compute_cell_index(const int dims[3], int i, int j,
 static int
 checkmemory(int nz, struct processed_grid *out, int **intersections)
 {
+    int r, m, n, ok;
 
     /* Ensure there is enough space */
-    int r = (2*nz+2)*(2*nz+2);
-    int m = out->m;
-    int n = out->n;
+    r = (2*nz + 2) * (2*nz + 2);
+    m = out->m;
+    n = out->n;
 
-    if(out->number_of_faces +  r > m){
+    if (out->number_of_faces +  r > m) {
         m += max(m*0.5, 2*r);
     }
-    if (out->face_ptr[out->number_of_faces] + 6*r > n){
+    if (out->face_ptr[out->number_of_faces] + 6*r > n) {
         n += max(n*0.5, 12*r);
     }
 
-    if (m != out->m){
-        void *p1 = realloc(out->face_neighbors, 2*m * sizeof(*out->face_neighbors));
-        void *p2 = realloc(*intersections, 4*m * sizeof(**intersections));
-        if (p1 && p2) {
-            out->face_neighbors = p1;
-            *intersections = p2;
-        } else {
-            return 0;
-        }
+    ok = m == out->m;
+    if (! ok) {
+        void *p1, *p2, *p3, *p4;
+
+        p1 = realloc(*intersections     , 4*m   * sizeof **intersections);
+        p2 = realloc(out->face_neighbors, 2*m   * sizeof *out->face_neighbors);
+        p3 = realloc(out->face_ptr      , (m+1) * sizeof *out->face_ptr);
+        p4 = realloc(out->face_tag      , 1*m   * sizeof *out->face_tag);
+
+        if (p1 != NULL) { *intersections      = p1; }
+        if (p2 != NULL) { out->face_neighbors = p2; }
+        if (p3 != NULL) { out->face_ptr       = p3; }
+        if (p4 != NULL) { out->face_tag       = p4; }
+
+        ok = (p1 != NULL) && (p2 != NULL) && (p3 != NULL) && (p4 != NULL);
+
+        if (ok) { out->m = m; }
     }
 
-    if (m != out->m || n != out->n) {
-        void *p1 = realloc(out->face_nodes, n * sizeof *out->face_nodes);
-        void *p2 = realloc(out->face_ptr, (m+1) * sizeof *out->face_ptr);
-        void *p3 = realloc(out->face_tag, m * sizeof *out->face_tag);
+    if (ok && (n != out->n)) {
+        void *p1;
 
-        if (p1 && p2 && p3) {
+        p1 = realloc(out->face_nodes, n * sizeof *out->face_nodes);
+
+        ok = p1 != NULL;
+
+        if (ok) {
             out->face_nodes = p1;
-            out->face_ptr = p2;
-            out->face_tag = p3;
-        } else {
-            return 0;
+            out->n          = n;
         }
-
-        out->m = m;
-        out->n = n;
     }
 
-    return 1;
+    return ok;
 }
 
 /*-----------------------------------------------------------------
