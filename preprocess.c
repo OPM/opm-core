@@ -140,7 +140,10 @@ checkmemory(int nz, struct processed_grid *out, int **intersections)
 {
     int r, m, n, ok;
 
-    /* Ensure there is enough space */
+    /* Ensure there is enough space to manage the (pathological) case
+     * of every single cell on one side of a fault connecting to all
+     * cells on the other side of the fault (i.e., an all-to-all cell
+     * connectivity pairing). */
     r = (2*nz + 2) * (2*nz + 2);
     m = out->m;
     n = out->n;
