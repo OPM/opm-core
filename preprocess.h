@@ -63,7 +63,7 @@ extern "C" {
         enum face_tag *face_tag;
   
         int    number_of_nodes; 
-        int    number_of_nodes_on_pillars;
+        int    number_of_nodes_on_pillars; /** Total number of unique cell vertices that lie on pillars. */
         double *node_coordinates; /* 3 doubles per node, sequentially                   */
   
         int    number_of_cells;   /* number of active cells                             */
