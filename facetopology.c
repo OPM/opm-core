@@ -198,9 +198,9 @@ faceintersection(const int *a1, const int *a2,
 }
 
 
-#define MEANINGFUL_FACE(i,j)                            \
-    !((a1[i]  ==INT_MIN) && (b1[j]  ==INT_MIN)) &&      \
-    !((a1[i+1]==INT_MAX) && (b1[j+1]==INT_MAX))
+#define MEANINGFUL_FACE(i, j)                                   \
+    (! ((a1[i]   == INT_MIN) && (b1[j]   == INT_MIN)) &&        \
+     ! ((a1[i+1] == INT_MAX) && (b1[j+1] == INT_MAX)))
 
 
 /* work should be pointer to 2n ints initialised to zero . */
