@@ -231,20 +231,23 @@ void findconnections(int n, int *pts[4],
 
     for (i = 0; i < 4; i++) { intersect[i] = -1; }
 
-    for (i = 0; i<n-1; ++i){
+    for (i = 0; i < n - 1; ++i) {
 
         /* pinched a-cell */
-        if (a1[i] == a1[i+1] && a2[i] == a2[i+1]){
+        if ((a1[i] == a1[i + 1]) &&
+            (a2[i] == a2[i + 1])) {
             continue;
         }
 
 
-
-
-        while(j<n-1 && (b1[j] < a1[i+1] || b2[j] < a2[i+1])){
-
+        while ((j < n-1) &&
+               ((b1[j] < a1[i + 1]) ||
+                (b2[j] < a2[i + 1])))
+        {
             /* pinched b-cell */
-            if (b1[j] == b1[j+1] && b2[j] == b2[j+1]){
+            if ((b1[j] == b1[j + 1]) &&
+                (b2[j] == b2[j + 1])) {
+
                 itop[j+1] = itop[j];
                 ++j;
                 continue;
