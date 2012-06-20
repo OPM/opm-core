@@ -32,12 +32,13 @@
   along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
 #include <assert.h>
-#include <stdio.h>
 #include <float.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "preprocess.h"
 #include "uniquepoints.h"
 #include "facetopology.h"
@@ -66,6 +67,14 @@ process_horizontal_faces(int **intersections,
 static int
 linearindex(const int dims[3], int i, int j, int k)
 {
+    assert (0 <= i);
+    assert (0 <= j);
+    assert (0 <= k);
+
+    assert (i < dims[0]);
+    assert (j < dims[1]);
+    assert (k < dims[2]);
+
     return i + dims[0]*(j + dims[1]*k);
 }
 
@@ -75,9 +84,9 @@ linearindex(const int dims[3], int i, int j, int k)
   faster than j, and Cartesian dimensions <dims>, find pointers to the
   (i-1, j-1, 0), (i-1, j, 0), (i, j-1, 0) and (i, j, 0) elements of
   field.  */
-static void igetvectors(int dims[3], int i, int j, int *field, int *v[])
+static void
+igetvectors(int dims[3], int i, int j, int *field, int *v[])
 {
-
     int im = max(1,       i  ) - 1;
     int ip = min(dims[0], i+1) - 1;
     int jm = max(1,       j  ) - 1;
