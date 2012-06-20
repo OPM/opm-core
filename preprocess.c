@@ -219,6 +219,8 @@ process_vertical_faces(int direction,
     int *ptr;
     int len;
 
+    assert ((direction == 0) || (direction == 1));
+    
     d[0] = 2 * (nx + 0);
     d[1] = 2 * (ny + 0);
     d[2] = 2 * (nz + 1);
