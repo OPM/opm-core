@@ -39,7 +39,7 @@ extern int interrupt_signal;
 #else
 
 #define print printf
-#include "nlsolvers.h"
+#include <opm/core/transport/reorder/nlsolvers.h>
 
 #endif
 
