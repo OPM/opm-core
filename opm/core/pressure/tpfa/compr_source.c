@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "compr_source.h"
+#include <opm/core/pressure/tpfa/compr_source.h>
 
 static int
 expand_source_tables(int alloc, struct compr_src *src)
