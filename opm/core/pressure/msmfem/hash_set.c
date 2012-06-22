@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "hash_set.h"
+#include <opm/core/pressure/msmfem/hash_set.h>
 
 /* ======================================================================
  * Macros
