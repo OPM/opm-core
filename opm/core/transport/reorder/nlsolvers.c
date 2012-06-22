@@ -36,12 +36,13 @@ extern int interrupt_signal;
 #define calloc  mxCalloc
 #define realloc mxRealloc
 #define free    mxFree
-#else
+
+#else  /* MATLAB_MEX_FILE */
 
 #define print printf
 #include <opm/core/transport/reorder/nlsolvers.h>
 
-#endif
+#endif  /* MATLAB_MEX_FILE */
 
 static const char no_root_str[]=
     "  In %s:\n"
