@@ -20,87 +20,338 @@
 #ifndef OPM_HYBSYS_HEADER_INCLUDED
 #define OPM_HYBSYS_HEADER_INCLUDED
 
+/**
+ * \file
+ * Routines and data structures to manage local contributions to a
+ * global system of simultaneous linear equations arising from a
+ * Schur complement reduction of an original block system.
+ *
+ * Specifically, these data structures and related routines compute
+ * and store the elemental (cell-based) contributions of the Schur
+ * complement reduction of the block system of simultaneous linear
+ * equations
+ * \f[
+ * \begin{pmatrix}
+ * B              & C_1 & D \\
+ * C_2^\mathsf{T} & P   & 0 \\
+ * D^\mathsf{T}   & 0   & 0
+ * \end{pmatrix}
+ * \begin{pmatrix}
+ * v \\ -p \\ \pi
+ * \end{pmatrix} = \begin{pmatrix}
+ * G \\ g \\ h
+ * \end{pmatrix}
+ * \f]
+ * in which \f$G\f$ accounts for effects of gravity.  The traditional
+ * Schurcomplement reduction (block Gaussian elimination) then produces
+ * the equivalent system of simultaneous linear equations
+ * \f[
+ * \begin{pmatrix}
+ * B & C_1 &  D   \\
+ * 0 & -L  & -F_2 \\
+ * 0 &  0  &  A
+ * \end{pmatrix}
+ * \begin{pmatrix}
+ * v \\ -p \\ \pi
+ * \end{pmatrix} = \begin{pmatrix}
+ * G \\ g - C_2^\mathsf{T}B^{-1}G \\ b
+ * \end{pmatrix}.
+ * \f]
+ * Here, the matrix \f$A\f$ and the right hand side vector \f$b\f$ are given
+ * by
+ * \f[
+ * \begin{aligned}
+ * A &= D^\mathsf{T}B^{-1}D - F_1^\mathsf{T}L^{-1}F_2 \\
+ * b &= D^\mathsf{T}B^{-1}G +
+ *      F_1^\mathsf{T}L^{-1}(g - C_2^\mathsf{T}B^{-1}G) - h,
+ * \end{aligned}
+ * \f]
+ * and the component matrices \f$F_1\f$, \f$F_2\f$, and \f$L\f$ are given
+ * by
+ * \f[
+ *   F_1 = C_1^\mathsf{T}B^{-1}D, \quad
+ *   F_2 = C_2^\mathsf{T}B^{-1}D, \quad
+ *   L   = C_2^\mathsf{T}B^{-1}C_1 - P.
+ * \f]
+ * In the case of incompressible flow, the matrix \f$C_2\f$ is the same
+ * as \f$C_1\f$ and \f$P=0\f$ whence the coefficient matrix \f$A\f$ of
+ * the Schur complement system \f$A\pi=b\f$ is symmetric.
+ *
+ * A great deal of simplification arises from the simple characterisation
+ * of the \f$C_1\f$ and \f$D\f$ matrices.  Specifically,
+ * \f[
+ * (C_1)_{ij} = \begin{cases}
+ * 1, &\quad i\in\{\mathit{pconn}_j, \dots, \mathit{pconn}_{j+1}-1\}, \\
+ * 0, &\quad \text{otherwise},
+ * \end{cases}
+ * \f]
+ * and
+ * \f[
+ * (D)_{ij} = \begin{cases}
+ * 1, &\quad \mathit{conn}_i = j, \\
+ * 0, &\quad \text{otherwise}.
+ * \end{cases}
+ * \f]
+ * When viewed in the context of a single cell, then the \f$D\f$ matrix
+ * is, effectively, the identity with the \f$\mathit{conn}\f$ array
+ * simply affecting a finite-element style redistribution (assembly)
+ * of the local contributions.  This module leverages that property
+ * extensively.
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * Elemental contributions (from cells) to block system of simultaneous
+ * linear equations.  Mixes quantities of single cells (@c r,
+ * @c S and @c one) with those that cater to all cells (@c L,
+ * @c q, @c F1, and--possibly--@c F2).
+ */
 struct hybsys {
-    double *L;                  /* C2' * inv(B) * C1 - P */
-    double *q;                  /* g - F2*G */
-    double *F1;                 /* C1' * inv(B)          */
-    double *F2;                 /* C2' * inv(B)          */
-    double *r;                  /* system rhs in single cell */
-    double *S;                  /* system matrix in single cell */
-    double *one;                /* ones(max_nconn, 1) */
+    double *L;    /**< \f$C_2^\mathsf{T}B^{-1}C - P\f$, all cells */
+    double *q;    /**< \f$g - F_2 G\f$, all cells */
+    double *F1;   /**< \f$C_1^\mathsf{T}B^{-1}\f$, all cells */
+    double *F2;   /**< \f$C_2^\mathsf{T}B^{-1}\f$, all cells*/
+    double *r;    /**< Data buffer for system right-hand side, single cell */
+    double *S;    /**< Data buffer system matrix, single cell */
+    double *one;  /**< \f$(1,1,\dots,1)^\mathsf{T}\f$, single cell */
 };
 
 
+/**
+ * Elemental contributions (from wells) to block system of simultaneous
+ * linear equations.  Mixes quantities of single cell connections (@c r,
+ * @c w2r, @c r2w, and @c w2w) and those that pertain to all well
+ * connections (perforations) in concert (@c F1 and @c F2).
+ */
 struct hybsys_well {
-    double *F1;
-    double *F2;
-    double *r;
+    double *F1;    /**< \f$C_1^\mathsf{T}B^{-1}\f$, all connections. */
+    double *F2;    /**< \f$C_2^\mathsf{T}B^{-1}\f$, all connections. */
+    double *r;     /**< Data buffer for system right-hand side, single cell. */
 
-    double *w2r;
-    double *r2w;
-    double *w2w;
+    double *w2r;   /**< Well-to-reservoir connection strength, single cell. */
+    double *r2w;   /**< Reservoir-to-well connection strength, single cell. */
+    double *w2w;   /**< Aggregate well-to-well connection strength. */
 
-    double *data;
+    double *data;  /**< Linear storage array.  Structure undisclosed. */
 };
 
 
+/**
+ * Allocate a hybrid system management structure suitable for discretising
+ * a symmetric (i.e., incompressible) flow problem on a grid model of
+ * given size.
+ *
+ * @param[in] max_nconn Maximum number of single cell faces.
+ * @param[in] nc        Total number of grid cells.
+ * @param[in] nconn_tot Aggregate number of cell faces for all cells.
+ * @return Fully formed hybrid system management structure if successful or
+ * @c NULL in case of allocation failure.
+ */
 struct hybsys *
 hybsys_allocate_symm(int max_nconn, int nc, int nconn_tot);
 
+
+/**
+ * Allocate a hybrid system management structure suitable for discretising
+ * an unsymmetric (i.e., compressible) flow problem on a grid model of
+ * given size.
+ *
+ * @param[in] max_nconn Maximum number of single cell faces.
+ * @param[in] nc        Total number of grid cells.
+ * @param[in] nconn_tot Aggregate number of cell faces for all cells.
+ * @return Fully formed hybrid system management structure if successful or
+ * @c NULL in case of allocation failure.
+ */
 struct hybsys *
 hybsys_allocate_unsymm(int max_nconn, int nc, int nconn_tot);
 
+
+/**
+ * Allocate a hybrid system management structure suitable for discretising
+ * an incompressible (i.e., symmetric) well flow problem on a grid model
+ * of given size.
+ *
+ * @param[in] max_nconn Maximum number of single cell faces.
+ * @param[in] nc        Total number of grid cells.
+ * @param[in] cwpos     Indirection array that defines each cell's
+ *                      connecting wells.  Values typically computed
+ *                      using function derive_cell_wells().
+ * @return Fully formed hybrid system management structure if successful or
+ * @c NULL in case of allocation failure.
+ */
 struct hybsys_well *
 hybsys_well_allocate_symm(int max_nconn, int nc, int *cwpos);
 
+
+/**
+ * Allocate a hybrid system management structure suitable for discretising
+ * a compressible (i.e., unsymmetric) well flow problem on a grid model
+ * of given size.
+ *
+ * @param[in] max_nconn Maximum number of single cell faces.
+ * @param[in] nc        Total number of grid cells.
+ * @param[in] cwpos     Indirection array that defines each cell's
+ *                      connecting wells.  Values typically computed
+ *                      using function derive_cell_wells().
+ * @return Fully formed hybrid system management structure if successful
+ * or @c NULL in case of allocation failure.
+ */
 struct hybsys_well *
 hybsys_well_allocate_unsymm(int max_nconn, int nc, int *cwpos);
 
+
+/**
+ * Dispose of memory resources previously obtained through one of the
+ * allocation functions, hybsys_allocate_symm() or
+ * hybsys_allocate_unsymm().
+ *
+ * Following a call to hybsys_free(), the input pointer is no longer
+ * valid.  <CODE>hybsys_free(NULL)</CODE> does nothing.
+ *
+ * @param[in,out] sys Previously allocated hybrid system management
+ *                    structure (or @c NULL).
+ */
 void
 hybsys_free(struct hybsys *sys);
 
+/**
+ * Dispose of memory resources previously obtained through one of the
+ * allocation functions, hybsys_well_allocate_symm() or
+ * hybsys_well_allocate_unsymm().
+ *
+ * Following a call to hybsys_well_free(), the input pointer is
+ * no longer valid.  <CODE>hybsys_well_free(NULL)</CODE> does nothing.
+ *
+ * @param[in,out] wsys Previously allocated hybrid system management
+ *                     structure (or @c NULL).
+ */
 void
 hybsys_well_free(struct hybsys_well *wsys);
 
+
+/**
+ * Perform post-construction dynamic initialisation of system
+ * structure obtained from function hybsys_allocate_symm() or
+ * hybsys_allocate_unsymm().
+ *
+ * @param[in] max_nconn Maximum number of single cell faces.
+ *                      Must coincide with the equally named
+ *                      parameter of functions hybsys_allocate_symm()
+ *                      or hybsys_allocate_unsymm().
+ * @param[in,out] sys   Previously allocated hybrid system management
+ *                      structure.
+ */
 void
 hybsys_init(int max_nconn, struct hybsys *sys);
 
-/*
- * Schur complement reduction (per grid cell) of block matrix
+/**
+ * Compute elemental (per-cell) contributions to symmetric Schur
+ * system of simultaneous linear equations.
  *
- *    [  B   C   D  ]
- *    [  C'  0   0  ]
- *    [  D'  0   0  ]
+ * This function assumes that the coefficient matrix of the hybrid
+ * system of linear equations is that of the introduction with the
+ * additional provision that \f$C_1=C_2=C\f$ and that \f$P=0\f$.
+ * In other words, this function assumes that the coefficient matrix
+ * is of the form
+ * \f[
+ * \begin{pmatrix}
+ * B            & C & D \\
+ * C^\mathsf{T} & 0 & 0 \\
+ * D^\mathsf{T} & 0 & 0
+ * \end{pmatrix}.
+ * \f]
+ * This function fills the @c F1 and @c L fields of the management
+ * structure.
  *
+ * @param[in]     nc    Total number of grid cells.
+ * @param[in]     pconn Cell-to-face start pointers.
+ * @param[in]     Binv  Inverse inner product results, usually
+ *                      computed using mim_ip_simple_all() and
+ *                      mim_ip_mobility_update().
+ * @param[in,out] sys   Hybrid system management structure allocated
+ *                      using hybsys_allocate_symm() and initialised
+ *                      using hybsys_init().
  */
 void
 hybsys_schur_comp_symm(int nc, const int *pconn,
                        const double *Binv, struct hybsys *sys);
 
-/*
- * Schur complement reduction (per grid cell) of block matrix
+
+/**
+ * Compute elemental (per-cell) contributions to unsymmetric Schur
+ * system of simultaneous linear equations.
  *
- *    [    B     C   D  ]
- *    [  (C-V)'  P   0  ]
- *    [    D'    0   0  ]
+ * This function assumes that the coefficient matrix of the hybrid
+ * system of linear equations is that of the introduction with the
+ * additional provision that \f$C_2=C_1-V\f$.  In other words, this
+ * function assumes that the coefficient matrix is of the form
+ * \f[
+ * \begin{pmatrix}
+ * B                & C & D \\
+ * (C-V)^\mathsf{T} & P & 0 \\
+ * D^\mathsf{T}     & 0 & 0
+ * \end{pmatrix}.
+ * \f]
+ * This matrix arises in the ``\f$v^2\f$'' phase compressibility
+ * formulation of the compressible black-oil model. This function
+ * fills the @c F1, @c F2 and @c L fields of the management structure.
  *
+ * @param[in]     nc    Total number of grid cells.
+ * @param[in]     pconn Cell-to-face start pointers.
+ * @param[in]     Binv  Inverse inner product results, usually
+ *                      computed using mim_ip_simple_all() and
+ *                      mim_ip_mobility_update().
+ * @param[in]     BIV   \f$B^{-1}v\f$ in which \f$v\f$ is the flux
+ *                      field of a previous time step or non-linear
+ *                      iteration.
+ * @param[in]     P     Per cell compressible accumulation term.  One
+ *                      scalar per cell.
+ * @param[in,out] sys   Hybrid system management structure allocated
+ *                      using hybsys_allocate_symm() and initialised
+ *                      using hybsys_init().
  */
 void
 hybsys_schur_comp_unsymm(int nc, const int *pconn,
                          const double *Binv, const double *BIV,
                          const double *P, struct hybsys *sys);
 
-/*
- * Schur complement reduction (per grid cell) of block matrix
+
+/**
+ * Compute elemental (per-cell) contributions to unsymmetric Schur
+ * system of simultaneous linear equations.
  *
- *    [   B   C   D  ]
- *    [  C2'  P   0  ]
- *    [   D'  0   0  ]
+ * This function assumes that the coefficient matrix of the hybrid
+ * system of linear equations is that of the introduction with no
+ * additional provisions.  In other words, this
+ * function assumes that the coefficient matrix is of the form
+ * \f[
+ * \begin{pmatrix}
+ * B              & C_1 & D \\
+ * C_2^\mathsf{T} & P   & 0 \\
+ * D^\mathsf{T}   & 0   & 0
+ * \end{pmatrix}.
+ * \f]
+ * This function fills the @c F1, @c F2 and @c L fields of
+ * the management structure.
  *
+ * @param[in]     nc    Total number of grid cells.
+ * @param[in]     pconn Cell-to-face start pointers.
+ * @param[in]     Binv  Inverse inner product results, usually
+ *                      computed using mim_ip_simple_all() and
+ *                      mim_ip_mobility_update().
+ * @param[in]     C2    Explicit representation of the \f$C_2\f$
+ *                      matrix as a linear array.  Assumed to only
+ *                      contain the (structurally) non-zero matrix
+ *                      elements (that correspond to the non-zero
+ *                      structure of \f$C_1\f$).
+ * @param[in]     P     Per cell compressible accumulation term.  One
+ *                      scalar per cell.
+ * @param[in,out] sys   Hybrid system management structure allocated
+ *                      using hybsys_allocate_symm() and initialised
+ *                      using hybsys_init().
  */
 void
 hybsys_schur_comp_gen(int nc, const int *pconn,
