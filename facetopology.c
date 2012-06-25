@@ -60,12 +60,10 @@
 
 /* Determine face topology first, then compute intersection. */
 /* All intersections that occur are present in the final face geometry.*/
-static int *computeFaceTopology(int *a1,
-                                int *a2,
-                                int *b1,
-                                int *b2,
-                                int intersect[4],
-                                int *faces)
+static int *
+computeFaceTopology(const int *a1, const int *a2,
+                    const int *b1, const int *b2,
+                    int intersect[4], int *faces)
 {
     int mask[8];
     int k;
