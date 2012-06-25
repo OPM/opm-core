@@ -209,7 +209,7 @@ compute_cell_geometry(int ndims, double *coords,
                 subnormal_sign += w[i]*fnormals[3*face+i];
             }
 
-            if(subnormal_sign<0){
+            if (subnormal_sign < 0.0) {
                 tet_volume = - tet_volume;
             }
             if (neighbors[2*face + 0] != c) {
