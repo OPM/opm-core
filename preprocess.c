@@ -220,7 +220,7 @@ process_vertical_faces(int direction,
     int len;
 
     assert ((direction == 0) || (direction == 1));
-    
+
     d[0] = 2 * (nx + 0);
     d[1] = 2 * (ny + 0);
     d[2] = 2 * (nz + 1);
@@ -618,6 +618,136 @@ get_zcorn_sign(int nx, int ny, int nz, const int *actnum,
 }
 
 
+static void
+ind2sub(const size_t nx,
+        const size_t ny,
+        const size_t nz,
+        size_t       c ,
+        size_t *i, size_t *j, size_t *k)
+{
+    assert (c < (nx * ny * nz));
+
+#if !defined(NDEBUG)
+    (void) nz;
+#endif
+
+    *i = c % nx;  c /= nx;
+    *j = c % ny;
+    *k = c / ny;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static double
+vert_size(const struct grdecl *in,
+          const size_t         c ,
+          const size_t         off[8])
+/* ---------------------------------------------------------------------- */
+{
+    size_t        i, j, k, start;
+    double        dz;
+    const double *zcorn;
+
+    ind2sub(in->dims[0], in->dims[1], in->dims[2], c, &i, &j, &k);
+
+    zcorn = in->zcorn;
+    start = (k * off[4]) + (j * off[2]) + (i * 2);
+
+    for (k = 0, dz = 0.0; (! (fabs(dz) > 0)) && (k < 4); k++) {
+        dz = zcorn[start + off[k + 4]] - zcorn[start + off[k]];
+    }
+
+    return dz;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static int
+is_lefthanded(const struct grdecl *in)
+/* ---------------------------------------------------------------------- */
+{
+    int           active, searching;
+    size_t        nx, ny, nz, c;
+    size_t        origin, imax, jmax;
+    size_t        off[8];
+    double        dx[2], dy[2], dz, triple;
+    const double *pt_coord;
+
+    nx = in->dims[0];
+    ny = in->dims[1];
+    nz = in->dims[2];
+
+    off[0] = 0;
+    off[1] = off[0] + 1;
+    off[2] = off[0] + (2 * nx);
+    off[3] = off[2] + 1;
+    off[4] = off[0] + ((2 * nx) * (2 * ny));
+    off[5] = off[4] + 1;
+    off[6] = off[4] + (2 * nx);
+    off[7] = off[6] + 1;
+
+    pt_coord = in->coord;
+
+    origin = 0;
+    imax   = (nx + 0) * 1        * (2 * 3);
+    jmax   = (nx + 1) * (ny + 0) * (2 * 3);
+
+    dx[0] = pt_coord[imax + 0] - pt_coord[origin + 0];
+    dy[0] = pt_coord[imax + 1] - pt_coord[origin + 1];
+
+    dx[1] = pt_coord[jmax + 0] - pt_coord[origin + 0];
+    dy[1] = pt_coord[jmax + 1] - pt_coord[origin + 1];
+
+    c = 0;  dz = 0.0;
+    do {
+        active = (in->actnum == NULL) || (in->actnum[c] != 0);
+
+        if (active) {
+            dz = vert_size(in, c, off);
+        }
+
+        searching = ! (active && (fabs(dz) > 0.0));
+
+        c += 1;
+    } while (searching && (c < (nx * ny * nz)));
+
+    assert (! searching);       /* active && (fabs(dz) > 0) */
+
+    /* Compute vector triple product to distinguish left-handed (<0)
+     * from right-handed (>0) coordinate systems. */
+    triple = dz * (dx[0]*dy[1] - dx[1]*dy[0]);
+
+    assert (fabs(triple) > 0.0);
+
+    return triple < 0.0;
+}
+
+
+/* ---------------------------------------------------------------------- */
+static void
+reverse_face_nodes(struct processed_grid *out)
+/* ---------------------------------------------------------------------- */
+{
+    int f, t, *i, *j;
+
+    for (f = 0; f < out->number_of_faces; f++) {
+        i = out->face_nodes + (out->face_ptr[f + 0] + 0);
+        j = out->face_nodes + (out->face_ptr[f + 1] - 1);
+
+        assert (i <= j);
+
+        while (i < j) {
+            t  = *i;
+            *i = *j;
+            *j =  t;
+
+            i += 1;
+            j -= 1;
+        }
+    }
+}
+
+
 /*-----------------------------------------------------------------
   Public interface
 */
@@ -628,7 +758,7 @@ void process_grdecl(const struct grdecl   *in,
     struct grdecl g;
 
     size_t i;
-    int    sign, error;
+    int    sign, error, left_handed;
     int    cellnum;
 
     int    *actnum, *iptr;
@@ -711,6 +841,16 @@ void process_grdecl(const struct grdecl   *in,
     free (zcorn);
     free (actnum);
 
+    /* Determine if coordinate system is left handed or not. */
+    left_handed = is_lefthanded(in);
+    if (left_handed) {
+        /* Reflect Y coordinates about XZ plane to create right-handed
+         * coordinate system whilst processing intersections. */
+        for (i = 1; i < ((size_t) 3) * out->number_of_nodes; i += 3) {
+            out->node_coordinates[i] = -out->node_coordinates[i];
+        }
+    }
+
     /* -----------------------------------------------------------------*/
     /* Find face topology and face-to-cell connections */
 
@@ -765,6 +905,14 @@ void process_grdecl(const struct grdecl   *in,
     free(out->local_cell_index);
     out->local_cell_index = global_cell_index;
 
+    /* Reflect Y coordinate back to original position if left-handed
+     * coordinate system was detected and handled earlier. */
+    if (left_handed) {
+        for (i = 1; i < ((size_t) 3) * out->number_of_nodes; i += 3) {
+            out->node_coordinates[i] = -out->node_coordinates[i];
+        }
+    }
+
     /* if sign==-1 in ZCORN preprocessing, the sign of the
      * z-coordinate need to change before we finish */
     if (sign == -1)
@@ -773,6 +921,14 @@ void process_grdecl(const struct grdecl   *in,
             out->node_coordinates[i] *= sign;
     }
 
+    /* If an odd number of coordinate reflections were applied, the
+     * processing routines--especially facetopology()--will produce
+     * node orderings that lead to normals pointing from 2 to 1.
+     * Reverse nodes to reestablish expected normal direction (and
+     * positive cell volumes). */
+    if (left_handed ^ (sign == -1)) {
+        reverse_face_nodes(out);
+    }
 }
 
 /*-------------------------------------------------------*/
