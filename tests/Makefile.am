@@ -19,7 +19,6 @@ test_column_extract				\
 test_lapack					\
 test_read_vag					\
 test_readpolymer				\
-test_readvector					\
 test_sf2p					\
 test_writeVtkData				\
 unit_test
@@ -48,8 +47,6 @@ test_lapack_LDADD         = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 test_readpolymer_SOURCES  = test_readpolymer.cpp
 test_read_vag_SOURCES     = test_read_vag.cpp
-
-test_readvector_SOURCES   = test_readvector.cpp
 
 test_sf2p_SOURCES         = test_sf2p.cpp
 
