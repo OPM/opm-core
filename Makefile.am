@@ -57,8 +57,6 @@ opm/core/grid/cornerpoint_grid.c			\
 opm/core/grid/cpgpreprocess/facetopology.c		\
 opm/core/grid/cpgpreprocess/geometry.c			\
 opm/core/grid/cpgpreprocess/preprocess.c		\
-opm/core/grid/cpgpreprocess/readvector.cpp		\
-opm/core/grid/cpgpreprocess/sparsetable.c		\
 opm/core/grid/cpgpreprocess/uniquepoints.c		\
 opm/core/linalg/LinearSolverFactory.cpp			\
 opm/core/linalg/LinearSolverInterface.cpp		\
@@ -160,8 +158,6 @@ opm/core/grid/cpgpreprocess/facetopology.h		\
 opm/core/grid/cpgpreprocess/geometry.h			\
 opm/core/grid/cpgpreprocess/grdecl.h			\
 opm/core/grid/cpgpreprocess/preprocess.h		\
-opm/core/grid/cpgpreprocess/readvector.hpp		\
-opm/core/grid/cpgpreprocess/sparsetable.h		\
 opm/core/grid/cpgpreprocess/uniquepoints.h		\
 opm/core/linalg/LinearSolverFactory.hpp			\
 opm/core/linalg/LinearSolverInterface.hpp		\
