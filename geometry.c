@@ -198,14 +198,10 @@ compute_cell_geometry(int ndims, double *coords,
 
             cross(u,v,w);
 
-
-
             tet_volume = 0;
             for(i=0; i<ndims; ++i){
                 tet_volume += 0.5/3 * w[i]*(x[i]-xcell[i]);
-                /*tet_volume += 0.5/3 * w[i]*(x[i]-xcell[i]);*/
             }
-            /*tet_volume = fabs(tet_volume);*/
 
             subnormal_sign=0.0;
             for(i=0; i<ndims; ++i){
