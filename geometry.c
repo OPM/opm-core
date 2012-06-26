@@ -131,6 +131,12 @@ compute_cell_geometry(int ndims, double *coords,
    double ccell[3];
    double cface[3]  = {0};
    const double twothirds = 0.666666666666666666666666666667;
+
+   int ndigits;
+
+   ndigits = ((int) (log(ncells) / log(10.0))) + 1;
+
+
    for (c=0; c<ncells; ++c)
    {
       int num_faces;
@@ -214,9 +220,6 @@ compute_cell_geometry(int ndims, double *coords,
             }
 
             volume += tet_volume;
-            if(!(volume>0)){
-                fprintf(stderr, "Internal error in mex_compute_geometry: negative volume\n");
-            }
 
             /* face centroid of triangle  */
             for (i=0; i<ndims; ++i) cface[i] = (x[i]+twothirds*0.5*(u[i]+v[i]));
@@ -229,6 +232,13 @@ compute_cell_geometry(int ndims, double *coords,
             for (i=0; i<ndims; ++i) u[i] = v[i];
          }
       }
+
+      if (! (volume > 0.0)) {
+          fprintf(stderr,
+                  "Internal error in mex_compute_geometry(%*d): "
+                  "negative volume\n", ndigits, c);
+      }
+
       for (i=0; i<ndims; ++i) ccentroids[3*c+i] = xcell[i] + ccell[i]/volume;
       cvolumes[c] = volume;
    }
