@@ -41,8 +41,8 @@ AC_DEFUN([OPM_DYNLINK_BOOST_TEST],
 AC_REQUIRE([AX_BOOST_BASE])
 AC_REQUIRE([AX_BOOST_UNIT_TEST_FRAMEWORK])
 
-_opm_LIBS_SAVE="$LIBS"
-_opm_CPPFLAGS_SAVE="$CPPFLAGS"
+_opm_LIBS_SAVE="${LIBS}"
+_opm_CPPFLAGS_SAVE="${CPPFLAGS}"
 
 LIBS="${BOOST_LDFLAGS} ${BOOST_UNIT_TEST_FRAMEWORK_LIB} ${LIBS}"
 CPPFLAGS="${BOOST_CPPFLAGS} ${CPPFLAGS}"
@@ -66,12 +66,12 @@ AC_CACHE_CHECK([if the Boost.Test library can be linked dynamically],dnl
 
 AC_LANG_POP([C++])
 
-LIBS="$_opm_LIBS_SAVE"
-CPPFLAGS="$_opm_CPPFLAGS_SAVE"
+LIBS="${_opm_LIBS_SAVE}"
+CPPFLAGS="${_opm_CPPFLAGS_SAVE}"
 
-AS_IF([test x"$opm_cv_boost_link_static" = x"yes" -o \
-            x"$opm_cv_boost_link_dynamic" = x"yes"],
-[AS_IF([test x"$opm_cv_boost_link_dynamic" = x"yes"],
+AS_IF([test x"${opm_cv_boost_link_static}" = x"yes" -o \
+            x"${opm_cv_boost_link_dynamic}" = x"yes"],
+[AS_IF([test x"${opm_cv_boost_link_dynamic}" = x"yes"],
  [AC_DEFINE([HAVE_DYNAMIC_BOOST_TEST], [1],
             [Define to `1' if Boost.Test should use BOOST_TEST_DYN_LINK])]
  [:])[]dnl
