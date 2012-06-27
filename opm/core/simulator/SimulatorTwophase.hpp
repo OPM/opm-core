@@ -36,7 +36,7 @@ namespace Opm
     class SimulatorTimer;
     class TwophaseState;
     class WellState;
-    class SimulatorReport;
+    struct SimulatorReport;
 
     /// Class collecting all necessary components for a two-phase simulation.
     class SimulatorTwophase
