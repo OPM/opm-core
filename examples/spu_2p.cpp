@@ -94,14 +94,19 @@
 #include <numeric>
 
 
+#ifdef HAVE_ERT
+#include <opm/core/utility/writeECLData.hpp>
+#endif
+
 
 
 static void outputState(const UnstructuredGrid& grid,
                         const Opm::TwophaseState& state,
-                        const int step,
+                        const Opm::SimulatorTimer& simtimer,
                         const std::string& output_dir)
 {
     // Write data in VTK format.
+  int step = simtimer.currentStepNum();
     std::ostringstream vtkfilename;
     vtkfilename << output_dir << "/output-" << std::setw(3) << std::setfill('0') << step << ".vtu";
     std::ofstream vtkfile(vtkfilename.str().c_str());
@@ -115,6 +120,9 @@ static void outputState(const UnstructuredGrid& grid,
     Opm::estimateCellVelocity(grid, state.faceflux(), cell_velocity);
     dm["velocity"] = &cell_velocity;
     Opm::writeVtkData(grid, dm, vtkfile);
+#ifdef HAVE_ERT
+    Opm::writeECLData(grid , dm , simtimer , output_dir , "OPM" );
+#endif
 
     // Write data (not grid) in Matlab format
     for (Opm::DataMap::const_iterator it = dm.begin(); it != dm.end(); ++it) {
@@ -532,7 +540,7 @@ main(int argc, char** argv)
         // Report timestep and (optionally) write state to disk.
         simtimer.report(std::cout);
         if (output && (simtimer.currentStepNum() % output_interval == 0)) {
-            outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
+            outputState(*grid->c_grid(), state, simtimer , output_dir);
         }
 
         // Solve pressure.
@@ -701,7 +709,7 @@ main(int argc, char** argv)
               << "\n  Transport time: " << ttime << std::endl;
 
     if (output) {
-        outputState(*grid->c_grid(), state, simtimer.currentStepNum(), output_dir);
+        outputState(*grid->c_grid(), state, simtimer, output_dir);
         outputWaterCut(watercut, output_dir);
         if (wells->c_wells()) {
             outputWellReport(wellreport, output_dir);

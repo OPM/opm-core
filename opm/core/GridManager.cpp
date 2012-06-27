@@ -33,36 +33,14 @@ namespace Opm
     /// Construct a 3d corner-point grid from a deck.
     GridManager::GridManager(const Opm::EclipseGridParser& deck)
     {
-	// Extract data from deck.
-	const std::vector<double>& zcorn = deck.getFloatingPointValue("ZCORN");
-	const std::vector<double>& coord = deck.getFloatingPointValue("COORD");
-        const int* actnum = 0;
-        if (deck.hasField("ACTNUM")) {
-            actnum = &(deck.getIntegerValue("ACTNUM")[0]);
-        }
-	std::vector<int> dims;
-	if (deck.hasField("DIMENS")) {
-	    dims = deck.getIntegerValue("DIMENS");
-	} else if (deck.hasField("SPECGRID")) {
-	    dims = deck.getSPECGRID().dimensions;
-	} else {
-	    THROW("Deck must have either DIMENS or SPECGRID.");
-	}
-
-	// Collect in input struct for preprocessing.
-	struct grdecl grdecl;
-	grdecl.zcorn = &zcorn[0];
-	grdecl.coord = &coord[0];
-	grdecl.actnum = actnum;
-	grdecl.dims[0] = dims[0];
-	grdecl.dims[1] = dims[1];
-	grdecl.dims[2] = dims[2];
-
-	// Process grid.
-	ug_ = create_grid_cornerpoint(&grdecl, 0.0);
-	if (!ug_) {
-	    THROW("Failed to construct grid.");
-	}
+      // Collect in input struct for preprocessing.
+      struct grdecl grdecl = deck.get_grdecl();
+      
+      // Process grid.
+      ug_ = create_grid_cornerpoint(&grdecl, 0.0);
+      if (!ug_) {
+        THROW("Failed to construct grid.");
+      }
     }
 
 
@@ -71,10 +49,10 @@ namespace Opm
     /// Construct a 2d cartesian grid with cells of unit size.
     GridManager::GridManager(int nx, int ny)
     {
-	ug_ = create_grid_cart2d(nx, ny);
-	if (!ug_) {
-	    THROW("Failed to construct grid.");
-	}
+        ug_ = create_grid_cart2d(nx, ny);
+        if (!ug_) {
+            THROW("Failed to construct grid.");
+        }
     }
 
 
@@ -83,10 +61,10 @@ namespace Opm
     /// Construct a 3d cartesian grid with cells of unit size.
     GridManager::GridManager(int nx, int ny, int nz)
     {
-	ug_ = create_grid_cart3d(nx, ny, nz);
-	if (!ug_) {
-	    THROW("Failed to construct grid.");
-	}
+        ug_ = create_grid_cart3d(nx, ny, nz);
+        if (!ug_) {
+            THROW("Failed to construct grid.");
+        }
     }
 
 
@@ -96,10 +74,10 @@ namespace Opm
     GridManager::GridManager(int nx, int ny, int nz,
                              double dx, double dy, double dz)
     {
-	ug_ = create_grid_hexa3d(nx, ny, nz, dx, dy, dz);
-	if (!ug_) {
-	    THROW("Failed to construct grid.");
-	}
+        ug_ = create_grid_hexa3d(nx, ny, nz, dx, dy, dz);
+        if (!ug_) {
+            THROW("Failed to construct grid.");
+        }
     }
 
 
@@ -108,7 +86,7 @@ namespace Opm
     /// Destructor.
     GridManager::~GridManager()
     {
-	destroy_grid(ug_);
+        destroy_grid(ug_);
     }
 
 
@@ -119,7 +97,7 @@ namespace Opm
     /// to make it clear that we are returning a C-compatible struct.
     const UnstructuredGrid* GridManager::c_grid() const
     {
-	return ug_;
+        return ug_;
     }
 
 

@@ -22,7 +22,6 @@ test_column_extract                             \
 test_lapack                                     \
 test_read_vag                                   \
 test_readpolymer                                \
-test_readvector                                 \
 test_sf2p                                       \
 test_writeVtkData                               \
 unit_test

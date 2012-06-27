@@ -15,7 +15,7 @@ lib_LTLIBRARIES = libopmcore.la
 # ERT related settings
 #if HAVE_ERT
 ERT_LIB_PATH = $(ERT_ROOT)/lib
-ERT_LIBS = -leclxx -lecl -lgeometry -lutil -lpthread -lz -lgomp
+ERT_LIBS = -lecl -lgeometry -lutil -lpthread -lz -lgomp
 ERT_LDFLAGS = -L$(ERT_LIB_PATH) $(ERT_LIBS)
 ERT_INCLUDE_PATH = $(ERT_ROOT)/include
 ERT_CPPFLAGS = -I$(ERT_INCLUDE_PATH)
@@ -68,8 +68,6 @@ opm/core/grid/cornerpoint_grid.c                        \
 opm/core/grid/cpgpreprocess/facetopology.c              \
 opm/core/grid/cpgpreprocess/geometry.c                  \
 opm/core/grid/cpgpreprocess/preprocess.c                \
-opm/core/grid/cpgpreprocess/readvector.cpp              \
-opm/core/grid/cpgpreprocess/sparsetable.c               \
 opm/core/grid/cpgpreprocess/uniquepoints.c              \
 opm/core/linalg/LinearSolverFactory.cpp                 \
 opm/core/linalg/LinearSolverInterface.cpp               \
@@ -171,8 +169,6 @@ opm/core/grid/cpgpreprocess/facetopology.h              \
 opm/core/grid/cpgpreprocess/geometry.h                  \
 opm/core/grid/cpgpreprocess/grdecl.h                    \
 opm/core/grid/cpgpreprocess/preprocess.h                \
-opm/core/grid/cpgpreprocess/readvector.hpp              \
-opm/core/grid/cpgpreprocess/sparsetable.h               \
 opm/core/grid/cpgpreprocess/uniquepoints.h              \
 opm/core/linalg/LinearSolverFactory.hpp                 \
 opm/core/linalg/LinearSolverInterface.hpp               \
@@ -259,6 +255,7 @@ opm/core/utility/parameters/ParameterXML.hpp            \
 opm/core/utility/parameters/tinyxml/tinystr.h           \
 opm/core/utility/parameters/tinyxml/tinyxml.h           \
 opm/core/utility/writeVtkData.hpp                       \
+opm/core/utility/DataMap.hpp                            \
 opm/core/vag_format/vag.hpp                             \
 opm/core/well.h                                         \
 opm/core/wells/InjectionSpecification.hpp               \
@@ -278,6 +275,14 @@ opm/core/linalg/LinearSolverUmfpack.cpp
 nobase_include_HEADERS +=                       \
 opm/core/linalg/call_umfpack.h                  \
 opm/core/linalg/LinearSolverUmfpack.hpp
+endif
+
+if HAVE_ERT
+libopmcore_la_SOURCES  +=                       \
+opm/core/utility/writeECLData.cpp
+
+nobase_include_HEADERS +=                       \
+opm/core/utility/writeECLData.hpp
 endif
 
 

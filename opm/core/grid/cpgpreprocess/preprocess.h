@@ -46,6 +46,7 @@ extern "C" {
         const double *coord;
         const double *zcorn;
         const int    *actnum;
+        const double *mapaxes;  /* 6 Element rotation vector - can be NULL. */
     };
 
     /* Constant:     I     J     K    */
