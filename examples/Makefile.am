@@ -1,12 +1,15 @@
 # Build-time flags needed to form example programs
-AM_CPPFLAGS =					\
--I$(top_srcdir)					\
-$(BOOST_CPPFLAGS)
+ERT_INCLUDE_PATH = $(ERT_ROOT)/include
+
+AM_CPPFLAGS =                                   \
+-I$(top_srcdir)                                 \
+$(BOOST_CPPFLAGS)                               \
+-I$(ERT_INCLUDE_PATH)
 
 # All targets link to the library
-LDADD =						\
-$(top_builddir)/libopmcore.la			\
-$(BOOST_FILESYSTEM_LIB)				\
+LDADD =                                         \
+$(top_builddir)/libopmcore.la                   \
+$(BOOST_FILESYSTEM_LIB)                         \
 $(BOOST_SYSTEM_LIB)
 
 # ----------------------------------------------------------------------
@@ -14,11 +17,11 @@ $(BOOST_SYSTEM_LIB)
 #
 # Please keep the list sorted.
 
-noinst_PROGRAMS =				\
-refine_wells					\
-scaneclipsedeck					\
-sim_2p_incomp_reorder				\
-sim_wateroil					\
+noinst_PROGRAMS =                               \
+refine_wells                                    \
+scaneclipsedeck                                 \
+sim_2p_incomp_reorder                           \
+sim_wateroil                                    \
 wells_example
 
 # ----------------------------------------------------------------------
@@ -40,7 +43,7 @@ if UMFPACK
 noinst_PROGRAMS += spu_2p
 
 spu_2p_SOURCES   = spu_2p.cpp
-spu_2p_LDADD     =				\
-$(LDADD)					\
+spu_2p_LDADD     =                              \
+$(LDADD)                                        \
 $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 endif

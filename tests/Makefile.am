@@ -1,27 +1,30 @@
-AM_CPPFLAGS =					\
--I$(top_srcdir)					\
-$(BOOST_CPPFLAGS)
+ERT_INCLUDE_PATH = $(ERT_ROOT)/include
+
+AM_CPPFLAGS =                                   \
+-I$(top_srcdir)                                 \
+$(BOOST_CPPFLAGS)                               \
+-I$(ERT_INCLUDE_PATH)
 
 LDFLAGS = $(BOOST_LDFLAGS)
 
 
-LDADD =	$(top_builddir)/libopmcore.la
+LDADD = $(top_builddir)/libopmcore.la
 
 
-noinst_PROGRAMS =				\
-bo_resprop_test					\
-monotcubicinterpolator_test			\
-param_test					\
-sparsetable_test				\
-sparsevector_test				\
-test_cartgrid					\
-test_column_extract				\
-test_lapack					\
-test_read_vag					\
-test_readpolymer				\
-test_readvector					\
-test_sf2p					\
-test_writeVtkData				\
+noinst_PROGRAMS =                               \
+bo_resprop_test                                 \
+monotcubicinterpolator_test                     \
+param_test                                      \
+sparsetable_test                                \
+sparsevector_test                               \
+test_cartgrid                                   \
+test_column_extract                             \
+test_lapack                                     \
+test_read_vag                                   \
+test_readpolymer                                \
+test_readvector                                 \
+test_sf2p                                       \
+test_writeVtkData                               \
 unit_test
 
 
@@ -68,4 +71,10 @@ endif
 if BUILD_AGMG
 noinst_PROGRAMS   += test_agmg
 test_agmg_SOURCES  = test_agmg.cpp
+endif
+
+
+if HAVE_ERT
+noinst_PROGRAMS   += test_ert
+test_ert_SOURCES   = test_ert.cpp
 endif

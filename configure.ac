@@ -78,6 +78,59 @@ m4_ifdef([AM_COND_IF],
                  UMFPACK support is disabled.])])
 ])
 
+#-----------------------------------------------------------------
+# Support for ERT configuration in the OPM build process. The
+# configuration is unfortunately not really functional :-(.
+#
+# Define the option --with-ert=/path/to/ert/root which can be passed
+# to the configure script. If we pass --with-ert=no (the default)
+# support for use of ert libraries will not be added built in;
+# otherwise we will build support for ERT. 
+#
+
+# The argument given to the --with-ert option will be interpreted as
+# the root path of a ert installation, and the build process will
+# expect to find the ert libraries in $with_ert/lib and the header
+# files in $with_ert/include. There are no check for actually finding
+# the required libraries and headers, and support for ert could in
+# principle be configured as:
+#
+# configure --with-ert=yes CPPFLAGS=-I/path/to/ert/include  LDFLAGS=-L/path/to/ert/lib
+
+AC_ARG_WITH(ert, [AS_HELP_STRING([--with-ert=<root>], [Use ERT libraries])], [], [with_ert=no])
+
+AM_CONDITIONAL([HAVE_ERT], 
+   [test "x$ert" != "xno"])
+
+# The purpose of this macro was to test if the WITH_ERT conditional
+# was true, and in that case the statements:
+#
+#   AC_SUBST([ERT_ROOT],["$with_ert"])
+#   AC_DEFINE([HAVE_ERT],1,[Are the ERT libraries available])
+# 
+# should be invoked - but the if construction does not work, and at
+# the bottom of the configuration the two statements are invoked
+# unconditionally (i.e. in the end the build will be with ert
+# anyway). I will award anyone who can fix this a real bear :-) -
+# Joakim.
+m4_ifdef([AM_COND_IF],
+ [AM_COND_IF([HAVE_ERT], [AC_SUBST([ERT_ROOT],["$with_ert"])], [])
+])
+
+AC_SUBST([ERT_ROOT],["$with_ert"])
+AC_DEFINE(HAVE_ERT,1,[Are the ERT libraries available for reading and writing ECLIPSE files.])
+
+# In addition to what is present in this script ERT support is further
+# configured through:
+#
+#  o The ERT_LDFLAGS and ERT_CPPFLAGS configured in the Makefile.am
+#    template.
+#
+#  o The config.h file will define the symbol HAVE_ERT if ert is built into
+#    the current installation.
+#-----------------------------------------------------------------
+
+
 
 AC_CONFIG_FILES([
  Makefile
