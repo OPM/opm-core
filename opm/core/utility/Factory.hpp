@@ -86,7 +86,7 @@ namespace Opm
         template<class Derived>
         static void addCreator(const std::string& type)
         {
-            instance().doAddCreator<Derived>(type);
+            instance().template doAddCreator<Derived>(type);
         }
 
     private:

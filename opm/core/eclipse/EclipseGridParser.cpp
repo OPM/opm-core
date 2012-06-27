@@ -191,21 +191,7 @@ namespace {
         return us;
     }
 
-    inline std::string readKeyword(std::istream& is)
-    {
-        std::string keyword_candidate;
-        while (!is.eof()) {
-            is >> keyword_candidate;
-            if(keyword_candidate.find("--") == 0) {
-                is >> ignoreLine;  // This line is a comment
-            } else {
-                return upcase(keyword_candidate);
-            }
-        }
-        return "CONTINUE";  // Last line in included file is a comment
-    }
-
-    inline bool readKeywordNew(std::istream& is, std::string& keyword)
+    inline bool readKeyword(std::istream& is, std::string& keyword)
     {
         char buf[9];
         int i, j;
@@ -377,7 +363,7 @@ void EclipseGridParser::readImpl(istream& is)
     std::string keyword;
     while (is.good()) {
         is >> ignoreWhitespace;
-        bool ok = readKeywordNew(is, keyword);
+        bool ok = readKeyword(is, keyword);
         if (ok) {
             //#ifdef VERBOSE
             cout << "Keyword found: " << keyword << endl;
