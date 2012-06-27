@@ -5,7 +5,7 @@
 // Created: Sun Dec 13 20:08:36 2009
 //
 // Author(s): Atgeirr F Rasmussen <atgeirr@sintef.no>
-//            Bård Skaflestad     <bard.skaflestad@sintef.no>
+//            BÃ¥rd Skaflestad     <bard.skaflestad@sintef.no>
 //
 // $Date$
 //
@@ -34,7 +34,11 @@
 */
 
 
+#include <config.h>
+
+#if HAVE_DYNAMIC_BOOST_TEST
 #define BOOST_TEST_DYN_LINK
+#endif
 #define NVERBOSE // to suppress our messages when throwing
 
 #define BOOST_TEST_MODULE ParameterTest
