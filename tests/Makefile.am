@@ -1,11 +1,9 @@
-ERT_INCLUDE_PATH = $(ERT_ROOT)/include
+AM_CPPFLAGS =					\
+-I$(top_srcdir)					\
+$(BOOST_CPPFLAGS)				\
+$(ERT_CPPFLAGS)
 
-AM_CPPFLAGS =                                   \
--I$(top_srcdir)                                 \
-$(BOOST_CPPFLAGS)                               \
--I$(ERT_INCLUDE_PATH)
-
-LDFLAGS = $(BOOST_LDFLAGS)
+LDFLAGS = $(BOOST_LDFLAGS) $(ERT_LDFLAGS)
 
 
 LDADD = $(top_builddir)/libopmcore.la
