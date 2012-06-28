@@ -53,7 +53,7 @@ namespace Opm
 
 
   void writeECLData(const UnstructuredGrid& grid,
-                    DataMap& data,
+                    const DataMap& data,
                     const SimulatorTimer& simtimer,
                     const std::string& output_dir,
                     const std::string& base_name) {
@@ -79,15 +79,21 @@ namespace Opm
     ecl_rst_file_start_solution( rst_file );
 
     {
-      ecl_kw_type * pressure_kw = ecl_kw_wrapper( grid , "PRESSURE" , data["pressure"] , 0 , 1);
-      ecl_rst_file_add_kw( rst_file , pressure_kw );
-      ecl_kw_free( pressure_kw );
+      DataMap::const_iterator i = data.find("pressure");
+      if (i != data.end()) {
+        ecl_kw_type * pressure_kw = ecl_kw_wrapper( grid , "PRESSURE" , i->second , 0 , 1);
+        ecl_rst_file_add_kw( rst_file , pressure_kw );
+        ecl_kw_free( pressure_kw );
+      }
     }
     
     {
-      ecl_kw_type * swat_kw = ecl_kw_wrapper( grid , "SWAT" , data["saturation"] , 0 , 2);
-      ecl_rst_file_add_kw( rst_file , swat_kw );
-      ecl_kw_free( swat_kw );
+      DataMap::const_iterator i = data.find("saturation");
+      if (i != data.end()) {
+        ecl_kw_type * swat_kw = ecl_kw_wrapper( grid , "SWAT" , i->second , 0 , 2);
+        ecl_rst_file_add_kw( rst_file , swat_kw );
+        ecl_kw_free( swat_kw );
+      }
     }
 
     ecl_rst_file_end_solution( rst_file );
