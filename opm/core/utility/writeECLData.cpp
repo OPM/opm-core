@@ -23,11 +23,14 @@
 #include <opm/core/grid.h>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/writeECLData.hpp>
+#include <opm/core/utility/Units.hpp>
+
 #include <vector>
 
 #include <ecl_grid.h>
 #include <ecl_util.h>
 #include <ecl_rst_file.h>
+
 
 
 namespace Opm
@@ -60,9 +63,10 @@ namespace Opm
     
     int step                = simtimer.currentStepNum();
     ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;
-    char * filename         = ecl_util_alloc_filename(output_dir.c_str() , base_name.c_str() , file_type , true , step );
+    bool fmt_file           = true; 
+    char * filename         = ecl_util_alloc_filename(output_dir.c_str() , base_name.c_str() , file_type , fmt_file , step );
     int phases              = ECL_OIL_PHASE + ECL_WATER_PHASE;
-    double days             = simtimer.currentTime() / 86400;
+    double days             = Opm::unit::convert::to(simtimer.currentTime(), Opm::unit::day);
     time_t date             = 0;
     int nx                  = grid.cartdims[0];
     int ny                  = grid.cartdims[1];
