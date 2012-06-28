@@ -627,7 +627,7 @@ ind2sub(const size_t nx,
 {
     assert (c < (nx * ny * nz));
 
-#if !defined(NDEBUG)
+#if defined(NDEBUG)
     (void) nz;
 #endif
 
