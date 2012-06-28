@@ -11,31 +11,35 @@ lib_LTLIBRARIES = libopmcore.la
 # ----------------------------------------------------------------------
 # Build-time flags needed to build libopmcore.la
 
+AM_CPPFLAGS =					\
+$(ERT_CPPFLAGS)					\
+$(BOOST_CPPFLAGS)
+
 #-----------------------------------------------------------------
 # ERT related settings
 #if HAVE_ERT
-ERT_LIB_PATH = $(ERT_ROOT)/lib
-ERT_LIBS = -lecl -lgeometry -lutil -lpthread -lz -lgomp
-ERT_LDFLAGS = -L$(ERT_LIB_PATH) $(ERT_LIBS)
-ERT_INCLUDE_PATH = $(ERT_ROOT)/include
-ERT_CPPFLAGS = -I$(ERT_INCLUDE_PATH)
-#endif
+# ERT_LIB_PATH = $(ERT_ROOT)/lib
+# ERT_LIBS = -lecl -lgeometry -lutil -lpthread -lz -lgomp
+# ERT_LDFLAGS = -L$(ERT_LIB_PATH) $(ERT_LIBS)
+# ERT_INCLUDE_PATH = $(ERT_ROOT)/include
+# ERT_CPPFLAGS = -I$(ERT_INCLUDE_PATH)
 
-AM_CPPFLAGS =                                   \
-$(BOOST_CPPFLAGS)                               \
--I$(ERT_INCLUDE_PATH) 
+#AM_CPPFLAGS +=					\
+#$(ERT_CPPFLAGS)
+#endif
 
 # ----------------------------------------------------------------------
 # Link-time flags needed both to successfully link the library and to
 # (transitively) convey inter-library dependency information.
 
-libopmcore_la_LDFLAGS =                         \
-$(BOOST_LDFLAGS)                                \
-$(BOOST_FILESYSTEM_LIB)                         \
-$(BOOST_SYSTEM_LIB)                             \
-$(BOOST_DATE_TIME_LIB)                          \
+libopmcore_la_LDFLAGS =				\
+$(ERT_LDFLAGS)					\
+$(BOOST_LDFLAGS)				\
+$(BOOST_FILESYSTEM_LIB)				\
+$(BOOST_SYSTEM_LIB)				\
+$(BOOST_DATE_TIME_LIB)				\
 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)                \
-$(ERT_LDFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+$(ERT_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 # ----------------------------------------------------------------------
 # Library constituents.  SOURCES followed by HEADERS.
