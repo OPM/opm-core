@@ -15,19 +15,6 @@ AM_CPPFLAGS =					\
 $(ERT_CPPFLAGS)					\
 $(BOOST_CPPFLAGS)
 
-#-----------------------------------------------------------------
-# ERT related settings
-#if HAVE_ERT
-# ERT_LIB_PATH = $(ERT_ROOT)/lib
-# ERT_LIBS = -lecl -lgeometry -lutil -lpthread -lz -lgomp
-# ERT_LDFLAGS = -L$(ERT_LIB_PATH) $(ERT_LIBS)
-# ERT_INCLUDE_PATH = $(ERT_ROOT)/include
-# ERT_CPPFLAGS = -I$(ERT_INCLUDE_PATH)
-
-#AM_CPPFLAGS +=					\
-#$(ERT_CPPFLAGS)
-#endif
-
 # ----------------------------------------------------------------------
 # Link-time flags needed both to successfully link the library and to
 # (transitively) convey inter-library dependency information.
