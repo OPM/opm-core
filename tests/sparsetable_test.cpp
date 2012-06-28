@@ -5,7 +5,7 @@
 // Created: Thu May 28 10:01:46 2009
 //
 // Author(s): Atgeirr F Rasmussen <atgeirr@sintef.no>
-//            Bård Skaflestad     <bard.skaflestad@sintef.no>
+//            BÃ¥rd Skaflestad     <bard.skaflestad@sintef.no>
 //
 // $Date$
 //
@@ -33,7 +33,11 @@
   along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <config.h>
+
+#if HAVE_DYNAMIC_BOOST_TEST
 #define BOOST_TEST_DYN_LINK
+#endif
 #define NVERBOSE // to suppress our messages when throwing
 
 #define BOOST_TEST_MODULE SparseTableTest
