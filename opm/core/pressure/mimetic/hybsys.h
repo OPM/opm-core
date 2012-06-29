@@ -435,6 +435,39 @@ hybsys_cellcontrib_symm(int c, int nconn, int p1, int p2,
                         const double *gpress, const double *src,
                         const double *Binv, struct hybsys *sys);
 
+
+/**
+ * Compute final (non-symmetric) Schur complement contributions to
+ * global system of simultaneous linear equations.
+ *
+ * This function forms the coefficient matrix
+ * \f[
+ * S_c = D^\mathsf{T}B_c^{-1}D - (F_1)_c^\mathsf{T}L_c^{-1}(F_2)_c
+ * \f]
+ * and similar right-hand side \f$r_c\f$ elemental contributions.
+ * These values must be subsequently assembled into the global system
+ * using function hybsys_global_assemble_cell() after imposing any
+ * applicable boundary conditions.
+ *
+ * This function overwrites the fields @c S and @c r of the hybrid system
+ * structure.
+ *
+ * @param[in]     c      Cell for which to compute local contributions.
+ * @param[in]     nconn  Number of connections (faces) of cell @c c.
+ * @param[in]     p1     Start address (into @c gpress) of the gravity
+ *                       contributions of cell @c c.
+ * @param[in]     p2     Start address (into @c Binv) of the inverse
+ *                       inner product of cell @c c.
+ * @param[in]     gpress Gravity contributions of all cells.  Must
+ *                       include effects of multiple phases if applicable.
+ * @param[in]     src    Explicit source terms for all cells.
+ * @param[in]     Binv   Inverse inner products for all cells.  Must
+ *                       include effects of multiple phases if applicable.
+ * @param[in,out] sys    Hybrid system management structure allocated
+ *                       using hybsys_allocate_symm() and initialised
+ *                       using hybsys_init() and/or filled using functions
+ *                       hybsys_schur_comp_unsymm() or hybsys_schur_comp_gen().
+ */
 void
 hybsys_cellcontrib_unsymm(int c, int nconn, int p1, int p2,
                           const double *gpress, const double *src,
