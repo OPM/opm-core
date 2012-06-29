@@ -358,6 +358,39 @@ hybsys_schur_comp_gen(int nc, const int *pconn,
                       const double *Binv, const double *C2,
                       const double *P, struct hybsys *sys);
 
+/**
+ * Compute elemental contributions to global, symmetric system of
+ * simultaneous linear equations from cell<->well connections.
+ *
+ * Specifically, for a well @c w intersecting a cell @c c, this function
+ * computes the elemental contributions
+ * \f[
+ * (F_1)_{wc} = C_{wc}^\mathsf{T} B_{wc}^{-1} D_{wc} = \mathit{WI}_{wc}
+ * \f]
+ * and
+ * \f[
+ * L_{wc} = C_{wc}^\mathsf{T} B_{wc}^{-1} C_{wc} = \mathit{WI}_{wc}
+ * \f]
+ * and incorporates the contributions into the global system quantities
+ * as appropriate.
+ *
+ * This function modifies <CODE>sys->L</CODE> and <CODE>wsys->F1</CODE>.
+ *
+ * @param[in]     nc    Total number of grid cells.
+ * @param[in]     cwpos Indirection array that defines each cell's
+ *                      connecting wells.  Values typically computed
+ *                      using function derive_cell_wells().
+ * @param[in]     WI    Peaceman well connection indices.  Array of
+ *                      size <CODE>cwpos[nc]</CODE>.  Must incorporate
+ *                      effects of multiple phases (i.e., total mobility)
+ *                      if applicable.
+ * @param[in,out] sys   Hybrid system management structure allocated
+ *                      using hybsys_allocate_symm() and initialised
+ *                      using hybsys_init() and/or filled using function
+ *                      hybsys_schur_comp_symm().
+ * @param[in,out] wsys  Hybrid well-system management structure obtained
+ *                      from function hybsys_well_allocate_symm().
+ */
 void
 hybsys_well_schur_comp_symm(int nc, const int *cwpos,
                             double             *WI,
