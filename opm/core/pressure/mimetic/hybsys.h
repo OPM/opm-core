@@ -479,6 +479,46 @@ hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
                              const double *WI, const double *wdp,
                              struct hybsys *sys, struct hybsys_well *wsys);
 
+
+/**
+ * Recover cell pressures and outward fluxes (with respect to cells--i.e., the
+ * ``half-face fluxes'') through back substitution after solving a symmetric
+ * (i.e., incompressible) Schur complement system of simultaneous linear
+ * equations.
+ *
+ * Specifically, given the solution \f$\pi\f$ to the global system of
+ * simultaneous linear equations, \f$A\pi=b\f$, that arises as a result of the
+ * Schur complement analysis, this function recovers the cell pressures \f$p\f$
+ * and outward fluxes \f$v\f$ defined by
+ * \f[
+ * \begin{aligned}
+ * Lp &= g - C_2^\mathsf{T}B^{-1}G + F_2\pi \\
+ * Bv &= G + C_1p - D\pi
+ * \end{aligned}.
+ * \f]
+ *
+ * @param[in]     nc     Total number of grid cells.
+ * @param[in]     pconn  Cell-to-face start pointers.
+ * @param[in]     conn   Cell-to-face mapping.
+ * @param[in]     gpress Gravity contributions of all cells.  Must coincide with
+ *                       equally named parameter in calls to cell contribution
+ *                       functions such as hybsys_cellcontrib_symm().
+ * @param[in]     Binv   Inverse inner products for all cells.  Must coincide
+ *                       with equally named parameter in calls to contribution
+ *                       functions such as hybsys_cellcontrib_symm().
+ * @param[in]     sys    Hybrid system management structure coinciding with
+ *                       equally named parameter in contribution functions such
+ *                       as hybsys_cellcontrib_symm() or
+ *                       hybsys_cellcontrib_unsymm().
+ * @param[in]     pi     Solution (interface/contact pressure) obtained from
+ *                       solving the global system \f$A\pi = b\f$.
+ * @param[out]    press  Cell pressures, \f$p\f$.  Array of size @c nc.
+ * @param[out]    flux   Outward interface fluxes, \f$v\f$.  Array of size
+ *                       <CODE>pconn[nc]</CODE>.
+ * @param[in,out] work   Scratch array for temporary results.  Array of size at
+ *                       least \f$\max_c \{   \mathit{pconn}_{c + 1}
+ *                                          - \mathit{pconn}_c \} \f$.
+ */
 void
 hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
                           const double *gpress,
