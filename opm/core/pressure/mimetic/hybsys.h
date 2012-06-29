@@ -526,6 +526,52 @@ hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
                           const double *pi, double *press, double *flux,
                           double *work);
 
+
+/**
+ * Recover well pressures (i.e., bottom-hole pressure values) and well
+ * connection (perforation) fluxes.
+ *
+ * Specifically, this function performs the same role (i.e., back-substitution)
+ * for wells as function hybsys_compute_press_flux() does for grid cells and
+ * grid contacts (interfaces).
+ *
+ * @param[in]     nc     Total number of grid cells.
+ * @param[in]     pgconn Cell-to-face start pointers.
+ * @param[in]     nf     Total number of grid faces.
+ * @param[in]     nw     Total number of wells.
+ * @param[in]     pwconn Cell-to-well start pointers.  If <CODE>nw > 0</CODE>,
+ *                       then this parameter must coincide with the @c cwpos
+ *                       array used in call to hybsys_well_schur_comp_symm().
+ * @param[in]     wconn  Cell-to-well mapping.
+ * @param[in]     Binv   Inverse inner products for all cells.  Must coincide
+ *                       with equally named parameter in calls to contribution
+ *                       functions such as hybsys_well_cellcontrib_symm().
+ * @param[in]     WI     Peaceman well connection indices.  Array of
+ *                       size <CODE>pwconn[nc]</CODE>.  Must coincide with
+ *                       equally named parameter of contribution function
+ *                       hybsys_well_cellcontrib_symm().
+ * @param[in]     wdp    Well connection gravity pressure adjustments.
+ * @param[in]     sys    Hybrid system management structure coinciding with
+ *                       equally named parameter in contribution functions such
+ *                       as hybsys_cellcontrib_symm() and
+ *                       hybsys_well_cellcontrib_symm().
+ * @param[in]     wsys   Hybrid well-system management structure.  Must coincide
+ *                       with equally named paramter of contribution function
+ *                       hybsys_well_cellcontrib_symm().
+ * @param[in]     pi     Solution (interface/contact pressure and well BHPs)
+ *                       obtained from solving the global system \f$A\pi = b\f$.
+ * @param[in]     cpress Cell pressures, \f$p\f$, obtained from a previous call
+ *                       to function hybsys_compute_press_flux().
+ * @param[in]     cflux  Outward fluxes, \f$v\f$, obtained from a previous call
+ *                       to function hybsys_compute_press_flux().
+ * @param[out]    wpress Well (i.e., bottom-hole) pressures.  Array of size
+ *                       @c nw.
+ * @param[out]    wflux  Well connection (perforation) fluxes.  Array of size
+ *                       <CODE>pwconn[nw]</CODE>.
+ * @param[in,out] work   Scratch array for storing intermediate results.  Array
+ *                       of size at least \f$\max_w \{  \mathit{pwconn}_{w + 1}
+ *                                                    - \mathit{pwconn}_w\}\f$.
+ */
 void
 hybsys_compute_press_flux_well(int nc, const int *pgconn, int nf,
                                int nw, const int *pwconn, const int *wconn,
