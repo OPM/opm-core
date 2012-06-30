@@ -473,6 +473,32 @@ hybsys_cellcontrib_unsymm(int c, int nconn, int p1, int p2,
                           const double *gpress, const double *src,
                           const double *Binv, struct hybsys *sys);
 
+
+/**
+ * Form elemental direct contributions to global system of simultaneous linear
+ * equations from cell<->well interactions.
+ *
+ * Plays a role similar to function hybsys_cellcontrib_symm(), but for wells.
+ *
+ * @param[in]     c      Cell for which to compute cell<->well Schur complement
+ * @param[in]     ngconn Number of inter-cell connections (faces) of cell @c c.
+ * @param[in]     p1     Start index (into <CODE>sys->F1</CODE>) of cell @c c.
+ * @param[in]     cwpos  Indirection array that defines each cell's connecting
+ *                       wells.  Must coincide with equally named parameter of
+ *                       function hybsys_well_schur_comp_symm().
+ * @param[in]     WI     Peaceman well connection indices.  Array of
+ *                       size <CODE>pwconn[nc]</CODE>.  Must coincide with
+ *                       equally named parameter of contribution function
+ *                       hybsys_well_schur_comp_symm().
+ * @param[in]     wdp    Well connection gravity pressure adjustments.
+ *                       One scalar for each well connection in an array of size
+ *                       <CODE>pwconn[nc]</CODE>.
+ * @param[in,out] sys    Hybrid system management structure filled using
+ *                       functions hybsys_schur_comp_unsymm() or
+ *                       hybsys_schur_comp_gen().
+ * @param[in,out] wsys   Hybrid well-system management structure filled using
+ *                       function hybsys_well_schur_comp_symm().
+ */
 void
 hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
                              const int *cwpos,
