@@ -2131,7 +2131,8 @@ struct WpolymerLine
 
     WpolymerLine()
     {
-	well_ = polymer_group_ = salt_group_ = "";	
+	well_ = polymer_group_ = salt_group_ = "";
+	polymer_concentration_ = salt_concentration_ = 0.0;
     }
 };
 
