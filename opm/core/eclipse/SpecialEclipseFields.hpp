@@ -780,9 +780,11 @@ struct WelspecsLine
     int fluids_in_place_reg_numb_;   // Fluids in place region number
 
     WelspecsLine() :
-	datum_depth_BHP_(-1.0), drain_rad_(0.0), spec_inflow_("STD"),
-	shut_in_("SHUT"), crossflow_("YES"), pressure_table_number_(0),
-	density_calc_type_("SEG"), fluids_in_place_reg_numb_(0)
+        name_(), group_(), I_(-1), J_(-1),
+        datum_depth_BHP_(-1.0), pref_phase_(), drain_rad_(0.0),
+        spec_inflow_("STD"), shut_in_("SHUT"), crossflow_("YES"),
+        pressure_table_number_(0), density_calc_type_("SEG"),
+        fluids_in_place_reg_numb_(0)
     {}
 };
 
