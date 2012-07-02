@@ -306,42 +306,42 @@ namespace Opm {
 
             std::copy(porevol.begin(), porevol.end(), store_.porevol());
         }
-        void makefhfQPeriodic(  const std::vector<int>& p_faces,const std::vector<int>& hf_faces,
-                                const std::vector<int>& nb_faces)
+
+        void
+        makefhfQPeriodic(const std::vector<int>& p_faces ,
+                         const std::vector<int>& hf_faces,
+                         const std::vector<int>& nb_faces)
         {
+            assert (! p_faces.empty());
+            assert (p_faces.size()  == hf_faces.size());
+            assert (hf_faces.size() == nb_faces.size());
+
             std::vector<int> nbhf(hf_faces.size());
-            for(unsigned int i=0; i<p_faces.size(); ++i){
-                int nbf = nb_faces[i];
-                if(f2hf_[2*nbf] == -1){
-                    nbhf[i] = f2hf_[2*nbf+1];
-                }else{
-                    assert(f2hf_[2*nbf+1]==-1);
-                    nbhf[i] = f2hf_[2*nbf];
-                }
+
+            for (std::vector<int>::size_type i = 0; i < p_faces.size(); ++i) {
+                const int nbf = nb_faces[i];
+
+                assert (2*std::vector<int>::size_type(nbf) + 1 < f2hf_.size());
+                assert ((f2hf_[2*nbf + 0] < 0) ^ (f2hf_[2*nbf + 1] < 0));
+
+                const int p = (f2hf_[2*nbf + 0] < 0) ? 1 : 0;  // "Self"
+                nbhf[ i ]   =  f2hf_[2*nbf + p];
             }
-            for(unsigned int i=0; i<p_faces.size(); ++i){
 
-                int f = p_faces[i];
-                int hf = hf_faces[i];
-                bool changed=false;
+            for (std::vector<int>::size_type i = 0; i < p_faces.size(); ++i) {
+                const int f  = p_faces [i];
+                const int hf = hf_faces[i];
 
-                if(f2hf_[2*f] == hf){
-                    assert(f2hf_[2*f+1]==-1);
-                }else{
-                    assert(f2hf_[2*f]==-1);
-                    f2hf_[2*f]=nbhf[i];
-                    changed=true;
-                }
-                if(!changed){
-                    if(f2hf_[2*f+1]== hf){
-                        assert(f2hf_[2*f]==-1);
-                    }else{
-                        assert(f2hf_[2*f+1]==-1);
-                        f2hf_[2*f+1]=nbhf[i];
-                        changed=true;
-                    }
-                }
-                assert(changed);
+                assert (0 <= f);
+                assert (0 <= hf);
+                assert (2*std::vector<int>::size_type(f) + 1 < f2hf_.size());
+
+                assert ((f2hf_[2*f + 0] <  0 ) ^ (f2hf_[2*f + 1] <  0 ));
+                assert ((f2hf_[2*f + 0] == hf) ^ (f2hf_[2*f + 1] == hf));
+
+                const int p = (f2hf_[2*f + 0] == hf) ? 1 : 0;  // "Other"
+
+                f2hf_[2*f + p] = nbhf[ i ];
             }
         }
 
