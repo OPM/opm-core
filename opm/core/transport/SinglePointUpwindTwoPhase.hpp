@@ -33,6 +33,12 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+ * \file
+ * Numerical model and support classes needed to model transport of two
+ * incompressible fluid phases.  Intended for the ImplicitTransport system.
+ */
+
 #ifndef OPM_SINGLEPOINTUPWINDTWOPHASE_HPP_HEADER
 #define OPM_SINGLEPOINTUPWINDTWOPHASE_HPP_HEADER
 
@@ -45,8 +51,43 @@
 
 namespace Opm {
     namespace spu_2p {
+        /**
+         * Internal class to manage the direct and derived quantities needed to
+         * formulate the fluid transport system.
+         *
+         * Note: This class elides off-diagonal elements of the phase mobility
+         * Jacobian, \f$(\partial_{s_\beta} \lambda_\alpha)_{\alpha\beta}\f$.
+         * These elements are assumed to be strictly equal to zero.  In other
+         * words, the relative permeability of phase \f$\alpha\f$ is assumed to
+         * depend only on the saturation of phase \f$\alpha\f$.  This convention
+         * allows storing only the two diagonals of the mobility Jacobian per
+         * grid cell.
+         *
+         * The static gravity term is the scalar value
+         * \f[
+         * \Delta G_i = \mathsf{T}_f\, \vec{g}\cdot(\Bar{x}_f - \Bar{x}_c)
+         * \f]
+         * in which @c i is the half face index corresponding to the cell-face
+         * pair <CODE>(f,c)</CODE> and \f$\mathsf{T}_f\f$ is the absolute
+         * (bacground) two-point transmissibility of face @c f.
+         *
+         * The fluid transport problem is formulated in terms of saturation
+         * changes, \f$\Delta s\f$, per cell.  These changes are the primary
+         * degrees of freedom in this model.
+         *
+         * Capillary pressures are defined by the fluid model, but usually
+         * correspond to \f$p_w - p_n\f$ (e.g., \f$p_\mathit{oil} -
+         * p_\mathit{water}\f$).
+         */
         class ModelParameterStorage {
         public:
+            /**
+             * Constructor.
+             *
+             * @param[in] nc      Total number of grid cells.
+             * @param[in] totconn Total number of connections, accumulated per
+             *                    cell (``half faces'').
+             */
             ModelParameterStorage(int nc, int totconn)
                 : drho_(0.0), mob_(0), dmob_(0),
                   porevol_(0), dg_(0), ds_(0), pc_(0), dpc_(0), trans_(0),
@@ -74,44 +115,160 @@ namespace Opm {
                 trans_   = dpc_      + (1 * nc     );
             }
 
+            /**
+             * Modifiable density difference.
+             * @return Reference to modifiable internal representation of fluid
+             * phase density difference.
+             */
             double&       drho   ()            { return drho_            ; }
+            /**
+             * Read-only density difference.
+             * @return Read-only value of current fluid phase difference value.
+             */
             double        drho   ()      const { return drho_            ; }
 
+            /**
+             * Phase mobility in cell.
+             * @param[in] c Cell.
+             * @return Read-write reference to two consecutive phase mobilities
+             * in cell @c c.
+             */
             double*       mob    (int c)       { return mob_  + (2*c + 0); }
+            /**
+             * Phase mobility in cell.
+             * @param[in] c Cell.
+             * @return Read-only reference to two consecutive phase mobilities
+             * in cell @c c.
+             */
             const double* mob    (int c) const { return mob_  + (2*c + 0); }
 
+            /**
+             * Diagonal elements of phase mobility derivative (Jacobian).
+             *
+             * @param[in] c Cell.
+             * @return Read-write reference to diagonal elements of phase
+             * mobility Jacobian in cell @c c.
+             */
             double*       dmob   (int c)       { return dmob_ + (2*c + 0); }
+            /**
+             * Diagonal elements of phase mobility derivative (Jacobian).
+             *
+             * @param[in] c Cell.
+             * @return Read-only reference to two consecutive diagonal elements
+             * of phase mobility Jacobian in cell @c c.
+             */
             const double* dmob   (int c) const { return dmob_ + (2*c + 0); }
 
+            /**
+             * Retrieve pore volumes for all cells.
+             * @return Modifiable vector of pore volumes for all cells.
+             */
             double*       porevol()            { return porevol_         ; }
+            /**
+             * Pore volume of single cell.
+             * @param[in] c Cell.
+             * @return Pore volume of cell @c c.
+             */
             double        porevol(int c) const { return porevol_[c]      ; }
 
+            /**
+             * Static gravity term associated to single half face.
+             *
+             * @param[in] i Half face index corresponding to particular
+             *              cell-face pair.
+             * @return Read-write reference to static gravity term of single
+             * half face.
+             */
             double&       dg(int i)            { return dg_[i]           ; }
+            /**
+             * Static gravity term associated to single half face.
+             * @param[in] i Half face index corresponding to particular
+             *              cell-face pair.
+             * @return Read-only reference to static gravity term of single half
+             * face.
+             */
             double        dg(int i)      const { return dg_[i]           ; }
 
+            /**
+             * Saturation change in particular cell.
+             *
+             * @param[in] c
+             * @return Read-write reference to saturation change (scalar) in
+             * cell @c c.
+             */
             double&       ds(int c)            { return ds_[c]           ; }
+            /**
+             * Saturation change in particular cell.
+             *
+             * @param[in] c
+             * @return Read-only reference to saturation change (scalar) in cell
+             * @c c.
+             */
             double        ds(int c)      const { return ds_[c]           ; }
 
+            /**
+             * Capillary pressure in particular cell.
+             *
+             * @param[in] c Cell.
+             * @return Read-write reference to capillary pressure in cell @c c.
+             */
             double&       pc(int c)            { return pc_[c]           ; }
+            /**
+             * Capillary pressure in particular cell.
+             *
+             * @param[in] c Cell
+             * @return Read-only reference to capillary pressure in cell @c c.
+             */
             double        pc(int c)      const { return pc_[c]           ; }
 
+            /**
+             * Derivative of capillary pressure with respect to saturation.
+             *
+             * @param[in] c Cell
+             * @return Read-write reference to capillary pressure derivative
+             * with respect to primary saturation in cell @c c.
+             */
             double&       dpc(int c)           { return dpc_[c]          ; }
+            /**
+             * Derivative of capillary pressure with respect to saturation.
+             *
+             * @param[in] c Cell
+             * @return Read-only reference to capillary pressure derivative with
+             * respect to primary saturation in cell @c c.
+             */
             double        dpc(int c)     const { return dpc_[c]          ; }
 
+            /**
+             * Background (absolute) face transmissibility of particular face.
+             *
+             * @param[in] f Face
+             * @return Read-write reference to background face transmissibility
+             * of face @c f.
+             */
             double&       trans(int f)         { return trans_[f]        ; }
+            /**
+             * Background (absolute) face transmissibility of particular face.
+             *
+             * @param[in] f Face
+             * @return Read-only reference to bacground face transmissibility of
+             * face @c f.
+             */
             double        trans(int f)   const { return trans_[f]        ; }
 
         private:
-            double  drho_   ;
-            double *mob_    ;
-            double *dmob_   ;
-            double *porevol_;
-            double *dg_     ;
-            double *ds_     ;
-            double *pc_     ;
-            double *dpc_    ;
-            double *trans_  ;
+            double  drho_   ;  /**< Fluid phase density difference */
+            double *mob_    ;  /**< Fluid phase mobility in all cells */
+            double *dmob_   ;  /**< Derivative of phase mobility in all cells */
+            double *porevol_;  /**< Pore volume in all cells */
+            double *dg_     ;  /**< Static gravity term on all half faces */
+            double *ds_     ;  /**< Saturation change in all cells */
+            double *pc_     ;  /**< Capillary pressure in all cells */
+            double *dpc_    ;  /**< Derivative of cap. pressure in all cells */
+            double *trans_  ;  /**< Absolute transmissibility on all faces */
 
+            /**
+             * Data storage from which individual quantities are managed.
+             */
             std::vector<double> data_;
         };
     }
