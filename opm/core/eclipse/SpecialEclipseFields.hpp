@@ -1362,8 +1362,8 @@ struct WgrupconLine
     bool available_for_group_control_;
     double guide_rate_;
     std::string phase_;
-    WgrupconLine() :
-    available_for_group_control_(true)
+    WgrupconLine()
+    : well_(), available_for_group_control_(true), guide_rate_(-1.0), phase_()
     {
     }
 };
