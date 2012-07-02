@@ -1582,6 +1582,7 @@ struct WeltargLine
     double new_value_;             // New value of this quantity
 
     WeltargLine()
+    : well_(), control_change_(), new_value_(-1.0)
     {
     }
 };
