@@ -1742,6 +1742,13 @@ struct EquilLine
                                      // initial fluids in place calculation.
     EquilLine()
     {
+        datum_depth_             = datum_depth_pressure_   = 0.0;
+        water_oil_contact_depth_ = oil_water_cap_pressure_ = 0.0;
+        gas_oil_contact_depth_   = gas_oil_cap_pressure_   = 0.0;
+
+        live_oil_table_index_ = 0;
+        wet_gas_table_index_  = 0;
+        N_                    = 0;
     }
 };
 
