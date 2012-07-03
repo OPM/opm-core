@@ -31,6 +31,10 @@ $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 #
 # Please try to keep the list sorted.
 
+# List of sources that should be built but not distributed.  See AGMG
+# support below for additional details.
+nodist_lib_libopmcore_la_SOURCES =
+
 lib_libopmcore_la_SOURCES =				\
 opm/core/GridManager.cpp				\
 opm/core/eclipse/EclipseGridInspector.cpp		\
@@ -276,9 +280,11 @@ endif
 
 
 if BUILD_AGMG
-lib_libopmcore_la_SOURCES +=			\
+nodist_lib_libopmcore_la_SOURCES +=		\
 $(AGMG_SRCDIR)/dagmg.f90			\
-$(AGMG_SRCDIR)/dagmg_mumps.f90			\
+$(AGMG_SRCDIR)/dagmg_mumps.f90
+
+lib_libopmcore_la_SOURCES +=			\
 opm/core/linalg/LinearSolverAGMG.cpp
 
 nobase_include_HEADERS +=			\
