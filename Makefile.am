@@ -6,7 +6,7 @@ SUBDIRS = . tests examples tutorials
 
 # ----------------------------------------------------------------------
 # Declare products (i.e., the library)
-lib_LTLIBRARIES = libopmcore.la
+lib_LTLIBRARIES = lib/libopmcore.la
 
 # ----------------------------------------------------------------------
 # Build-time flags needed to build libopmcore.la
@@ -18,7 +18,7 @@ $(BOOST_CPPFLAGS)
 # Link-time flags needed both to successfully link the library and to
 # (transitively) convey inter-library dependency information.
 
-libopmcore_la_LDFLAGS =				\
+lib_libopmcore_la_LDFLAGS =			\
 $(BOOST_LDFLAGS)				\
 $(BOOST_FILESYSTEM_LIB)				\
 $(BOOST_SYSTEM_LIB)				\
@@ -31,7 +31,7 @@ $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 #
 # Please try to keep the list sorted.
 
-libopmcore_la_SOURCES =					\
+lib_libopmcore_la_SOURCES =				\
 opm/core/GridManager.cpp				\
 opm/core/eclipse/EclipseGridInspector.cpp		\
 opm/core/eclipse/EclipseGridParser.cpp			\
@@ -256,7 +256,7 @@ opm/core/wells/WellsManager.hpp
 # Optional library constituents.
 
 if UMFPACK
-libopmcore_la_SOURCES  +=			\
+lib_libopmcore_la_SOURCES  +=			\
 opm/core/linalg/call_umfpack.c			\
 opm/core/linalg/LinearSolverUmfpack.cpp
 
@@ -267,7 +267,7 @@ endif
 
 
 if DUNE_ISTL
-libopmcore_la_SOURCES  +=			\
+lib_libopmcore_la_SOURCES  +=			\
 opm/core/linalg/LinearSolverIstl.cpp
 
 nobase_include_HEADERS +=			\
@@ -276,7 +276,7 @@ endif
 
 
 if BUILD_AGMG
-libopmcore_la_SOURCES +=			\
+lib_libopmcore_la_SOURCES +=			\
 $(AGMG_SRCDIR)/dagmg.f90			\
 $(AGMG_SRCDIR)/dagmg_mumps.f90			\
 opm/core/linalg/LinearSolverAGMG.cpp
@@ -284,6 +284,6 @@ opm/core/linalg/LinearSolverAGMG.cpp
 nobase_include_HEADERS +=			\
 opm/core/linalg/LinearSolverAGMG.hpp
 
-libopmcore_la_LDFLAGS +=			\
+lib_libopmcore_la_LDFLAGS +=			\
 $(FCLIBS)
 endif
