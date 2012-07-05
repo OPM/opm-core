@@ -57,11 +57,11 @@ namespace Opm
 	    /// restarted by a call to start().
 	    void stop();
 
-	    /// \ret the number of running seconds that have passed
+	    /// \return the number of running seconds that have passed
 	    /// since last call to start(), secsSinceLast() or
 	    /// secsSinceStart()
 	    double secsSinceLast();
-	    /// \ret the number of running seconds that have passed
+	    /// \return the number of running seconds that have passed
 	    /// since last call to start().
 	    double secsSinceStart();
 

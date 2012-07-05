@@ -358,28 +358,193 @@ hybsys_schur_comp_gen(int nc, const int *pconn,
                       const double *Binv, const double *C2,
                       const double *P, struct hybsys *sys);
 
+/**
+ * Compute elemental contributions to global, symmetric system of
+ * simultaneous linear equations from cell<->well connections.
+ *
+ * Specifically, for a well @c w intersecting a cell @c c, this function
+ * computes the elemental contributions
+ * \f[
+ * (F_1)_{wc} = C_{wc}^\mathsf{T} B_{wc}^{-1} D_{wc} = \mathit{WI}_{wc}
+ * \f]
+ * and
+ * \f[
+ * L_{wc} = C_{wc}^\mathsf{T} B_{wc}^{-1} C_{wc} = \mathit{WI}_{wc}
+ * \f]
+ * and incorporates the contributions into the global system quantities
+ * as appropriate.
+ *
+ * This function modifies <CODE>sys->L</CODE> and <CODE>wsys->F1</CODE>.
+ *
+ * @param[in]     nc    Total number of grid cells.
+ * @param[in]     cwpos Indirection array that defines each cell's
+ *                      connecting wells.  Values typically computed
+ *                      using function derive_cell_wells().
+ * @param[in]     WI    Peaceman well connection indices.  Array of
+ *                      size <CODE>cwpos[nc]</CODE>.  Must incorporate
+ *                      effects of multiple phases (i.e., total mobility)
+ *                      if applicable.
+ * @param[in,out] sys   Hybrid system management structure allocated
+ *                      using hybsys_allocate_symm() and initialised
+ *                      using hybsys_init() and/or filled using function
+ *                      hybsys_schur_comp_symm().
+ * @param[in,out] wsys  Hybrid well-system management structure obtained
+ *                      from function hybsys_well_allocate_symm().
+ */
 void
 hybsys_well_schur_comp_symm(int nc, const int *cwpos,
                             double             *WI,
                             struct hybsys      *sys,
                             struct hybsys_well *wsys);
 
+/**
+ * Compute final (symmetric) Schur complement contributions to
+ * global system of simultaneous linear equations.
+ *
+ * This function forms the coefficient matrix
+ * \f[
+ * S_c = D^\mathsf{T}B_c^{-1}D - F_c^\mathsf{T}L_c^{-1}F_c
+ * \f]
+ * and similar right-hand side \f$r_c\f$ elemental contributions.
+ * These values must be subsequently assembled into the global system
+ * using function hybsys_global_assemble_cell() after imposing any
+ * applicable boundary conditions.
+ *
+ * This function overwrites the fields @c S and @c r of the hybrid system
+ * structure.
+ *
+ * @param[in]     c      Cell for which to compute local contributions.
+ * @param[in]     nconn  Number of connections (faces) of cell @c c.
+ * @param[in]     p1     Start address (into @c gpress) of the gravity
+ *                       contributions of cell @c c.
+ * @param[in]     p2     Start address (into @c Binv) of the inverse
+ *                       inner product of cell @c c.
+ * @param[in]     gpress Gravity contributions of all cells.  Must
+ *                       include effects of multiple phases if applicable.
+ * @param[in]     src    Explicit source terms for all cells.
+ * @param[in]     Binv   Inverse inner products for all cells.  Must
+ *                       include effects of multiple phases if applicable.
+ * @param[in,out] sys    Hybrid system management structure allocated
+ *                       using hybsys_allocate_symm() and initialised
+ *                       using hybsys_init() and/or filled using function
+ *                       hybsys_schur_comp_symm() and
+ *                       hybsys_well_schur_comp_symm() if applicable.
+ */
 void
 hybsys_cellcontrib_symm(int c, int nconn, int p1, int p2,
                         const double *gpress, const double *src,
                         const double *Binv, struct hybsys *sys);
 
+
+/**
+ * Compute final (non-symmetric) Schur complement contributions to
+ * global system of simultaneous linear equations.
+ *
+ * This function forms the coefficient matrix
+ * \f[
+ * S_c = D^\mathsf{T}B_c^{-1}D - (F_1)_c^\mathsf{T}L_c^{-1}(F_2)_c
+ * \f]
+ * and similar right-hand side \f$r_c\f$ elemental contributions.
+ * These values must be subsequently assembled into the global system
+ * using function hybsys_global_assemble_cell() after imposing any
+ * applicable boundary conditions.
+ *
+ * This function overwrites the fields @c S and @c r of the hybrid system
+ * structure.
+ *
+ * @param[in]     c      Cell for which to compute local contributions.
+ * @param[in]     nconn  Number of connections (faces) of cell @c c.
+ * @param[in]     p1     Start address (into @c gpress) of the gravity
+ *                       contributions of cell @c c.
+ * @param[in]     p2     Start address (into @c Binv) of the inverse
+ *                       inner product of cell @c c.
+ * @param[in]     gpress Gravity contributions of all cells.  Must
+ *                       include effects of multiple phases if applicable.
+ * @param[in]     src    Explicit source terms for all cells.
+ * @param[in]     Binv   Inverse inner products for all cells.  Must
+ *                       include effects of multiple phases if applicable.
+ * @param[in,out] sys    Hybrid system management structure allocated
+ *                       using hybsys_allocate_symm() and initialised
+ *                       using hybsys_init() and/or filled using functions
+ *                       hybsys_schur_comp_unsymm() or hybsys_schur_comp_gen().
+ */
 void
 hybsys_cellcontrib_unsymm(int c, int nconn, int p1, int p2,
                           const double *gpress, const double *src,
                           const double *Binv, struct hybsys *sys);
 
+
+/**
+ * Form elemental direct contributions to global system of simultaneous linear
+ * equations from cell<->well interactions.
+ *
+ * Plays a role similar to function hybsys_cellcontrib_symm(), but for wells.
+ *
+ * @param[in]     c      Cell for which to compute cell<->well Schur complement
+ * @param[in]     ngconn Number of inter-cell connections (faces) of cell @c c.
+ * @param[in]     p1     Start index (into <CODE>sys->F1</CODE>) of cell @c c.
+ * @param[in]     cwpos  Indirection array that defines each cell's connecting
+ *                       wells.  Must coincide with equally named parameter of
+ *                       function hybsys_well_schur_comp_symm().
+ * @param[in]     WI     Peaceman well connection indices.  Array of
+ *                       size <CODE>pwconn[nc]</CODE>.  Must coincide with
+ *                       equally named parameter of contribution function
+ *                       hybsys_well_schur_comp_symm().
+ * @param[in]     wdp    Well connection gravity pressure adjustments.
+ *                       One scalar for each well connection in an array of size
+ *                       <CODE>pwconn[nc]</CODE>.
+ * @param[in,out] sys    Hybrid system management structure filled using
+ *                       functions hybsys_schur_comp_unsymm() or
+ *                       hybsys_schur_comp_gen().
+ * @param[in,out] wsys   Hybrid well-system management structure filled using
+ *                       function hybsys_well_schur_comp_symm().
+ */
 void
 hybsys_well_cellcontrib_symm(int c, int ngconn, int p1,
                              const int *cwpos,
                              const double *WI, const double *wdp,
                              struct hybsys *sys, struct hybsys_well *wsys);
 
+
+/**
+ * Recover cell pressures and outward fluxes (with respect to cells--i.e., the
+ * ``half-face fluxes'') through back substitution after solving a symmetric
+ * (i.e., incompressible) Schur complement system of simultaneous linear
+ * equations.
+ *
+ * Specifically, given the solution \f$\pi\f$ to the global system of
+ * simultaneous linear equations, \f$A\pi=b\f$, that arises as a result of the
+ * Schur complement analysis, this function recovers the cell pressures \f$p\f$
+ * and outward fluxes \f$v\f$ defined by
+ * \f[
+ * \begin{aligned}
+ * Lp &= g - C_2^\mathsf{T}B^{-1}G + F_2\pi \\
+ * Bv &= G + C_1p - D\pi
+ * \end{aligned}.
+ * \f]
+ *
+ * @param[in]     nc     Total number of grid cells.
+ * @param[in]     pconn  Cell-to-face start pointers.
+ * @param[in]     conn   Cell-to-face mapping.
+ * @param[in]     gpress Gravity contributions of all cells.  Must coincide with
+ *                       equally named parameter in calls to cell contribution
+ *                       functions such as hybsys_cellcontrib_symm().
+ * @param[in]     Binv   Inverse inner products for all cells.  Must coincide
+ *                       with equally named parameter in calls to contribution
+ *                       functions such as hybsys_cellcontrib_symm().
+ * @param[in]     sys    Hybrid system management structure coinciding with
+ *                       equally named parameter in contribution functions such
+ *                       as hybsys_cellcontrib_symm() or
+ *                       hybsys_cellcontrib_unsymm().
+ * @param[in]     pi     Solution (interface/contact pressure) obtained from
+ *                       solving the global system \f$A\pi = b\f$.
+ * @param[out]    press  Cell pressures, \f$p\f$.  Array of size @c nc.
+ * @param[out]    flux   Outward interface fluxes, \f$v\f$.  Array of size
+ *                       <CODE>pconn[nc]</CODE>.
+ * @param[in,out] work   Scratch array for temporary results.  Array of size at
+ *                       least \f$\max_c \{   \mathit{pconn}_{c + 1}
+ *                                          - \mathit{pconn}_c \} \f$.
+ */
 void
 hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
                           const double *gpress,
@@ -387,6 +552,52 @@ hybsys_compute_press_flux(int nc, const int *pconn, const int *conn,
                           const double *pi, double *press, double *flux,
                           double *work);
 
+
+/**
+ * Recover well pressures (i.e., bottom-hole pressure values) and well
+ * connection (perforation) fluxes.
+ *
+ * Specifically, this function performs the same role (i.e., back-substitution)
+ * for wells as function hybsys_compute_press_flux() does for grid cells and
+ * grid contacts (interfaces).
+ *
+ * @param[in]     nc     Total number of grid cells.
+ * @param[in]     pgconn Cell-to-face start pointers.
+ * @param[in]     nf     Total number of grid faces.
+ * @param[in]     nw     Total number of wells.
+ * @param[in]     pwconn Cell-to-well start pointers.  If <CODE>nw > 0</CODE>,
+ *                       then this parameter must coincide with the @c cwpos
+ *                       array used in call to hybsys_well_schur_comp_symm().
+ * @param[in]     wconn  Cell-to-well mapping.
+ * @param[in]     Binv   Inverse inner products for all cells.  Must coincide
+ *                       with equally named parameter in calls to contribution
+ *                       functions such as hybsys_well_cellcontrib_symm().
+ * @param[in]     WI     Peaceman well connection indices.  Array of
+ *                       size <CODE>pwconn[nc]</CODE>.  Must coincide with
+ *                       equally named parameter of contribution function
+ *                       hybsys_well_cellcontrib_symm().
+ * @param[in]     wdp    Well connection gravity pressure adjustments.
+ * @param[in]     sys    Hybrid system management structure coinciding with
+ *                       equally named parameter in contribution functions such
+ *                       as hybsys_cellcontrib_symm() and
+ *                       hybsys_well_cellcontrib_symm().
+ * @param[in]     wsys   Hybrid well-system management structure.  Must coincide
+ *                       with equally named paramter of contribution function
+ *                       hybsys_well_cellcontrib_symm().
+ * @param[in]     pi     Solution (interface/contact pressure and well BHPs)
+ *                       obtained from solving the global system \f$A\pi = b\f$.
+ * @param[in]     cpress Cell pressures, \f$p\f$, obtained from a previous call
+ *                       to function hybsys_compute_press_flux().
+ * @param[in]     cflux  Outward fluxes, \f$v\f$, obtained from a previous call
+ *                       to function hybsys_compute_press_flux().
+ * @param[out]    wpress Well (i.e., bottom-hole) pressures.  Array of size
+ *                       @c nw.
+ * @param[out]    wflux  Well connection (perforation) fluxes.  Array of size
+ *                       <CODE>pwconn[nw]</CODE>.
+ * @param[in,out] work   Scratch array for storing intermediate results.  Array
+ *                       of size at least \f$\max_w \{  \mathit{pwconn}_{w + 1}
+ *                                                    - \mathit{pwconn}_w\}\f$.
+ */
 void
 hybsys_compute_press_flux_well(int nc, const int *pgconn, int nf,
                                int nw, const int *pwconn, const int *wconn,

@@ -5,7 +5,7 @@ $(BOOST_CPPFLAGS)
 LDFLAGS = $(BOOST_LDFLAGS)
 
 
-LDADD =	$(top_builddir)/libopmcore.la
+LDADD =	$(top_builddir)/lib/libopmcore.la
 
 
 noinst_PROGRAMS =				\
