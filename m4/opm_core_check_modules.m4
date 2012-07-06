@@ -155,7 +155,7 @@ AC_DEFUN([OPM_CORE_CHECK_MODULES],[
       ifelse(_dune_symbol,,
         [_DUNE_MODULE[]_LIBDIR=""
          _dune_cm_LIBS=""],
-        [_DUNE_MODULE[]_LIBDIR="$_DUNE_MODULE[]_ROOT"
+        [_DUNE_MODULE[]_LIBDIR="$_DUNE_MODULE[]_ROOT/lib"
          _dune_cm_LIBS="-L$_DUNE_MODULE[]_LIBDIR -l[]_dune_lib"])
       # set expanded module path
       with_[]_dune_module="$_DUNE_MODULE[]_ROOT"
