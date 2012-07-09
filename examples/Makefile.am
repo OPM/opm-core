@@ -1,7 +1,7 @@
 # Build-time flags needed to form example programs
 AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
-$(BOOST_CPPFLAGS)
+$(OPM_BOOST_CPPFLAGS)
 
 # All targets link to the library
 LDADD =						\

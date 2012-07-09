@@ -17,11 +17,11 @@
 #
 #   This macro calls:
 #
-#     AC_SUBST(BOOST_CPPFLAGS) / AC_SUBST(BOOST_LDFLAGS)
+#     AC_SUBST(OPM_BOOST_CPPFLAGS) / AC_SUBST(OPM_BOOST_LDFLAGS)
 #
 #   And sets:
 #
-#     HAVE_BOOST
+#     OPM_HAVE_BOOST
 #
 # LICENSE
 #
@@ -99,10 +99,10 @@ if test "x$want_boost" = "xyes"; then
     dnl this location ist chosen if boost libraries are installed with the --layout=system option
     dnl or if you install boost with RPM
     if test "$ac_boost_path" != ""; then
-        BOOST_CPPFLAGS="-I$ac_boost_path/include"
+        OPM_BOOST_CPPFLAGS="-I$ac_boost_path/include"
         for ac_boost_path_tmp in $libsubdirs; do
                 if test -d "$ac_boost_path"/"$ac_boost_path_tmp" ; then
-                        BOOST_LDFLAGS="-L$ac_boost_path/$ac_boost_path_tmp"
+                        OPM_BOOST_LDFLAGS="-L$ac_boost_path/$ac_boost_path_tmp"
                         break
                 fi
         done
@@ -112,8 +112,8 @@ if test "x$want_boost" = "xyes"; then
                 for libsubdir in $libsubdirs ; do
                     if ls "$ac_boost_path_tmp/$libsubdir/libboost_"* >/dev/null 2>&1 ; then break; fi
                 done
-                BOOST_LDFLAGS="-L$ac_boost_path_tmp/$libsubdir"
-                BOOST_CPPFLAGS="-I$ac_boost_path_tmp/include"
+                OPM_BOOST_LDFLAGS="-L$ac_boost_path_tmp/$libsubdir"
+                OPM_BOOST_CPPFLAGS="-I$ac_boost_path_tmp/include"
                 break;
             fi
         done
@@ -122,15 +122,15 @@ if test "x$want_boost" = "xyes"; then
     dnl overwrite ld flags if we have required special directory with
     dnl --with-boost-libdir parameter
     if test "$ac_boost_lib_path" != ""; then
-       BOOST_LDFLAGS="-L$ac_boost_lib_path"
+       OPM_BOOST_LDFLAGS="-L$ac_boost_lib_path"
     fi
 
     CPPFLAGS_SAVED="$CPPFLAGS"
-    CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $OPM_BOOST_CPPFLAGS"
     export CPPFLAGS
 
     LDFLAGS_SAVED="$LDFLAGS"
-    LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
+    LDFLAGS="$LDFLAGS $OPM_BOOST_LDFLAGS"
     export LDFLAGS
 
     AC_REQUIRE([AC_PROG_CXX])
@@ -166,7 +166,7 @@ if test "x$want_boost" = "xyes"; then
                         _version=$_version_tmp
                     fi
                     VERSION_UNDERSCORE=`echo $_version | sed 's/\./_/'`
-                    BOOST_CPPFLAGS="-I$ac_boost_path/include/boost-$VERSION_UNDERSCORE"
+                    OPM_BOOST_CPPFLAGS="-I$ac_boost_path/include/boost-$VERSION_UNDERSCORE"
                 done
             fi
         else
@@ -185,12 +185,12 @@ if test "x$want_boost" = "xyes"; then
                 done
 
                 VERSION_UNDERSCORE=`echo $_version | sed 's/\./_/'`
-                BOOST_CPPFLAGS="-I$best_path/include/boost-$VERSION_UNDERSCORE"
+                OPM_BOOST_CPPFLAGS="-I$best_path/include/boost-$VERSION_UNDERSCORE"
                 if test "$ac_boost_lib_path" = ""; then
                     for libsubdir in $libsubdirs ; do
                         if ls "$best_path/$libsubdir/libboost_"* >/dev/null 2>&1 ; then break; fi
                     done
-                    BOOST_LDFLAGS="-L$best_path/$libsubdir"
+                    OPM_BOOST_LDFLAGS="-L$best_path/$libsubdir"
                 fi
             fi
 
@@ -205,16 +205,16 @@ if test "x$want_boost" = "xyes"; then
                     V_CHECK=`expr $stage_version_shorten \>\= $_version`
                     if test "$V_CHECK" = "1" -a "$ac_boost_lib_path" = "" ; then
                         AC_MSG_NOTICE(We will use a staged boost library from $BOOST_ROOT)
-                        BOOST_CPPFLAGS="-I$BOOST_ROOT"
-                        BOOST_LDFLAGS="-L$BOOST_ROOT/stage/$libsubdir"
+                        OPM_BOOST_CPPFLAGS="-I$BOOST_ROOT"
+                        OPM_BOOST_LDFLAGS="-L$BOOST_ROOT/stage/$libsubdir"
                     fi
                 fi
             fi
         fi
 
-        CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS $OPM_BOOST_CPPFLAGS"
         export CPPFLAGS
-        LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
+        LDFLAGS="$LDFLAGS $OPM_BOOST_LDFLAGS"
         export LDFLAGS
 
         AC_LANG_PUSH(C++)
@@ -244,9 +244,9 @@ if test "x$want_boost" = "xyes"; then
         # execute ACTION-IF-NOT-FOUND (if present):
         ifelse([$3], , :, [$3])
     else
-        AC_SUBST(BOOST_CPPFLAGS)
-        AC_SUBST(BOOST_LDFLAGS)
-        AC_DEFINE(HAVE_BOOST,,[define if the Boost library is available])
+        AC_SUBST([OPM_BOOST_CPPFLAGS])
+        AC_SUBST([OPM_BOOST_LDFLAGS])
+        AC_DEFINE([OPM_HAVE_BOOST], [1], [define if the Boost library is available])
         # execute ACTION-IF-FOUND (if present):
         ifelse([$2], , :, [$2])
     fi

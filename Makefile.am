@@ -12,14 +12,14 @@ lib_LTLIBRARIES = lib/libopmcore.la
 # Build-time flags needed to build libopmcore.la
 
 AM_CPPFLAGS =					\
-$(BOOST_CPPFLAGS)
+$(OPM_BOOST_CPPFLAGS)
 
 # ----------------------------------------------------------------------
 # Link-time flags needed both to successfully link the library and to
 # (transitively) convey inter-library dependency information.
 
 lib_libopmcore_la_LDFLAGS =			\
-$(BOOST_LDFLAGS)				\
+$(OPM_BOOST_LDFLAGS)				\
 $(BOOST_FILESYSTEM_LIB)				\
 $(BOOST_SYSTEM_LIB)				\
 $(BOOST_DATE_TIME_LIB)				\

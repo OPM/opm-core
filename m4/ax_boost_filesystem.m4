@@ -56,11 +56,11 @@ AC_DEFUN([AX_BOOST_FILESYSTEM],
 	if test "x$want_boost" = "xyes"; then
         AC_REQUIRE([AC_PROG_CC])
 		CPPFLAGS_SAVED="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $OPM_BOOST_CPPFLAGS"
 		export CPPFLAGS
 
 		LDFLAGS_SAVED="$LDFLAGS"
-		LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
+		LDFLAGS="$LDFLAGS $OPM_BOOST_LDFLAGS"
 		export LDFLAGS
 
 		LIBS_SAVED=$LIBS
@@ -79,7 +79,7 @@ AC_DEFUN([AX_BOOST_FILESYSTEM],
 		])
 		if test "x$ax_cv_boost_filesystem" = "xyes"; then
 			AC_DEFINE(HAVE_BOOST_FILESYSTEM,,[define if the Boost::Filesystem library is available])
-            BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
+            BOOSTLIBDIR=`echo $OPM_BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
             ax_lib="-lboost_filesystem"
             if test "x$ax_boost_user_filesystem_lib" = "x"; then
                 for libextension in `ls $BOOSTLIBDIR/libboost_filesystem*.so* $BOOSTLIBDIR/libboost_filesystem*.dylib* $BOOSTLIBDIR/libboost_filesystem*.a* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^lib\(boost_filesystem.*\)\.so.*$;\1;' -e 's;^lib\(boost_filesystem.*\)\.a*$;\1;' -e 's;^lib\(boost_filesystem.*\)\.dylib$;\1;'` ; do
