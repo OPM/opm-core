@@ -2,7 +2,7 @@ AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
 $(OPM_BOOST_CPPFLAGS)
 
-LDFLAGS = $(OPM_BOOST_LDFLAGS)
+AM_LDFLAGS = $(OPM_BOOST_LDFLAGS)
 
 
 LDADD =	$(top_builddir)/lib/libopmcore.la
@@ -43,7 +43,7 @@ test_column_extract_SOURCES = test_column_extract.cpp
 test_column_extract_LDADD = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 test_lapack_SOURCES       = test_lapack.cpp
-test_lapack_LDADD         = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+test_lapack_LDADD         = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS)
 
 test_readpolymer_SOURCES  = test_readpolymer.cpp
 test_read_vag_SOURCES     = test_read_vag.cpp
