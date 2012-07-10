@@ -2,7 +2,7 @@ AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
 $(OPM_BOOST_CPPFLAGS)
 
-LDFLAGS = $(OPM_BOOST_LDFLAGS)
+AM_LDFLAGS = $(OPM_BOOST_LDFLAGS)
 
 
 LDADD =	$(top_builddir)/lib/libopmcore.la
