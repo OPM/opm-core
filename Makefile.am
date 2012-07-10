@@ -24,7 +24,7 @@ $(BOOST_FILESYSTEM_LIB)				\
 $(BOOST_SYSTEM_LIB)				\
 $(BOOST_DATE_TIME_LIB)				\
 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)		\
-$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS)
 
 # ----------------------------------------------------------------------
 # Library constituents.  SOURCES followed by HEADERS.
