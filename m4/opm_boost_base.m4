@@ -243,6 +243,8 @@ if test "x$want_boost" = "xyes"; then
         fi
         # execute ACTION-IF-NOT-FOUND (if present):
         ifelse([$3], , :, [$3])
+        AC_DEFINE([OPM_HAVE_BOOST], [0],dnl
+                  [Define to `0' if the Boost library is not available])
     else
         AC_SUBST([OPM_BOOST_CPPFLAGS])
         AC_SUBST([OPM_BOOST_LDFLAGS])

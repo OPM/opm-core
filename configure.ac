@@ -32,6 +32,16 @@ OPM_CORE_CHECKS
 
 OPM_DYNLINK_BOOST_TEST
 
+dnl Substitute Autoconf's abs_*dir variables into the Makefiles for the
+dnl benefit of external code that uses these variables to derive
+dnl locations (e.g., Dune's DUNE_CHECK_MODULES macro).  Automakes prior
+dnl to version 1.10 do not automatically substitute these variables into
+dnl output files.
+AC_SUBST([abs_srcdir])
+AC_SUBST([abs_builddir])
+AC_SUBST([abs_top_srcdir])
+AC_SUBST([abs_top_builddir])
+
 AC_CONFIG_FILES([
  Makefile
  tests/Makefile
