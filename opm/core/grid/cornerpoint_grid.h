@@ -77,7 +77,7 @@ extern "C" {
      * This function computes values for each of the following quantities
      * - Quantities pertaining to interfaces (connections, faces)
      *   -# Barycenters (centroids), <CODE>g->dimensions</CODE> scalars per face
-     *      stored sequentially in </CODE>g->face_centroids</CODE>.
+     *      stored sequentially in <CODE>g->face_centroids</CODE>.
      *   -# Areas, one scalar per face stored sequentially in
      *      <CODE>g->face_areas</CODE>.
      *   -# Normals, <CODE>g->dimensions</CODE> scalars per face stored
