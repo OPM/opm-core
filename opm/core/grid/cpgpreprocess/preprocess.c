@@ -872,7 +872,7 @@ void process_grdecl(const struct grdecl   *in,
 
     /* -----------------------------------------------------------------*/
     /* (re)allocate space for and compute coordinates of nodes that
-     * arise from intesecting cells (faults) */
+     * arise from intersecting cells (faults) */
     compute_intersection_coordinates(intersections, out);
 
     free (intersections);
