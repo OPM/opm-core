@@ -94,7 +94,7 @@ create_grid_cart3d(int nx, int ny, int nz);
  * Must be destroyed using function destroy_grid().
  */
 struct UnstructuredGrid *
-create_grid_hexa3d(int nx, int ny, int nz,
+create_grid_hexa3d(int    nx, int    ny, int    nz,
                    double dx, double dy, double dz);
 
 
@@ -122,8 +122,8 @@ create_grid_hexa3d(int nx, int ny, int nz,
  * Must be destroyed using function destroy_grid().
  */
 struct UnstructuredGrid *
-create_grid_tensor2d(int nx, int ny,
-                     double x[], double y[]);
+create_grid_tensor2d(int           nx, int           ny,
+                     const double *x , const double *y );
 
 
 /**
@@ -157,9 +157,13 @@ create_grid_tensor2d(int nx, int ny,
  * Must be destroyed using function destroy_grid().
  */
 struct UnstructuredGrid *
-create_grid_tensor3d(int nx, int ny, int nz,
-                     double x[], double y[], double z[],
-                     const double depthz[]);
+create_grid_tensor3d(int           nx    ,
+                     int           ny    ,
+                     int           nz    ,
+                     const double *x     ,
+                     const double *y     ,
+                     const double *z     ,
+                     const double *depthz);
 #ifdef __cplusplus
 }
 #endif
