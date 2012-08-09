@@ -118,7 +118,7 @@ create_grid_cart2d(int nx, int ny)
 /* --------------------------------------------------------------------- */
 
 struct UnstructuredGrid *
-create_grid_tensor2d(int nx, int ny, double x[], double y[])
+create_grid_tensor2d(int nx, int ny, const double *x, const double *y)
 {
     struct UnstructuredGrid *G;
 
@@ -136,9 +136,13 @@ create_grid_tensor2d(int nx, int ny, double x[], double y[])
 /* --------------------------------------------------------------------- */
 
 struct UnstructuredGrid *
-create_grid_tensor3d(int    nx,  int    ny , int    nz ,
-                      double x[], double y[], double z[],
-                      const double depthz[])
+create_grid_tensor3d(int           nx    ,
+                     int           ny    ,
+                     int           nz    ,
+                     const double *x     ,
+                     const double *y     ,
+                     const double *z     ,
+                     const double *depthz)
 {
     struct UnstructuredGrid *G;
 
