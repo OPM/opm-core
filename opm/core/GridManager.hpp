@@ -33,13 +33,14 @@ namespace Opm
     /// encapsulates creation and destruction of the grid.
     /// The following grid types can be constructed:
     ///   - 3d corner-point grids (from deck input)
+    ///   - 3d tensor grids (from deck input)
     ///   - 2d cartesian grids
     ///   - 3d cartesian grids
     /// The resulting UnstructuredGrid is available through the c_grid() method.
     class GridManager
     {
     public:
-	/// Construct a 3d corner-point grid from a deck.
+	/// Construct a 3d corner-point grid or tensor grid from a deck.
 	GridManager(const Opm::EclipseGridParser& deck);
 
 	/// Construct a 2d cartesian grid with cells of unit size.
@@ -64,6 +65,12 @@ namespace Opm
 	// Disable copying and assignment.
 	GridManager(const GridManager& other);
 	GridManager& operator=(const GridManager& other);
+
+        // Construct corner-point grid from deck.
+        void initFromDeckCornerpoint(const Opm::EclipseGridParser& deck);
+        // Construct tensor grid from deck.
+        void initFromDeckTensorgrid(const Opm::EclipseGridParser& deck);
+
 	// The managed UnstructuredGrid.
 	UnstructuredGrid* ug_;
     };
