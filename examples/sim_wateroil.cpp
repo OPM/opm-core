@@ -178,9 +178,7 @@ main(int argc, char** argv)
         // Grid init
         grid.reset(new Opm::GridManager(deck));
         // Rock and fluid init
-        const int* gc = grid->c_grid()->global_cell;
-        std::vector<int> global_cell(gc, gc + grid->c_grid()->number_of_cells);
-        props.reset(new Opm::BlackoilPropertiesFromDeck(deck, global_cell));
+        props.reset(new Opm::BlackoilPropertiesFromDeck(deck, *grid->c_grid()));
         // Wells init.
         wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
         check_well_controls = param.getDefault("check_well_controls", false);
@@ -423,8 +421,10 @@ main(int argc, char** argv)
             std::cout << "Making " << num_transport_substeps << " transport substeps." << std::endl;
         }
         for (int tr_substep = 0; tr_substep < num_transport_substeps; ++tr_substep) {
+            // Note that for now we do not handle rock compressibility,
+            // although the transport solver should be able to.
             reorder_model.solve(&state.faceflux()[0], &state.pressure()[0], &state.surfacevol()[0],
-                                &porevol[0], &reorder_src[0], stepsize, state.saturation());
+                                &porevol[0],  &porevol[0], &reorder_src[0], stepsize, state.saturation());
             // Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
             if (use_segregation_split) {
                 THROW("Segregation not implemented yet.");

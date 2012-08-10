@@ -86,7 +86,7 @@ namespace EclipseKeywords
           string("MULTPV"),   string("PRESSURE"),   string("SGAS"),
           string("SWAT"),     string("SOIL"),       string("RS"),
           string("DXV"),      string("DYV"),        string("DZV"),
-          string("DEPTHZ")
+          string("DEPTHZ"),   string("TOPS")
         };
     const int num_floating_fields = sizeof(floating_fields) / sizeof(floating_fields[0]);
 
@@ -525,9 +525,9 @@ void EclipseGridParser::convertToSI()
         // Find the right unit.
         double unit = 1e100;
         bool do_convert = true;
-        if (key == "COORD" || key == "ZCORN" ||
-            key == "DXV"   || key == "DYV"   || key == "DZV" ||
-            key == "DEPTHZ") {
+        if (key == "COORD"  || key == "ZCORN" ||
+            key == "DXV"    || key == "DYV"   || key == "DZV" ||
+            key == "DEPTHZ" || key == "TOPS") {
             unit = units_.length;
         } else if (key == "PERMX"  || key == "PERMY"  || key == "PERMZ"  ||
                    key == "PERMXX" || key == "PERMYY" || key == "PERMZZ" ||
