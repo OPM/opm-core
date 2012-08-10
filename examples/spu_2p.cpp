@@ -309,17 +309,7 @@ main(int argc, char** argv)
         // Grid init
         grid.reset(new Opm::GridManager(deck));
         // Rock and fluid init
-        int nc = grid->c_grid()->number_of_cells;
-        std::vector<int> global_cell(nc);
-        const int* gc = grid->c_grid()->global_cell;
-        if (gc != 0) {
-            std::copy(gc, gc + nc, global_cell.begin());
-        } else {
-            for (int cell = 0; cell < nc; ++cell) {
-                global_cell[cell] = cell;
-            }
-        }
-        props.reset(new Opm::IncompPropertiesFromDeck(deck, global_cell));
+        props.reset(new Opm::IncompPropertiesFromDeck(deck, *grid->c_grid()));
         // Wells init.
         wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
         check_well_controls = param.getDefault("check_well_controls", false);

@@ -81,17 +81,7 @@ main(int argc, char** argv)
         // Grid init
         grid.reset(new GridManager(*deck));
         // Rock and fluid init
-        int nc = grid->c_grid()->number_of_cells;
-        std::vector<int> global_cell(nc);
-        const int* gc = grid->c_grid()->global_cell;
-        if (gc != 0) {
-            std::copy(gc, gc + nc, global_cell.begin());
-        } else {
-            for (int cell = 0; cell < nc; ++cell) {
-                global_cell[cell] = cell;
-            }
-        }
-        props.reset(new IncompPropertiesFromDeck(*deck, global_cell));
+        props.reset(new IncompPropertiesFromDeck(*deck, *grid->c_grid()));
         // check_well_controls = param.getDefault("check_well_controls", false);
         // max_well_control_iterations = param.getDefault("max_well_control_iterations", 10);
         // Rock compressibility.

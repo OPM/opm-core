@@ -18,6 +18,7 @@
 */
 
 #include <opm/core/fluid/SaturationPropsFromDeck.hpp>
+#include <opm/core/grid.h>
 #include <opm/core/fluid/blackoil/phaseUsageFromDeck.hpp>
 #include <opm/core/utility/buildUniformMonotoneTable.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
@@ -33,7 +34,7 @@ namespace Opm
 
     /// Initialize from deck.
     void SaturationPropsFromDeck::init(const EclipseGridParser& deck,
-                                       const std::vector<int>& global_cell)
+                                       const UnstructuredGrid& grid)
     {
         phase_usage_ = phaseUsageFromDeck(deck);
 
@@ -49,10 +50,12 @@ namespace Opm
         if (deck.hasField("SATNUM")) {
             const std::vector<int>& satnum = deck.getIntegerValue("SATNUM");
             satfuncs_expected = *std::max_element(satnum.begin(), satnum.end());
-            int num_cells = global_cell.size();
+            const int num_cells = grid.number_of_cells;
             cell_to_func_.resize(num_cells);
+            const int* gc = grid.global_cell;
             for (int cell = 0; cell < num_cells; ++cell) {
-                cell_to_func_[cell] = satnum[global_cell[cell]] - 1;
+                const int deck_pos = (gc == NULL) ? cell : gc[cell];
+                cell_to_func_[cell] = satnum[deck_pos] - 1;
             }
         }
 
