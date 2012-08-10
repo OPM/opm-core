@@ -153,7 +153,7 @@ namespace Opm
 
     namespace
     {
-        std::vector<double> coordsFromDeltas(const std::vector<double> deltas)
+        std::vector<double> coordsFromDeltas(const std::vector<double>& deltas)
         {
             std::vector<double> coords(deltas.size() + 1);
             coords[0] = 0.0;
