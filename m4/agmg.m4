@@ -13,8 +13,12 @@ AC_DEFUN([OPM_AGMG],dnl
    AC_DEFINE([HAVE_AGMG], [1],dnl
              [Define to `1' if Notay's AGMG solver is included])[]dnl
    build_agmg="yes"],dnl
-  [build_agmg="no"])],dnl
- [build_agmg="no"])[]dnl
+  [AC_DEFINE([HAVE_AGMG], [0],dnl
+             [Define to 0 if Notay's AGMG solver is unavailable.])[]dnl
+   build_agmg="no"])],dnl
+ [AC_DEFINE([HAVE_AGMG], [0],dnl
+            [Define to 0 if Notay's AGMG solver is unwanted.])[]dnl
+  build_agmg="no"])[]dnl
 
  AS_IF([test x"$build_agmg" = x"yes"],dnl
    [AC_PROG_FC_C_O[]dnl
