@@ -43,6 +43,8 @@
  */
 
 #include <opm/core/linalg/LinearSolverInterface.hpp>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
+#include <string>
 
 namespace Opm
 {
@@ -61,7 +63,12 @@ namespace Opm
         LinearSolverAGMG(const int    max_it = 100   ,
                          const double rtol   = 1.0e-6,
                          const bool   is_spd = false);
-
+	/**
+         * Constructor.
+	 * \param[in] param   ParameterGroup object contianing the fields
+	 *                    max_it,rtol,is_spd as used in the constructor
+         */	
+	LinearSolverAGMG(const parameter::ParameterGroup& param);
         /// Destructor.
         virtual ~LinearSolverAGMG();
 
