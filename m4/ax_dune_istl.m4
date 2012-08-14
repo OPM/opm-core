@@ -31,7 +31,9 @@ AC_DEFUN([AX_DUNE_ISTL],
               "x$ax_cv_dune_common_available" = "xyes"],dnl
    [AC_DEFINE([HAVE_DUNE_ISTL], [1],dnl
               [Define to 1 if `dune-istl' is available])
-   ])[]dnl
+   ],dnl
+   [AC_DEFINE([HAVE_DUNE_ISTL], [0],dnl
+              [Define to 0 if `dune-istl' is unavailable.])])[]dnl
 
   AM_CONDITIONAL([DUNE_ISTL],
     [test "x$ax_cv_dune_istl_available" = "xyes" -a \

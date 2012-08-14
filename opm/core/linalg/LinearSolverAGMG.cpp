@@ -66,6 +66,7 @@ namespace Opm
           is_spd_(is_spd)
     {
     }
+
     LinearSolverAGMG::LinearSolverAGMG(const parameter::ParameterGroup& param)
         : max_it_(100)   ,
           rtol_  (1.0e-6),
@@ -76,11 +77,8 @@ namespace Opm
         is_spd_ = param.getDefault("is_spd", is_spd_);
     }
 
-    
     LinearSolverAGMG::~LinearSolverAGMG() {}
 
-
-    
     LinearSolverInterface::LinearSolverReport
     LinearSolverAGMG::solve(const int     size    ,
                             const int     nonzeros,
