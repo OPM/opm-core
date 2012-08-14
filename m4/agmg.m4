@@ -11,7 +11,7 @@ AC_DEFUN([OPM_AGMG],dnl
  [AS_IF([test -f "$with_agmg/dagmg.f90"],dnl
   [AC_SUBST([AGMG_SRCDIR], [$with_agmg])[]dnl
    AC_DEFINE([HAVE_AGMG], [1],dnl
-             [Define to `1' if Notay's AGMG solver is included])[]dnl
+             [Define to 1 if Notay's AGMG solver is included.])[]dnl
    build_agmg="yes"],dnl
   [AC_DEFINE([HAVE_AGMG], [0],dnl
              [Define to 0 if Notay's AGMG solver is unavailable.])[]dnl
