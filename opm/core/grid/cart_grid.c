@@ -262,6 +262,13 @@ fill_cart_topology_3d(struct UnstructuredGrid *G)
             }
         }
     }
+    
+    for (k=0; k< nx*ny*nz;++k){
+       for (i=0; i < 6; ++i){
+           G->cell_facetag[k*6+i]=i;
+       }
+    }
+
 
 
     fnodes      = G->face_nodes;
@@ -565,6 +572,12 @@ fill_cart_topology_2d(struct UnstructuredGrid *G)
         }
     }
 
+    for (j=0; j< nx*ny;++j){
+	G->cell_facetag[j*4+0]=0;
+       G->cell_facetag[j*4+1]=2;
+       G->cell_facetag[j*4+2]=1;
+       G->cell_facetag[j*4+3]=3;
+    }
 
 
     fnodes     = G->face_nodes;

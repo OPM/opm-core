@@ -65,12 +65,21 @@ namespace Opm
           rtol_  (rtol)  ,
           is_spd_(is_spd)
     {
-#if !HAVE_AGMG
-        THROW("AGMG support is not enabled in this library");
-#endif  // HAVE_AGMG
+    }
+    LinearSolverAGMG::LinearSolverAGMG(const parameter::ParameterGroup& param)
+        : max_it_(100)   ,
+          rtol_  (1.0e-6),
+          is_spd_(false)
+    {
+        max_it_ = param.getDefault("max_it", max_it_);
+        rtol_   = param.getDefault("rtol"  , rtol_  );
+        is_spd_ = param.getDefault("is_spd", is_spd_);
     }
 
+    
     LinearSolverAGMG::~LinearSolverAGMG() {}
+
+
     
     LinearSolverInterface::LinearSolverReport
     LinearSolverAGMG::solve(const int     size    ,
