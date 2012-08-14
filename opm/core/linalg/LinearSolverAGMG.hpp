@@ -44,7 +44,6 @@
 
 #include <opm/core/linalg/LinearSolverInterface.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
-#include <string>
 
 namespace Opm
 {
