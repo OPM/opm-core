@@ -104,7 +104,7 @@ allocate_grid(size_t ndims     ,
         nel               = ncellfaces;
         G->cell_faces     = malloc(nel * sizeof *G->cell_faces);
 
-	G->cell_facetag   = malloc(nel * sizeof *G->cell_facetag);
+        G->cell_facetag   = malloc(nel * sizeof *G->cell_facetag);
 
         nel               = ncells + 1;
         G->cell_facepos   = malloc(nel * sizeof *G->cell_facepos);
@@ -123,7 +123,7 @@ allocate_grid(size_t ndims     ,
             (G->face_normals     == NULL) ||
             (G->face_areas       == NULL) ||
             (G->cell_faces       == NULL) ||
-	    (G->cell_facetag     == NULL) ||
+            (G->cell_facetag     == NULL) ||
             (G->cell_facepos     == NULL) ||
             (G->cell_centroids   == NULL) ||
             (G->cell_volumes     == NULL)  )
