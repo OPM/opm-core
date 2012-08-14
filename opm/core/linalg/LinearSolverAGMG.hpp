@@ -79,12 +79,12 @@ namespace Opm
 
         /// Solve a linear system, with a matrix given in compressed
         /// sparse row format.
-        /// \param[in] size        Number of rows (and columns).
-        /// \param[in] nonzeros    Number of (structural) non-zeros.
-        /// \param[in] ia          Row pointers.
-        /// \param[in] ja          Column indices.
-        /// \param[in] sa          (structurally) non-zero elements.
-        /// \param[in] rhs         System right-hand side.
+        /// \param[in] size         Number of rows (and columns).
+        /// \param[in] nonzeros     Number of (structural) non-zeros.
+        /// \param[in] ia           Row pointers.
+        /// \param[in] ja           Column indices.
+        /// \param[in] sa           (structurally) non-zero elements.
+        /// \param[in] rhs          System right-hand side.
         /// \param[in,out] solution System solution.
         /// \return Solver meta-data concerning most recent system solve.
         virtual LinearSolverInterface::LinearSolverReport
