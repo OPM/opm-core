@@ -46,6 +46,7 @@
 #include <opm/core/simulator/SimulatorTwophase.hpp>
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/filesystem/convenience.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -155,17 +156,27 @@ main(int argc, char** argv)
     // Linear solver.
     LinearSolverFactory linsolver(param);
 
-    // Warn if any parameters are unused.
-    // if (param.anyUnused()) {
-    //     std::cout << "--------------------   Unused parameters:   --------------------\n";
-    //     param.displayUsage();
-    //     std::cout << "----------------------------------------------------------------" << std::endl;
-    // }
-
+    //Warn if any parameters are unused.
+    if (param.anyUnused()) {
+         std::cout << "--------------------   Unused parameters:   --------------------\n";
+         param.displayUsage();
+        std::cout << "----------------------------------------------------------------" << std::endl;
+    }
+    
     // Write parameters used for later reference.
-    // if (output) {
-    //     param.writeParam(output_dir + "/spu_2p.param");
-    // }
+    bool output = param.getDefault("output", true);
+    if (output) {
+      std::string output_dir =
+        param.getDefault("output_dir", std::string("output"));
+      boost::filesystem::path fpath(output_dir);
+      try {
+        create_directories(fpath);
+      }
+      catch (...) {
+        THROW("Creating directories failed: " << fpath);
+      }  
+      param.writeParam(output_dir + "/spu_2p.param");
+    }
 
 
     std::cout << "\n\n================    Starting main simulation loop     ===============\n"
