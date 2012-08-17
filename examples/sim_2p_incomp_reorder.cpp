@@ -46,8 +46,7 @@
 #include <opm/core/simulator/SimulatorTwophase.hpp>
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/filesystem/convenience.hpp>
-
+#include <boost/filesystem.hpp>
 #include <algorithm>
 #include <iostream>
 #include <vector>
