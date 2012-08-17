@@ -68,8 +68,6 @@
 #include <vector>
 #include <numeric>
 
-#define TRANSPORT_SOLVER_FIXED 1
-
 
 template <class State>
 static void outputState(const UnstructuredGrid& grid,
@@ -299,14 +297,13 @@ main(int argc, char** argv)
                                   nl_press_res_tol, nl_press_change_tol, nl_press_maxiter,
                                   grav, wells->c_wells());
     // Reordering solver.
-#if TRANSPORT_SOLVER_FIXED
     const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
     const int nl_maxiter = param.getDefault("nl_maxiter", 30);
     Opm::TransportModelCompressibleTwophase reorder_model(*grid->c_grid(), *props, nl_tolerance, nl_maxiter);
     if (use_gauss_seidel_gravity) {
-        reorder_model.initGravity(grav);
+        reorder_model.initGravity();
     }
-#endif // TRANSPORT_SOLVER_FIXED
+
     // Column-based gravity segregation solver.
     std::vector<std::vector<int> > columns;
     if (use_column_solver) {
@@ -414,7 +411,6 @@ main(int argc, char** argv)
 
         // Solve transport.
         transport_timer.start();
-#if TRANSPORT_SOLVER_FIXED
         double stepsize = simtimer.currentStepLength();
         if (num_transport_substeps != 1) {
             stepsize /= double(num_transport_substeps);
@@ -427,11 +423,9 @@ main(int argc, char** argv)
                                 &porevol[0],  &porevol[0], &reorder_src[0], stepsize, state.saturation());
             // Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
             if (use_segregation_split) {
-                THROW("Segregation not implemented yet.");
-                // reorder_model.solveGravity(columns, &porevol[0], stepsize, state.saturation());
+                reorder_model.solveGravity(columns, &state.pressure()[0], &porevol[0], stepsize, grav, state.saturation());
             }
         }
-#endif // TRANSPORT_SOLVER_FIXED
         transport_timer.stop();
         double tt = transport_timer.secsSinceStart();
         std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
