@@ -78,6 +78,7 @@ namespace Opm
 
         // Parameters for output.
         bool output_;
+        bool output_vtk_;
         std::string output_dir_;
         int output_interval_;
         // Parameters for transport solver.
@@ -130,10 +131,10 @@ namespace Opm
 
 
 
-    static void outputState(const UnstructuredGrid& grid,
-                            const Opm::TwophaseState& state,
-                            const int step,
-                            const std::string& output_dir)
+    static void outputStateVtk(const UnstructuredGrid& grid,
+                               const Opm::TwophaseState& state,
+                               const int step,
+                               const std::string& output_dir)
     {
         // Write data in VTK format.
         std::ostringstream vtkfilename;
@@ -157,12 +158,26 @@ namespace Opm
         Opm::estimateCellVelocity(grid, state.faceflux(), cell_velocity);
         dm["velocity"] = &cell_velocity;
         Opm::writeVtkData(grid, dm, vtkfile);
+    }
+
+
+    static void outputStateMatlab(const UnstructuredGrid& grid,
+                                  const Opm::TwophaseState& state,
+                                  const int step,
+                                  const std::string& output_dir)
+    {
+        Opm::DataMap dm;
+        dm["saturation"] = &state.saturation();
+        dm["pressure"] = &state.pressure();
+        std::vector<double> cell_velocity;
+        Opm::estimateCellVelocity(grid, state.faceflux(), cell_velocity);
+        dm["velocity"] = &cell_velocity;
 
         // Write data (not grid) in Matlab format
         for (Opm::DataMap::const_iterator it = dm.begin(); it != dm.end(); ++it) {
             std::ostringstream fname;
             fname << output_dir << "/" << it->first;
-            fpath = fname.str();
+            boost::filesystem::path fpath = fname.str();
             try {
               create_directories(fpath);
             }
@@ -238,6 +253,7 @@ namespace Opm
         // For output.
         output_ = param.getDefault("output", true);
         if (output_) {
+            output_vtk_ = param.getDefault("output_vtk", true);
             output_dir_ = param.getDefault("output_dir", std::string("output"));
             // Ensure that output dir exists
             boost::filesystem::path fpath(output_dir_);
@@ -314,7 +330,10 @@ namespace Opm
             // Report timestep and (optionally) write state to disk.
             timer.report(std::cout);
             if (output_ && (timer.currentStepNum() % output_interval_ == 0)) {
-                outputState(grid_, state, timer.currentStepNum(), output_dir_);
+                if (output_vtk_) {
+                    outputStateVtk(grid_, state, timer.currentStepNum(), output_dir_);
+                }
+                outputStateMatlab(grid_, state, timer.currentStepNum(), output_dir_);
             }
 
             // Solve pressure.
@@ -400,7 +419,10 @@ namespace Opm
         }
 
         if (output_) {
-            outputState(grid_, state, timer.currentStepNum(), output_dir_);
+            if (output_vtk_) {
+                outputStateVtk(grid_, state, timer.currentStepNum(), output_dir_);
+            }
+            outputStateMatlab(grid_, state, timer.currentStepNum(), output_dir_);
             outputWaterCut(watercut, output_dir_);
             if (wells_) {
                 outputWellReport(wellreport, output_dir_);
