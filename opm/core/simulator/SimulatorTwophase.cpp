@@ -45,7 +45,7 @@
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/transport/reorder/TransportModelTwophase.hpp>
 
-#include <boost/filesystem/convenience.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -137,7 +137,15 @@ namespace Opm
     {
         // Write data in VTK format.
         std::ostringstream vtkfilename;
-        vtkfilename << output_dir << "/output-" << std::setw(3) << std::setfill('0') << step << ".vtu";
+        vtkfilename << output_dir << "/vtk_files";
+        boost::filesystem::path fpath(vtkfilename.str());
+        try {
+          create_directories(fpath);
+        }
+        catch (...) {
+          THROW("Creating directories failed: " << fpath);
+        }
+        vtkfilename << "/" << std::setw(3) << std::setfill('0') << step << ".vtu";
         std::ofstream vtkfile(vtkfilename.str().c_str());
         if (!vtkfile) {
             THROW("Failed to open " << vtkfilename.str());
@@ -153,7 +161,15 @@ namespace Opm
         // Write data (not grid) in Matlab format
         for (Opm::DataMap::const_iterator it = dm.begin(); it != dm.end(); ++it) {
             std::ostringstream fname;
-            fname << output_dir << "/" << it->first << "-" << std::setw(3) << std::setfill('0') << step << ".dat";
+            fname << output_dir << "/" << it->first;
+            fpath = fname.str();
+            try {
+              create_directories(fpath);
+            }
+            catch (...) {
+              THROW("Creating directories failed: " << fpath);
+            }
+            fname << "/" << std::setw(3) << std::setfill('0') << step << ".txt";
             std::ofstream file(fname.str().c_str());
             if (!file) {
                 THROW("Failed to open " << fname.str());
