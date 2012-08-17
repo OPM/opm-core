@@ -44,8 +44,7 @@
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/transport/reorder/TransportModelTwophase.hpp>
-
-#include <boost/filesystem/convenience.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 
