@@ -45,7 +45,7 @@
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/transport/reorder/TransportModelTwophase.hpp>
 
-#include <boost/filesystem/convenience.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -138,7 +138,7 @@ namespace Opm
         // Write data in VTK format.
         std::ostringstream vtkfilename;
         vtkfilename << output_dir << "/vtk_files";
-        boost::filesystem::path fpath(vtkfilename.str().c_str());
+        boost::filesystem::path fpath(vtkfilename.str());
         try {
           create_directories(fpath);
         }
@@ -162,7 +162,7 @@ namespace Opm
         for (Opm::DataMap::const_iterator it = dm.begin(); it != dm.end(); ++it) {
             std::ostringstream fname;
             fname << output_dir << "/" << it->first;
-            boost::filesystem::path fpath(fname.str().c_str());
+            fpath = fname.str();
             try {
               create_directories(fpath);
             }
