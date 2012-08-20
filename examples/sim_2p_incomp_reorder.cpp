@@ -180,7 +180,7 @@ main(int argc, char** argv)
       catch (...) {
         THROW("Creating directories failed: " << fpath);
       }  
-      param.writeParam(output_dir + "/spu_2p.param");
+      param.writeParam(output_dir + "/simulation.param");
     }
 
 
