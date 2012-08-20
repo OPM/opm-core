@@ -228,16 +228,8 @@ main(int argc, char** argv)
         }
     }
     bool use_segregation_split = false;
-    bool use_column_solver = false;
-    bool use_gauss_seidel_gravity = false;
     if (use_gravity) {
         use_segregation_split = param.getDefault("use_segregation_split", use_segregation_split);
-        if (use_segregation_split) {
-            use_column_solver = param.getDefault("use_column_solver", use_column_solver);
-            if (use_column_solver) {
-                use_gauss_seidel_gravity = param.getDefault("use_gauss_seidel_gravity", use_gauss_seidel_gravity);
-            }
-        }
     }
 
     // Source-related variables init.
@@ -287,13 +279,13 @@ main(int argc, char** argv)
     const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
     const int nl_maxiter = param.getDefault("nl_maxiter", 30);
     Opm::TransportModelCompressibleTwophase reorder_model(*grid->c_grid(), *props, nl_tolerance, nl_maxiter);
-    if (use_gauss_seidel_gravity) {
+    if (use_segregation_split) {
         reorder_model.initGravity();
     }
 
     // Column-based gravity segregation solver.
     std::vector<std::vector<int> > columns;
-    if (use_column_solver) {
+    if (use_segregation_split) {
         Opm::extractColumn(*grid->c_grid(), columns);
     }
 
