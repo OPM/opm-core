@@ -21,7 +21,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include <opm/core/simulator/SimulatorTwophase.hpp>
+#include <opm/core/simulator/SimulatorIncompTwophase.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 
@@ -56,7 +56,7 @@
 namespace Opm
 {
 
-    class SimulatorTwophase::Impl
+    class SimulatorIncompTwophase::Impl
     {
     public:
         Impl(const parameter::ParameterGroup& param,
@@ -105,15 +105,15 @@ namespace Opm
 
 
 
-    SimulatorTwophase::SimulatorTwophase(const parameter::ParameterGroup& param,
-                                         const UnstructuredGrid& grid,
-                                         const IncompPropertiesInterface& props,
-                                         const RockCompressibility* rock_comp,
-                                         const Wells* wells,
-                                         const std::vector<double>& src,
-                                         const FlowBoundaryConditions* bcs,
-                                         LinearSolverInterface& linsolver,
-                                         const double* gravity)
+    SimulatorIncompTwophase::SimulatorIncompTwophase(const parameter::ParameterGroup& param,
+                                                     const UnstructuredGrid& grid,
+                                                     const IncompPropertiesInterface& props,
+                                                     const RockCompressibility* rock_comp,
+                                                     const Wells* wells,
+                                                     const std::vector<double>& src,
+                                                     const FlowBoundaryConditions* bcs,
+                                                     LinearSolverInterface& linsolver,
+                                                     const double* gravity)
     {
         pimpl_.reset(new Impl(param, grid, props, rock_comp, wells, src, bcs, linsolver, gravity));
     }
@@ -122,9 +122,9 @@ namespace Opm
 
 
 
-    SimulatorReport SimulatorTwophase::run(SimulatorTimer& timer,
-                                           TwophaseState& state,
-                                           WellState& well_state)
+    SimulatorReport SimulatorIncompTwophase::run(SimulatorTimer& timer,
+                                                 TwophaseState& state,
+                                                 WellState& well_state)
     {
         return pimpl_->run(timer, state, well_state);
     }
@@ -224,15 +224,15 @@ namespace Opm
 
 
 
-    SimulatorTwophase::Impl::Impl(const parameter::ParameterGroup& param,
-                                  const UnstructuredGrid& grid,
-                                  const IncompPropertiesInterface& props,
-                                  const RockCompressibility* rock_comp,
-                                  const Wells* wells,
-                                  const std::vector<double>& src,
-                                  const FlowBoundaryConditions* bcs,
-                                  LinearSolverInterface& linsolver,
-                                  const double* gravity)
+    SimulatorIncompTwophase::Impl::Impl(const parameter::ParameterGroup& param,
+                                        const UnstructuredGrid& grid,
+                                        const IncompPropertiesInterface& props,
+                                        const RockCompressibility* rock_comp,
+                                        const Wells* wells,
+                                        const std::vector<double>& src,
+                                        const FlowBoundaryConditions* bcs,
+                                        LinearSolverInterface& linsolver,
+                                        const double* gravity)
         : grid_(grid),
           props_(props),
           rock_comp_(rock_comp),
@@ -285,9 +285,9 @@ namespace Opm
 
 
 
-    SimulatorReport SimulatorTwophase::Impl::run(SimulatorTimer& timer,
-                                                 TwophaseState& state,
-                                                 WellState& well_state)
+    SimulatorReport SimulatorIncompTwophase::Impl::run(SimulatorTimer& timer,
+                                                       TwophaseState& state,
+                                                       WellState& well_state)
     {
         std::vector<double> transport_src;
 
