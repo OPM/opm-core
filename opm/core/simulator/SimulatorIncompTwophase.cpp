@@ -21,7 +21,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include <opm/core/simulator/SimulatorTwophase.hpp>
+#include <opm/core/simulator/SimulatorIncompTwophase.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 
@@ -56,7 +56,7 @@
 namespace Opm
 {
 
-    class SimulatorTwophase::Impl
+    class SimulatorIncompTwophase::Impl
     {
     public:
         Impl(const parameter::ParameterGroup& param,
@@ -78,6 +78,7 @@ namespace Opm
 
         // Parameters for output.
         bool output_;
+        bool output_vtk_;
         std::string output_dir_;
         int output_interval_;
         // Parameters for transport solver.
@@ -104,15 +105,15 @@ namespace Opm
 
 
 
-    SimulatorTwophase::SimulatorTwophase(const parameter::ParameterGroup& param,
-                                         const UnstructuredGrid& grid,
-                                         const IncompPropertiesInterface& props,
-                                         const RockCompressibility* rock_comp,
-                                         const Wells* wells,
-                                         const std::vector<double>& src,
-                                         const FlowBoundaryConditions* bcs,
-                                         LinearSolverInterface& linsolver,
-                                         const double* gravity)
+    SimulatorIncompTwophase::SimulatorIncompTwophase(const parameter::ParameterGroup& param,
+                                                     const UnstructuredGrid& grid,
+                                                     const IncompPropertiesInterface& props,
+                                                     const RockCompressibility* rock_comp,
+                                                     const Wells* wells,
+                                                     const std::vector<double>& src,
+                                                     const FlowBoundaryConditions* bcs,
+                                                     LinearSolverInterface& linsolver,
+                                                     const double* gravity)
     {
         pimpl_.reset(new Impl(param, grid, props, rock_comp, wells, src, bcs, linsolver, gravity));
     }
@@ -121,19 +122,19 @@ namespace Opm
 
 
 
-    SimulatorReport SimulatorTwophase::run(SimulatorTimer& timer,
-                                           TwophaseState& state,
-                                           WellState& well_state)
+    SimulatorReport SimulatorIncompTwophase::run(SimulatorTimer& timer,
+                                                 TwophaseState& state,
+                                                 WellState& well_state)
     {
         return pimpl_->run(timer, state, well_state);
     }
 
 
 
-    static void outputState(const UnstructuredGrid& grid,
-                            const Opm::TwophaseState& state,
-                            const int step,
-                            const std::string& output_dir)
+    static void outputStateVtk(const UnstructuredGrid& grid,
+                               const Opm::TwophaseState& state,
+                               const int step,
+                               const std::string& output_dir)
     {
         // Write data in VTK format.
         std::ostringstream vtkfilename;
@@ -157,12 +158,26 @@ namespace Opm
         Opm::estimateCellVelocity(grid, state.faceflux(), cell_velocity);
         dm["velocity"] = &cell_velocity;
         Opm::writeVtkData(grid, dm, vtkfile);
+    }
+
+
+    static void outputStateMatlab(const UnstructuredGrid& grid,
+                                  const Opm::TwophaseState& state,
+                                  const int step,
+                                  const std::string& output_dir)
+    {
+        Opm::DataMap dm;
+        dm["saturation"] = &state.saturation();
+        dm["pressure"] = &state.pressure();
+        std::vector<double> cell_velocity;
+        Opm::estimateCellVelocity(grid, state.faceflux(), cell_velocity);
+        dm["velocity"] = &cell_velocity;
 
         // Write data (not grid) in Matlab format
         for (Opm::DataMap::const_iterator it = dm.begin(); it != dm.end(); ++it) {
             std::ostringstream fname;
             fname << output_dir << "/" << it->first;
-            fpath = fname.str();
+            boost::filesystem::path fpath = fname.str();
             try {
               create_directories(fpath);
             }
@@ -209,15 +224,15 @@ namespace Opm
 
 
 
-    SimulatorTwophase::Impl::Impl(const parameter::ParameterGroup& param,
-                                  const UnstructuredGrid& grid,
-                                  const IncompPropertiesInterface& props,
-                                  const RockCompressibility* rock_comp,
-                                  const Wells* wells,
-                                  const std::vector<double>& src,
-                                  const FlowBoundaryConditions* bcs,
-                                  LinearSolverInterface& linsolver,
-                                  const double* gravity)
+    SimulatorIncompTwophase::Impl::Impl(const parameter::ParameterGroup& param,
+                                        const UnstructuredGrid& grid,
+                                        const IncompPropertiesInterface& props,
+                                        const RockCompressibility* rock_comp,
+                                        const Wells* wells,
+                                        const std::vector<double>& src,
+                                        const FlowBoundaryConditions* bcs,
+                                        LinearSolverInterface& linsolver,
+                                        const double* gravity)
         : grid_(grid),
           props_(props),
           rock_comp_(rock_comp),
@@ -238,6 +253,7 @@ namespace Opm
         // For output.
         output_ = param.getDefault("output", true);
         if (output_) {
+            output_vtk_ = param.getDefault("output_vtk", true);
             output_dir_ = param.getDefault("output_dir", std::string("output"));
             // Ensure that output dir exists
             boost::filesystem::path fpath(output_dir_);
@@ -269,9 +285,9 @@ namespace Opm
 
 
 
-    SimulatorReport SimulatorTwophase::Impl::run(SimulatorTimer& timer,
-                                                 TwophaseState& state,
-                                                 WellState& well_state)
+    SimulatorReport SimulatorIncompTwophase::Impl::run(SimulatorTimer& timer,
+                                                       TwophaseState& state,
+                                                       WellState& well_state)
     {
         std::vector<double> transport_src;
 
@@ -314,7 +330,10 @@ namespace Opm
             // Report timestep and (optionally) write state to disk.
             timer.report(std::cout);
             if (output_ && (timer.currentStepNum() % output_interval_ == 0)) {
-                outputState(grid_, state, timer.currentStepNum(), output_dir_);
+                if (output_vtk_) {
+                    outputStateVtk(grid_, state, timer.currentStepNum(), output_dir_);
+                }
+                outputStateMatlab(grid_, state, timer.currentStepNum(), output_dir_);
             }
 
             // Solve pressure.
@@ -400,7 +419,10 @@ namespace Opm
         }
 
         if (output_) {
-            outputState(grid_, state, timer.currentStepNum(), output_dir_);
+            if (output_vtk_) {
+                outputStateVtk(grid_, state, timer.currentStepNum(), output_dir_);
+            }
+            outputStateMatlab(grid_, state, timer.currentStepNum(), output_dir_);
             outputWaterCut(watercut, output_dir_);
             if (wells_) {
                 outputWellReport(wellreport, output_dir_);
