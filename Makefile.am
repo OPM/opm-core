@@ -92,9 +92,9 @@ opm/core/pressure/tpfa/compr_source.c			\
 opm/core/pressure/tpfa/ifs_tpfa.c			\
 opm/core/pressure/tpfa/trans_tpfa.c			\
 opm/core/pressure/well.c				\
+opm/core/simulator/SimulatorIncompTwophase.cpp		\
 opm/core/simulator/SimulatorReport.cpp			\
 opm/core/simulator/SimulatorTimer.cpp			\
-opm/core/simulator/SimulatorTwophase.cpp		\
 opm/core/transport/reorder/TransportModelCompressibleTwophase.cpp	\
 opm/core/transport/reorder/TransportModelInterface.cpp	\
 opm/core/transport/reorder/TransportModelTwophase.cpp	\
@@ -196,8 +196,8 @@ opm/core/pressure/tpfa/ifs_tpfa.h			\
 opm/core/pressure/tpfa/trans_tpfa.h			\
 opm/core/simulator/BlackoilState.hpp			\
 opm/core/simulator/SimulatorReport.hpp			\
+opm/core/simulator/SimulatorIncompTwophase.hpp		\
 opm/core/simulator/SimulatorTimer.hpp			\
-opm/core/simulator/SimulatorTwophase.hpp		\
 opm/core/simulator/TwophaseState.hpp			\
 opm/core/simulator/WellState.hpp			\
 opm/core/transport/CSRMatrixBlockAssembler.hpp		\
