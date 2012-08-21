@@ -191,11 +191,12 @@ main(int argc, char** argv)
     SimulatorReport rep;
     if (!use_deck) {
         // Simple simulation without a deck.
+        WellsManager wells; // no wells.
         SimulatorIncompTwophase simulator(param,
                                           *grid->c_grid(),
                                           *props,
                                           rock_comp->isActive() ? rock_comp.get() : 0,
-                                          0, // wells
+                                          wells,
                                           src,
                                           bcs.c_bcs(),
                                           linsolver,
@@ -250,7 +251,7 @@ main(int argc, char** argv)
                                               *grid->c_grid(),
                                               *props,
                                               rock_comp->isActive() ? rock_comp.get() : 0,
-                                              wells.c_wells(),
+                                              wells,
                                               src,
                                               bcs.c_bcs(),
                                               linsolver,
