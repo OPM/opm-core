@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_SIMULATORTWOPHASE_HEADER_INCLUDED
-#define OPM_SIMULATORTWOPHASE_HEADER_INCLUDED
+#ifndef OPM_SIMULATORINCOMPTWOPHASE_HEADER_INCLUDED
+#define OPM_SIMULATORINCOMPTWOPHASE_HEADER_INCLUDED
 
 #include <boost/shared_ptr.hpp>
 #include <vector>
@@ -39,7 +39,7 @@ namespace Opm
     struct SimulatorReport;
 
     /// Class collecting all necessary components for a two-phase simulation.
-    class SimulatorTwophase
+    class SimulatorIncompTwophase
     {
     public:
         /// Initialise from parameters and objects to observe.
@@ -66,15 +66,15 @@ namespace Opm
         /// \param[in] bcs         boundary conditions, treat as all noflow if null
         /// \param[in] linsolver   linear solver
         /// \param[in] gravity     if non-null, gravity vector
-       SimulatorTwophase(const parameter::ParameterGroup& param,
-                         const UnstructuredGrid& grid,
-                         const IncompPropertiesInterface& props,
-                         const RockCompressibility* rock_comp,
-                         const Wells* wells,
-                         const std::vector<double>& src,
-                         const FlowBoundaryConditions* bcs,
-                         LinearSolverInterface& linsolver,
-                         const double* gravity);
+       SimulatorIncompTwophase(const parameter::ParameterGroup& param,
+                               const UnstructuredGrid& grid,
+                               const IncompPropertiesInterface& props,
+                               const RockCompressibility* rock_comp,
+                               const Wells* wells,
+                               const std::vector<double>& src,
+                               const FlowBoundaryConditions* bcs,
+                               LinearSolverInterface& linsolver,
+                               const double* gravity);
 
         /// Run the simulation.
         /// This will run succesive timesteps until timer.done() is true. It will
