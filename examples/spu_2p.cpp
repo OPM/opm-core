@@ -493,7 +493,7 @@ main(int argc, char** argv)
 
     // Write parameters used for later reference.
     if (output) {
-        param.writeParam(output_dir + "/spu_2p.param");
+        param.writeParam(output_dir + "/simulation.param");
     }
 
     // Main simulation loop.
