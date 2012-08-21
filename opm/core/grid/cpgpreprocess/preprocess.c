@@ -588,7 +588,7 @@ get_zcorn_sign(int nx, int ny, int nz, const int *actnum,
                     z2 = sign*zcorn[i+2*nx*(j+2*ny*(k+1))];
 
                     c1 = i/2 + nx*(j/2 + ny*k/2);
-                    c2 = i/2 + nx*(j/2 + ny*(k+1)/2);
+                    c2 = i/2 + nx*(j/2 + ny*((k+1)/2));
 
                     if (((actnum == NULL) ||
                          (actnum[c1] && actnum[c2]))
