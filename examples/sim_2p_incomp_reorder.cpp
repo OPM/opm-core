@@ -173,22 +173,22 @@ main(int argc, char** argv)
     std::ofstream epoch_os;
     std::string output_dir;
     if (output) {
-      output_dir =
-        param.getDefault("output_dir", std::string("output"));
-      boost::filesystem::path fpath(output_dir);
-      try {
-        create_directories(fpath);
-      }
-      catch (...) {
-        THROW("Creating directories failed: " << fpath);
-      }
-      std::string filename = output_dir + "/epoch_timing.param";
-      epoch_os.open(filename.c_str(), std::fstream::trunc | std::fstream::out);
-      // open file to clean it. The file is appended to in SimulatorTwophase
-      filename = output_dir + "/step_timing.param";
-      std::fstream step_os(filename.c_str(), std::fstream::trunc | std::fstream::out);
-      step_os.close();
-      param.writeParam(output_dir + "/simulation.param");
+        output_dir =
+            param.getDefault("output_dir", std::string("output"));
+        boost::filesystem::path fpath(output_dir);
+        try {
+            create_directories(fpath);
+        }
+        catch (...) {
+            THROW("Creating directories failed: " << fpath);
+        }
+        std::string filename = output_dir + "/epoch_timing.param";
+        epoch_os.open(filename.c_str(), std::fstream::trunc | std::fstream::out);
+        // open file to clean it. The file is appended to in SimulatorTwophase
+        filename = output_dir + "/step_timing.param";
+        std::fstream step_os(filename.c_str(), std::fstream::trunc | std::fstream::out);
+        step_os.close();
+        param.writeParam(output_dir + "/simulation.param");
     }
 
 
@@ -268,8 +268,8 @@ main(int argc, char** argv)
                 warnIfUnusedParams(param);
             }
             SimulatorReport epoch_rep = simulator.run(simtimer, state, well_state);
-            if(output){
-              epoch_rep.reportParam(epoch_os);
+            if (output) {
+                epoch_rep.reportParam(epoch_os);
             }
             // Update total timing report and remember step number.
             rep += epoch_rep;
@@ -277,7 +277,6 @@ main(int argc, char** argv)
         }
     }
 
-    epoch_os.close();
     std::cout << "\n\n================    End of simulation     ===============\n\n";
     rep.report(std::cout);
 
@@ -285,7 +284,6 @@ main(int argc, char** argv)
       std::string filename = output_dir + "/walltime.param";
       std::fstream tot_os(filename.c_str(),std::fstream::trunc | std::fstream::out);
       rep.reportParam(tot_os);
-      tot_os.close();
     }
 
 }
