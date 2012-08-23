@@ -280,7 +280,7 @@ main(int argc, char** argv)
     const int nl_maxiter = param.getDefault("nl_maxiter", 30);
     Opm::TransportModelCompressibleTwophase reorder_model(*grid->c_grid(), *props, nl_tolerance, nl_maxiter);
     if (use_segregation_split) {
-        reorder_model.initGravity();
+        reorder_model.initGravity(grav);
     }
 
     // Column-based gravity segregation solver.
@@ -409,7 +409,7 @@ main(int argc, char** argv)
             // Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
             if (use_segregation_split) {
                 reorder_model.solveGravity(columns, &state.pressure()[0], &initial_porevol[0],
-                                           stepsize, grav, state.saturation());
+                                           stepsize, state.saturation(), state.surfacevol());
             }
         }
         transport_timer.stop();

@@ -17,7 +17,6 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
@@ -153,7 +152,7 @@ namespace Opm
         catch (...) {
           THROW("Creating directories failed: " << fpath);
         }
-        vtkfilename << "/" << std::setw(3) << std::setfill('0') << step << ".vtu";
+        vtkfilename << "/output-" << std::setw(3) << std::setfill('0') << step << ".vtu";
         std::ofstream vtkfile(vtkfilename.str().c_str());
         if (!vtkfile) {
             THROW("Failed to open " << vtkfilename.str());
@@ -228,36 +227,6 @@ namespace Opm
     }
 
 
-    static bool allNeumannBCs(const FlowBoundaryConditions* bcs)
-    {
-        if (bcs == NULL) {
-            return true;
-        } else {
-            return std::find(bcs->type, bcs->type + bcs->nbc, BC_PRESSURE)
-                == bcs->type + bcs->nbc;
-        }
-    }
-
-
-    static bool allRateWells(const Wells* wells)
-    {
-        if (wells == NULL) {
-            return true;
-        }
-        const int nw = wells->number_of_wells;
-        for (int w = 0; w < nw; ++w) {
-            const WellControls* wc = wells->ctrls[w];
-            if (wc->current >= 0) {
-                if (wc->type[wc->current] == BHP) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-
-
 
     // \TODO: make CompressibleTpfa take src and bcs.
     SimulatorCompressibleTwophase::Impl::Impl(const parameter::ParameterGroup& param,
@@ -276,7 +245,6 @@ namespace Opm
           wells_(wells_manager.c_wells()),
           src_(src),
           bcs_(bcs),
-          gravity_(gravity),
           psolver_(grid, props, rock_comp, linsolver,
                    param.getDefault("nl_pressure_residual_tolerance", 0.0),
                    param.getDefault("nl_pressure_change_tolerance", 1.0),
@@ -310,7 +278,7 @@ namespace Opm
         num_transport_substeps_ = param.getDefault("num_transport_substeps", 1);
         use_segregation_split_ = param.getDefault("use_segregation_split", false);
         if (gravity != 0 && use_segregation_split_){
-            tsolver_.initGravity();
+            tsolver_.initGravity(gravity);
             extractColumn(grid_, columns_);
         }
 
@@ -402,12 +370,12 @@ namespace Opm
                 std::vector<double> initial_pressure = state.pressure();
                 psolver_.solve(timer.currentStepLength(), state, well_state);
 
-                // Renormalize pressure if rock is incompressible, and
-                // there are no pressure conditions (bcs or wells).
-                // It is deemed sufficient for now to renormalize
-                // using geometric volume instead of pore volume.
-                if ((rock_comp_ == NULL || !rock_comp_->isActive())
-                    && allNeumannBCs(bcs_) && allRateWells(wells_)) {
+                // Renormalize pressure if both fluids and rock are
+                // incompressible, and there are no pressure
+                // conditions (bcs or wells).  It is deemed sufficient
+                // for now to renormalize using geometric volume
+                // instead of pore volume.
+                if (psolver_.singularPressure()) {
                     // Compute average pressures of previous and last
                     // step, and total volume.
                     double av_prev_press = 0.0;
@@ -484,7 +452,7 @@ namespace Opm
                                              transport_src, stepsize, injected, produced);
                 if (gravity_ != 0 && use_segregation_split_) {
                     tsolver_.solveGravity(columns_, &state.pressure()[0], &initial_porevol[0],
-                                          stepsize, gravity_, state.saturation());
+                                          stepsize, state.saturation(), state.surfacevol());
                 }
             }
             transport_timer.stop();
