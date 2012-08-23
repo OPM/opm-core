@@ -8,6 +8,10 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
+# Needed for automake since version 1.12 because extra-portability
+# warnings were then added to -Wall. Ifdef makes it backwards compatible.
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([opm/core/grid.h])
 AC_CONFIG_HEADERS([config.h])
