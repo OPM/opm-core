@@ -103,6 +103,7 @@ if test "x$want_boost" = "xyes"; then
         for ac_boost_path_tmp in $libsubdirs; do
                 if test -d "$ac_boost_path"/"$ac_boost_path_tmp" ; then
                         OPM_BOOST_LDFLAGS="-L$ac_boost_path/$ac_boost_path_tmp"
+                        OPM_BOOST_LIBDIR="${ac_boost_path}/${ac_boost_path_tmp}"
                         break
                 fi
         done
@@ -114,6 +115,7 @@ if test "x$want_boost" = "xyes"; then
                 done
                 OPM_BOOST_LDFLAGS="-L$ac_boost_path_tmp/$libsubdir"
                 OPM_BOOST_CPPFLAGS="-I$ac_boost_path_tmp/include"
+                OPM_BOOST_LIBDIR="${ac_boost_path_tmp}/${libsubdir}"
                 break;
             fi
         done
@@ -123,6 +125,7 @@ if test "x$want_boost" = "xyes"; then
     dnl --with-boost-libdir parameter
     if test "$ac_boost_lib_path" != ""; then
        OPM_BOOST_LDFLAGS="-L$ac_boost_lib_path"
+       OPM_BOOST_LIBDIR="${ac_boost_lib_path}"
     fi
 
     CPPFLAGS_SAVED="$CPPFLAGS"
@@ -191,6 +194,7 @@ if test "x$want_boost" = "xyes"; then
                         if ls "$best_path/$libsubdir/libboost_"* >/dev/null 2>&1 ; then break; fi
                     done
                     OPM_BOOST_LDFLAGS="-L$best_path/$libsubdir"
+                    OPM_BOOST_LIBDIR="$best_path/$libsubdir"
                 fi
             fi
 
@@ -207,6 +211,7 @@ if test "x$want_boost" = "xyes"; then
                         AC_MSG_NOTICE(We will use a staged boost library from $BOOST_ROOT)
                         OPM_BOOST_CPPFLAGS="-I$BOOST_ROOT"
                         OPM_BOOST_LDFLAGS="-L$BOOST_ROOT/stage/$libsubdir"
+                        OPM_BOOST_LIBDIR="$BOOST_ROOT/stage/$libsubdir"
                     fi
                 fi
             fi
@@ -248,6 +253,7 @@ if test "x$want_boost" = "xyes"; then
     else
         AC_SUBST([OPM_BOOST_CPPFLAGS])
         AC_SUBST([OPM_BOOST_LDFLAGS])
+        AC_SUBST([OPM_BOOST_LIBDIR])
         AC_DEFINE([OPM_HAVE_BOOST], [1], [define if the Boost library is available])
         # execute ACTION-IF-FOUND (if present):
         ifelse([$2], , :, [$2])
