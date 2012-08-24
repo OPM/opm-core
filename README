@@ -1,0 +1,41 @@
+These are the release notes for opm-core
+
+Open Porous Media Core Library
+
+CONTENT
+opm-core is the core library within OPM and contains the following 
+
+* Eclipse preprosessing
+* Fluid properties (basic PVT models and rock properties)
+* Grid (generates different grids)
+* Linear Algerbra (interface to different linear solvers)
+* Pressure solvers (different discretization schemes, different flow models)
+* Simulator (some basic examples of simulators based on sequential schemes)
+* Transport solvers (different discretization schemes, different flow models)
+* Utility (input and output processing, unit conversion)
+* Wells (basic well handling)
+
+ON WHAT PLATFORMS DOES IT RUN?
+The opm-core module is designed to run on linux platforms. No efforts have
+been made to ensure that the code will compile and run on windows platforms.
+
+DOCUMENTATION
+Efforts have been made to document the code with Doxygen.
+
+DOWNLOAD opm-core
+git clone git://github.com/OPM/opm-core.git
+
+BUILDING opm-core
+cd ../opm-core
+  autoreconf -i
+ ./configure
+ make
+ sudo make install
+
+
+DEPENDENCIES FOR DEBIAN BASED DISTRIBUTIONS
+
+
+DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
+blas libblas3 lapack liblapack3 libboost libxml2 gcc automake autoconf git
+doxygen umfpack
