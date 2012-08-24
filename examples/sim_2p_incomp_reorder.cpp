@@ -43,7 +43,7 @@
 
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/simulator/WellState.hpp>
-#include <opm/core/simulator/SimulatorTwophase.hpp>
+#include <opm/core/simulator/SimulatorIncompTwophase.hpp>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/filesystem.hpp>
@@ -173,23 +173,22 @@ main(int argc, char** argv)
     std::ofstream epoch_os;
     std::string output_dir;
     if (output) {
-      output_dir =
-        param.getDefault("output_dir", std::string("output"));
-      boost::filesystem::path fpath(output_dir);
-      try {
-        create_directories(fpath);
-      }
-      catch (...) {
-        THROW("Creating directories failed: " << fpath);
-      }
-      std::string filename = output_dir + "/epoch_timing.param";
-      epoch_os.open(filename.c_str(), std::fstream::trunc | std::fstream::out);
-      // open file to clean it. The file is appended to in SimulatorTwophase
-      filename = output_dir + "/step_timing.param";
-      std::fstream step_os(filename.c_str(), std::fstream::trunc | std::fstream::out);
-      step_os.close();
-      
-      param.writeParam(output_dir + "/simulation.param");
+        output_dir =
+            param.getDefault("output_dir", std::string("output"));
+        boost::filesystem::path fpath(output_dir);
+        try {
+            create_directories(fpath);
+        }
+        catch (...) {
+            THROW("Creating directories failed: " << fpath);
+        }
+        std::string filename = output_dir + "/epoch_timing.param";
+        epoch_os.open(filename.c_str(), std::fstream::trunc | std::fstream::out);
+        // open file to clean it. The file is appended to in SimulatorTwophase
+        filename = output_dir + "/step_timing.param";
+        std::fstream step_os(filename.c_str(), std::fstream::trunc | std::fstream::out);
+        step_os.close();
+        param.writeParam(output_dir + "/simulation.param");
     }
 
 
@@ -200,15 +199,16 @@ main(int argc, char** argv)
     SimulatorReport rep;
     if (!use_deck) {
         // Simple simulation without a deck.
-        SimulatorTwophase simulator(param,
-                                    *grid->c_grid(),
-                                    *props,
-                                    rock_comp->isActive() ? rock_comp.get() : 0,
-                                    0, // wells
-                                    src,
-                                    bcs.c_bcs(),
-                                    linsolver,
-                                    grav);
+        WellsManager wells; // no wells.
+        SimulatorIncompTwophase simulator(param,
+                                          *grid->c_grid(),
+                                          *props,
+                                          rock_comp->isActive() ? rock_comp.get() : 0,
+                                          wells,
+                                          src,
+                                          bcs.c_bcs(),
+                                          linsolver,
+                                          grav);
         SimulatorTimer simtimer;
         simtimer.init(param);
         warnIfUnusedParams(param);
@@ -255,37 +255,35 @@ main(int argc, char** argv)
             }
 
             // Create and run simulator.
-            SimulatorTwophase simulator(param,
-                                        *grid->c_grid(),
-                                        *props,
-                                        rock_comp->isActive() ? rock_comp.get() : 0,
-                                        wells.c_wells(),
-                                        src,
-                                        bcs.c_bcs(),
-                                        linsolver,
-                                        grav);
+            SimulatorIncompTwophase simulator(param,
+                                              *grid->c_grid(),
+                                              *props,
+                                              rock_comp->isActive() ? rock_comp.get() : 0,
+                                              wells,
+                                              src,
+                                              bcs.c_bcs(),
+                                              linsolver,
+                                              grav);
             if (epoch == 0) {
                 warnIfUnusedParams(param);
             }
             SimulatorReport epoch_rep = simulator.run(simtimer, state, well_state);
-            if(output){
-              epoch_rep.reportParam(epoch_os);
+            if (output) {
+                epoch_rep.reportParam(epoch_os);
             }
             // Update total timing report and remember step number.
             rep += epoch_rep;
             step = simtimer.currentStepNum();
         }
     }
-    
-    epoch_os.close();
+
     std::cout << "\n\n================    End of simulation     ===============\n\n";
     rep.report(std::cout);
-    
+
     if (output) {
       std::string filename = output_dir + "/walltime.param";
       std::fstream tot_os(filename.c_str(),std::fstream::trunc | std::fstream::out);
       rep.reportParam(tot_os);
-      tot_os.close();
     }
-      
+
 }
