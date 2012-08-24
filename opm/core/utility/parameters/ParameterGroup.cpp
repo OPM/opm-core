@@ -4,7 +4,7 @@
 //
 // Created: Tue Jun  2 19:13:17 2009
 //
-// Author(s): Bård Skaflestad     <bard.skaflestad@sintef.no>
+// Author(s): BÃ¥rd Skaflestad     <bard.skaflestad@sintef.no>
 //            Atgeirr F Rasmussen <atgeirr@sintef.no>
 //
 // $Date$
@@ -139,9 +139,6 @@ namespace Opm {
                     }
                 }
 	    }
-	    #ifdef MATLAB_MEX_FILE
-	    fclose(is);
-	    #endif
 	}
 
 	void ParameterGroup::writeParam(const std::string& param_filename) const {
