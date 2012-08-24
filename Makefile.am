@@ -98,6 +98,7 @@ opm/core/simulator/SimulatorReport.cpp			\
 opm/core/simulator/SimulatorTimer.cpp			\
 opm/core/transport/reorder/TransportModelCompressibleTwophase.cpp	\
 opm/core/transport/reorder/TransportModelInterface.cpp	\
+opm/core/transport/reorder/TransportModelTracerTof.cpp	\
 opm/core/transport/reorder/TransportModelTwophase.cpp	\
 opm/core/transport/reorder/nlsolvers.c			\
 opm/core/transport/reorder/reordersequence.cpp		\
@@ -214,6 +215,7 @@ opm/core/transport/SimpleFluid2pWrapper.hpp		\
 opm/core/transport/SinglePointUpwindTwoPhase.hpp	\
 opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp	\
 opm/core/transport/reorder/TransportModelInterface.hpp	\
+opm/core/transport/reorder/TransportModelTracerTof.hpp	\
 opm/core/transport/reorder/TransportModelTwophase.hpp	\
 opm/core/transport/reorder/nlsolvers.h			\
 opm/core/transport/reorder/reordersequence.h		\
