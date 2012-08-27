@@ -148,6 +148,8 @@ opm/core/fluid/RockCompressibility.hpp			\
 opm/core/fluid/RockFromDeck.hpp				\
 opm/core/fluid/SaturationPropsBasic.hpp			\
 opm/core/fluid/SaturationPropsFromDeck.hpp		\
+opm/core/fluid/SaturationPropsFromDeck_impl.hpp		\
+opm/core/fluid/SaturationPropsInterface.hpp		\
 opm/core/fluid/SimpleFluid2p.hpp			\
 opm/core/fluid/blackoil/BlackoilPhases.hpp		\
 opm/core/fluid/blackoil/BlackoilPvtProperties.hpp	\
