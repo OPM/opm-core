@@ -95,6 +95,7 @@ opm/core/pressure/tpfa/compr_source.c			\
 opm/core/pressure/tpfa/ifs_tpfa.c			\
 opm/core/pressure/tpfa/trans_tpfa.c			\
 opm/core/pressure/well.c				\
+opm/core/simulator/SimulatorCompressibleTwophase.cpp	\
 opm/core/simulator/SimulatorIncompTwophase.cpp		\
 opm/core/simulator/SimulatorReport.cpp			\
 opm/core/simulator/SimulatorTimer.cpp			\
@@ -198,6 +199,7 @@ opm/core/pressure/tpfa/compr_source.h			\
 opm/core/pressure/tpfa/ifs_tpfa.h			\
 opm/core/pressure/tpfa/trans_tpfa.h			\
 opm/core/simulator/BlackoilState.hpp			\
+opm/core/simulator/SimulatorCompressibleTwophase.hpp	\
 opm/core/simulator/SimulatorReport.hpp			\
 opm/core/simulator/SimulatorIncompTwophase.hpp		\
 opm/core/simulator/SimulatorTimer.hpp			\

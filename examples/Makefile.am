@@ -15,6 +15,7 @@ $(top_builddir)/lib/libopmcore.la
 noinst_PROGRAMS =				\
 refine_wells					\
 scaneclipsedeck					\
+sim_2p_comp_reorder				\
 sim_2p_incomp_reorder				\
 sim_wateroil					\
 wells_example
@@ -27,6 +28,7 @@ wells_example
 # Please maintain sort order from "noinst_PROGRAMS".
 
 refine_wells_SOURCES          = refine_wells.cpp
+sim_2p_comp_reorder_SOURCES   = sim_2p_comp_reorder.cpp
 sim_2p_incomp_reorder_SOURCES = sim_2p_incomp_reorder.cpp
 sim_wateroil_SOURCES          = sim_wateroil.cpp
 wells_example_SOURCES         = wells_example.cpp
