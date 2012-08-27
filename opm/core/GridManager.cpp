@@ -166,6 +166,16 @@ namespace Opm
     // Construct tensor grid from deck.
     void GridManager::initFromDeckTensorgrid(const Opm::EclipseGridParser& deck)
     {
+        // Extract logical cartesian size.
+        std::vector<int> dims;
+        if (deck.hasField("DIMENS")) {
+            dims = deck.getIntegerValue("DIMENS");
+        } else if (deck.hasField("SPECGRID")) {
+            dims = deck.getSPECGRID().dimensions;
+        } else {
+            THROW("Deck must have either DIMENS or SPECGRID.");
+        }
+
         // Extract coordinates (or offsets from top, in case of z).
         const std::vector<double>& dxv = deck.getFloatingPointValue("DXV");
         const std::vector<double>& dyv = deck.getFloatingPointValue("DYV");
@@ -173,6 +183,17 @@ namespace Opm
         std::vector<double> x = coordsFromDeltas(dxv);
         std::vector<double> y = coordsFromDeltas(dyv);
         std::vector<double> z = coordsFromDeltas(dzv);
+
+        // Check that number of cells given are consistent with DIMENS/SPECGRID.
+        if (dims[0] != int(dxv.size())) {
+            THROW("Number of DXV data points do not match DIMENS or SPECGRID.");
+        }
+        if (dims[1] != int(dyv.size())) {
+            THROW("Number of DYV data points do not match DIMENS or SPECGRID.");
+        }
+        if (dims[2] != int(dzv.size())) {
+            THROW("Number of DZV data points do not match DIMENS or SPECGRID.");
+        }
 
         // Extract top corner depths, if available.
         const double* top_depths = 0;

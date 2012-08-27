@@ -1,28 +1,42 @@
-These are the release notes for opm-core
-
 Open Porous Media Core Library
+==============================
+
+These are release notes for opm-core.
+
 
 CONTENT
+-------
+
 opm-core is the core library within OPM and contains the following 
 
-* Eclipse preprosessing
+* Eclipse deck input and preprosessing
 * Fluid properties (basic PVT models and rock properties)
-* Grid (generates different grids)
-* Linear Algerbra (interface to different linear solvers)
-* Pressure solvers (different discretization schemes, different flow models)
-* Simulator (some basic examples of simulators based on sequential schemes)
-* Transport solvers (different discretization schemes, different flow models)
-* Utility (input and output processing, unit conversion)
+* Grid handling (cornerpoint grids, unstructured grid interface)
+* Linear Algebra (interface to different linear solvers)
+* Pressure solvers (various discretization schemes, flow models)
+* Simulators (some basic examples of simulators based on sequential splitting schemes)
+* Transport solvers (various discretization schemes, flow models)
+* Utilities (input and output processing, unit conversion)
 * Wells (basic well handling)
 
-ON WHAT PLATFORMS DOES IT RUN?
-The opm-core module is designed to run on linux platforms. No efforts have
-been made to ensure that the code will compile and run on windows platforms.
 
-DOCUMENTATION
-Efforts have been made to document the code with Doxygen.
+LICENSE
+-------
+
+The library is distributed under the GNU General Public License,
+version 3 or later (GPLv3+).
+
+
+PLATFORMS
+---------
+
+The opm-core module is designed to run on Linux platforms. It is also
+regularly run on Mac OS X. No efforts have been made to ensure that
+the code will compile and run on windows platforms.
+
 
 DEPENDENCIES FOR DEBIAN BASED DISTRIBUTIONS (Debian Squeeze/Ubuntu Precise)
+---------------------------------------------------------------------------
 
 # packages necessary for building
 sudo apt-get install -y build-essential gfortran pkg-config libtool \
@@ -40,7 +54,9 @@ sudo apt-get install -y libboost-all-dev libsuperlu3-dev libsuitesparse-dev
 # libraries necessary for OPM
 sudo apt-get install -y libxml0-dev
 
+
 DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
+-----------------------------------------
 
 # libraries
 sudo zypper install blas libblas3 lapack liblapack3 libboost libxml2 umfpack
@@ -48,7 +64,11 @@ sudo zypper install blas libblas3 lapack liblapack3 libboost libxml2 umfpack
 # tools
 sudo zypper install gcc automake autoconf git doxygen
 
+
 RETRIEVING AND BUILDING DUNE PREREQUISITES
+------------------------------------------
+
+(only necessary if you want to use opm-core as a dune module)
 
 # trust DUNE certificate (sic)
 echo p | svn list https://svn.dune-project.org/svn/dune-common
@@ -67,20 +87,39 @@ for module in common istl geometry grid localfunctions; do
 	--make-opts="-j -l 0.8" autogen : configure : make
 done
 
-DOWNLOAD opm-core
 
+DOWNLOADING
+-----------
+
+For a read-only download:
 git clone git://github.com/OPM/opm-core.git
 
-BUILDING opm-core
+If you want to contribute, fork OPM/opm-core on github.
 
-# note: this is done from the parent directory of opm-core
-env CCACHE_DISABLE=1 dune-common/bin/dunecontrol --only=opm-core \
-  --configure-opts="" --make-opts="-j -l 0.8" autogen : configure : make
 
-or, without using dunecontrol:
+BUILDING
+--------
 
-pushd opm-core
-autoreconf -i
-./configure
-make
-sudo make install
+(standalone opm-core:)
+
+ cd ../opm-core
+ autoreconf -i
+ ./configure
+ make
+ sudo make install
+
+(using opm-core as a dune module:)
+
+ # note: this is done from the parent directory of opm-core
+ env CCACHE_DISABLE=1 dune-common/bin/dunecontrol --only=opm-core \
+   --configure-opts="" --make-opts="-j -l 0.8" autogen : configure : make
+
+
+
+DOCUMENTATION
+-------------
+
+Efforts have been made to document the code with Doxygen.
+In order to build the documentation, enter the command
+$ doxygen
+in the topmost directory.
