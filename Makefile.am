@@ -51,7 +51,7 @@ opm/core/fluid/RockFromDeck.cpp				\
 opm/core/fluid/SaturationPropsBasic.cpp			\
 opm/core/fluid/SaturationPropsFromDeck.cpp		\
 opm/core/fluid/blackoil/BlackoilPvtProperties.cpp	\
-opm/core/fluid/blackoil/SinglePvtDead.cpp		\
+opm/core/fluid/blackoil/SinglePvtDeadSpline.cpp		\
 opm/core/fluid/blackoil/SinglePvtInterface.cpp		\
 opm/core/fluid/blackoil/SinglePvtLiveGas.cpp		\
 opm/core/fluid/blackoil/SinglePvtLiveOil.cpp		\
@@ -151,7 +151,7 @@ opm/core/fluid/SimpleFluid2p.hpp			\
 opm/core/fluid/blackoil/BlackoilPhases.hpp		\
 opm/core/fluid/blackoil/BlackoilPvtProperties.hpp	\
 opm/core/fluid/blackoil/SinglePvtConstCompr.hpp		\
-opm/core/fluid/blackoil/SinglePvtDead.hpp		\
+opm/core/fluid/blackoil/SinglePvtDeadSpline.hpp		\
 opm/core/fluid/blackoil/SinglePvtInterface.hpp		\
 opm/core/fluid/blackoil/SinglePvtLiveGas.hpp		\
 opm/core/fluid/blackoil/SinglePvtLiveOil.hpp		\

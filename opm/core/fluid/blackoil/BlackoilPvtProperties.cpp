@@ -20,7 +20,7 @@
 
 
 #include <opm/core/fluid/blackoil/BlackoilPvtProperties.hpp>
-#include <opm/core/fluid/blackoil/SinglePvtDead.hpp>
+#include <opm/core/fluid/blackoil/SinglePvtDeadSpline.hpp>
 #include <opm/core/fluid/blackoil/SinglePvtLiveOil.hpp>
 #include <opm/core/fluid/blackoil/SinglePvtLiveGas.hpp>
 #include <opm/core/fluid/blackoil/SinglePvtConstCompr.hpp>
@@ -78,7 +78,7 @@ namespace Opm
         // Oil PVT
         if (phase_usage_.phase_used[Liquid]) {
             if (deck.hasField("PVDO")) {
-                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDead(deck.getPVDO().pvdo_));
+                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDeadSpline(deck.getPVDO().pvdo_));
             } else if (deck.hasField("PVTO")) {
                 props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtLiveOil(deck.getPVTO().pvto_));
             } else if (deck.hasField("PVCDO")) {
@@ -90,7 +90,7 @@ namespace Opm
 	// Gas PVT
         if (phase_usage_.phase_used[Vapour]) {
             if (deck.hasField("PVDG")) {
-                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDead(deck.getPVDG().pvdg_));
+                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDeadSpline(deck.getPVDG().pvdg_));
             } else if (deck.hasField("PVTG")) {
                 props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(deck.getPVTG().pvtg_));
             } else {

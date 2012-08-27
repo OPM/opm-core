@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_SINGLEPVTDEAD_HEADER_INCLUDED
-#define OPM_SINGLEPVTDEAD_HEADER_INCLUDED
+#ifndef OPM_SINGLEPVTDEADSPLINE_HEADER_INCLUDED
+#define OPM_SINGLEPVTDEADSPLINE_HEADER_INCLUDED
 
 
 #include <opm/core/fluid/blackoil/SinglePvtInterface.hpp>
@@ -33,13 +33,13 @@ namespace Opm
     /// are expected to be of size n and n*num_phases, respectively.
     /// Output arrays shall be of size n, and must be valid before
     /// calling the method.
-    class SinglePvtDead : public SinglePvtInterface
+    class SinglePvtDeadSpline : public SinglePvtInterface
     {
     public:
 	typedef std::vector<std::vector<std::vector<double> > > table_t;
 
-	SinglePvtDead(const table_t& pvd_table);
-	virtual ~SinglePvtDead();
+	SinglePvtDeadSpline(const table_t& pvd_table);
+	virtual ~SinglePvtDeadSpline();
 
         /// Viscosity as a function of p and z.
         virtual void mu(const int n,
@@ -80,5 +80,5 @@ namespace Opm
 
 }
 
-#endif // OPM_SINGLEPVTDEAD_HEADER_INCLUDED
+#endif // OPM_SINGLEPVTDEADSPLINE_HEADER_INCLUDED
 
