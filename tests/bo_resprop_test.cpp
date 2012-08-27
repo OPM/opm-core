@@ -43,7 +43,8 @@ int main(int argc, char** argv)
     UnstructuredGrid grid;
     grid.number_of_cells = 1;
     grid.global_cell = NULL;
-    Opm::BlackoilPropertiesFromDeck props(deck, grid);
+    bool props_use_spline = param.getDefault("props_use_spline", true);
+    Opm::BlackoilPropertiesFromDeck props(deck, grid, props_use_spline);
 
     const int n = 1;
     double p[n] = { 150e5 };
