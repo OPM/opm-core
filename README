@@ -22,20 +22,65 @@ been made to ensure that the code will compile and run on windows platforms.
 DOCUMENTATION
 Efforts have been made to document the code with Doxygen.
 
+DEPENDENCIES FOR DEBIAN BASED DISTRIBUTIONS (Debian Squeeze/Ubuntu Precise)
+
+# packages necessary for building
+sudo apt-get install -y build-essential gfortran pkg-config libtool \
+                        automake autoconf
+
+# packages necessary for documentation
+sudo apt-get install -y doxygen ghostscript texlive-latex-recommended pgf
+
+# packages necessary for version control
+sudo apt-get install -y git-core git-svn subversion
+
+# libraries necessary for DUNE
+sudo apt-get install -y libboost-all-dev libsuperlu3-dev libsuitesparse-dev
+
+# libraries necessary for OPM
+sudo apt-get install -y libxml0-dev
+
+DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
+
+# libraries
+sudo zypper install blas libblas3 lapack liblapack3 libboost libxml2 umfpack
+
+# tools
+sudo zypper install gcc automake autoconf git doxygen
+
+RETRIEVING AND BUILDING DUNE PREREQUISITES
+
+# trust DUNE certificate (sic)
+echo p | svn list https://svn.dune-project.org/svn/dune-common
+
+# checkout DUNE libraries
+for module in common istl geometry grid localfunctions; do
+  git svn clone -s \
+    https://svn.dune-project.org/svn/dune-$module/branches/release-2.2/ \
+	dune-$module
+done
+
+# building DUNE libraries
+for module in common istl geometry grid localfunctions; do
+  env CCACHE_DISABLE=1 dune-common/bin/dunecontrol --only=dune-$module \
+    --configure-opts="--enable-fieldvector-size-is-method" \
+	--make-opts="-j -l 0.8" autogen : configure : make
+done
+
 DOWNLOAD opm-core
+
 git clone git://github.com/OPM/opm-core.git
 
 BUILDING opm-core
-cd ../opm-core
-  autoreconf -i
- ./configure
- make
- sudo make install
 
+# note: this is done from the parent directory of opm-core
+env CCACHE_DISABLE=1 dune-common/bin/dunecontrol --only=opm-core \
+  --configure-opts="" --make-opts="-j -l 0.8" autogen : configure : make
 
-DEPENDENCIES FOR DEBIAN BASED DISTRIBUTIONS
+or, without using dunecontrol:
 
-
-DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
-blas libblas3 lapack liblapack3 libboost libxml2 gcc automake autoconf git
-doxygen umfpack
+pushd opm-core
+autoreconf -i
+./configure
+make
+sudo make install
