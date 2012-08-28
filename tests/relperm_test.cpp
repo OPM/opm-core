@@ -18,7 +18,7 @@
 */
 
 
-#include "config.h"
+//#include "config.h"
 
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/eclipse/EclipseGridParser.hpp>
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
     UnstructuredGrid grid;
     grid.number_of_cells = 1;
     grid.global_cell = NULL;
-    Opm::BlackoilPropertiesFromDeck props(deck, grid);
+    Opm::BlackoilPropertiesFromDeck props(deck, grid, param);
   
     std::fstream inos(input_file.c_str());//, std::fstream::in);
     if(!inos.good()){

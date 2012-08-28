@@ -18,7 +18,7 @@
 */
 
 
-#include "config.h"
+//#include "config.h"
 
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/eclipse/EclipseGridParser.hpp>
