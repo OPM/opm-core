@@ -17,6 +17,7 @@ sparsevector_test				\
 test_cartgrid					\
 test_column_extract				\
 test_lapack					\
+test_read_grid					\
 test_read_vag					\
 test_readpolymer				\
 test_sf2p					\
