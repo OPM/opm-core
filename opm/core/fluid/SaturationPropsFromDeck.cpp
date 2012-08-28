@@ -248,7 +248,7 @@ namespace Opm
     }
 
     // Map the cell number to the correct function set.
-    const SatFuncStone2&
+    const SaturationPropsFromDeck::satfunc_t&
     SaturationPropsFromDeck::funcForCell(const int cell) const
     {
         return cell_to_func_.empty() ? satfuncset_[0] : satfuncset_[cell_to_func_[cell]];

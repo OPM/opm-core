@@ -17,8 +17,10 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
 
-//#include "config.h"
 
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/eclipse/EclipseGridParser.hpp>
@@ -83,5 +85,10 @@ int main(int argc, char** argv)
         std::copy(b, rs + np, std::ostream_iterator<double>(rsos, " "));
         std::copy(b, drs + np, std::ostream_iterator<double>(rsos, " "));
         std::cout << std::endl;
+    }
+    if (param.anyUnused()) {
+        std::cout << "--------------------   Unused parameters:   --------------------\n";
+        param.displayUsage();
+        std::cout << "----------------------------------------------------------------" << std::endl;
     }
 }

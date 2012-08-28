@@ -18,7 +18,9 @@
 */
 
 
-//#include "config.h"
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
 
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/eclipse/EclipseGridParser.hpp>
@@ -78,5 +80,10 @@ int main(int argc, char** argv)
       std::copy(dkr, dkr + np*np, std::ostream_iterator<double>(kros, " "));
       kros << "\n";
       }
+    }
+    if (param.anyUnused()) {
+        std::cout << "--------------------   Unused parameters:   --------------------\n";
+        param.displayUsage();
+        std::cout << "----------------------------------------------------------------" << std::endl;
     }
 }

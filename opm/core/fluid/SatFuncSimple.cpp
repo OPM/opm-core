@@ -1,4 +1,4 @@
-#include <opm/core/fluid/SatFuncStone2.hpp>
+#include <opm/core/fluid/SatFuncSimple.hpp>
 #include <opm/core/fluid/blackoil/BlackoilPhases.hpp>
 #include <opm/core/fluid/SaturationPropsFromDeck.hpp>
 #include <opm/core/grid.h>
@@ -13,13 +13,13 @@ namespace Opm
 
 
     // ----------- Methods of SatFuncSet below -----------
-    void SatFuncStone2::init(const EclipseGridParser& deck,
+    void SatFuncSimple::init(const EclipseGridParser& deck,
                              const int table_num,
                              const PhaseUsage phase_usg){
         init(deck, table_num, phase_usg, 200);
     }
 
-    void SatFuncStone2::init(const EclipseGridParser& deck,
+    void SatFuncSimple::init(const EclipseGridParser& deck,
                              const int table_num,
                              const PhaseUsage phase_usg,
                              const int samples)
@@ -64,7 +64,7 @@ namespace Opm
     }
 
 
-    void SatFuncStone2::evalKr(const double* s, double* kr) const
+    void SatFuncSimple::evalKr(const double* s, double* kr) const
     {
         if (phase_usage.num_phases == 3) {
             // Stone-II relative permeability model.
@@ -77,7 +77,7 @@ namespace Opm
             double krocw = krocw_;
             kr[Aqua] = krw;
             kr[Vapour] = krg;
-            kr[Liquid] = krocw*((krow/krocw + krw)*(krog/krocw + krg) - krw - krg);
+            kr[Liquid] = krow;
             if (kr[Liquid] < 0.0) {
                 kr[Liquid] = 0.0;
             }
@@ -105,7 +105,7 @@ namespace Opm
     }
 
 
-    void SatFuncStone2::evalKrDeriv(const double* s, double* kr, double* dkrds) const
+    void SatFuncSimple::evalKrDeriv(const double* s, double* kr, double* dkrds) const
     {
         const int np = phase_usage.num_phases;
         std::fill(dkrds, dkrds + np*np, 0.0);
@@ -125,15 +125,19 @@ namespace Opm
             double krocw = krocw_;
             kr[Aqua] = krw;
             kr[Vapour] = krg;
-            kr[Liquid] = krocw*((krow/krocw + krw)*(krog/krocw + krg) - krw - krg);
+            kr[Liquid] =  krow;
+            //krocw*((krow/krocw + krw)*(krog/krocw + krg) - krw - krg);
             if (kr[Liquid] < 0.0) {
                 kr[Liquid] = 0.0;
             }
             dkrds[Aqua + Aqua*np] = dkrww;
             dkrds[Vapour + Vapour*np] = dkrgg;
-            dkrds[Liquid + Aqua*np] = krocw*((dkrow/krocw + dkrww)*(krog/krocw + krg) - dkrww);
-            dkrds[Liquid + Vapour*np] = krocw*((krow/krocw + krw)*(dkrog/krocw + dkrgg) - dkrgg)
-                    + krocw*((dkrow/krocw + krw)*(krog/krocw + krg) - dkrgg);
+            //dkrds[Liquid + Aqua*np] = dkrow;
+            dkrds[Liquid + Liquid*np] = -dkrow;
+                    //krocw*((dkrow/krocw + dkrww)*(krog/krocw + krg) - dkrww);
+            dkrds[Liquid + Vapour*np] = 0.0;
+                    //krocw*((krow/krocw + krw)*(dkrog/krocw + dkrgg) - dkrgg)
+                    //+ krocw*((dkrow/krocw + krw)*(krog/krocw + krg) - dkrgg);
             return;
         }
         // We have a two-phase situation. We know that oil is active.
@@ -167,7 +171,7 @@ namespace Opm
     }
 
 
-    void SatFuncStone2::evalPc(const double* s, double* pc) const
+    void SatFuncSimple::evalPc(const double* s, double* pc) const
     {
         pc[phase_usage.phase_pos[Liquid]] = 0.0;
         if (phase_usage.phase_used[Aqua]) {
@@ -180,7 +184,7 @@ namespace Opm
         }
     }
 
-    void SatFuncStone2::evalPcDeriv(const double* s, double* pc, double* dpcds) const
+    void SatFuncSimple::evalPcDeriv(const double* s, double* pc, double* dpcds) const
     {
         // The problem of determining three-phase capillary pressures
         // is very hard experimentally, usually one extends two-phase

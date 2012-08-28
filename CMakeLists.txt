@@ -34,8 +34,8 @@ target_link_libraries(opmcore
 FILE(GLOB CPP_EXAMPLES "examples/*.cpp")
 FILE(GLOB CPP_tests "tests/*.cpp")
 add_executable(spu_2p examples/spu_2p.cpp)
-#add_executable(sim_2p_incomp_reorder examples/sim_2p_incomp_reorder.cpp)
-#add_executable(sim_water_oil examples/sim_water_oil.cpp)
+add_executable(sim_2p_incomp_reorder examples/sim_2p_incomp_reorder.cpp)
+add_executable(sim_wateroil examples/sim_wateroil.cpp)
 
 add_executable(pvt_test tests/pvt_test.cpp)
 add_executable(relperm_test tests/relperm_test.cpp)
@@ -43,6 +43,14 @@ add_executable(relperm_test tests/relperm_test.cpp)
 target_link_libraries(spu_2p
   opmcore
 )
+target_link_libraries(sim_2p_incomp_reorder
+  opmcore
+)
+
+target_link_libraries(sim_wateroil
+  opmcore
+)
+
 target_link_libraries(pvt_test
   opmcore
 )
@@ -51,5 +59,7 @@ target_link_libraries(relperm_test
 )
 
 set_target_properties(opmcore spu_2p PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
+set_target_properties(opmcore sim_2p_incomp_reorder PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
+set_target_properties(opmcore sim_wateroil PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
 set_target_properties(opmcore pvt_test PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
 set_target_properties(opmcore relperm_test PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
