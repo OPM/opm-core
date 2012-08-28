@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 project (opm-core)
 
 enable_language(Fortran)
-
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 set(Boost_USE_STATIC_LIBS        ON)
@@ -16,94 +16,40 @@ include_directories(${PROJECT_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
 
 
 # The opmcore library
-add_library(opmcore
-opm/core/eclipse/EclipseGridInspector.cpp
-opm/core/eclipse/EclipseGridParser.cpp
-opm/core/fluid/blackoil/BlackoilPvtProperties.cpp
-opm/core/fluid/blackoil/SinglePvtDead.cpp
-opm/core/fluid/blackoil/SinglePvtLiveGas.cpp
-opm/core/fluid/blackoil/SinglePvtLiveOil.cpp
-opm/core/fluid/blackoil/SinglePvtInterface.cpp
-opm/core/fluid/BlackoilPropertiesBasic.cpp
-opm/core/fluid/BlackoilPropertiesFromDeck.cpp
-opm/core/fluid/IncompPropertiesBasic.cpp
-opm/core/fluid/IncompPropertiesFromDeck.cpp
-opm/core/fluid/PvtPropertiesBasic.cpp
-opm/core/fluid/PvtPropertiesIncompFromDeck.cpp
-opm/core/fluid/RockBasic.cpp
-opm/core/fluid/RockFromDeck.cpp
-opm/core/fluid/SaturationPropsBasic.cpp
-opm/core/fluid/SaturationPropsFromDeck.cpp
-opm/core/utility/MonotCubicInterpolator.cpp
-opm/core/utility/parameters/Parameter.cpp
-opm/core/utility/parameters/ParameterGroup.cpp
-opm/core/utility/parameters/ParameterTools.cpp
-opm/core/utility/parameters/ParameterXML.cpp
-opm/core/utility/parameters/tinyxml/tinystr.cpp
-opm/core/utility/parameters/tinyxml/tinyxml.cpp
-opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp
-opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp
-opm/core/utility/cart_grid.c
-opm/core/utility/cpgpreprocess/geometry.c
-opm/core/utility/cpgpreprocess/preprocess.c
-opm/core/utility/cpgpreprocess/readvector.cpp
-opm/core/utility/cpgpreprocess/cgridinterface.c
-opm/core/utility/cpgpreprocess/sparsetable.c
-opm/core/utility/cpgpreprocess/facetopology.c
-opm/core/utility/cpgpreprocess/uniquepoints.c
-opm/core/utility/StopWatch.cpp
-opm/core/utility/newwells.c
-opm/core/utility/writeVtkData.cpp
-opm/core/GridManager.cpp
-opm/core/linalg/sparse_sys.c
-opm/core/pressure/cfsh.c
-opm/core/pressure/flow_bc.c
-opm/core/pressure/well.c
-opm/core/pressure/fsh_common_impl.c
-opm/core/pressure/fsh.c
-opm/core/pressure/tpfa/ifs_tpfa.c
-opm/core/pressure/tpfa/compr_source.c
-opm/core/pressure/tpfa/cfs_tpfa.c
-opm/core/pressure/tpfa/compr_bc.c
-opm/core/pressure/tpfa/compr_quant.c
-opm/core/pressure/tpfa/compr_quant_general.c
-opm/core/pressure/tpfa/cfs_tpfa_residual.c
-opm/core/pressure/tpfa/trans_tpfa.c
-opm/core/pressure/msmfem/coarse_conn.c
-opm/core/pressure/msmfem/partition.c
-opm/core/pressure/msmfem/hash_set.c
-opm/core/pressure/msmfem/ifsh_ms.c
-opm/core/pressure/msmfem/dfs.c
-opm/core/pressure/msmfem/coarse_sys.c
-opm/core/pressure/ifsh.c
-opm/core/pressure/IncompTpfa.cpp
-opm/core/pressure/mimetic/mimetic.c
-opm/core/pressure/mimetic/hybsys_global.c
-opm/core/pressure/mimetic/hybsys.c
-opm/core/transport/spu_explicit.c
-opm/core/transport/spu_implicit.c
-opm/core/transport/transport_source.c
-opm/core/transport/reorder/TransportModelInterface.cpp
-opm/core/transport/reorder/TransportModelTwophase.cpp
-opm/core/transport/reorder/reordersequence.cpp
-opm/core/transport/reorder/nlsolvers.c
-opm/core/transport/reorder/tarjan.c
-opm/core/linalg/call_umfpack.c
-opm/core/pressure/IncompTpfa.cpp
-opm/core/linalg/LinearSolverInterface.cpp
-opm/core/linalg/LinearSolverIstl.cpp
-opm/core/linalg/LinearSolverUmfpack.cpp
-)
+FILE(GLOB_RECURSE C_FILES_CORE "opm/core/*.c")
+FILE(GLOB_RECURSE CPP_FILES_CORE "opm/core/*.cpp")
+FILE(GLOB_RECURSE REMOVE_FILES   "processgrid.c")
+FILE(GLOB_RECURSE REMOVE_FILESMX   "mx*.c")
+FILE(GLOB_RECURSE REMOVE_FILESAGMG   "*AGMG.cpp" "*test*")
+list(REMOVE_ITEM C_FILES_CORE ${REMOVE_FILES} ${REMOVE_FILESMX} )
+list(REMOVE_ITEM CPP_FILES_CORE ${REMOVE_FILES} ${REMOVE_FILESAGMG})
+add_library(opmcore ${C_FILES_CORE} ${CPP_FILES_CORE} )
+
 
 target_link_libraries(opmcore
   ${UMFPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES} ${Boost_LIBRARIES}
  -lcholmod -lcamd -lccolamd -lmetis -ldunecommon
 )
 
+FILE(GLOB CPP_EXAMPLES "examples/*.cpp")
+FILE(GLOB CPP_tests "tests/*.cpp")
 add_executable(spu_2p examples/spu_2p.cpp)
+#add_executable(sim_2p_incomp_reorder examples/sim_2p_incomp_reorder.cpp)
+#add_executable(sim_water_oil examples/sim_water_oil.cpp)
+
+add_executable(pvt_test tests/pvt_test.cpp)
+add_executable(relperm_test tests/relperm_test.cpp)
 
 target_link_libraries(spu_2p
   opmcore
 )
+target_link_libraries(pvt_test
+  opmcore
+)
+target_link_libraries(relperm_test
+  opmcore
+)
 
 set_target_properties(opmcore spu_2p PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
+set_target_properties(opmcore pvt_test PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
+set_target_properties(opmcore relperm_test PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
