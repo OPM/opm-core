@@ -196,6 +196,7 @@ private:
     SpecialFieldPtr cloneSpecialField(const std::string& fieldname,
                                       const std::tr1::shared_ptr<SpecialBase> original);
     void readImpl(std::istream& is);
+    void getNumericErtFields(const std::string& filename);
 
 
     std::string directory_;
