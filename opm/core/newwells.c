@@ -468,6 +468,8 @@ add_well(enum WellType  type     ,
 
     struct WellMgmt *m;
 
+    assert (W != NULL);
+
     nw        = W->number_of_wells;
     nperf_tot = W->well_connpos[nw];
 
@@ -532,6 +534,7 @@ append_well_controls(enum WellControlType type,
     struct WellControlMgmt *m;
 
     assert (W != NULL);
+    assert ((0 <= well_index) && (well_index < W->number_of_wells));
 
     ctrl = W->ctrls[well_index];
     np = W->number_of_phases;
@@ -567,7 +570,12 @@ void
 set_current_control(int well_index, int current_control, struct Wells *W)
 /* ---------------------------------------------------------------------- */
 {
+    assert (W != NULL);
+    assert ((0 <= well_index) && (well_index < W->number_of_wells));
+
     assert (W->ctrls[well_index] != NULL);
+
+    assert (current_control < W->ctrls[well_index]->num);
 
     W->ctrls[well_index]->current = current_control;
 }
@@ -578,6 +586,9 @@ void
 clear_well_controls(int well_index, struct Wells *W)
 /* ---------------------------------------------------------------------- */
 {
+    assert (W != NULL);
+    assert ((0 <= well_index) && (well_index < W->number_of_wells));
+
     if (W->ctrls[well_index] != NULL) {
         W->ctrls[well_index]->num = 0;
     }
