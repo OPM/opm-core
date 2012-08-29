@@ -801,4 +801,61 @@ void EclipseGridParser::computeUnits()
     }
 }
 
+#if USE_ERT  
+// Read an imported fortio data file using Ert. 
+// Data stored in 'integer_field_map_' and 'floating_field_map_'.
+void EclipseGridParser::getNumericErtFields(const string& filename)
+{
+    // Read file
+    ecl_file_type * ecl_file = ecl_file_open(filename.c_str());
+    const int num_kw = ecl_file_get_size(ecl_file);
+    std::vector<double> double_vec;
+    std::vector<int> int_vec;
+    for (int i=0; i<num_kw; ++i) {
+	ecl_kw_type * ecl_kw = ecl_file_iget_kw(ecl_file, i);
+	const char* keyword =  ecl_kw_get_header(ecl_kw);
+	FieldType field_type = classifyKeyword(keyword);
+	if (field_type == Unknown) {
+	    ignored_fields_.insert(keyword);
+	    cout << "*** Warning: keyword " << keyword << " is unknown." << endl;
+	    continue;
+	} else {
+#ifdef VERBOSE
+	    cout << "Imported keyword found: " << keyword << endl;
+#endif
+	}
+	ecl_type_enum ecl_type = ecl_kw_get_type(ecl_kw);
+	int data_size = ecl_kw_get_size(ecl_kw);
+	switch(ecl_type) {
+	case ECL_FLOAT_TYPE : {
+	    double_vec.resize(data_size);
+	    ecl_kw_get_data_as_double(ecl_kw, &double_vec[0]);
+	    floating_field_map_[keyword] = double_vec;
+	    break;
+	}
+	case ECL_DOUBLE_TYPE : {
+	    double_vec.resize(data_size);
+	    ecl_kw_get_memcpy_double_data(ecl_kw, &double_vec[0]);
+	    floating_field_map_[keyword] = double_vec;
+	    break;
+	}
+	case ECL_INT_TYPE : {
+	    int_vec.resize(data_size);
+	    ecl_kw_get_memcpy_int_data(ecl_kw, &int_vec[0]);
+	    integer_field_map_[keyword] = int_vec;
+	    break;
+	}
+	default: {
+	    std::cout << "Ignored non-numeric type in file: " << filename << "  Keyword="
+		      << keyword << "  Size=" << ecl_kw_get_size(ecl_kw)
+		      << "  Type=" << ecl_util_get_type_name(ecl_kw_get_type(ecl_kw))
+		      << std::endl;
+	    break;
+	}
+	}
+    }
+    ecl_file_close(ecl_file);
+}
+#endif  //USE_ERT
+
 } // namespace Opm
