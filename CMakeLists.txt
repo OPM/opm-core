@@ -3,7 +3,9 @@ project (opm-core)
 
 enable_language(Fortran)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
-
+SET(CMAKE_BUILD_TYPE "debug")
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -pg -Wall -fopenmp -ggdb")
+SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -pg -Wall -fopenmp -ggdb")
 
 set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
@@ -58,8 +60,8 @@ target_link_libraries(relperm_test
   opmcore
 )
 
-set_target_properties(opmcore spu_2p PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
-set_target_properties(opmcore sim_2p_incomp_reorder PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
-set_target_properties(opmcore sim_wateroil PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
-set_target_properties(opmcore pvt_test PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
+#set_target_properties(opmcore spu_2p PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
+#set_target_properties(opmcore sim_2p_incomp_reorder PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
+#set_target_properties(opmcore sim_wateroil PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
+#set_target_properties(opmcore pvt_test PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)
 set_target_properties(opmcore relperm_test PROPERTIES COMPILE_FLAGS -m64 LINKER_LANGUAGE CXX LINK_FLAGS -m64)

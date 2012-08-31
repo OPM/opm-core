@@ -39,7 +39,7 @@ namespace Opm
     }
 
 
-    void BlackoilPvtProperties::init(const EclipseGridParser& deck)
+    void BlackoilPvtProperties::init(const EclipseGridParser& deck,const int samples)
     {
         typedef std::vector<std::vector<std::vector<double> > > table_t;
         // If we need multiple regions, this class and the SinglePvt* classes must change.
@@ -78,7 +78,7 @@ namespace Opm
         // Oil PVT
         if (phase_usage_.phase_used[Liquid]) {
             if (deck.hasField("PVDO")) {
-                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDead(deck.getPVDO().pvdo_));
+                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDead(deck.getPVDO().pvdo_, samples));
             } else if (deck.hasField("PVTO")) {
                 props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtLiveOil(deck.getPVTO().pvto_));
             } else if (deck.hasField("PVCDO")) {
@@ -90,7 +90,7 @@ namespace Opm
 	// Gas PVT
         if (phase_usage_.phase_used[Vapour]) {
             if (deck.hasField("PVDG")) {
-                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDead(deck.getPVDG().pvdg_));
+                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDead(deck.getPVDG().pvdg_, samples));
             } else if (deck.hasField("PVTG")) {
                 props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(deck.getPVTG().pvtg_));
             } else {

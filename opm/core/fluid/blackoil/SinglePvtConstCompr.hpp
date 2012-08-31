@@ -106,13 +106,18 @@ namespace Opm
                           double* output_B,
                           double* output_dBdp) const
         {
-            B(n, p, 0, output_B);
+            //B(n, p, 0, output_B);
             if (comp_) {
 // #pragma omp parallel for
                 for (int i = 0; i < n; ++i) {
-                    output_dBdp[i] = -comp_*output_B[i];
+                    //output_dBdp[i] = -comp_*output_B[i];
+                    double x = comp_*(p[i] - ref_press_);
+                    double d= (1.0 + x + 0.5*x*x);
+                    output_B[i] = ref_B_/d;//(1.0 + x + 0.5*x*x);
+                    output_dBdp[i] = (- ref_B_/(d*d))*(1 + x) *comp_;
                 }
             } else {
+                std::fill(output_B, output_B + n, ref_B_);
                 std::fill(output_dBdp, output_dBdp + n, 0.0);
             }
         }

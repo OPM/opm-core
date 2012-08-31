@@ -138,7 +138,7 @@ namespace Opm
         }
 
         // Initialize tables.
-        int tab_size=param.getDefault("tab_size",200);
+        int tab_size=param.getDefault("tab_size_kr",200);
         satfuncset_.resize(num_tables);
         for (int table = 0; table < num_tables; ++table) {
             satfuncset_[table].init(deck, table, phase_usage_,tab_size);

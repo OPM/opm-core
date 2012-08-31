@@ -65,20 +65,20 @@ int main(int argc, char** argv)
     while((inos.good()) && (!inos.eof())){
       double s[np];
       for(int i=0; i < np; ++i){
-	inos >> s[i];
+        inos >> s[i];
       }
       if(inos.good()){
-      double kr[np];
-      double dkr[np*np];
-      int cell[1];
-      cell[0]=1;
-      props.relperm(1,s, cell, kr, dkr);
-      std::copy(s, s + np, std::ostream_iterator<double>(kros, " "));
-      kros << " ";
-      std::copy(kr, kr + np, std::ostream_iterator<double>(kros, " "));
-      kros << " ";
-      std::copy(dkr, dkr + np*np, std::ostream_iterator<double>(kros, " "));
-      kros << "\n";
+          double kr[np];
+          double dkr[np*np];
+          int cell[1];
+          cell[0]=1;
+          props.relperm(1,s, cell, kr, dkr);
+          std::copy(s, s + np, std::ostream_iterator<double>(kros, " "));
+          kros << " ";
+          std::copy(kr, kr + np, std::ostream_iterator<double>(kros, " "));
+          kros << " ";
+          std::copy(dkr, dkr + np*np, std::ostream_iterator<double>(kros, " "));
+          kros << "\n";
       }
     }
     if (param.anyUnused()) {
