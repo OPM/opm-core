@@ -33,7 +33,7 @@ namespace Opm
     // Member functions
     //-------------------------------------------------------------------------
     /// Constructor
-    SinglePvtDead::SinglePvtDead(const table_t& pvd_table,const int samples)
+    SinglePvtDead::SinglePvtDead(const table_t& pvd_table, const int samples)
     {
 	const int region_number = 0;
 	if (pvd_table.size() != 1) {

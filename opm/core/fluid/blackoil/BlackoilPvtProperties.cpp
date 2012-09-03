@@ -39,7 +39,7 @@ namespace Opm
     }
 
 
-    void BlackoilPvtProperties::init(const EclipseGridParser& deck,const int samples)
+    void BlackoilPvtProperties::init(const EclipseGridParser& deck, const int samples)
     {
         typedef std::vector<std::vector<std::vector<double> > > table_t;
         // If we need multiple regions, this class and the SinglePvt* classes must change.
