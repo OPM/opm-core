@@ -12,10 +12,10 @@ namespace Opm
 
 
 
-    // ----------- Methods of SatFuncSet below -----------
     void SatFuncStone2::init(const EclipseGridParser& deck,
                              const int table_num,
-                             const PhaseUsage phase_usg){
+                             const PhaseUsage phase_usg)
+    {
         init(deck, table_num, phase_usg, 200);
     }
 

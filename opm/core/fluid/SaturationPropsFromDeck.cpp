@@ -88,9 +88,13 @@ namespace Opm
             satfuncset_[table].init(deck, table, phase_usage_);
         }
     }
+
+
+    /// Initialize from deck, grid and parameters
     void SaturationPropsFromDeck::init(const EclipseGridParser& deck,
-              const UnstructuredGrid& grid,
-              const parameter::ParameterGroup& param){
+                                       const UnstructuredGrid& grid,
+                                       const parameter::ParameterGroup& param)
+    {
         phase_usage_ = phaseUsageFromDeck(deck);
 
         // Extract input data.
@@ -138,10 +142,10 @@ namespace Opm
         }
 
         // Initialize tables.
-        int tab_size=param.getDefault("tab_size_kr",200);
+        int tab_size = param.getDefault("tab_size_kr", 200);
         satfuncset_.resize(num_tables);
         for (int table = 0; table < num_tables; ++table) {
-            satfuncset_[table].init(deck, table, phase_usage_,tab_size);
+            satfuncset_[table].init(deck, table, phase_usage_, tab_size);
         }
     }
 
