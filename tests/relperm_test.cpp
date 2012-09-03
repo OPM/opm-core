@@ -49,6 +49,10 @@ int main(int argc, char** argv)
     UnstructuredGrid grid;
     grid.number_of_cells = 1;
     grid.global_cell = NULL;
+    grid.dimensions = 3;
+    grid.cartdims[0] = 1;
+    grid.cartdims[1] = 1;
+    grid.cartdims[2] = 1;
     Opm::BlackoilPropertiesFromDeck props(deck, grid, param);
   
     std::fstream inos(input_file.c_str());//, std::fstream::in);
@@ -61,15 +65,19 @@ int main(int argc, char** argv)
         std::cout << "Could not open :" << input_file << std::endl;
         exit(3);
     }
-    int np=props.numPhases();
+    const int np = props.numPhases();
+    const int max_np = 3;
+    if (np > max_np) {
+        THROW("Max #phases is 3.");
+    }
     while((inos.good()) && (!inos.eof())){
-      double s[np];
+      double s[max_np];
       for(int i=0; i < np; ++i){
         inos >> s[i];
       }
       if(inos.good()){
-          double kr[np];
-          double dkr[np*np];
+          double kr[max_np];
+          double dkr[max_np*max_np];
           int cell[1];
           cell[0]=1;
           props.relperm(1,s, cell, kr, dkr);

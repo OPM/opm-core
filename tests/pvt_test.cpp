@@ -52,6 +52,10 @@ int main(int argc, char** argv)
     UnstructuredGrid grid;
     grid.number_of_cells = 1;
     grid.global_cell = NULL;
+    grid.dimensions = 3;
+    grid.cartdims[0] = 1;
+    grid.cartdims[1] = 1;
+    grid.cartdims[2] = 1;
     Opm::BlackoilPropertiesFromDeck props(deck, grid, param);
     Opm::BlackoilPvtProperties pvt;
     int samples = param.getDefault("dead_tab_size", 1025);
@@ -90,10 +94,14 @@ int main(int argc, char** argv)
 
 
 
-    int np=props.numPhases();
+    const int np = props.numPhases();
+    const int max_np = 3;
+    if (np > max_np) {
+        THROW("Max #phases is 3.");
+    }
     while((inos.good()) && (!inos.eof())){
         double p[n];
-        double z[np*n];
+        double z[max_np*n];
         int cells[n] = { 0 };
         inos >> p[0];      
         for(int i=0; i < np; ++i){
@@ -101,28 +109,28 @@ int main(int argc, char** argv)
         }
 
         if(inos.good()){
-            double A[np*np*n];
-            double dA[np*np*n];
+            double A[max_np*max_np*n];
+            double dA[max_np*max_np*n];
             props.matrix(n, p, z, cells, A, dA);
             std::copy(A, A + np*np, std::ostream_iterator<double>(aos, " "));
             std::copy(dA, dA + np*np, std::ostream_iterator<double>(aos, " "));
             aos << std::endl;
-            double mu[np];
-            //double dmu[np];//not implemented
+            double mu[max_np];
+            //double dmu[max_np];//not implemented
             props.viscosity(n, p, z, cells, mu, 0);
             std::copy(mu, mu + np, std::ostream_iterator<double>(muos, " "));
             //std::copy(dmu, dmu + np, std::ostream_iterator<double>(muos, " "));
             aos << std::endl;
 
-            double b[np];
-            double dbdp[np];
+            double b[max_np];
+            double dbdp[max_np];
             pvt.dBdp(n, p, z, b, dbdp);
             std::copy(b, b + np, std::ostream_iterator<double>(bos, " "));
             std::copy(dbdp, dbdp + np, std::ostream_iterator<double>(bos, " "));
             bos << std::endl;
 
-            double rs[np];
-            double drs[np];
+            double rs[max_np];
+            double drs[max_np];
             //pvt.R(n, p, z, rs);
             pvt.dRdp(n, p, z, rs,drs);
             std::copy(rs, rs + np, std::ostream_iterator<double>(rsos, " "));
