@@ -142,6 +142,7 @@ allocate_grid(size_t ndims     ,
 }
 
 
+#define GRID_NMETA      6
 #define GRID_NDIMS      0
 #define GRID_NCELLS     1
 #define GRID_NFACES     2
@@ -174,18 +175,18 @@ allocate_grid_from_file(FILE *fp, int *has_tag, int *has_indexmap)
 
     int           save_errno;
     unsigned long tmp;
-    size_t        dimens[6], i;
+    size_t        dimens[GRID_NMETA], i;
 
     save_errno = errno;
 
     i = 0;
-    while ((i < 6) && (fscanf(fp, " %lu", &tmp) == 1)) {
+    while ((i < GRID_NMETA) && (fscanf(fp, " %lu", &tmp) == 1)) {
         dimens[i] = tmp;
 
         i += 1;
     }
 
-    if (i == 6) {
+    if (i == GRID_NMETA) {
         if (fscanf(fp, "%d %d", has_tag, has_indexmap) == 2) {
             G = allocate_grid(dimens[GRID_NDIMS]     ,
                               dimens[GRID_NCELLS]    ,
