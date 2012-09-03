@@ -12,12 +12,13 @@ namespace Opm
 
 
 
-    // ----------- Methods of SatFuncSet below -----------
     void SatFuncSimple::init(const EclipseGridParser& deck,
                              const int table_num,
-                             const PhaseUsage phase_usg){
+                             const PhaseUsage phase_usg)
+    {
         init(deck, table_num, phase_usg, 200);
     }
+
 
     void SatFuncSimple::init(const EclipseGridParser& deck,
                              const int table_num,
@@ -67,14 +68,14 @@ namespace Opm
     void SatFuncSimple::evalKr(const double* s, double* kr) const
     {
         if (phase_usage.num_phases == 3) {
-            // Stone-II relative permeability model.
+            // A simplified relative permeability model.
             double sw = s[Aqua];
             double sg = s[Vapour];
             double krw = krw_(sw);
             double krg = krg_(sg);
             double krow = krow_(sw + sg); // = 1 - so
-            double krog = krog_(sg);      // = 1 - so - sw
-            double krocw = krocw_;
+            // double krog = krog_(sg);      // = 1 - so - sw
+            // double krocw = krocw_;
             kr[Aqua] = krw;
             kr[Vapour] = krg;
             kr[Liquid] = krow;
@@ -111,7 +112,7 @@ namespace Opm
         std::fill(dkrds, dkrds + np*np, 0.0);
 
         if (np == 3) {
-            // Stone-II relative permeability model.
+            // A simplified relative permeability model.
             double sw = s[Aqua];
             double sg = s[Vapour];
             double krw = krw_(sw);
@@ -120,12 +121,12 @@ namespace Opm
             double dkrgg = krg_.derivative(sg);
             double krow = krow_(sw + sg);
             double dkrow = krow_.derivative(sw + sg);
-            double krog = krog_(sg);
-            double dkrog = krog_.derivative(sg);
-            double krocw = krocw_;
+            // double krog = krog_(sg);
+            // double dkrog = krog_.derivative(sg);
+            // double krocw = krocw_;
             kr[Aqua] = krw;
             kr[Vapour] = krg;
-            kr[Liquid] =  krow;
+            kr[Liquid] = krow;
             //krocw*((krow/krocw + krw)*(krog/krocw + krg) - krw - krg);
             if (kr[Liquid] < 0.0) {
                 kr[Liquid] = 0.0;
