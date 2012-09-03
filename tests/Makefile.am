@@ -21,7 +21,9 @@ test_read_vag					\
 test_readpolymer				\
 test_sf2p					\
 test_writeVtkData				\
-unit_test
+unit_test                                       \
+pvt_test					\
+relperm_test                 
 
 
 bo_resprop_test_SOURCES = bo_resprop_test.cpp
@@ -53,6 +55,12 @@ test_sf2p_SOURCES         = test_sf2p.cpp
 test_writeVtkData_SOURCES = test_writeVtkData.cpp
 
 unit_test_SOURCES         = unit_test.cpp
+
+pvt_test_SOURCES          = pvt_test.cpp
+pvt_test_LDADD            = $(LDADD)
+
+relperm_test_SOURCES      = relperm_test.cpp
+relperm_test_LDADD       = $(LDADD)
 
 
 if UMFPACK

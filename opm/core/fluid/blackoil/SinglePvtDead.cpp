@@ -32,9 +32,8 @@ namespace Opm
     //------------------------------------------------------------------------
     // Member functions
     //-------------------------------------------------------------------------
-
     /// Constructor
-    SinglePvtDead::SinglePvtDead(const table_t& pvd_table)
+    SinglePvtDead::SinglePvtDead(const table_t& pvd_table,const int samples)
     {
 	const int region_number = 0;
 	if (pvd_table.size() != 1) {
@@ -51,7 +50,6 @@ namespace Opm
             B_inv[i] = 1.0 / pvd_table[region_number][1][i];
             visc[i]  = pvd_table[region_number][2][i];
 	}
-        int samples = 1025;
         buildUniformMonotoneTable(press, B_inv, samples, one_over_B_);
         buildUniformMonotoneTable(press, visc, samples, viscosity_);
 
