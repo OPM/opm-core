@@ -26,7 +26,8 @@
 namespace Opm
 {
 
-
+    // This file should be removed in the future.
+    // Holding off until refactoring of SaturationPropsFromDeck class is done.
 
 } // namespace Opm
 
