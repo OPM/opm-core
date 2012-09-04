@@ -188,19 +188,25 @@ namespace Opm {
 	UniformTableLinear<T>
 	::derivative(const double xparam) const
 	{
-            // Implements ClosestValue policy.
-            double x = std::min(xparam, xmax_);
-            x = std::max(x, xmin_);
-
-            // Lookup is easy since we are uniform in x.
-            double pos = (x - xmin_)/xdelta_;
-            double posi = std::floor(pos);
-            int left = int(posi);
-            if (left == int(y_values_.size()) - 1) {
-                // We are at xmax_
-                --left;
+            // Implements derivative consistent
+            // with ClosestValue policy for function
+            double value;
+            if (xparam > xmax_ || xparam < xmin_) {
+                value = 0.0;
+            } else {
+                double x = std::min(xparam, xmax_);
+                x =  std::max(x, xmin_);
+                // Lookup is easy since we are uniform in x.
+                double pos = (x - xmin_)/xdelta_;
+                double posi = std::floor(pos);
+                int left = int(posi);
+                if (left == int(y_values_.size()) - 1) {
+                    // We are at xmax_
+                    --left;
+                }
+                value = (y_values_[left + 1] - y_values_[left])/xdelta_;
             }
-	    return (y_values_[left + 1] - y_values_[left])/xdelta_;
+            return value;
 	}
 
 
