@@ -175,8 +175,7 @@ main(int argc, char** argv)
         // Grid init
         grid.reset(new Opm::GridManager(deck));
         // Rock and fluid init
-        bool props_use_spline = param.getDefault("props_use_spline", true);
-        props.reset(new BlackoilPropertiesFromDeck(deck, *grid->c_grid(), props_use_spline));
+        props.reset(new BlackoilPropertiesFromDeck(deck, *grid->c_grid(), param));
         // Wells init.
         wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
         check_well_controls = param.getDefault("check_well_controls", false);

@@ -38,7 +38,7 @@ namespace Opm
     public:
 	typedef std::vector<std::vector<std::vector<double> > > table_t;
 
-	SinglePvtDeadSpline(const table_t& pvd_table);
+	SinglePvtDeadSpline(const table_t& pvd_table, const int samples);
 	virtual ~SinglePvtDeadSpline();
 
         /// Viscosity as a function of p and z.

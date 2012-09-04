@@ -37,8 +37,7 @@ namespace Opm
     {
     public:
 	typedef std::vector<std::vector<std::vector<double> > > table_t;
-
-	SinglePvtDead(const table_t& pvd_table);
+        SinglePvtDead(const table_t& pvd_table);
 	virtual ~SinglePvtDead();
 
         /// Viscosity as a function of p and z.

@@ -50,6 +50,8 @@ opm/core/fluid/RockCompressibility.cpp			\
 opm/core/fluid/RockFromDeck.cpp				\
 opm/core/fluid/SaturationPropsBasic.cpp			\
 opm/core/fluid/SaturationPropsFromDeck.cpp		\
+opm/core/fluid/SatFuncStone2.cpp			\
+opm/core/fluid/SatFuncSimple.cpp                        \
 opm/core/fluid/blackoil/BlackoilPvtProperties.cpp	\
 opm/core/fluid/blackoil/SinglePvtDead.cpp		\
 opm/core/fluid/blackoil/SinglePvtDeadSpline.cpp		\
@@ -146,6 +148,8 @@ opm/core/fluid/PvtPropertiesIncompFromDeck.hpp		\
 opm/core/fluid/RockBasic.hpp				\
 opm/core/fluid/RockCompressibility.hpp			\
 opm/core/fluid/RockFromDeck.hpp				\
+opm/core/fluid/SatFuncStone2.hpp			\
+opm/core/fluid/SatFuncSimple.hpp                        \
 opm/core/fluid/SaturationPropsBasic.hpp			\
 opm/core/fluid/SaturationPropsFromDeck.hpp		\
 opm/core/fluid/SaturationPropsFromDeck_impl.hpp		\
