@@ -12,6 +12,8 @@ noinst_PROGRAMS =				\
 bo_resprop_test					\
 monotcubicinterpolator_test			\
 param_test					\
+pvt_test					\
+relperm_test                 			\
 sparsetable_test				\
 sparsevector_test				\
 test_cartgrid					\
@@ -21,9 +23,7 @@ test_read_vag					\
 test_readpolymer				\
 test_sf2p					\
 test_writeVtkData				\
-unit_test                                       \
-pvt_test					\
-relperm_test                 
+unit_test
 
 
 bo_resprop_test_SOURCES = bo_resprop_test.cpp
@@ -32,6 +32,10 @@ monotcubicinterpolator_test_SOURCES = monotcubicinterpolator_test.cpp
 
 param_test_SOURCES        = param_test.cpp
 param_test_LDADD          = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
+pvt_test_SOURCES          = pvt_test.cpp
+
+relperm_test_SOURCES      = relperm_test.cpp
 
 sparsetable_test_SOURCES  = sparsetable_test.cpp
 sparsetable_test_LDADD    = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
@@ -55,12 +59,6 @@ test_sf2p_SOURCES         = test_sf2p.cpp
 test_writeVtkData_SOURCES = test_writeVtkData.cpp
 
 unit_test_SOURCES         = unit_test.cpp
-
-pvt_test_SOURCES          = pvt_test.cpp
-pvt_test_LDADD            = $(LDADD)
-
-relperm_test_SOURCES      = relperm_test.cpp
-relperm_test_LDADD       = $(LDADD)
 
 
 if UMFPACK
