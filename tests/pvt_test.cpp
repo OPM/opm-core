@@ -112,29 +112,29 @@ int main(int argc, char** argv)
             double A[max_np*max_np*n];
             double dA[max_np*max_np*n];
             props.matrix(n, p, z, cells, A, dA);
-            std::copy(A, A + np*np, std::ostream_iterator<double>(aos, " "));
-            std::copy(dA, dA + np*np, std::ostream_iterator<double>(aos, " "));
+            std::copy(A, A + np*np*n, std::ostream_iterator<double>(aos, " "));
+            std::copy(dA, dA + np*np*n, std::ostream_iterator<double>(aos, " "));
             aos << std::endl;
             double mu[max_np];
             //double dmu[max_np];//not implemented
             props.viscosity(n, p, z, cells, mu, 0);
-            std::copy(mu, mu + np, std::ostream_iterator<double>(muos, " "));
-            //std::copy(dmu, dmu + np, std::ostream_iterator<double>(muos, " "));
+            std::copy(mu, mu + np*n, std::ostream_iterator<double>(muos, " "));
+            //std::copy(dmu, dmu + np*n, std::ostream_iterator<double>(muos, " "));
             aos << std::endl;
 
             double b[max_np];
             double dbdp[max_np];
             pvt.dBdp(n, p, z, b, dbdp);
-            std::copy(b, b + np, std::ostream_iterator<double>(bos, " "));
-            std::copy(dbdp, dbdp + np, std::ostream_iterator<double>(bos, " "));
+            std::copy(b, b + np*n, std::ostream_iterator<double>(bos, " "));
+            std::copy(dbdp, dbdp + np*n, std::ostream_iterator<double>(bos, " "));
             bos << std::endl;
 
             double rs[max_np];
             double drs[max_np];
             //pvt.R(n, p, z, rs);
             pvt.dRdp(n, p, z, rs,drs);
-            std::copy(rs, rs + np, std::ostream_iterator<double>(rsos, " "));
-            std::copy(drs, drs + np, std::ostream_iterator<double>(rsos, " "));
+            std::copy(rs, rs + np*n, std::ostream_iterator<double>(rsos, " "));
+            std::copy(drs, drs + np*n, std::ostream_iterator<double>(rsos, " "));
             rsos << std::endl;
         }
     }
