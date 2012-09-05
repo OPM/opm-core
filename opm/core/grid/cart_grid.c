@@ -118,7 +118,7 @@ create_grid_cart2d(int nx, int ny)
 /* --------------------------------------------------------------------- */
 
 struct UnstructuredGrid *
-create_grid_tensor2d(int nx, int ny, double x[], double y[])
+create_grid_tensor2d(int nx, int ny, const double *x, const double *y)
 {
     struct UnstructuredGrid *G;
 
@@ -136,9 +136,13 @@ create_grid_tensor2d(int nx, int ny, double x[], double y[])
 /* --------------------------------------------------------------------- */
 
 struct UnstructuredGrid *
-create_grid_tensor3d(int    nx,  int    ny , int    nz ,
-                      double x[], double y[], double z[],
-                      const double depthz[])
+create_grid_tensor3d(int           nx    ,
+                     int           ny    ,
+                     int           nz    ,
+                     const double *x     ,
+                     const double *y     ,
+                     const double *z     ,
+                     const double *depthz)
 {
     struct UnstructuredGrid *G;
 
@@ -259,6 +263,11 @@ fill_cart_topology_3d(struct UnstructuredGrid *G)
         }
     }
 
+    for (k = 0; k < nx * ny * nz; ++k) {
+        for (i = 0; i < 6; ++i) {
+            G->cell_facetag[k*6 + i] = i;
+        }
+    }
 
     fnodes      = G->face_nodes;
     fnodepos    = G->face_nodepos;
@@ -561,6 +570,12 @@ fill_cart_topology_2d(struct UnstructuredGrid *G)
         }
     }
 
+    for (j = 0; j < nx * ny; ++j) {
+        G->cell_facetag[j*4 + 0] = 0;
+        G->cell_facetag[j*4 + 1] = 2;
+        G->cell_facetag[j*4 + 2] = 1;
+        G->cell_facetag[j*4 + 3] = 3;
+    }
 
 
     fnodes     = G->face_nodes;

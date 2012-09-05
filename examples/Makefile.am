@@ -1,15 +1,15 @@
 # Build-time flags needed to form example programs
 ERT_INCLUDE_PATH = $(ERT_ROOT)/include
 
-AM_CPPFLAGS =                                   \
--I$(top_srcdir)                                 \
-$(BOOST_CPPFLAGS)                               \
+AM_CPPFLAGS =					\
+-I$(top_srcdir)					\
+$(OPM_BOOST_CPPFLAGS)				\
 -I$(ERT_INCLUDE_PATH)
 
 # All targets link to the library
-LDADD =                                         \
-$(top_builddir)/libopmcore.la                   \
-$(BOOST_FILESYSTEM_LIB)                         \
+LDADD =						\
+$(top_builddir)/lib/libopmcore.la		\
+$(BOOST_FILESYSTEM_LIB)				\
 $(BOOST_SYSTEM_LIB)
 
 # ----------------------------------------------------------------------
@@ -17,11 +17,12 @@ $(BOOST_SYSTEM_LIB)
 #
 # Please keep the list sorted.
 
-noinst_PROGRAMS =                               \
-refine_wells                                    \
-scaneclipsedeck                                 \
-sim_2p_incomp_reorder                           \
-sim_wateroil                                    \
+noinst_PROGRAMS =				\
+refine_wells					\
+scaneclipsedeck					\
+sim_2p_comp_reorder				\
+sim_2p_incomp_reorder				\
+sim_wateroil					\
 wells_example
 
 # ----------------------------------------------------------------------
@@ -32,6 +33,7 @@ wells_example
 # Please maintain sort order from "noinst_PROGRAMS".
 
 refine_wells_SOURCES          = refine_wells.cpp
+sim_2p_comp_reorder_SOURCES   = sim_2p_comp_reorder.cpp
 sim_2p_incomp_reorder_SOURCES = sim_2p_incomp_reorder.cpp
 sim_wateroil_SOURCES          = sim_wateroil.cpp
 wells_example_SOURCES         = wells_example.cpp
@@ -43,7 +45,7 @@ if UMFPACK
 noinst_PROGRAMS += spu_2p
 
 spu_2p_SOURCES   = spu_2p.cpp
-spu_2p_LDADD     =                              \
-$(LDADD)                                        \
+spu_2p_LDADD     =				\
+$(LDADD)					\
 $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS)
 endif

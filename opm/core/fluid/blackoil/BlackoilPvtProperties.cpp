@@ -21,6 +21,7 @@
 
 #include <opm/core/fluid/blackoil/BlackoilPvtProperties.hpp>
 #include <opm/core/fluid/blackoil/SinglePvtDead.hpp>
+#include <opm/core/fluid/blackoil/SinglePvtDeadSpline.hpp>
 #include <opm/core/fluid/blackoil/SinglePvtLiveOil.hpp>
 #include <opm/core/fluid/blackoil/SinglePvtLiveGas.hpp>
 #include <opm/core/fluid/blackoil/SinglePvtConstCompr.hpp>
@@ -39,18 +40,18 @@ namespace Opm
     }
 
 
-    void BlackoilPvtProperties::init(const EclipseGridParser& deck)
+    void BlackoilPvtProperties::init(const EclipseGridParser& deck, const int samples)
     {
         typedef std::vector<std::vector<std::vector<double> > > table_t;
         // If we need multiple regions, this class and the SinglePvt* classes must change.
-	region_number_ = 0;
+        region_number_ = 0;
 
         phase_usage_ = phaseUsageFromDeck(deck);
 
-	// Surface densities. Accounting for different orders in eclipse and our code.
-	if (deck.hasField("DENSITY")) {
-	    const std::vector<double>& d = deck.getDENSITY().densities_[region_number_];
-	    enum { ECL_oil = 0, ECL_water = 1, ECL_gas = 2 };
+        // Surface densities. Accounting for different orders in eclipse and our code.
+        if (deck.hasField("DENSITY")) {
+            const std::vector<double>& d = deck.getDENSITY().densities_[region_number_];
+            enum { ECL_oil = 0, ECL_water = 1, ECL_gas = 2 };
             if (phase_usage_.phase_used[Aqua]) {
                 densities_[phase_usage_.phase_pos[Aqua]]   = d[ECL_water];
             }
@@ -60,9 +61,9 @@ namespace Opm
             if (phase_usage_.phase_used[Liquid]) {
                 densities_[phase_usage_.phase_pos[Liquid]] = d[ECL_oil];
             }
-	} else {
-	    THROW("Input is missing DENSITY\n");
-	}
+        } else {
+            THROW("Input is missing DENSITY\n");
+        }
 
         // Set the properties.
         props_.resize(phase_usage_.num_phases);
@@ -78,7 +79,11 @@ namespace Opm
         // Oil PVT
         if (phase_usage_.phase_used[Liquid]) {
             if (deck.hasField("PVDO")) {
-                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDead(deck.getPVDO().pvdo_));
+                if (samples > 0) {
+                    props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDeadSpline(deck.getPVDO().pvdo_, samples));
+                } else {
+                    props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDead(deck.getPVDO().pvdo_));
+                }
             } else if (deck.hasField("PVTO")) {
                 props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtLiveOil(deck.getPVTO().pvto_));
             } else if (deck.hasField("PVCDO")) {
@@ -87,10 +92,14 @@ namespace Opm
                 THROW("Input is missing PVDO or PVTO\n");
             }
         }
-	// Gas PVT
+        // Gas PVT
         if (phase_usage_.phase_used[Vapour]) {
             if (deck.hasField("PVDG")) {
-                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDead(deck.getPVDG().pvdg_));
+                if (samples > 0) {
+                    props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDeadSpline(deck.getPVDG().pvdg_, samples));
+                } else {
+                    props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDead(deck.getPVDG().pvdg_));
+                }
             } else if (deck.hasField("PVTG")) {
                 props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(deck.getPVTG().pvtg_));
             } else {

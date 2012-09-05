@@ -57,11 +57,11 @@ AC_DEFUN([AX_BOOST_SYSTEM],
         AC_REQUIRE([AC_PROG_CC])
         AC_REQUIRE([AC_CANONICAL_BUILD])
 		CPPFLAGS_SAVED="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $OPM_BOOST_CPPFLAGS"
 		export CPPFLAGS
 
 		LDFLAGS_SAVED="$LDFLAGS"
-		LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
+		LDFLAGS="$LDFLAGS $OPM_BOOST_LDFLAGS"
 		export LDFLAGS
 
         AC_CACHE_CHECK(whether the Boost::System library is available,
@@ -76,10 +76,10 @@ AC_DEFUN([AX_BOOST_SYSTEM],
              AC_LANG_POP([C++])
 		])
 		if test "x$ax_cv_boost_system" = "xyes"; then
-			AC_SUBST(BOOST_CPPFLAGS)
+			AC_SUBST(OPM_BOOST_CPPFLAGS)
 
 			AC_DEFINE(HAVE_BOOST_SYSTEM,,[define if the Boost::System library is available])
-            BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
+            BOOSTLIBDIR=`echo $OPM_BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
             ax_lib="-lboost_system"
 
 			LDFLAGS_SAVE=$LDFLAGS

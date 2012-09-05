@@ -73,7 +73,7 @@ class MonotCubicInterpolator {
     if (!read(datafilename)) { 
       throw("Unable to constuct MonotCubicInterpolator from file.") ; 
     } ;
-  } ;
+  }
 
 
    /**
@@ -94,7 +94,7 @@ class MonotCubicInterpolator {
     if (!read(std::string(datafilename))) { 
       throw("Unable to constuct MonotCubicInterpolator from file.") ; 
     } ;
-  } ;
+  }
 
 
    /** 
@@ -110,7 +110,7 @@ class MonotCubicInterpolator {
     if (!read(std::string(datafilename),xColumn,fColumn)) { 
       throw("Unable to constuct MonotCubicInterpolator from file.") ; 
     } ;
-  } ;
+  }
    
    /** 
        @param datafilename data file
@@ -125,7 +125,7 @@ class MonotCubicInterpolator {
     if (!read(datafilename,xColumn,fColumn)) { 
       throw("Unable to constuct MonotCubicInterpolator from file.") ; 
     } ;
-  } ;
+  }
    
    /**
       @param x vector of x values
@@ -144,7 +144,7 @@ class MonotCubicInterpolator {
       This object must be treated with care until
       populated.
    */
-   MonotCubicInterpolator() {;} ;
+   MonotCubicInterpolator() { }
 
 
 
@@ -163,7 +163,7 @@ class MonotCubicInterpolator {
    */
   bool read(const std::string & datafilename) {
     return read(datafilename,1,2) ;
-  } ;
+  }
    
    /** 
        @param datafilename data file
@@ -188,7 +188,7 @@ class MonotCubicInterpolator {
 
       @return f(x) for a given x
    */
-  double operator () (double x) const { return evaluate(x) ; } ;
+  double operator () (double x) const { return evaluate(x) ; }
    
    /**
       @param x x value
@@ -485,7 +485,7 @@ class MonotCubicInterpolator {
     */
     void shrinkFlatAreas() {
         shrinkFlatAreas(1e-14);
-    };
+    }
 
 
 

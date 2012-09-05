@@ -1,6 +1,24 @@
+
+# This script generate the illustration pictures for the documentation.
+#
+# To run this script, you have to install paraview, see:
+#
+# http://www.paraview.org/paraview/resources/software.php
+#
+# Eventually, set up the paths (figure_path, tutorial_data_path, tutorial_path) according to your own installation.
+# (The default values should be ok.)
+#
+# Make sure that pvpython is in your path of executables.
+#
+# Run the following command at the root of the directory where
+# opm-core is installed (which also corresponds to the directory where
+# generate_doc_figures is located):
+#
+#   pvpython generate_doc_figures.py
+#
+
 from subprocess import call
 from paraview.simple import *
-# from paraview import servermanager
 from os import remove, mkdir, curdir
 from os.path import join, isdir
 
@@ -13,7 +31,6 @@ collected_garbage_file = []
 if not isdir(figure_path):
     mkdir(figure_path)
     
-# connection = servermanager.Connect()
 
 # tutorial 1
 call(join(tutorial_path, "tutorial1"))

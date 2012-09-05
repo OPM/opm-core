@@ -780,9 +780,11 @@ struct WelspecsLine
     int fluids_in_place_reg_numb_;   // Fluids in place region number
 
     WelspecsLine() :
-	datum_depth_BHP_(-1.0), drain_rad_(0.0), spec_inflow_("STD"),
-	shut_in_("SHUT"), crossflow_("YES"), pressure_table_number_(0),
-	density_calc_type_("SEG"), fluids_in_place_reg_numb_(0)
+        name_(), group_(), I_(-1), J_(-1),
+        datum_depth_BHP_(-1.0), pref_phase_(), drain_rad_(0.0),
+        spec_inflow_("STD"), shut_in_("SHUT"), crossflow_("YES"),
+        pressure_table_number_(0), density_calc_type_("SEG"),
+        fluids_in_place_reg_numb_(0)
     {}
 };
 
@@ -1360,8 +1362,8 @@ struct WgrupconLine
     bool available_for_group_control_;
     double guide_rate_;
     std::string phase_;
-    WgrupconLine() :
-    available_for_group_control_(true)
+    WgrupconLine()
+    : well_(), available_for_group_control_(true), guide_rate_(-1.0), phase_()
     {
     }
 };
@@ -1580,6 +1582,7 @@ struct WeltargLine
     double new_value_;             // New value of this quantity
 
     WeltargLine()
+    : well_(), control_change_(), new_value_(-1.0)
     {
     }
 };
@@ -1739,6 +1742,13 @@ struct EquilLine
                                      // initial fluids in place calculation.
     EquilLine()
     {
+        datum_depth_             = datum_depth_pressure_   = 0.0;
+        water_oil_contact_depth_ = oil_water_cap_pressure_ = 0.0;
+        gas_oil_contact_depth_   = gas_oil_cap_pressure_   = 0.0;
+
+        live_oil_table_index_ = 0;
+        wet_gas_table_index_  = 0;
+        N_                    = 0;
     }
 };
 
@@ -2128,7 +2138,8 @@ struct WpolymerLine
 
     WpolymerLine()
     {
-	well_ = polymer_group_ = salt_group_ = "";	
+	well_ = polymer_group_ = salt_group_ = "";
+	polymer_concentration_ = salt_concentration_ = 0.0;
     }
 };
 

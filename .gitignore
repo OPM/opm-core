@@ -1,4 +1,5 @@
 *~
+.\#*
 *.o
 *.lo
 *.la
@@ -28,15 +29,26 @@ ltmain.sh
 m4/libtool.m4
 m4/lt*.m4
 missing
+tutorials/tutorial[1-4]
 
 # Ignoring executables
 *_test
 examples/scaneclipsedeck
 examples/spu_2p
 examples/reorder-qfs
+examples/refine_wells
+examples/sim_2p_incomp_reorder
+examples/sim_wateroil
+examples/wells_example
 tests/test_cfs_tpfa
 tests/test_jacsys
 tests/test_readvector
 tests/test_sf2p
 tests/bo_fluid_p_and_z_deps
 tests/bo_fluid_pressuredeps
+tests/test_cartgrid
+tests/test_column_extract
+tests/test_lapack
+tests/test_read_vag
+tests/test_readpolymer
+tests/test_writeVtkData

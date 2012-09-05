@@ -43,6 +43,7 @@
  */
 
 #include <opm/core/linalg/LinearSolverInterface.hpp>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
 
 namespace Opm
 {
@@ -62,20 +63,29 @@ namespace Opm
                          const double rtol   = 1.0e-6,
                          const bool   is_spd = false);
 
-        /// Destructor.
+        /**
+         * Constructor.
+         * \param[in] param   ParameterGroup object containing the fields
+         *                    max_it,rtol,is_spd as used in the constructor.
+         */
+        LinearSolverAGMG(const parameter::ParameterGroup& param);
+
+        /**
+         *  Destructor.
+         */
         virtual ~LinearSolverAGMG();
 
         using LinearSolverInterface::solve;
 
         /// Solve a linear system, with a matrix given in compressed
         /// sparse row format.
-        /// \param[in] size        Number of rows (and colums).
-        /// \param[in] nonzeros    Number of (structural) non-zeros.
-        /// \param[in] ia          Row pointers.
-        /// \param[in] ja          Column indices.
-        /// \param[in] sa          (structurally) non-zero elements.
-        /// \param[in] rhs         System right-hand side.
-        /// \param[inout] solution System solution.
+        /// \param[in] size         Number of rows (and columns).
+        /// \param[in] nonzeros     Number of (structural) non-zeros.
+        /// \param[in] ia           Row pointers.
+        /// \param[in] ja           Column indices.
+        /// \param[in] sa           (structurally) non-zero elements.
+        /// \param[in] rhs          System right-hand side.
+        /// \param[in,out] solution System solution.
         /// \return Solver meta-data concerning most recent system solve.
         virtual LinearSolverInterface::LinearSolverReport
         solve(const int size, const int nonzeros,

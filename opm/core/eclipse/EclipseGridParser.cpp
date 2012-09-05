@@ -96,7 +96,7 @@ namespace EclipseKeywords
           string("MULTPV"),   string("PRESSURE"),   string("SGAS"),
           string("SWAT"),     string("SOIL"),       string("RS"),
           string("DXV"),      string("DYV"),        string("DZV"),
-          string("DEPTHZ"),   string("MAPAXES")
+          string("DEPTHZ"),   string("TOPS"),       string("MAPAXES")
         };
     const int num_floating_fields = sizeof(floating_fields) / sizeof(floating_fields[0]);
 
@@ -201,21 +201,7 @@ namespace {
         return us;
     }
 
-    inline std::string readKeyword(std::istream& is)
-    {
-        std::string keyword_candidate;
-        while (!is.eof()) {
-            is >> keyword_candidate;
-            if(keyword_candidate.find("--") == 0) {
-                is >> ignoreLine;  // This line is a comment
-            } else {
-                return upcase(keyword_candidate);
-            }
-        }
-        return "CONTINUE";  // Last line in included file is a comment
-    }
-
-    inline bool readKeywordNew(std::istream& is, std::string& keyword)
+    inline bool readKeyword(std::istream& is, std::string& keyword)
     {
         char buf[9];
         int i, j;
@@ -387,7 +373,7 @@ void EclipseGridParser::readImpl(istream& is)
     std::string keyword;
     while (is.good()) {
         is >> ignoreWhitespace;
-        bool ok = readKeywordNew(is, keyword);
+        bool ok = readKeyword(is, keyword);
         if (ok) {
             //#ifdef VERBOSE
             cout << "Keyword found: " << keyword << endl;
@@ -549,9 +535,9 @@ void EclipseGridParser::convertToSI()
         // Find the right unit.
         double unit = 1e100;
         bool do_convert = true;
-        if (key == "COORD" || key == "ZCORN" ||
-            key == "DXV"   || key == "DYV"   || key == "DZV" ||
-            key == "DEPTHZ") {
+        if (key == "COORD"  || key == "ZCORN" ||
+            key == "DXV"    || key == "DYV"   || key == "DZV" ||
+            key == "DEPTHZ" || key == "TOPS") {
             unit = units_.length;
         } else if (key == "PERMX"  || key == "PERMY"  || key == "PERMZ"  ||
                    key == "PERMXX" || key == "PERMYY" || key == "PERMZZ" ||

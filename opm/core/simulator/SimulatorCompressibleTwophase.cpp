@@ -21,11 +21,11 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include <opm/core/simulator/SimulatorTwophase.hpp>
+#include <opm/core/simulator/SimulatorCompressibleTwophase.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 
-#include <opm/core/pressure/IncompTpfa.hpp>
+#include <opm/core/pressure/CompressibleTpfa.hpp>
 
 #include <opm/core/grid.h>
 #include <opm/core/newwells.h>
@@ -36,16 +36,19 @@
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/writeVtkData.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
+#include <opm/core/utility/miscUtilitiesBlackoil.hpp>
 
-#include <opm/core/fluid/IncompPropertiesInterface.hpp>
+#include <opm/core/wells/WellsManager.hpp>
+
+#include <opm/core/fluid/BlackoilPropertiesInterface.hpp>
 #include <opm/core/fluid/RockCompressibility.hpp>
 
 #include <opm/core/utility/ColumnExtract.hpp>
-#include <opm/core/simulator/TwophaseState.hpp>
+#include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/simulator/WellState.hpp>
-#include <opm/core/transport/reorder/TransportModelTwophase.hpp>
+#include <opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp>
 
-#include <boost/filesystem/convenience.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -56,21 +59,21 @@
 namespace Opm
 {
 
-    class SimulatorTwophase::Impl
+    class SimulatorCompressibleTwophase::Impl
     {
     public:
         Impl(const parameter::ParameterGroup& param,
              const UnstructuredGrid& grid,
-             const IncompPropertiesInterface& props,
+             const BlackoilPropertiesInterface& props,
              const RockCompressibility* rock_comp,
-             const Wells* wells,
+             WellsManager& wells_manager,
              const std::vector<double>& src,
              const FlowBoundaryConditions* bcs,
              LinearSolverInterface& linsolver,
              const double* gravity);
 
         SimulatorReport run(SimulatorTimer& timer,
-                            TwophaseState& state,
+                            BlackoilState& state,
                             WellState& well_state);
 
     private:
@@ -78,23 +81,27 @@ namespace Opm
 
         // Parameters for output.
         bool output_;
+        bool output_vtk_;
         std::string output_dir_;
         int output_interval_;
+        // Parameters for well control
+        bool check_well_controls_;
+        int max_well_control_iterations_;
         // Parameters for transport solver.
         int num_transport_substeps_;
         bool use_segregation_split_;
         // Observed objects.
         const UnstructuredGrid& grid_;
-        const IncompPropertiesInterface& props_;
+        const BlackoilPropertiesInterface& props_;
         const RockCompressibility* rock_comp_;
+        WellsManager& wells_manager_;
         const Wells* wells_;
         const std::vector<double>& src_;
         const FlowBoundaryConditions* bcs_;
-        const LinearSolverInterface& linsolver_;
         const double* gravity_;
         // Solvers
-        IncompTpfa psolver_;
-        TransportModelTwophase tsolver_;
+        CompressibleTpfa psolver_;
+        TransportModelCompressibleTwophase tsolver_;
         // Needed by column-based gravity segregation solver.
         std::vector< std::vector<int> > columns_;
         // Misc. data
@@ -104,40 +111,48 @@ namespace Opm
 
 
 
-    SimulatorTwophase::SimulatorTwophase(const parameter::ParameterGroup& param,
-                                         const UnstructuredGrid& grid,
-                                         const IncompPropertiesInterface& props,
-                                         const RockCompressibility* rock_comp,
-                                         const Wells* wells,
-                                         const std::vector<double>& src,
-                                         const FlowBoundaryConditions* bcs,
-                                         LinearSolverInterface& linsolver,
-                                         const double* gravity)
+    SimulatorCompressibleTwophase::SimulatorCompressibleTwophase(const parameter::ParameterGroup& param,
+                                                                 const UnstructuredGrid& grid,
+                                                                 const BlackoilPropertiesInterface& props,
+                                                                 const RockCompressibility* rock_comp,
+                                                                 WellsManager& wells_manager,
+                                                                 const std::vector<double>& src,
+                                                                 const FlowBoundaryConditions* bcs,
+                                                                 LinearSolverInterface& linsolver,
+                                                                 const double* gravity)
     {
-        pimpl_.reset(new Impl(param, grid, props, rock_comp, wells, src, bcs, linsolver, gravity));
+        pimpl_.reset(new Impl(param, grid, props, rock_comp, wells_manager, src, bcs, linsolver, gravity));
     }
 
 
 
 
 
-    SimulatorReport SimulatorTwophase::run(SimulatorTimer& timer,
-                                           TwophaseState& state,
-                                           WellState& well_state)
+    SimulatorReport SimulatorCompressibleTwophase::run(SimulatorTimer& timer,
+                                                       BlackoilState& state,
+                                                       WellState& well_state)
     {
         return pimpl_->run(timer, state, well_state);
     }
 
 
 
-    static void outputState(const UnstructuredGrid& grid,
-                            const Opm::TwophaseState& state,
-                            const int step,
-                            const std::string& output_dir)
+    static void outputStateVtk(const UnstructuredGrid& grid,
+                               const Opm::BlackoilState& state,
+                               const int step,
+                               const std::string& output_dir)
     {
         // Write data in VTK format.
         std::ostringstream vtkfilename;
-        vtkfilename << output_dir << "/output-" << std::setw(3) << std::setfill('0') << step << ".vtu";
+        vtkfilename << output_dir << "/vtk_files";
+        boost::filesystem::path fpath(vtkfilename.str());
+        try {
+          create_directories(fpath);
+        }
+        catch (...) {
+          THROW("Creating directories failed: " << fpath);
+        }
+        vtkfilename << "/output-" << std::setw(3) << std::setfill('0') << step << ".vtu";
         std::ofstream vtkfile(vtkfilename.str().c_str());
         if (!vtkfile) {
             THROW("Failed to open " << vtkfilename.str());
@@ -149,11 +164,33 @@ namespace Opm
         Opm::estimateCellVelocity(grid, state.faceflux(), cell_velocity);
         dm["velocity"] = &cell_velocity;
         Opm::writeVtkData(grid, dm, vtkfile);
+    }
+
+
+    static void outputStateMatlab(const UnstructuredGrid& grid,
+                                  const Opm::BlackoilState& state,
+                                  const int step,
+                                  const std::string& output_dir)
+    {
+        Opm::DataMap dm;
+        dm["saturation"] = &state.saturation();
+        dm["pressure"] = &state.pressure();
+        std::vector<double> cell_velocity;
+        Opm::estimateCellVelocity(grid, state.faceflux(), cell_velocity);
+        dm["velocity"] = &cell_velocity;
 
         // Write data (not grid) in Matlab format
         for (Opm::DataMap::const_iterator it = dm.begin(); it != dm.end(); ++it) {
             std::ostringstream fname;
-            fname << output_dir << "/" << it->first << "-" << std::setw(3) << std::setfill('0') << step << ".dat";
+            fname << output_dir << "/" << it->first;
+            boost::filesystem::path fpath = fname.str();
+            try {
+              create_directories(fpath);
+            }
+            catch (...) {
+              THROW("Creating directories failed: " << fpath);
+            }
+            fname << "/" << std::setw(3) << std::setfill('0') << step << ".txt";
             std::ofstream file(fname.str().c_str());
             if (!file) {
                 THROW("Failed to open " << fname.str());
@@ -191,30 +228,28 @@ namespace Opm
 
 
 
-
-
-    SimulatorTwophase::Impl::Impl(const parameter::ParameterGroup& param,
-                                  const UnstructuredGrid& grid,
-                                  const IncompPropertiesInterface& props,
-                                  const RockCompressibility* rock_comp,
-                                  const Wells* wells,
-                                  const std::vector<double>& src,
-                                  const FlowBoundaryConditions* bcs,
-                                  LinearSolverInterface& linsolver,
-                                  const double* gravity)
+    // \TODO: make CompressibleTpfa take src and bcs.
+    SimulatorCompressibleTwophase::Impl::Impl(const parameter::ParameterGroup& param,
+                                              const UnstructuredGrid& grid,
+                                              const BlackoilPropertiesInterface& props,
+                                              const RockCompressibility* rock_comp,
+                                              WellsManager& wells_manager,
+                                              const std::vector<double>& src,
+                                              const FlowBoundaryConditions* bcs,
+                                              LinearSolverInterface& linsolver,
+                                              const double* gravity)
         : grid_(grid),
           props_(props),
           rock_comp_(rock_comp),
-          wells_(wells),
+          wells_manager_(wells_manager),
+          wells_(wells_manager.c_wells()),
           src_(src),
           bcs_(bcs),
-          linsolver_(linsolver),
-          gravity_(gravity),
           psolver_(grid, props, rock_comp, linsolver,
                    param.getDefault("nl_pressure_residual_tolerance", 0.0),
                    param.getDefault("nl_pressure_change_tolerance", 1.0),
                    param.getDefault("nl_pressure_maxiter", 10),
-                   gravity, wells, src, bcs),
+                   gravity, wells_manager.c_wells() /*, src, bcs*/),
           tsolver_(grid, props,
                    param.getDefault("nl_tolerance", 1e-9),
                    param.getDefault("nl_maxiter", 30))
@@ -222,6 +257,7 @@ namespace Opm
         // For output.
         output_ = param.getDefault("output", true);
         if (output_) {
+            output_vtk_ = param.getDefault("output_vtk", true);
             output_dir_ = param.getDefault("output_dir", std::string("output"));
             // Ensure that output dir exists
             boost::filesystem::path fpath(output_dir_);
@@ -233,6 +269,10 @@ namespace Opm
             }
             output_interval_ = param.getDefault("output_interval", 1);
         }
+
+        // Well control related init.
+        check_well_controls_ = param.getDefault("check_well_controls", false);
+        max_well_control_iterations_ = param.getDefault("max_well_control_iterations", 10);
 
         // Transport related init.
         num_transport_substeps_ = param.getDefault("num_transport_substeps", 1);
@@ -253,9 +293,9 @@ namespace Opm
 
 
 
-    SimulatorReport SimulatorTwophase::Impl::run(SimulatorTimer& timer,
-                                                 TwophaseState& state,
-                                                 WellState& well_state)
+    SimulatorReport SimulatorCompressibleTwophase::Impl::run(SimulatorTimer& timer,
+                                                             BlackoilState& state,
+                                                             WellState& well_state)
     {
         std::vector<double> transport_src;
 
@@ -267,13 +307,14 @@ namespace Opm
             computePorevolume(grid_, props_.porosity(), porevol);
         }
         const double tot_porevol_init = std::accumulate(porevol.begin(), porevol.end(), 0.0);
-
+        std::vector<double> initial_porevol = porevol;
 
         // Main simulation loop.
         Opm::time::StopWatch pressure_timer;
         double ptime = 0.0;
         Opm::time::StopWatch transport_timer;
         double ttime = 0.0;
+        Opm::time::StopWatch step_timer;
         Opm::time::StopWatch total_timer;
         total_timer.start();
         double init_satvol[2] = { 0.0 };
@@ -292,27 +333,102 @@ namespace Opm
         std::vector<double> well_resflows_phase;
         if (wells_) {
             well_resflows_phase.resize((wells_->number_of_phases)*(wells_->number_of_wells), 0.0);
-            wellreport.push(props_, *wells_, state.saturation(), 0.0, well_state.bhp(), well_state.perfRates());
+            wellreport.push(props_, *wells_,
+                            state.pressure(), state.surfacevol(), state.saturation(),
+                            0.0, well_state.bhp(), well_state.perfRates());
+        }
+        std::fstream tstep_os;
+        if (output_) {
+            std::string filename = output_dir_ + "/step_timing.param";
+            tstep_os.open(filename.c_str(), std::fstream::out | std::fstream::app);
         }
         for (; !timer.done(); ++timer) {
             // Report timestep and (optionally) write state to disk.
+            step_timer.start();
             timer.report(std::cout);
             if (output_ && (timer.currentStepNum() % output_interval_ == 0)) {
-                outputState(grid_, state, timer.currentStepNum(), output_dir_);
+                if (output_vtk_) {
+                    outputStateVtk(grid_, state, timer.currentStepNum(), output_dir_);
+                }
+                outputStateMatlab(grid_, state, timer.currentStepNum(), output_dir_);
             }
 
-            // Solve pressure.
+            SimulatorReport sreport;
+
+            // Solve pressure equation.
+            if (check_well_controls_) {
+                computeFractionalFlow(props_, allcells_,
+                                      state.pressure(), state.surfacevol(), state.saturation(),
+                                      fractional_flows);
+                wells_manager_.applyExplicitReinjectionControls(well_resflows_phase, well_resflows_phase);
+            }
+            bool well_control_passed = !check_well_controls_;
+            int well_control_iteration = 0;
             do {
+                // Run solver.
                 pressure_timer.start();
+                std::vector<double> initial_pressure = state.pressure();
                 psolver_.solve(timer.currentStepLength(), state, well_state);
+
+                // Renormalize pressure if both fluids and rock are
+                // incompressible, and there are no pressure
+                // conditions (bcs or wells).  It is deemed sufficient
+                // for now to renormalize using geometric volume
+                // instead of pore volume.
+                if (psolver_.singularPressure()) {
+                    // Compute average pressures of previous and last
+                    // step, and total volume.
+                    double av_prev_press = 0.0;
+                    double av_press = 0.0;
+                    double tot_vol = 0.0;
+                    const int num_cells = grid_.number_of_cells;
+                    for (int cell = 0; cell < num_cells; ++cell) {
+                        av_prev_press += initial_pressure[cell]*grid_.cell_volumes[cell];
+                        av_press      += state.pressure()[cell]*grid_.cell_volumes[cell];
+                        tot_vol       += grid_.cell_volumes[cell];
+                    }
+                    // Renormalization constant
+                    const double ren_const = (av_prev_press - av_press)/tot_vol;
+                    for (int cell = 0; cell < num_cells; ++cell) {
+                        state.pressure()[cell] += ren_const;
+                    }
+                    const int num_wells = (wells_ == NULL) ? 0 : wells_->number_of_wells;
+                    for (int well = 0; well < num_wells; ++well) {
+                        well_state.bhp()[well] += ren_const;
+                    }
+                }
+
+                // Stop timer and report.
                 pressure_timer.stop();
                 double pt = pressure_timer.secsSinceStart();
                 std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
                 ptime += pt;
-            } while (false);
+                sreport.pressure_time = pt;
+
+                // Optionally, check if well controls are satisfied.
+                if (check_well_controls_) {
+                    Opm::computePhaseFlowRatesPerWell(*wells_,
+                                                      fractional_flows,
+                                                      well_state.perfRates(),
+                                                      well_resflows_phase);
+                    std::cout << "Checking well conditions." << std::endl;
+                    // For testing we set surface := reservoir
+                    well_control_passed = wells_manager_.conditionsMet(well_state.bhp(), well_resflows_phase, well_resflows_phase);
+                    ++well_control_iteration;
+                    if (!well_control_passed && well_control_iteration > max_well_control_iterations_) {
+                        THROW("Could not satisfy well conditions in " << max_well_control_iterations_ << " tries.");
+                    }
+                    if (!well_control_passed) {
+                        std::cout << "Well controls not passed, solving again." << std::endl;
+                    } else {
+                        std::cout << "Well conditions met." << std::endl;
+                    }
+                }
+            } while (!well_control_passed);
 
             // Update pore volumes if rock is compressible.
             if (rock_comp_ && rock_comp_->isActive()) {
+                initial_porevol = porevol;
                 computePorevolume(grid_, props_.porosity(), *rock_comp_, state.pressure(), porevol);
             }
 
@@ -328,18 +444,22 @@ namespace Opm
                 std::cout << "Making " << num_transport_substeps_ << " transport substeps." << std::endl;
             }
             for (int tr_substep = 0; tr_substep < num_transport_substeps_; ++tr_substep) {
-                tsolver_.solve(&state.faceflux()[0], &porevol[0], &transport_src[0],
-                              stepsize, state.saturation());
-                Opm::computeInjectedProduced(props_, state.saturation(), transport_src, stepsize, injected, produced);
-                if (use_segregation_split_) {
-                    tsolver_.solveGravity(columns_, &porevol[0], stepsize, state.saturation());
+                tsolver_.solve(&state.faceflux()[0], &state.pressure()[0],
+                               &porevol[0],  &initial_porevol[0], &transport_src[0], stepsize,
+                               state.saturation(), state.surfacevol());
+                Opm::computeInjectedProduced(props_,
+                                             state.pressure(), state.surfacevol(), state.saturation(),
+                                             transport_src, stepsize, injected, produced);
+                if (gravity_ != 0 && use_segregation_split_) {
+                    tsolver_.solveGravity(columns_, &state.pressure()[0], &initial_porevol[0],
+                                          stepsize, state.saturation(), state.surfacevol());
                 }
             }
             transport_timer.stop();
             double tt = transport_timer.secsSinceStart();
+            sreport.transport_time = tt;
             std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
             ttime += tt;
-
             // Report volume balances.
             Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
             tot_injected[0] += injected[0];
@@ -377,18 +497,27 @@ namespace Opm
                           produced[0]/(produced[0] + produced[1]),
                           tot_produced[0]/tot_porevol_init);
             if (wells_) {
-                wellreport.push(props_, *wells_, state.saturation(),
+                wellreport.push(props_, *wells_,
+                                state.pressure(), state.surfacevol(), state.saturation(),
                                 timer.currentTime() + timer.currentStepLength(),
                                 well_state.bhp(), well_state.perfRates());
+            }
+            sreport.total_time =  step_timer.secsSinceStart();
+            if (output_) {
+                sreport.reportParam(tstep_os);
             }
         }
 
         if (output_) {
-            outputState(grid_, state, timer.currentStepNum(), output_dir_);
+            if (output_vtk_) {
+                outputStateVtk(grid_, state, timer.currentStepNum(), output_dir_);
+            }
+            outputStateMatlab(grid_, state, timer.currentStepNum(), output_dir_);
             outputWaterCut(watercut, output_dir_);
             if (wells_) {
                 outputWellReport(wellreport, output_dir_);
             }
+            tstep_os.close();
         }
 
         total_timer.stop();

@@ -317,9 +317,7 @@ main(int argc, char** argv)
         // Grid init
         grid.reset(new Opm::GridManager(deck));
         // Rock and fluid init
-        const int* gc = grid->c_grid()->global_cell;
-        std::vector<int> global_cell(gc, gc + grid->c_grid()->number_of_cells);
-        props.reset(new Opm::IncompPropertiesFromDeck(deck, global_cell));
+        props.reset(new Opm::IncompPropertiesFromDeck(deck, *grid->c_grid()));
         // Wells init.
         wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
         check_well_controls = param.getDefault("check_well_controls", false);
@@ -503,7 +501,7 @@ main(int argc, char** argv)
 
     // Write parameters used for later reference.
     if (output) {
-        param.writeParam(output_dir + "/spu_2p.param");
+        param.writeParam(output_dir + "/simulation.param");
     }
 
     // Main simulation loop.

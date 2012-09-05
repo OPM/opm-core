@@ -85,6 +85,40 @@ namespace Opm
 	}
     }
 
+    template <typename T>
+    T linearInterpolationDerivativeExtrap(const std::vector<double>& xv,
+					  const std::vector<T>& yv,
+					  double x)
+    {
+	std::vector<double>::const_iterator lb = std::lower_bound(xv.begin(), xv.end(), x);
+	int lb_ix = lb - xv.begin();
+	int nend =  int(xv.size());
+	if (lb_ix == 0) {
+	    return (yv[1]-yv[0])/(xv[1]-xv[0]);
+	} else if (lb_ix == int(xv.size())) {
+	    return (yv[nend-1]-yv[nend-2])/(xv[nend-1]-xv[nend-2]);
+	} else {
+	    return (yv[lb_ix] - yv[lb_ix - 1])/(xv[lb_ix] - xv[lb_ix - 1]);
+	}
+    }
+    
+    template <typename T>
+    T linearInterpolationExtrap(const std::vector<double>& xv,
+				const std::vector<T>& yv,
+				double x)
+    {
+	std::vector<double>::const_iterator lb = std::lower_bound(xv.begin(), xv.end(), x);
+	int lb_ix = lb - xv.begin();
+	if (lb_ix == 0) {
+	    lb_ix=1;
+	} else if (lb_ix == int(xv.size())){
+	    lb_ix = int(xv.size())-1;
+	}
+	double w = (x - xv[lb_ix - 1])/(xv[lb_ix] - xv[lb_ix - 1]);
+	return (1.0 - w)*yv[lb_ix - 1] + w*yv[lb_ix];
+	
+    }
+    
 
 } // namespace Opm
 

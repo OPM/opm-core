@@ -1,0 +1,125 @@
+Open Porous Media Core Library
+==============================
+
+These are release notes for opm-core.
+
+
+CONTENT
+-------
+
+opm-core is the core library within OPM and contains the following 
+
+* Eclipse deck input and preprosessing
+* Fluid properties (basic PVT models and rock properties)
+* Grid handling (cornerpoint grids, unstructured grid interface)
+* Linear Algebra (interface to different linear solvers)
+* Pressure solvers (various discretization schemes, flow models)
+* Simulators (some basic examples of simulators based on sequential splitting schemes)
+* Transport solvers (various discretization schemes, flow models)
+* Utilities (input and output processing, unit conversion)
+* Wells (basic well handling)
+
+
+LICENSE
+-------
+
+The library is distributed under the GNU General Public License,
+version 3 or later (GPLv3+).
+
+
+PLATFORMS
+---------
+
+The opm-core module is designed to run on Linux platforms. It is also
+regularly run on Mac OS X. No efforts have been made to ensure that
+the code will compile and run on windows platforms.
+
+
+DEPENDENCIES FOR DEBIAN BASED DISTRIBUTIONS (Debian Squeeze/Ubuntu Precise)
+---------------------------------------------------------------------------
+
+# packages necessary for building
+sudo apt-get install -y build-essential gfortran pkg-config libtool \
+                        automake autoconf
+
+# packages necessary for documentation
+sudo apt-get install -y doxygen ghostscript texlive-latex-recommended pgf
+
+# packages necessary for version control
+sudo apt-get install -y git-core git-svn subversion
+
+# libraries necessary for DUNE
+sudo apt-get install -y libboost-all-dev libsuperlu3-dev libsuitesparse-dev
+
+# libraries necessary for OPM
+sudo apt-get install -y libxml0-dev
+
+
+DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
+-----------------------------------------
+
+# libraries
+sudo zypper install blas libblas3 lapack liblapack3 libboost libxml2 umfpack
+
+# tools
+sudo zypper install gcc automake autoconf git doxygen
+
+
+RETRIEVING AND BUILDING DUNE PREREQUISITES
+------------------------------------------
+
+(only necessary if you want to use opm-core as a dune module)
+
+# trust DUNE certificate (sic)
+echo p | svn list https://svn.dune-project.org/svn/dune-common
+
+# checkout DUNE libraries
+for module in common istl geometry grid localfunctions; do
+  git svn clone -s \
+    https://svn.dune-project.org/svn/dune-$module/branches/release-2.2/ \
+	dune-$module
+done
+
+# building DUNE libraries
+for module in common istl geometry grid localfunctions; do
+  env CCACHE_DISABLE=1 dune-common/bin/dunecontrol --only=dune-$module \
+    --configure-opts="--enable-fieldvector-size-is-method" \
+	--make-opts="-j -l 0.8" autogen : configure : make
+done
+
+
+DOWNLOADING
+-----------
+
+For a read-only download:
+git clone git://github.com/OPM/opm-core.git
+
+If you want to contribute, fork OPM/opm-core on github.
+
+
+BUILDING
+--------
+
+(standalone opm-core:)
+
+ cd ../opm-core
+ autoreconf -i
+ ./configure
+ make
+ sudo make install
+
+(using opm-core as a dune module:)
+
+ # note: this is done from the parent directory of opm-core
+ env CCACHE_DISABLE=1 dune-common/bin/dunecontrol --only=opm-core \
+   --configure-opts="" --make-opts="-j -l 0.8" autogen : configure : make
+
+
+
+DOCUMENTATION
+-------------
+
+Efforts have been made to document the code with Doxygen.
+In order to build the documentation, enter the command
+$ doxygen
+in the topmost directory.
