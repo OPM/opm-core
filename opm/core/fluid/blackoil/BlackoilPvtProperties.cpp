@@ -44,14 +44,14 @@ namespace Opm
     {
         typedef std::vector<std::vector<std::vector<double> > > table_t;
         // If we need multiple regions, this class and the SinglePvt* classes must change.
-	region_number_ = 0;
+        region_number_ = 0;
 
         phase_usage_ = phaseUsageFromDeck(deck);
 
-	// Surface densities. Accounting for different orders in eclipse and our code.
-	if (deck.hasField("DENSITY")) {
-	    const std::vector<double>& d = deck.getDENSITY().densities_[region_number_];
-	    enum { ECL_oil = 0, ECL_water = 1, ECL_gas = 2 };
+        // Surface densities. Accounting for different orders in eclipse and our code.
+        if (deck.hasField("DENSITY")) {
+            const std::vector<double>& d = deck.getDENSITY().densities_[region_number_];
+            enum { ECL_oil = 0, ECL_water = 1, ECL_gas = 2 };
             if (phase_usage_.phase_used[Aqua]) {
                 densities_[phase_usage_.phase_pos[Aqua]]   = d[ECL_water];
             }
@@ -61,9 +61,9 @@ namespace Opm
             if (phase_usage_.phase_used[Liquid]) {
                 densities_[phase_usage_.phase_pos[Liquid]] = d[ECL_oil];
             }
-	} else {
-	    THROW("Input is missing DENSITY\n");
-	}
+        } else {
+            THROW("Input is missing DENSITY\n");
+        }
 
         // Set the properties.
         props_.resize(phase_usage_.num_phases);
@@ -92,7 +92,7 @@ namespace Opm
                 THROW("Input is missing PVDO or PVTO\n");
             }
         }
-	// Gas PVT
+        // Gas PVT
         if (phase_usage_.phase_used[Vapour]) {
             if (deck.hasField("PVDG")) {
                 if (samples > 0) {

@@ -36,10 +36,10 @@ namespace Opm
     class SinglePvtDeadSpline : public SinglePvtInterface
     {
     public:
-	typedef std::vector<std::vector<std::vector<double> > > table_t;
+        typedef std::vector<std::vector<std::vector<double> > > table_t;
 
-	SinglePvtDeadSpline(const table_t& pvd_table, const int samples);
-	virtual ~SinglePvtDeadSpline();
+        SinglePvtDeadSpline(const table_t& pvd_table, const int samples);
+        virtual ~SinglePvtDeadSpline();
 
         /// Viscosity as a function of p and z.
         virtual void mu(const int n,
@@ -73,7 +73,7 @@ namespace Opm
                           double* output_R,
                           double* output_dRdp) const;
     private:
-	// PVT properties of dry gas or dead oil
+        // PVT properties of dry gas or dead oil
         UniformTableLinear<double> one_over_B_;
         UniformTableLinear<double> viscosity_;
     };

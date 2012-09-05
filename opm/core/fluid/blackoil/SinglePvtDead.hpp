@@ -36,9 +36,9 @@ namespace Opm
     class SinglePvtDead : public SinglePvtInterface
     {
     public:
-	typedef std::vector<std::vector<std::vector<double> > > table_t;
+        typedef std::vector<std::vector<std::vector<double> > > table_t;
         SinglePvtDead(const table_t& pvd_table);
-	virtual ~SinglePvtDead();
+        virtual ~SinglePvtDead();
 
         /// Viscosity as a function of p and z.
         virtual void mu(const int n,
@@ -72,7 +72,7 @@ namespace Opm
                           double* output_R,
                           double* output_dRdp) const;
     private:
-	// PVT properties of dry gas or dead oil
+        // PVT properties of dry gas or dead oil
         NonuniformTableLinear<double> one_over_B_;
         NonuniformTableLinear<double> viscosity_;
     };
