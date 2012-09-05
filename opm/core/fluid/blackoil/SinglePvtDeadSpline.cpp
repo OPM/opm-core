@@ -1,5 +1,5 @@
 /*
-  Copyright 2012 SINTEF ICT, Applied Mathematics.
+  Copyright 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-#include <opm/core/fluid/blackoil/SinglePvtDead.hpp>
+#include <opm/core/fluid/blackoil/SinglePvtDeadSpline.hpp>
+#include <opm/core/utility/buildUniformMonotoneTable.hpp>
 #include <algorithm>
 
 // Extra includes for debug dumping of tables.
@@ -32,8 +32,9 @@ namespace Opm
     //------------------------------------------------------------------------
     // Member functions
     //-------------------------------------------------------------------------
+
     /// Constructor
-    SinglePvtDead::SinglePvtDead(const table_t& pvd_table)
+    SinglePvtDeadSpline::SinglePvtDeadSpline(const table_t& pvd_table, const int samples)
     {
         const int region_number = 0;
         if (pvd_table.size() != 1) {
@@ -50,8 +51,8 @@ namespace Opm
             B_inv[i] = 1.0 / pvd_table[region_number][1][i];
             visc[i]  = pvd_table[region_number][2][i];
         }
-        one_over_B_ = NonuniformTableLinear<double>(press, B_inv);
-        viscosity_ = NonuniformTableLinear<double>(press, visc);
+        buildUniformMonotoneTable(press, B_inv, samples, one_over_B_);
+        buildUniformMonotoneTable(press, visc, samples, viscosity_);
 
         // Dumping the created tables.
 //         static int count = 0;
@@ -62,16 +63,16 @@ namespace Opm
     }
 
     // Destructor
-    SinglePvtDead::~SinglePvtDead()
+    SinglePvtDeadSpline::~SinglePvtDeadSpline()
     {
     }
 
 
 
-    void SinglePvtDead::mu(const int n,
-                           const double* p,
-                           const double* /*z*/,
-                           double* output_mu) const
+    void SinglePvtDeadSpline::mu(const int n,
+                                 const double* p,
+                                 const double* /*z*/,
+                                 double* output_mu) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
@@ -79,10 +80,10 @@ namespace Opm
         }
     }
 
-    void SinglePvtDead::B(const int n,
-                          const double* p,
-                          const double* /*z*/,
-                          double* output_B) const
+    void SinglePvtDeadSpline::B(const int n,
+                                const double* p,
+                                const double* /*z*/,
+                                double* output_B) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
@@ -90,11 +91,11 @@ namespace Opm
         }
     }
 
-    void SinglePvtDead::dBdp(const int n,
-                             const double* p,
-                             const double* /*z*/,
-                             double* output_B,
-                             double* output_dBdp) const
+    void SinglePvtDeadSpline::dBdp(const int n,
+                                   const double* p,
+                                   const double* /*z*/,
+                                   double* output_B,
+                                   double* output_dBdp) const
     {
         B(n, p, 0, output_B);
 // #pragma omp parallel for
@@ -105,19 +106,19 @@ namespace Opm
     }
 
 
-    void SinglePvtDead::R(const int n,
-                          const double* /*p*/,
-                          const double* /*z*/,
-                          double* output_R) const
+    void SinglePvtDeadSpline::R(const int n,
+                                const double* /*p*/,
+                                const double* /*z*/,
+                                double* output_R) const
     {
         std::fill(output_R, output_R + n, 0.0);
     }
 
-    void SinglePvtDead::dRdp(const int n,
-                             const double* /*p*/,
-                             const double* /*z*/,
-                             double* output_R,
-                             double* output_dRdp) const
+    void SinglePvtDeadSpline::dRdp(const int n,
+                                   const double* /*p*/,
+                                   const double* /*z*/,
+                                   double* output_R,
+                                   double* output_dRdp) const
     {
         std::fill(output_R, output_R + n, 0.0);
         std::fill(output_dRdp, output_dRdp + n, 0.0);
