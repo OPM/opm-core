@@ -1,5 +1,5 @@
 /*
-  Copyright 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
+  Copyright 2012 SINTEF ICT, Applied Mathematics.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -22,7 +22,7 @@
 
 
 #include <opm/core/fluid/blackoil/SinglePvtInterface.hpp>
-#include <opm/core/utility/UniformTableLinear.hpp>
+#include <opm/core/utility/NonuniformTableLinear.hpp>
 #include <vector>
 
 namespace Opm
@@ -36,10 +36,9 @@ namespace Opm
     class SinglePvtDead : public SinglePvtInterface
     {
     public:
-	typedef std::vector<std::vector<std::vector<double> > > table_t;
-
-	SinglePvtDead(const table_t& pvd_table);
-	virtual ~SinglePvtDead();
+        typedef std::vector<std::vector<std::vector<double> > > table_t;
+        SinglePvtDead(const table_t& pvd_table);
+        virtual ~SinglePvtDead();
 
         /// Viscosity as a function of p and z.
         virtual void mu(const int n,
@@ -73,12 +72,12 @@ namespace Opm
                           double* output_R,
                           double* output_dRdp) const;
     private:
-	// PVT properties of dry gas or dead oil
-        UniformTableLinear<double> one_over_B_;
-        UniformTableLinear<double> viscosity_;
+        // PVT properties of dry gas or dead oil
+        NonuniformTableLinear<double> one_over_B_;
+        NonuniformTableLinear<double> viscosity_;
     };
 
 }
 
-#endif // OPM_SINGLEPVTDEAD_HEADER_INCLUDED
 
+#endif // OPM_SINGLEPVTDEAD_HEADER_INCLUDED

@@ -12,6 +12,8 @@ noinst_PROGRAMS =				\
 bo_resprop_test					\
 monotcubicinterpolator_test			\
 param_test					\
+pvt_test					\
+relperm_test                 			\
 sparsetable_test				\
 sparsevector_test				\
 test_cartgrid					\
@@ -30,6 +32,10 @@ monotcubicinterpolator_test_SOURCES = monotcubicinterpolator_test.cpp
 
 param_test_SOURCES        = param_test.cpp
 param_test_LDADD          = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
+pvt_test_SOURCES          = pvt_test.cpp
+
+relperm_test_SOURCES      = relperm_test.cpp
 
 sparsetable_test_SOURCES  = sparsetable_test.cpp
 sparsetable_test_LDADD    = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)

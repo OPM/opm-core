@@ -40,12 +40,12 @@ namespace Opm
     public:
         typedef std::vector<std::vector<double> > table_t;
 
-	SinglePvtConstCompr(const table_t& pvtw)
+        SinglePvtConstCompr(const table_t& pvtw)
         {
-	    const int region_number = 0;
-	    if (pvtw.size() != 1) {
-		THROW("More than one PVD-region");
-	    }
+            const int region_number = 0;
+            if (pvtw.size() != 1) {
+                THROW("More than one PVD-region");
+            }
             ref_press_ = pvtw[region_number][0];
             ref_B_     = pvtw[region_number][1];
             comp_      = pvtw[region_number][2];
@@ -53,7 +53,7 @@ namespace Opm
             visc_comp_ = pvtw[region_number][4];
         }
 
-	SinglePvtConstCompr(double visc)
+        SinglePvtConstCompr(double visc)
             : ref_press_(0.0),
               ref_B_(1.0),
               comp_(0.0),
@@ -62,7 +62,7 @@ namespace Opm
         {
         }
 
-	virtual ~SinglePvtConstCompr()
+        virtual ~SinglePvtConstCompr()
         {
         }
 
@@ -106,13 +106,16 @@ namespace Opm
                           double* output_B,
                           double* output_dBdp) const
         {
-            B(n, p, 0, output_B);
             if (comp_) {
 // #pragma omp parallel for
                 for (int i = 0; i < n; ++i) {
-                    output_dBdp[i] = -comp_*output_B[i];
+                    double x = comp_*(p[i] - ref_press_);
+                    double d = (1.0 + x + 0.5*x*x);
+                    output_B[i] = ref_B_/d;
+                    output_dBdp[i] = (-ref_B_/(d*d))*(1 + x) * comp_;
                 }
             } else {
+                std::fill(output_B, output_B + n, ref_B_);
                 std::fill(output_dBdp, output_dBdp + n, 0.0);
             }
         }

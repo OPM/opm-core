@@ -25,29 +25,29 @@ namespace Opm
 
     /// Default constructor.
     RockBasic::RockBasic()
-	: dimensions_(-1)
+        : dimensions_(-1)
     {
     }
 
 
     /// Initialize with homogenous porosity and permeability.
     void RockBasic::init(const int dimensions,
-			 const int num_cells,
-			 const double poro,
-			 const double perm)
+                         const int num_cells,
+                         const double poro,
+                         const double perm)
     {
-	dimensions_ = dimensions;
-	porosity_.clear();
-	porosity_.resize(num_cells, poro);
-	permeability_.clear();
-	const int dsq = dimensions*dimensions;
-	permeability_.resize(num_cells*dsq, 0.0);
+        dimensions_ = dimensions;
+        porosity_.clear();
+        porosity_.resize(num_cells, poro);
+        permeability_.clear();
+        const int dsq = dimensions*dimensions;
+        permeability_.resize(num_cells*dsq, 0.0);
 // #pragma omp parallel for
-	for (int i = 0; i < num_cells; ++i) {
-	    for (int d = 0; d < dimensions; ++d) {
-		permeability_[dsq*i + dimensions*d + d] = perm;
-	    }
-	}
+        for (int i = 0; i < num_cells; ++i) {
+            for (int d = 0; d < dimensions; ++d) {
+                permeability_[dsq*i + dimensions*d + d] = perm;
+            }
+        }
     }
 
 
