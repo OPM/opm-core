@@ -43,7 +43,7 @@ int main(int argc, char** argv)
     UnstructuredGrid grid;
     grid.number_of_cells = 1;
     grid.global_cell = NULL;
-    Opm::BlackoilPropertiesFromDeck props(deck, grid);
+    Opm::BlackoilPropertiesFromDeck props(deck, grid, param);
 
     const int n = 1;
     double p[n] = { 150e5 };

@@ -57,6 +57,7 @@ opm/core/fluid/SatFuncStone2.cpp			\
 opm/core/fluid/SatFuncSimple.cpp                        \
 opm/core/fluid/blackoil/BlackoilPvtProperties.cpp	\
 opm/core/fluid/blackoil/SinglePvtDead.cpp		\
+opm/core/fluid/blackoil/SinglePvtDeadSpline.cpp		\
 opm/core/fluid/blackoil/SinglePvtInterface.cpp		\
 opm/core/fluid/blackoil/SinglePvtLiveGas.cpp		\
 opm/core/fluid/blackoil/SinglePvtLiveOil.cpp		\
@@ -150,15 +151,18 @@ opm/core/fluid/PvtPropertiesIncompFromDeck.hpp		\
 opm/core/fluid/RockBasic.hpp				\
 opm/core/fluid/RockCompressibility.hpp			\
 opm/core/fluid/RockFromDeck.hpp				\
-opm/core/fluid/SaturationPropsBasic.hpp			\
-opm/core/fluid/SaturationPropsFromDeck.hpp		\
 opm/core/fluid/SatFuncStone2.hpp			\
 opm/core/fluid/SatFuncSimple.hpp                        \
+opm/core/fluid/SaturationPropsBasic.hpp			\
+opm/core/fluid/SaturationPropsFromDeck.hpp		\
+opm/core/fluid/SaturationPropsFromDeck_impl.hpp		\
+opm/core/fluid/SaturationPropsInterface.hpp		\
 opm/core/fluid/SimpleFluid2p.hpp			\
 opm/core/fluid/blackoil/BlackoilPhases.hpp		\
 opm/core/fluid/blackoil/BlackoilPvtProperties.hpp	\
 opm/core/fluid/blackoil/SinglePvtConstCompr.hpp		\
 opm/core/fluid/blackoil/SinglePvtDead.hpp		\
+opm/core/fluid/blackoil/SinglePvtDeadSpline.hpp		\
 opm/core/fluid/blackoil/SinglePvtInterface.hpp		\
 opm/core/fluid/blackoil/SinglePvtLiveGas.hpp		\
 opm/core/fluid/blackoil/SinglePvtLiveOil.hpp		\
@@ -233,6 +237,7 @@ opm/core/utility/ColumnExtract.hpp			\
 opm/core/utility/ErrorMacros.hpp			\
 opm/core/utility/Factory.hpp				\
 opm/core/utility/MonotCubicInterpolator.hpp		\
+opm/core/utility/NonuniformTableLinear.hpp		\
 opm/core/utility/RootFinders.hpp			\
 opm/core/utility/SparseTable.hpp			\
 opm/core/utility/SparseVector.hpp			\

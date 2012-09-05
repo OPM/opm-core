@@ -18,17 +18,21 @@
 */
 #ifndef SATFUNCSIMPLE_HPP
 #define SATFUNCSIMPLE_HPP
+
 #include <opm/core/eclipse/EclipseGridParser.hpp>
 #include <opm/core/utility/UniformTableLinear.hpp>
+#include <opm/core/utility/NonuniformTableLinear.hpp>
 #include <opm/core/fluid/blackoil/BlackoilPhases.hpp>
 #include <vector>
+
 namespace Opm
 {
-    class SatFuncSimple: public BlackoilPhases
+    class SatFuncSimpleUniform : public BlackoilPhases
     {
     public:
-        void init(const EclipseGridParser& deck, const int table_num, PhaseUsage phase_usg);
-        void init(const EclipseGridParser& deck, const int table_num, PhaseUsage phase_usg,
+        void init(const EclipseGridParser& deck,
+                  const int table_num,
+                  const PhaseUsage phase_usg,
                   const int samples);
         void evalKr(const double* s, double* kr) const;
         void evalKrDeriv(const double* s, double* kr, double* dkrds) const;
@@ -46,5 +50,31 @@ namespace Opm
         UniformTableLinear<double> pcog_;
         double krocw_; // = krow_(s_wc)
     };
+
+
+    class SatFuncSimpleNonuniform : public BlackoilPhases
+    {
+    public:
+        void init(const EclipseGridParser& deck,
+                  const int table_num,
+                  const PhaseUsage phase_usg,
+                  const int samples);
+        void evalKr(const double* s, double* kr) const;
+        void evalKrDeriv(const double* s, double* kr, double* dkrds) const;
+        void evalPc(const double* s, double* pc) const;
+        void evalPcDeriv(const double* s, double* pc, double* dpcds) const;
+        double smin_[PhaseUsage::MaxNumPhases];
+        double smax_[PhaseUsage::MaxNumPhases];
+    private:
+        PhaseUsage phase_usage; // A copy of the outer class' phase_usage_.
+        NonuniformTableLinear<double> krw_;
+        NonuniformTableLinear<double> krow_;
+        NonuniformTableLinear<double> pcow_;
+        NonuniformTableLinear<double> krg_;
+        NonuniformTableLinear<double> krog_;
+        NonuniformTableLinear<double> pcog_;
+        double krocw_; // = krow_(s_wc)
+    };
+
 } // namespace Opm
 #endif // SATFUNCSIMPLE_HPP

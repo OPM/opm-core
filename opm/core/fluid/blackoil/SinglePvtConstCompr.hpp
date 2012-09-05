@@ -40,12 +40,12 @@ namespace Opm
     public:
         typedef std::vector<std::vector<double> > table_t;
 
-	SinglePvtConstCompr(const table_t& pvtw)
+        SinglePvtConstCompr(const table_t& pvtw)
         {
-	    const int region_number = 0;
-	    if (pvtw.size() != 1) {
-		THROW("More than one PVD-region");
-	    }
+            const int region_number = 0;
+            if (pvtw.size() != 1) {
+                THROW("More than one PVD-region");
+            }
             ref_press_ = pvtw[region_number][0];
             ref_B_     = pvtw[region_number][1];
             comp_      = pvtw[region_number][2];
@@ -53,7 +53,7 @@ namespace Opm
             visc_comp_ = pvtw[region_number][4];
         }
 
-	SinglePvtConstCompr(double visc)
+        SinglePvtConstCompr(double visc)
             : ref_press_(0.0),
               ref_B_(1.0),
               comp_(0.0),
@@ -62,7 +62,7 @@ namespace Opm
         {
         }
 
-	virtual ~SinglePvtConstCompr()
+        virtual ~SinglePvtConstCompr()
         {
         }
 
