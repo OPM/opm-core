@@ -16,6 +16,11 @@ find_package(LAPACK)
 
 include_directories(${PROJECT_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
 
+# find all hpp files and h files to be seen in qtcreator
+FILE(GLOB_RECURSE OPM_HPP_FILES "*hpp")
+FILE(GLOB_RECURSE OPM_H_FILES "*h")
+set(EXTRA_FILES ${OPM_HPP_FILES} ${OPM_H_FILES})
+
 
 # The opmcore library
 FILE(GLOB_RECURSE C_FILES_CORE "opm/core/*.c")
@@ -35,7 +40,7 @@ target_link_libraries(opmcore
 
 FILE(GLOB CPP_EXAMPLES "examples/*.cpp")
 FILE(GLOB CPP_tests "tests/*.cpp")
-add_executable(spu_2p examples/spu_2p.cpp)
+add_executable(spu_2p examples/spu_2p.cpp ${EXTRA_FILES})
 add_executable(sim_2p_incomp_reorder examples/sim_2p_incomp_reorder.cpp)
 add_executable(sim_wateroil examples/sim_wateroil.cpp)
 
