@@ -408,7 +408,7 @@ main(int argc, char** argv)
                                 state.saturation(), state.surfacevol());
             // Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
             if (use_segregation_split) {
-                reorder_model.solveGravity(columns, &state.pressure()[0], &initial_porevol[0],
+                reorder_model.solveGravity(columns, 
                                            stepsize, state.saturation(), state.surfacevol());
             }
         }
