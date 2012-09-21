@@ -38,6 +38,7 @@ examples/spu_2p
 examples/reorder-qfs
 examples/refine_wells
 examples/sim_2p_incomp_reorder
+examples/sim_2p_comp_reorder
 examples/sim_wateroil
 examples/wells_example
 tests/test_cfs_tpfa
