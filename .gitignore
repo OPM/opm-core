@@ -29,6 +29,7 @@ ltmain.sh
 m4/libtool.m4
 m4/lt*.m4
 missing
+ar-lib
 tutorials/tutorial[1-4]
 
 # Ignoring executables
