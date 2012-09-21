@@ -20,8 +20,11 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
 AM_PROG_CC_C_O
 
+dnl Initialize libtool; the funny indentation here is to
+dnl satisfy libtoolize' check for the presence of this macro
 m4_ifdef([LT_INIT],
-         [LT_INIT[]dnl
+         [
+          LT_INIT[]dnl
           LT_LANG([C++])dnl
           LT_LANG([Fortran 77])dnl
           LT_LANG([Fortran])dnl
