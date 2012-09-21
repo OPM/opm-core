@@ -51,6 +51,8 @@ AC_CONFIG_FILES([
  tests/Makefile
  examples/Makefile
  tutorials/Makefile
+ opm-core.pc
+ lib/pkgconfig/opm-core.pc
 ])
 
 AC_OUTPUT

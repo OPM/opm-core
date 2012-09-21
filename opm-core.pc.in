@@ -1,0 +1,18 @@
+# This is the configuration for local builds. Use this by putting the
+# compilation output path (the directory in which you ran ./configure)
+# into the environment variable PKG_CONFIG_PATH. This will enable you
+# to use pkg-config in your code while making changes to opm-core.
+
+# This is NOT the file that is installed in the system directories when
+# you do `make install`. That is the one in lib/pkgconfig. However, if
+# you make changes here, you should consider that one as well.
+
+libdir=@abs_top_builddir@/lib/.libs
+includedir=@abs_top_srcdir@
+
+Name: @PACKAGE_NAME@
+Description: @PACKAGE_STRING@
+Version: @PACKAGE_VERSION@
+URL: @PACKAGE_URL@
+Libs: -L${libdir} -l@PACKAGE@
+Cflags: -I${includedir}
