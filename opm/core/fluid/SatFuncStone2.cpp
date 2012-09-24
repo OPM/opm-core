@@ -33,9 +33,9 @@ namespace Opm
 
 
     void SatFuncStone2Uniform::init(const EclipseGridParser& deck,
-                             const int table_num,
-                             const PhaseUsage phase_usg,
-                             const int samples)
+                                    const int table_num,
+                                    const PhaseUsage phase_usg,
+                                    const int samples)
     {
         phase_usage = phase_usg;
         double swco = 0.0;
@@ -221,7 +221,7 @@ namespace Opm
 
 
 
-    // ====== Methods for SatFuncSimpleNonuniform ======
+    // ====== Methods for SatFuncStone2Nonuniform ======
 
 
 
