@@ -17,7 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opm/core/fluid/SatFuncStone2.hpp>
+#include <opm/core/fluid/SatFuncGwseg.hpp>
 #include <opm/core/fluid/blackoil/BlackoilPhases.hpp>
 #include <opm/core/fluid/SaturationPropsFromDeck.hpp>
 #include <opm/core/grid.h>
@@ -32,10 +32,10 @@ namespace Opm
 
 
 
-    void SatFuncStone2Uniform::init(const EclipseGridParser& deck,
-                                    const int table_num,
-                                    const PhaseUsage phase_usg,
-                                    const int samples)
+    void SatFuncGwsegUniform::init(const EclipseGridParser& deck,
+                                   const int table_num,
+                                   const PhaseUsage phase_usg,
+                                   const int samples)
     {
         phase_usage = phase_usg;
         double swco = 0.0;
@@ -77,23 +77,27 @@ namespace Opm
     }
 
 
-    void SatFuncStone2Uniform::evalKr(const double* s, double* kr) const
+    void SatFuncGwsegUniform::evalKr(const double* s, double* kr) const
     {
         if (phase_usage.num_phases == 3) {
-            // Stone-II relative permeability model.
-            double sw = s[Aqua];
-            double sg = s[Vapour];
-            double krw = krw_(sw);
-            double krg = krg_(sg);
-            double krow = krow_(sw + sg); // = 1 - so
-            double krog = krog_(sg);      // = 1 - so - sw
-            double krocw = krocw_;
-            kr[Aqua] = krw;
-            kr[Vapour] = krg;
-            kr[Liquid] = krocw*((krow/krocw + krw)*(krog/krocw + krg) - krw - krg);
-            if (kr[Liquid] < 0.0) {
-                kr[Liquid] = 0.0;
-            }
+            // Relative permeability model based on segregation of water
+            // and gas, with oil present in both water and gas zones.
+            const double swco = smin_[phase_usage.phase_pos[Aqua]];
+            const double sw = std::max(s[Aqua], swco);
+            const double sg = s[Vapour];
+            // xw and xg are the fractions occupied by water and gas zones.
+            const double eps = 1e-6;
+            const double xw = (sw - swco) / std::max(sg + sw - swco, eps);
+            const double xg = 1 - xw;
+            const double ssw = sg + sw;
+            const double ssg = sw - swco + sg;
+            const double krw = krw_(ssw);
+            const double krg = krg_(ssg);
+            const double krow = krow_(ssw);
+            const double krog = krog_(ssg);
+            kr[Aqua]   = xw*krw;
+            kr[Vapour] = xg*krg;
+            kr[Liquid] = xw*krow + xg*krog;
             return;
         }
         // We have a two-phase situation. We know that oil is active.
@@ -118,35 +122,43 @@ namespace Opm
     }
 
 
-    void SatFuncStone2Uniform::evalKrDeriv(const double* s, double* kr, double* dkrds) const
+    void SatFuncGwsegUniform::evalKrDeriv(const double* s, double* kr, double* dkrds) const
     {
         const int np = phase_usage.num_phases;
         std::fill(dkrds, dkrds + np*np, 0.0);
 
         if (np == 3) {
-            // Stone-II relative permeability model.
-            double sw = s[Aqua];
-            double sg = s[Vapour];
-            double krw = krw_(sw);
-            double dkrww = krw_.derivative(sw);
-            double krg = krg_(sg);
-            double dkrgg = krg_.derivative(sg);
-            double krow = krow_(sw + sg);
-            double dkrow = krow_.derivative(sw + sg);
-            double krog = krog_(sg);
-            double dkrog = krog_.derivative(sg);
-            double krocw = krocw_;
-            kr[Aqua] = krw;
-            kr[Vapour] = krg;
-            kr[Liquid] = krocw*((krow/krocw + krw)*(krog/krocw + krg) - krw - krg);
-            if (kr[Liquid] < 0.0) {
-                kr[Liquid] = 0.0;
-            }
-            dkrds[Aqua + Aqua*np] = dkrww;
-            dkrds[Vapour + Vapour*np] = dkrgg;
-            dkrds[Liquid + Aqua*np] = krocw*((dkrow/krocw + dkrww)*(krog/krocw + krg) - dkrww);
-            dkrds[Liquid + Vapour*np] = krocw*((krow/krocw + krw)*(dkrog/krocw + dkrgg) - dkrgg)
-                    + krocw*((dkrow/krocw + krw)*(krog/krocw + krg) - dkrgg);
+            // Relative permeability model based on segregation of water
+            // and gas, with oil present in both water and gas zones.
+            const double swco = smin_[phase_usage.phase_pos[Aqua]];
+            const double sw = std::max(s[Aqua], swco);
+            const double sg = s[Vapour];
+            // xw and xg are the fractions occupied by water and gas zones.
+            const double eps = 1e-6;
+            const double xw = (sw - swco) / std::max(sg + sw - swco, eps);
+            const double xg = 1 - xw;
+            const double ssw = sg + sw;
+            const double ssg = sw - swco + sg;
+            const double krw = krw_(ssw);
+            const double krg = krg_(ssg);
+            const double krow = krow_(ssw);
+            const double krog = krog_(ssg);
+            kr[Aqua]   = xw*krw;
+            kr[Vapour] = xg*krg;
+            kr[Liquid] = xw*krow + xg*krog;
+
+            // Derivatives.
+            const double dkrww = krw_.derivative(ssw);
+            const double dkrgg = krg_.derivative(ssg);
+            const double dkrow = krow_.derivative(ssw);
+            const double dkrog = krog_.derivative(ssg);
+            const double d = ssg; // = sw - swco + sg (using 'd' for consistency with mrst docs).
+            dkrds[Aqua   + Aqua*np]   =  (xg/d)*krw + xw*dkrww;
+            dkrds[Aqua   + Vapour*np] = -(xw/d)*krw + xw*dkrww;
+            dkrds[Liquid + Aqua*np]   =  (xg/d)*krow + xw*dkrow - (xg/d)*krog + xg*dkrog;
+            dkrds[Liquid + Vapour*np] = -(xw/d)*krow + xw*dkrow + (xw/d)*krog + xg*dkrog;
+            dkrds[Vapour + Aqua*np]   = -(xg/d)*krg + xg*dkrgg;
+            dkrds[Vapour + Vapour*np] =  (xw/d)*krg + xg*dkrgg;
             return;
         }
         // We have a two-phase situation. We know that oil is active.
@@ -180,7 +192,7 @@ namespace Opm
     }
 
 
-    void SatFuncStone2Uniform::evalPc(const double* s, double* pc) const
+    void SatFuncGwsegUniform::evalPc(const double* s, double* pc) const
     {
         pc[phase_usage.phase_pos[Liquid]] = 0.0;
         if (phase_usage.phase_used[Aqua]) {
@@ -193,7 +205,7 @@ namespace Opm
         }
     }
 
-    void SatFuncStone2Uniform::evalPcDeriv(const double* s, double* pc, double* dpcds) const
+    void SatFuncGwsegUniform::evalPcDeriv(const double* s, double* pc, double* dpcds) const
     {
         // The problem of determining three-phase capillary pressures
         // is very hard experimentally, usually one extends two-phase
@@ -219,17 +231,16 @@ namespace Opm
 
 
 
-
-
-    // ====== Methods for SatFuncStone2Nonuniform ======
-
+    // ====== Methods for SatFuncGwsegNonuniform ======
 
 
 
-    void SatFuncStone2Nonuniform::init(const EclipseGridParser& deck,
-                                       const int table_num,
-                                       const PhaseUsage phase_usg,
-                                       const int /*samples*/)
+
+
+    void SatFuncGwsegNonuniform::init(const EclipseGridParser& deck,
+                                      const int table_num,
+                                      const PhaseUsage phase_usg,
+                                      const int /*samples*/)
     {
         phase_usage = phase_usg;
         double swco = 0.0;
@@ -271,23 +282,27 @@ namespace Opm
     }
 
 
-    void SatFuncStone2Nonuniform::evalKr(const double* s, double* kr) const
+    void SatFuncGwsegNonuniform::evalKr(const double* s, double* kr) const
     {
         if (phase_usage.num_phases == 3) {
-            // Stone-II relative permeability model.
-            double sw = s[Aqua];
-            double sg = s[Vapour];
-            double krw = krw_(sw);
-            double krg = krg_(sg);
-            double krow = krow_(sw + sg); // = 1 - so
-            double krog = krog_(sg);      // = 1 - so - sw
-            double krocw = krocw_;
-            kr[Aqua] = krw;
-            kr[Vapour] = krg;
-            kr[Liquid] = krocw*((krow/krocw + krw)*(krog/krocw + krg) - krw - krg);
-            if (kr[Liquid] < 0.0) {
-                kr[Liquid] = 0.0;
-            }
+            // Relative permeability model based on segregation of water
+            // and gas, with oil present in both water and gas zones.
+            const double swco = smin_[phase_usage.phase_pos[Aqua]];
+            const double sw = std::max(s[Aqua], swco);
+            const double sg = s[Vapour];
+            // xw and xg are the fractions occupied by water and gas zones.
+            const double eps = 1e-6;
+            const double xw = (sw - swco) / std::max(sg + sw - swco, eps);
+            const double xg = 1 - xw;
+            const double ssw = sg + sw;
+            const double ssg = sw - swco + sg;
+            const double krw = krw_(ssw);
+            const double krg = krg_(ssg);
+            const double krow = krow_(ssw);
+            const double krog = krog_(ssg);
+            kr[Aqua]   = xw*krw;
+            kr[Vapour] = xg*krg;
+            kr[Liquid] = xw*krow + xg*krog;
             return;
         }
         // We have a two-phase situation. We know that oil is active.
@@ -312,35 +327,43 @@ namespace Opm
     }
 
 
-    void SatFuncStone2Nonuniform::evalKrDeriv(const double* s, double* kr, double* dkrds) const
+    void SatFuncGwsegNonuniform::evalKrDeriv(const double* s, double* kr, double* dkrds) const
     {
         const int np = phase_usage.num_phases;
         std::fill(dkrds, dkrds + np*np, 0.0);
 
         if (np == 3) {
-            // Stone-II relative permeability model.
-            double sw = s[Aqua];
-            double sg = s[Vapour];
-            double krw = krw_(sw);
-            double dkrww = krw_.derivative(sw);
-            double krg = krg_(sg);
-            double dkrgg = krg_.derivative(sg);
-            double krow = krow_(sw + sg);
-            double dkrow = krow_.derivative(sw + sg);
-            double krog = krog_(sg);
-            double dkrog = krog_.derivative(sg);
-            double krocw = krocw_;
-            kr[Aqua] = krw;
-            kr[Vapour] = krg;
-            kr[Liquid] = krocw*((krow/krocw + krw)*(krog/krocw + krg) - krw - krg);
-            if (kr[Liquid] < 0.0) {
-                kr[Liquid] = 0.0;
-            }
-            dkrds[Aqua + Aqua*np] = dkrww;
-            dkrds[Vapour + Vapour*np] = dkrgg;
-            dkrds[Liquid + Aqua*np] = krocw*((dkrow/krocw + dkrww)*(krog/krocw + krg) - dkrww);
-            dkrds[Liquid + Vapour*np] = krocw*((krow/krocw + krw)*(dkrog/krocw + dkrgg) - dkrgg)
-                    + krocw*((dkrow/krocw + krw)*(krog/krocw + krg) - dkrgg);
+            // Relative permeability model based on segregation of water
+            // and gas, with oil present in both water and gas zones.
+            const double swco = smin_[phase_usage.phase_pos[Aqua]];
+            const double sw = std::max(s[Aqua], swco);
+            const double sg = s[Vapour];
+            // xw and xg are the fractions occupied by water and gas zones.
+            const double eps = 1e-6;
+            const double xw = (sw - swco) / std::max(sg + sw - swco, eps);
+            const double xg = 1 - xw;
+            const double ssw = sg + sw;
+            const double ssg = sw - swco + sg;
+            const double krw = krw_(ssw);
+            const double krg = krg_(ssg);
+            const double krow = krow_(ssw);
+            const double krog = krog_(ssg);
+            kr[Aqua]   = xw*krw;
+            kr[Vapour] = xg*krg;
+            kr[Liquid] = xw*krow + xg*krog;
+
+            // Derivatives.
+            const double dkrww = krw_.derivative(ssw);
+            const double dkrgg = krg_.derivative(ssg);
+            const double dkrow = krow_.derivative(ssw);
+            const double dkrog = krog_.derivative(ssg);
+            const double d = ssg; // = sw - swco + sg (using 'd' for consistency with mrst docs).
+            dkrds[Aqua   + Aqua*np]   =  (xg/d)*krw + xw*dkrww;
+            dkrds[Aqua   + Vapour*np] = -(xw/d)*krw + xw*dkrww;
+            dkrds[Liquid + Aqua*np]   =  (xg/d)*krow + xw*dkrow - (xg/d)*krog + xg*dkrog;
+            dkrds[Liquid + Vapour*np] = -(xw/d)*krow + xw*dkrow + (xw/d)*krog + xg*dkrog;
+            dkrds[Vapour + Aqua*np]   = -(xg/d)*krg + xg*dkrgg;
+            dkrds[Vapour + Vapour*np] =  (xw/d)*krg + xg*dkrgg;
             return;
         }
         // We have a two-phase situation. We know that oil is active.
@@ -374,7 +397,7 @@ namespace Opm
     }
 
 
-    void SatFuncStone2Nonuniform::evalPc(const double* s, double* pc) const
+    void SatFuncGwsegNonuniform::evalPc(const double* s, double* pc) const
     {
         pc[phase_usage.phase_pos[Liquid]] = 0.0;
         if (phase_usage.phase_used[Aqua]) {
@@ -387,7 +410,7 @@ namespace Opm
         }
     }
 
-    void SatFuncStone2Nonuniform::evalPcDeriv(const double* s, double* pc, double* dpcds) const
+    void SatFuncGwsegNonuniform::evalPcDeriv(const double* s, double* pc, double* dpcds) const
     {
         // The problem of determining three-phase capillary pressures
         // is very hard experimentally, usually one extends two-phase
