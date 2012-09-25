@@ -220,7 +220,7 @@ main(int argc, char** argv)
     // Solve time-of-flight.
     std::vector<double> tof(num_cells, 0.0);
     transport_timer.start();
-    tofsolver.solveTof(&state.faceflux()[0], &porevol[0], tof);
+    tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
     transport_timer.stop();
     double tt = transport_timer.secsSinceStart();
     std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
