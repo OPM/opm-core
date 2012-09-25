@@ -306,3 +306,6 @@ opm/core/linalg/LinearSolverAGMG.hpp
 lib_libopmcore_la_LDFLAGS +=			\
 $(FCLIBS)
 endif
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = lib/pkgconfig/opm-core.pc
