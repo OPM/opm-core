@@ -38,22 +38,23 @@ $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS)
 # support below for additional details.
 nodist_lib_libopmcore_la_SOURCES =
 
-lib_libopmcore_la_SOURCES =                             \
-opm/core/GridManager.cpp                                \
-opm/core/eclipse/EclipseGridInspector.cpp               \
-opm/core/eclipse/EclipseGridParser.cpp                  \
-opm/core/fluid/BlackoilPropertiesBasic.cpp              \
-opm/core/fluid/BlackoilPropertiesFromDeck.cpp           \
-opm/core/fluid/IncompPropertiesBasic.cpp                \
-opm/core/fluid/IncompPropertiesFromDeck.cpp             \
-opm/core/fluid/PvtPropertiesBasic.cpp                   \
-opm/core/fluid/PvtPropertiesIncompFromDeck.cpp          \
-opm/core/fluid/RockBasic.cpp                            \
-opm/core/fluid/RockCompressibility.cpp                  \
-opm/core/fluid/RockFromDeck.cpp                         \
-opm/core/fluid/SaturationPropsBasic.cpp                 \
-opm/core/fluid/SaturationPropsFromDeck.cpp              \
-opm/core/fluid/SatFuncStone2.cpp                        \
+lib_libopmcore_la_SOURCES =				\
+opm/core/GridManager.cpp				\
+opm/core/eclipse/EclipseGridInspector.cpp		\
+opm/core/eclipse/EclipseGridParser.cpp			\
+opm/core/fluid/BlackoilPropertiesBasic.cpp		\
+opm/core/fluid/BlackoilPropertiesFromDeck.cpp		\
+opm/core/fluid/IncompPropertiesBasic.cpp		\
+opm/core/fluid/IncompPropertiesFromDeck.cpp		\
+opm/core/fluid/PvtPropertiesBasic.cpp			\
+opm/core/fluid/PvtPropertiesIncompFromDeck.cpp		\
+opm/core/fluid/RockBasic.cpp				\
+opm/core/fluid/RockCompressibility.cpp			\
+opm/core/fluid/RockFromDeck.cpp				\
+opm/core/fluid/SaturationPropsBasic.cpp			\
+opm/core/fluid/SaturationPropsFromDeck.cpp		\
+opm/core/fluid/SatFuncGwseg.cpp				\
+opm/core/fluid/SatFuncStone2.cpp			\
 opm/core/fluid/SatFuncSimple.cpp                        \
 opm/core/fluid/blackoil/BlackoilPvtProperties.cpp       \
 opm/core/fluid/blackoil/SinglePvtDead.cpp               \
@@ -131,27 +132,28 @@ opm/core/wells/WellCollection.cpp                       \
 opm/core/wells/WellsGroup.cpp                           \
 opm/core/wells/WellsManager.cpp
 
-nobase_include_HEADERS =                                \
-opm/core/GridAdapter.hpp                                \
-opm/core/GridManager.hpp                                \
-opm/core/eclipse/CornerpointChopper.hpp                 \
-opm/core/eclipse/EclipseGridInspector.hpp               \
-opm/core/eclipse/EclipseGridParser.hpp                  \
-opm/core/eclipse/EclipseGridParserHelpers.hpp           \
-opm/core/eclipse/EclipseUnits.hpp                       \
-opm/core/eclipse/SpecialEclipseFields.hpp               \
-opm/core/fluid/BlackoilPropertiesBasic.hpp              \
-opm/core/fluid/BlackoilPropertiesFromDeck.hpp           \
-opm/core/fluid/BlackoilPropertiesInterface.hpp          \
-opm/core/fluid/IncompPropertiesBasic.hpp                \
-opm/core/fluid/IncompPropertiesFromDeck.hpp             \
-opm/core/fluid/IncompPropertiesInterface.hpp            \
-opm/core/fluid/PvtPropertiesBasic.hpp                   \
-opm/core/fluid/PvtPropertiesIncompFromDeck.hpp          \
-opm/core/fluid/RockBasic.hpp                            \
-opm/core/fluid/RockCompressibility.hpp                  \
-opm/core/fluid/RockFromDeck.hpp                         \
-opm/core/fluid/SatFuncStone2.hpp                        \
+nobase_include_HEADERS =				\
+opm/core/GridAdapter.hpp				\
+opm/core/GridManager.hpp				\
+opm/core/eclipse/CornerpointChopper.hpp			\
+opm/core/eclipse/EclipseGridInspector.hpp		\
+opm/core/eclipse/EclipseGridParser.hpp			\
+opm/core/eclipse/EclipseGridParserHelpers.hpp		\
+opm/core/eclipse/EclipseUnits.hpp			\
+opm/core/eclipse/SpecialEclipseFields.hpp		\
+opm/core/fluid/BlackoilPropertiesBasic.hpp		\
+opm/core/fluid/BlackoilPropertiesFromDeck.hpp		\
+opm/core/fluid/BlackoilPropertiesInterface.hpp		\
+opm/core/fluid/IncompPropertiesBasic.hpp		\
+opm/core/fluid/IncompPropertiesFromDeck.hpp		\
+opm/core/fluid/IncompPropertiesInterface.hpp		\
+opm/core/fluid/PvtPropertiesBasic.hpp			\
+opm/core/fluid/PvtPropertiesIncompFromDeck.hpp		\
+opm/core/fluid/RockBasic.hpp				\
+opm/core/fluid/RockCompressibility.hpp			\
+opm/core/fluid/RockFromDeck.hpp				\
+opm/core/fluid/SatFuncGwseg.hpp				\
+opm/core/fluid/SatFuncStone2.hpp			\
 opm/core/fluid/SatFuncSimple.hpp                        \
 opm/core/fluid/SaturationPropsBasic.hpp                 \
 opm/core/fluid/SaturationPropsFromDeck.hpp              \
@@ -316,3 +318,6 @@ opm/core/linalg/LinearSolverAGMG.hpp
 lib_libopmcore_la_LDFLAGS +=                    \
 $(FCLIBS)
 endif
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = lib/pkgconfig/opm-core.pc
