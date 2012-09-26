@@ -44,6 +44,7 @@
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/pressure/IncompTpfa.hpp>
 #include <opm/core/transport/reorder/TransportModelTracerTof.hpp>
+#include <opm/core/transport/reorder/TransportModelTracerTofDiscGal.hpp>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/filesystem.hpp>
@@ -165,8 +166,12 @@ main(int argc, char** argv)
                             0.0, 0.0, 0,
                             grav, wells->c_wells(), src, bcs.c_bcs());
 
-    // Tof solver.
-    Opm::TransportModelTracerTof tofsolver(*grid->c_grid());
+    // Choice of tof solver.
+    bool use_dg = param.getDefault("use_dg", false);
+    int dg_degree = -1;
+    if (use_dg) {
+        dg_degree = param.getDefault("dg_degree", 0);
+    }
 
     // Write parameters used for later reference.
     bool output = param.getDefault("output", true);
@@ -218,10 +223,18 @@ main(int argc, char** argv)
                                 wells->c_wells(), well_state.perfRates(), transport_src);
 
     // Solve time-of-flight.
-    std::vector<double> tof(num_cells, 0.0);
-    transport_timer.start();
-    tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
-    transport_timer.stop();
+    std::vector<double> tof;
+    if (use_dg) {
+        Opm::TransportModelTracerTofDiscGal tofsolver(*grid->c_grid());
+        transport_timer.start();
+        tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], dg_degree, tof);
+        transport_timer.stop();
+    } else {
+        Opm::TransportModelTracerTof tofsolver(*grid->c_grid());
+        transport_timer.start();
+        tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
+        transport_timer.stop();
+    }
     double tt = transport_timer.secsSinceStart();
     std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
     ttime += tt;
