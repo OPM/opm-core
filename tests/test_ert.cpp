@@ -34,7 +34,7 @@
 using namespace std;
 
 
-
+static
 void cell_nodes(const UnstructuredGrid * c_grid , int cell , std::vector<int>& nodes) {
   int face_offset = c_grid->cell_facepos[cell];
   int num_faces   = c_grid->cell_facepos[cell + 1] - face_offset;
@@ -80,7 +80,7 @@ void cell_nodes(const UnstructuredGrid * c_grid , int cell , std::vector<int>& n
 }
 
 
-
+static
 void eclExport(Opm::GridManager& grid) {
   const UnstructuredGrid * c_grid = grid.c_grid();
   
@@ -119,7 +119,7 @@ void eclExport(Opm::GridManager& grid) {
     
     int   ** coords;
     float ** corners;
-    float  * mapaxes = NULL;
+    // float  * mapaxes = NULL;
     std::vector<int> nodes;
     
     corners = (float **) malloc( num_coords * sizeof * corners );
@@ -244,7 +244,7 @@ ecl_grid_type * create_ecl_grid( const struct UnstructuredGrid * g) {
 
 
 
-int main(int argc , char **argv)
+int main(int /*argc*/ , char **argv)
 {
   std::string filename( argv[1] );
   boost::scoped_ptr<Opm::GridManager> grid;
@@ -254,8 +254,6 @@ int main(int argc , char **argv)
   //eclParser.saveEGRID_INIT("/tmp" , "OPM" );
 
   grid.reset(new Opm::GridManager(eclParser));
-  const int* gc = grid->c_grid()->global_cell;
-  std::vector<int> global_cell(gc, gc + grid->c_grid()->number_of_cells);
   
-  props.reset(new Opm::IncompPropertiesFromDeck(eclParser , global_cell));
+  props.reset(new Opm::IncompPropertiesFromDeck(eclParser , *grid->c_grid()));
 }
