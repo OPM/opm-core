@@ -24,6 +24,7 @@
 #include <opm/core/eclipse/EclipseGridParser.hpp>
 #include <opm/core/eclipse/EclipseGridInspector.hpp>
 #include <opm/core/fluid/BlackoilPropertiesFromDeck.hpp>
+#include <opm/core/grid.h>
 
 #include <algorithm>
 #include <iostream>
@@ -39,14 +40,10 @@ int main(int argc, char** argv)
     // Parser.
     std::string ecl_file = param.get<std::string>("filename");
     Opm::EclipseGridParser deck(ecl_file);
-    Opm::EclipseGridInspector insp(deck);
-    std::tr1::array<int, 3> gs = insp.gridSize();
-    int num_cells = gs[0]*gs[1]*gs[2];
-    std::vector<int> global_cell(num_cells);
-    for (int i = 0; i < num_cells; ++i) {
-        global_cell[i] = i;
-    }
-    Opm::BlackoilPropertiesFromDeck props(deck, global_cell);
+    UnstructuredGrid grid;
+    grid.number_of_cells = 1;
+    grid.global_cell = NULL;
+    Opm::BlackoilPropertiesFromDeck props(deck, grid, param);
 
     const int n = 1;
     double p[n] = { 150e5 };

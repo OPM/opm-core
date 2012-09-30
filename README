@@ -1,0 +1,103 @@
+Open Porous Media Core Library
+==============================
+
+These are release notes for opm-core.
+
+
+CONTENT
+-------
+
+opm-core is the core library within OPM and contains the following 
+
+* Eclipse deck input and preprosessing
+* Fluid properties (basic PVT models and rock properties)
+* Grid handling (cornerpoint grids, unstructured grid interface)
+* Linear Algebra (interface to different linear solvers)
+* Pressure solvers (various discretization schemes, flow models)
+* Simulators (some basic examples of simulators based on sequential splitting schemes)
+* Transport solvers (various discretization schemes, flow models)
+* Utilities (input and output processing, unit conversion)
+* Wells (basic well handling)
+
+
+LICENSE
+-------
+
+The library is distributed under the GNU General Public License,
+version 3 or later (GPLv3+).
+
+
+PLATFORMS
+---------
+
+The opm-core module is designed to run on Linux platforms. It is also
+regularly run on Mac OS X. No efforts have been made to ensure that
+the code will compile and run on windows platforms.
+
+
+DEPENDENCIES FOR DEBIAN BASED DISTRIBUTIONS (Debian Squeeze/Ubuntu Precise)
+---------------------------------------------------------------------------
+
+# packages necessary for building
+sudo apt-get install -y build-essential gfortran pkg-config libtool \
+                        automake autoconf
+
+# packages necessary for documentation
+sudo apt-get install -y doxygen ghostscript texlive-latex-recommended pgf
+
+# packages necessary for version control
+sudo apt-get install -y git-core
+
+# basic libraries necessary for both DUNE and OPM
+sudo apt-get install -y libboost-all-dev libsuperlu3-dev libsuitesparse-dev
+
+# add this repository for necessary backports (required for Ubuntu Precise)
+sudo add-apt-repository -y ppa:opm/ppa
+sudo apt-get update
+
+# parts of DUNE needed
+sudo apt-get install libdune-common-dev libdune-istl-dev
+
+# libraries necessary for OPM
+sudo apt-get install -y libxml0-dev
+
+
+DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
+-----------------------------------------
+
+# libraries
+sudo zypper in blas libblas3 lapack liblapack3 libboost libxml2 umfpack
+
+# tools
+sudo zypper in gcc automake autoconf git doxygen
+
+# DUNE libraries
+sudo zypper ar http://download.opensuse.org/repositories/science/openSUSE_12.2/science.repo
+sudo zypper in dune-common dune-istl
+
+
+DOWNLOADING
+-----------
+
+For a read-only download:
+git clone git://github.com/OPM/opm-core.git
+
+If you want to contribute, fork OPM/opm-core on github.
+
+
+BUILDING
+--------
+
+ cd opm-core
+ autoreconf -i
+ ./configure
+ make
+
+
+DOCUMENTATION
+-------------
+
+Efforts have been made to document the code with Doxygen.
+In order to build the documentation, enter the command
+$ doxygen
+in the topmost directory.

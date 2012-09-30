@@ -1,27 +1,29 @@
 AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
-$(BOOST_CPPFLAGS)				\
+$(OPM_BOOST_CPPFLAGS)				\
 $(ERT_CPPFLAGS)
 
-AM_LDFLAGS = $(BOOST_LDFLAGS) $(ERT_LDFLAGS)
+AM_LDFLAGS = $(OPM_BOOST_LDFLAGS) $(ERT_LDFLAGS)
 
 
-LDADD = $(top_builddir)/libopmcore.la
+LDADD =	$(top_builddir)/lib/libopmcore.la
 
 
-noinst_PROGRAMS =                               \
-bo_resprop_test                                 \
-monotcubicinterpolator_test                     \
-param_test                                      \
-sparsetable_test                                \
-sparsevector_test                               \
-test_cartgrid                                   \
-test_column_extract                             \
-test_lapack                                     \
-test_read_vag                                   \
-test_readpolymer                                \
-test_sf2p                                       \
-test_writeVtkData                               \
+noinst_PROGRAMS =				\
+bo_resprop_test					\
+monotcubicinterpolator_test			\
+param_test					\
+pvt_test					\
+relperm_test                 			\
+sparsetable_test				\
+sparsevector_test				\
+test_cartgrid					\
+test_column_extract				\
+test_lapack					\
+test_read_vag					\
+test_readpolymer				\
+test_sf2p					\
+test_writeVtkData				\
 unit_test
 
 
@@ -31,6 +33,10 @@ monotcubicinterpolator_test_SOURCES = monotcubicinterpolator_test.cpp
 
 param_test_SOURCES        = param_test.cpp
 param_test_LDADD          = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
+pvt_test_SOURCES          = pvt_test.cpp
+
+relperm_test_SOURCES      = relperm_test.cpp
 
 sparsetable_test_SOURCES  = sparsetable_test.cpp
 sparsetable_test_LDADD    = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)

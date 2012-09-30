@@ -47,7 +47,9 @@ namespace Opm {
 
     public:
         ImplicitAssembly(Model& model)
-            : model_(model)
+            : model_(model),
+              nconn_(-1)   ,
+              asm_buffer_()
         {}
 
         template <class Grid          ,

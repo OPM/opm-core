@@ -22,6 +22,8 @@
 #include <opm/core/grid.h>
 #include <opm/core/grid/cart_grid.h>
 #include <opm/core/grid/cornerpoint_grid.h>
+#include <algorithm>
+#include <numeric>
 
 
 
@@ -33,14 +35,26 @@ namespace Opm
     /// Construct a 3d corner-point grid from a deck.
     GridManager::GridManager(const Opm::EclipseGridParser& deck)
     {
-      // Collect in input struct for preprocessing.
-      struct grdecl grdecl = deck.get_grdecl();
-      
-      // Process grid.
-      ug_ = create_grid_cornerpoint(&grdecl, 0.0);
-      if (!ug_) {
-        THROW("Failed to construct grid.");
-      }
+        // We accept two different ways to specify the grid.
+        //    1. Corner point format.
+        //       Requires ZCORN, COORDS, DIMENS or SPECGRID, optionally
+        //       ACTNUM, optionally MAPAXES.
+        //       For this format, we will verify that DXV, DYV, DZV,
+        //       DEPTHZ and TOPS are not present.
+        //    2. Tensor grid format.
+        //       Requires DXV, DYV, DZV, optionally DEPTHZ or TOPS.
+        //       For this format, we will verify that ZCORN, COORDS
+        //       and ACTNUM are not present.
+        //       Note that for TOPS, we only allow a uniform vector of values.
+
+        if (deck.hasField("ZCORN") && deck.hasField("COORD")) {
+            initFromDeckCornerpoint(deck);
+        } else if (deck.hasField("DXV") && deck.hasField("DYV") && deck.hasField("DZV")) {
+            initFromDeckTensorgrid(deck);
+        } else {
+            THROW("Could not initialize grid from deck. "
+                  "Need either ZCORN + COORD or DXV + DYV + DZV keywords.");
+        }
     }
 
 
@@ -100,6 +114,95 @@ namespace Opm
         return ug_;
     }
 
+
+
+    // Construct corner-point grid from deck.
+    void GridManager::initFromDeckCornerpoint(const Opm::EclipseGridParser& deck)
+    {
+        // Extract data from deck.
+        // Collect in input struct for preprocessing.
+        struct grdecl grdecl = deck.get_grdecl();
+
+        // Process grid.
+        ug_ = create_grid_cornerpoint(&grdecl, 0.0);
+        if (!ug_) {
+            THROW("Failed to construct grid.");
+        }
+    }
+
+
+    namespace
+    {
+        std::vector<double> coordsFromDeltas(const std::vector<double>& deltas)
+        {
+            std::vector<double> coords(deltas.size() + 1);
+            coords[0] = 0.0;
+            std::partial_sum(deltas.begin(), deltas.end(), coords.begin() + 1);
+            return coords;
+        }
+    } // anonymous namespace
+
+
+    // Construct tensor grid from deck.
+    void GridManager::initFromDeckTensorgrid(const Opm::EclipseGridParser& deck)
+    {
+        // Extract logical cartesian size.
+        std::vector<int> dims;
+        if (deck.hasField("DIMENS")) {
+            dims = deck.getIntegerValue("DIMENS");
+        } else if (deck.hasField("SPECGRID")) {
+            dims = deck.getSPECGRID().dimensions;
+        } else {
+            THROW("Deck must have either DIMENS or SPECGRID.");
+        }
+
+        // Extract coordinates (or offsets from top, in case of z).
+        const std::vector<double>& dxv = deck.getFloatingPointValue("DXV");
+        const std::vector<double>& dyv = deck.getFloatingPointValue("DYV");
+        const std::vector<double>& dzv = deck.getFloatingPointValue("DZV");
+        std::vector<double> x = coordsFromDeltas(dxv);
+        std::vector<double> y = coordsFromDeltas(dyv);
+        std::vector<double> z = coordsFromDeltas(dzv);
+
+        // Check that number of cells given are consistent with DIMENS/SPECGRID.
+        if (dims[0] != int(dxv.size())) {
+            THROW("Number of DXV data points do not match DIMENS or SPECGRID.");
+        }
+        if (dims[1] != int(dyv.size())) {
+            THROW("Number of DYV data points do not match DIMENS or SPECGRID.");
+        }
+        if (dims[2] != int(dzv.size())) {
+            THROW("Number of DZV data points do not match DIMENS or SPECGRID.");
+        }
+
+        // Extract top corner depths, if available.
+        const double* top_depths = 0;
+        std::vector<double> top_depths_vec;
+        if (deck.hasField("DEPTHZ")) {
+            const std::vector<double>& depthz = deck.getFloatingPointValue("DEPTHZ");
+            if (depthz.size() != x.size()*y.size()) {
+                THROW("Incorrect size of DEPTHZ: " << depthz.size());
+            }
+            top_depths = &depthz[0];
+        } else if (deck.hasField("TOPS")) {
+            // We only support constant values for TOPS.
+            // It is not 100% clear how we best can deal with
+            // varying TOPS (stair-stepping grid, or not).
+            const std::vector<double>& tops = deck.getFloatingPointValue("TOPS");
+            if (std::count(tops.begin(), tops.end(), tops[0]) != int(tops.size())) {
+                THROW("We do not support nonuniform TOPS, please use ZCORN/COORDS instead.");
+            }
+            top_depths_vec.resize(x.size()*y.size(), tops[0]);
+            top_depths = &top_depths_vec[0];
+        }
+
+        // Construct grid.
+        ug_ = create_grid_tensor3d(dxv.size(), dyv.size(), dzv.size(),
+                                   &x[0], &y[0], &z[0], top_depths);
+        if (!ug_) {
+            THROW("Failed to construct grid.");
+        }
+    }
 
 
 

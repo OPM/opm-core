@@ -30,11 +30,13 @@
 #include <opm/core/newwells.h>
 #include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/simulator/WellState.hpp>
+#include <opm/core/fluid/RockCompressibility.hpp>
 
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <numeric>
 
 namespace Opm
 {
@@ -58,6 +60,7 @@ namespace Opm
     ///                                to change.
     CompressibleTpfa::CompressibleTpfa(const UnstructuredGrid& grid,
                                        const BlackoilPropertiesInterface& props,
+                                       const RockCompressibility* rock_comp_props,
                                        const LinearSolverInterface& linsolver,
                                        const double residual_tol,
                                        const double change_tol,
@@ -66,6 +69,7 @@ namespace Opm
                                        const struct Wells* wells)
         : grid_(grid),
           props_(props),
+          rock_comp_props_(rock_comp_props),
           linsolver_(linsolver),
           residual_tol_(residual_tol),
           change_tol_(change_tol),
@@ -74,8 +78,8 @@ namespace Opm
           wells_(wells),
           htrans_(grid.cell_facepos[ grid.number_of_cells ]),
           trans_ (grid.number_of_faces),
-          porevol_(grid.number_of_cells),
-          allcells_(grid.number_of_cells)
+          allcells_(grid.number_of_cells),
+          singular_(false)
     {
         if (wells_ && (wells_->number_of_phases != props.numPhases())) {
             THROW("Inconsistent number of phases specified (wells vs. props): "
@@ -86,7 +90,12 @@ namespace Opm
         UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(&grid_);
         tpfa_htrans_compute(gg, props.permeability(), &htrans_[0]);
         tpfa_trans_compute(gg, &htrans_[0], &trans_[0]);
-        computePorevolume(grid_, props.porosity(), porevol_);
+        // If we have rock compressibility, pore volumes are updated
+        // in the compute*() methods, otherwise they are constant and
+        // hence may be computed here.
+        if (rock_comp_props_ == NULL || !rock_comp_props_->isActive()) {
+            computePorevolume(grid_, props.porosity(), porevol_);
+        }
         for (int c = 0; c < grid.number_of_cells; ++c) {
             allcells_[c] = c;
         }
@@ -114,7 +123,7 @@ namespace Opm
                                  WellState& well_state)
     {
         const int nc = grid_.number_of_cells;
-        const int nw = wells_->number_of_wells;
+        const int nw = (wells_ != 0) ? wells_->number_of_wells : 0;
 
         // Set up dynamic data.
         computePerSolveDynamicData(dt, state, well_state);
@@ -182,6 +191,21 @@ namespace Opm
 
 
 
+    /// @brief After solve(), was the resulting pressure singular.
+    /// Returns true if the pressure is singular in the following
+    /// sense: if everything is incompressible and there are no
+    /// pressure conditions, the absolute values of the pressure
+    /// solution are arbitrary. (But the differences in pressure
+    /// are significant.)
+    bool CompressibleTpfa::singularPressure() const
+    {
+        return singular_;
+    }
+
+
+
+
+
     /// Compute well potentials.
     void CompressibleTpfa::computeWellPotentials(const BlackoilState& state)
     {
@@ -230,6 +254,9 @@ namespace Opm
                                                       const WellState& /*well_state*/)
     {
         computeWellPotentials(state);
+        if (rock_comp_props_ && rock_comp_props_->isActive()) {
+            computePorevolume(grid_, props_.porosity(), *rock_comp_props_, state.pressure(), initial_porevol_);
+        }
     }
 
 
@@ -252,6 +279,8 @@ namespace Opm
         // std::vector<double> face_gravcap_;
         // std::vector<double> wellperf_A_;
         // std::vector<double> wellperf_phasemob_;
+        // std::vector<double> porevol_;   // Only modified if rock_comp_props_ is non-null.
+        // std::vector<double> rock_comp_; // Empty unless rock_comp_props_ is non-null.
         computeCellDynamicData(dt, state, well_state);
         computeFaceDynamicData(dt, state, well_state);
         computeWellDynamicData(dt, state, well_state);
@@ -273,6 +302,8 @@ namespace Opm
         // std::vector<double> cell_viscosity_;
         // std::vector<double> cell_phasemob_;
         // std::vector<double> cell_voldisc_;
+        // std::vector<double> porevol_;   // Only modified if rock_comp_props_ is non-null.
+        // std::vector<double> rock_comp_; // Empty unless rock_comp_props_ is non-null.
         const int nc = grid_.number_of_cells;
         const int np = props_.numPhases();
         const double* cell_p = &state.pressure()[0];
@@ -296,6 +327,14 @@ namespace Opm
         // TODO: Check this!
         cell_voldisc_.clear();
         cell_voldisc_.resize(nc, 0.0);
+
+        if (rock_comp_props_ && rock_comp_props_->isActive()) {
+            computePorevolume(grid_, props_.porosity(), *rock_comp_props_, state.pressure(), porevol_);
+            rock_comp_.resize(nc);
+            for (int cell = 0; cell < nc; ++cell) {
+                rock_comp_[cell] = rock_comp_props_->rockComp(state.pressure()[cell]);
+            }
+        }
     }
 
 
@@ -341,7 +380,7 @@ namespace Opm
                         const double depth_diff = face_depth - grid_.cell_centroids[c[j]*dim + dim - 1];
                         props_.density(1, &cell_A_[np*np*c[j]], &gravcontrib[j][0]);
                         for (int p = 0; p < np; ++p) {
-                            gravcontrib[j][p] *= depth_diff;
+                            gravcontrib[j][p] *= depth_diff*grav;
                         }
                     } else {
                         std::fill(gravcontrib[j].begin(), gravcontrib[j].end(), 0.0);
@@ -408,30 +447,54 @@ namespace Opm
     /// Compute per-iteration dynamic properties for wells.
     void CompressibleTpfa::computeWellDynamicData(const double /*dt*/,
                                                   const BlackoilState& /*state*/,
-                                                  const WellState& /*well_state*/)
+                                                  const WellState& well_state)
     {
         // These are the variables that get computed by this function:
         //
         // std::vector<double> wellperf_A_;
         // std::vector<double> wellperf_phasemob_;
         const int np = props_.numPhases();
-        const int nw = wells_->number_of_wells;
-        const int nperf = wells_->well_connpos[nw];
+        const int nw = (wells_ != 0) ? wells_->number_of_wells : 0;
+        const int nperf = (wells_ != 0) ? wells_->well_connpos[nw] : 0;
         wellperf_A_.resize(nperf*np*np);
         wellperf_phasemob_.resize(nperf*np);
         // The A matrix is set equal to the perforation grid cells'
-        // matrix, for both injectors and producers.
+        // matrix for producers, computed from bhp and injection
+        // component fractions from
         // The mobilities are set equal to the perforation grid cells'
-        // mobilities, for both injectors and producers.
+        // mobilities for producers.
+        std::vector<double> mu(np);
         for (int w = 0; w < nw; ++w) {
+            bool producer = (wells_->type[w] == PRODUCER);
+            const double* comp_frac = &wells_->comp_frac[np*w];
             for (int j = wells_->well_connpos[w]; j < wells_->well_connpos[w+1]; ++j) {
                 const int c = wells_->well_cells[j];
-                const double* cA = &cell_A_[np*np*c];
                 double* wpA = &wellperf_A_[np*np*j];
-                std::copy(cA, cA + np*np, wpA);
-                const double* cM = &cell_phasemob_[np*c];
                 double* wpM = &wellperf_phasemob_[np*j];
-                std::copy(cM, cM + np, wpM);
+                if (producer) {
+                    const double* cA = &cell_A_[np*np*c];
+                    std::copy(cA, cA + np*np, wpA);
+                    const double* cM = &cell_phasemob_[np*c];
+                    std::copy(cM, cM + np, wpM);
+                } else {
+                    const double bhp = well_state.bhp()[w];
+                    double perf_p = bhp;
+                    for (int phase = 0; phase < np; ++phase) {
+                        perf_p += wellperf_gpot_[np*j + phase]*comp_frac[phase];
+                    }
+                    // Hack warning: comp_frac is used as a component
+                    // surface-volume variable in calls to matrix() and
+                    // viscosity(), but as a saturation in the call to
+                    // relperm(). This is probably ok as long as injectors
+                    // only inject pure fluids.
+                    props_.matrix(1, &perf_p, comp_frac, &c, wpA, NULL);
+                    props_.viscosity(1, &perf_p, comp_frac, &c, &mu[0], NULL);
+                    ASSERT(std::fabs(std::accumulate(comp_frac, comp_frac + np, 0.0) - 1.0) < 1e-6);
+                    props_.relperm  (1, comp_frac, &c, wpM , NULL);
+                    for (int phase = 0; phase < np; ++phase) {
+                        wpM[phase] /= mu[phase];
+                    }
+                }
             }
         }
     }
@@ -449,9 +512,9 @@ namespace Opm
         const double* z = &state.surfacevol()[0];
         UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(&grid_);
         CompletionData completion_data;
-        completion_data.gpot = &wellperf_gpot_[0];
-        completion_data.A = &wellperf_A_[0];
-        completion_data.phasemob = &wellperf_phasemob_[0];
+        completion_data.gpot = ! wellperf_gpot_.empty() ? &wellperf_gpot_[0] : 0;
+        completion_data.A = ! wellperf_A_.empty() ? &wellperf_A_[0] : 0;
+        completion_data.phasemob = ! wellperf_phasemob_.empty() ? &wellperf_phasemob_[0] : 0;
         cfs_tpfa_res_wells wells_tmp;
         wells_tmp.W = const_cast<Wells*>(wells_);
         wells_tmp.data = &completion_data;
@@ -465,9 +528,20 @@ namespace Opm
         cq.Af = &face_A_[0];
         cq.phasemobf = &face_phasemob_[0];
         cq.voldiscr = &cell_voldisc_[0];
-        cfs_tpfa_res_assemble(gg, dt, &forces, z, &cq, &trans_[0],
-                              &face_gravcap_[0], cell_press, well_bhp,
-                              &porevol_[0], h_);
+        int was_adjusted = 0;
+        if (! (rock_comp_props_ && rock_comp_props_->isActive())) {
+            was_adjusted =
+                cfs_tpfa_res_assemble(gg, dt, &forces, z, &cq, &trans_[0],
+                                      &face_gravcap_[0], cell_press, well_bhp,
+                                      &porevol_[0], h_);
+        } else {
+            was_adjusted =
+                cfs_tpfa_res_comprock_assemble(gg, dt, &forces, z, &cq, &trans_[0],
+                                               &face_gravcap_[0], cell_press, well_bhp,
+                                               &porevol_[0], &initial_porevol_[0],
+                                               &rock_comp_[0], h_);
+        }
+        singular_ = (was_adjusted == 1);
     }
 
 
@@ -525,15 +599,18 @@ namespace Opm
     {
         UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(&grid_);
         CompletionData completion_data;
-        completion_data.gpot = const_cast<double*>(&wellperf_gpot_[0]);
-        completion_data.A = const_cast<double*>(&wellperf_A_[0]);
-        completion_data.phasemob = const_cast<double*>(&wellperf_phasemob_[0]);
+        completion_data.gpot = ! wellperf_gpot_.empty() ? const_cast<double*>(&wellperf_gpot_[0]) : 0;
+        completion_data.A = ! wellperf_A_.empty() ? const_cast<double*>(&wellperf_A_[0]) : 0;
+        completion_data.phasemob = ! wellperf_phasemob_.empty() ? const_cast<double*>(&wellperf_phasemob_[0]) : 0;
         cfs_tpfa_res_wells wells_tmp;
         wells_tmp.W = const_cast<Wells*>(wells_);
         wells_tmp.data = &completion_data;
         cfs_tpfa_res_forces forces;
         forces.wells = &wells_tmp;
         forces.src = NULL;
+
+        double* wpress = ! well_state.bhp      ().empty() ? & well_state.bhp      ()[0] : 0;
+        double* wflux  = ! well_state.perfRates().empty() ? & well_state.perfRates()[0] : 0;
 
         cfs_tpfa_res_flux(gg,
                           &forces,
@@ -543,9 +620,9 @@ namespace Opm
                           &face_phasemob_[0],
                           &face_gravcap_[0],
                           &state.pressure()[0],
-                          &well_state.bhp()[0],
+                          wpress,
                           &state.faceflux()[0],
-                          &well_state.perfRates()[0]);
+                          wflux);
         cfs_tpfa_res_fpress(gg,
                             props_.numPhases(),
                             &htrans_[0],

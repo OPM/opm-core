@@ -1,5 +1,5 @@
 /*
-  Copyright 2010, 2011, 2012 SINTEF ICT, Applied Mathematics.
+  Copyright 2012 SINTEF ICT, Applied Mathematics.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 #include <opm/core/fluid/blackoil/SinglePvtDead.hpp>
-#include <opm/core/utility/buildUniformMonotoneTable.hpp>
 #include <algorithm>
 
 // Extra includes for debug dumping of tables.
@@ -32,28 +32,26 @@ namespace Opm
     //------------------------------------------------------------------------
     // Member functions
     //-------------------------------------------------------------------------
-
     /// Constructor
     SinglePvtDead::SinglePvtDead(const table_t& pvd_table)
     {
-	const int region_number = 0;
-	if (pvd_table.size() != 1) {
-	    THROW("More than one PVT-region");
-	}
+        const int region_number = 0;
+        if (pvd_table.size() != 1) {
+            THROW("More than one PVT-region");
+        }
 
-	// Copy data
-	const int sz = pvd_table[region_number][0].size();
+        // Copy data
+        const int sz = pvd_table[region_number][0].size();
         std::vector<double> press(sz);
         std::vector<double> B_inv(sz);
         std::vector<double> visc(sz);
-	for (int i = 0; i < sz; ++i) {
+        for (int i = 0; i < sz; ++i) {
             press[i] = pvd_table[region_number][0][i];
             B_inv[i] = 1.0 / pvd_table[region_number][1][i];
             visc[i]  = pvd_table[region_number][2][i];
-	}
-        int samples = 1025;
-        buildUniformMonotoneTable(press, B_inv, samples, one_over_B_);
-        buildUniformMonotoneTable(press, visc, samples, viscosity_);
+        }
+        one_over_B_ = NonuniformTableLinear<double>(press, B_inv);
+        viscosity_ = NonuniformTableLinear<double>(press, visc);
 
         // Dumping the created tables.
 //         static int count = 0;

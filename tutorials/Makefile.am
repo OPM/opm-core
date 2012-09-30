@@ -1,10 +1,10 @@
 AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
-$(BOOST_CPPFLAGS)
+$(OPM_BOOST_CPPFLAGS)
 
-LDFLAGS = $(BOOST_LDFLAGS)
+AM_LDFLAGS = $(OPM_BOOST_LDFLAGS)
 
-LDADD =	$(top_builddir)/libopmcore.la
+LDADD =	$(top_builddir)/lib/libopmcore.la
 
 noinst_PROGRAMS   = tutorial1
 tutorial1_SOURCES = tutorial1.cpp

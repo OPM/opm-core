@@ -27,8 +27,9 @@
 #include <opm/core/pressure/flow_bc.h>
 #include <opm/core/pressure/mimetic/mimetic.h> // for updating gpress
 #include <opm/core/GridAdapter.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
 #include <stdexcept>
-
+#include <cassert>
 
 
 /// @brief

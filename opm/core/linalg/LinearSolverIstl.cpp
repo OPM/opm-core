@@ -24,10 +24,11 @@
 
 #include <opm/core/linalg/LinearSolverIstl.hpp>
 
-// Work around the fact that istl headers expect
-// HAVE_BOOST to be 1, and not just defined.
-#undef HAVE_BOOST
-#define HAVE_BOOST 1
+#include <opm/core/utility/have_boost_redef.hpp>
+
+// Silence compatibility warning from DUNE headers since we don't use
+// the deprecated member anyway (in this compilation unit)
+#define DUNE_COMMON_FIELDVECTOR_SIZE_IS_METHOD 1
 
 // TODO: clean up includes.
 #include <dune/common/deprecated.hh>

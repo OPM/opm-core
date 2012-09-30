@@ -55,11 +55,11 @@ AC_DEFUN([AX_BOOST_DATE_TIME],
 	if test "x$want_boost" = "xyes"; then
         AC_REQUIRE([AC_PROG_CC])
 		CPPFLAGS_SAVED="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $OPM_BOOST_CPPFLAGS"
 		export CPPFLAGS
 
 		LDFLAGS_SAVED="$LDFLAGS"
-		LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
+		LDFLAGS="$LDFLAGS $OPM_BOOST_LDFLAGS"
 		export LDFLAGS
 
         AC_CACHE_CHECK(whether the Boost::Date_Time library is available,
@@ -74,7 +74,7 @@ AC_DEFUN([AX_BOOST_DATE_TIME],
 		])
 		if test "x$ax_cv_boost_date_time" = "xyes"; then
 			AC_DEFINE(HAVE_BOOST_DATE_TIME,,[define if the Boost::Date_Time library is available])
-            BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
+            BOOSTLIBDIR=`echo $OPM_BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
             ax_lib="-lboost_date_time"
 
             if test "x$ax_boost_user_date_time_lib" = "x"; then

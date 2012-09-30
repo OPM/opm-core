@@ -43,15 +43,28 @@
 
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/simulator/WellState.hpp>
-#include <opm/core/simulator/SimulatorTwophase.hpp>
+#include <opm/core/simulator/SimulatorIncompTwophase.hpp>
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/filesystem.hpp>
 
 #include <algorithm>
 #include <iostream>
 #include <vector>
 #include <numeric>
 
+
+namespace
+{
+    void warnIfUnusedParams(const Opm::parameter::ParameterGroup& param)
+    {
+        if (param.anyUnused()) {
+            std::cout << "--------------------   Unused parameters:   --------------------\n";
+            param.displayUsage();
+            std::cout << "----------------------------------------------------------------" << std::endl;
+        }
+    }
+} // anon namespace
 
 
 
@@ -81,9 +94,7 @@ main(int argc, char** argv)
         // Grid init
         grid.reset(new GridManager(*deck));
         // Rock and fluid init
-        const int* gc = grid->c_grid()->global_cell;
-        std::vector<int> global_cell(gc, gc + grid->c_grid()->number_of_cells);
-        props.reset(new IncompPropertiesFromDeck(*deck, global_cell));
+        props.reset(new IncompPropertiesFromDeck(*deck, *grid->c_grid()));
         // check_well_controls = param.getDefault("check_well_controls", false);
         // max_well_control_iterations = param.getDefault("max_well_control_iterations", 10);
         // Rock compressibility.
@@ -157,17 +168,28 @@ main(int argc, char** argv)
     // Linear solver.
     LinearSolverFactory linsolver(param);
 
-    // Warn if any parameters are unused.
-    // if (param.anyUnused()) {
-    //     std::cout << "--------------------   Unused parameters:   --------------------\n";
-    //     param.displayUsage();
-    //     std::cout << "----------------------------------------------------------------" << std::endl;
-    // }
-
     // Write parameters used for later reference.
-    // if (output) {
-    //     param.writeParam(output_dir + "/spu_2p.param");
-    // }
+    bool output = param.getDefault("output", true);
+    std::ofstream epoch_os;
+    std::string output_dir;
+    if (output) {
+        output_dir =
+            param.getDefault("output_dir", std::string("output"));
+        boost::filesystem::path fpath(output_dir);
+        try {
+            create_directories(fpath);
+        }
+        catch (...) {
+            THROW("Creating directories failed: " << fpath);
+        }
+        std::string filename = output_dir + "/epoch_timing.param";
+        epoch_os.open(filename.c_str(), std::fstream::trunc | std::fstream::out);
+        // open file to clean it. The file is appended to in SimulatorTwophase
+        filename = output_dir + "/step_timing.param";
+        std::fstream step_os(filename.c_str(), std::fstream::trunc | std::fstream::out);
+        step_os.close();
+        param.writeParam(output_dir + "/simulation.param");
+    }
 
 
     std::cout << "\n\n================    Starting main simulation loop     ===============\n"
@@ -177,17 +199,19 @@ main(int argc, char** argv)
     SimulatorReport rep;
     if (!use_deck) {
         // Simple simulation without a deck.
-        SimulatorTwophase simulator(param,
-                                    *grid->c_grid(),
-                                    *props,
-                                    rock_comp->isActive() ? rock_comp.get() : 0,
-                                    0, // wells
-                                    src,
-                                    bcs.c_bcs(),
-                                    linsolver,
-                                    grav);
+        WellsManager wells; // no wells.
+        SimulatorIncompTwophase simulator(param,
+                                          *grid->c_grid(),
+                                          *props,
+                                          rock_comp->isActive() ? rock_comp.get() : 0,
+                                          wells,
+                                          src,
+                                          bcs.c_bcs(),
+                                          linsolver,
+                                          grav);
         SimulatorTimer simtimer;
         simtimer.init(param);
+        warnIfUnusedParams(param);
         WellState well_state;
         well_state.init(0, state);
         rep = simulator.run(simtimer, state, well_state);
@@ -221,7 +245,7 @@ main(int argc, char** argv)
                       << "\n                  (number of steps: "
                       << simtimer.numSteps() - step << ")\n\n" << std::flush;
 
-            // Create new wells, well_satate
+            // Create new wells, well_state
             WellsManager wells(*deck, *grid->c_grid(), props->permeability());
             // @@@ HACK: we should really make a new well state and
             // properly transfer old well state to it every epoch,
@@ -231,17 +255,22 @@ main(int argc, char** argv)
             }
 
             // Create and run simulator.
-            SimulatorTwophase simulator(param,
-                                        *grid->c_grid(),
-                                        *props,
-                                        rock_comp->isActive() ? rock_comp.get() : 0,
-                                        wells.c_wells(),
-                                        src,
-                                        bcs.c_bcs(),
-                                        linsolver,
-                                        grav);
+            SimulatorIncompTwophase simulator(param,
+                                              *grid->c_grid(),
+                                              *props,
+                                              rock_comp->isActive() ? rock_comp.get() : 0,
+                                              wells,
+                                              src,
+                                              bcs.c_bcs(),
+                                              linsolver,
+                                              grav);
+            if (epoch == 0) {
+                warnIfUnusedParams(param);
+            }
             SimulatorReport epoch_rep = simulator.run(simtimer, state, well_state);
-
+            if (output) {
+                epoch_rep.reportParam(epoch_os);
+            }
             // Update total timing report and remember step number.
             rep += epoch_rep;
             step = simtimer.currentStepNum();
@@ -250,4 +279,11 @@ main(int argc, char** argv)
 
     std::cout << "\n\n================    End of simulation     ===============\n\n";
     rep.report(std::cout);
+
+    if (output) {
+      std::string filename = output_dir + "/walltime.param";
+      std::fstream tot_os(filename.c_str(),std::fstream::trunc | std::fstream::out);
+      rep.reportParam(tot_os);
+    }
+
 }

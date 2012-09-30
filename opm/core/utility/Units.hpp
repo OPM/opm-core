@@ -35,18 +35,24 @@
 #ifndef OPENRS_UNITS_HEADER
 #define OPENRS_UNITS_HEADER
 
+/**
+ * \file
+ * Constants and routines to assist in handling units of measurement.  These are
+ * geared towards handling common units in reservoir descriptions.
+ */
+
 namespace Opm
 {
     namespace prefix
     /// Conversion prefix for units.
     {
-        const double micro = 1.0e-6;
-        const double milli = 1.0e-3;
-        const double centi = 1.0e-2;
-        const double deci  = 1.0e-1;
-        const double kilo  = 1.0e3;
-        const double mega  = 1.0e6;
-        const double giga  = 1.0e9;
+        const double micro = 1.0e-6;  /**< Unit prefix [\f$\mu\f$] */
+        const double milli = 1.0e-3;  /**< Unit prefix [m] */
+        const double centi = 1.0e-2;  /**< Non-standard unit prefix [c] */
+        const double deci  = 1.0e-1;  /**< Non-standard unit prefix [d] */
+        const double kilo  = 1.0e3;   /**< Unit prefix [k] */
+        const double mega  = 1.0e6;   /**< Unit prefix [M] */
+        const double giga  = 1.0e9;   /**< Unit prefix [G] */
     } // namespace prefix
 
     namespace unit
@@ -95,6 +101,7 @@ namespace Opm
         /// @{
         const double gallon = 231 * cubic(inch);
         const double stb    =  42 * gallon;
+        const double liter  =   1 * cubic(prefix::deci*meter);
         /// @}
 
         /// \name Mass
@@ -137,15 +144,6 @@ namespace Opm
         const double Poise = prefix::deci*Pas;
         /// @}
 
-        /// \name Permeability
-        /// @{
-        ///
-        /// A porous medium with a permeability of 1 darcy permits a
-        /// flow (flux) of \f$1\,cm^3/s\f$ of a fluid with viscosity
-        /// \f$1\,cP\f$ (\f$1\,mPa\cdot s\f$) under a pressure
-        /// gradient of \f$1\,atm/cm\f$ acting across an area of
-        /// \f$1\,cm^2\f$.
-        ///
         namespace perm_details {
             const double p_grad   = atm / (prefix::centi*meter);
             const double area     = square(prefix::centi*meter);
@@ -156,47 +154,63 @@ namespace Opm
             //                    == 1e-7 [m^2] / 101325
             //                    == 9.869232667160130e-13 [m^2]
         }
+        /// \name Permeability
+        /// @{
+        ///
+        /// A porous medium with a permeability of 1 darcy permits a flow (flux)
+        /// of \f$1\,\mathit{cm}^3/s\f$ of a fluid with viscosity
+        /// \f$1\,\mathit{cP}\f$ (\f$1\,mPa\cdot s\f$) under a pressure gradient
+        /// of \f$1\,\mathit{atm}/\mathit{cm}\f$ acting across an area of
+        /// \f$1\,\mathit{cm}^2\f$.
+        ///
         const double darcy = perm_details::darcy;
         /// @}
 
-        // Unit conversion support.
-        //
-        // Note: Under the penalty of treason will you be
-        //
-        //    using namespace Opm::unit::convert;
-        //
-        // I mean it!
-        //
+        /**
+         * Unit conversion routines.
+         */
         namespace convert {
-            // Convert from external units of measurements to equivalent
-            // internal units of measurements.  Note: The internal units
-            // of measurements are *ALWAYS*, and exclusively, SI.
-            //
-            // Example: Convert a double kx, containing a permeability
-            // value in units of milli-darcy (mD) to the equivalent
-            // value in SI units (m^2).
-            //
-            //    using namespace Opm::unit;
-            //    using namespace Opm::prefix;
-            //    convert::from(kx, milli*darcy);
-            //
+            /**
+             * Convert from external units of measurements to equivalent
+             * internal units of measurements.  Note: The internal units of
+             * measurements are *ALWAYS*, and exclusively, SI.
+             *
+             * Example: Convert a double @c kx, containing a permeability value
+             * in units of milli-darcy (mD) to the equivalent value in SI units
+             * (i.e., \f$m^2\f$).
+             * \code
+             *    using namespace Opm::unit;
+             *    using namespace Opm::prefix;
+             *    convert::from(kx, milli*darcy);
+             * \endcode
+             *
+             * @param[in] q    Physical quantity.
+             * @param[in] unit Physical unit of measurement.
+             * @return Value of @c q in equivalent SI units of measurements.
+             */
             inline double from(const double q, const double unit)
             {
                 return q * unit;
             }
 
-            // Convert from internal units of measurements to equivalent
-            // external units of measurements.  Note: The internal units
-            // of measurements are *ALWAYS*, and exclusively, SI.
-            //
-            // Example: Convert a std::vector<double> p, containing
-            // pressure values in the SI unit Pascal (i.e., unit::Pascal)
-            // to the equivalent values in Psi (unit::psia).
-            //
-            //    using namespace Opm::unit;
-            //    std::transform(p.begin(), p.end(), p.begin(),
-            //                   boost::bind(convert::to, _1, psia));
-            //
+            /**
+             * Convert from internal units of measurements to equivalent
+             * external units of measurements.  Note: The internal units of
+             * measurements are *ALWAYS*, and exclusively, SI.
+             *
+             * Example: Convert a <CODE>std::vector<double> p</CODE>, containing
+             * pressure values in the SI unit Pascal (i.e., unit::Pascal) to the
+             * equivalent values in Psi (unit::psia).
+             * \code
+             *    using namespace Opm::unit;
+             *    std::transform(p.begin(), p.end(), p.begin(),
+             *                   boost::bind(convert::to, _1, psia));
+             * \endcode
+             *
+             * @param[in] q    Physical quantity, measured in SI units.
+             * @param[in] unit Physical unit of measurement.
+             * @return Value of @c q in unit <CODE>unit</CODE>.
+             */
             inline double to(const double q, const double unit)
             {
                 return q / unit;

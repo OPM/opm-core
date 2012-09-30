@@ -6,50 +6,59 @@ SUBDIRS = . tests examples tutorials
 
 # ----------------------------------------------------------------------
 # Declare products (i.e., the library)
-lib_LTLIBRARIES = libopmcore.la
+lib_LTLIBRARIES = lib/libopmcore.la
 
 # ----------------------------------------------------------------------
 # Build-time flags needed to build libopmcore.la
 
-AM_CPPFLAGS =					\
-$(ERT_CPPFLAGS)					\
-$(BOOST_CPPFLAGS)
+AM_CPPFLAGS =                                   \
+$(ERT_CPPFLAGS)                                 \
+$(OPM_BOOST_CPPFLAGS)
 
 # ----------------------------------------------------------------------
 # Link-time flags needed both to successfully link the library and to
 # (transitively) convey inter-library dependency information.
 
-libopmcore_la_LDFLAGS =				\
-$(ERT_LDFLAGS)					\
-$(BOOST_LDFLAGS)				\
-$(BOOST_FILESYSTEM_LIB)				\
-$(BOOST_SYSTEM_LIB)				\
-$(BOOST_DATE_TIME_LIB)				\
+lib_libopmcore_la_LDFLAGS =                     \
+$(ERT_LDFLAGS)                                  \
+$(OPM_BOOST_LDFLAGS)                            \
+$(BOOST_FILESYSTEM_LIB)                         \
+$(BOOST_SYSTEM_LIB)                             \
+$(BOOST_DATE_TIME_LIB)                          \
 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)                \
-$(ERT_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS)
+$(ERT_LIBS)                                     \
+$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS)
 
 # ----------------------------------------------------------------------
 # Library constituents.  SOURCES followed by HEADERS.
 #
 # Please try to keep the list sorted.
 
-libopmcore_la_SOURCES =                                 \
-opm/core/GridManager.cpp                                \
-opm/core/eclipse/EclipseGridInspector.cpp               \
-opm/core/eclipse/EclipseGridParser.cpp                  \
-opm/core/fluid/BlackoilPropertiesBasic.cpp              \
-opm/core/fluid/BlackoilPropertiesFromDeck.cpp           \
-opm/core/fluid/IncompPropertiesBasic.cpp                \
-opm/core/fluid/IncompPropertiesFromDeck.cpp             \
-opm/core/fluid/PvtPropertiesBasic.cpp                   \
-opm/core/fluid/PvtPropertiesIncompFromDeck.cpp          \
-opm/core/fluid/RockBasic.cpp                            \
-opm/core/fluid/RockCompressibility.cpp                  \
-opm/core/fluid/RockFromDeck.cpp                         \
-opm/core/fluid/SaturationPropsBasic.cpp                 \
-opm/core/fluid/SaturationPropsFromDeck.cpp              \
+# List of sources that should be built but not distributed.  See AGMG
+# support below for additional details.
+nodist_lib_libopmcore_la_SOURCES =
+
+lib_libopmcore_la_SOURCES =				\
+opm/core/GridManager.cpp				\
+opm/core/eclipse/EclipseGridInspector.cpp		\
+opm/core/eclipse/EclipseGridParser.cpp			\
+opm/core/fluid/BlackoilPropertiesBasic.cpp		\
+opm/core/fluid/BlackoilPropertiesFromDeck.cpp		\
+opm/core/fluid/IncompPropertiesBasic.cpp		\
+opm/core/fluid/IncompPropertiesFromDeck.cpp		\
+opm/core/fluid/PvtPropertiesBasic.cpp			\
+opm/core/fluid/PvtPropertiesIncompFromDeck.cpp		\
+opm/core/fluid/RockBasic.cpp				\
+opm/core/fluid/RockCompressibility.cpp			\
+opm/core/fluid/RockFromDeck.cpp				\
+opm/core/fluid/SaturationPropsBasic.cpp			\
+opm/core/fluid/SaturationPropsFromDeck.cpp		\
+opm/core/fluid/SatFuncGwseg.cpp				\
+opm/core/fluid/SatFuncStone2.cpp			\
+opm/core/fluid/SatFuncSimple.cpp                        \
 opm/core/fluid/blackoil/BlackoilPvtProperties.cpp       \
 opm/core/fluid/blackoil/SinglePvtDead.cpp               \
+opm/core/fluid/blackoil/SinglePvtDeadSpline.cpp         \
 opm/core/fluid/blackoil/SinglePvtInterface.cpp          \
 opm/core/fluid/blackoil/SinglePvtLiveGas.cpp            \
 opm/core/fluid/blackoil/SinglePvtLiveOil.cpp            \
@@ -90,9 +99,10 @@ opm/core/pressure/tpfa/compr_source.c                   \
 opm/core/pressure/tpfa/ifs_tpfa.c                       \
 opm/core/pressure/tpfa/trans_tpfa.c                     \
 opm/core/pressure/well.c                                \
+opm/core/simulator/SimulatorCompressibleTwophase.cpp    \
+opm/core/simulator/SimulatorIncompTwophase.cpp          \
 opm/core/simulator/SimulatorReport.cpp                  \
 opm/core/simulator/SimulatorTimer.cpp                   \
-opm/core/simulator/SimulatorTwophase.cpp                \
 opm/core/transport/reorder/TransportModelCompressibleTwophase.cpp       \
 opm/core/transport/reorder/TransportModelInterface.cpp  \
 opm/core/transport/reorder/TransportModelTwophase.cpp   \
@@ -122,33 +132,39 @@ opm/core/wells/WellCollection.cpp                       \
 opm/core/wells/WellsGroup.cpp                           \
 opm/core/wells/WellsManager.cpp
 
-nobase_include_HEADERS =                                \
-opm/core/GridAdapter.hpp                                \
-opm/core/GridManager.hpp                                \
-opm/core/eclipse/CornerpointChopper.hpp                 \
-opm/core/eclipse/EclipseGridInspector.hpp               \
-opm/core/eclipse/EclipseGridParser.hpp                  \
-opm/core/eclipse/EclipseGridParserHelpers.hpp           \
-opm/core/eclipse/EclipseUnits.hpp                       \
-opm/core/eclipse/SpecialEclipseFields.hpp               \
-opm/core/fluid/BlackoilPropertiesBasic.hpp              \
-opm/core/fluid/BlackoilPropertiesFromDeck.hpp           \
-opm/core/fluid/BlackoilPropertiesInterface.hpp          \
-opm/core/fluid/IncompPropertiesBasic.hpp                \
-opm/core/fluid/IncompPropertiesFromDeck.hpp             \
-opm/core/fluid/IncompPropertiesInterface.hpp            \
-opm/core/fluid/PvtPropertiesBasic.hpp                   \
-opm/core/fluid/PvtPropertiesIncompFromDeck.hpp          \
-opm/core/fluid/RockBasic.hpp                            \
-opm/core/fluid/RockCompressibility.hpp                  \
-opm/core/fluid/RockFromDeck.hpp                         \
+nobase_include_HEADERS =				\
+opm/core/GridAdapter.hpp				\
+opm/core/GridManager.hpp				\
+opm/core/eclipse/CornerpointChopper.hpp			\
+opm/core/eclipse/EclipseGridInspector.hpp		\
+opm/core/eclipse/EclipseGridParser.hpp			\
+opm/core/eclipse/EclipseGridParserHelpers.hpp		\
+opm/core/eclipse/EclipseUnits.hpp			\
+opm/core/eclipse/SpecialEclipseFields.hpp		\
+opm/core/fluid/BlackoilPropertiesBasic.hpp		\
+opm/core/fluid/BlackoilPropertiesFromDeck.hpp		\
+opm/core/fluid/BlackoilPropertiesInterface.hpp		\
+opm/core/fluid/IncompPropertiesBasic.hpp		\
+opm/core/fluid/IncompPropertiesFromDeck.hpp		\
+opm/core/fluid/IncompPropertiesInterface.hpp		\
+opm/core/fluid/PvtPropertiesBasic.hpp			\
+opm/core/fluid/PvtPropertiesIncompFromDeck.hpp		\
+opm/core/fluid/RockBasic.hpp				\
+opm/core/fluid/RockCompressibility.hpp			\
+opm/core/fluid/RockFromDeck.hpp				\
+opm/core/fluid/SatFuncGwseg.hpp				\
+opm/core/fluid/SatFuncStone2.hpp			\
+opm/core/fluid/SatFuncSimple.hpp                        \
 opm/core/fluid/SaturationPropsBasic.hpp                 \
 opm/core/fluid/SaturationPropsFromDeck.hpp              \
+opm/core/fluid/SaturationPropsFromDeck_impl.hpp         \
+opm/core/fluid/SaturationPropsInterface.hpp             \
 opm/core/fluid/SimpleFluid2p.hpp                        \
 opm/core/fluid/blackoil/BlackoilPhases.hpp              \
 opm/core/fluid/blackoil/BlackoilPvtProperties.hpp       \
 opm/core/fluid/blackoil/SinglePvtConstCompr.hpp         \
 opm/core/fluid/blackoil/SinglePvtDead.hpp               \
+opm/core/fluid/blackoil/SinglePvtDeadSpline.hpp         \
 opm/core/fluid/blackoil/SinglePvtInterface.hpp          \
 opm/core/fluid/blackoil/SinglePvtLiveGas.hpp            \
 opm/core/fluid/blackoil/SinglePvtLiveOil.hpp            \
@@ -193,9 +209,10 @@ opm/core/pressure/tpfa/compr_source.h                   \
 opm/core/pressure/tpfa/ifs_tpfa.h                       \
 opm/core/pressure/tpfa/trans_tpfa.h                     \
 opm/core/simulator/BlackoilState.hpp                    \
+opm/core/simulator/SimulatorCompressibleTwophase.hpp    \
 opm/core/simulator/SimulatorReport.hpp                  \
+opm/core/simulator/SimulatorIncompTwophase.hpp          \
 opm/core/simulator/SimulatorTimer.hpp                   \
-opm/core/simulator/SimulatorTwophase.hpp                \
 opm/core/simulator/TwophaseState.hpp                    \
 opm/core/simulator/WellState.hpp                        \
 opm/core/transport/CSRMatrixBlockAssembler.hpp          \
@@ -219,9 +236,11 @@ opm/core/transport/spu_implicit.h                       \
 opm/core/transport/transport_source.h                   \
 opm/core/utility/Average.hpp                            \
 opm/core/utility/ColumnExtract.hpp                      \
+opm/core/utility/DataMap.hpp                      	\
 opm/core/utility/ErrorMacros.hpp                        \
 opm/core/utility/Factory.hpp                            \
 opm/core/utility/MonotCubicInterpolator.hpp             \
+opm/core/utility/NonuniformTableLinear.hpp              \
 opm/core/utility/RootFinders.hpp                        \
 opm/core/utility/SparseTable.hpp                        \
 opm/core/utility/SparseVector.hpp                       \
@@ -246,7 +265,6 @@ opm/core/utility/parameters/ParameterXML.hpp            \
 opm/core/utility/parameters/tinyxml/tinystr.h           \
 opm/core/utility/parameters/tinyxml/tinyxml.h           \
 opm/core/utility/writeVtkData.hpp                       \
-opm/core/utility/DataMap.hpp                            \
 opm/core/vag_format/vag.hpp                             \
 opm/core/well.h                                         \
 opm/core/wells/InjectionSpecification.hpp               \
@@ -259,7 +277,7 @@ opm/core/wells/WellsManager.hpp
 # Optional library constituents.
 
 if UMFPACK
-libopmcore_la_SOURCES  +=                       \
+lib_libopmcore_la_SOURCES  +=                   \
 opm/core/linalg/call_umfpack.c                  \
 opm/core/linalg/LinearSolverUmfpack.cpp
 
@@ -269,16 +287,16 @@ opm/core/linalg/LinearSolverUmfpack.hpp
 endif
 
 if HAVE_ERT
-libopmcore_la_SOURCES  +=                       \
+lib_libopmcore_la_SOURCES  +=			\
 opm/core/utility/writeECLData.cpp
 
-nobase_include_HEADERS +=                       \
+nobase_include_HEADERS +=			\
 opm/core/utility/writeECLData.hpp
 endif
 
 
 if DUNE_ISTL
-libopmcore_la_SOURCES  +=                       \
+lib_libopmcore_la_SOURCES  +=                   \
 opm/core/linalg/LinearSolverIstl.cpp
 
 nobase_include_HEADERS +=                       \
@@ -287,14 +305,19 @@ endif
 
 
 if BUILD_AGMG
-libopmcore_la_SOURCES +=                        \
+nodist_lib_libopmcore_la_SOURCES +=             \
 $(AGMG_SRCDIR)/dagmg.f90                        \
-$(AGMG_SRCDIR)/dagmg_mumps.f90                  \
+$(AGMG_SRCDIR)/dagmg_mumps.f90
+
+lib_libopmcore_la_SOURCES +=                    \
 opm/core/linalg/LinearSolverAGMG.cpp
 
 nobase_include_HEADERS +=                       \
 opm/core/linalg/LinearSolverAGMG.hpp
 
-libopmcore_la_LDFLAGS +=                        \
+lib_libopmcore_la_LDFLAGS +=                    \
 $(FCLIBS)
 endif
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = lib/pkgconfig/opm-core.pc

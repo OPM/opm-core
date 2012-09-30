@@ -20,23 +20,88 @@
 #ifndef OPM_TRANS_TPFA_HEADER_INCLUDED
 #define OPM_TRANS_TPFA_HEADER_INCLUDED
 
+/**
+ * \file
+ * Routines to assist in the calculation of two-point transmissibilities.
+ */
+
 #include <opm/core/grid.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * Calculate static, one-sided transmissibilities for use in the two-point flux
+ * approximation method.
+ *
+ * The one-sided transmissibilities are defined by the formula
+ * \f[
+ * t_i = \frac{\vec{n}_f \mathsf{K}_c \vec{c}_c}{\lVert \vec{c}_c \rVert^2}
+ * \f]
+ * in which @c i is the half-face index corresponding to the cell-face index
+ * pair <CODE>(c,f)</CODE> and \f$\vec{c}_{cf} = \Bar{x}_f - \Bar{x}_c\f$ is the
+ * centroid difference vector.
+ *
+ * @param[in]  G       Grid.
+ * @param[in]  perm    Permeability.  One symmetric, positive definite tensor
+ *                     per grid cell.
+ * @param[out] htrans  One-sided transmissibilities.  Array of size at least
+ *                     <CODE>G->cell_facepos[ G->number_of_cells  ]</CODE>.
+ */
 void
-tpfa_htrans_compute(struct UnstructuredGrid *G, const double *perm, double *htrans);
+tpfa_htrans_compute(struct UnstructuredGrid *G     ,
+                    const double            *perm  ,
+                    double                  *htrans);
 
+/**
+ * Compute two-point transmissibilities from one-sided transmissibilities.
+ *
+ * The two-point transmissibilities are given by the simple, near-harmonic
+ * average (save a factor of two)
+ * \f[
+ * \mathsf{T}_f = \big(\frac{1}{t_1} + \frac{1}{t_2}\big)^{-1}
+ *              = \frac{t_1t_2}{t_1 + t_2}
+ * \f]
+ * in which \f$t_1\f$ and \f$t_2\f$ are the one-sided transmissibilities that
+ * connect the neighbouring cells of face @c f.
+ *
+ * @param[in]  G       Grid.
+ * @param[in]  htrans  One-sided transmissibilities as defined by function
+ *                     tpfa_htrans_compute().
+ * @param[out] trans   Interface, two-point transmissibilities.  Array of size
+ *                     at least <CODE>G->number_of_faces</CODE>.
+ */
 void
-tpfa_trans_compute(struct UnstructuredGrid *G, const double *htrans, double *trans);
+tpfa_trans_compute(struct UnstructuredGrid *G     ,
+                   const double            *htrans,
+                   double                  *trans );
 
+/**
+ * Calculate effective two-point transmissibilities from one-sided, total
+ * mobility weighted, transmissibilities.
+ *
+ * Specifically, compute the following product
+ * \f[
+ * \mathsf{T}_f = \big(\frac{1}{\lambda_1t_1} + \frac{1}{\lambda_2t_2}\big)^{-1}
+ *              = \lambda_1\lambda_2 \frac{t_1t_2}{t_1 + t_2}
+ * \f]
+ * in which \f$t_1\f$ and \f$t_2\f$ are the one-sided, static transmissibility
+ * values connecting the cells of face @c f and \f$\lambda_1\f$ and
+ * \f$\lambda_2\f$ denote the total mobilities of the respective cells.
+ *
+ * @param[in]  G      Grid.
+ * @param[in]  totmob Total mobilities. One positive scalar value for each cell.
+ * @param[in]  htrans One-sided transmissibilities as defined by function
+ *                    tpfa_htrans_compute().
+ * @param[out] trans  Effective, two-point transmissibilities.  Array of size at
+ *                    least <CODE>G->number_of_faces</CODE>.
+ */
 void
-tpfa_eff_trans_compute(struct UnstructuredGrid       *G,
-                       const double *totmob,
-                       const double *htrans,
-                       double       *trans);
+tpfa_eff_trans_compute(struct UnstructuredGrid *G     ,
+                       const double            *totmob,
+                       const double            *htrans,
+                       double                  *trans );
 
 #ifdef __cplusplus
 }
