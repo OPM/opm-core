@@ -884,7 +884,7 @@ ecl_kw_type * EclipseGridParser::newEclKW(const std::string &keyword , ecl_type_
         ecl_kw_set_memcpy_data( ecl_kw , &data[0]);
       } else if (ecl_type == ECL_FLOAT_TYPE) {
         ecl_kw = ecl_kw_alloc( keyword.c_str() , data.size() , ecl_type );
-        for (int i=0; i < data.size(); i++)
+        for (std::vector<double>::size_type i=0; i < data.size(); i++)
           ecl_kw_iset_float( ecl_kw , i , data[i] );      
       } 
     }
