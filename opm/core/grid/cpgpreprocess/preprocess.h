@@ -56,8 +56,8 @@ extern "C" {
     struct grdecl {
         int           dims[3]; /**< Cartesian box dimensions. */
         const double *coord;   /**< Pillar end-points. */
-        const double *zcorn;   /**< Explicit "active" map.  May be NULL.*/
-        const int    *actnum;  /**< Corner-point depths. */
+        const double *zcorn;   /**< Corner-point depths. */
+        const int    *actnum;  /**< Explicit "active" map.  May be NULL.*/
     };
 
     /**
