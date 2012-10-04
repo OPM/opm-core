@@ -582,3 +582,78 @@ clear_well_controls(int well_index, struct Wells *W)
         W->ctrls[well_index]->num = 0;
     }
 }
+
+
+/* ---------------------------------------------------------------------- */
+struct Wells *
+clone_wells(const struct Wells *W)
+/* ---------------------------------------------------------------------- */
+{
+    int                        c, np, nperf, ok, pos, w;
+    double                     target;
+    const int                 *cells;
+    const double              *WI, *comp_frac, *distr;
+    enum WellControlType       type;
+    const struct WellControls *ctrls;
+
+    struct Wells *ret;
+
+    if (W == NULL) {
+        ret = NULL;
+    }
+    else {
+        np  = W->number_of_phases;
+        ret = create_wells(W->number_of_phases, W->number_of_wells,
+                           W->well_connpos[ W->number_of_wells ]);
+
+        if (ret != NULL) {
+            pos = W->well_connpos[ 0 ];
+            ok  = 1;
+
+            for (w = 0; ok && (w < W->number_of_wells); w++) {
+                nperf = W->well_connpos[w + 1] - pos;
+                cells = W->well_cells + pos;
+
+                WI        = W->WI        != NULL ? W->WI        + pos  : NULL;
+                comp_frac = W->comp_frac != NULL ? W->comp_frac + w*np : NULL;
+
+                ok = add_well(W->type[ w ], W->depth_ref[ w ], nperf,
+                              comp_frac, cells, WI, W->name[ w ], ret);
+
+                /* Capacity should be sufficient from create_wells() */
+                assert (ok);
+
+                ctrls = W->ctrls[ w ];
+
+                if (ok) {
+                    ok = well_controls_reserve(ctrls->num, np, ret->ctrls[ w ]);
+
+                    for (c = 0; ok && (c < ctrls->num); c++) {
+                        type   =   ctrls->type  [ c ];
+                        target =   ctrls->target[ c ];
+                        distr  = & ctrls->distr [ c * np ];
+
+                        ok = append_well_controls(type, target, distr, w, ret);
+
+                        /* Capacity *should* be sufficient from
+                         *  well_controls_reserve() */
+                        assert (ok);
+                    }
+                }
+
+                if (ok) {
+                    set_current_control(w, ctrls->current, ret);
+                }
+
+                pos = W->well_connpos[w + 1];
+            }
+
+            if (! ok) {
+                destroy_wells(ret);
+                ret = NULL;
+            }
+        }
+    }
+
+    return ret;
+}
