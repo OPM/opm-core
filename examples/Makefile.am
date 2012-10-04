@@ -1,13 +1,15 @@
 # Build-time flags needed to form example programs
 AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
-$(OPM_BOOST_CPPFLAGS)
+$(OPM_BOOST_CPPFLAGS)                           \
+${SUPERLU_CPPFLAGS}
 
 # All targets link to the library
 LDADD =						\
 $(top_builddir)/lib/libopmcore.la		\
 $(BOOST_FILESYSTEM_LIB)				\
-$(BOOST_SYSTEM_LIB)
+$(BOOST_SYSTEM_LIB)                             \
+${SUPERLU_LIBS} $(BLAS_LIBS) $(LIBS)
 
 # ----------------------------------------------------------------------
 # Declare products (i.e., the example programs).
