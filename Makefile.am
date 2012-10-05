@@ -19,7 +19,10 @@ $(OPM_BOOST_CPPFLAGS)
 # (transitively) convey inter-library dependency information.
 
 lib_libopmcore_la_LDFLAGS =			\
-$(OPM_BOOST_LDFLAGS)				\
+-R $(OPM_BOOST_LIBDIR)				\
+$(OPM_BOOST_LDFLAGS)
+
+lib_libopmcore_la_LIBADD = 			\
 $(BOOST_FILESYSTEM_LIB)				\
 $(BOOST_SYSTEM_LIB)				\
 $(BOOST_DATE_TIME_LIB)				\
