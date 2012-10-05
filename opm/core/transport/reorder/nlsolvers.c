@@ -26,23 +26,7 @@ SOFTWARE.
 #include <assert.h>
 #include <math.h>
 
-#ifdef MATLAB_MEX_FILE
-#include "nlsolvers.h"
-
-#include <mex.h>
-extern int interrupt_signal;
-#define print   mexPrintf
-#define malloc  mxMalloc
-#define calloc  mxCalloc
-#define realloc mxRealloc
-#define free    mxFree
-
-#else  /* MATLAB_MEX_FILE */
-
-#define print printf
 #include <opm/core/transport/reorder/nlsolvers.h>
-
-#endif  /* MATLAB_MEX_FILE */
 
 static const char no_root_str[]=
     "  In %s:\n"
@@ -100,7 +84,7 @@ ridders (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctr
 
     if (G0*G1 > 0)
     {
-        print(no_root_str, "ridder", s0, G0, s1, G1);
+        printf(no_root_str, "ridder", s0, G0, s1, G1);
         return -1.0;
     }
 
@@ -157,7 +141,7 @@ ridders (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *ctr
         }
         else
         {
-            print("In ridder:\nG0=%10.10f, G1=%10.10f, "
+            printf("In ridder:\nG0=%10.10f, G1=%10.10f, "
                   "G3=%10.10f\n", G0, G1, G3);
         }
         s2   = 0.5*(s0+s1);
@@ -199,7 +183,7 @@ regulafalsi (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl 
 
     if (G0*G1 > 0)
     {
-        print(no_root_str, "regulafalsi", s0, G0, s1, G1);
+        printf(no_root_str, "regulafalsi", s0, G0, s1, G1);
         return -1.0;
     }
 
@@ -282,7 +266,7 @@ bisection (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *c
 
     if (G0*G1 > 0.0)
     {
-        print(no_root_str, "bisection", s0, G0, s1, G1);
+        printf(no_root_str, "bisection", s0, G0, s1, G1);
         return -1.0;
     }
 
@@ -312,7 +296,7 @@ bisection (double (*G)(double, void*), void *data, struct NonlinearSolverCtrl *c
     }
     if (ctrl->iterations >= ctrl->maxiterations)
     {
-        print("Warning: convergence criterion not met\n");
+        printf("Warning: convergence criterion not met\n");
     }
     ctrl->residual = Gn;
     return sn;
