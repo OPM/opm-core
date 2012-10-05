@@ -5,9 +5,7 @@ $(OPM_BOOST_CPPFLAGS)
 
 # All targets link to the library
 LDADD =						\
-$(top_builddir)/lib/libopmcore.la		\
-$(BOOST_FILESYSTEM_LIB)				\
-$(BOOST_SYSTEM_LIB)
+$(top_builddir)/lib/libopmcore.la
 
 # ----------------------------------------------------------------------
 # Declare products (i.e., the example programs).

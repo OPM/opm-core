@@ -273,6 +273,17 @@ allocate_grid(size_t ndims     ,
               size_t ncellfaces,
               size_t nnodes    );
 
+
+/**
+ * Import a grid from a character representation stored in file.
+ *
+ * @param[in] fname File name.
+ * @return Fully formed UnstructuredGrid with all fields allocated and filled.
+ * Returns @c NULL in case of allocation failure.
+ */
+struct UnstructuredGrid *
+read_grid(const char *fname);
+
 #ifdef __cplusplus
 }
 #endif
