@@ -7,8 +7,7 @@ ${SUPERLU_CPPFLAGS}
 # All targets link to the library
 LDADD =						\
 $(top_builddir)/lib/libopmcore.la               \
-${BOOST_SYSTEM_LIB} ${BOOST_FILESYSTEM_LIB}     \
-${SUPERLU_LIBS} $(BLAS_LIBS) $(LIBS)
+$(SUPERLU_LIBS) $(BLAS_LIBS) $(LIBS)
 
 # Convenience definition for targets that use Boost.Filesystem directly.
 # While libopmcore depends on (and references) Boost.Filesystem (through
