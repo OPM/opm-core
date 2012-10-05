@@ -175,10 +175,10 @@ namespace Opm
 	}
 	// model_.sourceTerms(); // Not needed 
 	// Solve.
-	const int num_rhs = 1;
-	int info = 0;
+	const MAT_SIZE_T num_rhs = 1, colSize = col_size;
+	MAT_SIZE_T info = 0;
 	// Solution will be written to rhs.
-	dgtsv_(&col_size, &num_rhs, DL, D, DU, &rhs[0], &col_size, &info);
+	dgtsv_(&colSize, &num_rhs, DL, D, DU, &rhs[0], &colSize, &info);
 	if (info != 0) {
 	    THROW("Lapack reported error in dgtsv: " << info);
 	}
