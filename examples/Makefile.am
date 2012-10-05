@@ -6,8 +6,9 @@ ${SUPERLU_CPPFLAGS}
 
 # All targets link to the library
 LDADD =						\
-$(top_builddir)/lib/libopmcore.la
-#${SUPERLU_LIBS} $(BLAS_LIBS) $(LIBS)
+$(top_builddir)/lib/libopmcore.la               \
+${BOOST_SYSTEM_LIB} ${BOOST_FILESYSTEM_LIB}     \
+${SUPERLU_LIBS} $(BLAS_LIBS) $(LIBS)
 
 # ----------------------------------------------------------------------
 # Declare products (i.e., the example programs).
