@@ -94,7 +94,7 @@ AC_DEFUN([_slu_search_default],
 
 # DUNE_PATH_SUPERLU()
 #
-# REQUIRES: AC_PROG_CC, ACX_BLAS
+# REQUIRES: AC_PROG_CC, AX_BLAS
 #
 # Shell variables:
 #   with_superlu
@@ -141,7 +141,7 @@ AC_DEFUN([DUNE_PATH_SUPERLU],[
     AC_REQUIRE([AC_PROG_CC])
     # we need this for FLIBS
     AC_REQUIRE([AC_F77_LIBRARY_LDFLAGS])
-    AC_REQUIRE([ACX_BLAS])
+    AC_REQUIRE([AX_BLAS])
 
     #
     # User hints ...
@@ -308,7 +308,7 @@ AC_DEFUN([DUNE_PATH_SUPERLU],[
     fi
     AC_SUBST([SUPERLU_LIBS])
     AC_SUBST([SUPERLU_CPPFLAGS])
-    DUNE_ADD_ALL_PKG([SUPERLU], [\${SUPERLU_CPPFLAGS}], [], [\${SUPERLU_LIBS}])
+    #DUNE_ADD_ALL_PKG([SUPERLU], [\${SUPERLU_CPPFLAGS}], [], [\${SUPERLU_LIBS}])
 
     # tell automake
     AM_CONDITIONAL(SUPERLU, test x$HAVE_SUPERLU = x1)
