@@ -153,7 +153,7 @@ AC_DEFUN([DUNE_PATH_SUPERLU],[
         [dnl
             if test x"$withval" != xno ; then
                 # get absolute path
-                with_superlu=`eval cd $withval 2>&1 && pwd`
+                with_superlu=`eval cd $withval > /dev/null 2>&1 && pwd`
                 if test x"$withval" = xyes; then
                     # Search in default locations
                     _slu_search_default
