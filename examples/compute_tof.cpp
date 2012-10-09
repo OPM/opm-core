@@ -75,7 +75,7 @@ main(int argc, char** argv)
 {
     using namespace Opm;
 
-    std::cout << "\n================    Test program for incompressible two-phase flow     ===============\n\n";
+    std::cout << "\n================    Test program for incompressible tof computations     ===============\n\n";
     parameter::ParameterGroup param(argc, argv, false);
     std::cout << "---------------    Reading parameters     ---------------" << std::endl;
 
