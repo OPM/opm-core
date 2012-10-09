@@ -29,6 +29,7 @@ $(BOOST_SYSTEM_LIB)
 # Please keep the list sorted.
 
 noinst_PROGRAMS =				\
+compute_tof					\
 refine_wells					\
 scaneclipsedeck					\
 sim_2p_comp_reorder				\
@@ -43,6 +44,7 @@ wells_example
 #
 # Please maintain sort order from "noinst_PROGRAMS".
 
+compute_tof_SOURCES           = compute_tof.cpp
 refine_wells_SOURCES          = refine_wells.cpp
 
 sim_2p_comp_reorder_SOURCES   = sim_2p_comp_reorder.cpp
