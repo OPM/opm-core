@@ -1,6 +1,7 @@
 *~
 .\#*
 *.o
+*.mod
 *.lo
 *.la
 .libs
@@ -42,8 +43,10 @@ examples/sim_2p_incomp_reorder
 examples/sim_2p_comp_reorder
 examples/sim_wateroil
 examples/wells_example
+tests/test_agmg
 tests/test_cfs_tpfa
 tests/test_jacsys
+tests/test_read_grid
 tests/test_readvector
 tests/test_sf2p
 tests/bo_fluid_p_and_z_deps
