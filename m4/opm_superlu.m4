@@ -92,7 +92,7 @@ AC_DEFUN([_slu_search_default],
 )
 
 
-# DUNE_PATH_SUPERLU()
+# OPM_PATH_SUPERLU()
 #
 # REQUIRES: AC_PROG_CC, AX_BLAS
 #
@@ -137,7 +137,7 @@ AC_DEFUN([_slu_search_default],
 #
 # Conditionals:
 #   SUPERLU
-AC_DEFUN([DUNE_PATH_SUPERLU],[
+AC_DEFUN([OPM_PATH_SUPERLU],[
     AC_REQUIRE([AC_PROG_CC])
     # we need this for FLIBS
     AC_REQUIRE([AC_F77_LIBRARY_LDFLAGS])
