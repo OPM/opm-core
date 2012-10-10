@@ -399,7 +399,8 @@ namespace
 		    }
 		}
                 if (xv.empty()) {
-                    // Nothing specified, insert zeros.
+                    // Nothing specified, the entire column is defaulted.
+                    // We insert zeros.
                     for (int i=0; i<int(indx.size()); ++i) {
                         table[k][indx[i]] = 0.0;
                     }
