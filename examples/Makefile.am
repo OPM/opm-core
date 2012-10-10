@@ -1,13 +1,11 @@
 # Build-time flags needed to form example programs
 AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
-$(OPM_BOOST_CPPFLAGS)                           \
-${SUPERLU_CPPFLAGS}
+$(OPM_BOOST_CPPFLAGS)
 
 # All targets link to the library
 LDADD =						\
-$(top_builddir)/lib/libopmcore.la               \
-$(SUPERLU_LIBS) $(BLAS_LIBS) $(LIBS)
+$(top_builddir)/lib/libopmcore.la
 
 # Convenience definition for targets that use Boost.Filesystem directly.
 # While libopmcore depends on (and references) Boost.Filesystem (through
