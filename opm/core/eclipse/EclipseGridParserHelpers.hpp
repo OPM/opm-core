@@ -398,10 +398,18 @@ namespace
 			yv.push_back(table[k][i]);		    
 		    }
 		}
-		// Interpolate
-		for (int i=0; i<int(indx.size()); ++i) {
-		    table[k][indx[i]] = linearInterpolationExtrap(xv, yv, x[i]);
-		}
+                if (xv.empty()) {
+                    // Nothing specified, the entire column is defaulted.
+                    // We insert zeros.
+                    for (int i=0; i<int(indx.size()); ++i) {
+                        table[k][indx[i]] = 0.0;
+                    }
+                } else {
+                    // Interpolate
+                    for (int i=0; i<int(indx.size()); ++i) {
+                        table[k][indx[i]] = linearInterpolationExtrap(xv, yv, x[i]);
+                    }
+                }
 	    }
 	}
     }
