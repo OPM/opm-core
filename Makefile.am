@@ -12,7 +12,8 @@ lib_LTLIBRARIES = lib/libopmcore.la
 # Build-time flags needed to build libopmcore.la
 
 AM_CPPFLAGS =					\
-$(OPM_BOOST_CPPFLAGS)
+$(OPM_BOOST_CPPFLAGS)                           \
+${SUPERLU_CPPFLAGS}
 
 # ----------------------------------------------------------------------
 # Link-time flags needed both to successfully link the library and to
@@ -20,14 +21,15 @@ $(OPM_BOOST_CPPFLAGS)
 
 lib_libopmcore_la_LDFLAGS =			\
 -R $(OPM_BOOST_LIBDIR)				\
-$(OPM_BOOST_LDFLAGS)
+$(OPM_BOOST_LDFLAGS)                            \
+${SUPERLU_LDFLAGS}
 
 lib_libopmcore_la_LIBADD = 			\
 $(BOOST_FILESYSTEM_LIB)				\
 $(BOOST_SYSTEM_LIB)				\
 $(BOOST_DATE_TIME_LIB)				\
 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)		\
-$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS)
+$(LAPACK_LIBS) ${SUPERLU_LIBS} $(BLAS_LIBS) $(LIBS)
 
 # ----------------------------------------------------------------------
 # Library constituents.  SOURCES followed by HEADERS.
@@ -105,6 +107,8 @@ opm/core/simulator/SimulatorReport.cpp			\
 opm/core/simulator/SimulatorTimer.cpp			\
 opm/core/transport/reorder/TransportModelCompressibleTwophase.cpp	\
 opm/core/transport/reorder/TransportModelInterface.cpp	\
+opm/core/transport/reorder/TransportModelTracerTof.cpp	\
+opm/core/transport/reorder/TransportModelTracerTofDiscGal.cpp	\
 opm/core/transport/reorder/TransportModelTwophase.cpp	\
 opm/core/transport/reorder/nlsolvers.c			\
 opm/core/transport/reorder/reordersequence.cpp		\
@@ -227,6 +231,8 @@ opm/core/transport/SimpleFluid2pWrapper.hpp		\
 opm/core/transport/SinglePointUpwindTwoPhase.hpp	\
 opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp	\
 opm/core/transport/reorder/TransportModelInterface.hpp	\
+opm/core/transport/reorder/TransportModelTracerTof.hpp	\
+opm/core/transport/reorder/TransportModelTracerTofDiscGal.hpp	\
 opm/core/transport/reorder/TransportModelTwophase.hpp	\
 opm/core/transport/reorder/nlsolvers.h			\
 opm/core/transport/reorder/reordersequence.h		\

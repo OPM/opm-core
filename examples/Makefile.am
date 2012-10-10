@@ -1,11 +1,27 @@
 # Build-time flags needed to form example programs
 AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
-$(OPM_BOOST_CPPFLAGS)
+$(OPM_BOOST_CPPFLAGS)                           \
+${SUPERLU_CPPFLAGS}
 
 # All targets link to the library
 LDADD =						\
-$(top_builddir)/lib/libopmcore.la
+$(top_builddir)/lib/libopmcore.la               \
+$(SUPERLU_LIBS) $(BLAS_LIBS) $(LIBS)
+
+# Convenience definition for targets that use Boost.Filesystem directly.
+# While libopmcore depends on (and references) Boost.Filesystem (through
+# the $(BOOST_FILESYSTEM_LIB) macro) this indirect dependency is not
+# sufficient to satisfy the requirements of targets that use the indirect
+# libraries directly.
+#
+# Additional details at
+#   https://fedoraproject.org/wiki/UnderstandingDSOLinkChange
+#
+LINK_BOOST_FILESYSTEM =				\
+$(OPM_BOOST_LDFLAGS)				\
+$(BOOST_FILESYSTEM_LIB)				\
+$(BOOST_SYSTEM_LIB)
 
 # ----------------------------------------------------------------------
 # Declare products (i.e., the example programs).
@@ -13,6 +29,7 @@ $(top_builddir)/lib/libopmcore.la
 # Please keep the list sorted.
 
 noinst_PROGRAMS =				\
+compute_tof					\
 refine_wells					\
 scaneclipsedeck					\
 sim_2p_comp_reorder				\
@@ -27,10 +44,18 @@ wells_example
 #
 # Please maintain sort order from "noinst_PROGRAMS".
 
+compute_tof_SOURCES           = compute_tof.cpp
 refine_wells_SOURCES          = refine_wells.cpp
+
 sim_2p_comp_reorder_SOURCES   = sim_2p_comp_reorder.cpp
+sim_2p_comp_reorder_LDADD     = $(LDADD) $(LINK_BOOST_FILESYSTEM)
+
 sim_2p_incomp_reorder_SOURCES = sim_2p_incomp_reorder.cpp
+sim_2p_incomp_reorder_LDADD   = $(LDADD) $(LINK_BOOST_FILESYSTEM)
+
 sim_wateroil_SOURCES          = sim_wateroil.cpp
+sim_wateroil_LDADD            = $(LDADD) $(LINK_BOOST_FILESYSTEM)
+
 wells_example_SOURCES         = wells_example.cpp
 
 # ----------------------------------------------------------------------
@@ -42,5 +67,6 @@ noinst_PROGRAMS += spu_2p
 spu_2p_SOURCES   = spu_2p.cpp
 spu_2p_LDADD     =				\
 $(LDADD)					\
+$(LINK_BOOST_FILESYSTEM)			\
 $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS)
 endif
