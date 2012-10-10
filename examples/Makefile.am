@@ -45,6 +45,7 @@ wells_example
 # Please maintain sort order from "noinst_PROGRAMS".
 
 compute_tof_SOURCES           = compute_tof.cpp
+compute_tof_LDADD             = $(LDADD) $(LINK_BOOST_FILESYSTEM)
 refine_wells_SOURCES          = refine_wells.cpp
 
 sim_2p_comp_reorder_SOURCES   = sim_2p_comp_reorder.cpp
