@@ -35,6 +35,7 @@ tutorials/tutorial[1-4]
 
 # Ignoring executables
 *_test
+examples/compute_tof
 examples/scaneclipsedeck
 examples/spu_2p
 examples/reorder-qfs
@@ -56,4 +57,5 @@ tests/test_column_extract
 tests/test_lapack
 tests/test_read_vag
 tests/test_readpolymer
+tests/test_wells
 tests/test_writeVtkData
