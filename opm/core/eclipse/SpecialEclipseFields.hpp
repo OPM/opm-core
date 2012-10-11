@@ -1047,7 +1047,7 @@ struct GCONINJE : public SpecialBase
 	    gconinje_line.injector_type_ = readString(is);
 	    gconinje_line.control_mode_ = readString(is);
 	    std::vector<double> double_data(10, -1.0E20);
-            const int num_to_read = 10;
+            const int num_to_read = 4;
 	    int num_read = readDefaultedVectorData(is, double_data, num_to_read);
 	    gconinje_line.surface_flow_max_rate_ = double_data[0];
             gconinje_line.resv_flow_max_rate_ = double_data[1];
