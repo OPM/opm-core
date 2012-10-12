@@ -58,6 +58,7 @@
 #include <ecl_kw.h>
 #include <ecl_util.h>
 #include <ecl_init_file.h>
+#include <ecl_file.h>
 #endif
 
 using namespace std;
@@ -151,6 +152,9 @@ namespace EclipseKeywords
     string include_keywords[] = { string("INCLUDE") };
     const int num_include_keywords = sizeof(include_keywords) / sizeof(include_keywords[0]);
 
+    string import_keywords[] = { string("IMPORT") };
+    const int num_import_keywords = sizeof(import_keywords) / sizeof(import_keywords[0]);
+
 
 } // namespace EclipseKeywords
 
@@ -164,6 +168,7 @@ namespace {
         IgnoreWithData,
         IgnoreNoData,
         Include,
+        Import,
         Unknown
     };
 
@@ -184,6 +189,8 @@ namespace {
             return IgnoreNoData;
         } else if (count(include_keywords, include_keywords + num_include_keywords, keyword)) {
             return Include;
+        } else if (count(import_keywords, import_keywords + num_import_keywords, keyword)) {
+            return Import;
         } else {
             return Unknown;
         }
@@ -498,6 +505,14 @@ void EclipseGridParser::readImpl(istream& is)
                 //              is >> ignoreSlashLine;
                 break;
             }
+            case Import: {
+                string import_filename = readString(is);
+                if (!directory_.empty()) {
+                    import_filename = directory_ + '/' + import_filename;
+                }
+                getNumericErtFields(import_filename);
+                break;
+            }
             case Unknown:
             default:
                 ignored_fields_.insert(keyword);
@@ -552,6 +567,9 @@ void EclipseGridParser::convertToSI()
             do_convert = false; // Dimensionless keywords...
         } else if (key == "PRESSURE") {
             unit = units_.pressure;
+        } else if (key == "MAPAXES") {
+            MESSAGE("Not applying units to MAPAXES yet!");
+            unit = 1.0;
         } else {
             THROW("Units for field " << key << " not specified. Cannon convert to SI.");
         }
@@ -1053,5 +1071,67 @@ void EclipseGridParser::saveEGRID_INIT( const std::string& output_dir , const st
   ecl_grid_free( ecl_grid );
 }
 #endif
+
+// Read an imported fortio data file using Ert. 
+// Data stored in 'integer_field_map_' and 'floating_field_map_'.
+void EclipseGridParser::getNumericErtFields(const string& filename)
+{
+#ifdef HAVE_ERT
+    // Read file
+    ecl_file_type * ecl_file = ecl_file_open(filename.c_str());
+    if (ecl_file == NULL) {
+        THROW("Could not open IMPORTed file " << filename);
+    }
+    const int num_kw = ecl_file_get_size(ecl_file);
+    std::vector<double> double_vec;
+    std::vector<int> int_vec;
+    for (int i=0; i<num_kw; ++i) {
+	ecl_kw_type * ecl_kw = ecl_file_iget_kw(ecl_file, i);
+	const char* keyword =  ecl_kw_get_header(ecl_kw);
+	FieldType field_type = classifyKeyword(keyword);
+	if (field_type == Unknown) {
+	    ignored_fields_.insert(keyword);
+	    cout << "*** Warning: keyword " << keyword << " is unknown." << endl;
+	    continue;
+	} else {
+#ifdef VERBOSE
+	    cout << "Imported keyword found: " << keyword << endl;
+#endif
+	}
+	ecl_type_enum ecl_type = ecl_kw_get_type(ecl_kw);
+	int data_size = ecl_kw_get_size(ecl_kw);
+	switch(ecl_type) {
+	case ECL_FLOAT_TYPE : {
+	    double_vec.resize(data_size);
+	    ecl_kw_get_data_as_double(ecl_kw, &double_vec[0]);
+	    floating_field_map_[keyword] = double_vec;
+	    break;
+	}
+	case ECL_DOUBLE_TYPE : {
+	    double_vec.resize(data_size);
+	    ecl_kw_get_memcpy_double_data(ecl_kw, &double_vec[0]);
+	    floating_field_map_[keyword] = double_vec;
+	    break;
+	}
+	case ECL_INT_TYPE : {
+	    int_vec.resize(data_size);
+	    ecl_kw_get_memcpy_int_data(ecl_kw, &int_vec[0]);
+	    integer_field_map_[keyword] = int_vec;
+	    break;
+	}
+	default: {
+	    std::cout << "Ignored non-numeric type in file: " << filename << "  Keyword="
+		      << keyword << "  Size=" << ecl_kw_get_size(ecl_kw)
+		      << "  Type=" << ecl_util_get_type_name(ecl_kw_get_type(ecl_kw))
+		      << std::endl;
+	    break;
+	}
+	}
+    }
+    ecl_file_close(ecl_file);
+#else
+    THROW("Cannot use IMPORT keyword without ert library support. Reconfigure opm-core with --with-ert and recompile.");
+#endif  // HAVE_ERT
+}
 
 } // namespace Opm

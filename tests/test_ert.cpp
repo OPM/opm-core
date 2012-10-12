@@ -33,7 +33,7 @@
 
 using namespace std;
 
-
+#if 0
 static
 void cell_nodes(const UnstructuredGrid * c_grid , int cell , std::vector<int>& nodes) {
   int face_offset = c_grid->cell_facepos[cell];
@@ -78,8 +78,9 @@ void cell_nodes(const UnstructuredGrid * c_grid , int cell , std::vector<int>& n
     */
   }
 }
+#endif
 
-
+/*
 static
 void eclExport(Opm::GridManager& grid) {
   const UnstructuredGrid * c_grid = grid.c_grid();
@@ -184,7 +185,7 @@ void eclExport(Opm::GridManager& grid) {
     free( coords );
   }
 }
-
+*/
 
 
 /*
