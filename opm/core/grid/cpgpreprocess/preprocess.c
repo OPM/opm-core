@@ -590,6 +590,9 @@ get_zcorn_sign(int nx, int ny, int nz, const int *actnum,
                     c1 = i/2 + nx*(j/2 + ny*(k/2));
                     c2 = i/2 + nx*(j/2 + ny*((k+1)/2));
 
+                    assert (c1 < (nx * ny * nz));
+                    assert (c2 < (nx * ny * nz));
+
                     if (((actnum == NULL) ||
                          (actnum[c1] && actnum[c2]))
                         && (z2 < z1)) {

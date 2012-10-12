@@ -37,7 +37,8 @@ namespace Opm
     {
         // We accept two different ways to specify the grid.
         //    1. Corner point format.
-        //       Requires ZCORN, COORDS, DIMENS or SPECGRID, optionally ACTNUM.
+        //       Requires ZCORN, COORDS, DIMENS or SPECGRID, optionally
+        //       ACTNUM, optionally MAPAXES.
         //       For this format, we will verify that DXV, DYV, DZV,
         //       DEPTHZ and TOPS are not present.
         //    2. Tensor grid format.
@@ -119,29 +120,8 @@ namespace Opm
     void GridManager::initFromDeckCornerpoint(const Opm::EclipseGridParser& deck)
     {
         // Extract data from deck.
-        const std::vector<double>& zcorn = deck.getFloatingPointValue("ZCORN");
-        const std::vector<double>& coord = deck.getFloatingPointValue("COORD");
-        const int* actnum = 0;
-        if (deck.hasField("ACTNUM")) {
-            actnum = &(deck.getIntegerValue("ACTNUM")[0]);
-        }
-        std::vector<int> dims;
-        if (deck.hasField("DIMENS")) {
-            dims = deck.getIntegerValue("DIMENS");
-        } else if (deck.hasField("SPECGRID")) {
-            dims = deck.getSPECGRID().dimensions;
-        } else {
-            THROW("Deck must have either DIMENS or SPECGRID.");
-        }
-
         // Collect in input struct for preprocessing.
-        struct grdecl grdecl;
-        grdecl.zcorn = &zcorn[0];
-        grdecl.coord = &coord[0];
-        grdecl.actnum = actnum;
-        grdecl.dims[0] = dims[0];
-        grdecl.dims[1] = dims[1];
-        grdecl.dims[2] = dims[2];
+        struct grdecl grdecl = deck.get_grdecl();
 
         // Process grid.
         ug_ = create_grid_cornerpoint(&grdecl, 0.0);
