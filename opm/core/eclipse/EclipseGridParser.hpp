@@ -45,6 +45,13 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <opm/core/eclipse/EclipseUnits.hpp>
 #include <opm/core/utility/Factory.hpp>
 
+#include <opm/core/grid/cornerpoint_grid.h>
+#ifdef HAVE_ERT
+#include <ecl_kw.h>
+#include <ecl_grid.h>
+#endif
+
+
 namespace Opm
 {
 
@@ -191,11 +198,28 @@ public:                                                                         
     /// The units specified by the eclipse file read.
     const EclipseUnits& units() const;
 
+    struct grdecl get_grdecl() const;
+
+#ifdef HAVE_ERT
+  void saveEGRID_INIT( const std::string& output_dir , const std::string& basename, bool fmt_file = false);
+  void saveEGRID( const std::string & filename );
+  void saveINIT( const std::string & filename , const ecl_grid_type * ecl_grid);
+  ecl_grid_type * newGrid( );
+#endif
+
+
 private:
+
+#ifdef HAVE_ERT
+  ecl_kw_type * newEclKW(const std::string &keyword , ecl_type_enum ecl_type) const;
+  void          save_kw( fortio_type * fortio , const std::string & kw , ecl_type_enum ecl_type);
+#endif
+
     SpecialFieldPtr createSpecialField(std::istream& is, const std::string& fieldname);
     SpecialFieldPtr cloneSpecialField(const std::string& fieldname,
                                       const std::tr1::shared_ptr<SpecialBase> original);
     void readImpl(std::istream& is);
+    void getNumericErtFields(const std::string& filename);
 
 
     std::string directory_;

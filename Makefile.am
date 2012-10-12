@@ -12,6 +12,7 @@ lib_LTLIBRARIES = lib/libopmcore.la
 # Build-time flags needed to build libopmcore.la
 
 AM_CPPFLAGS =					\
+$(ERT_CPPFLAGS)                                 \
 $(OPM_BOOST_CPPFLAGS)                           \
 ${SUPERLU_CPPFLAGS}
 
@@ -22,6 +23,7 @@ ${SUPERLU_CPPFLAGS}
 lib_libopmcore_la_LDFLAGS =			\
 -R $(OPM_BOOST_LIBDIR)				\
 $(OPM_BOOST_LDFLAGS)                            \
+$(ERT_LDFLAGS)
 ${SUPERLU_LDFLAGS}
 
 lib_libopmcore_la_LIBADD = 			\
@@ -29,6 +31,7 @@ $(BOOST_FILESYSTEM_LIB)				\
 $(BOOST_SYSTEM_LIB)				\
 $(BOOST_DATE_TIME_LIB)				\
 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)		\
+$(ERT_LIBS)                                     \
 $(LAPACK_LIBS) ${SUPERLU_LIBS} $(BLAS_LIBS) $(LIBS)
 
 # ----------------------------------------------------------------------
@@ -242,6 +245,7 @@ opm/core/transport/spu_implicit.h			\
 opm/core/transport/transport_source.h			\
 opm/core/utility/Average.hpp				\
 opm/core/utility/ColumnExtract.hpp			\
+opm/core/utility/DataMap.hpp				\
 opm/core/utility/ErrorMacros.hpp			\
 opm/core/utility/Factory.hpp				\
 opm/core/utility/MonotCubicInterpolator.hpp		\
@@ -289,6 +293,15 @@ opm/core/linalg/LinearSolverUmfpack.cpp
 nobase_include_HEADERS +=			\
 opm/core/linalg/call_umfpack.h			\
 opm/core/linalg/LinearSolverUmfpack.hpp
+endif
+
+
+if HAVE_ERT
+lib_libopmcore_la_SOURCES  +=			\
+opm/core/utility/writeECLData.cpp
+
+nobase_include_HEADERS +=			\
+opm/core/utility/writeECLData.hpp
 endif
 
 
