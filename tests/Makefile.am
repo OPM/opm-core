@@ -1,6 +1,6 @@
 AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
-$(OPM_BOOST_CPPFLAGS)				\
+$(OPM_BOOST_CPPFLAGS) ${SUPERLU_CPPFLAGS}	\
 $(ERT_CPPFLAGS)
 
 AM_LDFLAGS = $(OPM_BOOST_LDFLAGS) $(ERT_LDFLAGS)
@@ -24,6 +24,7 @@ test_read_grid					\
 test_read_vag					\
 test_readpolymer				\
 test_sf2p					\
+test_wells					\
 test_writeVtkData				\
 unit_test
 
@@ -59,6 +60,9 @@ test_read_vag_SOURCES     = test_read_vag.cpp
 test_sf2p_SOURCES         = test_sf2p.cpp
 
 test_writeVtkData_SOURCES = test_writeVtkData.cpp
+
+test_wells_SOURCES        = test_wells.cpp
+test_wells_LDADD          = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 unit_test_SOURCES         = unit_test.cpp
 

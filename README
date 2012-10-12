@@ -56,10 +56,10 @@ sudo add-apt-repository -y ppa:opm/ppa
 sudo apt-get update
 
 # parts of DUNE needed
-sudo apt-get install libdune-common-dev libdune-istl-dev
+sudo apt-get install libdune-common-dev libdune-istl-dev libdune-grid-dev
 
 # libraries necessary for OPM
-sudo apt-get install -y libxml0-dev
+sudo apt-get install -y libxml2-dev
 
 
 DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
@@ -88,10 +88,25 @@ If you want to contribute, fork OPM/opm-core on github.
 BUILDING
 --------
 
+There are two ways to build the opm-core library:
+
+1. As a stand-alone library.
  cd opm-core
  autoreconf -i
  ./configure
  make
+If you want to install the library:
+ make install
+or (if installing to /usr/local or similar)
+ sudo make install
+
+2. As a dune module.
+ - Put the opm-core directory in the same directory
+   as the other dune modules to be built (e.g. dune-commmon,
+   dune-grid).
+ - Run dunecontrol as normal. For more information on
+   the dune build system, see
+   http://www.dune-project.org/doc/installation-notes.html
 
 
 DOCUMENTATION
