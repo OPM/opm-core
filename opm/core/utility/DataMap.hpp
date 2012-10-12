@@ -17,32 +17,16 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_WRITEVTKDATA_HEADER_INCLUDED
-#define OPM_WRITEVTKDATA_HEADER_INCLUDED
-
+#ifndef OPM_DATAMAP_HEADER_INCLUDED
+#define OPM_DATAMAP_HEADER_INCLUDED
 
 #include <string>
 #include <map>
-#include <vector>
-#include <tr1/array>
-#include <iosfwd>
-#include <opm/core/utility/DataMap.hpp>
-
-struct UnstructuredGrid;
 
 namespace Opm
 {
+  /// Intended to map strings (giving the output field names) to data.
+  typedef std::map<std::string, const std::vector<double>*> DataMap;
+}
 
-    /// Vtk output for cartesian grids.
-    void writeVtkData(const std::tr1::array<int, 3>& dims,
-                      const std::tr1::array<double, 3>& cell_size,
-                      const DataMap& data,
-                      std::ostream& os);
-
-    /// Vtk output for general grids.
-    void writeVtkData(const UnstructuredGrid& grid,
-                      const DataMap& data,
-                      std::ostream& os);
-} // namespace Opm
-
-#endif // OPM_WRITEVTKDATA_HEADER_INCLUDED
+#endif

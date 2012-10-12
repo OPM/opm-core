@@ -1,8 +1,9 @@
 AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
-$(OPM_BOOST_CPPFLAGS)
+$(OPM_BOOST_CPPFLAGS)				\
+$(ERT_CPPFLAGS)
 
-AM_LDFLAGS = $(OPM_BOOST_LDFLAGS)
+AM_LDFLAGS = $(OPM_BOOST_LDFLAGS) $(ERT_LDFLAGS)
 
 
 LDADD =	$(top_builddir)/lib/libopmcore.la
@@ -76,4 +77,10 @@ endif
 if BUILD_AGMG
 noinst_PROGRAMS   += test_agmg
 test_agmg_SOURCES  = test_agmg.cpp
+endif
+
+
+if HAVE_ERT
+noinst_PROGRAMS   += test_ert
+test_ert_SOURCES   = test_ert.cpp
 endif

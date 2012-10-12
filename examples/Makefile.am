@@ -1,7 +1,10 @@
 # Build-time flags needed to form example programs
+ERT_INCLUDE_PATH = $(ERT_ROOT)/include
+
 AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
-$(OPM_BOOST_CPPFLAGS)
+$(OPM_BOOST_CPPFLAGS)				\
+-I$(ERT_INCLUDE_PATH)
 
 # All targets link to the library
 LDADD =						\
