@@ -1,6 +1,7 @@
 *~
 .\#*
 *.o
+*.mod
 *.lo
 *.la
 .libs
@@ -34,6 +35,7 @@ tutorials/tutorial[1-4]
 
 # Ignoring executables
 *_test
+examples/compute_tof
 examples/scaneclipsedeck
 examples/spu_2p
 examples/reorder-qfs
@@ -42,8 +44,10 @@ examples/sim_2p_incomp_reorder
 examples/sim_2p_comp_reorder
 examples/sim_wateroil
 examples/wells_example
+tests/test_agmg
 tests/test_cfs_tpfa
 tests/test_jacsys
+tests/test_read_grid
 tests/test_readvector
 tests/test_sf2p
 tests/bo_fluid_p_and_z_deps
@@ -53,4 +57,5 @@ tests/test_column_extract
 tests/test_lapack
 tests/test_read_vag
 tests/test_readpolymer
+tests/test_wells
 tests/test_writeVtkData
