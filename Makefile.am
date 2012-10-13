@@ -23,7 +23,7 @@ ${SUPERLU_CPPFLAGS}
 lib_libopmcore_la_LDFLAGS =			\
 -R $(OPM_BOOST_LIBDIR)				\
 $(OPM_BOOST_LDFLAGS)                            \
-$(ERT_LDFLAGS)
+$(ERT_LDFLAGS)                                  \
 ${SUPERLU_LDFLAGS}
 
 lib_libopmcore_la_LIBADD = 			\
