@@ -14,7 +14,7 @@ lib_LTLIBRARIES = lib/libopmcore.la
 AM_CPPFLAGS =					\
 $(ERT_CPPFLAGS)                                 \
 $(OPM_BOOST_CPPFLAGS)                           \
-${SUPERLU_CPPFLAGS}
+$(SUPERLU_CPPFLAGS)
 
 # ----------------------------------------------------------------------
 # Link-time flags needed both to successfully link the library and to
@@ -24,7 +24,7 @@ lib_libopmcore_la_LDFLAGS =			\
 -R $(OPM_BOOST_LIBDIR)				\
 $(OPM_BOOST_LDFLAGS)                            \
 $(ERT_LDFLAGS)                                  \
-${SUPERLU_LDFLAGS}
+$(SUPERLU_LDFLAGS)
 
 lib_libopmcore_la_LIBADD = 			\
 $(BOOST_FILESYSTEM_LIB)				\
@@ -32,7 +32,7 @@ $(BOOST_SYSTEM_LIB)				\
 $(BOOST_DATE_TIME_LIB)				\
 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)		\
 $(ERT_LIBS)                                     \
-$(LAPACK_LIBS) ${SUPERLU_LIBS} $(BLAS_LIBS) $(LIBS)
+$(LAPACK_LIBS) $(SUPERLU_LIBS) $(BLAS_LIBS) $(LIBS)
 
 # ----------------------------------------------------------------------
 # Library constituents.  SOURCES followed by HEADERS.
