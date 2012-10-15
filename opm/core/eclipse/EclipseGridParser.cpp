@@ -1130,6 +1130,7 @@ void EclipseGridParser::getNumericErtFields(const string& filename)
     }
     ecl_file_close(ecl_file);
 #else
+    static_cast<void>(filename); // Suppress "unused variable" warning.
     THROW("Cannot use IMPORT keyword without ert library support. Reconfigure opm-core with --with-ert and recompile.");
 #endif  // HAVE_ERT
 }
