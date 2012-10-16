@@ -20,6 +20,7 @@
 #include <opm/core/utility/VelocityInterpolation.hpp>
 #include <opm/core/grid.h>
 #include <algorithm>
+#include <cmath>
 #include <map>
 #include <set>
 
@@ -80,9 +81,27 @@ namespace Opm
     }
 
 
+    // -------- Helper methods for class VelocityInterpolationECVI --------
+
+    namespace
+    {
+        /// Calculates the determinant of a 3 x 3 matrix, represented as
+        /// three three-dimensional arrays.
+        double determinantOf(const double* a0,
+                             const double* a1,
+                             const double* a2)
+        {
+            return
+                a0[0] * (a1[1] * a2[2] - a2[1] * a1[2]) -
+                a0[1] * (a1[0] * a2[2] - a2[0] * a1[2]) +
+                a0[2] * (a1[0] * a2[1] - a2[0] * a1[1]);
+        }
+    } // anonymous namespace
+
 
 
     // --------  Methods of class VelocityInterpolationECVI  --------
+
 
 
     /// Constructor.
@@ -90,7 +109,8 @@ namespace Opm
     VelocityInterpolationECVI::VelocityInterpolationECVI(const UnstructuredGrid& grid)
         : grid_(grid)
     {
-        if (grid.dimensions > Maxdim) {
+        const int dim = grid.dimensions;
+        if (dim > Maxdim) {
             THROW("Grid has more than " << Maxdim << " dimensions.");
         }
         // Compute static data for each corner.
@@ -98,9 +118,11 @@ namespace Opm
         int corner_id_count = 0;
         for (int cell = 0; cell < num_cells; ++cell) {
             std::set<int> cell_vertices;
+            std::vector<int> cell_faces;
             std::multimap<int, int> vertex_adj_faces;
             for (int hface = grid.cell_facepos[cell]; hface < grid.cell_facepos[cell + 1]; ++hface) {
                 const int face = grid.cell_faces[hface];
+                cell_faces.push_back(face);
                 const int fn0 = grid.face_nodepos[face];
                 const int fn1 = grid.face_nodepos[face + 1];
                 cell_vertices.insert(grid.face_nodes + fn0, grid.face_nodes + fn1);
@@ -109,14 +131,37 @@ namespace Opm
                     vertex_adj_faces.insert(std::make_pair(vertex, face));
                 }
             }
+            std::sort(cell_faces.begin(), cell_faces.end()); // set_difference requires sorted ranges
             std::vector<CornerInfo> cell_corner_info;
             std::set<int>::const_iterator it = cell_vertices.begin();
             for (; it != cell_vertices.end(); ++it) {
                 CornerInfo ci;
                 ci.corner_id = corner_id_count++;;
                 ci.vertex = *it;
+                typedef double* DblPtr;
+                DblPtr fnorm[3] = { 0, 0, 0 };
+                typedef std::multimap<int, int>::const_iterator MMIt;
+                std::pair<MMIt, MMIt> frange = vertex_adj_faces.equal_range(ci.vertex);
+                int fi = 0;
+                std::vector<int> vert_adj_faces(dim);
+                for (MMIt face_it = frange.first; face_it != frange.second; ++face_it, ++fi) {
+                    if (fi >= dim) {
+                        THROW("In cell " << cell << ", vertex " << ci.vertex << " has "
+                              << " more than " << dim << " adjacent faces.");
+                    }
+                    fnorm[fi] = grid_.face_normals + dim*(face_it->second);
+                    vert_adj_faces[fi] = face_it->second;
+                }
+                ASSERT(fi == dim);
+                const double corner_vol = std::fabs(determinantOf(fnorm[0], fnorm[1], fnorm[2]));
+                ci.volume = corner_vol;
                 cell_corner_info.push_back(ci);
-                // nonadj_faces_.appendRow();
+                std::sort(vert_adj_faces.begin(), vert_adj_faces.end());
+                std::vector<int> vert_nonadj_faces(cell_faces.size() - vert_adj_faces.size());
+                std::set_difference(cell_faces.begin(), cell_faces.end(),
+                                    vert_adj_faces.begin(), vert_adj_faces.end(),
+                                    vert_nonadj_faces.begin());
+                nonadj_faces_.appendRow(vert_nonadj_faces.begin(), vert_nonadj_faces.end());
             }
             corner_info_.appendRow(cell_corner_info.begin(), cell_corner_info.end());
         }
@@ -169,9 +214,9 @@ namespace Opm
             // ^^^                                   ^^^    ^^^
             // corner "volume"                    normal    centroid
             xb[i] = ci.volume;
-            const int num_nonadj_faces = nonadj_faces[ci.corner_id].size();
+            const int num_nonadj_faces = nonadj_faces_[ci.corner_id].size();
             for (int j = 0; j < num_nonadj_faces; ++j) {
-                const int face = nonadj_faces[ci.corner_id][j];
+                const int face = nonadj_faces_[ci.corner_id][j];
                 double factor = 0.0;
                 for (int dd = 0; dd < dim; ++dd) {
                     factor += grid_.face_normals[dim*face + dd]*(grid_.face_centroids[dim*face + dd] - x[dd]);

@@ -122,7 +122,7 @@ namespace Opm
             double velocity[Maxdim];  // Computed corner velocity.
         };
         SparseTable<CornerInfo> corner_info_;   // Corner info by cell.
-        SparseTable<int> nonadj_faces; // Set of nonadjacent faces, by corner id.
+        SparseTable<int> nonadj_faces_; // Set of nonadjacent faces, by corner id.
 
         void cartToBaryWachspress(const int cell,
                                   const double* x,
