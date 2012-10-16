@@ -225,7 +225,8 @@ main(int argc, char** argv)
     // Solve time-of-flight.
     std::vector<double> tof;
     if (use_dg) {
-        Opm::TransportModelTracerTofDiscGal tofsolver(*grid->c_grid());
+        bool use_cvi = param.getDefault("use_cvi", false);
+        Opm::TransportModelTracerTofDiscGal tofsolver(*grid->c_grid(), use_cvi);
         transport_timer.start();
         tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], dg_degree, tof);
         transport_timer.stop();
