@@ -178,6 +178,7 @@ namespace Opm
         // for each corner.
         const int dim = grid_.dimensions;
         std::vector<double> N(dim*dim); // Normals matrix. Fortran ordering!
+        std::vector<double> orig_N(dim*dim); // Normals matrix. Fortran ordering!
         std::vector<double> f(dim);     // Flux vector.
         std::vector<MAT_SIZE_T> piv(dim); // For LAPACK solve
         const int num_cells = grid_.number_of_cells;
@@ -203,6 +204,7 @@ namespace Opm
                 MAT_SIZE_T lda = n;
                 MAT_SIZE_T ldb = n;
                 MAT_SIZE_T info = 0;
+                orig_N = N;
                 dgesv_(&n, &nrhs, &N[0], &lda, &piv[0], &f[0], &ldb, &info);
                 if (info != 0) {
                     // Print the local matrix and rhs.
@@ -210,7 +212,7 @@ namespace Opm
                               << " with N = \n";
                     for (int row = 0; row < n; ++row) {
                         for (int col = 0; col < n; ++col) {
-                            std::cerr << "    " << N[row + n*col];
+                            std::cerr << "    " << orig_N[row + n*col];
                         }
                         std::cerr << '\n';
                     }
