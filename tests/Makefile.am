@@ -24,6 +24,7 @@ test_read_grid					\
 test_read_vag					\
 test_readpolymer				\
 test_sf2p					\
+test_velocityinterpolation			\
 test_wells					\
 test_writeVtkData				\
 unit_test
@@ -58,6 +59,8 @@ test_readpolymer_SOURCES  = test_readpolymer.cpp
 test_read_vag_SOURCES     = test_read_vag.cpp
 
 test_sf2p_SOURCES         = test_sf2p.cpp
+
+test_velocityinterpolation_SOURCES = test_velocityinterpolation.cpp
 
 test_writeVtkData_SOURCES = test_writeVtkData.cpp
 
