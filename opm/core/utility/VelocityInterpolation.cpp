@@ -19,6 +19,7 @@
 
 #include <opm/core/utility/VelocityInterpolation.hpp>
 #include <opm/core/grid.h>
+#include <opm/core/linalg/blas_lapack.h>
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -153,6 +154,7 @@ namespace Opm
                     vert_adj_faces[fi] = face_it->second;
                 }
                 ASSERT(fi == dim);
+                adj_faces_.insert(adj_faces_.end(), vert_adj_faces.begin(), vert_adj_faces.end());
                 const double corner_vol = std::fabs(determinantOf(fnorm[0], fnorm[1], fnorm[2]));
                 ci.volume = corner_vol;
                 cell_corner_info.push_back(ci);
@@ -172,7 +174,56 @@ namespace Opm
     /// \param[in]  flux   One signed flux per face in the grid.
     void VelocityInterpolationECVI::setupFluxes(const double* flux)
     {
-        THROW("Not implemented");
+        // We must now update the velocity member of the CornerInfo
+        // for each corner.
+        const int dim = grid_.dimensions;
+        std::vector<double> N(dim*dim); // Normals matrix. Fortran ordering!
+        std::vector<double> f(dim);     // Flux vector.
+        std::vector<MAT_SIZE_T> piv(dim); // For LAPACK solve
+        const int num_cells = grid_.number_of_cells;
+        for (int cell = 0; cell < num_cells; ++cell) {
+            const int num_cell_corners = corner_info_[cell].size();
+            for (int cell_corner = 0; cell_corner < num_cell_corners; ++cell_corner) {
+                CornerInfo& ci = corner_info_[cell][cell_corner];
+                for (int adj_ix = 0; adj_ix < dim; ++adj_ix) {
+                    const int face = adj_faces_[dim*ci.corner_id + adj_ix];
+                    const double* fn = grid_.face_normals + dim*face;
+                    for (int dd = 0; dd < dim; ++dd) {
+                        N[adj_ix + dd*dim] = fn[dd]; // Row adj_ix, column dd
+                    }
+                    f[adj_ix] = flux[face];
+                }
+                // Now we have built N and f. Solve Nv = f.
+                // Note that the face orientations do not matter,
+                // as changing an orientation would negate both a
+                // row in N and the corresponding element of f.
+                // Solving linear equation with LAPACK.
+                MAT_SIZE_T n = dim;
+                MAT_SIZE_T nrhs = 1;
+                MAT_SIZE_T lda = n;
+                MAT_SIZE_T ldb = n;
+                MAT_SIZE_T info = 0;
+                dgesv_(&n, &nrhs, &N[0], &lda, &piv[0], &f[0], &ldb, &info);
+                if (info != 0) {
+                    // Print the local matrix and rhs.
+                    std::cerr << "Failed solving single-cell system Nv = f in cell " << cell
+                              << " with N = \n";
+                    for (int row = 0; row < n; ++row) {
+                        for (int col = 0; col < n; ++col) {
+                            std::cerr << "    " << N[row + n*col];
+                        }
+                        std::cerr << '\n';
+                    }
+                    std::cerr << "and f = \n";
+                    for (int row = 0; row < n; ++row) {
+                        std::cerr << "    " << f[row] << '\n';
+                    }
+                    THROW("Lapack error: " << info << " encountered in cell " << cell);
+                }
+                // The solution ends up in f, so we must copy it.
+                std::copy(f.begin(), f.end(), ci.velocity);
+            }
+        }
     }
 
     /// Interpolate velocity.
@@ -220,6 +271,11 @@ namespace Opm
                 double factor = 0.0;
                 for (int dd = 0; dd < dim; ++dd) {
                     factor += grid_.face_normals[dim*face + dd]*(grid_.face_centroids[dim*face + dd] - x[dd]);
+                }
+                // Assumes outward-pointing normals, so negate factor if necessary.
+                if (grid_.face_cells[2*face] != cell) {
+                    ASSERT(grid_.face_cells[2*face + 1] == cell);
+                    factor = -factor;
                 }
                 xb[i] *= factor;
             }

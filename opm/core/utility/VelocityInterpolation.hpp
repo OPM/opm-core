@@ -122,6 +122,7 @@ namespace Opm
             double velocity[Maxdim];  // Computed corner velocity.
         };
         SparseTable<CornerInfo> corner_info_;   // Corner info by cell.
+        std::vector<int> adj_faces_;    // Set of adjacent faces, by corner id. Contains dim face indices per corner.
         SparseTable<int> nonadj_faces_; // Set of nonadjacent faces, by corner id.
 
         void cartToBaryWachspress(const int cell,
