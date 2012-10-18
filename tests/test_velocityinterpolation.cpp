@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE(test_VelocityInterpolationConstant)
     testConstantVelRepro2d<VelocityInterpolationConstant>();
     testConstantVelReproPyramid<VelocityInterpolationConstant>();
     testConstantVelReproIrreg2d<VelocityInterpolationConstant>();
-    // testConstantVelReproIrregPrism<VelocityInterpolationConstant>(); // We should verify if this is expected to fail or not.
+    testConstantVelReproIrregPrism<VelocityInterpolationConstant>();
 }
 
 BOOST_AUTO_TEST_CASE(test_VelocityInterpolationECVI)
