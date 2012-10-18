@@ -73,6 +73,7 @@ namespace Opm
             if (cell == grid_.face_cells[2*face]) {
                 face_flux = flux_[face];
             } else {
+                ASSERT(cell == grid_.face_cells[2*face + 1]);
                 face_flux = -flux_[face];
             }
             for (int dd = 0; dd < dim; ++dd) {
