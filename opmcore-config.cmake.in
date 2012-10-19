@@ -1,0 +1,36 @@
+# - Open Porous Media Initiative Core Library config mode
+#
+# Defines the following variables:
+#  @PACKAGE@_FOUND        - true
+#  @PACKAGE@_VERSION      - version of the opm-core library found, e.g. 0.2
+#  @PACKAGE@_DEFINITIONS  - defines to be made on the command line
+#  @PACKAGE@_INCLUDE_DIRS - include directories to be included in build
+#  @PACKAGE@_LIBRARIES    - library directories to be included in build
+#
+# You should put lines like this in your CMakeLists.txt
+#  set (@PACKAGE@_DIR "../@PACKAGE@" CACHE LOCATION "Build tree of @PACKAGE_NAME@")
+#  find_package (@PACKAGE@)
+
+# <http://www.vtk.org/Wiki/CMake/Tutorials/How_to_create_a_ProjectConfig.cmake_file>
+
+# propagate this property from one build system to the other
+set (@PACKAGE@_VERSION @PACKAGE_VERSION@)
+
+# these definitions may be necessary to make the header files behave the
+# same way as they did when the library was compiled
+set (@PACKAGE@_DEFINITIONS "@OPM_BOOST_CPPFLAGS@ @SUPERLU_CPPFLAGS@ @ERT_CPPFLAGS@")
+
+# include files come from the source tree where the template is stored
+set (@PACKAGE@_INCLUDE_DIRS "@abs_top_srcdir@")
+
+# user programs should link with this library (see comment in the header)
+set (@PACKAGE@_LIBRARIES "@PACKAGE@")
+
+# libraries come from the build tree where this file was generated
+find_library (@PACKAGE@_LOCATION NAMES "@PACKAGE@" PATHS "@abs_top_builddir@/lib/.libs")
+mark_as_advanced (@PACKAGE@_LOCATION)
+
+# add the library as a target, so that other things in the project including
+# this file may depend on it and get rebuild if this library changes.
+add_library (@PACKAGE@ UNKNOWN IMPORTED)
+set_property (TARGET @PACKAGE@ PROPERTY IMPORTED_LOCATION "${@PACKAGE@_LOCATION}")
