@@ -58,6 +58,7 @@ AC_CONFIG_FILES([
  tutorials/Makefile
  opm-core.pc
  lib/pkgconfig/opm-core.pc
+ opmcore-config.cmake
 ])
 
 AC_OUTPUT
