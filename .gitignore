@@ -32,6 +32,7 @@ m4/lt*.m4
 missing
 ar-lib
 tutorials/tutorial[1-4]
+opmcore-config.cmake
 
 # Ignoring executables
 *_test
