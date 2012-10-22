@@ -31,8 +31,8 @@ $(BOOST_SYSTEM_LIB)
 
 noinst_PROGRAMS =                               \
 compute_tof                                     \
+import_rewrite                                  \
 refine_wells                                    \
-rewrite_import                                  \
 scaneclipsedeck                                 \
 sim_2p_comp_reorder                             \
 sim_2p_incomp_reorder                           \
@@ -52,8 +52,8 @@ compute_tof_LDADD             = $(LDADD) $(LINK_BOOST_FILESYSTEM)
 
 refine_wells_SOURCES          = refine_wells.cpp
 
-rewrite_import_SOURCES        = rewrite_import.cpp
-rewrite_import_LDADD          = $(LDADD) $(LINK_BOOST_FILESYSTEM)
+import_rewrite_SOURCES        = import_rewrite.cpp
+import_rewrite_LDADD          = $(LDADD) $(LINK_BOOST_FILESYSTEM)
 
 
 sim_2p_comp_reorder_SOURCES   = sim_2p_comp_reorder.cpp
