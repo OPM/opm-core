@@ -1,13 +1,13 @@
 # Build-time flags needed to form example programs
 ERT_INCLUDE_PATH = $(ERT_ROOT)/include
 
-AM_CPPFLAGS =					\
--I$(top_srcdir)					\
--I$(ERT_INCLUDE_PATH)				\
+AM_CPPFLAGS =                                   \
+-I$(top_srcdir)                                 \
+-I$(ERT_INCLUDE_PATH)                           \
 $(OPM_BOOST_CPPFLAGS)
 
 # All targets link to the library
-LDADD =						\
+LDADD =                                         \
 $(top_builddir)/lib/libopmcore.la
 
 # Convenience definition for targets that use Boost.Filesystem directly.
@@ -19,9 +19,9 @@ $(top_builddir)/lib/libopmcore.la
 # Additional details at
 #   https://fedoraproject.org/wiki/UnderstandingDSOLinkChange
 #
-LINK_BOOST_FILESYSTEM =				\
-$(OPM_BOOST_LDFLAGS)				\
-$(BOOST_FILESYSTEM_LIB)				\
+LINK_BOOST_FILESYSTEM =                         \
+$(OPM_BOOST_LDFLAGS)                            \
+$(BOOST_FILESYSTEM_LIB)                         \
 $(BOOST_SYSTEM_LIB)
 
 # ----------------------------------------------------------------------
@@ -29,14 +29,16 @@ $(BOOST_SYSTEM_LIB)
 #
 # Please keep the list sorted.
 
-noinst_PROGRAMS =				\
-compute_tof					\
-refine_wells					\
-scaneclipsedeck					\
-sim_2p_comp_reorder				\
-sim_2p_incomp_reorder				\
-sim_wateroil					\
-wells_example
+noinst_PROGRAMS =                               \
+compute_tof                                     \
+refine_wells                                    \
+rewrite_import                                  \
+scaneclipsedeck                                 \
+sim_2p_comp_reorder                             \
+sim_2p_incomp_reorder                           \
+sim_wateroil                                    \
+wells_example                                   
+
 
 # ----------------------------------------------------------------------
 # Product constituents.  Must be specified for every product that's
@@ -47,7 +49,12 @@ wells_example
 
 compute_tof_SOURCES           = compute_tof.cpp
 compute_tof_LDADD             = $(LDADD) $(LINK_BOOST_FILESYSTEM)
+
 refine_wells_SOURCES          = refine_wells.cpp
+
+rewrite_import_SOURCES        = rewrite_import.cpp
+rewrite_import_LDADD          = $(LDADD) $(LINK_BOOST_FILESYSTEM)
+
 
 sim_2p_comp_reorder_SOURCES   = sim_2p_comp_reorder.cpp
 sim_2p_comp_reorder_LDADD     = $(LDADD) $(LINK_BOOST_FILESYSTEM)
@@ -67,8 +74,8 @@ if UMFPACK
 noinst_PROGRAMS += spu_2p
 
 spu_2p_SOURCES   = spu_2p.cpp
-spu_2p_LDADD     =				\
-$(LDADD)					\
-$(LINK_BOOST_FILESYSTEM)			\
+spu_2p_LDADD     =                              \
+$(LDADD)                                        \
+$(LINK_BOOST_FILESYSTEM)                        \
 $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS)
 endif
