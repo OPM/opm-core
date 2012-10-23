@@ -31,13 +31,17 @@ $(BOOST_SYSTEM_LIB)
 
 noinst_PROGRAMS =                               \
 compute_tof                                     \
-import_rewrite                                  \
 refine_wells                                    \
 scaneclipsedeck                                 \
 sim_2p_comp_reorder                             \
 sim_2p_incomp_reorder                           \
 sim_wateroil                                    \
 wells_example                                   
+
+if HAVE_ERT
+noinst_PROGRAMS += import_rewrite
+endif
+
 
 
 # ----------------------------------------------------------------------
@@ -52,9 +56,10 @@ compute_tof_LDADD             = $(LDADD) $(LINK_BOOST_FILESYSTEM)
 
 refine_wells_SOURCES          = refine_wells.cpp
 
-import_rewrite_SOURCES        = import_rewrite.cpp
-import_rewrite_LDADD          = $(LDADD) $(LINK_BOOST_FILESYSTEM)
-
+if HAVE_ERT
+   import_rewrite_SOURCES        = import_rewrite.cpp
+   import_rewrite_LDADD          = $(LDADD) $(LINK_BOOST_FILESYSTEM)
+endif
 
 sim_2p_comp_reorder_SOURCES   = sim_2p_comp_reorder.cpp
 sim_2p_comp_reorder_LDADD     = $(LDADD) $(LINK_BOOST_FILESYSTEM)
