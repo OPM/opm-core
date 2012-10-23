@@ -2,121 +2,69 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include <opm/core/pressure/IncompTpfa.hpp>
-#include <opm/core/pressure/FlowBCManager.hpp>
-
-#include <opm/core/grid.h>
-#include <opm/core/GridManager.hpp>
-#include <opm/core/newwells.h>
-#include <opm/core/wells/WellsManager.hpp>
-#include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/initState.hpp>
-#include <opm/core/simulator/SimulatorTimer.hpp>
-#include <opm/core/utility/StopWatch.hpp>
-#include <opm/core/utility/Units.hpp>
-#include <opm/core/utility/writeVtkData.hpp>
-#include <opm/core/utility/miscUtilities.hpp>
-#include <opm/core/utility/parameters/ParameterGroup.hpp>
-
-#include <opm/core/fluid/SimpleFluid2p.hpp>
-#include <opm/core/fluid/IncompPropertiesBasic.hpp>
-#include <opm/core/fluid/IncompPropertiesFromDeck.hpp>
-#include <opm/core/fluid/RockCompressibility.hpp>
-
-#include <opm/core/linalg/LinearSolverFactory.hpp>
-
-#include <opm/core/transport/transport_source.h>
-#include <opm/core/transport/CSRMatrixUmfpackSolver.hpp>
-#include <opm/core/transport/NormSupport.hpp>
-#include <opm/core/transport/ImplicitAssembly.hpp>
-#include <opm/core/transport/ImplicitTransport.hpp>
-#include <opm/core/transport/JacobianSystem.hpp>
-#include <opm/core/transport/CSRMatrixBlockAssembler.hpp>
-#include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
-
-#include <opm/core/utility/ColumnExtract.hpp>
-#include <opm/core/simulator/TwophaseState.hpp>
-#include <opm/core/simulator/WellState.hpp>
-#include <opm/core/transport/GravityColumnSolver.hpp>
-
-#include <opm/core/transport/reorder/TransportModelTwophase.hpp>
+#include <opm/core/eclipse/EclipseGridParser.hpp>
 
 #include <boost/filesystem/convenience.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/lexical_cast.hpp>
-
-#include <cassert>
-#include <cstddef>
-//#include <cstdio.h>
-
-#include <algorithm>
-#include <tr1/array>
-#include <functional>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <iterator>
-#include <vector>
-#include <numeric>
 
 #ifdef HAVE_ERT
 #include <opm/core/utility/writeECLData.hpp>
-
 #include <util.h>
-
 #include <ecl_util.h>
 #include <ecl_kw.h>
 #include <ecl_endian_flip.h>
 #include <fortio.h>
-
 #endif
 
 
 using namespace Opm;
 
 
+static void skipKeyword( std::ifstream& is) {
+  std::string keyword;
+  EclipseGridParser::readKeyword( is , keyword );
+  std::cout << "Skipping: " << keyword << "Pos: " << is.tellg() << std::endl;
+  while (true) {
+    std::ios::pos_type pos = is.tellg();
 
-static void skipKeyword( std::ifstream& is , std::ofstream& os) {
-  std::ios::pos_type start_pos = is.tellg();
-  std::ios::pos_type end_pos;
-  size_t length;
-  {
-    std::string keyword;
-    std::cout << "Starting in " << start_pos;
-    EclipseGridParser::readKeyword( is , keyword );
-    while (true) {
-      
-      end_pos = is.tellg();
-      if (EclipseGridParser::readKeyword( is , keyword )) 
-        break;
-      else
-        is >> ignoreLine;
-      
-      if (!is.good()) {
-        is.clear();
-        is.seekg( 0 , std::ios::end );
-        end_pos = is.tellg();
-        break;
-      }
-    }
+    if (EclipseGridParser::readKeyword( is , keyword )) {
+      is.seekg( pos );  // Repos to start of keyword for next read.
+      break;
+    } else
+      is >> ignoreLine;
     
-    length = end_pos - start_pos;
-  }
-
-  {
-    char * buffer = new char[length];
-    {
-      is.seekg( start_pos );
-      is.read( buffer , length );
+    if (!is.good()) {
+      is.clear();
+      is.seekg( 0 , std::ios::end );
+      break;
     }
-    os.write( buffer , length );
-    delete[] buffer;
   }
-  std::cout << "Stopping in " << end_pos << std::endl;
 }
 
 
-static void convertKeyword( const char * inputFile , std::ifstream& is , FieldType fieldType , std::ofstream& os ) {
+static void copyKeyword( std::ifstream& is , std::ofstream& os) {
+  std::ios::pos_type start_pos = is.tellg();
+  skipKeyword( is );
+  {
+    std::ios::pos_type end_pos = is.tellg();
+    long length = end_pos - start_pos;
+    
+    {
+      char * buffer = new char[length];
+      {
+        is.seekg( start_pos );
+        is.read( buffer , length );
+      }
+      os.write( buffer , length );
+      delete[] buffer;
+    }
+  }
+}
+
+
+
+
+
+static void convertKeyword( const std::string& inputFile , const std::string& outputPath , std::ifstream& is , FieldType fieldType , std::ofstream& os ) {
   const ecl_type_enum outputFloatType = ECL_DOUBLE_TYPE;
   ecl_type_enum ecl_type;
   ecl_kw_type * ecl_kw;
@@ -126,8 +74,9 @@ static void convertKeyword( const char * inputFile , std::ifstream& is , FieldTy
   else
     ecl_type = outputFloatType;
 
+  std::cout << "InputPos: " << is.tellg() << std::endl;
   {
-    FILE * cstream = util_fopen( inputFile , "r");
+    FILE * cstream = util_fopen( inputFile.c_str() , "r");
     fseek( cstream , is.tellg() , SEEK_SET);
     ecl_kw = ecl_kw_fscanf_alloc_current_grdecl( cstream , ecl_type );
     {
@@ -137,36 +86,38 @@ static void convertKeyword( const char * inputFile , std::ifstream& is , FieldTy
     util_fclose( cstream );
     
     {
-      fortio_type * fortio = fortio_open_writer( ecl_kw_get_header( ecl_kw ) , false , ECL_ENDIAN_FLIP );
+      std::string outputFile = outputPath + "/" + ecl_kw_get_header( ecl_kw );
+      fortio_type * fortio = fortio_open_writer( outputFile.c_str() , false , ECL_ENDIAN_FLIP );
       ecl_kw_fwrite( ecl_kw , fortio );
       std::cout << "Writing binary file: " << ecl_kw_get_header( ecl_kw ) << std::endl;
       fortio_fclose( fortio );
+
+      os << "IMPORT" << std::endl << "  '" << outputFile << "'  /" << std::endl << std::endl;
     }
   }
+  std::cout << "Exit: InputPos: " << is.tellg() << std::endl;
 }
 
 
-
-
-int
-main(int argc, char** argv)
-{
-  if (argc != 2)
-    THROW("Need the name of ECLIPSE file on command line");
-
-  std::cout << "Reading file " << argv[1] << "\n";
+bool parseFile(const std::string& inputFile, std::string& outputFile) {
+  bool updateFile = false;
+  std::cout << "Reading file " << inputFile << "\n";
   {
-    std::ifstream is(argv[1]);
+    std::ifstream is(inputFile.c_str());
     std::ofstream os;
-    std::string outputFile(argv[1]);
     std::string keyword;
-
+    std::string path;
+    {
+      boost::filesystem::path inputPath(inputFile);
+      path = inputPath.parent_path().string();
+    }
 
     {
       std::string basename;
       std::string extension;
       
-      size_t ext_pos = outputFile.rfind(".");
+      outputFile = inputFile;
+      size_t ext_pos = inputFile.rfind(".");
       if (ext_pos == std::string::npos) {
         basename = outputFile.substr();
         extension = "";
@@ -186,20 +137,76 @@ main(int argc, char** argv)
         std::ios::pos_type start_pos = is.tellg();
         if (EclipseGridParser::readKeyword( is , keyword )) {
           FieldType fieldType = EclipseGridParser::classifyKeyword( keyword );
+          std::cout << std::endl;
           std::cout << "Have read keyword: " << keyword << " Type : " << fieldType << "\n";
           
-          is.seekg( start_pos );
-          if (fieldType == Integer || fieldType == FloatingPoint) 
-            convertKeyword( argv[1] , is , fieldType , os );
-          else
-            skipKeyword( is , os );
+          switch (fieldType) {
+          case(Integer):
+            {
+              is.seekg( start_pos );
+              std::cout << "Converting keyword: " << keyword << std::endl;
+              convertKeyword( inputFile , path , is , fieldType , os );
+              updateFile = true;
+              break;
+            }
+          case(FloatingPoint):
+            {
+              is.seekg( start_pos );
+              std::cout << "Converting keyword: " << keyword << std::endl;
+              convertKeyword( inputFile , path , is , fieldType , os );
+              updateFile = true;
+              break;
+            }
+          case(Include):
+            {
+              std::string includeFile = readString(is);
+              if (!path.empty()) {
+                includeFile = path + '/' + includeFile;
+              }
+              std::cout << "Continue to includeFile: " << includeFile << std::endl;
+              {
+                bool updateInclude = parseFile( includeFile , outputFile );
+                if (updateInclude) {
+                  is.seekg( start_pos );
+                  skipKeyword( is );
+                  os << "INCLUDE" << std::endl << "   '" << outputFile << "'  /" << std::endl << std::endl;
+                }
+                updateFile |= updateInclude;
+              }
+              break;
+            }
+          default:
+            {
+              std::cout << "Calling copy: " << keyword << " fieldType:" << fieldType << std::endl;
+              is.seekg( start_pos );
+              copyKeyword( is , os);
+              std::cout << "After loop pos: " << is.tellg() << std::endl;
+              break;
+            }
+          }
         } else
-          is >> ignoreLine;
+          is >> ignoreLine;  // Not at a valid keyword
       }
-      
     }
     
     os.close();
     is.close();
+    if (!updateFile)
+      remove( outputFile.c_str() );
+  }
+  return updateFile;
+}
+
+
+
+int
+main(int argc, char** argv)
+{
+  if (argc != 2)
+    THROW("Need the name of ECLIPSE file on command line");
+  {
+    std::string outputFile;
+    if (parseFile(argv[1] , outputFile))
+      std::cout << "Have written: " << outputFile << std::endl;
   }
 }
