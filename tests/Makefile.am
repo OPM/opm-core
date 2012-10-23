@@ -61,6 +61,7 @@ test_read_vag_SOURCES     = test_read_vag.cpp
 test_sf2p_SOURCES         = test_sf2p.cpp
 
 test_velocityinterpolation_SOURCES = test_velocityinterpolation.cpp
+test_velocityinterpolation_LDADD   = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 test_writeVtkData_SOURCES = test_writeVtkData.cpp
 
