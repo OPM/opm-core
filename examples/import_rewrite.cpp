@@ -147,7 +147,7 @@ static bool convertKeyword( const std::string& inputFile , const std::string& ou
 
 
 
-bool parseFile(const std::string& inputFile, std::string& outputFile, const std::string& indent = "") {
+static bool parseFile(const std::string& inputFile, std::string& outputFile, const std::string& indent = "") {
   bool updateFile = false;
   std::cout << indent << "Parsing " << inputFile << "\n";
   {
