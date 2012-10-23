@@ -112,7 +112,6 @@ static ecl_kw_type * loadFromcstdio( const std::string& filename , std::ios::pos
 static bool convertKeyword( const std::string& inputFile , const std::string& outputPath , std::ifstream& is , FieldType fieldType , std::ofstream& os ) {
   bool convert = true;
   ecl_type_enum ecl_type;
-  ecl_kw_type * ecl_kw;
 
   if (fieldType == Integer)
     ecl_type = ECL_INT_TYPE;
@@ -148,7 +147,7 @@ static bool convertKeyword( const std::string& inputFile , const std::string& ou
 
 
 
-bool parseFile(const std::string& inputFile, std::string& outputFile, const std::string& indent = "") {
+static bool parseFile(const std::string& inputFile, std::string& outputFile, const std::string& indent = "") {
   bool updateFile = false;
   std::cout << indent << "Parsing " << inputFile << "\n";
   {
