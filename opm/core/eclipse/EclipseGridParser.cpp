@@ -160,42 +160,6 @@ namespace EclipseKeywords
 
 namespace {
 
-    enum FieldType {
-        Integer,
-        FloatingPoint,
-        Timestepping,
-        SpecialField,
-        IgnoreWithData,
-        IgnoreNoData,
-        Include,
-        Import,
-        Unknown
-    };
-
-    inline FieldType classifyKeyword(const string& keyword)
-    {
-        using namespace EclipseKeywords;
-        if (count(integer_fields, integer_fields + num_integer_fields, keyword)) {
-            return Integer;
-        } else if (count(floating_fields, floating_fields + num_floating_fields, keyword)) {
-            return FloatingPoint;
-        } else if (keyword == "TSTEP" || keyword == "DATES") {
-            return Timestepping;
-        } else if (count(special_fields, special_fields + num_special_fields, keyword)) {
-            return SpecialField;
-        } else if (count(ignore_with_data, ignore_with_data + num_ignore_with_data, keyword)) {
-            return IgnoreWithData;
-        } else if (count(ignore_no_data, ignore_no_data + num_ignore_no_data, keyword)) {
-            return IgnoreNoData;
-        } else if (count(include_keywords, include_keywords + num_include_keywords, keyword)) {
-            return Include;
-        } else if (count(import_keywords, import_keywords + num_import_keywords, keyword)) {
-            return Import;
-        } else {
-            return Unknown;
-        }
-    }
-
     inline std::string upcase(const std::string& s)
     {
         std::string us(s);
@@ -208,71 +172,7 @@ namespace {
         return us;
     }
 
-    inline bool readKeyword(std::istream& is, std::string& keyword)
-    {
-        char buf[9];
-        int i, j;
-        char c;
-        /* Clear buf */
-        for (i=0; i<9; ++i) {
-            buf[i] = '\0';
-        }
-
-        /* Read first character and check if it is uppercase*/
-        //buf[0] = fgetc(fp);
-        is.get(buf[0]);
-        if ( !isupper( buf[0] ) ) {
-            is.unget();
-            return false;          /* NOT VALID CHARACTER */
-        }
-
-        /* Scan as much as possible possible keyword, 8 characters long */
-        i = 1;
-        is.get(c);
-        while ( (is.good()) &&
-                (c != EOF     ) &&
-                (!isblank(c)   ) &&
-                (isupper(c) || isdigit(c)) &&
-                (c != '\n'    ) &&
-                (c != '/'     ) &&
-                (i < 8        )) {
-            buf[i++] = c;
-            is.get(c);
-        }
-
-        /* Skip rest of line */
-        if (c != '\n'){
-            is.get(c);
-            while ( (is.good()) &&
-                    (c != EOF     ) &&
-                    (c != '\n'    )) {
-                is.get(c);
-            }
-        }
-        if(c == '\n') {
-            is.unget();
-        }
-
-        /* Find first non-uppercase or non-digit character */
-        for (i=0; i<8; ++i) {
-            if ( !(isupper(buf[i]) || isdigit(buf[i])) ) {
-                break;
-            }
-        }
-
-        /* Check if remaining characters are blank */
-        for (j = i; j<8; ++j) {
-            if(!isspace(buf[j]) && buf[j] != '\0') {
-                return false; /* CHARACTER AFTER SPACE OR INVALID CHARACTER */
-            }
-            buf[j] = '\0';
-        }
-        keyword = std::string(buf);
-        std::string::size_type end = keyword.find_last_of('\0');
-        if(end != keyword.npos)
-        keyword = keyword.substr(0, end+1);
-        return true;
-    }
+    
 
 } // anon namespace
 
@@ -314,6 +214,98 @@ EclipseGridParser::EclipseGridParser(const string& filename, bool convert_to_SI)
     read(is, convert_to_SI);
 }
 
+
+  FieldType EclipseGridParser::classifyKeyword(const string& keyword)
+  {
+    using namespace EclipseKeywords;
+    if (count(integer_fields, integer_fields + num_integer_fields, keyword)) {
+      return Integer;
+    } else if (count(floating_fields, floating_fields + num_floating_fields, keyword)) {
+      return FloatingPoint;
+    } else if (keyword == "TSTEP" || keyword == "DATES") {
+      return Timestepping;
+    } else if (count(special_fields, special_fields + num_special_fields, keyword)) {
+      return SpecialField;
+    } else if (count(ignore_with_data, ignore_with_data + num_ignore_with_data, keyword)) {
+      return IgnoreWithData;
+    } else if (count(ignore_no_data, ignore_no_data + num_ignore_no_data, keyword)) {
+      return IgnoreNoData;
+    } else if (count(include_keywords, include_keywords + num_include_keywords, keyword)) {
+      return Include;
+    } else if (count(import_keywords, import_keywords + num_import_keywords, keyword)) {
+      return Import;
+    } else {
+      return Unknown;
+    }
+  }
+  
+
+bool EclipseGridParser::readKeyword(std::istream& is, std::string& keyword)
+{
+  char buf[9];
+  int i, j;
+  char c;
+  /* Clear buf */
+  for (i=0; i<9; ++i) {
+    buf[i] = '\0';
+  }
+  
+  /* Read first character and check if it is uppercase*/
+  //buf[0] = fgetc(fp);
+  is.get(buf[0]);
+  if ( !isupper( buf[0] ) ) {
+    is.unget();
+    return false;          /* NOT VALID CHARACTER */
+  }
+  
+  /* Scan as much as possible possible keyword, 8 characters long */
+  i = 1;
+  is.get(c);
+  while ( (is.good()) &&
+          (c != EOF     ) &&
+          (!isblank(c)   ) &&
+          (isupper(c) || isdigit(c)) &&
+          (c != '\n'    ) &&
+          (c != '/'     ) &&
+          (i < 8        )) {
+    buf[i++] = c;
+    is.get(c);
+  }
+  
+  /* Skip rest of line */
+  if (c != '\n'){
+    is.get(c);
+    while ( (is.good()) &&
+            (c != EOF     ) &&
+            (c != '\n'    )) {
+      is.get(c);
+    }
+  }
+  if(c == '\n') {
+    is.unget();
+  }
+  
+  /* Find first non-uppercase or non-digit character */
+  for (i=0; i<8; ++i) {
+    if ( !(isupper(buf[i]) || isdigit(buf[i])) ) {
+      break;
+    }
+  }
+  
+  /* Check if remaining characters are blank */
+  for (j = i; j<8; ++j) {
+    if(!isspace(buf[j]) && buf[j] != '\0') {
+      return false; /* CHARACTER AFTER SPACE OR INVALID CHARACTER */
+    }
+    buf[j] = '\0';
+  }
+  keyword = std::string(buf);
+  std::string::size_type end = keyword.find_last_of('\0');
+  if(end != keyword.npos)
+    keyword = keyword.substr(0, end+1);
+  return true;
+}
+  
 
 /// Read the given stream, overwriting any previous data.
 //---------------------------------------------------------------------------
@@ -1086,47 +1078,47 @@ void EclipseGridParser::getNumericErtFields(const string& filename)
     std::vector<double> double_vec;
     std::vector<int> int_vec;
     for (int i=0; i<num_kw; ++i) {
-	ecl_kw_type * ecl_kw = ecl_file_iget_kw(ecl_file, i);
-	const char* keyword =  ecl_kw_get_header(ecl_kw);
-	FieldType field_type = classifyKeyword(keyword);
-	if (field_type == Unknown) {
-	    ignored_fields_.insert(keyword);
-	    cout << "*** Warning: keyword " << keyword << " is unknown." << endl;
-	    continue;
-	} else {
+        ecl_kw_type * ecl_kw = ecl_file_iget_kw(ecl_file, i);
+        const char* keyword =  ecl_kw_get_header(ecl_kw);
+        FieldType field_type = classifyKeyword(keyword);
+        if (field_type == Unknown) {
+            ignored_fields_.insert(keyword);
+            cout << "*** Warning: keyword " << keyword << " is unknown." << endl;
+            continue;
+        } else {
 #ifdef VERBOSE
-	    cout << "Imported keyword found: " << keyword << endl;
+            cout << "Imported keyword found: " << keyword << endl;
 #endif
-	}
-	ecl_type_enum ecl_type = ecl_kw_get_type(ecl_kw);
-	int data_size = ecl_kw_get_size(ecl_kw);
-	switch(ecl_type) {
-	case ECL_FLOAT_TYPE : {
-	    double_vec.resize(data_size);
-	    ecl_kw_get_data_as_double(ecl_kw, &double_vec[0]);
-	    floating_field_map_[keyword] = double_vec;
-	    break;
-	}
-	case ECL_DOUBLE_TYPE : {
-	    double_vec.resize(data_size);
-	    ecl_kw_get_memcpy_double_data(ecl_kw, &double_vec[0]);
-	    floating_field_map_[keyword] = double_vec;
-	    break;
-	}
-	case ECL_INT_TYPE : {
-	    int_vec.resize(data_size);
-	    ecl_kw_get_memcpy_int_data(ecl_kw, &int_vec[0]);
-	    integer_field_map_[keyword] = int_vec;
-	    break;
-	}
-	default: {
-	    std::cout << "Ignored non-numeric type in file: " << filename << "  Keyword="
-		      << keyword << "  Size=" << ecl_kw_get_size(ecl_kw)
-		      << "  Type=" << ecl_util_get_type_name(ecl_kw_get_type(ecl_kw))
-		      << std::endl;
-	    break;
-	}
-	}
+        }
+        ecl_type_enum ecl_type = ecl_kw_get_type(ecl_kw);
+        int data_size = ecl_kw_get_size(ecl_kw);
+        switch(ecl_type) {
+        case ECL_FLOAT_TYPE : {
+            double_vec.resize(data_size);
+            ecl_kw_get_data_as_double(ecl_kw, &double_vec[0]);
+            floating_field_map_[keyword] = double_vec;
+            break;
+        }
+        case ECL_DOUBLE_TYPE : {
+            double_vec.resize(data_size);
+            ecl_kw_get_memcpy_double_data(ecl_kw, &double_vec[0]);
+            floating_field_map_[keyword] = double_vec;
+            break;
+        }
+        case ECL_INT_TYPE : {
+            int_vec.resize(data_size);
+            ecl_kw_get_memcpy_int_data(ecl_kw, &int_vec[0]);
+            integer_field_map_[keyword] = int_vec;
+            break;
+        }
+        default: {
+            std::cout << "Ignored non-numeric type in file: " << filename << "  Keyword="
+                      << keyword << "  Size=" << ecl_kw_get_size(ecl_kw)
+                      << "  Type=" << ecl_util_get_type_name(ecl_kw_get_type(ecl_kw))
+                      << std::endl;
+            break;
+        }
+        }
     }
     ecl_file_close(ecl_file);
 #else

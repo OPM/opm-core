@@ -71,15 +71,34 @@ namespace Opm
 
 */
 
-class EclipseGridParser
-{
-public:
+  enum FieldType {
+    Integer,
+    FloatingPoint,
+    Timestepping,
+    SpecialField,
+    IgnoreWithData,
+    IgnoreNoData,
+    Include,
+    Import,
+    Unknown
+  };
+
+
+
+  class EclipseGridParser
+  {
+  public:
     /// Default constructor.
     EclipseGridParser();
     /// Constructor taking an eclipse filename. Unless the second
     /// argument 'convert_to_SI' is false, all fields will be
     /// converted to SI units.
     explicit EclipseGridParser(const std::string& filename, bool convert_to_SI = true);
+
+
+    static FieldType classifyKeyword(const std::string& keyword);
+    static bool readKeyword(std::istream& is, std::string& keyword);
+
 
     /// Read the given stream, overwriting any previous data.  Unless
     /// the second argument 'convert_to_SI' is false, all fields will
@@ -238,6 +257,7 @@ private:
     typedef std::map<std::string, SpecialFieldPtr> SpecialMap;
     std::vector<SpecialMap> special_field_by_epoch_;
 };
+
 
 
 } // namespace Opm
