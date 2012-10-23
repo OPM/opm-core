@@ -58,5 +58,6 @@ tests/test_column_extract
 tests/test_lapack
 tests/test_read_vag
 tests/test_readpolymer
+tests/test_velocityinterpolation
 tests/test_wells
 tests/test_writeVtkData
