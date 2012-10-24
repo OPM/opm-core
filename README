@@ -64,6 +64,8 @@ sudo apt-get install libdune-common-dev libdune-istl-dev libdune-grid-dev
 # libraries necessary for OPM
 sudo apt-get install -y libxml2-dev
 
+Note: You should compile the OPM modules using the same toolchain that
+      was used to build DUNE. Otherwise, you can get strange ABI errors.
 
 DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
 -----------------------------------------
@@ -97,7 +99,7 @@ There are two ways to build the opm-core library:
  cd opm-core
  autoreconf -i
  ./configure
- make
+ make -j -l 0.9
 If you want to install the library:
  make install
 or (if installing to /usr/local or similar)
