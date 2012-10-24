@@ -5,6 +5,11 @@ dnl -*- autoconf -*-
 AC_DEFUN([OPM_CORE_CHECKS],
 [
 
+# Language features
+GXX0X
+STATIC_ASSERT_CHECK
+NULLPTR_CHECK
+
 # Checks for libraries.
 
 # Bring in numerics support (standard library component)
