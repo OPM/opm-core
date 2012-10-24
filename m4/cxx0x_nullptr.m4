@@ -3,12 +3,12 @@ AC_DEFUN([NULLPTR_CHECK],[
     AC_REQUIRE([AC_PROG_CXX])
     AC_REQUIRE([GXX0X])
     AC_LANG_PUSH([C++])
-    AC_TRY_COMPILE([],[
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[
       char* ch = nullptr;
       if(ch!=nullptr) { ; }
-      ], 
-      dune_cv_nullptr_support=yes,
-      dune_cv_nullptr_support=no)
+      ])],
+      [dune_cv_nullptr_support=yes],
+      [dune_cv_nullptr_support=no])
     AC_LANG_POP
   ])
   if test "x$dune_cv_nullptr_support" = xyes; then

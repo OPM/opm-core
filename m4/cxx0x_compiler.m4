@@ -22,12 +22,12 @@ AC_DEFUN([GXX0X],[
     if test "x$GXX" = xyes && test "x$gxx11check" = xyes && test "x$gxx0xcheck" = xyes ; then
       AC_LANG_PUSH([C++])
       CXX="$CXX -std=c++11"
-      AC_TRY_COMPILE([
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
         #include <iostream>
         #include <array>
-        ], [],
-        dune_cv_gplusplus_accepts_cplusplus11=yes,
-        dune_cv_gplusplus_accepts_cplusplus11=no)
+        ],)],
+        [dune_cv_gplusplus_accepts_cplusplus11=yes],
+        [dune_cv_gplusplus_accepts_cplusplus11=no])
       AC_LANG_POP([C++])
     else
       dune_cv_gplusplus_accepts_cplusplus11=disabled
@@ -45,12 +45,12 @@ AC_DEFUN([GXX0X],[
       if test "x$GXX" = xyes && test "x$gxx0xcheck" = xyes; then
         AC_LANG_PUSH([C++])
         CXX="$CXX -std=c++0x"
-        AC_TRY_COMPILE([
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
           #include <iostream>
           #include <array>
-          ], [],
-          dune_cv_gplusplus_accepts_cplusplus0x=yes,
-          dune_cv_gplusplus_accepts_cplusplus0x=no)
+          ],)],
+          [dune_cv_gplusplus_accepts_cplusplus0x=yes],
+          [dune_cv_gplusplus_accepts_cplusplus0x=no])
         AC_LANG_POP([C++])
       else
         dune_cv_gplusplus_accepts_cplusplus0x=disabled
