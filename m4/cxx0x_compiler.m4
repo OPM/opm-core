@@ -2,7 +2,7 @@
 # can be disabled by --disable-gxx0xcheck
 
 AC_DEFUN([GXX0X],[
-  ac_save_CXX="$CXX"
+  save_CXX="$CXX"
 
   # put this check first, so we get disable C++11 if C++0x is
   AC_ARG_ENABLE(gxx0xcheck,
@@ -34,10 +34,10 @@ AC_DEFUN([GXX0X],[
     fi
   ])
   if test "x$dune_cv_gplusplus_accepts_cplusplus11" == "xyes" ; then
-    CXX="$ac_save_CXX -std=c++11"
+    CXX="$save_CXX -std=c++11"
     CXXCPP="$CXXCPP -std=c++11"
   else
-    CXX="$ac_save_CXX"
+    CXX="$save_CXX"
     
     # try flag -std=c++0x instead
     AC_CACHE_CHECK([whether $CXX accepts -std=c++0x], dune_cv_gplusplus_accepts_cplusplus0x, [
@@ -57,10 +57,10 @@ AC_DEFUN([GXX0X],[
       fi
     ])
     if test "x$dune_cv_gplusplus_accepts_cplusplus0x" == "xyes" ; then
-      CXX="$ac_save_CXX -std=c++0x"
+      CXX="$save_CXX -std=c++0x"
       CXXCPP="$CXXCPP -std=c++0x"
     else
-      CXX="$ac_save_CXX"
+      CXX="$save_CXX"
     fi
   fi
 ])
