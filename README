@@ -97,7 +97,7 @@ There are two ways to build the opm-core library:
  cd opm-core
  autoreconf -i
  ./configure
- make
+ make -j -l 0.9
 If you want to install the library:
  make install
 or (if installing to /usr/local or similar)
