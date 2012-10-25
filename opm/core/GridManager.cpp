@@ -97,6 +97,20 @@ namespace Opm
 
 
 
+    /// Construct a grid from an input file.
+    /// The file format used is currently undocumented,
+    /// and is therefore only suited for internal use.
+    GridManager::GridManager(const std::string& input_filename)
+    {
+        ug_ = read_grid(input_filename.c_str());
+        if (!ug_) {
+            THROW("Failed to read grid from file " << input_filename);
+        }
+    }
+
+
+
+
     /// Destructor.
     GridManager::~GridManager()
     {
