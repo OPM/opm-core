@@ -33,7 +33,7 @@ AC_DEFUN([GXX0X],[
       dune_cv_gplusplus_accepts_cplusplus11=disabled
     fi
   ])
-  if test "x$dune_cv_gplusplus_accepts_cplusplus11" == "xyes" ; then
+  if test "x$dune_cv_gplusplus_accepts_cplusplus11" = "xyes" ; then
     CXX="$save_CXX -std=c++11"
     CXXCPP="$CXXCPP -std=c++11"
   else
@@ -56,7 +56,7 @@ AC_DEFUN([GXX0X],[
         dune_cv_gplusplus_accepts_cplusplus0x=disabled
       fi
     ])
-    if test "x$dune_cv_gplusplus_accepts_cplusplus0x" == "xyes" ; then
+    if test "x$dune_cv_gplusplus_accepts_cplusplus0x" = "xyes" ; then
       CXX="$save_CXX -std=c++0x"
       CXXCPP="$CXXCPP -std=c++0x"
     else

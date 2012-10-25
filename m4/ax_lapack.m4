@@ -104,7 +104,7 @@ fi
 # don't probe if explicitly defined; by bailing out here if the
 # argument is set, we guard against typo, incompatible libs. etc.
 # being inadvertedly overrided by another (random) implementation
-if test "x$with_lapack" == x; then
+if test "x$with_lapack" = x; then
 
 # LAPACK linked to by default?  (is sometimes included in BLAS lib)
 if test $ax_lapack_ok = no; then
