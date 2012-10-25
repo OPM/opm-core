@@ -31,6 +31,7 @@ $(BOOST_SYSTEM_LIB)
 
 noinst_PROGRAMS =                               \
 compute_tof                                     \
+compute_tof_from_files                          \
 refine_wells                                    \
 scaneclipsedeck                                 \
 sim_2p_comp_reorder                             \
@@ -53,6 +54,9 @@ endif
 
 compute_tof_SOURCES           = compute_tof.cpp
 compute_tof_LDADD             = $(LDADD) $(LINK_BOOST_FILESYSTEM)
+
+compute_tof_from_files_SOURCES = compute_tof_from_files.cpp
+compute_tof_from_files_LDADD   = $(LDADD) $(LINK_BOOST_FILESYSTEM)
 
 refine_wells_SOURCES          = refine_wells.cpp
 
