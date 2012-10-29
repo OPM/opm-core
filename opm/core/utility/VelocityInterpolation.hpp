@@ -20,7 +20,7 @@
 #ifndef OPM_VELOCITYINTERPOLATION_HEADER_INCLUDED
 #define OPM_VELOCITYINTERPOLATION_HEADER_INCLUDED
 
-#include <opm/core/utility/SparseTable.hpp>
+#include <opm/core/utility/WachspressCoord.hpp>
 #include <vector>
 
 struct UnstructuredGrid;
@@ -108,26 +108,10 @@ namespace Opm
                                  const double* x,
                                  double* v) const;
     private:
+        WachspressCoord bcmethod_;
         const UnstructuredGrid& grid_;
         mutable std::vector<double> bary_coord_;
-        enum { Maxdim = 3 };
-
-        // A corner is here defined as a {cell, vertex} pair where the
-        // vertex is adjacent to the cell.
-        struct CornerInfo
-        {
-            int corner_id;         // Unique for each corner.
-            int vertex;            // Shared between corners belonging to different cells.
-            double volume;         // Defined as det(N) where N is the matrix of adjacent face normals.
-            double velocity[Maxdim];  // Computed corner velocity.
-        };
-        SparseTable<CornerInfo> corner_info_;   // Corner info by cell.
-        std::vector<int> adj_faces_;    // Set of adjacent faces, by corner id. Contains dim face indices per corner.
-        SparseTable<int> nonadj_faces_; // Set of nonadjacent faces, by corner id.
-
-        void cartToBaryWachspress(const int cell,
-                                  const double* x,
-                                  double* xb) const;
+        std::vector<double> corner_velocity_; // size = dim * #corners
     };
 
 

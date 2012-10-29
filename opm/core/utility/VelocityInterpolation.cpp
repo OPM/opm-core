@@ -128,65 +128,8 @@ namespace Opm
     /// Constructor.
     /// \param[in]  grid   A grid.
     VelocityInterpolationECVI::VelocityInterpolationECVI(const UnstructuredGrid& grid)
-        : grid_(grid)
+        : bcmethod_(grid), grid_(grid)
     {
-        const int dim = grid.dimensions;
-        if (dim > Maxdim) {
-            THROW("Grid has more than " << Maxdim << " dimensions.");
-        }
-        // Compute static data for each corner.
-        const int num_cells = grid.number_of_cells;
-        int corner_id_count = 0;
-        for (int cell = 0; cell < num_cells; ++cell) {
-            std::set<int> cell_vertices;
-            std::vector<int> cell_faces;
-            std::multimap<int, int> vertex_adj_faces;
-            for (int hface = grid.cell_facepos[cell]; hface < grid.cell_facepos[cell + 1]; ++hface) {
-                const int face = grid.cell_faces[hface];
-                cell_faces.push_back(face);
-                const int fn0 = grid.face_nodepos[face];
-                const int fn1 = grid.face_nodepos[face + 1];
-                cell_vertices.insert(grid.face_nodes + fn0, grid.face_nodes + fn1);
-                for (int fn = fn0; fn < fn1; ++fn) {
-                    const int vertex = grid.face_nodes[fn];
-                    vertex_adj_faces.insert(std::make_pair(vertex, face));
-                }
-            }
-            std::sort(cell_faces.begin(), cell_faces.end()); // set_difference requires sorted ranges
-            std::vector<CornerInfo> cell_corner_info;
-            std::set<int>::const_iterator it = cell_vertices.begin();
-            for (; it != cell_vertices.end(); ++it) {
-                CornerInfo ci;
-                ci.corner_id = corner_id_count++;;
-                ci.vertex = *it;
-                double* fnorm[Maxdim] = { 0 };
-                typedef std::multimap<int, int>::const_iterator MMIt;
-                std::pair<MMIt, MMIt> frange = vertex_adj_faces.equal_range(ci.vertex);
-                int fi = 0;
-                std::vector<int> vert_adj_faces(dim);
-                for (MMIt face_it = frange.first; face_it != frange.second; ++face_it, ++fi) {
-                    if (fi >= dim) {
-                        THROW("In cell " << cell << ", vertex " << ci.vertex << " has "
-                              << " more than " << dim << " adjacent faces.");
-                    }
-                    fnorm[fi] = grid_.face_normals + dim*(face_it->second);
-                    vert_adj_faces[fi] = face_it->second;
-                }
-                ASSERT(fi == dim);
-                adj_faces_.insert(adj_faces_.end(), vert_adj_faces.begin(), vert_adj_faces.end());
-                const double corner_vol = cornerVolume(fnorm, dim);
-                ci.volume = corner_vol;
-                cell_corner_info.push_back(ci);
-                std::sort(vert_adj_faces.begin(), vert_adj_faces.end());
-                std::vector<int> vert_nonadj_faces(cell_faces.size() - vert_adj_faces.size());
-                std::set_difference(cell_faces.begin(), cell_faces.end(),
-                                    vert_adj_faces.begin(), vert_adj_faces.end(),
-                                    vert_nonadj_faces.begin());
-                nonadj_faces_.appendRow(vert_nonadj_faces.begin(), vert_nonadj_faces.end());
-            }
-            corner_info_.appendRow(cell_corner_info.begin(), cell_corner_info.end());
-        }
-        ASSERT(corner_id_count == corner_info_.dataSize());
     }
 
     /// Set up fluxes for interpolation.
@@ -201,13 +144,16 @@ namespace Opm
         std::vector<double> orig_N(dim*dim); // Normals matrix. Fortran ordering!
         std::vector<double> f(dim);     // Flux vector.
         std::vector<MAT_SIZE_T> piv(dim); // For LAPACK solve
+        const SparseTable<WachspressCoord::CornerInfo>& all_ci = bcmethod_.cornerInfo();
+        const std::vector<int>& adj_faces = bcmethod_.adjacentFaces();
+        corner_velocity_.resize(dim*all_ci.dataSize());
         const int num_cells = grid_.number_of_cells;
         for (int cell = 0; cell < num_cells; ++cell) {
-            const int num_cell_corners = corner_info_[cell].size();
+            const int num_cell_corners = bcmethod_.numCorners(cell);
             for (int cell_corner = 0; cell_corner < num_cell_corners; ++cell_corner) {
-                CornerInfo& ci = corner_info_[cell][cell_corner];
+                const int cid = all_ci[cell][cell_corner].corner_id;
                 for (int adj_ix = 0; adj_ix < dim; ++adj_ix) {
-                    const int face = adj_faces_[dim*ci.corner_id + adj_ix];
+                    const int face = adj_faces[dim*cid + adj_ix];
                     const double* fn = grid_.face_normals + dim*face;
                     for (int dd = 0; dd < dim; ++dd) {
                         N[adj_ix + dd*dim] = fn[dd]; // Row adj_ix, column dd
@@ -243,7 +189,7 @@ namespace Opm
                     THROW("Lapack error: " << info << " encountered in cell " << cell);
                 }
                 // The solution ends up in f, so we must copy it.
-                std::copy(f.begin(), f.end(), ci.velocity);
+                std::copy(f.begin(), f.end(), corner_velocity_.begin() + dim*cid);
             }
         }
     }
@@ -258,53 +204,17 @@ namespace Opm
                                                 const double* x,
                                                 double* v) const
     {
-        const int n = corner_info_[cell].size();
+        const int n = bcmethod_.numCorners(cell);
         const int dim = grid_.dimensions;
         bary_coord_.resize(n);
-        cartToBaryWachspress(cell, x, &bary_coord_[0]);
+        bcmethod_.cartToBary(cell, x, &bary_coord_[0]);
         std::fill(v, v + dim, 0.0);
+        const SparseTable<WachspressCoord::CornerInfo>& all_ci = bcmethod_.cornerInfo();
         for (int i = 0; i < n; ++i) {
-            const CornerInfo& ci = corner_info_[cell][i];
+            const int cid = all_ci[cell][i].corner_id;
             for (int dd = 0; dd < dim; ++dd) {
-                v[dd] += ci.velocity[dd] * bary_coord_[i];
+                v[dd] += corner_velocity_[dim*cid + dd] * bary_coord_[i];
             }
-        }
-    }
-
-    // Compute generalized barycentric coordinates for some point x
-    // with respect to the vertices of a cell.
-    void VelocityInterpolationECVI::cartToBaryWachspress(const int cell,
-                                                         const double* x,
-                                                         double* xb) const
-    {
-        const int n = corner_info_[cell].size();
-        const int dim = grid_.dimensions;
-        double totw = 0.0;
-        for (int i = 0; i < n; ++i) {
-            const CornerInfo& ci = corner_info_[cell][i];
-            // Weight (unnormalized) is equal to:
-            // V_i * (prod_{j \in nonadjacent faces} n_j * (c_j - x) )
-            // ^^^                                   ^^^    ^^^
-            // corner "volume"                    normal    centroid
-            xb[i] = ci.volume;
-            const int num_nonadj_faces = nonadj_faces_[ci.corner_id].size();
-            for (int j = 0; j < num_nonadj_faces; ++j) {
-                const int face = nonadj_faces_[ci.corner_id][j];
-                double factor = 0.0;
-                for (int dd = 0; dd < dim; ++dd) {
-                    factor += grid_.face_normals[dim*face + dd]*(grid_.face_centroids[dim*face + dd] - x[dd]);
-                }
-                // Assumes outward-pointing normals, so negate factor if necessary.
-                if (grid_.face_cells[2*face] != cell) {
-                    ASSERT(grid_.face_cells[2*face + 1] == cell);
-                    factor = -factor;
-                }
-                xb[i] *= factor;
-            }
-            totw += xb[i];
-        }
-        for (int i = 0; i < n; ++i) {
-            xb[i] /= totw;
         }
     }
 
