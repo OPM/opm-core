@@ -34,6 +34,11 @@ ar-lib
 tutorials/tutorial[1-4]
 opmcore-config.cmake
 
+# in-tree build with CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
 # Ignoring executables
 *_test
 examples/compute_tof
