@@ -122,6 +122,7 @@ opm/core/transport/transport_source.c			\
 opm/core/utility/MonotCubicInterpolator.cpp		\
 opm/core/utility/StopWatch.cpp				\
 opm/core/utility/VelocityInterpolation.cpp		\
+opm/core/utility/WachspressCoord.cpp			\
 opm/core/utility/miscUtilities.cpp			\
 opm/core/utility/miscUtilitiesBlackoil.cpp		\
 opm/core/utility/parameters/Parameter.cpp		\
@@ -258,6 +259,7 @@ opm/core/utility/StopWatch.hpp				\
 opm/core/utility/UniformTableLinear.hpp			\
 opm/core/utility/Units.hpp				\
 opm/core/utility/VelocityInterpolation.hpp		\
+opm/core/utility/WachspressCoord.hpp			\
 opm/core/utility/buildUniformMonotoneTable.hpp		\
 opm/core/utility/initState.hpp				\
 opm/core/utility/initState_impl.hpp			\
