@@ -25,6 +25,7 @@ test_read_vag					\
 test_readpolymer				\
 test_sf2p					\
 test_velocityinterpolation			\
+test_wachspresscoord				\
 test_wells					\
 test_writeVtkData				\
 unit_test
@@ -62,6 +63,9 @@ test_sf2p_SOURCES         = test_sf2p.cpp
 
 test_velocityinterpolation_SOURCES = test_velocityinterpolation.cpp
 test_velocityinterpolation_LDADD   = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
+test_wachspresscoord_SOURCES = test_wachspresscoord.cpp
+test_wachspresscoord_LDADD   = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 test_writeVtkData_SOURCES = test_writeVtkData.cpp
 
