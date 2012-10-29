@@ -92,7 +92,7 @@ namespace Opm
     public:
         /// Constructor.
         /// \param[in]  grid   A grid.
-        VelocityInterpolationECVI(const UnstructuredGrid& grid);
+        explicit VelocityInterpolationECVI(const UnstructuredGrid& grid);
 
         /// Set up fluxes for interpolation.
         /// \param[in]  flux   One signed flux per face in the grid.

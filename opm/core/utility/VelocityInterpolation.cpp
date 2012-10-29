@@ -190,6 +190,7 @@ namespace Opm
     }
 
     /// Set up fluxes for interpolation.
+    /// Computes the corner velocities.
     /// \param[in]  flux   One signed flux per face in the grid.
     void VelocityInterpolationECVI::setupFluxes(const double* flux)
     {
