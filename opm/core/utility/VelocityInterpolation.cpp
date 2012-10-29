@@ -20,10 +20,6 @@
 #include <opm/core/utility/VelocityInterpolation.hpp>
 #include <opm/core/grid.h>
 #include <opm/core/linalg/blas_lapack.h>
-#include <algorithm>
-#include <cmath>
-#include <map>
-#include <set>
 
 namespace Opm
 {
@@ -81,44 +77,6 @@ namespace Opm
             }
         }
     }
-
-
-    // -------- Helper methods for class VelocityInterpolationECVI --------
-
-    namespace
-    {
-        /// Calculates the determinant of a 2 x 2 matrix, represented as
-        /// two two-dimensional arrays.
-        double determinantOf(const double* a0,
-                             const double* a1)
-        {
-            return
-                a0[0] * a1[1] - a0[1] * a1[0];
-        }
-
-        /// Calculates the determinant of a 3 x 3 matrix, represented as
-        /// three three-dimensional arrays.
-        double determinantOf(const double* a0,
-                             const double* a1,
-                             const double* a2)
-        {
-            return
-                a0[0] * (a1[1] * a2[2] - a2[1] * a1[2]) -
-                a0[1] * (a1[0] * a2[2] - a2[0] * a1[2]) +
-                a0[2] * (a1[0] * a2[1] - a2[0] * a1[1]);
-        }
-
-        /// Calculates the volume of the parallelepiped given by
-        /// the vectors n[i] for i = 0..(dim-1), each n[i] is of size dim.
-        double cornerVolume(double** n, const int dim)
-        {
-            ASSERT(dim == 2 || dim == 3);
-            double det = (dim == 2) ? determinantOf(n[0], n[1]) : determinantOf(n[0], n[1], n[2]);
-            return std::fabs(det);
-        }
-
-    } // anonymous namespace
-
 
 
     // --------  Methods of class VelocityInterpolationECVI  --------
