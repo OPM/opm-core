@@ -48,7 +48,7 @@ AS_IF([test x"${with_ert}" != x"no"],
   LDFLAGS="${_ert_LDFLAGS_SAVE}"
   CFLAGS="${_ert_CFLAGS_SAVE}"
 
-  AS_IF([test x"${use_ert}" == x"yes"],
+  AS_IF([test x"${use_ert}" = x"yes"],
    [AC_SUBST([ERT_CPPFLAGS])
     AC_SUBST([ERT_LDFLAGS])
     AC_SUBST([ERT_LIBS])
