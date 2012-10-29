@@ -65,9 +65,13 @@ namespace Opm
             double volume;         // Defined as det(N) where N is the matrix of adjacent face normals.
         };
 
-        /// The class stores some info for each corner.
+        /// The class stores some info for each corner, made accessible for user convenience.
         /// \return            The corner info container.
         const SparseTable<CornerInfo>& cornerInfo() const;
+
+        /// The class stores adjacent faces for each corner, made accessible for user convenience.
+        /// \return            The vector of adjacent faces. Size = dim * #corners.
+        const std::vector<int>& adjacentFaces() const;
 
     private:
         const UnstructuredGrid& grid_;

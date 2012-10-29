@@ -177,6 +177,15 @@ namespace Opm
 
 
 
+    /// The class stores some info for each corner.
+    /// \return            The corner info container.
+    const std::vector<int>& WachspressCoord::adjacentFaces() const
+    {
+        return adj_faces_;
+    }
+
+
+
     /// Compute generalized barycentric coordinates for some point x
     /// with respect to the vertices of a grid cell.
     /// \param[in]  cell   Cell in which to compute coordinates.
