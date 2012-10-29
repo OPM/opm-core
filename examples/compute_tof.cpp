@@ -169,8 +169,11 @@ main(int argc, char** argv)
     // Choice of tof solver.
     bool use_dg = param.getDefault("use_dg", false);
     int dg_degree = -1;
+    bool use_multidim_upwind = false;
     if (use_dg) {
         dg_degree = param.getDefault("dg_degree", 0);
+    } else {
+        use_multidim_upwind = param.getDefault("use_multidim_upwind", false);
     }
 
     // Write parameters used for later reference.
@@ -231,7 +234,7 @@ main(int argc, char** argv)
         tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], dg_degree, tof);
         transport_timer.stop();
     } else {
-        Opm::TransportModelTracerTof tofsolver(*grid->c_grid());
+        Opm::TransportModelTracerTof tofsolver(*grid->c_grid(), use_multidim_upwind);
         transport_timer.start();
         tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
         transport_timer.stop();
