@@ -101,6 +101,7 @@ namespace Opm
         /// @{
         const double gallon = 231 * cubic(inch);
         const double stb    =  42 * gallon;
+        const double liter  =   1 * cubic(prefix::deci*meter);
         /// @}
 
         /// \name Mass

@@ -64,7 +64,7 @@ namespace Opm
         Impl(const parameter::ParameterGroup& param,
              const UnstructuredGrid& grid,
              const IncompPropertiesInterface& props,
-             const RockCompressibility* rock_comp,
+             const RockCompressibility* rock_comp_props,
              WellsManager& wells_manager,
              const std::vector<double>& src,
              const FlowBoundaryConditions* bcs,
@@ -91,7 +91,7 @@ namespace Opm
         // Observed objects.
         const UnstructuredGrid& grid_;
         const IncompPropertiesInterface& props_;
-        const RockCompressibility* rock_comp_;
+        const RockCompressibility* rock_comp_props_;
         WellsManager& wells_manager_;
         const Wells* wells_;
         const std::vector<double>& src_;
@@ -111,14 +111,14 @@ namespace Opm
     SimulatorIncompTwophase::SimulatorIncompTwophase(const parameter::ParameterGroup& param,
                                                      const UnstructuredGrid& grid,
                                                      const IncompPropertiesInterface& props,
-                                                     const RockCompressibility* rock_comp,
+                                                     const RockCompressibility* rock_comp_props,
                                                      WellsManager& wells_manager,
                                                      const std::vector<double>& src,
                                                      const FlowBoundaryConditions* bcs,
                                                      LinearSolverInterface& linsolver,
                                                      const double* gravity)
     {
-        pimpl_.reset(new Impl(param, grid, props, rock_comp, wells_manager, src, bcs, linsolver, gravity));
+        pimpl_.reset(new Impl(param, grid, props, rock_comp_props, wells_manager, src, bcs, linsolver, gravity));
     }
 
 
@@ -244,6 +244,7 @@ namespace Opm
             if (!file) {
                 THROW("Failed to open " << fname.str());
             }
+            file.precision(15);
             const std::vector<double>& d = *(it->second);
             std::copy(d.begin(), d.end(), std::ostream_iterator<double>(file, "\n"));
         }
@@ -311,7 +312,7 @@ namespace Opm
     SimulatorIncompTwophase::Impl::Impl(const parameter::ParameterGroup& param,
                                         const UnstructuredGrid& grid,
                                         const IncompPropertiesInterface& props,
-                                        const RockCompressibility* rock_comp,
+                                        const RockCompressibility* rock_comp_props,
                                         WellsManager& wells_manager,
                                         const std::vector<double>& src,
                                         const FlowBoundaryConditions* bcs,
@@ -319,12 +320,12 @@ namespace Opm
                                         const double* gravity)
         : grid_(grid),
           props_(props),
-          rock_comp_(rock_comp),
+          rock_comp_props_(rock_comp_props),
           wells_manager_(wells_manager),
           wells_(wells_manager.c_wells()),
           src_(src),
           bcs_(bcs),
-          psolver_(grid, props, rock_comp, linsolver,
+          psolver_(grid, props, rock_comp_props, linsolver,
                    param.getDefault("nl_pressure_residual_tolerance", 0.0),
                    param.getDefault("nl_pressure_change_tolerance", 1.0),
                    param.getDefault("nl_pressure_maxiter", 10),
@@ -380,8 +381,8 @@ namespace Opm
 
         // Initialisation.
         std::vector<double> porevol;
-        if (rock_comp_ && rock_comp_->isActive()) {
-            computePorevolume(grid_, props_.porosity(), *rock_comp_, state.pressure(), porevol);
+        if (rock_comp_props_ && rock_comp_props_->isActive()) {
+            computePorevolume(grid_, props_.porosity(), *rock_comp_props_, state.pressure(), porevol);
         } else {
             computePorevolume(grid_, props_.porosity(), porevol);
         }
@@ -398,8 +399,6 @@ namespace Opm
         total_timer.start();
         double init_satvol[2] = { 0.0 };
         double satvol[2] = { 0.0 };
-        double injected[2] = { 0.0 };
-        double produced[2] = { 0.0 };
         double tot_injected[2] = { 0.0 };
         double tot_produced[2] = { 0.0 };
         Opm::computeSaturatedVol(porevol, state.saturation(), init_satvol);
@@ -452,7 +451,7 @@ namespace Opm
                 // there are no pressure conditions (bcs or wells).
                 // It is deemed sufficient for now to renormalize
                 // using geometric volume instead of pore volume.
-                if ((rock_comp_ == NULL || !rock_comp_->isActive())
+                if ((rock_comp_props_ == NULL || !rock_comp_props_->isActive())
                     && allNeumannBCs(bcs_) && allRateWells(wells_)) {
                     // Compute average pressures of previous and last
                     // step, and total volume.
@@ -486,8 +485,8 @@ namespace Opm
                 // Optionally, check if well controls are satisfied.
                 if (check_well_controls_) {
                     Opm::computePhaseFlowRatesPerWell(*wells_,
-                                                      fractional_flows,
                                                       well_state.perfRates(),
+                                                      fractional_flows,
                                                       well_resflows_phase);
                     std::cout << "Checking well conditions." << std::endl;
                     // For testing we set surface := reservoir
@@ -505,9 +504,9 @@ namespace Opm
             } while (!well_control_passed);
 
             // Update pore volumes if rock is compressible.
-            if (rock_comp_ && rock_comp_->isActive()) {
+            if (rock_comp_props_ && rock_comp_props_->isActive()) {
                 initial_porevol = porevol;
-                computePorevolume(grid_, props_.porosity(), *rock_comp_, state.pressure(), porevol);
+                computePorevolume(grid_, props_.porosity(), *rock_comp_props_, state.pressure(), porevol);
             }
 
             // Process transport sources (to include bdy terms and well flows).
@@ -521,10 +520,19 @@ namespace Opm
                 stepsize /= double(num_transport_substeps_);
                 std::cout << "Making " << num_transport_substeps_ << " transport substeps." << std::endl;
             }
+            double injected[2] = { 0.0 };
+            double produced[2] = { 0.0 };
             for (int tr_substep = 0; tr_substep < num_transport_substeps_; ++tr_substep) {
                 tsolver_.solve(&state.faceflux()[0], &initial_porevol[0], &transport_src[0],
                               stepsize, state.saturation());
-                Opm::computeInjectedProduced(props_, state.saturation(), transport_src, stepsize, injected, produced);
+                double substep_injected[2] = { 0.0 };
+                double substep_produced[2] = { 0.0 };
+                Opm::computeInjectedProduced(props_, state.saturation(), transport_src, stepsize,
+                                             substep_injected, substep_produced);
+                injected[0] += substep_injected[0];
+                injected[1] += substep_injected[1];
+                produced[0] += substep_produced[0];
+                produced[1] += substep_produced[1];
                 if (use_segregation_split_) {
                     tsolver_.solveGravity(columns_, &initial_porevol[0], stepsize, state.saturation());
                 }

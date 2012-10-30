@@ -34,10 +34,10 @@ namespace Opm
     class SinglePvtLiveOil : public SinglePvtInterface
     {
     public:
-	typedef std::vector<std::vector<std::vector<double> > > table_t;
+        typedef std::vector<std::vector<std::vector<double> > > table_t;
 
-	SinglePvtLiveOil(const table_t& pvto);
-	virtual ~SinglePvtLiveOil();
+        SinglePvtLiveOil(const table_t& pvto);
+        virtual ~SinglePvtLiveOil();
 
         /// Viscosity as a function of p and z.
         virtual void mu(const int n,
@@ -77,15 +77,15 @@ namespace Opm
         double evalR(double press, const double* surfvol) const;
         void evalRDeriv(double press, const double* surfvol, double& R, double& dRdp) const;
 
-	// item:  1=>1/B  2=>mu;
-	double miscible_oil(const double press,
+        // item:  1=>1/B  2=>mu;
+        double miscible_oil(const double press,
                             const double* surfvol,
                             const int item,
-			    const bool deriv = false) const;
+                            const bool deriv = false) const;
 
-	// PVT properties of live oil (with dissolved gas)
-	std::vector<std::vector<double> > saturated_oil_table_;	
-	std::vector<std::vector<std::vector<double> > > undersat_oil_tables_;
+        // PVT properties of live oil (with dissolved gas)
+        std::vector<std::vector<double> > saturated_oil_table_;
+        std::vector<std::vector<std::vector<double> > > undersat_oil_tables_;
     };
 
 }

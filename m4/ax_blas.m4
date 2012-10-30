@@ -98,6 +98,11 @@ if test "x$BLAS_LIBS" != x; then
 fi
 fi
 
+# don't probe if explicitly defined; by bailing out here if the
+# argument is set, we guard against typo, incompatible libs. etc.
+# being inadvertedly overrided by another (random) implementation
+if test "x$with_blas" == x; then
+
 # BLAS linked to by default?  (happens on some supercomputers)
 if test $ax_blas_ok = no; then
 	save_LIBS="$LIBS"; LIBS="$LIBS"
@@ -184,6 +189,9 @@ fi
 # Generic BLAS library?
 if test $ax_blas_ok = no; then
 	AC_CHECK_LIB(blas, $sgemm, [ax_blas_ok=yes; BLAS_LIBS="-lblas"])
+fi
+
+# end of guard against automatic overriding explicit definitions
 fi
 
 AC_SUBST(BLAS_LIBS)

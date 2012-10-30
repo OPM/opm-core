@@ -45,6 +45,13 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 #include <opm/core/eclipse/EclipseUnits.hpp>
 #include <opm/core/utility/Factory.hpp>
 
+#include <opm/core/grid/cornerpoint_grid.h>
+#ifdef HAVE_ERT
+#include <ecl_kw.h>
+#include <ecl_grid.h>
+#endif
+
+
 namespace Opm
 {
 
@@ -64,15 +71,34 @@ namespace Opm
 
 */
 
-class EclipseGridParser
-{
-public:
+  enum FieldType {
+    Integer,
+    FloatingPoint,
+    Timestepping,
+    SpecialField,
+    IgnoreWithData,
+    IgnoreNoData,
+    Include,
+    Import,
+    Unknown
+  };
+
+
+
+  class EclipseGridParser
+  {
+  public:
     /// Default constructor.
     EclipseGridParser();
     /// Constructor taking an eclipse filename. Unless the second
     /// argument 'convert_to_SI' is false, all fields will be
     /// converted to SI units.
     explicit EclipseGridParser(const std::string& filename, bool convert_to_SI = true);
+
+
+    static FieldType classifyKeyword(const std::string& keyword);
+    static bool readKeyword(std::istream& is, std::string& keyword);
+
 
     /// Read the given stream, overwriting any previous data.  Unless
     /// the second argument 'convert_to_SI' is false, all fields will
@@ -191,11 +217,28 @@ public:                                                                         
     /// The units specified by the eclipse file read.
     const EclipseUnits& units() const;
 
+    struct grdecl get_grdecl() const;
+
+#ifdef HAVE_ERT
+  void saveEGRID_INIT( const std::string& output_dir , const std::string& basename, bool fmt_file = false);
+  void saveEGRID( const std::string & filename );
+  void saveINIT( const std::string & filename , const ecl_grid_type * ecl_grid);
+  ecl_grid_type * newGrid( );
+#endif
+
+
 private:
+
+#ifdef HAVE_ERT
+  ecl_kw_type * newEclKW(const std::string &keyword , ecl_type_enum ecl_type) const;
+  void          save_kw( fortio_type * fortio , const std::string & kw , ecl_type_enum ecl_type);
+#endif
+
     SpecialFieldPtr createSpecialField(std::istream& is, const std::string& fieldname);
     SpecialFieldPtr cloneSpecialField(const std::string& fieldname,
                                       const std::tr1::shared_ptr<SpecialBase> original);
     void readImpl(std::istream& is);
+    void getNumericErtFields(const std::string& filename);
 
 
     std::string directory_;
@@ -214,6 +257,7 @@ private:
     typedef std::map<std::string, SpecialFieldPtr> SpecialMap;
     std::vector<SpecialMap> special_field_by_epoch_;
 };
+
 
 
 } // namespace Opm

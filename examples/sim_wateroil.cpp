@@ -175,7 +175,7 @@ main(int argc, char** argv)
         // Grid init
         grid.reset(new Opm::GridManager(deck));
         // Rock and fluid init
-        props.reset(new Opm::BlackoilPropertiesFromDeck(deck, *grid->c_grid()));
+        props.reset(new BlackoilPropertiesFromDeck(deck, *grid->c_grid(), param));
         // Wells init.
         wells.reset(new Opm::WellsManager(deck, *grid->c_grid(), props->permeability()));
         check_well_controls = param.getDefault("check_well_controls", false);
@@ -408,7 +408,7 @@ main(int argc, char** argv)
                                 state.saturation(), state.surfacevol());
             // Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
             if (use_segregation_split) {
-                reorder_model.solveGravity(columns, &state.pressure()[0], &initial_porevol[0],
+                reorder_model.solveGravity(columns, 
                                            stepsize, state.saturation(), state.surfacevol());
             }
         }

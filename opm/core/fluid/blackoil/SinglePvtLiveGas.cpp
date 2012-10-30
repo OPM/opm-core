@@ -1,13 +1,13 @@
 //===========================================================================
-//                                                                           
-// File: MiscibilityLiveGas.cpp                                               
-//                                                                           
-// Created: Wed Feb 10 09:21:53 2010                                         
-//                                                                           
+//
+// File: MiscibilityLiveGas.cpp
+//
+// Created: Wed Feb 10 09:21:53 2010
+//
 // Author: Bjørn Spjelkavik <bsp@sintef.no>
-//                                                                           
+//
 // Revision: $Id$
-//                                                                           
+//
 //===========================================================================
 /*
   Copyright 2010 SINTEF ICT, Applied Mathematics.
@@ -47,37 +47,37 @@ namespace Opm
     /// Constructor
     SinglePvtLiveGas::SinglePvtLiveGas(const table_t& pvtg)
     {
-	// GAS, PVTG
-	const int region_number = 0;
-	if (pvtg.size() != 1) {
-	    THROW("More than one PVD-region");
-	}
-	saturated_gas_table_.resize(4);
-	const int sz = pvtg[region_number].size();
-	for (int k=0; k<4; ++k) {
-	    saturated_gas_table_[k].resize(sz);
-	}
+        // GAS, PVTG
+        const int region_number = 0;
+        if (pvtg.size() != 1) {
+            THROW("More than one PVD-region");
+        }
+        saturated_gas_table_.resize(4);
+        const int sz = pvtg[region_number].size();
+        for (int k=0; k<4; ++k) {
+            saturated_gas_table_[k].resize(sz);
+        }
 
-	for (int i=0; i<sz; ++i) {
-	    saturated_gas_table_[0][i] = pvtg[region_number][i][0];  // p
-	    saturated_gas_table_[1][i] = pvtg[region_number][i][2];  // Bg
-	    saturated_gas_table_[2][i] = pvtg[region_number][i][3];  // mu_g
-	    saturated_gas_table_[3][i] = pvtg[region_number][i][1]; // Rv
-	}
+        for (int i=0; i<sz; ++i) {
+            saturated_gas_table_[0][i] = pvtg[region_number][i][0];  // p
+            saturated_gas_table_[1][i] = pvtg[region_number][i][2];  // Bg
+            saturated_gas_table_[2][i] = pvtg[region_number][i][3];  // mu_g
+            saturated_gas_table_[3][i] = pvtg[region_number][i][1]; // Rv
+        }
 
-	undersat_gas_tables_.resize(sz);
-	for (int i=0; i<sz; ++i) {
-	    undersat_gas_tables_[i].resize(3);
-	    int tsize = (pvtg[region_number][i].size() - 1)/3;
-	    undersat_gas_tables_[i][0].resize(tsize);
-	    undersat_gas_tables_[i][1].resize(tsize);
-	    undersat_gas_tables_[i][2].resize(tsize);
-	    for (int j=0, k=0; j<tsize; ++j) {
-		undersat_gas_tables_[i][0][j] = pvtg[region_number][i][++k]; // Rv
-		undersat_gas_tables_[i][1][j] = pvtg[region_number][i][++k]; // Bg
-		undersat_gas_tables_[i][2][j] = pvtg[region_number][i][++k]; // mu_g
-	    }
-	}
+        undersat_gas_tables_.resize(sz);
+        for (int i=0; i<sz; ++i) {
+            undersat_gas_tables_[i].resize(3);
+            int tsize = (pvtg[region_number][i].size() - 1)/3;
+            undersat_gas_tables_[i][0].resize(tsize);
+            undersat_gas_tables_[i][1].resize(tsize);
+            undersat_gas_tables_[i][2].resize(tsize);
+            for (int j=0, k=0; j<tsize; ++j) {
+                undersat_gas_tables_[i][0][j] = pvtg[region_number][i][++k]; // Rv
+                undersat_gas_tables_[i][1][j] = pvtg[region_number][i][++k]; // Bg
+                undersat_gas_tables_[i][2][j] = pvtg[region_number][i][++k]; // mu_g
+            }
+        }
     }
 
     // Destructor
@@ -184,16 +184,16 @@ namespace Opm
             // To handle no-gas case.
             return 0.0;
         }
-	double satR = linearInterpolationExtrap(saturated_gas_table_[0],
-					     saturated_gas_table_[3], press);
-	double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
-	if (satR < maxR ) {
+        double satR = linearInterpolationExtrap(saturated_gas_table_[0],
+                                             saturated_gas_table_[3], press);
+        double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
+        if (satR < maxR ) {
             // Saturated case
-	    return satR;
-	} else {
+            return satR;
+        } else {
             // Undersaturated case
-	    return maxR;
-	}
+            return maxR;
+        }
     }
 
     void SinglePvtLiveGas::evalRDeriv(const double press, const double* surfvol,
@@ -205,20 +205,20 @@ namespace Opm
             dRdpval = 0.0;
             return;
         }
-	double satR = linearInterpolationExtrap(saturated_gas_table_[0],
-					     saturated_gas_table_[3], press);
-	double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
-	if (satR < maxR ) {
+        double satR = linearInterpolationExtrap(saturated_gas_table_[0],
+                                             saturated_gas_table_[3], press);
+        double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
+        if (satR < maxR ) {
             // Saturated case
             Rval = satR;
-	    dRdpval = linearInterpolDerivative(saturated_gas_table_[0],
-					    saturated_gas_table_[3],
-					    press);
-	} else {
+            dRdpval = linearInterpolDerivative(saturated_gas_table_[0],
+                                            saturated_gas_table_[3],
+                                            press);
+        } else {
             // Undersaturated case
             Rval = maxR;
-	    dRdpval = 0.0;
-	}	
+            dRdpval = 0.0;
+        }
     }
 
     double SinglePvtLiveGas::miscible_gas(const double press,
@@ -226,81 +226,81 @@ namespace Opm
                                           const int item,
                                           const bool deriv) const
     {
-	int section;
-	double Rval = linearInterpolationExtrap(saturated_gas_table_[0],
+        int section;
+        double Rval = linearInterpolationExtrap(saturated_gas_table_[0],
                                                 saturated_gas_table_[3], press,
                                                 section);
-	double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
-	if (deriv) {
-	    if (Rval < maxR ) {  // Saturated case
-		return linearInterpolDerivative(saturated_gas_table_[0],
-						saturated_gas_table_[item],
-						press);
-	    } else {  // Undersaturated case
-		int is = section;
-		if (undersat_gas_tables_[is][0].size() < 2) {
-		    double val = (saturated_gas_table_[item][is+1]
-				  - saturated_gas_table_[item][is]) /
-			(saturated_gas_table_[0][is+1] -
-			 saturated_gas_table_[0][is]);
-		    return val;
-		}
-		double val1 =
-		    linearInterpolationExtrap(undersat_gas_tables_[is][0],
-					      undersat_gas_tables_[is][item],
-					      maxR);
-		double val2 = 
-		    linearInterpolationExtrap(undersat_gas_tables_[is+1][0],
-					      undersat_gas_tables_[is+1][item],
-					      maxR);
-		double val = (val2 - val1)/
-		    (saturated_gas_table_[0][is+1] - saturated_gas_table_[0][is]);
-		return val;
-	    }
-	} else {
-	    if (Rval < maxR ) {  // Saturated case
-		return linearInterpolationExtrap(saturated_gas_table_[0],
-						 saturated_gas_table_[item],
-						 press);
-	    } else {  // Undersaturated case
-		int is = section;
-		// Extrapolate from first table section
-		if (is == 0 && press < saturated_gas_table_[0][0]) {
-		    return linearInterpolationExtrap(undersat_gas_tables_[0][0],
-						     undersat_gas_tables_[0][item],
-						     maxR);
-		}
+        double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
+        if (deriv) {
+            if (Rval < maxR ) {  // Saturated case
+                return linearInterpolDerivative(saturated_gas_table_[0],
+                                                saturated_gas_table_[item],
+                                                press);
+            } else {  // Undersaturated case
+                int is = section;
+                if (undersat_gas_tables_[is][0].size() < 2) {
+                    double val = (saturated_gas_table_[item][is+1]
+                                  - saturated_gas_table_[item][is]) /
+                        (saturated_gas_table_[0][is+1] -
+                         saturated_gas_table_[0][is]);
+                    return val;
+                }
+                double val1 =
+                    linearInterpolationExtrap(undersat_gas_tables_[is][0],
+                                              undersat_gas_tables_[is][item],
+                                              maxR);
+                double val2 =
+                    linearInterpolationExtrap(undersat_gas_tables_[is+1][0],
+                                              undersat_gas_tables_[is+1][item],
+                                              maxR);
+                double val = (val2 - val1)/
+                    (saturated_gas_table_[0][is+1] - saturated_gas_table_[0][is]);
+                return val;
+            }
+        } else {
+            if (Rval < maxR ) {  // Saturated case
+                return linearInterpolationExtrap(saturated_gas_table_[0],
+                                                 saturated_gas_table_[item],
+                                                 press);
+            } else {  // Undersaturated case
+                int is = section;
+                // Extrapolate from first table section
+                if (is == 0 && press < saturated_gas_table_[0][0]) {
+                    return linearInterpolationExtrap(undersat_gas_tables_[0][0],
+                                                     undersat_gas_tables_[0][item],
+                                                     maxR);
+                }
 
-		// Extrapolate from last table section
-		int ltp = saturated_gas_table_[0].size() - 1;
-		if (is+1 == ltp && press > saturated_gas_table_[0][ltp]) {
-		    return linearInterpolationExtrap(undersat_gas_tables_[ltp][0],
-						     undersat_gas_tables_[ltp][item],
-						     maxR);
-		}
+                // Extrapolate from last table section
+                int ltp = saturated_gas_table_[0].size() - 1;
+                if (is+1 == ltp && press > saturated_gas_table_[0][ltp]) {
+                    return linearInterpolationExtrap(undersat_gas_tables_[ltp][0],
+                                                     undersat_gas_tables_[ltp][item],
+                                                     maxR);
+                }
 
-		// Interpolate between table sections
-		double w = (press - saturated_gas_table_[0][is]) /
-		    (saturated_gas_table_[0][is+1] - 
-		     saturated_gas_table_[0][is]);
-		if (undersat_gas_tables_[is][0].size() < 2) {
-		    double val = saturated_gas_table_[item][is] +
-			w*(saturated_gas_table_[item][is+1] -
-			   saturated_gas_table_[item][is]);
-		    return val;
-		}
-		double val1 =
-		    linearInterpolationExtrap(undersat_gas_tables_[is][0],
-					      undersat_gas_tables_[is][item],
-					      maxR);
-		double val2 = 
-		    linearInterpolationExtrap(undersat_gas_tables_[is+1][0],
-					      undersat_gas_tables_[is+1][item],
-					      maxR);
-		double val = val1 + w*(val2 - val1);
-		return val;
-	    }
-	}
+                // Interpolate between table sections
+                double w = (press - saturated_gas_table_[0][is]) /
+                    (saturated_gas_table_[0][is+1] -
+                     saturated_gas_table_[0][is]);
+                if (undersat_gas_tables_[is][0].size() < 2) {
+                    double val = saturated_gas_table_[item][is] +
+                        w*(saturated_gas_table_[item][is+1] -
+                           saturated_gas_table_[item][is]);
+                    return val;
+                }
+                double val1 =
+                    linearInterpolationExtrap(undersat_gas_tables_[is][0],
+                                              undersat_gas_tables_[is][item],
+                                              maxR);
+                double val2 =
+                    linearInterpolationExtrap(undersat_gas_tables_[is+1][0],
+                                              undersat_gas_tables_[is+1][item],
+                                              maxR);
+                double val = val1 + w*(val2 - val1);
+                return val;
+            }
+        }
     }
 
 

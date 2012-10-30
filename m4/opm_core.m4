@@ -5,6 +5,11 @@ dnl -*- autoconf -*-
 AC_DEFUN([OPM_CORE_CHECKS],
 [
 
+# Language features
+GXX0X
+STATIC_ASSERT_CHECK
+NULLPTR_CHECK
+
 # Checks for libraries.
 
 # Bring in numerics support (standard library component)
@@ -17,8 +22,8 @@ AX_BOOST_SYSTEM
 AX_BOOST_DATE_TIME
 AX_BOOST_FILESYSTEM
 AX_BOOST_UNIT_TEST_FRAMEWORK
-
 AX_DUNE_ISTL
+OPM_PATH_SUPERLU
 OPM_AGMG
 
 # Checks for header files.

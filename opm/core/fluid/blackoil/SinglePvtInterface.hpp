@@ -32,7 +32,7 @@ namespace Opm
     public:
         SinglePvtInterface();
 
-	virtual ~SinglePvtInterface();
+        virtual ~SinglePvtInterface();
 
         /// \param[in]  num_phases   The number of active phases.
         /// \param[in]  phase_pos    Array of BlackpoilPhases::MaxNumPhases

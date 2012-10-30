@@ -65,7 +65,7 @@ namespace Opm
         Impl(const parameter::ParameterGroup& param,
              const UnstructuredGrid& grid,
              const BlackoilPropertiesInterface& props,
-             const RockCompressibility* rock_comp,
+             const RockCompressibility* rock_comp_props,
              WellsManager& wells_manager,
              const std::vector<double>& src,
              const FlowBoundaryConditions* bcs,
@@ -93,7 +93,7 @@ namespace Opm
         // Observed objects.
         const UnstructuredGrid& grid_;
         const BlackoilPropertiesInterface& props_;
-        const RockCompressibility* rock_comp_;
+        const RockCompressibility* rock_comp_props_;
         WellsManager& wells_manager_;
         const Wells* wells_;
         const std::vector<double>& src_;
@@ -114,14 +114,14 @@ namespace Opm
     SimulatorCompressibleTwophase::SimulatorCompressibleTwophase(const parameter::ParameterGroup& param,
                                                                  const UnstructuredGrid& grid,
                                                                  const BlackoilPropertiesInterface& props,
-                                                                 const RockCompressibility* rock_comp,
+                                                                 const RockCompressibility* rock_comp_props,
                                                                  WellsManager& wells_manager,
                                                                  const std::vector<double>& src,
                                                                  const FlowBoundaryConditions* bcs,
                                                                  LinearSolverInterface& linsolver,
                                                                  const double* gravity)
     {
-        pimpl_.reset(new Impl(param, grid, props, rock_comp, wells_manager, src, bcs, linsolver, gravity));
+        pimpl_.reset(new Impl(param, grid, props, rock_comp_props, wells_manager, src, bcs, linsolver, gravity));
     }
 
 
@@ -175,6 +175,7 @@ namespace Opm
         Opm::DataMap dm;
         dm["saturation"] = &state.saturation();
         dm["pressure"] = &state.pressure();
+        dm["surfvolume"] = &state.surfacevol();
         std::vector<double> cell_velocity;
         Opm::estimateCellVelocity(grid, state.faceflux(), cell_velocity);
         dm["velocity"] = &cell_velocity;
@@ -195,6 +196,7 @@ namespace Opm
             if (!file) {
                 THROW("Failed to open " << fname.str());
             }
+            file.precision(15);
             const std::vector<double>& d = *(it->second);
             std::copy(d.begin(), d.end(), std::ostream_iterator<double>(file, "\n"));
         }
@@ -232,7 +234,7 @@ namespace Opm
     SimulatorCompressibleTwophase::Impl::Impl(const parameter::ParameterGroup& param,
                                               const UnstructuredGrid& grid,
                                               const BlackoilPropertiesInterface& props,
-                                              const RockCompressibility* rock_comp,
+                                              const RockCompressibility* rock_comp_props,
                                               WellsManager& wells_manager,
                                               const std::vector<double>& src,
                                               const FlowBoundaryConditions* bcs,
@@ -240,12 +242,13 @@ namespace Opm
                                               const double* gravity)
         : grid_(grid),
           props_(props),
-          rock_comp_(rock_comp),
+          rock_comp_props_(rock_comp_props),
           wells_manager_(wells_manager),
           wells_(wells_manager.c_wells()),
           src_(src),
           bcs_(bcs),
-          psolver_(grid, props, rock_comp, linsolver,
+          gravity_(gravity),
+          psolver_(grid, props, rock_comp_props, linsolver,
                    param.getDefault("nl_pressure_residual_tolerance", 0.0),
                    param.getDefault("nl_pressure_change_tolerance", 1.0),
                    param.getDefault("nl_pressure_maxiter", 10),
@@ -301,8 +304,8 @@ namespace Opm
 
         // Initialisation.
         std::vector<double> porevol;
-        if (rock_comp_ && rock_comp_->isActive()) {
-            computePorevolume(grid_, props_.porosity(), *rock_comp_, state.pressure(), porevol);
+        if (rock_comp_props_ && rock_comp_props_->isActive()) {
+            computePorevolume(grid_, props_.porosity(), *rock_comp_props_, state.pressure(), porevol);
         } else {
             computePorevolume(grid_, props_.porosity(), porevol);
         }
@@ -317,15 +320,11 @@ namespace Opm
         Opm::time::StopWatch step_timer;
         Opm::time::StopWatch total_timer;
         total_timer.start();
-        double init_satvol[2] = { 0.0 };
-        double satvol[2] = { 0.0 };
-        double injected[2] = { 0.0 };
-        double produced[2] = { 0.0 };
+        double init_surfvol[2] = { 0.0 };
+        double inplace_surfvol[2] = { 0.0 };
         double tot_injected[2] = { 0.0 };
         double tot_produced[2] = { 0.0 };
-        Opm::computeSaturatedVol(porevol, state.saturation(), init_satvol);
-        std::cout << "\nInitial saturations are    " << init_satvol[0]/tot_porevol_init
-                  << "    " << init_satvol[1]/tot_porevol_init << std::endl;
+        Opm::computeSaturatedVol(porevol, state.surfacevol(), init_surfvol);
         Opm::Watercut watercut;
         watercut.push(0.0, 0.0, 0.0);
         Opm::WellReport wellreport;
@@ -408,8 +407,8 @@ namespace Opm
                 // Optionally, check if well controls are satisfied.
                 if (check_well_controls_) {
                     Opm::computePhaseFlowRatesPerWell(*wells_,
-                                                      fractional_flows,
                                                       well_state.perfRates(),
+                                                      fractional_flows,
                                                       well_resflows_phase);
                     std::cout << "Checking well conditions." << std::endl;
                     // For testing we set surface := reservoir
@@ -427,14 +426,13 @@ namespace Opm
             } while (!well_control_passed);
 
             // Update pore volumes if rock is compressible.
-            if (rock_comp_ && rock_comp_->isActive()) {
+            if (rock_comp_props_ && rock_comp_props_->isActive()) {
                 initial_porevol = porevol;
-                computePorevolume(grid_, props_.porosity(), *rock_comp_, state.pressure(), porevol);
+                computePorevolume(grid_, props_.porosity(), *rock_comp_props_, state.pressure(), porevol);
             }
 
-            // Process transport sources (to include bdy terms and well flows).
-            Opm::computeTransportSource(grid_, src_, state.faceflux(), 1.0,
-                                        wells_, well_state.perfRates(), transport_src);
+            // Process transport sources from well flows.
+            Opm::computeTransportSource(props_, wells_, well_state, transport_src);
 
             // Solve transport.
             transport_timer.start();
@@ -443,16 +441,22 @@ namespace Opm
                 stepsize /= double(num_transport_substeps_);
                 std::cout << "Making " << num_transport_substeps_ << " transport substeps." << std::endl;
             }
+            double injected[2] = { 0.0 };
+            double produced[2] = { 0.0 };
             for (int tr_substep = 0; tr_substep < num_transport_substeps_; ++tr_substep) {
                 tsolver_.solve(&state.faceflux()[0], &state.pressure()[0],
-                               &porevol[0],  &initial_porevol[0], &transport_src[0], stepsize,
+                               &initial_porevol[0], &porevol[0], &transport_src[0], stepsize,
                                state.saturation(), state.surfacevol());
-                Opm::computeInjectedProduced(props_,
-                                             state.pressure(), state.surfacevol(), state.saturation(),
-                                             transport_src, stepsize, injected, produced);
+                double substep_injected[2] = { 0.0 };
+                double substep_produced[2] = { 0.0 };
+                Opm::computeInjectedProduced(props_, state, transport_src, stepsize,
+                                             substep_injected, substep_produced);
+                injected[0] += substep_injected[0];
+                injected[1] += substep_injected[1];
+                produced[0] += substep_produced[0];
+                produced[1] += substep_produced[1];
                 if (gravity_ != 0 && use_segregation_split_) {
-                    tsolver_.solveGravity(columns_, &state.pressure()[0], &initial_porevol[0],
-                                          stepsize, state.saturation(), state.surfacevol());
+                    tsolver_.solveGravity(columns_, stepsize, state.saturation(), state.surfacevol());
                 }
             }
             transport_timer.stop();
@@ -461,35 +465,35 @@ namespace Opm
             std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
             ttime += tt;
             // Report volume balances.
-            Opm::computeSaturatedVol(porevol, state.saturation(), satvol);
+            Opm::computeSaturatedVol(porevol, state.surfacevol(), inplace_surfvol);
             tot_injected[0] += injected[0];
             tot_injected[1] += injected[1];
             tot_produced[0] += produced[0];
             tot_produced[1] += produced[1];
             std::cout.precision(5);
             const int width = 18;
-            std::cout << "\nVolume balance report (all numbers relative to total pore volume).\n";
-            std::cout << "    Saturated volumes:     "
-                      << std::setw(width) << satvol[0]/tot_porevol_init
-                      << std::setw(width) << satvol[1]/tot_porevol_init << std::endl;
-            std::cout << "    Injected volumes:      "
-                      << std::setw(width) << injected[0]/tot_porevol_init
-                      << std::setw(width) << injected[1]/tot_porevol_init << std::endl;
-            std::cout << "    Produced volumes:      "
-                      << std::setw(width) << produced[0]/tot_porevol_init
-                      << std::setw(width) << produced[1]/tot_porevol_init << std::endl;
-            std::cout << "    Total inj volumes:     "
-                      << std::setw(width) << tot_injected[0]/tot_porevol_init
-                      << std::setw(width) << tot_injected[1]/tot_porevol_init << std::endl;
-            std::cout << "    Total prod volumes:    "
-                      << std::setw(width) << tot_produced[0]/tot_porevol_init
-                      << std::setw(width) << tot_produced[1]/tot_porevol_init << std::endl;
-            std::cout << "    In-place + prod - inj: "
-                      << std::setw(width) << (satvol[0] + tot_produced[0] - tot_injected[0])/tot_porevol_init
-                      << std::setw(width) << (satvol[1] + tot_produced[1] - tot_injected[1])/tot_porevol_init << std::endl;
-            std::cout << "    Init - now - pr + inj: "
-                      << std::setw(width) << (init_satvol[0] - satvol[0] - tot_produced[0] + tot_injected[0])/tot_porevol_init
-                      << std::setw(width) << (init_satvol[1] - satvol[1] - tot_produced[1] + tot_injected[1])/tot_porevol_init
+            std::cout << "\nMass balance report.\n";
+            std::cout << "    Injected surface volumes:      "
+                      << std::setw(width) << injected[0]
+                      << std::setw(width) << injected[1] << std::endl;
+            std::cout << "    Produced surface volumes:      "
+                      << std::setw(width) << produced[0]
+                      << std::setw(width) << produced[1] << std::endl;
+            std::cout << "    Total inj surface volumes:     "
+                      << std::setw(width) << tot_injected[0]
+                      << std::setw(width) << tot_injected[1] << std::endl;
+            std::cout << "    Total prod surface volumes:    "
+                      << std::setw(width) << tot_produced[0]
+                      << std::setw(width) << tot_produced[1] << std::endl;
+            const double balance[2] = { init_surfvol[0] - inplace_surfvol[0] - tot_produced[0] + tot_injected[0],
+                                        init_surfvol[1] - inplace_surfvol[1] - tot_produced[1] + tot_injected[1] };
+            std::cout << "    Initial - inplace + inj - prod: "
+                      << std::setw(width) << balance[0]
+                      << std::setw(width) << balance[1]
+                      << std::endl;
+            std::cout << "    Relative mass error:            "
+                      << std::setw(width) << balance[0]/(init_surfvol[0] + tot_injected[0])
+                      << std::setw(width) << balance[1]/(init_surfvol[1] + tot_injected[1])
                       << std::endl;
             std::cout.precision(8);
 

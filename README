@@ -46,46 +46,39 @@ sudo apt-get install -y build-essential gfortran pkg-config libtool \
 sudo apt-get install -y doxygen ghostscript texlive-latex-recommended pgf
 
 # packages necessary for version control
-sudo apt-get install -y git-core git-svn subversion
+sudo apt-get install -y git-core
 
-# libraries necessary for DUNE
+# basic libraries necessary for both DUNE and OPM
 sudo apt-get install -y libboost-all-dev libsuperlu3-dev libsuitesparse-dev
 
-# libraries necessary for OPM
-sudo apt-get install -y libxml0-dev
+# for server edition of Ubuntu add-apt-repository depends on
+sudo apt-get install python-software-properties
 
+# add this repository for necessary backports (required for Ubuntu Precise)
+sudo add-apt-repository -y ppa:opm/ppa
+sudo apt-get update
+
+# parts of DUNE needed
+sudo apt-get install libdune-common-dev libdune-istl-dev libdune-grid-dev
+
+# libraries necessary for OPM
+sudo apt-get install -y libxml2-dev
+
+Note: You should compile the OPM modules using the same toolchain that
+      was used to build DUNE. Otherwise, you can get strange ABI errors.
 
 DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
 -----------------------------------------
 
 # libraries
-sudo zypper install blas libblas3 lapack liblapack3 libboost libxml2 umfpack
+sudo zypper in blas libblas3 lapack liblapack3 libboost libxml2 umfpack
 
 # tools
-sudo zypper install gcc automake autoconf git doxygen
+sudo zypper in gcc automake autoconf git doxygen
 
-
-RETRIEVING AND BUILDING DUNE PREREQUISITES
-------------------------------------------
-
-(only necessary if you want to use opm-core as a dune module)
-
-# trust DUNE certificate (sic)
-echo p | svn list https://svn.dune-project.org/svn/dune-common
-
-# checkout DUNE libraries
-for module in common istl geometry grid localfunctions; do
-  git svn clone -s \
-    https://svn.dune-project.org/svn/dune-$module/branches/release-2.2/ \
-	dune-$module
-done
-
-# building DUNE libraries
-for module in common istl geometry grid localfunctions; do
-  env CCACHE_DISABLE=1 dune-common/bin/dunecontrol --only=dune-$module \
-    --configure-opts="--enable-fieldvector-size-is-method" \
-	--make-opts="-j -l 0.8" autogen : configure : make
-done
+# DUNE libraries
+sudo zypper ar http://download.opensuse.org/repositories/science/openSUSE_12.2/science.repo
+sudo zypper in dune-common dune-istl
 
 
 DOWNLOADING
@@ -100,20 +93,26 @@ If you want to contribute, fork OPM/opm-core on github.
 BUILDING
 --------
 
-(standalone opm-core:)
+There are two ways to build the opm-core library:
 
- cd ../opm-core
+1. As a stand-alone library.
+ cd opm-core
  autoreconf -i
  ./configure
- make
+ make -j -l 0.9
+If you want to install the library:
+ make install
+or (if installing to /usr/local or similar)
  sudo make install
 
-(using opm-core as a dune module:)
-
- # note: this is done from the parent directory of opm-core
- env CCACHE_DISABLE=1 dune-common/bin/dunecontrol --only=opm-core \
-   --configure-opts="" --make-opts="-j -l 0.8" autogen : configure : make
-
+2. As a dune module.
+ - Put the opm-core directory in the same directory
+   as the other dune modules to be built (e.g. dune-commmon,
+   dune-grid). Note that for Ubuntu you can install Dune
+   from the ppa as outlined above.
+ - Run dunecontrol as normal. For more information on
+   the dune build system, see
+   http://www.dune-project.org/doc/installation-notes.html
 
 
 DOCUMENTATION
