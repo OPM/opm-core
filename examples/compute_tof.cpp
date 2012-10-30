@@ -169,9 +169,11 @@ main(int argc, char** argv)
     // Choice of tof solver.
     bool use_dg = param.getDefault("use_dg", false);
     int dg_degree = -1;
+    bool use_cvi = false;
     bool use_multidim_upwind = false;
     if (use_dg) {
         dg_degree = param.getDefault("dg_degree", 0);
+        use_cvi = param.getDefault("use_cvi", false);
     } else {
         use_multidim_upwind = param.getDefault("use_multidim_upwind", false);
     }
@@ -226,19 +228,16 @@ main(int argc, char** argv)
                                 wells->c_wells(), well_state.perfRates(), transport_src);
 
     // Solve time-of-flight.
+    transport_timer.start();
     std::vector<double> tof;
     if (use_dg) {
-        bool use_cvi = param.getDefault("use_cvi", false);
         Opm::TransportModelTracerTofDiscGal tofsolver(*grid->c_grid(), use_cvi);
-        transport_timer.start();
         tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], dg_degree, tof);
-        transport_timer.stop();
     } else {
         Opm::TransportModelTracerTof tofsolver(*grid->c_grid(), use_multidim_upwind);
-        transport_timer.start();
         tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
-        transport_timer.stop();
     }
+    transport_timer.stop();
     double tt = transport_timer.secsSinceStart();
     std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
     ttime += tt;
