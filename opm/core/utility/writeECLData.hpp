@@ -1,5 +1,6 @@
 /*
   Copyright 2012 SINTEF ICT, Applied Mathematics.
+  Copyright 2012 Statoil ASA.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -17,8 +18,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_WRITEVTKDATA_HEADER_INCLUDED
-#define OPM_WRITEVTKDATA_HEADER_INCLUDED
+#ifndef OPM_WRITEECLDATA_HEADER_INCLUDED
+#define OPM_WRITEECLDATA_HEADER_INCLUDED
 
 
 #include <string>
@@ -27,22 +28,20 @@
 #include <tr1/array>
 #include <iosfwd>
 #include <opm/core/utility/DataMap.hpp>
+#include <opm/core/simulator/SimulatorTimer.hpp>
 
 struct UnstructuredGrid;
 
 namespace Opm
 {
 
-    /// Vtk output for cartesian grids.
-    void writeVtkData(const std::tr1::array<int, 3>& dims,
-                      const std::tr1::array<double, 3>& cell_size,
-                      const DataMap& data,
-                      std::ostream& os);
+  // ECLIPSE output for general grids.
+  void writeECLData(const UnstructuredGrid& grid,
+                    const DataMap& data,
+                    const SimulatorTimer& simtimer,
+                    const std::string& output_dir,
+                    const std::string& base_name);
 
-    /// Vtk output for general grids.
-    void writeVtkData(const UnstructuredGrid& grid,
-                      const DataMap& data,
-                      std::ostream& os);
-} // namespace Opm
+} 
 
-#endif // OPM_WRITEVTKDATA_HEADER_INCLUDED
+#endif 

@@ -124,7 +124,7 @@ AC_DEFUN([_slu_search_default],
 #   HAVE_SUPERLU
 #     ENABLE_SUPERLU or undefined.  Whether SuperLU was found.  The correct
 #     way to check this is "#if HAVE_SUPERLU": This way SuperLU features will
-#     be disabled unless ${SUPERLU_CPPFLAGS} was given when compiling.
+#     be disabled unless $(SUPERLU_CPPFLAGS) was given when compiling.
 #   SUPERLU_POST_2005_VERSION
 #     1 or undefined.  A post-2005 version of SuperLU uses the header
 #     "slu_ddefs.h" while earlier versions use "dsp_defs.h".
@@ -308,7 +308,7 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
     fi
     AC_SUBST([SUPERLU_LIBS])
     AC_SUBST([SUPERLU_CPPFLAGS])
-    #DUNE_ADD_ALL_PKG([SUPERLU], [\${SUPERLU_CPPFLAGS}], [], [\${SUPERLU_LIBS}])
+    #DUNE_ADD_ALL_PKG([SUPERLU], [\$(SUPERLU_CPPFLAGS)], [], [\$(SUPERLU_LIBS)])
 
     # tell automake
     AM_CONDITIONAL(SUPERLU, test x$HAVE_SUPERLU = x1)

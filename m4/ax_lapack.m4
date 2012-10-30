@@ -101,6 +101,11 @@ if test "x$LAPACK_LIBS" != x; then
         fi
 fi
 
+# don't probe if explicitly defined; by bailing out here if the
+# argument is set, we guard against typo, incompatible libs. etc.
+# being inadvertedly overrided by another (random) implementation
+if test "x$with_lapack" = x; then
+
 # LAPACK linked to by default?  (is sometimes included in BLAS lib)
 if test $ax_lapack_ok = no; then
         save_LIBS="$LIBS"; LIBS="$LIBS $BLAS_LIBS $FLIBS"
@@ -117,6 +122,9 @@ for lapack in lapack lapack_rs6k; do
                 LIBS="$save_LIBS"
         fi
 done
+
+# end of guard against automatic overriding explicit definitions
+fi
 
 AC_SUBST(LAPACK_LIBS)
 

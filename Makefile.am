@@ -12,8 +12,9 @@ lib_LTLIBRARIES = lib/libopmcore.la
 # Build-time flags needed to build libopmcore.la
 
 AM_CPPFLAGS =					\
+$(ERT_CPPFLAGS)                                 \
 $(OPM_BOOST_CPPFLAGS)                           \
-${SUPERLU_CPPFLAGS}
+$(SUPERLU_CPPFLAGS)
 
 # ----------------------------------------------------------------------
 # Link-time flags needed both to successfully link the library and to
@@ -22,14 +23,16 @@ ${SUPERLU_CPPFLAGS}
 lib_libopmcore_la_LDFLAGS =			\
 -R $(OPM_BOOST_LIBDIR)				\
 $(OPM_BOOST_LDFLAGS)                            \
-${SUPERLU_LDFLAGS}
+$(ERT_LDFLAGS)                                  \
+$(SUPERLU_LDFLAGS)
 
 lib_libopmcore_la_LIBADD = 			\
 $(BOOST_FILESYSTEM_LIB)				\
 $(BOOST_SYSTEM_LIB)				\
 $(BOOST_DATE_TIME_LIB)				\
 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)		\
-$(LAPACK_LIBS) ${SUPERLU_LIBS} $(BLAS_LIBS) $(LIBS)
+$(ERT_LIBS)                                     \
+$(LAPACK_LIBS) $(SUPERLU_LIBS) $(BLAS_LIBS) $(LIBS)
 
 # ----------------------------------------------------------------------
 # Library constituents.  SOURCES followed by HEADERS.
@@ -118,6 +121,8 @@ opm/core/transport/spu_implicit.c			\
 opm/core/transport/transport_source.c			\
 opm/core/utility/MonotCubicInterpolator.cpp		\
 opm/core/utility/StopWatch.cpp				\
+opm/core/utility/VelocityInterpolation.cpp		\
+opm/core/utility/WachspressCoord.cpp			\
 opm/core/utility/miscUtilities.cpp			\
 opm/core/utility/miscUtilitiesBlackoil.cpp		\
 opm/core/utility/parameters/Parameter.cpp		\
@@ -242,6 +247,7 @@ opm/core/transport/spu_implicit.h			\
 opm/core/transport/transport_source.h			\
 opm/core/utility/Average.hpp				\
 opm/core/utility/ColumnExtract.hpp			\
+opm/core/utility/DataMap.hpp				\
 opm/core/utility/ErrorMacros.hpp			\
 opm/core/utility/Factory.hpp				\
 opm/core/utility/MonotCubicInterpolator.hpp		\
@@ -252,6 +258,8 @@ opm/core/utility/SparseVector.hpp			\
 opm/core/utility/StopWatch.hpp				\
 opm/core/utility/UniformTableLinear.hpp			\
 opm/core/utility/Units.hpp				\
+opm/core/utility/VelocityInterpolation.hpp		\
+opm/core/utility/WachspressCoord.hpp			\
 opm/core/utility/buildUniformMonotoneTable.hpp		\
 opm/core/utility/initState.hpp				\
 opm/core/utility/initState_impl.hpp			\
@@ -289,6 +297,15 @@ opm/core/linalg/LinearSolverUmfpack.cpp
 nobase_include_HEADERS +=			\
 opm/core/linalg/call_umfpack.h			\
 opm/core/linalg/LinearSolverUmfpack.hpp
+endif
+
+
+if HAVE_ERT
+lib_libopmcore_la_SOURCES  +=			\
+opm/core/utility/writeECLData.cpp
+
+nobase_include_HEADERS +=			\
+opm/core/utility/writeECLData.hpp
 endif
 
 

@@ -32,9 +32,16 @@ m4/lt*.m4
 missing
 ar-lib
 tutorials/tutorial[1-4]
+opmcore-config.cmake
+
+# in-tree build with CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
 
 # Ignoring executables
 *_test
+examples/compute_tof
 examples/scaneclipsedeck
 examples/spu_2p
 examples/reorder-qfs
@@ -56,4 +63,6 @@ tests/test_column_extract
 tests/test_lapack
 tests/test_read_vag
 tests/test_readpolymer
+tests/test_velocityinterpolation
+tests/test_wells
 tests/test_writeVtkData
