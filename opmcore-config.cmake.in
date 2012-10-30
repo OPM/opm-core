@@ -4,8 +4,9 @@
 #  @PACKAGE@_FOUND        - true
 #  @PACKAGE@_VERSION      - version of the opm-core library found, e.g. 0.2
 #  @PACKAGE@_DEFINITIONS  - defines to be made on the command line
-#  @PACKAGE@_INCLUDE_DIRS - include directories to be included in build
-#  @PACKAGE@_LIBRARIES    - library directories to be included in build
+#  @PACKAGE@_INCLUDE_DIRS - header directories with which to compile
+#  @PACKAGE@_LIBRARY_DIRS - directories to search for libraries
+#  @PACKAGE@_LIBRARIES    - names of the libraries with which to link
 #
 # You should put lines like this in your CMakeLists.txt
 #  set (@PACKAGE@_DIR "../@PACKAGE@" CACHE LOCATION "Build tree of @PACKAGE_NAME@")
@@ -26,8 +27,11 @@ set (@PACKAGE@_INCLUDE_DIRS "@abs_top_srcdir@")
 # user programs should link with this library (see comment in the header)
 set (@PACKAGE@_LIBRARIES "@PACKAGE@")
 
+# convention is to have a variable named like this to add to link directories
+set (@PACKAGE@_LIBRARY_DIRS "@abs_top_builddir@/lib/.libs")
+
 # libraries come from the build tree where this file was generated
-find_library (@PACKAGE@_LOCATION NAMES "@PACKAGE@" PATHS "@abs_top_builddir@/lib/.libs")
+find_library (@PACKAGE@_LOCATION NAMES "@PACKAGE@" PATHS "${@PACKAGE@_LIBRARY_DIRS}")
 mark_as_advanced (@PACKAGE@_LOCATION)
 
 # add the library as a target, so that other things in the project including
