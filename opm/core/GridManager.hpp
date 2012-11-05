@@ -20,6 +20,7 @@
 #ifndef OPM_GRIDMANAGER_HEADER_INCLUDED
 #define OPM_GRIDMANAGER_HEADER_INCLUDED
 
+#include <string>
 
 struct UnstructuredGrid;
 
@@ -52,6 +53,11 @@ namespace Opm
         /// Construct a 3d cartesian grid with cells of size [dx, dy, dz].
         GridManager(int nx, int ny, int nz,
                     double dx, double dy, double dz);
+
+        /// Construct a grid from an input file.
+        /// The file format used is currently undocumented,
+        /// and is therefore only suited for internal use.
+        GridManager(const std::string& input_filename);
 
         /// Destructor.
         ~GridManager();
