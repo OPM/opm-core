@@ -26,6 +26,7 @@
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/writeECLData.hpp>
 #include <opm/core/utility/Units.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
 
 #include <vector>
 
@@ -44,8 +45,12 @@ namespace Opm
                                        const std::vector<double> * data , 
                                        int offset , 
                                        int stride ) {
-
-    ecl_kw_type * ecl_kw = ecl_kw_alloc( kw_name.c_str() , data->size() / stride , ECL_FLOAT_TYPE );
+    const int ecl_data_size = grid.cartdims[0]*grid.cartdims[1]*grid.cartdims[2];
+    if (ecl_data_size < int(data->size()) / stride) {
+      THROW("Logical cartesian size claimed to be " << ecl_data_size << ", while active data size is " << data->size()
+            << "\n --- check if the grid is really a corner-point grid or other logical cartesian grid.");
+    }
+    ecl_kw_type * ecl_kw = ecl_kw_alloc( kw_name.c_str() , ecl_data_size , ECL_FLOAT_TYPE );
     if (grid.global_cell == NULL) {
       for (int i=0; i < grid.number_of_cells; i++) 
         ecl_kw_iset_float( ecl_kw , i , (*data)[i*stride + offset]);
@@ -97,6 +102,9 @@ namespace Opm
     {
       DataMap::const_iterator i = data.find("saturation");
       if (i != data.end()) {
+        if (int(i->second->size()) != 2 * grid.number_of_cells) {
+          THROW("writeECLData() requires saturation field to have two phases.");
+        }
         ecl_kw_type * swat_kw = ecl_kw_wrapper( grid , "SWAT" , i->second , 0 , 2);
         ecl_rst_file_add_kw( rst_file , swat_kw );
         ecl_kw_free( swat_kw );
