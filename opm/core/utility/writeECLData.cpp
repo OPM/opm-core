@@ -18,7 +18,9 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <opm/core/grid.h>
 #include <opm/core/simulator/SimulatorTimer.hpp>
@@ -27,10 +29,11 @@
 
 #include <vector>
 
+#ifdef HAVE_ERT // This one goes almost to the bottom of the file
+
 #include <ecl_grid.h>
 #include <ecl_util.h>
 #include <ecl_rst_file.h>
-
 
 
 namespace Opm
@@ -106,3 +109,18 @@ namespace Opm
   } 
 }
 
+#else // that is, we have not defined HAVE_ERT
+
+namespace Opm
+{
+    void writeECLData(const UnstructuredGrid&,
+                      const DataMap&,
+                      const SimulatorTimer&,
+                      const std::string&,
+                      const std::string&)
+    {
+        THROW("Cannot call writeECLData() without ert library support. Reconfigure opm-core with --with-ert and recompile.");
+    }
+}
+
+#endif
