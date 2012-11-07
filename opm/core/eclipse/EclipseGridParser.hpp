@@ -95,7 +95,6 @@ namespace Opm
     /// converted to SI units.
     explicit EclipseGridParser(const std::string& filename, bool convert_to_SI = true);
 
-
     static FieldType classifyKeyword(const std::string& keyword);
     static bool readKeyword(std::istream& is, std::string& keyword);
 
@@ -127,6 +126,9 @@ namespace Opm
     /// Valid arguments are in [0, ..., numberOfEpochs() - 1].
     /// After reading, current epoch always starts at 0.
     void setCurrentEpoch(int epoch);
+
+    /// Returns the start_date_
+    boost::gregorian::date getStartDate() const;
 
     /// Returns a reference to a vector containing the values
     /// corresponding to the given integer keyword.

@@ -90,9 +90,9 @@ namespace Opm
                     const std::string& output_dir,
                     const std::string& base_name) {
     
-    ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;
+    ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;  // Alternatively ECL_RESTART_FILE for multiple restart files.
     bool fmt_file           = true; 
-
+    
     int step                = simtimer.currentStepNum();
     char * filename         = ecl_util_alloc_filename(output_dir.c_str() , base_name.c_str() , file_type , fmt_file , step );
     int phases              = ECL_OIL_PHASE + ECL_WATER_PHASE;
@@ -103,6 +103,15 @@ namespace Opm
     int nz                  = grid.cartdims[2];
     int nactive             = grid.number_of_cells;
     ecl_rst_file_type * rst_file;
+    
+    {
+      using namespace boost::posix_time;
+      ptime t1 = simtimer.currentDateTime();
+      ptime t0( boost::gregorian::date(1970 , 1 ,1) );
+      time_duration::sec_type seconds = (t1 - t0).total_seconds();
+      
+      date = time_t( seconds );
+    }
     
     if (step > 0 && file_type == ECL_UNIFIED_RESTART_FILE)
       rst_file = ecl_rst_file_open_append( filename );
