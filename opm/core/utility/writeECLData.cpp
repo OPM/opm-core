@@ -46,7 +46,9 @@ namespace Opm
                                        int offset , 
                                        int stride ) {
 
-    if (grid.number_of_cells != data->size() / stride)   
+    if (stride <= 0)
+      THROW("Vector strides must be positive. Got stride = " << stride);
+    if ((stride * std::vector<double>::size_type(grid.number_of_cells)) != data->size())
       THROW("Internal mismatch grid.number_of_cells: " << grid.number_of_cells << " data size: " << data->size() / stride);
     {
       ecl_kw_type * ecl_kw = ecl_kw_alloc( kw_name.c_str() , grid.number_of_cells , ECL_FLOAT_TYPE );
