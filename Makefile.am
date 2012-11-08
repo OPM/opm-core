@@ -261,6 +261,7 @@ opm/core/utility/Units.hpp				\
 opm/core/utility/VelocityInterpolation.hpp		\
 opm/core/utility/WachspressCoord.hpp			\
 opm/core/utility/buildUniformMonotoneTable.hpp		\
+opm/core/utility/have_boost_redef.hpp			\
 opm/core/utility/initState.hpp				\
 opm/core/utility/initState_impl.hpp			\
 opm/core/utility/linInt.hpp				\
