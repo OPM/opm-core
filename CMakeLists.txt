@@ -16,6 +16,15 @@ set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 # find all the source code
 file (GLOB_RECURSE opm-core_SOURCES "opm/*.c" "opm/*.cpp")
 
+# these files are provided in source control, but can only compile with Matlab
+# available
+list (REMOVE_ITEM opm-core_SOURCES
+	${PROJECT_SOURCE_DIR}/opm/core/grid/cpgpreprocess/mxgrdecl.c
+	${PROJECT_SOURCE_DIR}/opm/core/grid/cpgpreprocess/processgrid.c
+	${PROJECT_SOURCE_DIR}/opm/core/utility/parameters/tinyxml/xmltest.cpp
+	${PROJECT_SOURCE_DIR}/opm/core/linalg/LinearSolverAGMG.cpp
+	)
+
 # we don't try to find any of these
 set (HAVE_AGMG 0)
 set (HAVE_DUNE_ISTL 0)
