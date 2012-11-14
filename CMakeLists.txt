@@ -7,11 +7,36 @@ enable_language (CXX)
 # all public header files are together with the source
 set (opm-core_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}")
 
+# additional search modules
+list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules")
+
 # put libraries in lib/
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
 # find all the source code
 file (GLOB_RECURSE opm-core_SOURCES "opm/*.c" "opm/*.cpp")
+
+# we don't try to find any of these
+set (HAVE_AGMG 0)
+set (HAVE_DUNE_ISTL 0)
+set (HAVE_DYNAMIC_BOOST_TEST 0)
+set (HAVE_ERT)
+set (HAVE_SUITESPARSE_UMFPACK_H 0)
+
+# create configuration header which describes available features
+# necessary to compile this library
+include (UseConfigVars)
+list (APPEND opm-core_CONFIG_VARS
+	"HAVE_AGMG"
+	"HAVE_DUNE_ISTL"
+	"HAVE_DYNAMIC_BOOST_TEST"
+	"HAVE_ERT"
+	"HAVE_SUITESPARSE_UMFPACK_H"
+	)
+configure_vars (
+	FILE  "${PROJECT_BINARY_DIR}/config.h"
+	WRITE ${opm-core_CONFIG_VARS}
+	)
 
 # create this library
 include_directories (${opm-core_INCLUDE_DIRS})
