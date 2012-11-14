@@ -654,7 +654,7 @@ vert_size(const struct grdecl *in,
     ind2sub(in->dims[0], in->dims[1], in->dims[2], c, &i, &j, &k);
 
     zcorn = in->zcorn;
-    start = (k * 2 * off[4]) + (j * 2 * off[2]) + (i * 2 * off[1]);
+    start = ((2 * k) * off[4]) + ((2 * j) * off[2]) + ((2 * i) * off[1]);
 
     for (k = 0, dz = 0.0; (! (fabs(dz) > 0)) && (k < 4); k++) {
         dz = zcorn[start + off[k + 4]] - zcorn[start + off[k]];
