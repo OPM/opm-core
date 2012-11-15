@@ -45,23 +45,46 @@ namespace Opm
                                        const std::vector<double> * data , 
                                        int offset , 
                                        int stride ) {
-    const int ecl_data_size = grid.cartdims[0]*grid.cartdims[1]*grid.cartdims[2];
-    if (ecl_data_size < int(data->size()) / stride) {
-      THROW("Logical cartesian size claimed to be " << ecl_data_size << ", while active data size is " << data->size()
-            << "\n --- check if the grid is really a corner-point grid or other logical cartesian grid.");
-    }
-    ecl_kw_type * ecl_kw = ecl_kw_alloc( kw_name.c_str() , ecl_data_size , ECL_FLOAT_TYPE );
-    if (grid.global_cell == NULL) {
+
+    if (stride <= 0)
+      THROW("Vector strides must be positive. Got stride = " << stride);
+    if ((stride * std::vector<double>::size_type(grid.number_of_cells)) != data->size())
+      THROW("Internal mismatch grid.number_of_cells: " << grid.number_of_cells << " data size: " << data->size() / stride);
+    {
+      ecl_kw_type * ecl_kw = ecl_kw_alloc( kw_name.c_str() , grid.number_of_cells , ECL_FLOAT_TYPE );
       for (int i=0; i < grid.number_of_cells; i++) 
         ecl_kw_iset_float( ecl_kw , i , (*data)[i*stride + offset]);
-    } else {
-      for (int i=0; i < grid.number_of_cells; i++) 
-        ecl_kw_iset_float( ecl_kw , grid.global_cell[i] , (*data)[i*stride + offset]);
+      return ecl_kw;
     }
-    return ecl_kw;
   }
 
 
+  /*
+    This function will write the data solution data in the DataMap
+    @data as an ECLIPSE restart file, in addition to the solution
+    fields the ECLIPSE restart file will have a minimum (hopefully
+    sufficient) amount of header information.
+
+    The ECLIPSE restart files come in two varietes; unified restart
+    files which have all the report steps lumped together in one large
+    chunk and non-unified restart files which are one file for each
+    report step. In addition the files can be either formatted
+    (i.e. ASCII) or unformatted (i.e. binary).
+    
+    The writeECLData() function has two hardcoded settings:
+    'file_type' and 'fmt_file' which regulate which type of files the
+    should be created. The extension of the files follow a convention:
+
+      Unified, formatted    : .FUNRST
+      Unified, unformatted  : .UNRST
+      Multiple, formatted   : .Fnnnn
+      Multiple, unformatted : .Xnnnn
+
+    For the multiple files the 'nnnn' part is the report number,
+    formatted with '%04d' format specifier. The writeECLData()
+    function will use the ecl_util_alloc_filename() function to create
+    an ECLIPSE filename according to this conventions.
+  */
 
   void writeECLData(const UnstructuredGrid& grid,
                     const DataMap& data,
@@ -69,9 +92,10 @@ namespace Opm
                     const std::string& output_dir,
                     const std::string& base_name) {
     
-    int step                = simtimer.currentStepNum();
-    ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;
+    ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;  // Alternatively ECL_RESTART_FILE for multiple restart files.
     bool fmt_file           = true; 
+    
+    int step                = simtimer.currentStepNum();
     char * filename         = ecl_util_alloc_filename(output_dir.c_str() , base_name.c_str() , file_type , fmt_file , step );
     int phases              = ECL_OIL_PHASE + ECL_WATER_PHASE;
     double days             = Opm::unit::convert::to(simtimer.currentTime(), Opm::unit::day);
@@ -81,6 +105,15 @@ namespace Opm
     int nz                  = grid.cartdims[2];
     int nactive             = grid.number_of_cells;
     ecl_rst_file_type * rst_file;
+    
+    {
+      using namespace boost::posix_time;
+      ptime t1 = simtimer.currentDateTime();
+      ptime t0( boost::gregorian::date(1970 , 1 ,1) );
+      time_duration::sec_type seconds = (t1 - t0).total_seconds();
+      
+      date = time_t( seconds );
+    }
     
     if (step > 0 && file_type == ECL_UNIFIED_RESTART_FILE)
       rst_file = ecl_rst_file_open_append( filename );

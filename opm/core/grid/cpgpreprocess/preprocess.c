@@ -647,14 +647,17 @@ vert_size(const struct grdecl *in,
           const size_t         off[8])
 /* ---------------------------------------------------------------------- */
 {
-    size_t        i, j, k, start;
+    size_t        i, j, k, nx, ny, start;
     double        dz;
     const double *zcorn;
 
-    ind2sub(in->dims[0], in->dims[1], in->dims[2], c, &i, &j, &k);
+    nx = in->dims[ 0 ];
+    ny = in->dims[ 1 ];
+
+    ind2sub(nx, ny, in->dims[ 2 ], c, &i, &j, &k);
 
     zcorn = in->zcorn;
-    start = (k * off[4]) + (j * off[2]) + (i * 2);
+    start = (2 * i) + (2 * nx)*((2 * j) + (2 * ny)*(2 * k));
 
     for (k = 0, dz = 0.0; (! (fabs(dz) > 0)) && (k < 4); k++) {
         dz = zcorn[start + off[k + 4]] - zcorn[start + off[k]];

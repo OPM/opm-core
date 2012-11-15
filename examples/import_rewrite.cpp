@@ -18,8 +18,8 @@
 /*
   Small utility to read through an ECLIPSE input deck and replace
   occurences of (large) numerical fields like COORD and ZCORN with
-  IMPORT statements of a binary versions of the relevant keywords. The
-  program will follow INCLUDE statements. 
+  IMPORT statements of a binary version of the same keyword. The
+  program will follow INCLUDE statements.
 
   Usage:  import_rewrite eclipse_case.data
 */
@@ -44,8 +44,8 @@ const ecl_type_enum outputFloatType = ECL_DOUBLE_TYPE;
 
 /*
   Only keywords which have more >= minImportSize elements are
-  converted to binary form. This is to avoid convertion short keywords
-  like MAPAXES and TABDIMS.
+  converted to binary form. This is to avoid conversion of short
+  keywords like MAPAXES and TABDIMS.  
 */
 const int minImportSize = 10;
 
@@ -109,7 +109,7 @@ static ecl_kw_type * loadFromcstdio( const std::string& filename , std::ios::pos
 
 
 
-static bool convertKeyword( const std::string& inputFile , const std::string& outputPath , std::ifstream& is , FieldType fieldType , std::ofstream& os ) {
+static bool convertKeyword( const std::string& inputFile , const std::string& outputPath , std::string& outputFile , std::ifstream& is , FieldType fieldType , std::ofstream& os ) {
   bool convert = true;
   ecl_type_enum ecl_type;
 
@@ -124,10 +124,15 @@ static bool convertKeyword( const std::string& inputFile , const std::string& ou
     
     if (ecl_kw_get_size( ecl_kw ) >= minImportSize) {
       {
-        std::string outputFile = outputPath + "/" + ecl_kw_get_header( ecl_kw );
-        fortio_type * fortio = fortio_open_writer( outputFile.c_str() , false , ECL_ENDIAN_FLIP );
-        ecl_kw_fwrite( ecl_kw , fortio );
-        fortio_fclose( fortio );
+        if (outputPath.empty())
+          outputFile = ecl_kw_get_header( ecl_kw );
+        else
+          outputFile = outputPath + "/" + ecl_kw_get_header( ecl_kw );
+        {
+          fortio_type * fortio = fortio_open_writer( outputFile.c_str() , false , ECL_ENDIAN_FLIP );
+          ecl_kw_fwrite( ecl_kw , fortio );
+          fortio_fclose( fortio );
+        }
         
         os << "IMPORT" << std::endl << "  '" << outputFile << "'  /" << std::endl << std::endl;
       }
@@ -189,9 +194,10 @@ static bool parseFile(const std::string& inputFile, std::string& outputFile, con
             case(Integer):
             case(FloatingPoint):
               {
+                std::string keywordFile;
                 is.seekg( start_pos );
-                if (convertKeyword( inputFile , path , is , fieldType , os )) {
-                  std::cout << indent  + "   " << "Writing binary file: " << path << "/" << keyword << std::endl;
+                if (convertKeyword( inputFile , path , keywordFile , is , fieldType , os )) {
+                  std::cout << indent  + "   " << "Writing binary file: " << keywordFile << std::endl;
                   updateFile = true;
                 }
                 break;

@@ -1,5 +1,6 @@
 AM_CPPFLAGS =					\
 -I$(top_srcdir)					\
+$(ERT_CPPFLAGS)					\
 $(OPM_BOOST_CPPFLAGS)
 
 AM_LDFLAGS = $(OPM_BOOST_LDFLAGS)

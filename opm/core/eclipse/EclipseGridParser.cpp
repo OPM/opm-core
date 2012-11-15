@@ -395,9 +395,9 @@ void EclipseGridParser::readImpl(istream& is)
                     // This will only ever happen in the first epoch,
                     // upon first encountering a timestepping keyword.
                     if (hasField("START")) {
-                        start_date_ = getSTART().date;
+                      start_date_ = getSTART().date;
                     } else {
-                        start_date_ = boost::gregorian::date(1983, 1, 1);
+                      start_date_ = boost::gregorian::date( 1983 , 1 , 1 );
                     }
                 }
                 if (current_reading_mode_ == Regular) {
@@ -658,6 +658,12 @@ void EclipseGridParser::setCurrentEpoch(int epoch)
     current_epoch_ = epoch;
 }
 
+//-----------------------------------------------------------------
+boost::gregorian::date EclipseGridParser::getStartDate() const
+//---------------------------------------------------------------------------
+{
+  return start_date_;
+}
 
 //---------------------------------------------------------------------------
 const std::vector<int>& EclipseGridParser::getIntegerValue(const std::string& keyword) const
