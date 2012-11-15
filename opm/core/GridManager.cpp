@@ -63,13 +63,19 @@ namespace Opm
     /// Construct a 2d cartesian grid with cells of unit size.
     GridManager::GridManager(int nx, int ny)
     {
-        ug_ = create_grid_cart2d(nx, ny);
+        ug_ = create_grid_cart2d(nx, ny, 1.0, 1.0);
         if (!ug_) {
             THROW("Failed to construct grid.");
         }
     }
 
-
+    GridManager::GridManager(int nx, int ny,double dx, double dy)
+    {
+        ug_ = create_grid_cart2d(nx, ny, dx, dy);
+        if (!ug_) {
+            THROW("Failed to construct grid.");
+        }
+    }
 
 
     /// Construct a 3d cartesian grid with cells of unit size.

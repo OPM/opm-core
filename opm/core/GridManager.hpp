@@ -46,6 +46,9 @@ namespace Opm
         /// Construct a 2d cartesian grid with cells of unit size.
         GridManager(int nx, int ny);
 
+        /// Construct a 2d cartesian grid with cells of size [dx, dy].
+        GridManager(int nx, int ny, double dx, double dy);
+
         /// Construct a 3d cartesian grid with cells of unit size.
         GridManager(int nx, int ny, int nz);
 

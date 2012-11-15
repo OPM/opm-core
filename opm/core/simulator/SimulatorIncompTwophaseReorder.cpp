@@ -21,7 +21,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include <opm/core/simulator/SimulatorIncompTwophase.hpp>
+#include <opm/core/simulator/SimulatorIncompTwophaseReorder.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 
@@ -58,7 +58,7 @@
 namespace Opm
 {
 
-    class SimulatorIncompTwophase::Impl
+    class SimulatorIncompTwophaseReorder::Impl
     {
     public:
         Impl(const parameter::ParameterGroup& param,
@@ -98,15 +98,7 @@ namespace Opm
         const FlowBoundaryConditions* bcs_;
         // Solvers
         IncompTpfa psolver_;
-        typedef Opm::SinglePointUpwindTwoPhase<TwophaseFluid> TransportModel;
-        typedef Opm::ImplicitTransport<TransportModel,
-                                       JacSys        ,
-                                       MaxNorm       ,
-                                       VectorNegater ,
-                                       VectorZero    ,
-                                       MatrixZero    ,
-                                       VectorAssign  > ImpliciteTwoPhaseTransportSolver;
-        ImpliciteTwoPhaseTransporSolver tsolver_;
+        TransportModelTwophase tsolver_;
         // Needed by column-based gravity segregation solver.
         std::vector< std::vector<int> > columns_;
         // Misc. data
@@ -116,7 +108,7 @@ namespace Opm
 
 
 
-    SimulatorIncompTwophase::SimulatorIncompTwophase(const parameter::ParameterGroup& param,
+    SimulatorIncompTwophaseReorder::SimulatorIncompTwophaseReorder(const parameter::ParameterGroup& param,
                                                      const UnstructuredGrid& grid,
                                                      const IncompPropertiesInterface& props,
                                                      const RockCompressibility* rock_comp_props,
@@ -133,7 +125,7 @@ namespace Opm
 
 
 
-    SimulatorReport SimulatorIncompTwophase::run(SimulatorTimer& timer,
+    SimulatorReport SimulatorIncompTwophaseReorder::run(SimulatorTimer& timer,
                                                  TwophaseState& state,
                                                  WellState& well_state)
     {
@@ -317,15 +309,14 @@ namespace Opm
 
 
 
-    SimulatorIncompTwophase::Impl::Impl(const parameter::ParameterGroup& param,
+    SimulatorIncompTwophaseReorder::Impl::Impl(const parameter::ParameterGroup& param,
                                         const UnstructuredGrid& grid,
                                         const IncompPropertiesInterface& props,
                                         const RockCompressibility* rock_comp_props,
                                         WellsManager& wells_manager,
                                         const std::vector<double>& src,
                                         const FlowBoundaryConditions* bcs,
-                                        LinearSolverInterface& linsolverp,
-                                        LinearSolverInterface& linsolvert,
+                                        LinearSolverInterface& linsolver,
                                         const double* gravity)
         : grid_(grid),
           props_(props),
@@ -334,30 +325,15 @@ namespace Opm
           wells_(wells_manager.c_wells()),
           src_(src),
           bcs_(bcs),
-          psolver_(grid, props, rock_comp_props, linsolverp,
+          psolver_(grid, props, rock_comp_props, linsolver,
                    param.getDefault("nl_pressure_residual_tolerance", 0.0),
                    param.getDefault("nl_pressure_change_tolerance", 1.0),
                    param.getDefault("nl_pressure_maxiter", 10),
                    gravity, wells_manager.c_wells(), src, bcs),
+          tsolver_(grid, props,
+                   param.getDefault("nl_tolerance", 1e-9),
+                   param.getDefault("nl_maxiter", 30))
     {
-        const bool use_reorder = param.getDefault("use_reorder", true);
-        if(use_reorder){
-            tsolver_ = new TransportSolverTwoPhaseReorder(grid, props, rock_comp_props, linsolver,
-                    param.getDefault("nl_pressure_residual_tolerance", 0.0),
-                    param.getDefault("nl_pressure_change_tolerance", 1.0),
-                    param.getDefault("nl_pressure_maxiter", 10),
-                    gravity, wells_manager.c_wells(), src, bcs);
-        }else{
-            //Opm::ImplicitTransportDetails::NRReport  rpt;
-            Opm::ImplicitTransportDetails::NRControl ctrl;
-            ctrl.max_it = param.getDefault("max_it", 20);
-            ctrl.verbosity = param.getDefault("verbosity", 0);
-            ctrl.max_it_ls = param.getDefault("max_it_ls", 5);
-            tsolver_ = new ImpliciteTransportSolverTwoPhase(grid, props,
-                    ctrl);
-
-        }
-
         // For output.
         output_ = param.getDefault("output", true);
         if (output_) {
@@ -397,7 +373,7 @@ namespace Opm
 
 
 
-    SimulatorReport SimulatorIncompTwophase::Impl::run(SimulatorTimer& timer,
+    SimulatorReport SimulatorIncompTwophaseReorder::Impl::run(SimulatorTimer& timer,
                                                        TwophaseState& state,
                                                        WellState& well_state)
     {
@@ -547,9 +523,8 @@ namespace Opm
             double injected[2] = { 0.0 };
             double produced[2] = { 0.0 };
             for (int tr_substep = 0; tr_substep < num_transport_substeps_; ++tr_substep) {
-                //tsolver_.solve(&state.faceflux()[0], &initial_porevol[0], &transport_src[0],
-                //              stepsize, state.saturation());
-                tsolver_.solve(*grid_->c_grid(), tsrc, stepsize, ctrl, state, linsolve, rpt);
+                tsolver_.solve(&state.faceflux()[0], &initial_porevol[0], &transport_src[0],
+                              stepsize, state.saturation());
                 double substep_injected[2] = { 0.0 };
                 double substep_produced[2] = { 0.0 };
                 Opm::computeInjectedProduced(props_, state.saturation(), transport_src, stepsize,
@@ -558,18 +533,17 @@ namespace Opm
                 injected[1] += substep_injected[1];
                 produced[0] += substep_produced[0];
                 produced[1] += substep_produced[1];
-
-
+                if (use_segregation_split_) {
+                    tsolver_.solveGravity(columns_, &initial_porevol[0], stepsize, state.saturation());
+                }
                 watercut.push(timer.currentTime() + timer.currentStepLength(),
                               produced[0]/(produced[0] + produced[1]),
                               tot_produced[0]/tot_porevol_init);
-
                 if (wells_) {
                     wellreport.push(props_, *wells_, state.saturation(),
                                     timer.currentTime() + timer.currentStepLength(),
                                     well_state.bhp(), well_state.perfRates());
                 }
-
             }
             transport_timer.stop();
             double tt = transport_timer.secsSinceStart();
