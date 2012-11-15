@@ -312,6 +312,9 @@ namespace Opm {
                          const std::vector<int>& hf_faces,
                          const std::vector<int>& nb_faces)
         {
+	    if (p_faces.empty()) {
+		return;
+	    }
             assert (p_faces.size()  == hf_faces.size());
             assert (hf_faces.size() == nb_faces.size());
 
