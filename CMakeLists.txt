@@ -2,6 +2,8 @@
 # vim: set filetype=cmake autoindent tabstop=2 shiftwidth=2 noexpandtab softtabstop=2 nowrap:
 cmake_minimum_required (VERSION 2.8)
 project (opm-core)
+set (opm-core_MAJOR_VERSION 0)
+set (opm-core_MINOR_VERSION 3)
 enable_language (CXX)
 
 # all public header files are together with the source
@@ -50,3 +52,7 @@ configure_vars (
 # create this library
 include_directories (${opm-core_INCLUDE_DIRS})
 add_library (opmcore SHARED ${opm-core_SOURCES})
+set_target_properties (opmcore PROPERTIES
+	SOVERSION ${opm-core_MAJOR_VERSION}
+	VERSION ${opm-core_MAJOR_VERSION}.${opm-core_MINOR_VERSION}
+	)
