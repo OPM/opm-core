@@ -18,6 +18,10 @@ include (UseOpmFind)
 # compile with C++0x/11 support if available
 find_package (CXX11Features REQUIRED)
 
+# blas/lapack
+find_and_append_package (BLAS REQUIRED)
+find_and_append_package (LAPACK REQUIRED)
+
 # put libraries in lib/
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
