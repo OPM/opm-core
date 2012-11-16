@@ -29,7 +29,11 @@
 
 #ifndef SIMPLEFLUID2PWRAPPINGPROPS_HPP
 #define SIMPLEFLUID2PWRAPPINGPROPS_HPP
-namespace opm{
+
+#include <opm/core/fluid/IncompPropertiesInterface.hpp>
+#include <vector>
+
+namespace Opm{
     class SimpleFluid2pWrappingProps
     {
     public:
@@ -59,7 +63,7 @@ namespace opm{
         const Opm::IncompPropertiesInterface& props_;
         std::vector<double> smin_;
         std::vector<double> smax_;
-    }
+    };
 }
 
 

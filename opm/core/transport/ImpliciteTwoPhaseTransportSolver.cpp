@@ -27,50 +27,59 @@
 */
 
 
-#include "ImpliciteTwoPhaseTransportSolver.hpp"
+#include <opm/core/transport/ImpliciteTwoPhaseTransportSolver.hpp>
+#include <opm/core/simulator/TwophaseState.hpp>
+#include <opm/core/utility/miscUtilities.hpp>
+namespace Opm{
 
-ImpliciteTwoPhaseTransportSolver::ImpliciteTwoPhaseTransportSolver()
-{
-    ImpliciteTwoPhaseTransportSolver::ImpliciteTwoPhaseTransportSolver(TwoPhaseTransprotModel& model,
-                const Opm::IncompPropertiesInterface& param)
+    ImpliciteTwoPhaseTransportSolver::ImpliciteTwoPhaseTransportSolver(
+            const Opm::WellsManager& wells,
+            const Opm::RockCompressibility& rock_comp,
+            const ImplicitTransportDetails::NRControl& ctrl,
+            SinglePointUpwindTwoPhase<Opm::SimpleFluid2pWrappingProps>& model,
+            const UnstructuredGrid& grid,
+            const Opm::IncompPropertiesInterface& props,
+            const parameter::ParameterGroup& param)
         : tsolver_(model),
           grid_(grid),
           ctrl_(ctrl),
           props_(props),
           rock_comp_(rock_comp),
-          wells_(wells),
+          wells_(wells)
     {
         tsrc_ = create_transport_source(2, 2);
+        //linsolver_(param),
         //src_(num_cells, 0.0);
     }
 
-    void ImpliciteTwoPhaseTransportSolver::solve(const double* darcyflux,
-                                       const double* porevolume,
-                                       const double* source,
-                                       const double dt,
-                                       std::vector<double>& saturation)
+    void ImpliciteTwoPhaseTransportSolver::solve(const double* porevolume,
+                                                 const double* source,
+                                                 const double dt,
+                                                 TwophaseState& state,
+                                                 WellState& well_state)
     {
-        if (rock_comp->isActive()) {
-            computePorevolume(grid_->c_grid(), props->porosity(), *rock_comp, state.pressure(), porevol);
+        std::vector<double> porevol;
+        if (rock_comp_.isActive()) {
+            computePorevolume(grid_, props_.porosity(), rock_comp_, state.pressure(), porevol);
         }
-        std::vector<double> src(num_cells, 0.0);
+        std::vector<double> src(grid_.number_of_cells, 0.0);
         //Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
-        Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0,
-                                            wells->c_wells(), well_state.perfRates(), src);
+        Opm::computeTransportSource(grid_, src, state.faceflux(), 1.0,
+                                    wells_.c_wells(), well_state.perfRates(), src);
         double ssrc[]   = { 1.0, 0.0 };
         double ssink[]  = { 0.0, 1.0 };
         double zdummy[] = { 0.0, 0.0 };
-        for (int cell = 0; cell < num_cells; ++cell) {
-            clear_transport_source(tsrc);
+        for (int cell = 0; cell < grid_.number_of_cells; ++cell) {
+            clear_transport_source(tsrc_);
             if (src[cell] > 0.0) {
-                append_transport_source(cell, 2, 0, src[cell], ssrc, zdummy, tsrc);
+                append_transport_source(cell, 2, 0, src[cell], ssrc, zdummy, tsrc_);
             } else if (src[cell] < 0.0) {
-                append_transport_source(cell, 2, 0, src[cell], ssink, zdummy, tsrc);
+                append_transport_source(cell, 2, 0, src[cell], ssink, zdummy, tsrc_);
             }
         }
         // Boundary conditions.
         Opm::ImplicitTransportDetails::NRReport  rpt;
-        tsolver.solve(grid_->c_grid(), tsrc, dt, ctrl_, state, linsolvet_, rpt);
+        tsolver_.solve(grid_, tsrc_, dt, ctrl_, state, linsolver_, rpt);
         std::cout << rpt;
 
     }

@@ -27,17 +27,15 @@
 */
 
 
-#include "SimpleFluid2pWrappingProps.hpp"
-
-SimpleFluid2pWrappingProps::SimpleFluid2pWrappingProps()
-{
-}
-namespace opm{
+#include <opm/core/transport/SimpleFluid2pWrappingProps.hpp>
+#include <cassert>
+#include <opm/core/utility/ErrorMacros.hpp>
+namespace Opm{
 
     SimpleFluid2pWrappingProps::SimpleFluid2pWrappingProps(const Opm::IncompPropertiesInterface& props)
-  : props_(props),
-    smin_(props.numCells()*props.numPhases()),
-    smax_(props.numCells()*props.numPhases())
+        : props_(props),
+          smin_(props.numCells()*props.numPhases()),
+          smax_(props.numCells()*props.numPhases())
     {
         if (props.numPhases() != 2) {
             THROW("SimpleFluid2pWrapper requires 2 phases.");
@@ -50,7 +48,7 @@ namespace opm{
         props.satRange(num_cells, &cells[0], &smin_[0], &smax_[0]);
     }
 
-    double density(int phase) const
+    double SimpleFluid2pWrappingProps::density(int phase) const
     {
         return props_.density()[phase];
     }
@@ -58,7 +56,7 @@ namespace opm{
     template <class Sat,
               class Mob,
               class DMob>
-    void SimpleFluid2pWrappingProps:;mobility(int c, const Sat& s, Mob& mob, DMob& dmob) const
+    void SimpleFluid2pWrappingProps::mobility(int c, const Sat& s, Mob& mob, DMob& dmob) const
     {
         props_.relperm(1, &s[0], &c, &mob[0], &dmob[0]);
         const double* mu = props_.viscosity();
