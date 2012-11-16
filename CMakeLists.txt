@@ -41,8 +41,8 @@ target_link_libraries(opmcore
 
 FILE(GLOB CPP_EXAMPLES "examples/*.cpp")
 FILE(GLOB CPP_tests "tests/*.cpp")
-add_executable(spu_2p examples/spu_2p.cpp ${EXTRA_FILES})
-add_executable(sim_2p_incomp_reorder examples/sim_2p_incomp_reorder.cpp)
+add_executable(spu_2p examples/spu_2p.cpp)
+add_executable(sim_2p_incomp_reorder examples/sim_2p_incomp_reorder.cpp ${EXTRA_FILES})
 add_executable(sim_wateroil examples/sim_wateroil.cpp)
 
 add_executable(pvt_test tests/pvt_test.cpp)

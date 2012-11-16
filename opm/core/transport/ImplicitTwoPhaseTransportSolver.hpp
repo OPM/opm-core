@@ -70,9 +70,9 @@ namespace Opm{
                 const Opm::IncompPropertiesInterface& props,
                 const parameter::ParameterGroup& param);
 
-        //ImpliciteTwoPhaseTransportSolver(){
-        //   destroy_transport_source(tsrc_);
-        //}
+        ~ImplicitTwoPhaseTransportSolver(){
+           destroy_transport_source(tsrc_);
+        }
 
         /// Solve for saturation at next timestep.
         /// \param[in] darcyflux         Array of signed face fluxes.
@@ -87,6 +87,8 @@ namespace Opm{
                    Opm::WellState& well_state);
 
     private:
+        ImplicitTwoPhaseTransportSolver(const ImplicitTwoPhaseTransportSolver&);
+        ImplicitTwoPhaseTransportSolver& operator=(const ImplicitTwoPhaseTransportSolver&);
         typedef Opm::SimpleFluid2pWrappingProps TwophaseFluid;
         typedef Opm::SinglePointUpwindTwoPhase<TwophaseFluid> TransportModel;
 

@@ -25,14 +25,15 @@
   You should have received a copy of the GNU General Public License
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
-
+#ifndef SIMPLEFLUID2PWRAPPINGPROPS_IMPL_HPP
+#define SIMPLEFLUID2PWRAPPINGPROPS_IMPL_HPP
 
 #include <opm/core/transport/SimpleFluid2pWrappingProps.hpp>
 #include <cassert>
 #include <opm/core/utility/ErrorMacros.hpp>
 namespace Opm{
 
-    SimpleFluid2pWrappingProps::SimpleFluid2pWrappingProps(const Opm::IncompPropertiesInterface& props)
+    inline SimpleFluid2pWrappingProps::SimpleFluid2pWrappingProps(const Opm::IncompPropertiesInterface& props)
         : props_(props),
           smin_(props.numCells()*props.numPhases()),
           smax_(props.numCells()*props.numPhases())
@@ -48,7 +49,7 @@ namespace Opm{
         props.satRange(num_cells, &cells[0], &smin_[0], &smax_[0]);
     }
 
-    double SimpleFluid2pWrappingProps::density(int phase) const
+    inline double SimpleFluid2pWrappingProps::density(int phase) const
     {
         return props_.density()[phase];
     }
@@ -89,14 +90,15 @@ namespace Opm{
         ASSERT(dpcow[3] == 0.0);
     }
 
-    double SimpleFluid2pWrappingProps::s_min(int c) const
+    inline double SimpleFluid2pWrappingProps::s_min(int c) const
     {
         return smin_[2*c + 0];
     }
 
-    double SimpleFluid2pWrappingProps::s_max(int c) const
+    inline double SimpleFluid2pWrappingProps::s_max(int c) const
     {
         return smax_[2*c + 0];
     }
 
 }
+#endif // SIMPLEFLUID2PWRAPPINGPROPS_IMPL_HPP

@@ -49,7 +49,7 @@
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/transport/GravityColumnSolver.hpp>
 
-#include <opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp>
+#include <opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.hpp>
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -278,7 +278,7 @@ main(int argc, char** argv)
     // Reordering solver.
     const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
     const int nl_maxiter = param.getDefault("nl_maxiter", 30);
-    Opm::TransportModelCompressibleTwophase reorder_model(*grid->c_grid(), *props, nl_tolerance, nl_maxiter);
+    Opm::TransportSolverCompressibleTwophaseReorder reorder_model(*grid->c_grid(), *props, nl_tolerance, nl_maxiter);
     if (use_segregation_split) {
         reorder_model.initGravity(grav);
     }
