@@ -12,6 +12,9 @@ set (opm-core_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}")
 # additional search modules
 list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules")
 
+# compile with C++0x/11 support if available
+find_package (CXX11Features REQUIRED)
+
 # put libraries in lib/
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
@@ -43,6 +46,9 @@ list (APPEND opm-core_CONFIG_VARS
 	"HAVE_DYNAMIC_BOOST_TEST"
 	"HAVE_ERT"
 	"HAVE_SUITESPARSE_UMFPACK_H"
+	"/* C++0x/11 support */"
+	"HAVE_NULLPTR"
+	"HAVE_STATIC_ASSERT"
 	)
 configure_vars (
 	FILE  "${PROJECT_BINARY_DIR}/config.h"
