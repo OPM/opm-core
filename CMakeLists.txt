@@ -22,6 +22,9 @@ find_package (CXX11Features REQUIRED)
 find_and_append_package (BLAS REQUIRED)
 find_and_append_package (LAPACK REQUIRED)
 
+# xml processing (for config parsing)
+find_and_append_package (LibXml2 REQUIRED)
+
 # put libraries in lib/
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
