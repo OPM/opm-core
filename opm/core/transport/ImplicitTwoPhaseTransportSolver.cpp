@@ -32,7 +32,7 @@
 #include <opm/core/utility/miscUtilities.hpp>
 namespace Opm{
 
-    ImpliciteTwoPhaseTransportSolver::ImpliciteTwoPhaseTransportSolver(
+    ImplicitTwoPhaseTransportSolver::ImplicitTwoPhaseTransportSolver(
             const Opm::WellsManager& wells,
             const Opm::RockCompressibility& rock_comp,
             const ImplicitTransportDetails::NRControl& ctrl,
@@ -52,7 +52,7 @@ namespace Opm{
         //src_(num_cells, 0.0);
     }
 
-    void ImpliciteTwoPhaseTransportSolver::solve(const double* porevolume,
+    void ImplicitTwoPhaseTransportSolver::solve(const double* porevolume,
                                                  const double* source,
                                                  const double dt,
                                                  TwophaseState& state,

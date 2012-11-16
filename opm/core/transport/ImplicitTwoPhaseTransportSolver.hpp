@@ -27,7 +27,7 @@
 */
 
 #ifndef IMPLICITETWOPHASETRANSPORTSOLVER_HPP
-#define IMPLICITETWOPHASETRANSPORTSOLVER_HPP
+#define IMPLICITTWOPHASETRANSPORTSOLVER_HPP
 #include <vector>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/transport/TwoPhaseTransportSolver.hpp>
@@ -53,7 +53,7 @@
 #include <opm/core/simulator/WellState.hpp>
 namespace Opm{
     // implicite transprot solver
-    class ImpliciteTwoPhaseTransportSolver : public TwoPhaseTransportSolver
+    class ImplicitTwoPhaseTransportSolver : public TwoPhaseTransportSolver
     {
     public:
         /// Construct solver.
@@ -61,7 +61,7 @@ namespace Opm{
         /// \param[in] props     Rock and fluid properties.
         /// \param[in] tol       Tolerance used in the solver.
         /// \param[in] maxit     Maximum number of non-linear iterations used.
-        ImpliciteTwoPhaseTransportSolver(
+        ImplicitTwoPhaseTransportSolver(
                 const Opm::WellsManager& wells,
                 const Opm::RockCompressibility& rock_comp,
                 const ImplicitTransportDetails::NRControl& ctrl,
