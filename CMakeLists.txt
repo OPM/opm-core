@@ -25,6 +25,9 @@ find_and_append_package (LAPACK REQUIRED)
 # Tim Davis' SuiteSparse archive
 find_and_append_package (SuiteSparse COMPONENTS umfpack)
 
+# SuperLU
+find_and_append_package (SUPERLU)
+
 # xml processing (for config parsing)
 find_and_append_package (LibXml2 REQUIRED)
 
