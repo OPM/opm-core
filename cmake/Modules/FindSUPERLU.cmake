@@ -7,11 +7,12 @@
 #
 # Sets the follwing variable:
 #
-# SUPERLU_FOUND           True if SuperLU available and usable.
-# SUPERLU_MIN_VERSION_4_3 True if SuperLU version >= 4.3.
-# SUPERLU_WITH_VERSION    Human readable string containing version information.
-# SUPERLU_INCLUDE_DIRS    Path to the SuperLU include dirs.
-# SUPERLU_LIBRARIES       Name to the SuperLU library.
+# SUPERLU_FOUND               True if SuperLU available and usable.
+# SUPERLU_MIN_VERSION_4_3     True if SuperLU version >= 4.3.
+# SUPERLU_POST_2005_VERSION   True if SuperLU is from post-2005
+# SUPERLU_WITH_VERSION        Human readable string containing version information.
+# SUPERLU_INCLUDE_DIRS        Path to the SuperLU include dirs.
+# SUPERLU_LIBRARIES           Name to the SuperLU library.
 #
 
 # adds SuperLU flags to the targets
@@ -100,6 +101,16 @@ int main(void)
   return SLU_DOUBLE;
 }"
 SUPERLU_MIN_VERSION_4_3)
+
+# check whether version is at least post-2005
+CHECK_C_SOURCE_COMPILES("
+#include <slu_ddefs.h>
+int main(void)
+{
+  GlobalLU_t g;
+  return 0;
+}"
+SUPERLU_POST_2005_VERSION)
 cmake_pop_check_state()
 
 if(SUPERLU_MIN_VERSION_4_3)
