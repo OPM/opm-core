@@ -39,6 +39,8 @@ OPM_CORE_CHECKS
 
 OPM_DYNLINK_BOOST_TEST
 
+ERT
+
 dnl Substitute Autoconf's abs_*dir variables into the Makefiles for the
 dnl benefit of external code that uses these variables to derive
 dnl locations (e.g., Dune's DUNE_CHECK_MODULES macro).  Automakes prior
@@ -56,6 +58,7 @@ AC_CONFIG_FILES([
  tutorials/Makefile
  opm-core.pc
  lib/pkgconfig/opm-core.pc
+ opmcore-config.cmake
 ])
 
 AC_OUTPUT

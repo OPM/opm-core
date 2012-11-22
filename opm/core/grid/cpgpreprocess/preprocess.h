@@ -58,6 +58,7 @@ extern "C" {
         const double *coord;   /**< Pillar end-points. */
         const double *zcorn;   /**< Corner-point depths. */
         const int    *actnum;  /**< Explicit "active" map.  May be NULL.*/
+        const double *mapaxes; /**< 6 Element rotation vector - can be NULL. */
     };
 
     /**

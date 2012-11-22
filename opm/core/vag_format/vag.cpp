@@ -64,7 +64,7 @@ namespace OPM
 	    }
 	    //cout << endl;
 	}
-	if(!(int(pos_struct.value.size())==pos_struct.pos[n])){
+	if(int(pos_struct.value.size()) != pos_struct.pos[n]){
 	    cerr << "Failed to read pos structure" << endl;
 	    cerr << "pos_struct.value.size()" << pos_struct.value.size() << endl;
 	    cerr << "pos_struct.pos[n+1]" << pos_struct.pos[n] << endl;
