@@ -28,6 +28,7 @@ find_and_append_package (LibXml2 REQUIRED)
 # various runtime library enhancements
 find_and_append_package (Boost 1.39.0
 	COMPONENTS date_time filesystem system unit_test_framework REQUIRED)
+include (UseDynamicBoost)
 
 # put libraries in lib/
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
@@ -47,7 +48,6 @@ list (REMOVE_ITEM opm-core_SOURCES
 # we don't try to find any of these
 set (HAVE_AGMG 0)
 set (HAVE_DUNE_ISTL 0)
-set (HAVE_DYNAMIC_BOOST_TEST 0)
 set (HAVE_ERT)
 set (HAVE_SUITESPARSE_UMFPACK_H 0)
 
