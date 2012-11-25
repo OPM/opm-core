@@ -41,6 +41,7 @@ find_and_append_package (dune-istl)
 
 # put libraries in lib/
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 
 # find all the source code
 file (GLOB_RECURSE opm-core_SOURCES "opm/*.c" "opm/*.cpp")
@@ -91,3 +92,18 @@ set_target_properties (opmcore PROPERTIES
 	LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
 	)
 target_link_libraries (opmcore ${opm-core_LIBRARIES})
+
+### test programs ###
+
+# find the source code
+file (GLOB_RECURSE tests_SOURCES "tests/*.c" "tests/*.cpp")
+
+# compile each of these separately
+foreach (test_FILE IN LISTS tests_SOURCES)
+	get_filename_component (test_NAME "${test_FILE}" NAME_WE)
+	add_executable (${test_NAME} ${test_FILE})
+	set_target_properties (${test_NAME} PROPERTIES
+		LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
+		)
+	target_link_libraries (${test_NAME} opmcore ${opm-core_LIBRARIES})
+endforeach (test_FILE)
