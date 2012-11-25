@@ -98,6 +98,18 @@ target_link_libraries (opmcore ${opm-core_LIBRARIES})
 # find the source code
 file (GLOB_RECURSE tests_SOURCES "tests/*.c" "tests/*.cpp")
 
+# conditionally disable tests when features aren't available
+macro (cond_disable_test name)
+	if ((NOT DEFINED ${HAVE_${name}}) OR (NOT ${HAVE_${name}}))
+		message (STATUS "${name} test disabled, since ${name} is not found.")
+		string (TOLOWER "${name}" name_lower)
+		get_filename_component (test_${name}_FILE "tests/test_${name_lower}.cpp" ABSOLUTE)
+		list (REMOVE_ITEM tests_SOURCES "${test_${name}_FILE}")
+	endif ((NOT DEFINED ${HAVE_${name}}) OR (NOT ${HAVE_${name}}))
+endmacro (cond_disable_test name)
+cond_disable_test ("AGMG")
+cond_disable_test ("ERT")
+
 # compile each of these separately
 foreach (test_FILE IN LISTS tests_SOURCES)
 	get_filename_component (test_NAME "${test_FILE}" NAME_WE)
