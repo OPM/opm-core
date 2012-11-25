@@ -22,6 +22,9 @@ find_package (CXX11Features REQUIRED)
 find_and_append_package (BLAS REQUIRED)
 find_and_append_package (LAPACK REQUIRED)
 
+# Tim Davis' SuiteSparse archive
+find_and_append_package (SuiteSparse COMPONENTS umfpack)
+
 # xml processing (for config parsing)
 find_and_append_package (LibXml2 REQUIRED)
 
@@ -49,7 +52,6 @@ list (REMOVE_ITEM opm-core_SOURCES
 set (HAVE_AGMG 0)
 set (HAVE_DUNE_ISTL 0)
 set (HAVE_ERT)
-set (HAVE_SUITESPARSE_UMFPACK_H 0)
 
 # create configuration header which describes available features
 # necessary to compile this library
