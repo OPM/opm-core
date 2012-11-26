@@ -958,7 +958,7 @@ ecl_grid_type * EclipseGridParser::newGrid( ) {
      }
 */
 
-void EclipseGridParser::saveEGRID( const std::string & filename) {
+void EclipseGridParser::saveEGRID( const std::string & filename) const {
   bool endian_flip = true;//ECL_ENDIAN_FLIP;
   bool fmt_file     = ecl_util_fmt_file( filename.c_str() );
   struct grdecl grdecl = get_grdecl();
@@ -1068,6 +1068,14 @@ void EclipseGridParser::saveEGRID_INIT( const std::string& output_dir , const st
   free( egrid_file );
   ecl_grid_free( ecl_grid );
 }
+#else
+
+void EclipseGridParser::saveEGRID( const std::string & filename) const
+{
+    static_cast<void>(filename); // Suppress "unused variable" warning.
+    THROW("Cannot write EGRID format without ert library support. Reconfigure opm-core with --with-ert and recompile.");
+}
+
 #endif
 
 // Read an imported fortio data file using Ert. 
