@@ -22,13 +22,10 @@
 #define OPM_WRITEECLDATA_HEADER_INCLUDED
 
 
-#include <string>
-#include <map>
-#include <vector>
-#include <tr1/array>
-#include <iosfwd>
 #include <opm/core/utility/DataMap.hpp>
-#include <opm/core/simulator/SimulatorTimer.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+
+#include <string>
 
 struct UnstructuredGrid;
 
@@ -38,7 +35,9 @@ namespace Opm
   // ECLIPSE output for general grids.
   void writeECLData(const UnstructuredGrid& grid,
                     const DataMap& data,
-                    const SimulatorTimer& simtimer,
+                    const int current_step,
+                    const double current_time,
+                    const boost::posix_time::ptime& current_date_time,
                     const std::string& output_dir,
                     const std::string& base_name);
 

@@ -23,7 +23,6 @@
 #endif
 
 #include <opm/core/grid.h>
-#include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/writeECLData.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
@@ -88,17 +87,18 @@ namespace Opm
 
   void writeECLData(const UnstructuredGrid& grid,
                     const DataMap& data,
-                    const SimulatorTimer& simtimer,
+                    const int current_step,
+                    const double current_time,
+                    const boost::posix_time::ptime& current_date_time,
                     const std::string& output_dir,
                     const std::string& base_name) {
     
     ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;  // Alternatively ECL_RESTART_FILE for multiple restart files.
     bool fmt_file           = true; 
     
-    int step                = simtimer.currentStepNum();
-    char * filename         = ecl_util_alloc_filename(output_dir.c_str() , base_name.c_str() , file_type , fmt_file , step );
+    char * filename         = ecl_util_alloc_filename(output_dir.c_str() , base_name.c_str() , file_type , fmt_file , current_step );
     int phases              = ECL_OIL_PHASE + ECL_WATER_PHASE;
-    double days             = Opm::unit::convert::to(simtimer.currentTime(), Opm::unit::day);
+    double days             = Opm::unit::convert::to(current_time, Opm::unit::day);
     time_t date             = 0;
     int nx                  = grid.cartdims[0];
     int ny                  = grid.cartdims[1];
@@ -108,19 +108,18 @@ namespace Opm
     
     {
       using namespace boost::posix_time;
-      ptime t1 = simtimer.currentDateTime();
       ptime t0( boost::gregorian::date(1970 , 1 ,1) );
-      time_duration::sec_type seconds = (t1 - t0).total_seconds();
+      time_duration::sec_type seconds = (current_date_time - t0).total_seconds();
       
       date = time_t( seconds );
     }
     
-    if (step > 0 && file_type == ECL_UNIFIED_RESTART_FILE)
+    if (current_step > 0 && file_type == ECL_UNIFIED_RESTART_FILE)
       rst_file = ecl_rst_file_open_append( filename );
     else
       rst_file = ecl_rst_file_open_write( filename );
     
-    ecl_rst_file_fwrite_header( rst_file , step , date , days , nx , ny , nz , nactive , phases );
+    ecl_rst_file_fwrite_header( rst_file , current_step , date , days , nx , ny , nz , nactive , phases );
     ecl_rst_file_start_solution( rst_file );
 
     {
