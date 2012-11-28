@@ -12,6 +12,9 @@ set (opm-core_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}")
 # additional search modules
 list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules")
 
+# macro to set standard variables (INCLUDE_DIRS, LIBRARIES etc.)
+include (UseOpmFind)
+
 # compile with C++0x/11 support if available
 find_package (CXX11Features REQUIRED)
 
@@ -55,10 +58,18 @@ configure_vars (
 	WRITE ${opm-core_CONFIG_VARS}
 	)
 
+# some CMake properties do not do list expansion
+list (REMOVE_DUPLICATES opm-core_LINKER_FLAGS)
+string (REPLACE ";" " " opm-core_LINKER_FLAGS_STR "${opm-core_LINKER_FLAGS}")
+remove_duplicate_libraries (opm-core)
+
 # create this library
 include_directories (${opm-core_INCLUDE_DIRS})
+add_definitions (${opm-core_DEFINITIONS})
 add_library (opmcore SHARED ${opm-core_SOURCES})
 set_target_properties (opmcore PROPERTIES
 	SOVERSION ${opm-core_MAJOR_VERSION}
 	VERSION ${opm-core_MAJOR_VERSION}.${opm-core_MINOR_VERSION}
+	LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
 	)
+target_link_libraries (opmcore ${opm-core_LIBRARIES})
