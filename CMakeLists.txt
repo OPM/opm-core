@@ -111,6 +111,14 @@ target_link_libraries (opmcore ${opm-core_LIBRARIES})
 # queue this executable to be stripped
 strip_debug_symbols (LIBRARY opmcore)
 
+# write configuration file to locate library
+set (opm-core_VERSION "${opm-core_MAJOR_VERSION}.${opm-core_MINOR_VERSION}")
+configure_file (
+	${PROJECT_SOURCE_DIR}/opm-core-config.cmake.in
+	${PROJECT_BINARY_DIR}/opm-core-config.cmake
+	@ONLY
+	)
+
 ### test programs ###
 
 # find the source code

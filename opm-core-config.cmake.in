@@ -1,0 +1,38 @@
+# - Open Porous Media Initiative Core Library config mode
+#
+# Defines the following variables:
+#  opm-core_FOUND        - true
+#  opm-core_VERSION      - version of the opm-core library found, e.g. 0.2
+#  opm-core_DEFINITIONS  - defines to be made on the command line
+#  opm-core_INCLUDE_DIRS - header directories with which to compile
+#  opm-core_LIBRARIES    - names of the libraries with which to link
+#  opm-core_CONFIG_VARS  - defines that must be written to config.h
+#
+# You should put lines like this in your CMakeLists.txt
+#  set (opm-core_DIR "../opm-core" CACHE LOCATION "Build tree of opm-core")
+#  find_package (opm-core)
+
+# <http://www.vtk.org/Wiki/CMake/Tutorials/How_to_create_a_ProjectConfig.cmake_file>
+
+# propagate this property from one build system to the other
+set (opm-core_VERSION "@opm-core_VERSION@")
+
+# these definitions may be necessary to make the header files behave the
+# same way as they did when the library was compiled
+set (opm-core_DEFINITIONS "@opm-core_DEFINITIONS@")
+set (opm-core_CONFIG_VARS "@opm-core_CONFIG_VARS@")
+
+# include files come from the source tree where the template is stored
+set (opm-core_INCLUDE_DIRS "@opm-core_INCLUDE_DIRS@")
+
+# libraries come from the build tree where this file was generated
+find_library (opm-core_LOCATION NAMES "opmcore" PATHS "@CMAKE_LIBRARY_OUTPUT_DIRECTORY@")
+mark_as_advanced (opm-core_LOCATION)
+
+# add the library as a target, so that other things in the project including
+# this file may depend on it and get rebuild if this library changes.
+add_library (opmcore UNKNOWN IMPORTED)
+set_property (TARGET opmcore PROPERTY IMPORTED_LOCATION "${opm-core_LOCATION}")
+
+# user programs should link with this library (see comment in the header)
+set (opm-core_LIBRARIES "${opm-core_LOCATION};@opm-core_LIBRARIES@")
