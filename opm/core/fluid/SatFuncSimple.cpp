@@ -54,6 +54,27 @@ namespace Opm
             smin_[phase_usage.phase_pos[Aqua]] = sw[0];
             swmax = sw.back();
             smax_[phase_usage.phase_pos[Aqua]] = sw.back();
+
+            krwmax_ = krw.back();
+            kromax_ = krow.front();
+            swcr_ = swmax;
+            sowcr_ = 1.0 - swco;
+            krwr_ = krw.back();
+            krorw_ = krow.front();
+            for (unsigned int i=1; i<sw.size(); ++i) {
+                if (krw[i]> 0.0) {
+                   swcr_ = sw[i-1];
+                   krorw_ = krow[i-1];
+                   break;
+                }
+            }
+            for (unsigned int i=sw.size()-2; i>=0; --i) {
+                if (krow[i]> 0.0) {
+                   sowcr_ = 1.0 - sw[i+1];
+                   krwr_ = krw[i+1];
+                   break;
+                }
+            }
         }
         if (phase_usage.phase_used[Vapour]) {
             const SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
@@ -102,7 +123,8 @@ namespace Opm
             int opos = phase_usage.phase_pos[Liquid];
             double sw = s[wpos];
             double krw = krw_(sw);
-            double krow = krow_(sw);
+            double so = s[opos];
+            double krow = krow_(1.0-so);
             kr[wpos] = krw;
             kr[opos] = krow;
         } else {
@@ -160,8 +182,9 @@ namespace Opm
             double sw = s[wpos];
             double krw = krw_(sw);
             double dkrww = krw_.derivative(sw);
-            double krow = krow_(sw);
-            double dkrow = krow_.derivative(sw);
+            double so = s[opos];
+            double krow = krow_(1.0-so);
+            double dkrow = krow_.derivative(1.0-so);
             kr[wpos] = krw;
             kr[opos] = krow;
             dkrds[wpos + wpos*np] = dkrww;
@@ -253,6 +276,28 @@ namespace Opm
             smin_[phase_usage.phase_pos[Aqua]] = sw[0];
             swmax = sw.back();
             smax_[phase_usage.phase_pos[Aqua]] = sw.back();
+
+            krwmax_ = krw.back();
+            kromax_ = krow.front();
+            swcr_ = swmax;
+            sowcr_ = 1.0 - swco;
+            krwr_ = krw.back();
+            krorw_ = krow.front();
+            for (unsigned int i=1; i<sw.size(); ++i) {
+                if (krw[i]> 0.0) {
+                   swcr_ = sw[i-1];
+                   krorw_ = krow[i-1];
+                   break;
+                }
+            }
+            for (unsigned int i=sw.size()-2; i>=0; --i) {
+                if (krow[i]> 0.0) {
+                   sowcr_ = 1.0 - sw[i+1];
+                   krwr_ = krw[i+1];
+                   break;
+                }
+            }
+
         }
         if (phase_usage.phase_used[Vapour]) {
             const SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
@@ -301,7 +346,8 @@ namespace Opm
             int opos = phase_usage.phase_pos[Liquid];
             double sw = s[wpos];
             double krw = krw_(sw);
-            double krow = krow_(sw);
+            double so = s[opos];
+            double krow = krow_(1.0-so);
             kr[wpos] = krw;
             kr[opos] = krow;
         } else {
@@ -359,8 +405,9 @@ namespace Opm
             double sw = s[wpos];
             double krw = krw_(sw);
             double dkrww = krw_.derivative(sw);
-            double krow = krow_(sw);
-            double dkrow = krow_.derivative(sw);
+            double so = s[opos];
+            double krow = krow_(1.0-so);
+            double dkrow = krow_.derivative(1.0-so);
             kr[wpos] = krw;
             kr[opos] = krow;
             dkrds[wpos + wpos*np] = dkrww;

@@ -2206,6 +2206,109 @@ struct WPOLYMER : public SpecialBase
     }
 };
 
+struct ENDSCALE : public SpecialBase {
+    std::string dir_switch_;
+    std::string revers_switch_;
+    int n_tab_;
+    int n_node_;
+
+    virtual std::string name() const {
+        return std::string("ENDSCALE");
+    }
+
+    virtual void read(std::istream & is) {
+        dir_switch_ = std::string("NODIR");
+        revers_switch_ = std::string("REVERS");
+        n_tab_ = 1;
+        n_node_ = 20;
+        while (!is.eof()) {
+	    std::string tmp = readString(is);
+	    while (tmp.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		tmp = readString(is);
+	    }
+	    if (tmp[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    }
+            dir_switch_ = tmp;
+
+            tmp = readString(is);
+	    if (tmp[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    }
+            revers_switch_ = tmp;
+
+            is >> ignoreWhitespace;
+            if(is.peek() == int('/')) {
+                is >> ignoreLine;
+                return;
+            }
+            is >> n_tab_;
+
+            is >> ignoreWhitespace;
+            if(is.peek() == int('/')) {
+                is >> ignoreLine;
+                return;
+            }
+            is >> n_node_;
+
+            is >> ignoreLine;
+            break;
+        }
+    }
+
+    virtual void write(std::ostream & os) {
+        os << name() << '\n';
+        os << dir_switch_ << "   " << revers_switch_ << "   "
+           << n_tab_ << "   " << n_node_ << '\n';
+    }
+
+    virtual void convertToSI(const EclipseUnits&) {
+    }
+};
+
+
+struct SCALECRS : public SpecialBase {
+    std::string scalecrs_;
+
+    virtual std::string name() const {
+        return std::string("SCALECRS");
+    }
+
+    virtual void read(std::istream & is) {
+        scalecrs_ = std::string("NO");
+        while (!is.eof()) {
+	    std::string tmp = readString(is);
+	    while (tmp.find("--") == 0) {
+		// This line is a comment
+		is >> ignoreLine;
+		tmp = readString(is);
+	    }
+	    if (tmp[0] == '/') {
+		is >> ignoreLine;
+		break;
+	    } else if (tmp[0] == 'Y') {
+                scalecrs_ = std::string("YES");
+            }
+
+            is >> ignoreLine;
+            break;
+        }
+    }
+
+    virtual void write(std::ostream & os) {
+        os << name() << '\n';
+        os << scalecrs_ << '\n';
+    }
+
+    virtual void convertToSI(const EclipseUnits&) {
+    }
+};
+
+
 // The following fields only have a dummy implementation
 // that allows us to ignore them.
 struct SWFN : public MultRec {};

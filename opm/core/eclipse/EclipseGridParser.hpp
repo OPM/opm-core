@@ -192,6 +192,8 @@ public:                                                                         
     SPECIAL_FIELD(GCONINJE)
     SPECIAL_FIELD(GCONPROD)
     SPECIAL_FIELD(WGRUPCON)
+    SPECIAL_FIELD(ENDSCALE)
+    SPECIAL_FIELD(SCALECRS)
 
     // The following fields only have a dummy implementation
     // that allows us to ignore them.
