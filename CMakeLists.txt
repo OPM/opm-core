@@ -24,6 +24,9 @@ include (UseDebugSymbols)
 # optimize full if we're not doing a debug build
 include (UseOptimization)
 
+# turn on all warnings
+include (UseWarnings)
+
 # blas/lapack
 find_and_append_package (BLAS REQUIRED)
 find_and_append_package (LAPACK REQUIRED)
