@@ -21,6 +21,9 @@ find_package (CXX11Features REQUIRED)
 # put debug information into every executable
 include (UseDebugSymbols)
 
+# optimize full if we're not doing a debug build
+include (UseOptimization)
+
 # blas/lapack
 find_and_append_package (BLAS REQUIRED)
 find_and_append_package (LAPACK REQUIRED)
