@@ -18,6 +18,9 @@ include (UseOpmFind)
 # compile with C++0x/11 support if available
 find_package (CXX11Features REQUIRED)
 
+# put debug information into every executable
+include (UseDebugSymbols)
+
 # blas/lapack
 find_and_append_package (BLAS REQUIRED)
 find_and_append_package (LAPACK REQUIRED)
@@ -93,6 +96,9 @@ set_target_properties (opmcore PROPERTIES
 	)
 target_link_libraries (opmcore ${opm-core_LIBRARIES})
 
+# queue this executable to be stripped
+strip_debug_symbols (LIBRARY opmcore)
+
 ### test programs ###
 
 # find the source code
@@ -118,4 +124,5 @@ foreach (test_FILE IN LISTS tests_SOURCES)
 		LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
 		)
 	target_link_libraries (${test_NAME} opmcore ${opm-core_LIBRARIES})
+	strip_debug_symbols (RUNTIME ${test_NAME})
 endforeach (test_FILE)
