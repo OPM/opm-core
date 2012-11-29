@@ -6,6 +6,12 @@ set (opm-core_MAJOR_VERSION 0)
 set (opm-core_MINOR_VERSION 3)
 enable_language (CXX)
 
+# build debug by default
+if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+	set (CMAKE_BUILD_TYPE "Debug")
+endif (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+message (STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 # all public header files are together with the source
 set (opm-core_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}")
 
