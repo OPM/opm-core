@@ -227,7 +227,7 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
                 AC_CHECK_LIB([superlu], [dgssvx],
                     [
                         direct_SUPERLU_LIBS="-L$SUPERLU_LIB_PATH -lsuperlu $BLAS_LIBS $FLIBS"
-                        SUPERLU_LIBS="-L$SUPERLU_LIB_PATH -lsuperlu \${BLAS_LIBS} \${FLIBS}"
+                        SUPERLU_LIBS="-L$SUPERLU_LIB_PATH -lsuperlu $BLAS_LIBS $FLIBS"
                         HAVE_SUPERLU="1"
                     ], [], [$BLAS_LIBS $FLIBS])
             fi
@@ -245,7 +245,7 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
                 AC_CHECK_FUNC([dgssvx],
                     [
                         direct_SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib $BLAS_LIBS $FLIBS"
-                        SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib \${BLAS_LIBS} \${FLIBS}"
+                        SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib $BLAS_LIBS $FLIBS"
                         HAVE_SUPERLU="1"
                     ])
             fi
@@ -260,7 +260,7 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
                 AC_CHECK_FUNC([dgssvx],
                     [
                         direct_SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib $SUPERLU_LIB_PATH/$with_superlu_blaslib $FLIBS"
-                        SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib $SUPERLU_LIB_PATH/$with_superlu_blaslib \${FLIBS}"
+                        SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib $SUPERLU_LIB_PATH/$with_superlu_blaslib $FLIBS"
                         HAVE_SUPERLU="1"
                     ])
             fi
