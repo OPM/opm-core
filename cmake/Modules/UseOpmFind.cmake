@@ -29,6 +29,7 @@ set (_opm_proj_vars
   LIBRARIES
   DEFINITIONS
   INCLUDE_DIRS
+  LIBRARY_DIRS
   CONFIG_VARS
   )
 
