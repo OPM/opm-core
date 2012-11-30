@@ -300,14 +300,15 @@ opm/core/linalg/call_umfpack.h			\
 opm/core/linalg/LinearSolverUmfpack.hpp
 endif
 
-
-if HAVE_ERT
+# Removed conditional, since the file now can be compiled
+# always (function throwing if no ERT).
+# if HAVE_ERT
 lib_libopmcore_la_SOURCES  +=			\
 opm/core/utility/writeECLData.cpp
 
 nobase_include_HEADERS +=			\
 opm/core/utility/writeECLData.hpp
-endif
+# endif
 
 
 if DUNE_ISTL
