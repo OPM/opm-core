@@ -143,6 +143,9 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
     AC_REQUIRE([AC_F77_LIBRARY_LDFLAGS])
     AC_REQUIRE([AX_BLAS])
 
+  if test x$HAVE_SUPERLU = x1 ; then
+     AC_MSG_WARN([SuperLU test was already performed. Skipping it here])
+  else
     #
     # User hints ...
     #
@@ -331,4 +334,5 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
     LDFLAGS="$ac_save_LDFLAGS"
     CPPFLAGS="$ac_save_CPPFLAGS"
     LIBS="$ac_save_LIBS"
+  fi
 ])
