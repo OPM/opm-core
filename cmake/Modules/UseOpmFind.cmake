@@ -41,15 +41,20 @@ foreach (name IN LISTS _opm_proj_vars)
 endforeach (name)
 
 # insert this boilerplate whenever we are going to find a new package
-macro (find_and_append_package name)
+macro (find_and_append_package_to prefix name)
   find_package (${name} ${ARGN})
   if (${name}_FOUND)
 	foreach (var IN LISTS _opm_proj_vars)
 	  if (DEFINED ${name}_${var})
-		list (APPEND ${CMAKE_PROJECT_NAME}_${var} ${${name}_${var}})
+		list (APPEND ${prefix}_${var} ${${name}_${var}})
 	  endif (DEFINED ${name}_${var})
 	endforeach (var)
   endif (${name}_FOUND)
+endmacro (find_and_append_package_to prefix name)
+
+# append to the list of variables associated with the project
+macro (find_and_append_package name)
+  find_and_append_package_to (${CMAKE_PROJECT_NAME} ${name} ${ARGN})
 endmacro (find_and_append_package name)
 
 # libraries should always be trimmed from the beginning, so that also
