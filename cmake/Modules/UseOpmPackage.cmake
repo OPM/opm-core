@@ -77,6 +77,7 @@ function (find_opm_package module reqs opts header lib defs prog conf)
 	NAMES "${header}"
 	PATHS ${${module}_DIR}
 	HINTS ${PkgConf_${module}_INCLUDE_DIRS}
+	PATH_SUFFIXES "include"
 	)
 
   # some modules are all in headers
