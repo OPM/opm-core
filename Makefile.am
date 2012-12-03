@@ -133,6 +133,7 @@ opm/core/utility/parameters/tinyxml/tinystr.cpp		\
 opm/core/utility/parameters/tinyxml/tinyxml.cpp		\
 opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp	\
 opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp	\
+opm/core/utility/writeECLData.cpp			\
 opm/core/utility/writeVtkData.cpp			\
 opm/core/vag_format/vag.cpp				\
 opm/core/wells/InjectionSpecification.cpp		\
@@ -278,6 +279,7 @@ opm/core/utility/parameters/ParameterTools.hpp		\
 opm/core/utility/parameters/ParameterXML.hpp		\
 opm/core/utility/parameters/tinyxml/tinystr.h		\
 opm/core/utility/parameters/tinyxml/tinyxml.h		\
+opm/core/utility/writeECLData.hpp			\
 opm/core/utility/writeVtkData.hpp			\
 opm/core/vag_format/vag.hpp				\
 opm/core/well.h						\
@@ -299,16 +301,6 @@ nobase_include_HEADERS +=			\
 opm/core/linalg/call_umfpack.h			\
 opm/core/linalg/LinearSolverUmfpack.hpp
 endif
-
-# Removed conditional, since the file now can be compiled
-# always (function throwing if no ERT).
-# if HAVE_ERT
-lib_libopmcore_la_SOURCES  +=			\
-opm/core/utility/writeECLData.cpp
-
-nobase_include_HEADERS +=			\
-opm/core/utility/writeECLData.hpp
-# endif
 
 
 if DUNE_ISTL
