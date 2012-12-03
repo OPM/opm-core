@@ -153,9 +153,12 @@ namespace Opm
 
 namespace Opm
 {
+
     void writeECLData(const UnstructuredGrid&,
                       const DataMap&,
-                      const SimulatorTimer&,
+                      const int,
+                      const double,
+                      const boost::posix_time::ptime&,
                       const std::string&,
                       const std::string&)
     {
