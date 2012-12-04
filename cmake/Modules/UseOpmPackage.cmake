@@ -47,6 +47,15 @@ macro (remove_duplicate_libraries module)
   endif (DEFINED ${module}_LIBRARIES)
 endmacro (remove_duplicate_libraries module)
 
+# append all items from src into dst; both must be *names* of lists
+macro (append_found src dst)
+  foreach (_item IN LISTS ${src})
+	if (NOT "${_item}" MATCHES "-NOTFOUND$")
+	  list (APPEND ${dst} ${_item})
+	endif (NOT "${_item}" MATCHES "-NOTFOUND$")
+  endforeach (_item)
+endmacro (append_found src dst)
+
 function (find_opm_package module reqs opts header lib defs prog conf)
   # if someone else has included this test, don't do it again
   if (${${module}_FOUND})
@@ -118,8 +127,10 @@ function (find_opm_package module reqs opts header lib defs prog conf)
   include (CMakePushCheckState)
   cmake_push_check_state ()
   include (CheckCXXSourceCompiles)
-  list (APPEND CMAKE_REQUIRED_INCLUDES ${${module}_INCLUDE_DIR})
-  list (APPEND CMAKE_REQUIRED_LIBRARIES ${${module}_LIBRARIES})
+  # only add these if they are actually found; otherwise it won't
+  # compile and the variable won't be set
+  append_found (${module}_INCLUDE_DIR CMAKE_REQUIRED_INCLUDES)
+  append_found (${module}_LIBRARIES CMAKE_REQUIRED_LIBRARIES)
   # since we don't have any config.h yet
   list (APPEND CMAKE_REQUIRED_DEFINITIONS ${${module}_DEFINITIONS})
   list (APPEND CMAKE_REQUIRED_DEFINITIONS "-DHAVE_NULLPTR=${HAVE_NULLPTR}")
