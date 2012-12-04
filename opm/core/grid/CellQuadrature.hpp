@@ -87,11 +87,11 @@ namespace Opm
                        const int degree)
             : grid_(grid), cell_(cell), degree_(degree)
         {
+            if (grid.dimensions != 3) {
+                THROW("CellQuadrature only implemented for 3D case.");
+            }
             if (degree > 2) {
                 THROW("CellQuadrature exact for polynomial degrees > 1 not implemented.");
-            }
-            if (degree == 2) {
-                // Prepare subdivision.
             }
         }
 
