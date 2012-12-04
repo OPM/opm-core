@@ -95,7 +95,7 @@ function (find_opm_package module reqs opts header lib defs prog conf)
 	  NAMES "${lib}"
 	  PATHS ${${module}_DIR}
 	  HINTS ${PkgConf_${module}_LIBRARY_DIRS}
-	  PATH_SUFFIXES ".libs" "lib" "lib32" "lib64"
+	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib32" "lib64"
 	  )
   else (NOT "${lib}" STREQUAL "")
 	set (${module}_LIBRARY "")
