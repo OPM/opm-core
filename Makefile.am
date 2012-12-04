@@ -180,6 +180,8 @@ opm/core/fluid/blackoil/SinglePvtLiveGas.hpp		\
 opm/core/fluid/blackoil/SinglePvtLiveOil.hpp		\
 opm/core/fluid/blackoil/phaseUsageFromDeck.hpp		\
 opm/core/grid.h						\
+opm/core/grid/CellQuadrature.hpp			\
+opm/core/grid/FaceQuadrature.hpp			\
 opm/core/grid/cart_grid.h				\
 opm/core/grid/cornerpoint_grid.h			\
 opm/core/grid/cpgpreprocess/facetopology.h		\
