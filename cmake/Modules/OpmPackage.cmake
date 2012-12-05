@@ -2,17 +2,16 @@
 #
 # Synopsis:
 #
-#   find_opm_package (module deps opts header lib defs prog conf)
+#   find_opm_package (module deps header lib defs prog conf)
 #
 # where
 #
 #   module    Name of the module, e.g. "dune-common"; this will be the
 #             stem of all variables defined (see below).
-#   reqs      Semi-colon-separated list of dependent modules which must
-#             be present; all are required.
-#   opts      Semi-colon-separated list of dependent modules which not
-#             necessarily must be present but should be included if they
-#             are.
+#   deps      Semi-colon-separated list of dependent modules which must
+#             be present; those that are required must be marked as such
+#	          explicitly. Quote if more than one word is necessary to
+#	          describe the dependency.
 #   header    Name of the header file to probe for, e.g.
 #             "dune/common/fvector.hh". Note that you should have to same
 #             relative path here as is used in the header files.
@@ -56,23 +55,21 @@ macro (append_found src dst)
   endforeach (_item)
 endmacro (append_found src dst)
 
-function (find_opm_package module reqs opts header lib defs prog conf)
+function (find_opm_package module deps header lib defs prog conf)
   # if someone else has included this test, don't do it again
   if (${${module}_FOUND})
 	return ()
   endif (${${module}_FOUND})
 
-  # dependencies on other packages
-  foreach (_dep IN LISTS reqs)
-	find_package (${_dep} QUIET REQUIRED)
+  # dependencies on other packages; underscore version only contains the
+  # name of the other package
+  set (_deps)
+  foreach (_dep IN LISTS deps)
+	separate_arguments (_args UNIX_COMMAND ${_dep})
+	find_package (${_args} QUIET)
+	list (GET _args 0 _name_only)
+	list (APPEND _deps ${_name_only})
   endforeach (_dep)
-  foreach (_dep IN LISTS opts)
-	find_package (${_dep} QUIET)
-  endforeach (_dep)
-  set (_deps ${reqs} ${opts})
-
-  # compile with C++0x/11 support if available
-  find_package (CXX11Features REQUIRED)
 
   # see if there is a pkg-config entry for this package, and use those
   # settings as a starting point
@@ -181,7 +178,7 @@ function (find_opm_package module reqs opts header lib defs prog conf)
   set (${module}_DEFINITIONS "${${module}_DEFINITIONS}" PARENT_SCOPE)
   set (${module}_CONFIG_VARS "${${module}_CONFIG_VARS}" PARENT_SCOPE)
   set (HAVE_${MODULE} "${HAVE_${MODULE}}" PARENT_SCOPE)
-endfunction (find_opm_package module reqs opts header lib defs prog conf)
+endfunction (find_opm_package module deps header lib defs prog conf)
 
 # print all variables defined by the above macro
 function (debug_find_vars module)

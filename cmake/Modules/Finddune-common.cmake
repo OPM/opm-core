@@ -15,12 +15,11 @@ find_opm_package (
   # module name
   "dune-common"
 
-  # required dependencies
-  "BLAS;LAPACK"
-
-  # optional dependencies
-  ""
-
+  # dependencies
+  "CXX11Features REQUIRED;
+  BLAS REQUIRED;
+  LAPACK REQUIRED
+  "
   # header to search for
   "dune/common/fvector.hh"
 

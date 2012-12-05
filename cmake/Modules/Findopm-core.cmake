@@ -10,25 +10,23 @@
 # Copyright (C) 2012 Uni Research AS
 # This code is licensed under The GNU General Public License v3.0
 
-# these packages must be found specially, since they require arguments
-include (OpmFind)
-find_and_append_package_to (opm-core SuiteSparse COMPONENTS umfpack)
-find_and_append_package_to (opm-core Boost 1.39.0
-	COMPONENTS date_time filesystem system unit_test_framework REQUIRED)
-include (UseDynamicBoost)
-
-# use the generic find routine to handle the rest
+# use the generic find routine
 include (OpmPackage)
 find_opm_package (
   # module name
   "opm-core"
 
-  # required dependencies
-  "CXX11Features;BLAS;LAPACK"
-
-  # optional dependencies
-  "dune-istl;SUPERLU"
-
+  # dependencies
+  "CXX11Features REQUIRED;
+  BLAS REQUIRED;
+  LAPACK REQUIRED;
+  SuiteSparse COMPONENTS umfpack;
+  SUPERLU;
+  LibXml2 REQUIRED;
+  Boost 1.39.0
+    COMPONENTS date_time filesystem system unit_test_framework REQUIRED;
+  dune-istl
+  "
   # header to search for
   "opm/core/grid.h"
 
@@ -56,4 +54,5 @@ int main (void) {
   HAVE_NULLPTR;
   HAVE_STATIC_ASSERT
   ")
+include (UseDynamicBoost)
 #debug_find_vars ("opm-core")
