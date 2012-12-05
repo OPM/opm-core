@@ -125,6 +125,10 @@ configure_file (
 	${PROJECT_BINARY_DIR}/opm-core-config.cmake
 	@ONLY
 	)
+configure_vars (
+	FILE CMAKE "${PROJECT_BINARY_DIR}/opm-core-config.cmake"
+	APPEND "${opm-core_CONFIG_VARS}"
+	)
 
 ### test programs ###
 
