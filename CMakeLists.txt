@@ -103,7 +103,10 @@ remove_duplicate_libraries (opm-core)
 # create this library
 include_directories (${opm-core_INCLUDE_DIRS})
 link_directories (${opm-core_LIBRARY_DIRS})
-add_definitions (${opm-core_DEFINITIONS})
+if (opm-core_DEFINITIONS)
+	list (REMOVE_DUPLICATES opm-core_DEFINITIONS)
+	add_definitions (${opm-core_DEFINITIONS})
+endif (opm-core_DEFINITIONS)
 add_library (opmcore SHARED ${opm-core_SOURCES})
 set_target_properties (opmcore PROPERTIES
 	SOVERSION ${opm-core_MAJOR_VERSION}
