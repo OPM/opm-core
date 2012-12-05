@@ -13,7 +13,8 @@ endif (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 message (STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # all public header files are together with the source
-set (opm-core_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}")
+set (opm-core_INCLUDE_DIR "${PROJECT_SOURCE_DIR}")
+list (APPEND opm-core_INCLUDE_DIRS "${opm-core_INCLUDE_DIR}")
 
 # additional search modules
 list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules")
@@ -75,18 +76,20 @@ set (HAVE_AGMG 0)
 set (HAVE_ERT)
 
 # create configuration header which describes available features
-# necessary to compile this library
+# necessary to compile this library. singular version is the names that
+# is required by this project alone, plural version transitively
+# includes the necessary defines by the dependencies
 include (ConfigVars)
-list (APPEND opm-core_CONFIG_VARS
-	"HAVE_AGMG"
-	"HAVE_DUNE_ISTL"
-	"HAVE_DYNAMIC_BOOST_TEST"
-	"HAVE_ERT"
-	"HAVE_SUITESPARSE_UMFPACK_H"
-	"/* C++0x/11 support */"
-	"HAVE_NULLPTR"
-	"HAVE_STATIC_ASSERT"
+set (opm-core_CONFIG_VAR
+	HAVE_AGMG
+	HAVE_DUNE_ISTL
+	HAVE_DYNAMIC_BOOST_TEST
+	HAVE_ERT
+	HAVE_SUITESPARSE_UMFPACK_H
+	HAVE_NULLPTR
+	HAVE_STATIC_ASSERT
 	)
+list (APPEND opm-core_CONFIG_VARS ${opm-core_CONFIG_VAR})
 configure_vars (
 	FILE  "${PROJECT_BINARY_DIR}/config.h"
 	WRITE ${opm-core_CONFIG_VARS}
@@ -111,6 +114,9 @@ target_link_libraries (opmcore ${opm-core_LIBRARIES})
 
 # queue this executable to be stripped
 strip_debug_symbols (LIBRARY opmcore)
+
+# we need to know the name of the library which is generated
+get_target_property (opm-core_LIBRARY opmcore LOCATION)
 
 # write configuration file to locate library
 set (opm-core_VERSION "${opm-core_MAJOR_VERSION}.${opm-core_MINOR_VERSION}")
