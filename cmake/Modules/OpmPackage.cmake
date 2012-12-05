@@ -75,7 +75,10 @@ function (find_opm_package module deps header lib defs prog conf)
   # settings as a starting point
   find_package (PkgConfig)
   pkg_check_modules (PkgConf_${module} QUIET ${module})
+
+  # these variables have non-standard names in FindPkgConfig (sic)
   set (${module}_DEFINITIONS ${PkgConf_${module}_CFLAGS_OTHER})
+  set (${module}_LINKER_FLAG ${PkgConf_${module}_LDFLAGS_OTHER})
 
   # search for this include and library file to get the installation
   # directory of the package
@@ -107,6 +110,7 @@ function (find_opm_package module deps header lib defs prog conf)
 	list (APPEND ${module}_LIBRARIES ${${_dep}_LIBRARIES})
 	list (APPEND ${module}_DEFINITIONS ${${_dep}_DEFINITIONS})
 	list (APPEND ${module}_CONFIG_VARS ${${_dep}_CONFIG_VARS})
+	list (APPEND ${module}_LINKER_FLAGS ${${_dep}_LINKER_FLAGS})
   endforeach (_dep)
 
   # compile with this option to avoid avalanche of warnings
@@ -177,6 +181,7 @@ function (find_opm_package module deps header lib defs prog conf)
   set (${module}_LIBRARIES "${${module}_LIBRARIES}" PARENT_SCOPE)
   set (${module}_DEFINITIONS "${${module}_DEFINITIONS}" PARENT_SCOPE)
   set (${module}_CONFIG_VARS "${${module}_CONFIG_VARS}" PARENT_SCOPE)
+  set (${module}_LINKER_FLAGS "${${module}_LINKER_FLAGS}" PARENT_SCOPE)
   set (HAVE_${MODULE} "${HAVE_${MODULE}}" PARENT_SCOPE)
 endfunction (find_opm_package module deps header lib defs prog conf)
 
