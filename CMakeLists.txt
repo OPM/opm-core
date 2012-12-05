@@ -21,8 +21,26 @@ list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules")
 # macro to set standard variables (INCLUDE_DIRS, LIBRARIES etc.)
 include (OpmFind)
 
-# compile with C++0x/11 support if available
-find_package (CXX11Features REQUIRED)
+# dependencies
+list (APPEND opm-core_DEPS
+	# compile with C++0x/11 support if available
+	"CXX11Features REQUIRED"
+	# matrix library
+	"BLAS REQUIRED"
+	"LAPACK REQUIRED"
+	# Tim Davis' SuiteSparse archive	
+	"SuiteSparse COMPONENTS umfpack"
+	# solver
+	"SUPERLU"
+	# xml processing (for config parsing)	
+	"LibXml2 REQUIRED"
+	# various runtime library enhancements
+	"Boost 1.39.0
+		COMPONENTS date_time filesystem system unit_test_framework REQUIRED"
+	# DUNE dependency
+	"dune-istl"
+	)
+find_and_append_package_list (${opm-core_DEPS})
 
 # put debug information into every executable
 include (UseDebugSymbols)
@@ -33,26 +51,8 @@ include (UseOptimization)
 # turn on all warnings
 include (UseWarnings)
 
-# blas/lapack
-find_and_append_package (BLAS REQUIRED)
-find_and_append_package (LAPACK REQUIRED)
-
-# Tim Davis' SuiteSparse archive
-find_and_append_package (SuiteSparse COMPONENTS umfpack)
-
-# SuperLU
-find_and_append_package (SUPERLU)
-
-# xml processing (for config parsing)
-find_and_append_package (LibXml2 REQUIRED)
-
-# various runtime library enhancements
-find_and_append_package (Boost 1.39.0
-	COMPONENTS date_time filesystem system unit_test_framework REQUIRED)
+# detect if Boost is in a shared library
 include (UseDynamicBoost)
-
-# DUNE dependency
-find_and_append_package (dune-istl)
 
 # put libraries in lib/
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
