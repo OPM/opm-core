@@ -2,7 +2,7 @@
 #
 # Synopsis:
 #
-#	find_and_append (name args)
+#	find_and_append_package (name args)
 #
 # where
 #
@@ -12,6 +12,25 @@
 # This macro will append the list of standard variables found by the
 # package to this project's standard variables
 #
+########################################################################
+#
+# - Generic inclusion of a list of packages
+#
+# Synopsis:
+#
+#	find_and_append_package_list (args)
+#
+# where
+#
+#	args          List of package strings. Each string must be quoted if
+#	              it contains more than one word.
+#
+# Example:
+#
+#	find_and_append_package_list (
+#		"Boost COMPONENTS filesystem REQUIRED"
+#		SUPERLU
+#	)
 ########################################################################
 #
 # - Remove duplicate library declarations
@@ -56,6 +75,22 @@ endmacro (find_and_append_package_to prefix name)
 macro (find_and_append_package name)
   find_and_append_package_to (${CMAKE_PROJECT_NAME} ${name} ${ARGN})
 endmacro (find_and_append_package name)
+
+# find a list of dependencies, adding each one of them
+macro (find_and_append_package_list_to prefix)
+  # setting and separating is necessary to work around apparent bugs
+  # in CMake's parser (sic)
+  set (_deps ${ARGN})
+  foreach (_dep IN LISTS _deps)
+	separate_arguments (_args UNIX_COMMAND ${_dep})
+	find_and_append_package_to (${prefix} ${_args})
+  endforeach (_dep)
+endmacro (find_and_append_package_list_to prefix)
+
+# convenience method to supply the project name as prefix
+macro (find_and_append_package_list)
+  find_and_append_package_list_to (${CMAKE_PROJECT_NAME} ${ARGN})
+endmacro (find_and_append_package_list)
 
 # libraries should always be trimmed from the beginning, so that also
 # missing functions in those later in the list will be resolved
