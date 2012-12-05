@@ -50,7 +50,9 @@ function (configure_vars obj filename verb)
   
   # only write the current value of each variable once
   list (APPEND _args ${ARGN})
-  list (REMOVE_DUPLICATES _args)
+  if (_args)
+	list (REMOVE_DUPLICATES _args)
+  endif (_args)
   
   # process each variable
   set (_prev_verbatim TRUE)
