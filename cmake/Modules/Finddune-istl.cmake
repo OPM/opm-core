@@ -10,7 +10,7 @@
 # Copyright (C) 2012 Uni Research AS
 # This code is licensed under The GNU General Public License v3.0
 
-include (UseOpmPackage)
+include (OpmPackage)
 find_opm_package (
   # module name
   "dune-istl"

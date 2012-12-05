@@ -19,7 +19,7 @@ set (opm-core_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}")
 list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules")
 
 # macro to set standard variables (INCLUDE_DIRS, LIBRARIES etc.)
-include (UseOpmFind)
+include (OpmFind)
 
 # compile with C++0x/11 support if available
 find_package (CXX11Features REQUIRED)
@@ -76,7 +76,7 @@ set (HAVE_ERT)
 
 # create configuration header which describes available features
 # necessary to compile this library
-include (UseConfigVars)
+include (ConfigVars)
 list (APPEND opm-core_CONFIG_VARS
 	"HAVE_AGMG"
 	"HAVE_DUNE_ISTL"
