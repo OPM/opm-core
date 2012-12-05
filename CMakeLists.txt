@@ -91,7 +91,7 @@ set (opm-core_CONFIG_VAR
 	)
 list (APPEND opm-core_CONFIG_VARS ${opm-core_CONFIG_VAR})
 configure_vars (
-	FILE  "${PROJECT_BINARY_DIR}/config.h"
+	FILE  CXX  "${PROJECT_BINARY_DIR}/config.h"
 	WRITE ${opm-core_CONFIG_VARS}
 	)
 

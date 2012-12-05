@@ -1,8 +1,9 @@
 # - Create config.h based on a list of variables
 #
 # Synopsis:
-#   configure_vars (FILE filename verb varlist)
+#   configure_vars (FILE syntax filename verb varlist)
 # where
+#	syntax        CXX or CMAKE, depending on target
 #   filename      Full path (including name) of config.h
 #   verb          WRITE or APPEND if truncating or not
 #   varlist       List of variable names that has been defined
@@ -17,14 +18,14 @@
 #     "HAVE_BAR_VERSION_2"
 #     )
 #   configure_vars (
-#     FILE  ${PROJECT_BINARY_DIR}/config.h
+#     FILE  CXX  ${PROJECT_BINARY_DIR}/config.h
 #     WRITE ${FOO_CONFIG_VARS}
 #     )
 
 # Copyright (C) 2012 Uni Research AS
 # This file is licensed under the GNU General Public License v3.0
 
-function (configure_vars obj filename verb)
+function (configure_vars obj syntax filename verb)
   # this is just to make the syntax look like the build-in commands
   message (STATUS "Writing config file \"${filename}\"...")
   if (NOT ("${obj}" STREQUAL "FILE" AND
@@ -32,6 +33,9 @@ function (configure_vars obj filename verb)
 	message (FATAL_ERROR "Syntax error in argument list")
   endif (NOT ("${obj}" STREQUAL "FILE" AND
 	  (("${verb}" STREQUAL "WRITE") OR ("${verb}" STREQUAL "APPEND"))))
+  if (NOT (("${syntax}" STREQUAL "CXX") OR ("${syntax}" STREQUAL "CMAKE")))
+	message (FATAL_ERROR "Invalid target syntax \"${syntax}\"")
+  endif (NOT (("${syntax}" STREQUAL "CXX") OR ("${syntax}" STREQUAL "CMAKE")))
   
   # truncate the file if the verb was "WRITE"
   if (verb STREQUAL "WRITE")
@@ -49,7 +53,7 @@ function (configure_vars obj filename verb)
   endif ("${_config_file}" STREQUAL "config.h")
   
   # only write the current value of each variable once
-  list (APPEND _args ${ARGN})
+  set (_args ${ARGN})
   if (_args)
 	list (REMOVE_DUPLICATES _args)
   endif (_args)
@@ -76,20 +80,31 @@ function (configure_vars obj filename verb)
 	  # check for empty variable; variables that are explicitly set to false
 	  # is not included in this clause
 	  if ((NOT DEFINED ${_var}) OR ("${${_var}}" STREQUAL ""))
-		file (APPEND "${filename}" "/* #undef ${_var} */\n")
+		if ("${syntax}" STREQUAL "CMAKE")
+		  file (APPEND "${filename}" "set (${_var})\n")
+		else ("${syntax}" STREQUAL "CMAKE")
+		  file (APPEND "${filename}" "/* #undef ${_var} */\n")
+		endif ("${syntax}" STREQUAL "CMAKE")
 	  else ((NOT DEFINED ${_var}) OR ("${${_var}}" STREQUAL ""))
 		
 		# integer variables (specifically 0 and 1) are written as they are,
 		# whereas everything else (including version numbers, which could
 		# be interpreted as floats) are quoted as strings
 		if (${_var} MATCHES "[0-9]+")
-		  file (APPEND "${filename}" "#define ${_var} ${${_var}}\n")
+		  set (_quoted "${${_var}}")
 		else (${_var} MATCHES "[0-9]+")
-		  file (APPEND "${filename}" "#define ${_var} \"${${_var}}\"\n")
+		  set (_quoted "\"${${_var}}\"")
 		endif (${_var} MATCHES "[0-9]+")
+
+		# write to file using the correct syntax
+		if ("${syntax}" STREQUAL "CMAKE")
+		  file (APPEND "${filename}" "set (${_var} ${_quoted})\n")
+		else ("${syntax}" STREQUAL "CMAKE")
+		  file (APPEND "${filename}" "#define ${_var} ${_quoted}\n")
+		endif ("${syntax}" STREQUAL "CMAKE")
 		
 	  endif ((NOT DEFINED ${_var}) OR ("${${_var}}" STREQUAL ""))
 	  set (_prev_verbatim FALSE)
 	endif ("${_var}" MATCHES "^/[/*]")
   endforeach(_var)
-endfunction (configure_vars)
+endfunction (configure_vars obj syntax filename verb)
