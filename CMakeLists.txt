@@ -29,7 +29,7 @@ include (OpmFind)
 # dependencies
 list (APPEND opm-core_DEPS
 	# compile with C++0x/11 support if available
-	"CXX11Features REQUIRED"
+	"CXX11Features"
 	# matrix library
 	"BLAS REQUIRED"
 	"LAPACK REQUIRED"
