@@ -2,8 +2,8 @@
 # vim: set filetype=cmake autoindent tabstop=2 shiftwidth=2 noexpandtab softtabstop=2 nowrap:
 cmake_minimum_required (VERSION 2.8)
 project (opm-core)
-set (opm-core_MAJOR_VERSION 0)
-set (opm-core_MINOR_VERSION 3)
+set (opm-core_VERSION_MAJOR 0)
+set (opm-core_VERSION_MINOR 3)
 enable_language (CXX)
 
 # build debug by default
@@ -108,9 +108,10 @@ if (opm-core_DEFINITIONS)
 	add_definitions (${opm-core_DEFINITIONS})
 endif (opm-core_DEFINITIONS)
 add_library (opmcore SHARED ${opm-core_SOURCES})
+set (opm-core_VERSION "${opm-core_VERSION_MAJOR}.${opm-core_VERSION_MINOR}")
 set_target_properties (opmcore PROPERTIES
-	SOVERSION ${opm-core_MAJOR_VERSION}
-	VERSION ${opm-core_MAJOR_VERSION}.${opm-core_MINOR_VERSION}
+	SOVERSION ${opm-core_VERSION_MAJOR}
+	VERSION ${opm-core_VERSION}
 	LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
 	)
 target_link_libraries (opmcore ${opm-core_LIBRARIES})
@@ -122,7 +123,6 @@ strip_debug_symbols (LIBRARY opmcore)
 get_target_property (opm-core_LIBRARY opmcore LOCATION)
 
 # write configuration file to locate library
-set (opm-core_VERSION "${opm-core_MAJOR_VERSION}.${opm-core_MINOR_VERSION}")
 configure_file (
 	${PROJECT_SOURCE_DIR}/opm-core-config.cmake.in
 	${PROJECT_BINARY_DIR}/opm-core-config.cmake
