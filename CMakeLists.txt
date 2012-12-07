@@ -59,12 +59,13 @@ include (UseDynamicBoost)
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 
-# find all the source code
-file (GLOB_RECURSE opm-core_SOURCES "opm/*.c" "opm/*.cpp")
+# find all the source code (note that these variables have name after
+# the target library and not the project)
+file (GLOB_RECURSE opmcore_SOURCES "opm/core/*.c" "opm/core/*.cpp")
 
 # these files are provided in source control, but can only compile with Matlab
 # available
-list (REMOVE_ITEM opm-core_SOURCES
+list (REMOVE_ITEM opmcore_SOURCES
 	${PROJECT_SOURCE_DIR}/opm/core/grid/cpgpreprocess/mxgrdecl.c
 	${PROJECT_SOURCE_DIR}/opm/core/grid/cpgpreprocess/processgrid.c
 	${PROJECT_SOURCE_DIR}/opm/core/utility/parameters/tinyxml/xmltest.cpp
@@ -107,7 +108,7 @@ if (opm-core_DEFINITIONS)
 	list (REMOVE_DUPLICATES opm-core_DEFINITIONS)
 	add_definitions (${opm-core_DEFINITIONS})
 endif (opm-core_DEFINITIONS)
-add_library (opmcore SHARED ${opm-core_SOURCES})
+add_library (opmcore SHARED ${opmcore_SOURCES})
 set (opm-core_VERSION "${opm-core_VERSION_MAJOR}.${opm-core_VERSION_MINOR}")
 set_target_properties (opmcore PROPERTIES
 	SOVERSION ${opm-core_VERSION_MAJOR}
