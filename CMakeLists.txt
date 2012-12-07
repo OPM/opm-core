@@ -17,7 +17,8 @@ set (opm-core_INCLUDE_DIR "${PROJECT_SOURCE_DIR}")
 list (APPEND opm-core_INCLUDE_DIRS "${opm-core_INCLUDE_DIR}")
 
 # additional search modules
-list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules")
+set (opm-core_MODULE_DIR "${PROJECT_SOURCE_DIR}/cmake/Modules")
+list (APPEND CMAKE_MODULE_PATH ${opm-core_MODULE_DIR})
 
 # macro to set standard variables (INCLUDE_DIRS, LIBRARIES etc.)
 include (OpmFind)
@@ -62,6 +63,7 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 # find all the source code (note that these variables have name after
 # the target library and not the project)
 file (GLOB_RECURSE opmcore_SOURCES "opm/core/*.c" "opm/core/*.cpp")
+file (GLOB_RECURSE opmcore_HEADERS "opm/core/*.h" "opm/core/*.hpp")
 
 # these files are provided in source control, but can only compile with Matlab
 # available
@@ -133,6 +135,23 @@ configure_vars (
 	FILE CMAKE "${PROJECT_BINARY_DIR}/opm-core-config.cmake"
 	APPEND "${opm-core_CONFIG_VARS}"
 	)
+
+### installation ###
+string (LENGTH ${PROJECT_SOURCE_DIR} _prefix_length)
+foreach (_hdr IN LISTS opmcore_HEADERS)
+	get_filename_component (_dir ${_hdr} PATH)
+	string (SUBSTRING ${_dir} ${_prefix_length} -1 _rel_dir)
+	install (
+		FILES ${_hdr}
+		DESTINATION include${_rel_dir}
+		)
+endforeach (_hdr)
+install (
+	TARGETS opmcore
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+	)
+message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")
 
 ### test programs ###
 
