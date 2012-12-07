@@ -138,6 +138,12 @@ configure_vars (
 	FILE CMAKE "${PROJECT_BINARY_DIR}/opm-core-config.cmake"
 	APPEND "${opm-core_CONFIG_VARS}"
 	)
+include (WriteBasicConfigVersionFile)
+write_basic_config_version_file (
+	"${PROJECT_BINARY_DIR}/opm-core-config-version.cmake"
+	VERSION ${opm-core_VERSION}
+	COMPATIBILITY SameMajorVersion
+	)
 
 ### installation ###
 string (LENGTH ${PROJECT_SOURCE_DIR} _prefix_length)

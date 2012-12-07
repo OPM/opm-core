@@ -39,4 +39,9 @@ function (opm_cmake_config name)
 	DESTINATION share/cmake/${name}
 	RENAME ${name}-config.cmake
 	)
+  # assume that there exists a version file already
+  install (
+	FILES ${PROJECT_BINARY_DIR}/${name}-config-version.cmake
+	DESTINATION share/cmake/${name}
+	)
 endfunction (opm_cmake_config name)
