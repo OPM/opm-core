@@ -20,6 +20,9 @@ list (APPEND opm-core_INCLUDE_DIRS "${opm-core_INCLUDE_DIR}")
 set (opm-core_MODULE_DIR "${PROJECT_SOURCE_DIR}/cmake/Modules")
 list (APPEND CMAKE_MODULE_PATH ${opm-core_MODULE_DIR})
 
+# use tricks to do faster builds
+include (UseFastBuilds)
+
 # macro to set standard variables (INCLUDE_DIRS, LIBRARIES etc.)
 include (OpmFind)
 
