@@ -46,6 +46,9 @@ namespace Opm
             const std::vector<double>& krw = swof_table[table_num][1];
             const std::vector<double>& krow = swof_table[table_num][2];
             const std::vector<double>& pcow = swof_table[table_num][3];
+            if (krw.front() != 0.0 || krow.back() != 0.0) {
+                THROW("Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
+            }
             buildUniformMonotoneTable(sw, krw,  samples, krw_);
             buildUniformMonotoneTable(sw, krow, samples, krow_);
             buildUniformMonotoneTable(sw, pcow, samples, pcow_);
@@ -68,10 +71,10 @@ namespace Opm
                    break;
                 }
             }
-            for (unsigned int i=sw.size()-2; i>=0; --i) {
-                if (krow[i]> 0.0) {
-                   sowcr_ = 1.0 - sw[i+1];
-                   krwr_ = krw[i+1];
+            for (unsigned int i=sw.size()-1; i>=1; --i) {
+                if (krow[i-1]> 0.0) {
+                   sowcr_ = 1.0 - sw[i];
+                   krwr_ = krw[i];
                    break;
                 }
             }
@@ -268,6 +271,9 @@ namespace Opm
             const std::vector<double>& krw = swof_table[table_num][1];
             const std::vector<double>& krow = swof_table[table_num][2];
             const std::vector<double>& pcow = swof_table[table_num][3];
+            if (krw.front() != 0.0 || krow.back() != 0.0) {
+                THROW("Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
+            }
             krw_ = NonuniformTableLinear<double>(sw, krw);
             krow_ = NonuniformTableLinear<double>(sw, krow);
             pcow_ = NonuniformTableLinear<double>(sw, pcow);
@@ -290,10 +296,10 @@ namespace Opm
                    break;
                 }
             }
-            for (unsigned int i=sw.size()-2; i>=0; --i) {
-                if (krow[i]> 0.0) {
-                   sowcr_ = 1.0 - sw[i+1];
-                   krwr_ = krw[i+1];
+            for (unsigned int i=sw.size()-1; i>=1; --i) {
+                if (krow[i-1]> 0.0) {
+                   sowcr_ = 1.0 - sw[i];
+                   krwr_ = krw[i];
                    break;
                 }
             }
