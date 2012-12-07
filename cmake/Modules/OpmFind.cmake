@@ -61,7 +61,13 @@ endforeach (name)
 
 # insert this boilerplate whenever we are going to find a new package
 macro (find_and_append_package_to prefix name)
-  find_package (${name} ${ARGN})
+  # if we have specified a directory, don't revert to searching the
+  # system default paths afterwards
+  if (${name}_DIR)
+	find_package (${name} ${ARGN} PATHS ${${name}_DIR} NO_DEFAULT_PATH)
+  else (${name}_DIR)
+	find_package (${name} ${ARGN})
+  endif (${name}_DIR)
   if (${name}_FOUND)
 	foreach (var IN LISTS _opm_proj_vars)
 	  if (DEFINED ${name}_${var})
