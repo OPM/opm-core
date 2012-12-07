@@ -23,6 +23,7 @@ CMakeFiles/
 cmake_install.cmake
 config.h
 opm-core-config.cmake
+opm-core-install.cmake
 Makefile
 bin/
 lib/

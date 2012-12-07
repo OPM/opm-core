@@ -156,6 +156,10 @@ install (
 	)
 message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")
 
+# installation of CMake modules to help user programs locate the library
+include (OpmProject)
+opm_cmake_config (opm-core)
+
 ### test programs ###
 
 # find the source code
