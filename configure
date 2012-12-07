@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# display help text
+usage () {
+  cat <<EOF
+Installation directories:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [/usr/local]
+EOF
+}
+
+# report an error regarding the arguments
+invalid_arg () {
+  cat <<EOF
+configure: error: unrecognized option: \`$1'
+Try \`$0 --help' for more information
+EOF
+}
+
+# default values
+prefix=/usr/local
+
+# long arguments are implemented by putting a dash character followed by
+# a colon in the optspec, see trick by Arvid Requate at
+# <http://stackoverflow.com/questions/402377/#7680682>
+while getopts -- ":-:" optchar; do
+  case "${optchar}" in
+    -)
+      # OPTARG now contains everything after double dashes
+      case "${OPTARG}" in
+        prefix=*)
+          # remove prefix consisting of everything up to equal sign
+          prefix=${OPTARG#*=}
+          ;;
+        help)
+		  usage
+		  exit 0
+		  ;;
+        *)
+          # remove everything *after* the equal sign
+		  arg=${OPTARG%=*}
+          invalid_arg --$arg
+		  exit 1
+	      ;;
+      esac
+	  ;;
+    *)
+	  invalid_arg -$OPTARG
+	  exit 1
+      ;;
+  esac
+done
+# remove all arguments processed by getopts
+shift $((OPTIND-1))
+
+# pass everything on to CMake
+env "$@" cmake "$(dirname $0)" "-DCMAKE_INSTALL_PREFIX=$prefix"
