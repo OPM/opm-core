@@ -42,4 +42,9 @@ string (REPLACE "@CXX_STD0X_FLAGS@" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 string (STRIP "${CMAKE_CXX_FLAGS}" CMAKE_CXX_FLAGS)
 set (CMAKE_CXX_FLAGS "@CXX_STD0X_FLAGS@ ${CMAKE_CXX_FLAGS}")
 
+# same as above, but for C99
+string (REPLACE "@C_STD99_FLAGS@" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+string (STRIP "${CMAKE_C_FLAGS}" CMAKE_C_FLAGS)
+set (CMAKE_C_FLAG "@C_STD99_FLAGS@ ${CMAKE_C_FLAGS}")
+
 # this is the contents of config.h as far as our probes can tell:

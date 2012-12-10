@@ -4,6 +4,7 @@ cmake_minimum_required (VERSION 2.8)
 project (opm-core)
 set (opm-core_VERSION_MAJOR 0)
 set (opm-core_VERSION_MINOR 3)
+enable_language (C)
 enable_language (CXX)
 
 # build debug by default
@@ -28,6 +29,8 @@ include (OpmFind)
 
 # dependencies
 list (APPEND opm-core_DEPS
+	# compile with C99 support if available
+	"C99"
 	# compile with C++0x/11 support if available
 	"CXX11Features"
 	# matrix library
