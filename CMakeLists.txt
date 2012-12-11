@@ -105,17 +105,12 @@ configure_vars (
 	)
 
 # some CMake properties do not do list expansion
-list (REMOVE_DUPLICATES opm-core_LINKER_FLAGS)
 string (REPLACE ";" " " opm-core_LINKER_FLAGS_STR "${opm-core_LINKER_FLAGS}")
-remove_duplicate_libraries (opm-core)
 
 # create this library
 include_directories (${opm-core_INCLUDE_DIRS})
 link_directories (${opm-core_LIBRARY_DIRS})
-if (opm-core_DEFINITIONS)
-	list (REMOVE_DUPLICATES opm-core_DEFINITIONS)
-	add_definitions (${opm-core_DEFINITIONS})
-endif (opm-core_DEFINITIONS)
+add_definitions (${opm-core_DEFINITIONS})
 add_library (opmcore SHARED ${opmcore_SOURCES})
 set (opm-core_VERSION "${opm-core_VERSION_MAJOR}.${opm-core_VERSION_MINOR}")
 set_target_properties (opmcore PROPERTIES
