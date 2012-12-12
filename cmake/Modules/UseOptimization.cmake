@@ -23,6 +23,15 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 	list (APPEND _opt_flags "-flto")
   endif (HAVE_LINK_OPTS)
 
+  # native instruction set tuning
+  option (WITH_NATIVE "Use native instruction set" ON)
+  if (WITH_NATIVE)
+	check_cxx_accepts_flag ("-mtune=native" HAVE_MTUNE)
+	if (HAVE_MTUNE)
+	  list (APPEND _opt_flags "-mtune=native")
+	endif (HAVE_MTUNE)
+  endif (WITH_NATIVE)
+
   # use these options for release builds - full optimization
   add_options (
 	ALL_LANGUAGES
