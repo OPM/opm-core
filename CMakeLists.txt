@@ -71,17 +71,26 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 file (GLOB_RECURSE opmcore_SOURCES "opm/core/*.c" "opm/core/*.cpp")
 file (GLOB_RECURSE opmcore_HEADERS "opm/core/*.h" "opm/core/*.hpp")
 
+# Algebraic Multigrid must be compiled together with our program;
+# if it is not available, then remove our corresponding component
+find_package (AGMG)
+if (AGMG_FOUND)
+	list (APPEND opmcore_SOURCES ${AGMG_SOURCES})
+else (AGMG_FOUND)
+	list (REMOVE_ITEM opmcore_SOURCES
+		${PROJECT_SOURCE_DIR}/opm/core/linalg/LinearSolverAGMG.cpp
+		)
+endif (AGMG_FOUND)
+
 # these files are provided in source control, but can only compile with Matlab
 # available
 list (REMOVE_ITEM opmcore_SOURCES
 	${PROJECT_SOURCE_DIR}/opm/core/grid/cpgpreprocess/mxgrdecl.c
 	${PROJECT_SOURCE_DIR}/opm/core/grid/cpgpreprocess/processgrid.c
 	${PROJECT_SOURCE_DIR}/opm/core/utility/parameters/tinyxml/xmltest.cpp
-	${PROJECT_SOURCE_DIR}/opm/core/linalg/LinearSolverAGMG.cpp
 	)
 
 # we don't try to find any of these
-set (HAVE_AGMG 0)
 set (HAVE_ERT)
 
 # create configuration header which describes available features
@@ -102,6 +111,10 @@ list (APPEND opm-core_CONFIG_VARS ${opm-core_CONFIG_VAR})
 configure_vars (
 	FILE  CXX  "${PROJECT_BINARY_DIR}/config.h"
 	WRITE ${opm-core_CONFIG_VARS}
+	)
+include (UseFortranWrappers)
+define_fc_func (
+	APPEND "${PROJECT_BINARY_DIR}/config.h"
 	)
 
 # some CMake properties do not do list expansion
