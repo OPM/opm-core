@@ -1,0 +1,2 @@
+#!/bin/sh
+exec ionice -c2 -n7 nice make -j $(echo "("$(grep -P -c '^processor\t:' /proc/cpuinfo)+1")"/1 | bc) "$@"
