@@ -17,6 +17,9 @@
 .project
 .settings/*
 
+# QtCreator project settings
+CMakeLists.txt.user*
+
 # in-tree build with CMake
 CMakeCache.txt
 CMakeFiles/
