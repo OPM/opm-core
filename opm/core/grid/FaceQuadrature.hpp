@@ -152,7 +152,7 @@ namespace Opm
             const int dim = grid_.dimensions;
             if (dim == 2) {
                 const double simpsonw[3] = { 1.0/6.0, 4.0/6.0, 1.0/6.0 };
-                return simpsonw[index];
+                return grid_.face_areas[face_]*simpsonw[index];
             }
             ASSERT(dim == 3);
             const double* fc = grid_.face_centroids + dim*face_;
