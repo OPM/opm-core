@@ -66,22 +66,6 @@ namespace
         mutable std::vector<double> pt;
     };
 
-    struct LinearFunc
-    {
-        double operator()(const double* x) const
-        {
-            return 1.0*x[0] + 2.0*x[1] + 1.0*x[2] + 3.0;
-        }
-    };
-
-    struct QuadraticFunc
-    {
-        double operator()(const double* x) const
-        {
-            return 1.0*x[0]*x[1] + 2.0*x[1] + 4.0*x[2] + 3.0;
-        }
-    };
-
 
     template <class Quadrature, class Func>
     void testSingleCase(const UnstructuredGrid& grid,
@@ -98,45 +82,124 @@ namespace
 } // anonymous namespace
 
 
-
-static void test3dCart()
+namespace cart2d
 {
-    // Set up 3d 1-cell cartesian case.
-    GridManager g(1, 1, 1);
-    const UnstructuredGrid& grid = *g.c_grid();
+    struct ConstantFunc
+    {
+        double operator()(const double*) const
+        {
+            return 1.234;
+        }
+    };
 
-    // CellQuadrature tests.
-    testSingleCase<CellQuadrature, LinearFunc>(grid, 0, 1, 5.0);
-    testSingleCase<CellQuadrature, LinearFunc>(grid, 0, 2, 5.0);
-    testSingleCase<CellQuadrature, QuadraticFunc>(grid, 0, 2, 6.25);
+    struct LinearFunc
+    {
+        double operator()(const double* x) const
+        {
+            return 1.0*x[0] + 2.0*x[1] + 3.0;
+        }
+    };
 
-    // FaceQuadrature tests, degree 1 precision.
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 0, 1, 4.5);
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 1, 1, 5.5);
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 2, 1, 4.0);
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 3, 1, 6.0);
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 4, 1, 4.5);
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 5, 1, 5.5);
+    struct QuadraticFunc
+    {
+        double operator()(const double* x) const
+        {
+            return 3.0*x[0]*x[0] + 1.0*x[0]*x[1] + 2.0*x[1] + 3.0;
+        }
+    };
 
-    // FaceQuadrature tests, degree 2 precision.
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 0, 2, 4.5);
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 1, 2, 5.5);
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 2, 2, 4.0);
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 3, 2, 6.0);
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 4, 2, 4.5);
-    testSingleCase<FaceQuadrature, LinearFunc>(grid, 5, 2, 5.5);
+    static void test()
+    {
+        // Set up 2d 1-cell cartesian case.
+        GridManager g(1, 1);
+        const UnstructuredGrid& grid = *g.c_grid();
 
-    // FaceQuadrature tests, quadratic function, degree 2 precision.
-    testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 0, 2, 6.0);
-    testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 1, 2, 6.5);
-    testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 2, 2, 5.0);
-    testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 3, 2, 7.5);
-    testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 4, 2, 4.25);
-    testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 5, 2, 8.25);
-}
+        // CellQuadrature tests.
+        testSingleCase<CellQuadrature, ConstantFunc>(grid, 0, 1, 1.234);
+        testSingleCase<CellQuadrature, LinearFunc>(grid, 0, 1, 4.5);
+        testSingleCase<CellQuadrature, ConstantFunc>(grid, 0, 2, 1.234);
+        testSingleCase<CellQuadrature, LinearFunc>(grid, 0, 2, 4.5);
+        testSingleCase<CellQuadrature, QuadraticFunc>(grid, 0, 2, 5.25);
 
+        // FaceQuadrature tests, degree 1 precision.
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 0, 1, 4);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 1, 1, 5);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 2, 1, 3.5);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 3, 1, 5.5);
+
+        // FaceQuadrature tests, degree 2 precision.
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 0, 2, 4);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 1, 2, 5);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 2, 2, 3.5);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 3, 2, 5.5);
+
+        // FaceQuadrature tests, quadratic function, degree 2 precision.
+        testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 0, 2, 4.0);
+        testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 1, 2, 7.5);
+        testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 2, 2, 4.0);
+        testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 3, 2, 6.5);
+    }
+} // namespace cart2d
+
+
+namespace cart3d
+{
+    struct LinearFunc
+    {
+        double operator()(const double* x) const
+        {
+            return 1.0*x[0] + 2.0*x[1] + 1.0*x[2] + 3.0;
+        }
+    };
+
+    struct QuadraticFunc
+    {
+        double operator()(const double* x) const
+        {
+            return 1.0*x[0]*x[1] + 2.0*x[1] + 4.0*x[2] + 3.0;
+        }
+    };
+
+    static void test()
+    {
+        // Set up 3d 1-cell cartesian case.
+        GridManager g(1, 1, 1);
+        const UnstructuredGrid& grid = *g.c_grid();
+
+        // CellQuadrature tests.
+        testSingleCase<CellQuadrature, LinearFunc>(grid, 0, 1, 5.0);
+        testSingleCase<CellQuadrature, LinearFunc>(grid, 0, 2, 5.0);
+        testSingleCase<CellQuadrature, QuadraticFunc>(grid, 0, 2, 6.25);
+
+        // FaceQuadrature tests, degree 1 precision.
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 0, 1, 4.5);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 1, 1, 5.5);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 2, 1, 4.0);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 3, 1, 6.0);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 4, 1, 4.5);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 5, 1, 5.5);
+
+        // FaceQuadrature tests, degree 2 precision.
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 0, 2, 4.5);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 1, 2, 5.5);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 2, 2, 4.0);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 3, 2, 6.0);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 4, 2, 4.5);
+        testSingleCase<FaceQuadrature, LinearFunc>(grid, 5, 2, 5.5);
+
+        // FaceQuadrature tests, quadratic function, degree 2 precision.
+        testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 0, 2, 6.0);
+        testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 1, 2, 6.5);
+        testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 2, 2, 5.0);
+        testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 3, 2, 7.5);
+        testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 4, 2, 4.25);
+        testSingleCase<FaceQuadrature, QuadraticFunc>(grid, 5, 2, 8.25);
+    }
+
+} // namespace cart3d
 
 BOOST_AUTO_TEST_CASE(test_quadratures)
 {
-    test3dCart();
+    cart2d::test();
+    cart3d::test();
 }

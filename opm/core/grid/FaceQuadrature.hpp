@@ -57,10 +57,15 @@ namespace Opm
     /// In general: \int_{face} g(x) dx = \sum_{i=0}^{n-1} w_i g(x_i).
     /// Note that this class does multiply weights by face area,
     /// so weights always sum to face area.
+    ///
     /// Degree 1 method:
     ///     Midpoint (centroid) method.
     ///         n = 1, w_0 = face area, x_0 = face centroid
-    /// Degree 2 method:
+    ///
+    /// Degree 2 method for 2d:
+    ///    Simpson's method (actually this is degree 3).
+    ///
+    /// Degree 2 method for 3d:
     ///    Based on subdivision of the face into triangles,
     ///    with the centroid as a common vertex, and the triangle
     ///    edge midpoint rule.
@@ -81,8 +86,8 @@ namespace Opm
                        const int degree)
             : grid_(grid), face_(face), degree_(degree)
         {
-            if (grid_.dimensions != 3) {
-                THROW("FaceQuadrature only implemented for 3D case.");
+            if (grid_.dimensions > 3) {
+                THROW("FaceQuadrature only implemented for up to 3 dimensions.");
             }
             if (degree_ > 2) {
                 THROW("FaceQuadrature exact for polynomial degrees > 2 not implemented.");
@@ -91,18 +96,22 @@ namespace Opm
 
         int numQuadPts() const
         {
-            if (degree_ < 2) {
+            if (degree_ < 2 || grid_.dimensions < 2) {
                 return 1;
             }
             // Degree 2 case.
-            return 2 * (grid_.face_nodepos[face_ + 1] - grid_.face_nodepos[face_]);
+            if (grid_.dimensions == 2) {
+                return 3;
+            } else {
+                return 2 * (grid_.face_nodepos[face_ + 1] - grid_.face_nodepos[face_]);
+            }
         }
 
         void quadPtCoord(const int index, double* coord) const
         {
             const int dim = grid_.dimensions;
             const double* fc = grid_.face_centroids + dim*face_;
-            if (degree_ < 2) {
+            if (degree_ < 2 || dim < 2) {
                 std::copy(fc, fc + dim, coord);
                 return;
             }
@@ -110,6 +119,13 @@ namespace Opm
             const int nn = grid_.face_nodepos[face_ + 1] - grid_.face_nodepos[face_];
             const int* fnodes = grid_.face_nodes + grid_.face_nodepos[face_];
             const double* nc = grid_.node_coordinates;
+            if (dim == 2) {
+                ASSERT(nn == 2);
+                const double* pa[3] = { nc + dim*fnodes[0], fc, nc + dim*fnodes[1] };
+                std::copy(pa[index], pa[index] + dim, coord);
+                return;
+            }
+            ASSERT(dim == 3);
             if (index < nn) {
                 // Boundary edge midpoint.
                 const int node0 = fnodes[index];
@@ -134,6 +150,11 @@ namespace Opm
             }
             // Degree 2 case.
             const int dim = grid_.dimensions;
+            if (dim == 2) {
+                const double simpsonw[3] = { 1.0/6.0, 4.0/6.0, 1.0/6.0 };
+                return simpsonw[index];
+            }
+            ASSERT(dim == 3);
             const double* fc = grid_.face_centroids + dim*face_;
             const int nn = grid_.face_nodepos[face_ + 1] - grid_.face_nodepos[face_];
             const int* fnodes = grid_.face_nodes + grid_.face_nodepos[face_];
