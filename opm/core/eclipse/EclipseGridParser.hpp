@@ -194,6 +194,8 @@ public:                                                                         
     SPECIAL_FIELD(WGRUPCON)
     SPECIAL_FIELD(ENDSCALE)
     SPECIAL_FIELD(SCALECRS)
+    SPECIAL_FIELD(ENPTVD)
+    SPECIAL_FIELD(ENKRVD)
 
     // The following fields only have a dummy implementation
     // that allows us to ignore them.

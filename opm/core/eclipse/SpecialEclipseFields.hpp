@@ -2266,7 +2266,6 @@ struct ENDSCALE : public SpecialBase {
     }
 };
 
-
 struct SCALECRS : public SpecialBase {
     std::string scalecrs_;
 
@@ -2300,6 +2299,181 @@ struct SCALECRS : public SpecialBase {
     }
 
     virtual void convertToSI(const EclipseUnits&) {
+    }
+};
+
+struct ENPTVD : public SpecialBase {
+    std::vector<std::vector<std::vector<double> > > table_;
+    std::vector<bool> mask_;
+
+    virtual std::string name() const {
+        return std::string("ENPTVD");
+    }
+
+    virtual void read(std::istream & is) {
+        table_.resize(5);
+        std::vector<std::vector<double> > sub_table(5);
+        while (!is.eof()) {
+            if(is.peek() == int('/')) {
+                if (sub_table[0].empty() && !(table_[0].empty())) {
+                    is >> ignoreLine; 
+                    break;
+                } else {
+                    THROW("Error reading ENPTVD data - none or incomplete table.");
+                }
+            }
+            std::vector<double> data(9,-1.0);
+            int nread = readDefaultedVectorData(is, data, 9);
+            if (nread != 9) {
+                THROW("Error reading ENPTVD data - depth and 8 saturations pr line.");
+            }
+            if (data[0] == -1.0) {
+                THROW("Error reading ENPTVD data - depth can not be defaulted.");
+            }
+            if ((data[4] != -1.0) || (data[5] != -1.0) || (data[6] != -1.0) || (data[8] != -1.0)) {
+                THROW("Error reading ENPTVD data - non-default values in column 5-7,9 not supported.");
+            }
+            sub_table[0].push_back(data[0]); //depth
+            sub_table[1].push_back(data[1]); //swl
+            sub_table[2].push_back(data[2]); //swcr
+            sub_table[3].push_back(data[3]); //swu
+            sub_table[4].push_back(data[7]); //sowcr
+            is >> ignoreWhitespace;
+            if(is.peek() == int('/')) {
+                is >> ignoreLine;
+                if (sub_table[0].size() >= 2) {
+                    insertDefaultValues(sub_table, 5, -1.0, false);
+                    std::vector<std::vector<double> >::iterator it_sub = sub_table.begin();
+                    for(std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {  
+                        table_[i].push_back(*it_sub);
+                        (*it_sub).clear();
+                        ++it_sub;
+                    }
+                } else {
+                    THROW("Error reading ENPTVD data - minimum 2 lines pr sub-table.");
+                }
+            }
+        }
+        for (std::vector<std::vector<std::vector<double> > >::size_type i=1; i<table_.size(); ++i) {
+            mask_.push_back(false);
+            for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
+                if (table_[i][j][0] != -1.0) {
+                    mask_.back() = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    virtual void write(std::ostream & os) const {
+        os << name() << '\n';
+        std::cout << "-----depth-------swl------swcr-------swu-----sowcr" << std::endl;
+        for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
+            std::cout << "--------------------------------------------------" << std::endl;
+            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) { 
+                for (std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {
+                    std::cout << std::setw(10) << table_[i][j][k];
+                }
+                std::cout << std::endl;
+            }
+        }
+    }
+
+    virtual void convertToSI(const EclipseUnits& units) {
+        //depths
+        for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
+            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) { 
+                table_[0][j][k] *= units.length;
+            }
+        }
+    }
+};
+
+struct ENKRVD : public SpecialBase {
+    std::vector<std::vector<std::vector<double> > > table_;
+    std::vector<bool> mask_;
+
+    virtual std::string name() const {
+        return std::string("ENKRVD");
+    }
+
+    virtual void read(std::istream & is) {
+        table_.resize(5);
+        std::vector<std::vector<double> > sub_table(5);
+        while (!is.eof()) {
+            if(is.peek() == int('/')) {
+                if (sub_table[0].empty() && !(table_[0].empty())) {
+                    is >> ignoreLine; 
+                    break;
+                } else {
+                    THROW("Error reading ENKRVD data - none or incomplete table.");
+                }
+            }
+            std::vector<double> data(8,-1.0);
+            int nread = readDefaultedVectorData(is, data, 8);
+            if (nread != 8) {
+                THROW("Error reading ENKRVD data - depth and 7 relperms pr line.");
+            }
+            if (data[0] == -1.0) {
+                THROW("Error reading ENKRVD data - depth can not be defaulted.");
+            }
+            if ((data[2] != -1.0) || (data[5] != -1.0) || (data[6] != -1.0)) {
+                THROW("Error reading ENKRVD data - non-default values in column 3,6-7 not supported.");
+            }
+            sub_table[0].push_back(data[0]); //depth
+            sub_table[1].push_back(data[1]); //krw
+            sub_table[2].push_back(data[3]); //kro
+            sub_table[3].push_back(data[4]); //krw(sowcr)
+            sub_table[4].push_back(data[7]); //kro(swcr)
+            is >> ignoreWhitespace;
+            if(is.peek() == int('/')) {
+                is >> ignoreLine;
+                if (sub_table[0].size() >= 2) {
+                    insertDefaultValues(sub_table, 5, -1.0, false);
+                    std::vector<std::vector<double> >::iterator it_sub = sub_table.begin();
+                    for(std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {  
+                        table_[i].push_back(*it_sub);
+                        (*it_sub).clear();
+                        ++it_sub;
+                    }
+                } else {
+                    THROW("Error reading ENKRVD data - minimum 2 lines pr sub-table.");
+                }
+            }
+        }
+        for (std::vector<std::vector<std::vector<double> > >::size_type i=1; i<table_.size(); ++i) {
+            mask_.push_back(false);
+            for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
+                if (table_[i][j][0] != -1.0) {
+                    mask_.back() = true;
+                    break;
+                }
+            }
+        }
+    }
+
+
+    virtual void write(std::ostream & os) const {
+        os << name() << '\n';
+        std::cout << "-----depth-------krw------krow------krwr-----krorw" << std::endl;
+        for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
+            std::cout << "--------------------------------------------------" << std::endl;
+            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) { 
+                for (std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {
+                    std::cout << std::setw(10) << table_[i][j][k];
+                }
+                std::cout << std::endl;
+            }
+        }
+    }
+
+    virtual void convertToSI(const EclipseUnits& units) {
+        //depths
+        for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
+            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) { 
+                table_[0][j][k] *= units.length;
+            }
+        }
     }
 };
 

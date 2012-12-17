@@ -118,6 +118,7 @@ namespace EclipseKeywords
           string("PLYMAX"),   string("TLMIXPAR"), string("WPOLYMER"),
           string("GRUPTREE"), string("GCONINJE"), string("GCONPROD"),
           string("WGRUPCON"), string("ENDSCALE"),  string("SCALECRS"),
+          string("ENPTVD"),   string("ENKRVD"),
           // The following fields only have a dummy implementation
           // that allows us to ignore them.
           string("SWFN"),
