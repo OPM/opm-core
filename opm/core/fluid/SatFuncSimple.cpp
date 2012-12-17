@@ -64,14 +64,14 @@ namespace Opm
             sowcr_ = 1.0 - swco;
             krwr_ = krw.back();
             krorw_ = krow.front();
-            for (unsigned int i=1; i<sw.size(); ++i) {
+            for (std::vector<double>::size_type i=1; i<sw.size(); ++i) {
                 if (krw[i]> 0.0) {
                    swcr_ = sw[i-1];
                    krorw_ = krow[i-1];
                    break;
                 }
             }
-            for (unsigned int i=sw.size()-1; i>=1; --i) {
+            for (std::vector<double>::size_type i=sw.size()-1; i>=1; --i) {
                 if (krow[i-1]> 0.0) {
                    sowcr_ = 1.0 - sw[i];
                    krwr_ = krw[i];
@@ -289,14 +289,14 @@ namespace Opm
             sowcr_ = 1.0 - swco;
             krwr_ = krw.back();
             krorw_ = krow.front();
-            for (unsigned int i=1; i<sw.size(); ++i) {
+            for (std::vector<double>::size_type i=1; i<sw.size(); ++i) {
                 if (krw[i]> 0.0) {
                    swcr_ = sw[i-1];
                    krorw_ = krow[i-1];
                    break;
                 }
             }
-            for (unsigned int i=sw.size()-1; i>=1; --i) {
+            for (std::vector<double>::size_type i=sw.size()-1; i>=1; --i) {
                 if (krow[i-1]> 0.0) {
                    sowcr_ = 1.0 - sw[i];
                    krwr_ = krw[i];
