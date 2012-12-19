@@ -10,6 +10,9 @@ Installation directories:
 Optional Features:
   --disable-FEATURE       do not include FEATURE
   --disable-gxx11check    do not try flag -std=c++11 to enable C++11 features
+  --enable-shared         build a shared library [default=yes]
+  --enable-static         build a static library [default=no]. Note: only one
+                          of the options shared and static may be built.
 
 Optional Packages:
   --with-boost=PATH       use Boost library from a specified location
@@ -116,6 +119,23 @@ while getopts -- ":-:" optchar; do
               ;;
           esac
           FEATURES="${FEATURES} -DCMAKE_DISABLE_FIND_PACKAGE_${pkgname}=TRUE"
+          ;;
+        enable-*)
+          # what kind of library are we building; shared or static?
+          kind=${OPTARG#enable-}
+          case "${kind}" in
+            shared)
+              shared="ON"
+              ;;
+            static)
+              shared="OFF"
+              ;;
+            *)
+              invalid_arg --enable-${kind}
+              exit 1
+              ;;
+          esac
+          FEATURES="${FEATURES} -DBUILD_opm-core_SHARED:BOOL=${shared}"
           ;;
         *)
           # remove everything *after* the equal sign

@@ -125,11 +125,24 @@ define_fc_func (
 # some CMake properties do not do list expansion
 string (REPLACE ";" " " opm-core_LINKER_FLAGS_STR "${opm-core_LINKER_FLAGS}")
 
+# default to building a shared library, but let user override
+if (DEFINED BUILD_SHARED_LIBS)
+	set (_shared_def ${BUILD_SHARED_LIBS})
+else (DEFINED BUILD_SHARED_LIBS)
+	set (_shared_def ON)
+endif (DEFINED BUILD_SHARED_LIBS)
+option (BUILD_opm-core_SHARED "Build opm-core as a shared library" ${_shared_def})
+if (BUILD_opm-core_SHARED)
+	set (opm-core_LIBRARY_TYPE SHARED)
+else (BUILD_opm-core_SHARED)
+	set (opm-core_LIBRARY_TYPE STATIC)
+endif (BUILD_opm-core_SHARED)
+
 # create this library
 include_directories (${opm-core_INCLUDE_DIRS})
 link_directories (${opm-core_LIBRARY_DIRS})
 add_definitions (${opm-core_DEFINITIONS})
-add_library (opmcore SHARED ${opmcore_SOURCES})
+add_library (opmcore ${opm-core_LIBRARY_TYPE} ${opmcore_SOURCES})
 set (opm-core_VERSION "${opm-core_VERSION_MAJOR}.${opm-core_VERSION_MINOR}")
 set_target_properties (opmcore PROPERTIES
 	SOVERSION ${opm-core_VERSION_MAJOR}
