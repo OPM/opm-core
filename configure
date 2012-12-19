@@ -6,6 +6,35 @@ usage () {
 Installation directories:
   --prefix=PREFIX         install architecture-independent files in PREFIX
                           [/usr/local]
+
+Optional Packages:
+  --with-boost=PATH       use Boost library from a specified location
+  --with-superlu=PATH     user defined path to SuperLU library
+  --with-agmg=PATH        Include DOUBLE PRECISION version Notay's of AGMG
+                          Algebraic Multigrid solver from specified source
+                          location. Note: this option requires a complete,
+                          working Fortran 90 environment.
+  --with-ert=PATH         Use ERT libraries
+
+Some influential environment variables:
+  CC          C compiler command
+  CFLAGS      C compiler flags
+  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+              nonstandard directory <lib dir>
+  LIBS        libraries to pass to the linker, e.g. -l<library>
+  CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
+              you have headers in a nonstandard directory <include dir>
+  CPP         C preprocessor
+  CXX         C++ compiler command
+  CXXFLAGS    C++ compiler flags
+  CXXCPP      C++ preprocessor
+  F77         Fortran 77 compiler command
+  FFLAGS      Fortran 77 compiler flags
+  FC          Fortran compiler command
+  FCFLAGS     Fortran compiler flags
+
+Use these variables to override the choices made by \`configure' or to help
+it to find libraries and programs with nonstandard names/locations.
 EOF
 }
 
@@ -19,6 +48,9 @@ EOF
 
 # default values
 prefix=/usr/local
+
+# this variable will get feature options
+FEATURES=
 
 # long arguments are implemented by putting a dash character followed by
 # a colon in the optspec, see trick by Arvid Requate at
@@ -36,6 +68,30 @@ while getopts -- ":-:" optchar; do
 		  usage
 		  exit 0
 		  ;;
+        with-*)
+          # get the name of the package; everything before equal sign
+          pkgname=${OPTARG%=*}
+          pkgname=${pkgname#with-}
+          # get the location of the package; everyhing after equal sign
+          pkgloc=${OPTARG#*=}
+          # packages need different suffix for their root (sic)
+          case "${pkgname}" in
+            agmg  |\
+            boost |\
+            ert   |\
+            zlib)
+              rootvar="${pkgname^^}_ROOT"
+              ;;
+            superlu)
+              rootvar="${pkgname^^}_PREFIX"
+              ;;
+            *)
+              rootvar="${pkgname}_DIR"
+              ;;
+          esac
+          # add this to the list of existing features
+          FEATURES="${FEATURES} -D${rootvar}=${pkgloc}"
+          ;;
         *)
           # remove everything *after* the equal sign
 		  arg=${OPTARG%=*}
@@ -54,4 +110,4 @@ done
 shift $((OPTIND-1))
 
 # pass everything on to CMake
-env "$@" cmake "$(dirname $0)" "-DCMAKE_INSTALL_PREFIX=$prefix"
+env "$@" cmake "$(dirname $0)" "-DCMAKE_INSTALL_PREFIX=$prefix" ${FEATURES}
