@@ -47,6 +47,8 @@ list (APPEND opm-core_DEPS
 		COMPONENTS date_time filesystem system unit_test_framework REQUIRED"
 	# DUNE dependency
 	"dune-istl"
+	# Ensembles-based Reservoir Tools (ERT)
+	"ERT"
 	)
 find_and_append_package_list (${opm-core_DEPS})
 
@@ -90,8 +92,11 @@ list (REMOVE_ITEM opmcore_SOURCES
 	${PROJECT_SOURCE_DIR}/opm/core/utility/parameters/tinyxml/xmltest.cpp
 	)
 
-# we don't try to find any of these
-set (HAVE_ERT)
+# HAVE_ERT is used as an #ifdef, not as an #if in the source code, if it
+# is not true, then it should be unset altogether
+if (NOT HAVE_ERT)
+	set (HAVE_ERT)
+endif (NOT HAVE_ERT)
 
 # create configuration header which describes available features
 # necessary to compile this library. singular version is the names that
