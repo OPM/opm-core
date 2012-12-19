@@ -84,7 +84,7 @@ function (find_opm_package module deps header lib defs prog conf)
   # directory of the package
   find_path (${module}_INCLUDE_DIR
 	NAMES "${header}"
-	PATHS ${${module}_DIR}
+	PATHS ${${module}_DIR} ${${module}_ROOT}
 	HINTS ${PkgConf_${module}_INCLUDE_DIRS}
 	PATH_SUFFIXES "include"
 	)
@@ -93,7 +93,7 @@ function (find_opm_package module deps header lib defs prog conf)
   if (NOT "${lib}" STREQUAL "")
 	find_library (${module}_LIBRARY
 	  NAMES "${lib}"
-	  PATHS ${${module}_DIR}
+	  PATHS ${${module}_DIR} ${${module}_ROOT}
 	  HINTS ${PkgConf_${module}_LIBRARY_DIRS}
 	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib32" "lib64"
 	  )
