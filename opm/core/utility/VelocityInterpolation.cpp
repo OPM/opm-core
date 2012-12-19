@@ -101,6 +101,7 @@ namespace Opm
         std::vector<double> N(dim*dim); // Normals matrix. Fortran ordering!
         std::vector<double> orig_N(dim*dim); // Normals matrix. Fortran ordering!
         std::vector<double> f(dim);     // Flux vector.
+        std::vector<double> orig_f(dim);     // Flux vector.
         std::vector<MAT_SIZE_T> piv(dim); // For LAPACK solve
         const SparseTable<WachspressCoord::CornerInfo>& all_ci = bcmethod_.cornerInfo();
         const std::vector<int>& adj_faces = bcmethod_.adjacentFaces();
@@ -129,6 +130,7 @@ namespace Opm
                 MAT_SIZE_T ldb = n;
                 MAT_SIZE_T info = 0;
                 orig_N = N;
+                orig_f = f;
                 dgesv_(&n, &nrhs, &N[0], &lda, &piv[0], &f[0], &ldb, &info);
                 if (info != 0) {
                     // Print the local matrix and rhs.
@@ -142,7 +144,7 @@ namespace Opm
                     }
                     std::cerr << "and f = \n";
                     for (int row = 0; row < n; ++row) {
-                        std::cerr << "    " << f[row] << '\n';
+                        std::cerr << "    " << orig_f[row] << '\n';
                     }
                     THROW("Lapack error: " << info << " encountered in cell " << cell);
                 }
