@@ -7,6 +7,10 @@ Installation directories:
   --prefix=PREFIX         install architecture-independent files in PREFIX
                           [/usr/local]
 
+Optional Features:
+  --disable-FEATURE       do not include FEATURE
+  --disable-gxx11check    do not try flag -std=c++11 to enable C++11 features
+
 Optional Packages:
   --with-boost=PATH       use Boost library from a specified location
   --with-superlu=PATH     user defined path to SuperLU library
@@ -91,6 +95,25 @@ while getopts -- ":-:" optchar; do
           esac
           # add this to the list of existing features
           FEATURES="${FEATURES} -D${rootvar}=${pkgloc}"
+          ;;
+        disable-*)
+          # get the name of the package
+          pkgname=${OPTARG#disable-}
+          # casing is of course different
+          case "${pkgname}" in
+            agmg |\
+            ert  |\
+            superlu)
+              pkgname="${pkgname^^}"
+              ;;
+            openmp)
+              pkgname="OpenMP"
+              ;;
+            gxx11check)
+              pkgname="CXX11Features"
+              ;;
+          esac
+          FEATURES="${FEATURES} -DCMAKE_DISABLE_FIND_PACKAGE_${pkgname}=TRUE"
           ;;
         *)
           # remove everything *after* the equal sign
