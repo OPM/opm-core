@@ -36,31 +36,42 @@ endif (CMAKE_COMPILER_IS_GNUCXX)
 
 # command to separate the debug information from the executable into
 # its own file; this must be called for each target
-function (strip_debug_symbols kind target)
+function (strip_debug_symbols targets)
   if (CMAKE_COMPILER_IS_GNUCXX AND OBJCOPY)
-	# libraries must retain the symbols in order to link to them, but
-	# everything can be stripped in an executable
-	if ("${kind}" STREQUAL "RUNTIME")
-	  set (_strip_args "--strip-all")
-	else ("${kind}" STREQUAL "RUNTIME")
-	  set (_strip_args "--strip-debug")
-	endif ("${kind}" STREQUAL "RUNTIME")
-	# add_custom_command doesn't support generator expressions in the
-	# working_directory argument (sic; that's what you get when you do
-	# ad hoc programming all the time), so we need to extract the
-	# location up front (the location on the other hand should not be
-	# used for libraries as it does not include the soversion -- sic
-	# again)
-	get_target_property (_full ${target} LOCATION)
-	get_filename_component (_dir ${_full} PATH)
-	add_custom_command (TARGET ${target}
-	  POST_BUILD
-	  WORKING_DIRECTORY ${_dir}
-	  COMMAND ${OBJCOPY} ARGS --only-keep-debug $<TARGET_FILE:${target}> $<TARGET_FILE:${target}>.debug
-	  COMMAND ${OBJCOPY} ARGS ${_strip_args} $<TARGET_FILE:${target}>
-	  COMMAND ${OBJCOPY} ARGS --add-gnu-debuglink=$<TARGET_FILE_NAME:${target}>.debug $<TARGET_FILE:${target}>
-	  VERBATIM
-	  )
+	foreach (target IN LISTS targets)
+	  # libraries must retain the symbols in order to link to them, but
+	  # everything can be stripped in an executable
+	  get_target_property (_kind ${target} TYPE)
+	  
+	  # don't strip static libraries
+	  if ("${_kind}" STREQUAL "STATIC_LIBRARY")
+		return ()
+	  endif ("${_kind}" STREQUAL "STATIC_LIBRARY")	  
+
+	  # don't strip public symbols in shared objects
+	  if ("${_kind}" STREQUAL "EXECUTABLE")
+		set (_strip_args "--strip-all")
+	  else ("${_kind}" STREQUAL "EXECUTABLE")
+		set (_strip_args "--strip-debug")
+	  endif ("${_kind}" STREQUAL "EXECUTABLE")
+	  
+	  # add_custom_command doesn't support generator expressions in the
+	  # working_directory argument (sic; that's what you get when you do
+	  # ad hoc programming all the time), so we need to extract the
+	  # location up front (the location on the other hand should not be
+	  # used for libraries as it does not include the soversion -- sic
+	  # again)
+	  get_target_property (_full ${target} LOCATION)
+	  get_filename_component (_dir ${_full} PATH)
+	  add_custom_command (TARGET ${target}
+		POST_BUILD
+		WORKING_DIRECTORY ${_dir}
+		COMMAND ${OBJCOPY} ARGS --only-keep-debug $<TARGET_FILE:${target}> $<TARGET_FILE:${target}>.debug
+		COMMAND ${OBJCOPY} ARGS ${_strip_args} $<TARGET_FILE:${target}>
+		COMMAND ${OBJCOPY} ARGS --add-gnu-debuglink=$<TARGET_FILE_NAME:${target}>.debug $<TARGET_FILE:${target}>
+		VERBATIM
+		)
+	endforeach (target)
   endif (CMAKE_COMPILER_IS_GNUCXX AND OBJCOPY)
-endfunction (strip_debug_symbols kind target)
+endfunction (strip_debug_symbols targets)
 

@@ -139,7 +139,7 @@ set_target_properties (opmcore PROPERTIES
 target_link_libraries (opmcore ${opm-core_LIBRARIES})
 
 # queue this executable to be stripped
-strip_debug_symbols (LIBRARY opmcore)
+strip_debug_symbols (opmcore)
 
 # we need to know the name of the library which is generated
 get_target_property (opm-core_LIBRARY opmcore LOCATION)
@@ -207,5 +207,5 @@ foreach (test_FILE IN LISTS tests_SOURCES)
 		LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
 		)
 	target_link_libraries (${test_NAME} opmcore ${opm-core_LIBRARIES})
-	strip_debug_symbols (RUNTIME ${test_NAME})
+	strip_debug_symbols (${test_NAME})
 endforeach (test_FILE)
