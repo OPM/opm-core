@@ -238,4 +238,22 @@ if (DOXYGEN_FOUND)
 		COMMENT "Generating API documentation with Doxygen"
 		VERBATIM
 		)
+	set (_formats html pdf)
+	foreach (format IN LISTS _formats)
+		string (TOUPPER ${format} FORMAT)
+		install (
+			DIRECTORY ${PROJECT_BINARY_DIR}/Documentation/${format}
+			DESTINATION share/doc/opm-core/
+			COMPONENT ${format}
+			OPTIONAL
+			)
+		# target to install just HTML documentation
+		add_custom_target (install-${format}
+			COMMAND ${CMAKE_COMMAND} -DCOMPONENT=${format} -P cmake_install.cmake
+			COMMENT Installing ${FORMAT} documentation
+			VERBATIM
+			)
+		# since the documentation is optional, it is not automatically built
+		add_dependencies (install-${format} doc)
+	endforeach (format)
 endif (DOXYGEN_FOUND)
