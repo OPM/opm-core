@@ -222,3 +222,10 @@ foreach (test_FILE IN LISTS tests_SOURCES)
 	target_link_libraries (${test_NAME} opmcore ${opm-core_LIBRARIES})
 	strip_debug_symbols (${test_NAME})
 endforeach (test_FILE)
+
+### documentation ###
+configure_file (
+	${PROJECT_SOURCE_DIR}/Doxyfile.in
+	${PROJECT_BINARY_DIR}/Doxyfile
+	@ONLY
+	)
