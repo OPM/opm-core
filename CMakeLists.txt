@@ -69,7 +69,10 @@ set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 
 # find all the source code (note that these variables have name after
-# the target library and not the project)
+# the target library and not the project). the documentation recommends
+# against using globs to enumerate source code, but if you list the
+# files explicitly you'll change the build files every time you add to
+# the project as well as having to rebuild completely anyway.
 file (GLOB_RECURSE opmcore_SOURCES "opm/core/*.c" "opm/core/*.cpp")
 file (GLOB_RECURSE opmcore_HEADERS "opm/core/*.h" "opm/core/*.hpp")
 
