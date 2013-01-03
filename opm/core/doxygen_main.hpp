@@ -1,5 +1,5 @@
 /*
-  Copyright 2012 SINTEF ICT, Applied Mathematics.
+  Copyright 2012, 2013 SINTEF ICT, Applied Mathematics.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -24,10 +24,37 @@
 /** \mainpage Documentation for the opm-core library.
 
 The following are the main library features:
+
 <h3>Grid handling</h3>
+
+The library defines a simple grid interface through the struct
+UnstructuredGrid. This can be used both from C and C++ code, and has a
+structure that is similar to MRST grids.
+
+Cells can have arbitrary shapes, and arbitrary numbers of neighbours.
+This flexibility allows us to handle complex grids such as faulted
+corner-point grids or PEBI grids. The structure is suited for
+computation with (for example) finite volume methods or mimetic finite
+differences. It is less ideal for finite element computations, as it
+does not provide any reference element mappings.
+
+There are multiple construction functions for UnstructuredGrid, for
+example create_grid_cart2d(), create_grid_hexa3d(), read_grid() and
+create_grid_cornerpoint(). The function destroy_grid() frees the
+resources used by a grid.
+
+For C++ users, the GridManager class can be used to encapsulate
+creation and destruction of an UnstructuredGrid. The method
+GridHandler::c_grid() provides access to the underlying
+UnstructuredGrid struct.
+
+
 <h3>Well handling</h3>
+
 <h3>Pressure solvers</h3>
+
 <h3>Transport solvers</h3>
+
 <h3>Various utilities</h3>
 
 */
