@@ -45,7 +45,7 @@ resources used by a grid.
 
 For C++ users, the Opm::GridManager class can be used to encapsulate
 creation and destruction of an UnstructuredGrid. The method
-GridHandler::c_grid() provides access to the underlying
+Opm::GridManager::c_grid() provides access to the underlying
 UnstructuredGrid struct.
 
 
