@@ -43,7 +43,7 @@ example create_grid_cart2d(), create_grid_hexa3d(), read_grid() and
 create_grid_cornerpoint(). The function destroy_grid() frees the
 resources used by a grid.
 
-For C++ users, the GridManager class can be used to encapsulate
+For C++ users, the Opm::GridManager class can be used to encapsulate
 creation and destruction of an UnstructuredGrid. The method
 GridHandler::c_grid() provides access to the underlying
 UnstructuredGrid struct.
