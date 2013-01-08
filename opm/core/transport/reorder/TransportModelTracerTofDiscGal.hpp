@@ -33,6 +33,7 @@ namespace Opm
 
     class IncompPropertiesInterface;
     class VelocityInterpolationInterface;
+    namespace parameter { class ParameterGroup; }
 
     /// Implements a discontinuous Galerkin solver for
     /// (single-phase) time-of-flight using reordering.
@@ -48,11 +49,23 @@ namespace Opm
     public:
         /// Construct solver.
         /// \param[in] grid      A 2d or 3d grid.
-        /// \param[in] use_cvi   If true, use corner point velocity interpolation.
-        ///                      Otherwise, use the basic constant interpolation.
+        /// \param[in] param     Parameters for the solver.
+        ///                      The following parameters are accepted (defaults):
+        ///   use_cvi (false)                         Use ECVI velocity interpolation.
+        ///   use_limiter (false)                     Use a slope limiter. If true, the next three parameters are used.
+        ///   limiter_relative_flux_threshold (1e-3)  Ignore upstream fluxes below this threshold, relative to total cell flux.
+        ///   limiter_method ("MinUpwindFace")        Limiter method used. Accepted methods are:
+        ///                                             MinUpwindFace              Limit cell tof to >= inflow face tofs.
+        ///   limiter_usage ("DuringComputations")    Usage pattern for limiter. Accepted choices are:
+        ///                                             DuringComputations         Apply limiter to cells as they are computed,
+        ///                                                                        so downstream cells' solutions may be affected
+        ///                                                                        by limiting in upstream cells.
+        ///                                             AsPostProcess              Apply in dependency order, but only after
+        ///                                                                        computing (unlimited) solution.
+        ///                                             AsSimultaneousPostProcess  Apply to each cell independently, using un-
+        ///                                                                        limited solution in neighbouring cells.
         TransportModelTracerTofDiscGal(const UnstructuredGrid& grid,
-                                       const bool use_cvi,
-                                       const bool use_limiter = false);
+                                       const parameter::ParameterGroup& param);
 
 
         /// Solve for time-of-flight.
@@ -88,6 +101,11 @@ namespace Opm
         boost::shared_ptr<VelocityInterpolationInterface> velocity_interpolation_;
         bool use_cvi_;
         bool use_limiter_;
+        double limiter_relative_flux_threshold_;
+        enum LimiterMethod { MinUpwindFace, MinUpwindAverage };
+        LimiterMethod limiter_method_;
+        enum LimiterUsage { DuringComputations, AsPostProcess, AsSimultaneousPostProcess };
+        LimiterUsage limiter_usage_;
         const double* darcyflux_;   // one flux per grid face
         const double* porevolume_;  // one volume per cell
         const double* source_;      // one volumetric source term per cell
@@ -105,7 +123,15 @@ namespace Opm
         std::vector<double> velocity_;
 
         // Private methods
-        void useLimiter(const int cell);
+
+        // Apply some limiter, writing to array tof
+        // (will read data from tof_coeff_, it is ok to call
+        //  with tof_coeff as tof argument.
+        void applyLimiter(const int cell, double* tof);
+        void applyMinUpwindFaceLimiter(const int cell, double* tof);
+        void applyMinUpwindAverageLimiter(const int cell, double* tof);
+        void applyLimiterAsPostProcess();
+        void applyLimiterAsSimultaneousPostProcess();
     };
 
 } // namespace Opm

@@ -23,6 +23,7 @@
 #include <opm/core/grid.h>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/VelocityInterpolation.hpp>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/linalg/blas_lapack.h>
 #include <algorithm>
 #include <cmath>
@@ -125,27 +126,66 @@ namespace Opm
 
     /// Construct solver.
     /// \param[in] grid      A 2d or 3d grid.
-    /// \param[in] use_cvi   If true, use corner point velocity interpolation.
-    ///                      Otherwise, use the basic constant interpolation.
+    /// \param[in] param     Parameters for the solver.
+    ///                      The following parameters are accepted (defaults):
+    ///   use_cvi (false)                         Use ECVI velocity interpolation.
+    ///   use_limiter (false)                     Use a slope limiter. If true, the next three parameters are used.
+    ///   limiter_relative_flux_threshold (1e-3)  Ignore upstream fluxes below this threshold, relative to total cell flux.
+    ///   limiter_method ("MinUpwindFace")        Limiter method used. Accepted methods are:
+    ///                                             MinUpwindFace              Limit cell tof to >= inflow face tofs.
+    ///   limiter_usage ("DuringComputations")    Usage pattern for limiter. Accepted choices are:
+    ///                                             DuringComputations         Apply limiter to cells as they are computed,
+    ///                                                                        so downstream cells' solutions may be affected
+    ///                                                                        by limiting in upstream cells.
+    ///                                             AsPostProcess              Apply in dependency order, but only after
+    ///                                                                        computing (unlimited) solution.
+    ///                                             AsSimultaneousPostProcess  Apply to each cell independently, using un-
+    ///                                                                        limited solution in neighbouring cells.
     TransportModelTracerTofDiscGal::TransportModelTracerTofDiscGal(const UnstructuredGrid& grid,
-                                                                   const bool use_cvi,
-                                                                   const bool use_limiter)
+                                                                   const parameter::ParameterGroup& param)
         : grid_(grid),
-          use_cvi_(use_cvi),
-          use_limiter_(use_limiter),
+          use_cvi_(false),
+          use_limiter_(false),
+          limiter_relative_flux_threshold_(1e-3),
+          limiter_method_(MinUpwindAverage),
+          limiter_usage_(DuringComputations),
           coord_(grid.dimensions),
           velocity_(grid.dimensions)
     {
+        use_cvi_ = param.getDefault("use_cvi", use_cvi_);
+        use_limiter_ = param.getDefault("use_limiter", use_limiter_);
+        if (use_limiter_) {
+            limiter_relative_flux_threshold_ = param.getDefault("limiter_relative_flux_threshold",
+                                                                limiter_relative_flux_threshold_);
+            const std::string limiter_method_str = param.getDefault<std::string>("limiter_method", "MinUpwindAverage");
+            if (limiter_method_str == "MinUpwindFace") {
+                limiter_method_ = MinUpwindFace;
+            } else if (limiter_method_str == "MinUpwindAverage") {
+                limiter_method_ = MinUpwindAverage;
+            } else {
+                THROW("Unknown limiter method: " << limiter_method_str);
+            }
+            const std::string limiter_usage_str = param.getDefault<std::string>("limiter_usage", "DuringComputations");
+            if (limiter_usage_str == "DuringComputations") {
+                limiter_usage_ = DuringComputations;
+            } else if (limiter_usage_str == "AsPostProcess") {
+                limiter_usage_ = AsPostProcess;
+            } else if (limiter_usage_str == "AsSimultaneousPostProcess") {
+                limiter_usage_ = AsSimultaneousPostProcess;
+            } else {
+                THROW("Unknown limiter usage spec: " << limiter_usage_str);
+            }
+        }
         // A note about the use_cvi_ member variable:
         // In principle, we should not need it, since the choice of velocity
         // interpolation is made below, but we may need to use higher order
         // quadrature to exploit CVI, so we store the choice.
         // An alternative would be to add a virtual method isConstant() to
         // the VelocityInterpolationInterface.
-        if (use_cvi) {
-            velocity_interpolation_.reset(new VelocityInterpolationECVI(grid));
+        if (use_cvi_) {
+            velocity_interpolation_.reset(new VelocityInterpolationECVI(grid_));
         } else {
-            velocity_interpolation_.reset(new VelocityInterpolationConstant(grid));
+            velocity_interpolation_.reset(new VelocityInterpolationConstant(grid_));
         }
     }
 
@@ -194,6 +234,19 @@ namespace Opm
         grad_basis_.resize(num_basis*grid_.dimensions);
         velocity_interpolation_->setupFluxes(darcyflux);
         reorderAndTransport(grid_, darcyflux);
+        switch (limiter_usage_) {
+        case AsPostProcess:
+            applyLimiterAsPostProcess();
+            break;
+        case AsSimultaneousPostProcess:
+            applyLimiterAsSimultaneousPostProcess();
+            break;
+        case DuringComputations:
+            // Do nothing.
+            break;
+        default:
+            THROW("Unknown limiter usage choice: " << limiter_usage_);
+        }
     }
 
 
@@ -370,8 +423,8 @@ namespace Opm
         std::copy(rhs_.begin(), rhs_.end(), tof_coeff_ + num_basis*cell);
 
         // Apply limiter.
-        if (degree_ > 0 && use_limiter_) {
-            useLimiter(cell);
+        if (degree_ > 0 && use_limiter_ && limiter_usage_ == DuringComputations) {
+            applyLimiter(cell, tof_coeff_);
         }
     }
 
@@ -389,7 +442,24 @@ namespace Opm
 
 
 
-    void TransportModelTracerTofDiscGal::useLimiter(const int cell)
+    void TransportModelTracerTofDiscGal::applyLimiter(const int cell, double* tof)
+    {
+        switch (limiter_method_) {
+        case MinUpwindFace:
+            applyMinUpwindFaceLimiter(cell, tof);
+            break;
+        case MinUpwindAverage:
+            applyMinUpwindAverageLimiter(cell, tof);
+            break;
+        default:
+            THROW("Limiter type not implemented: " << limiter_method_);
+        }
+    }
+
+
+
+
+    void TransportModelTracerTofDiscGal::applyMinUpwindFaceLimiter(const int cell, double* tof)
     {
         if (degree_ != 1) {
             THROW("This limiter only makes sense for our DG1 implementation.");
@@ -399,15 +469,38 @@ namespace Opm
         // 1. Let M be the minimum TOF value on the upstream faces,
         //    evaluated in the upstream cells. Then the value at all
         //    points in this cell shall be at least M.
+        //    Upstream faces whose flux does not exceed the relative
+        //    flux threshold are not considered for this minimum.
         // 2. The TOF shall not be below zero in any point.
 
+        // Find total upstream/downstream fluxes.
+        double upstream_flux = 0.0;
+        double downstream_flux = 0.0;
+        for (int hface = grid_.cell_facepos[cell]; hface < grid_.cell_facepos[cell+1]; ++hface) {
+            const int face = grid_.cell_faces[hface];
+            double flux = 0.0;
+            if (cell == grid_.face_cells[2*face]) {
+                flux = darcyflux_[face];
+            } else {
+                flux = -darcyflux_[face];
+            }
+            if (flux < 0.0) {
+                upstream_flux += flux;
+            } else {
+                downstream_flux += flux;
+            }
+        }
+        // In the presence of sources, significant fluxes may be missing from the computed fluxes,
+        // setting the total flux to the (positive) maximum avoids this: since source is either
+        // inflow or outflow, not both, either upstream_flux or downstream_flux must be correct.
+        const double total_flux = std::max(-upstream_flux, downstream_flux);
+
+        // Find minimum tof on upstream faces and for this cell.
         const int dim = grid_.dimensions;
         const int num_basis = DGBasis::numBasisFunc(dim, degree_);
-
-        double max_slope_mult = 0.0;
+        double min_upstream_tof = 1e100;
+        double min_here_tof = 1e100;
         int num_upstream_faces = 0;
-        // For inflow faces, ensure that cell tof does not dip below
-        // the minimum value from upstream (for all faces).
         for (int hface = grid_.cell_facepos[cell]; hface < grid_.cell_facepos[cell+1]; ++hface) {
             const int face = grid_.cell_faces[hface];
             double flux = 0.0;
@@ -419,54 +512,203 @@ namespace Opm
                 flux = -darcyflux_[face];
                 upstream_cell = grid_.face_cells[2*face];
             }
-            if (flux >= 0.0) {
-                // This is a downstream face.
-                continue;
+            const bool upstream = (flux < -total_flux*limiter_relative_flux_threshold_);
+            if (upstream) {
+                ++num_upstream_faces;
             }
-            ++num_upstream_faces;
+            bool interior = (upstream_cell >= 0);
 
-            // Evaluate the solution in all corners, and find the appropriate limiter.
-            bool upstream = (upstream_cell >= 0 && flux < 0.0);
-            double min_upstream = upstream ? 1e100 : 0.0;
-            double min_here = 1e100;
+            // Evaluate the solution in all corners.
             for (int fnode = grid_.face_nodepos[face]; fnode < grid_.face_nodepos[face+1]; ++fnode) {
                 const double* nc = grid_.node_coordinates + dim*grid_.face_nodes[fnode];
                 DGBasis::eval(grid_, cell, degree_, nc, &basis_[0]);
                 const double tof_here = std::inner_product(basis_.begin(), basis_.end(),
                                                            tof_coeff_ + num_basis*cell, 0.0);
-                min_here = std::min(min_here, tof_here);
+                min_here_tof = std::min(min_here_tof, tof_here);
                 if (upstream) {
-                    DGBasis::eval(grid_, upstream_cell, degree_, nc, &basis_nb_[0]);
-                    const double tof_upstream
-                        = std::inner_product(basis_nb_.begin(), basis_nb_.end(),
-                                             tof_coeff_ + num_basis*upstream_cell, 0.0);
-                    min_upstream = std::min(min_upstream, tof_upstream);
+                    if (interior) {
+                        DGBasis::eval(grid_, upstream_cell, degree_, nc, &basis_nb_[0]);
+                        const double tof_upstream
+                            = std::inner_product(basis_nb_.begin(), basis_nb_.end(),
+                                                 tof_coeff_ + num_basis*upstream_cell, 0.0);
+                        min_upstream_tof = std::min(min_upstream_tof, tof_upstream);
+                    } else {
+                        // Allow tof down to 0 on inflow boundaries.
+                        min_upstream_tof = std::min(min_upstream_tof, 0.0);
+                    }
                 }
             }
-            // Compute maximum slope multiplier.
-            const double tof_c = tof_coeff_[num_basis*cell];
-            if (tof_c < min_upstream) {
-                // Handle by setting a flat solution.
-                std::cout << "Trouble in cell " << cell << std::endl;
-                max_slope_mult = 0.0;
-                tof_coeff_[num_basis*cell] = min_upstream;
-                break;
-            }
-            const double face_mult = (tof_c - min_upstream)/(tof_c - min_here);
-            max_slope_mult = std::max(max_slope_mult, face_mult);
         }
-        ASSERT(max_slope_mult >= 0.0);
+
+        // Compute slope multiplier (limiter).
+        if (num_upstream_faces == 0) {
+            min_upstream_tof = 0.0;
+            min_here_tof = 0.0;
+        }
+        if (min_upstream_tof < 0.0) {
+            min_upstream_tof = 0.0;
+        }
+        const double tof_c = tof_coeff_[num_basis*cell];
+        double limiter = (tof_c - min_upstream_tof)/(tof_c - min_here_tof);
+        if (tof_c < min_upstream_tof) {
+            // Handle by setting a flat solution.
+            std::cout << "Trouble in cell " << cell << std::endl;
+            limiter = 0.0;
+            tof[num_basis*cell] = min_upstream_tof;
+        }
+        ASSERT(limiter >= 0.0);
 
         // Actually do the limiting (if applicable).
-        const double limiter = max_slope_mult;
-        if (num_upstream_faces > 0 && limiter < 1.0) {
-            std::cout << "Applying limiter in cell " << cell << ", limiter = " << limiter << std::endl;
+        if (limiter < 1.0) {
+            // std::cout << "Applying limiter in cell " << cell << ", limiter = " << limiter << std::endl;
             for (int i = num_basis*cell + 1; i < num_basis*(cell+1); ++i) {
-                tof_coeff_[i] *= limiter;
+                tof[i] *= limiter;
             }
         } else {
-            std::cout << "Not applying limiter in cell " << cell << "!" << std::endl;
+            // std::cout << "Not applying limiter in cell " << cell << "!" << std::endl;
         }
+    }
+
+
+
+
+    void TransportModelTracerTofDiscGal::applyMinUpwindAverageLimiter(const int cell, double* tof)
+    {
+        if (degree_ != 1) {
+            THROW("This limiter only makes sense for our DG1 implementation.");
+        }
+
+        // Limiter principles:
+        // 1. Let M be the average TOF value of the upstream cells.
+        ///   Then the value at all points in this cell shall be at least M.
+        //    Upstream faces whose flux does not exceed the relative
+        //    flux threshold are not considered for this minimum.
+        // 2. The TOF shall not be below zero in any point.
+
+        // Find total upstream/downstream fluxes.
+        double upstream_flux = 0.0;
+        double downstream_flux = 0.0;
+        for (int hface = grid_.cell_facepos[cell]; hface < grid_.cell_facepos[cell+1]; ++hface) {
+            const int face = grid_.cell_faces[hface];
+            double flux = 0.0;
+            if (cell == grid_.face_cells[2*face]) {
+                flux = darcyflux_[face];
+            } else {
+                flux = -darcyflux_[face];
+            }
+            if (flux < 0.0) {
+                upstream_flux += flux;
+            } else {
+                downstream_flux += flux;
+            }
+        }
+        // In the presence of sources, significant fluxes may be missing from the computed fluxes,
+        // setting the total flux to the (positive) maximum avoids this: since source is either
+        // inflow or outflow, not both, either upstream_flux or downstream_flux must be correct.
+        const double total_flux = std::max(-upstream_flux, downstream_flux);
+
+        // Find minimum tof on upstream faces and for this cell.
+        const int dim = grid_.dimensions;
+        const int num_basis = DGBasis::numBasisFunc(dim, degree_);
+        double min_upstream_tof = 1e100;
+        double min_here_tof = 1e100;
+        int num_upstream_faces = 0;
+        for (int hface = grid_.cell_facepos[cell]; hface < grid_.cell_facepos[cell+1]; ++hface) {
+            const int face = grid_.cell_faces[hface];
+            double flux = 0.0;
+            int upstream_cell = -1;
+            if (cell == grid_.face_cells[2*face]) {
+                flux = darcyflux_[face];
+                upstream_cell = grid_.face_cells[2*face+1];
+            } else {
+                flux = -darcyflux_[face];
+                upstream_cell = grid_.face_cells[2*face];
+            }
+            const bool upstream = (flux < -total_flux*limiter_relative_flux_threshold_);
+            if (upstream) {
+                ++num_upstream_faces;
+            }
+            bool interior = (upstream_cell >= 0);
+
+            // Evaluate the solution in all corners.
+            for (int fnode = grid_.face_nodepos[face]; fnode < grid_.face_nodepos[face+1]; ++fnode) {
+                const double* nc = grid_.node_coordinates + dim*grid_.face_nodes[fnode];
+                DGBasis::eval(grid_, cell, degree_, nc, &basis_[0]);
+                const double tof_here = std::inner_product(basis_.begin(), basis_.end(),
+                                                           tof_coeff_ + num_basis*cell, 0.0);
+                min_here_tof = std::min(min_here_tof, tof_here);
+                if (upstream) {
+                    if (interior) {
+                        min_upstream_tof = std::min(min_upstream_tof, tof_coeff_[num_basis*upstream_cell]);
+                    } else {
+                        // Allow tof down to 0 on inflow boundaries.
+                        min_upstream_tof = std::min(min_upstream_tof, 0.0);
+                    }
+                }
+            }
+        }
+
+        // Compute slope multiplier (limiter).
+        if (num_upstream_faces == 0) {
+            min_upstream_tof = 0.0;
+            min_here_tof = 0.0;
+        }
+        if (min_upstream_tof < 0.0) {
+            min_upstream_tof = 0.0;
+        }
+        const double tof_c = tof_coeff_[num_basis*cell];
+        double limiter = (tof_c - min_upstream_tof)/(tof_c - min_here_tof);
+        if (tof_c < min_upstream_tof) {
+            // Handle by setting a flat solution.
+            std::cout << "Trouble in cell " << cell << std::endl;
+            limiter = 0.0;
+            tof[num_basis*cell] = min_upstream_tof;
+        }
+        ASSERT(limiter >= 0.0);
+
+        // Actually do the limiting (if applicable).
+        if (limiter < 1.0) {
+            // std::cout << "Applying limiter in cell " << cell << ", limiter = " << limiter << std::endl;
+            for (int i = num_basis*cell + 1; i < num_basis*(cell+1); ++i) {
+                tof[i] *= limiter;
+            }
+        } else {
+            // std::cout << "Not applying limiter in cell " << cell << "!" << std::endl;
+        }
+    }
+
+
+
+
+    void TransportModelTracerTofDiscGal::applyLimiterAsPostProcess()
+    {
+        // Apply the limiter sequentially to all cells.
+        // This means that a cell's limiting behaviour may be affected by
+        // any limiting applied to its upstream cells.
+        const std::vector<int>& seq = TransportModelInterface::sequence();
+        const int nc = seq.size();
+        ASSERT(nc == grid_.number_of_cells);
+        for (int i = 0; i < nc; ++i) {
+            const int cell = seq[i];
+            applyLimiter(cell, tof_coeff_);
+        }
+    }
+
+
+
+
+    void TransportModelTracerTofDiscGal::applyLimiterAsSimultaneousPostProcess()
+    {
+        // Apply the limiter simultaneously to all cells.
+        // This means that each cell is limited independently from all other cells,
+        // we write the resulting dofs to a new array instead of writing to tof_coeff_.
+        // Afterwards we copy the results back to tof_coeff_.
+        const int num_basis = DGBasis::numBasisFunc(grid_.dimensions, degree_);
+        std::vector<double> tof_coeffs_new(tof_coeff_, tof_coeff_ + num_basis*grid_.number_of_cells);
+        for (int c = 0; c < grid_.number_of_cells; ++c) {
+            applyLimiter(c, &tof_coeffs_new[0]);
+        }
+        std::copy(tof_coeffs_new.begin(), tof_coeffs_new.end(), tof_coeff_);
     }
 
 
