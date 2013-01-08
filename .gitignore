@@ -26,6 +26,7 @@ CMakeFiles/
 cmake_install.cmake
 config.h
 opm-core-config.cmake
+opm-core-config-version.cmake
 opm-core-install.cmake
 Makefile
 bin/
