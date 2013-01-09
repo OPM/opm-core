@@ -106,7 +106,7 @@ while getopts -- ":-:" optchar; do
               ;;
           esac
           # add this to the list of existing features
-          FEATURES="${FEATURES} -D${rootvar}=${pkgloc}"
+          FEATURES="${FEATURES} \"-D${rootvar}=${pkgloc}\""
           ;;
         disable-*)
           # get the name of the package
