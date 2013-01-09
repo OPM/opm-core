@@ -261,3 +261,28 @@ if (DOXYGEN_FOUND)
 		add_dependencies (install-${format} doc)
 	endforeach (format)
 endif (DOXYGEN_FOUND)
+
+### clean in-source builds ###
+set (DISTCLEAN_FILES
+	CMakeCache.txt
+	cmake_install.cmake
+	Makefile
+  config.h
+  opm-core-config.cmake
+	opm-core-config-version.cmake
+  opm-core-install.cmake
+  Doxyfile
+	)
+set (DISTCLEAN_DIRS
+	CMakeFiles/
+	)
+add_custom_target (distclean
+	COMMAND ${CMAKE_COMMAND} -E remove ${DISTCLEAN_FILES}
+	COMMAND ${CMAKE_COMMAND} -E remove_directory ${DISTCLEAN_DIRS}
+# cannot depend on clean because it is only defined in the master Makefile
+# not in CMakeFiles/Makefile where this target will end up
+#	DEPENDS clean
+	WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+	COMMENT Removing CMake-generated files
+	VERBATIM
+	)
