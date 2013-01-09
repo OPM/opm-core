@@ -13,6 +13,7 @@ Optional Features:
   --enable-shared         build a shared library [default=yes]
   --enable-static         build a static library [default=no]. Note: only one
                           of the options shared and static may be built.
+  --disable-debug          build a release version of the library [default=no]
 
 Optional Packages:
   --with-dune-common=PATH use DUNE-common library from a specified location
@@ -57,6 +58,7 @@ EOF
 
 # default values
 prefix=/usr/local
+buildtype=Debug
 
 # this variable will get feature options
 FEATURES=
@@ -113,6 +115,11 @@ while getopts -- ":-:" optchar; do
           pkgname=${OPTARG#disable-}
           # casing is of course different
           case "${pkgname}" in
+            debug)
+              buildtype=Release
+              # special flag: don't disable any particular package
+              pkgname=""
+              ;;
             agmg |\
             ert  |\
             superlu)
@@ -125,6 +132,8 @@ while getopts -- ":-:" optchar; do
               pkgname="CXX11Features"
               ;;
           esac
+          # only disable packages if the flag refers to a proper one
+          test -n "${pkgname}" && \
           FEATURES="${FEATURES} -DCMAKE_DISABLE_FIND_PACKAGE_${pkgname}=TRUE"
           ;;
         enable-*)
@@ -165,7 +174,7 @@ shift $((OPTIND-1))
 ENVVARS=${@/ACLOCAL_*=*/}
 
 # pass everything on to CMake
-CMDLINE="env ${ENVVARS} cmake \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" ${FEATURES}"
+CMDLINE="env ${ENVVARS} cmake \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype} ${FEATURES}"
 echo --- calling CMake for opm-core ---
 echo ${CMDLINE}
 eval exec ${CMDLINE}
