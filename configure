@@ -160,5 +160,11 @@ done
 # remove all arguments processed by getopts
 shift $((OPTIND-1))
 
+# remove Autotools-specific variables
+ENVVARS=${@/ACLOCAL_*=*/}
+
 # pass everything on to CMake
-env "$@" cmake "$(dirname $0)" "-DCMAKE_INSTALL_PREFIX=$prefix" ${FEATURES}
+CMDLINE="env ${ENVVARS} cmake \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" ${FEATURES}"
+echo --- calling CMake for opm-core ---
+echo ${CMDLINE}
+eval exec ${CMDLINE}
