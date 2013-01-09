@@ -84,7 +84,8 @@ while getopts -- ":-:" optchar; do
           # get the location of the package; everyhing after equal sign
           pkgloc=${OPTARG#*=}
           # expand to full path since CMake changes to source directory (!)
-          pkgloc=$(echo $(sh -c "cd $(dirname ${pkgloc}); pwd")/$(basename ${pkgloc}))
+          # this also normalize the path name wrt. not having a trailing slash
+          pkgloc=$(sh -c "cd \"${pkgloc}\"; pwd")
           # packages need different suffix for their root (sic)
           case "${pkgname}" in
             agmg  |\
