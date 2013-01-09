@@ -1,7 +1,3 @@
-#dune module information file#
-##############################
-
-#Name of the module
 Module: opm-core
-Version: 0.1
-Maintainer: atgeirr@sintef.no
+Version: 0.3
+Depends: dune-common dune-istl
