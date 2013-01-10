@@ -217,9 +217,11 @@ cond_disable_test ("AGMG")
 cond_disable_test ("ERT")
 
 # compile each of these separately
+add_custom_target (tests)
 foreach (test_FILE IN LISTS tests_SOURCES)
 	get_filename_component (test_NAME "${test_FILE}" NAME_WE)
-	add_executable (${test_NAME} ${test_FILE})
+	add_executable (${test_NAME} EXCLUDE_FROM_ALL ${test_FILE})
+	add_dependencies (tests ${test_NAME})
 	set_target_properties (${test_NAME} PROPERTIES
 		LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
 		)
