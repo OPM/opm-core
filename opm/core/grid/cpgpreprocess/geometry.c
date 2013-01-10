@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "geometry.h"
+#include <assert.h>
 
 /* ------------------------------------------------------------------ */
 static void
@@ -25,16 +26,16 @@ norm(const double w[3])
 }
 
 
-
 /* ------------------------------------------------------------------ */
-void
-compute_face_geometry(int ndims, double *coords, int nfaces,
-                      int *nodepos, int *facenodes, double *fnormals,
-                      double *fcentroids, double *fareas)
+static void
+compute_face_geometry_3d(double *coords, int nfaces,
+                         int *nodepos, int *facenodes, double *fnormals,
+                         double *fcentroids, double *fareas)
 /* ------------------------------------------------------------------ */
 {
 
    /* Assume 3D for now */
+   const int ndims = 3;
    int f;
    double x[3];
    double u[3];
@@ -112,15 +113,34 @@ compute_face_geometry(int ndims, double *coords, int nfaces,
 
 /* ------------------------------------------------------------------ */
 void
-compute_cell_geometry(int ndims, double *coords,
-                      int *nodepos, int *facenodes, int *neighbors,
-                      double *fnormals,
-                      double *fcentroids,
-                      int ncells, int *facepos, int *cellfaces,
-                      double *ccentroids, double *cvolumes)
+compute_face_geometry(int ndims, double *coords, int nfaces,
+                      int *nodepos, int *facenodes, double *fnormals,
+                      double *fcentroids, double *fareas)
 /* ------------------------------------------------------------------ */
 {
+   if (ndims == 3)
+   {
+      compute_face_geometry_3d(coords, nfaces, nodepos, facenodes,
+                               fnormals, fcentroids, fareas);
+   }
+   else
+   {
+      assert(0);
+   }
+}
 
+
+/* ------------------------------------------------------------------ */
+static void
+compute_cell_geometry_3d(double *coords,
+                         int *nodepos, int *facenodes, int *neighbors,
+                         double *fnormals,
+                         double *fcentroids,
+                         int ncells, int *facepos, int *cellfaces,
+                         double *ccentroids, double *cvolumes)
+/* ------------------------------------------------------------------ */
+{
+   const int ndims = 3;
    int i,k, f,c;
    int face,node;
    double x[3];
@@ -238,5 +258,27 @@ compute_cell_geometry(int ndims, double *coords,
 
       for (i=0; i<ndims; ++i) ccentroids[3*c+i] = xcell[i] + ccell[i]/volume;
       cvolumes[c] = volume;
+   }
+}
+
+/* ------------------------------------------------------------------ */
+void
+compute_cell_geometry(int ndims, double *coords,
+                      int *nodepos, int *facenodes, int *neighbors,
+                      double *fnormals,
+                      double *fcentroids,
+                      int ncells, int *facepos, int *cellfaces,
+                      double *ccentroids, double *cvolumes)
+/* ------------------------------------------------------------------ */
+{
+   if (ndims == 3)
+   {
+      compute_cell_geometry_3d(coords, nodepos, facenodes,
+                               neighbors, fnormals, fcentroids, ncells,
+                               facepos, cellfaces, ccentroids, cvolumes);
+   }
+   else
+   {
+      assert(0);
    }
 }
