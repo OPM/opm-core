@@ -108,6 +108,7 @@ opm/core/simulator/SimulatorCompressibleTwophase.cpp	\
 opm/core/simulator/SimulatorIncompTwophase.cpp		\
 opm/core/simulator/SimulatorReport.cpp			\
 opm/core/simulator/SimulatorTimer.cpp			\
+opm/core/transport/reorder/DGBasis.cpp			\
 opm/core/transport/reorder/TransportModelCompressibleTwophase.cpp	\
 opm/core/transport/reorder/TransportModelInterface.cpp	\
 opm/core/transport/reorder/TransportModelTracerTof.cpp	\
@@ -237,6 +238,7 @@ opm/core/transport/JacobianSystem.hpp			\
 opm/core/transport/NormSupport.hpp			\
 opm/core/transport/SimpleFluid2pWrapper.hpp		\
 opm/core/transport/SinglePointUpwindTwoPhase.hpp	\
+opm/core/transport/reorder/DGBasis.hpp			\
 opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp	\
 opm/core/transport/reorder/TransportModelInterface.hpp	\
 opm/core/transport/reorder/TransportModelTracerTof.hpp	\

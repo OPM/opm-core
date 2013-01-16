@@ -168,12 +168,10 @@ main(int argc, char** argv)
 
     // Choice of tof solver.
     bool use_dg = param.getDefault("use_dg", false);
-    int dg_degree = -1;
     bool use_multidim_upwind = false;
     // Need to initialize dg solver here, since it uses parameters now.
     boost::scoped_ptr<Opm::TransportModelTracerTofDiscGal> dg_solver;
     if (use_dg) {
-        dg_degree = param.getDefault("dg_degree", 0);
         dg_solver.reset(new Opm::TransportModelTracerTofDiscGal(*grid->c_grid(), param));
     } else {
         use_multidim_upwind = param.getDefault("use_multidim_upwind", false);
@@ -237,7 +235,7 @@ main(int argc, char** argv)
     std::vector<double> tof;
     std::vector<double> tracer;
     if (use_dg) {
-        dg_solver->solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], dg_degree, tof);
+        dg_solver->solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
     } else {
         Opm::TransportModelTracerTof tofsolver(*grid->c_grid(), use_multidim_upwind);
         if (compute_tracer) {
