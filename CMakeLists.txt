@@ -64,7 +64,10 @@ include (UseWarnings)
 # detect if Boost is in a shared library
 include (UseDynamicBoost)
 
-# put libraries in lib/
+# needed for Debian installation scheme
+include (UseMultiArch)
+
+# put libraries in lib/ (no multi-arch support in build tree)
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set (CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/CMakeFiles")
@@ -190,8 +193,8 @@ foreach (_hdr IN LISTS opmcore_HEADERS)
 endforeach (_hdr)
 install (
 	TARGETS opmcore
-	LIBRARY DESTINATION lib
-	ARCHIVE DESTINATION lib
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	)
 install (
 	FILES dune.module
