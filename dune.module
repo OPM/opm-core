@@ -1,3 +1,3 @@
 Module: opm-core
 Version: 0.3
-Depends: dune-common dune-istl
+Depends: dune-common (>= 2.2) dune-istl (>= 2.2)
