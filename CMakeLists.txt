@@ -193,6 +193,10 @@ install (
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 	)
+install (
+	FILES dune.module
+	DESTINATION lib/dunecontrol/opm-core
+	)
 message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")
 
 # installation of CMake modules to help user programs locate the library
