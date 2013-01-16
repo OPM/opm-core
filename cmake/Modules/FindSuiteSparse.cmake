@@ -42,6 +42,17 @@ if (${SuiteSparse_DIR})
   list (INSERT SuiteSparse_SEARCH_INCS 0 "${SuiteSparse_DIR}")
   list (INSERT SuiteSparse_SEARCH_LIBS 0 "${SuiteSparse_DIR}")
 endif (${SuiteSparse_DIR})
+# CMake uses _DIR suffix as default for config-mode files; it is unlikely
+# that we are building SuiteSparse ourselves; use _ROOT suffix to specify
+# location to pre-canned binaries
+if (NOT $ENV{SuiteSparse_ROOT} STREQUAL "")
+  list (INSERT SuiteSparse_SEARCH_INCS 0 "$ENV{SuiteSparse_ROOT}")
+  list (INSERT SuiteSparse_SEARCH_LIBS 0 "$ENV{SuiteSparse_ROOT}")
+endif (NOT $ENV{SuiteSparse_ROOT} STREQUAL "")
+if (${SuiteSparse_ROOT})
+  list (INSERT SuiteSparse_SEARCH_INCS 0 "${SuiteSparse_ROOT}")
+  list (INSERT SuiteSparse_SEARCH_LIBS 0 "${SuiteSparse_ROOT}")
+endif (${SuiteSparse_ROOT})
 
 # transitive closure of dependencies; after this SuiteSparse_MODULES is the
 # full list of modules that must be found to satisfy the user's link demands
