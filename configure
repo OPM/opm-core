@@ -24,6 +24,7 @@ Optional Packages:
                           Algebraic Multigrid solver from specified source
                           location. Note: this option requires a complete,
                           working Fortran 90 environment.
+  --with-umfpack=PATH     use UMFPACK/SuiteSparse from a specified location
   --with-ert=PATH         Use ERT libraries
 
 Some influential environment variables:
@@ -88,6 +89,12 @@ while getopts -- ":-:" optchar; do
           # expand to full path since CMake changes to source directory (!)
           # this also normalize the path name wrt. not having a trailing slash
           pkgloc=$(sh -c "cd \"${pkgloc}\"; pwd")
+          # special aliases
+          case "${pkgname}" in
+            umfpack)
+              pkgname="SuiteSparse"
+              ;;
+          esac
           # packages need different suffix for their root (sic)
           case "${pkgname}" in
             agmg  |\
@@ -97,7 +104,8 @@ while getopts -- ":-:" optchar; do
               rootvar="${pkgname^^}_ROOT"
               ;;
             dune-common |\
-            dune-istl)
+            dune-istl   |\
+            SuiteSparse)
               rootvar="${pkgname}_ROOT"
               ;;
             superlu)
@@ -113,6 +121,12 @@ while getopts -- ":-:" optchar; do
         disable-*)
           # get the name of the package
           pkgname=${OPTARG#disable-}
+          # special aliases
+          case "${pkgname}" in
+            umfpack)
+              pkgname="SuiteSparse"
+              ;;
+          esac
           # casing is of course different
           case "${pkgname}" in
             debug)
