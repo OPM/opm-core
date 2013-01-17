@@ -295,3 +295,9 @@ add_custom_target (distclean
 	COMMENT Removing CMake-generated files
 	VERBATIM
 	)
+
+# smart wrapper that auto-parallelizes builds
+file (COPY
+	GNUmakefile
+	DESTINATION ${PROJECT_BINARY_DIR}
+	)
