@@ -20,6 +20,7 @@ sparsevector_test				\
 test_cartgrid					\
 test_column_extract				\
 test_lapack					\
+test_quadratures				\
 test_read_grid					\
 test_read_vag					\
 test_readpolymer				\
@@ -55,6 +56,9 @@ test_column_extract_LDADD = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 test_lapack_SOURCES       = test_lapack.cpp
 test_lapack_LDADD         = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS)
+
+test_quadratures_SOURCES = test_quadratures.cpp
+test_quadratures_LDADD   = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 test_readpolymer_SOURCES  = test_readpolymer.cpp
 test_read_vag_SOURCES     = test_read_vag.cpp

@@ -40,6 +40,12 @@ namespace Opm
         void evalPcDeriv(const double* s, double* pc, double* dpcds) const;
         double smin_[PhaseUsage::MaxNumPhases];
         double smax_[PhaseUsage::MaxNumPhases];
+        double krwmax_; // Max water relperm
+        double kromax_; // Max oil relperm
+        double swcr_;   // Critical water saturation.
+        double krwr_;   // Water relperm at critical oil-in-water saturation.
+        double sowcr_;  // Critical oil-in-water saturation.
+        double krorw_;  // Oil relperm at critical water saturation.
     private:
         PhaseUsage phase_usage; // A copy of the outer class' phase_usage_.
         UniformTableLinear<double> krw_;
@@ -65,6 +71,12 @@ namespace Opm
         void evalPcDeriv(const double* s, double* pc, double* dpcds) const;
         double smin_[PhaseUsage::MaxNumPhases];
         double smax_[PhaseUsage::MaxNumPhases];
+        double krwmax_; // Max water relperm
+        double kromax_; // Max oil relperm
+        double swcr_;   // Critical water saturation.
+        double krwr_;   // Water relperm at critical oil-in-water saturation.
+        double sowcr_;  // Critical oil-in-water saturation.
+        double krorw_;  // Oil relperm at critical water saturation.
     private:
         PhaseUsage phase_usage; // A copy of the outer class' phase_usage_.
         NonuniformTableLinear<double> krw_;

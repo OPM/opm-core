@@ -143,6 +143,9 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
     AC_REQUIRE([AC_F77_LIBRARY_LDFLAGS])
     AC_REQUIRE([AX_BLAS])
 
+  if test x$HAVE_SUPERLU = x1 ; then
+     AC_MSG_WARN([SuperLU test was already performed. Skipping it here])
+  else
     #
     # User hints ...
     #
@@ -227,7 +230,7 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
                 AC_CHECK_LIB([superlu], [dgssvx],
                     [
                         direct_SUPERLU_LIBS="-L$SUPERLU_LIB_PATH -lsuperlu $BLAS_LIBS $FLIBS"
-                        SUPERLU_LIBS="-L$SUPERLU_LIB_PATH -lsuperlu \${BLAS_LIBS} \${FLIBS}"
+                        SUPERLU_LIBS="-L$SUPERLU_LIB_PATH -lsuperlu $BLAS_LIBS $FLIBS"
                         HAVE_SUPERLU="1"
                     ], [], [$BLAS_LIBS $FLIBS])
             fi
@@ -245,7 +248,7 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
                 AC_CHECK_FUNC([dgssvx],
                     [
                         direct_SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib $BLAS_LIBS $FLIBS"
-                        SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib \${BLAS_LIBS} \${FLIBS}"
+                        SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib $BLAS_LIBS $FLIBS"
                         HAVE_SUPERLU="1"
                     ])
             fi
@@ -260,7 +263,7 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
                 AC_CHECK_FUNC([dgssvx],
                     [
                         direct_SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib $SUPERLU_LIB_PATH/$with_superlu_blaslib $FLIBS"
-                        SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib $SUPERLU_LIB_PATH/$with_superlu_blaslib \${FLIBS}"
+                        SUPERLU_LIBS="$SUPERLU_LIB_PATH/$with_superlu_lib $SUPERLU_LIB_PATH/$with_superlu_blaslib $FLIBS"
                         HAVE_SUPERLU="1"
                     ])
             fi
@@ -331,4 +334,5 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
     LDFLAGS="$ac_save_LDFLAGS"
     CPPFLAGS="$ac_save_CPPFLAGS"
     LIBS="$ac_save_LIBS"
+  fi
 ])

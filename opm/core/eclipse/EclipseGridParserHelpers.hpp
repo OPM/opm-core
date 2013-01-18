@@ -378,7 +378,10 @@ namespace
     }
 
     // Replace default values -1 by linear interpolation
-    inline void insertDefaultValues(std::vector<std::vector<double> >& table, int ncol)
+    inline void insertDefaultValues(std::vector<std::vector<double> >& table,
+                                    int ncol,
+                                    double defaultOut = 0.0,
+                                    bool defaultInterpolation = true)
     {
 	const int sz = table[0].size();
 	for (int k=1; k<ncol; ++k) {
@@ -400,14 +403,19 @@ namespace
 		}
                 if (xv.empty()) {
                     // Nothing specified, the entire column is defaulted.
-                    // We insert zeros.
+                    // We insert default value.
                     for (int i=0; i<int(indx.size()); ++i) {
-                        table[k][indx[i]] = 0.0;
+                        table[k][indx[i]] = defaultOut;
+                    }
+                } else if (defaultInterpolation) {
+                    // Interpolate
+                    for (int i=0; i<int(indx.size()); ++i) {
+                        table[k][indx[i]] = linearInterpolationExtrap(xv, yv, x[i]);
                     }
                 } else {
                     // Interpolate
                     for (int i=0; i<int(indx.size()); ++i) {
-                        table[k][indx[i]] = linearInterpolationExtrap(xv, yv, x[i]);
+                        table[k][indx[i]] = linearInterpolation(xv, yv, x[i]);
                     }
                 }
 	    }

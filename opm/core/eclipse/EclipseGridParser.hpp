@@ -192,6 +192,10 @@ public:                                                                         
     SPECIAL_FIELD(GCONINJE)
     SPECIAL_FIELD(GCONPROD)
     SPECIAL_FIELD(WGRUPCON)
+    SPECIAL_FIELD(ENDSCALE)
+    SPECIAL_FIELD(SCALECRS)
+    SPECIAL_FIELD(ENPTVD)
+    SPECIAL_FIELD(ENKRVD)
 
     // The following fields only have a dummy implementation
     // that allows us to ignore them.
@@ -221,9 +225,11 @@ public:                                                                         
 
     struct grdecl get_grdecl() const;
 
+    /// Save grid parts of deck in EGRID format. 
+    void saveEGRID(const std::string & filename) const;
+
 #ifdef HAVE_ERT
   void saveEGRID_INIT( const std::string& output_dir , const std::string& basename, bool fmt_file = false);
-  void saveEGRID( const std::string & filename );
   void saveINIT( const std::string & filename , const ecl_grid_type * ecl_grid);
   ecl_grid_type * newGrid( );
 #endif

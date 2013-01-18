@@ -168,14 +168,17 @@ main(int argc, char** argv)
 
     // Choice of tof solver.
     bool use_dg = param.getDefault("use_dg", false);
-    int dg_degree = -1;
-    bool use_cvi = false;
     bool use_multidim_upwind = false;
+    // Need to initialize dg solver here, since it uses parameters now.
+    boost::scoped_ptr<Opm::TransportModelTracerTofDiscGal> dg_solver;
     if (use_dg) {
-        dg_degree = param.getDefault("dg_degree", 0);
-        use_cvi = param.getDefault("use_cvi", false);
+        dg_solver.reset(new Opm::TransportModelTracerTofDiscGal(*grid->c_grid(), param));
     } else {
         use_multidim_upwind = param.getDefault("use_multidim_upwind", false);
+    }
+    bool compute_tracer = param.getDefault("compute_tracer", false);
+    if (use_dg && compute_tracer) {
+        THROW("DG for tracer not yet implemented.");
     }
 
     // Write parameters used for later reference.
@@ -230,12 +233,16 @@ main(int argc, char** argv)
     // Solve time-of-flight.
     transport_timer.start();
     std::vector<double> tof;
+    std::vector<double> tracer;
     if (use_dg) {
-        Opm::TransportModelTracerTofDiscGal tofsolver(*grid->c_grid(), use_cvi);
-        tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], dg_degree, tof);
+        dg_solver->solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
     } else {
         Opm::TransportModelTracerTof tofsolver(*grid->c_grid(), use_multidim_upwind);
-        tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
+        if (compute_tracer) {
+            tofsolver.solveTofTracer(&state.faceflux()[0], &porevol[0], &transport_src[0], tof, tracer);
+        } else {
+            tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
+        }
     }
     transport_timer.stop();
     double tt = transport_timer.secsSinceStart();
@@ -247,7 +254,17 @@ main(int argc, char** argv)
     if (output) {
         std::string tof_filename = output_dir + "/tof.txt";
         std::ofstream tof_stream(tof_filename.c_str());
+        tof_stream.precision(16);
         std::copy(tof.begin(), tof.end(), std::ostream_iterator<double>(tof_stream, "\n"));
+        if (compute_tracer) {
+            std::string tracer_filename = output_dir + "/tracer.txt";
+            std::ofstream tracer_stream(tracer_filename.c_str());
+            tracer_stream.precision(16);
+            const int nt = tracer.size()/num_cells;
+            for (int i = 0; i < nt*num_cells; ++i) {
+                tracer_stream << tracer[i] << (((i + 1) % nt == 0) ? '\n' : ' ');
+            }
+        }
     }
 
     std::cout << "\n\n================    End of simulation     ===============\n"

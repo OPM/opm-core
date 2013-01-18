@@ -97,7 +97,10 @@ namespace EclipseKeywords
           string("MULTPV"),   string("PRESSURE"),   string("SGAS"),
           string("SWAT"),     string("SOIL"),       string("RS"),
           string("DXV"),      string("DYV"),        string("DZV"),
-          string("DEPTHZ"),   string("TOPS"),       string("MAPAXES")
+          string("DEPTHZ"),   string("TOPS"),       string("MAPAXES"),
+          string("SWCR"),     string("SWL"),        string("SWU"),
+          string("SOWCR"),    string("KRW"),        string("KRWR"),
+          string("KRO"),      string("KRORW")
         };
     const int num_floating_fields = sizeof(floating_fields) / sizeof(floating_fields[0]);
 
@@ -114,7 +117,8 @@ namespace EclipseKeywords
           string("PLYVISC"),  string("PLYROCK"),  string("PLYADS"),
           string("PLYMAX"),   string("TLMIXPAR"), string("WPOLYMER"),
           string("GRUPTREE"), string("GCONINJE"), string("GCONPROD"),
-          string("WGRUPCON"),
+          string("WGRUPCON"), string("ENDSCALE"),  string("SCALECRS"),
+          string("ENPTVD"),   string("ENKRVD"),
           // The following fields only have a dummy implementation
           // that allows us to ignore them.
           string("SWFN"),
@@ -554,7 +558,9 @@ void EclipseGridParser::convertToSI()
                    key == "LAMEMOD"  || key == "SHEARMOD" || key == "POISSONMOD" ||
                    key == "PWAVEMOD" || key == "MULTPV"   || key == "PWAVEMOD" ||
                    key == "SGAS"     || key == "SWAT"     || key == "SOIL"     ||
-                   key == "RS") {
+                   key == "RS"       || key == "SWCR"     || key == "SWL"      || 
+                   key == "SWU"      || key == "SOWCR"    || key == "KRW"      || 
+                   key == "KRWR"     || key == "KRORW"    || key == "KRO") {
             unit = 1.0;
             do_convert = false; // Dimensionless keywords...
         } else if (key == "PRESSURE") {
@@ -958,7 +964,7 @@ ecl_grid_type * EclipseGridParser::newGrid( ) {
      }
 */
 
-void EclipseGridParser::saveEGRID( const std::string & filename) {
+void EclipseGridParser::saveEGRID( const std::string & filename) const {
   bool endian_flip = true;//ECL_ENDIAN_FLIP;
   bool fmt_file     = ecl_util_fmt_file( filename.c_str() );
   struct grdecl grdecl = get_grdecl();
@@ -1068,6 +1074,14 @@ void EclipseGridParser::saveEGRID_INIT( const std::string& output_dir , const st
   free( egrid_file );
   ecl_grid_free( ecl_grid );
 }
+#else
+
+void EclipseGridParser::saveEGRID( const std::string & filename) const
+{
+    static_cast<void>(filename); // Suppress "unused variable" warning.
+    THROW("Cannot write EGRID format without ert library support. Reconfigure opm-core with --with-ert and recompile.");
+}
+
 #endif
 
 // Read an imported fortio data file using Ert. 

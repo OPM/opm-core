@@ -108,6 +108,7 @@ opm/core/simulator/SimulatorCompressibleTwophase.cpp	\
 opm/core/simulator/SimulatorIncompTwophase.cpp		\
 opm/core/simulator/SimulatorReport.cpp			\
 opm/core/simulator/SimulatorTimer.cpp			\
+opm/core/transport/reorder/DGBasis.cpp			\
 opm/core/transport/reorder/TransportModelCompressibleTwophase.cpp	\
 opm/core/transport/reorder/TransportModelInterface.cpp	\
 opm/core/transport/reorder/TransportModelTracerTof.cpp	\
@@ -133,6 +134,7 @@ opm/core/utility/parameters/tinyxml/tinystr.cpp		\
 opm/core/utility/parameters/tinyxml/tinyxml.cpp		\
 opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp	\
 opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp	\
+opm/core/utility/writeECLData.cpp			\
 opm/core/utility/writeVtkData.cpp			\
 opm/core/vag_format/vag.cpp				\
 opm/core/wells/InjectionSpecification.cpp		\
@@ -179,6 +181,8 @@ opm/core/fluid/blackoil/SinglePvtLiveGas.hpp		\
 opm/core/fluid/blackoil/SinglePvtLiveOil.hpp		\
 opm/core/fluid/blackoil/phaseUsageFromDeck.hpp		\
 opm/core/grid.h						\
+opm/core/grid/CellQuadrature.hpp			\
+opm/core/grid/FaceQuadrature.hpp			\
 opm/core/grid/cart_grid.h				\
 opm/core/grid/cornerpoint_grid.h			\
 opm/core/grid/cpgpreprocess/facetopology.h		\
@@ -234,6 +238,7 @@ opm/core/transport/JacobianSystem.hpp			\
 opm/core/transport/NormSupport.hpp			\
 opm/core/transport/SimpleFluid2pWrapper.hpp		\
 opm/core/transport/SinglePointUpwindTwoPhase.hpp	\
+opm/core/transport/reorder/DGBasis.hpp			\
 opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp	\
 opm/core/transport/reorder/TransportModelInterface.hpp	\
 opm/core/transport/reorder/TransportModelTracerTof.hpp	\
@@ -278,6 +283,7 @@ opm/core/utility/parameters/ParameterTools.hpp		\
 opm/core/utility/parameters/ParameterXML.hpp		\
 opm/core/utility/parameters/tinyxml/tinystr.h		\
 opm/core/utility/parameters/tinyxml/tinyxml.h		\
+opm/core/utility/writeECLData.hpp			\
 opm/core/utility/writeVtkData.hpp			\
 opm/core/vag_format/vag.hpp				\
 opm/core/well.h						\
@@ -298,15 +304,6 @@ opm/core/linalg/LinearSolverUmfpack.cpp
 nobase_include_HEADERS +=			\
 opm/core/linalg/call_umfpack.h			\
 opm/core/linalg/LinearSolverUmfpack.hpp
-endif
-
-
-if HAVE_ERT
-lib_libopmcore_la_SOURCES  +=			\
-opm/core/utility/writeECLData.cpp
-
-nobase_include_HEADERS +=			\
-opm/core/utility/writeECLData.hpp
 endif
 
 

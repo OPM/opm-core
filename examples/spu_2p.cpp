@@ -121,7 +121,7 @@ static void outputState(const UnstructuredGrid& grid,
     dm["velocity"] = &cell_velocity;
     Opm::writeVtkData(grid, dm, vtkfile);
 #ifdef HAVE_ERT
-    Opm::writeECLData(grid , dm , simtimer , output_dir , "OPM" );
+    Opm::writeECLData(grid, dm, simtimer.currentStepNum(), simtimer.currentTime(), simtimer.currentDateTime(), output_dir, "OPM" );
 #endif
 
     // Write data (not grid) in Matlab format
