@@ -110,6 +110,71 @@ compute_face_geometry_3d(double *coords, int nfaces,
    }
 }
 
+/* ------------------------------------------------------------------ */
+static void
+compute_edge_geometry_2d(
+      /* in  */ double *node_coords,
+      /* in  */ int     num_edges,
+      /* in  */ int    *edge_node_pos,
+      /* in  */ int    *edge_nodes,
+      /* out */ double *edge_normals,
+      /* out */ double *edge_midpoints,
+      /* out */ double *edge_lengths)
+{
+   const int num_dims = 2;
+
+   /* offsets to each of the nodes in a compacted edge */
+   const int a_ofs = 0;
+   const int b_ofs = 1;
+
+   /* offsets to each dimension is a compacted point */
+   const int x_ofs = 0;
+   const int y_ofs = 1;
+
+   int edge;                     /* edge index       */
+   int a_nod, b_nod;             /* node indices     */
+   double a_x, a_y, b_x, b_y;    /* node coordinates */
+   double v_x, v_y;              /* vector elements  */
+
+   /* decompose each edge into a tuple (a,b) between two points and
+    * compute properties for that face. hopefully the host has enough
+    * cache pages to keep both input and output at the same time, and
+    * registers for all the local variables */
+   for (edge = 0; edge < num_edges; ++edge)
+   {
+      /* an edge in 2D can only have starting and ending point
+       * check that there are exactly two nodes till the next edge */
+      assert (edge_node_pos[edge + 1] - edge_node_pos[edge] == num_dims);
+
+      /* get the first and last point on the edge */
+      a_nod = edge_nodes[edge_node_pos[edge] + a_ofs];
+      b_nod = edge_nodes[edge_node_pos[edge] + b_ofs];
+
+      /* extract individual coordinates for the points */
+      a_x = node_coords[a_nod * num_dims + x_ofs];
+      a_y = node_coords[a_nod * num_dims + y_ofs];
+      b_x = node_coords[b_nod * num_dims + x_ofs];
+      b_y = node_coords[b_nod * num_dims + y_ofs];
+
+      /* compute edge center -- average of node coordinates */
+      edge_midpoints[edge * num_dims + x_ofs] = (a_x + b_x) * 0.5;
+      edge_midpoints[edge * num_dims + y_ofs] = (a_y + b_y) * 0.5;
+
+      /* vector from first to last point */
+      v_x = b_x - a_x;
+      v_y = b_y - a_y;
+
+      /* two-dimensional (unary) cross product analog that makes the
+       * "triple" (dot-cross) product zero, i.e. it's a normal; the
+       * direction of this vector is such that it will be pointing
+       * inwards when enumerating nodes clock-wise */
+      edge_normals[edge * num_dims + x_ofs] = +v_y;
+      edge_normals[edge * num_dims + y_ofs] = -v_x;
+
+      /* Euclidian norm in two dimensions is magnitude of edge */
+      edge_lengths[edge] = sqrt(v_x*v_x + v_y*v_y);
+   }
+}
 
 /* ------------------------------------------------------------------ */
 void
@@ -121,6 +186,12 @@ compute_face_geometry(int ndims, double *coords, int nfaces,
    if (ndims == 3)
    {
       compute_face_geometry_3d(coords, nfaces, nodepos, facenodes,
+                               fnormals, fcentroids, fareas);
+   }
+   else if (ndims == 2)
+   {
+      /* two-dimensional interfaces are called 'edges' */
+      compute_edge_geometry_2d(coords, nfaces, nodepos, facenodes,
                                fnormals, fcentroids, fareas);
    }
    else
