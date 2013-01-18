@@ -236,6 +236,14 @@ foreach (test_FILE IN LISTS tests_SOURCES)
 	strip_debug_symbols (${test_NAME})
 endforeach (test_FILE)
 
+# ideally this should run the tests, but for now we only test if they
+# compile without errors
+add_custom_target (check
+	DEPENDS tests
+	COMMENT Checking if library is functional
+	VERBATIM
+	)
+
 ### documentation ###
 configure_file (
 	${PROJECT_SOURCE_DIR}/Doxyfile.in
