@@ -13,15 +13,25 @@
 # After all the tutorial programs have been executed, run the following
 # command in the same directory:
 #
-#   pvpython generate_doc_figures.py
+#   pvpython generate_doc_figures.py Documentation/Figure
 #
 
 from paraview.simple import *
 from os import remove, mkdir, curdir
 from os.path import join, isdir
+from sys import argv, exit
 
-figure_path = "../Documentation/Figure"
-tutorial_data_path = curdir
+# we need at least the output directory
+if len(argv) <= 1:
+	exit('Synopsis: pvpython generate_doc_figures.py dest-dir [src-dir]')
+
+figure_path = argv[1]
+
+# default for the input directory is the current one
+if len(argv) <= 2:
+    tutorial_data_path = curdir
+else:
+    tutorial_data_path = argv[2]
 
 collected_garbage_file = []
 
