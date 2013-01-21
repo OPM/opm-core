@@ -5,7 +5,11 @@
 # figure out the number of processors from the system, add one and round
 # to nearest integer. this is the maximum number of processes we want running
 # at the same time (one for each core and one stuck on I/O)
-PROCS:=$(shell echo "("$$(grep -P -c '^processor\t:' /proc/cpuinfo)+1")"/1 | bc)
+# if we are running this is a VM, then /proc won't be mounted and we revert
+# to single CPU processing
+CPUINFO:=/proc/cpuinfo
+NUM_CPUS:=$(shell test -r $(CPUINFO) && grep -P -c '^processor\t:' $(CPUINFO) || echo 0)
+PROCS:=$(shell echo "("$(NUM_CPUS)+1")"/1 | bc)
 
 # use these utilities if they are available
 IONICE:=$(shell test -x "$$(which ionice)" && echo ionice -c2 -n7)
