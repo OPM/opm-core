@@ -81,6 +81,12 @@ allocate_grid(size_t ndims     ,
     G = create_grid_empty();
 
     if (G != NULL) {
+        /* Grid fields ---------------------------------------- */
+        G->dimensions       = ndims;
+        G->number_of_cells  = ncells;
+        G->number_of_faces  = nfaces;
+        G->number_of_nodes  = nnodes;
+
         /* Node fields ---------------------------------------- */
         nel                 = nnodes * ndims;
         G->node_coordinates = malloc(nel * sizeof *G->node_coordinates);
