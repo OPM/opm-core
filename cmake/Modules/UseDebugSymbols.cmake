@@ -63,12 +63,24 @@ function (strip_debug_symbols targets)
 	  # again)
 	  get_target_property (_full ${target} LOCATION)
 	  get_filename_component (_dir ${_full} PATH)
+	  get_filename_component (_name ${_full} NAME)
+	  # only libraries have soversion property attached
+	  get_target_property (_target_soversion ${target} SOVERSION)
+	  get_target_property (_target_version ${target} VERSION)
+	  if (_target_soversion)
+		set (_target_file "${_full}.${_target_version}")
+		set (_target_file_name "${_name}.${_target_version}")
+	  else (_target_soversion)
+		set (_target_file "${_full}")
+		set (_target_file_name "${_name}")
+	  endif (_target_soversion)
+	  # do without generator expressions (which doesn't work everywhere)
 	  add_custom_command (TARGET ${target}
 		POST_BUILD
 		WORKING_DIRECTORY ${_dir}
-		COMMAND ${OBJCOPY} ARGS --only-keep-debug $<TARGET_FILE:${target}> $<TARGET_FILE:${target}>.debug
-		COMMAND ${OBJCOPY} ARGS ${_strip_args} $<TARGET_FILE:${target}>
-		COMMAND ${OBJCOPY} ARGS --add-gnu-debuglink=$<TARGET_FILE_NAME:${target}>.debug $<TARGET_FILE:${target}>
+		COMMAND ${OBJCOPY} ARGS --only-keep-debug ${_target_file} ${_target_file}.debug
+		COMMAND ${OBJCOPY} ARGS ${_strip_args} ${_target_file}
+		COMMAND ${OBJCOPY} ARGS --add-gnu-debuglink=${_target_file_name}.debug ${_target_file}
 		VERBATIM
 		)
 	endforeach (target)
