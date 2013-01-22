@@ -157,14 +157,15 @@ function (find_opm_package module deps header lib defs prog conf)
 
   # write status message in the same manner as everyone else
   include (FindPackageHandleStandardArgs)
-  set (_req_vars "${${module}_INCLUDE_DIR}")
-  if (NOT "${lib}" STREQUAL "")
-	list (APPEND _req_vars "${${module}_LIBRARY}")
-  endif (NOT "${lib}" STREQUAL "")
+  if ("${lib}" STREQUAL "")
+	set (_lib_var "")
+  else ("${lib}" STREQUAL "")
+	set (_lib_var "${module}_LIBRARY")
+  endif ("${lib}" STREQUAL "")
   find_package_handle_standard_args (
 	${module}
 	DEFAULT_MSG
-	_req_vars
+	${module}_INCLUDE_DIR ${_lib_var}
 	)
 
   # allow the user to override these from user interface
