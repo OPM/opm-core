@@ -153,7 +153,9 @@ function (find_opm_package module deps header lib defs prog conf)
 	  list (APPEND ${module}_CONFIG_VARS ${_dep}_CONFIG_VARS)
 	endif (DEFINED ${_dep}_CONFIG_VARS)
   endforeach (_dep)
-  list (REMOVE_DUPLICATES ${module}_CONFIG_VARS)
+  if (${module}_CONFIG_VARS)
+	list (REMOVE_DUPLICATES ${module}_CONFIG_VARS)
+  endif (${module}_CONFIG_VARS)
 
   # write status message in the same manner as everyone else
   include (FindPackageHandleStandardArgs)
