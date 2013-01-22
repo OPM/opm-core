@@ -77,8 +77,8 @@ set (CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/CMakeFiles")
 # against using globs to enumerate source code, but if you list the
 # files explicitly you'll change the build files every time you add to
 # the project as well as having to rebuild completely anyway.
-file (GLOB_RECURSE opmcore_SOURCES "opm/core/*.c" "opm/core/*.cpp")
-file (GLOB_RECURSE opmcore_HEADERS "opm/core/*.h" "opm/core/*.hpp")
+file (GLOB_RECURSE opmcore_SOURCES "opm/core/[^.]*.c" "opm/core/[^.]*.cpp")
+file (GLOB_RECURSE opmcore_HEADERS "opm/core/[^.]*.h" "opm/core/[^.]*.hpp")
 
 # Algebraic Multigrid must be compiled together with our program;
 # if it is not available, then remove our corresponding component
@@ -230,7 +230,7 @@ opm_cmake_config (opm-core)
 ### test programs ###
 
 # find the source code
-file (GLOB_RECURSE tests_SOURCES "tests/*.c" "tests/*.cpp")
+file (GLOB_RECURSE tests_SOURCES "tests/[^.]*.c" "tests/[^.]*.cpp")
 
 # conditionally disable tests when features aren't available
 macro (cond_disable_test name)
