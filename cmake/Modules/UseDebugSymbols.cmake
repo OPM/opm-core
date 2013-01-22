@@ -35,7 +35,8 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
 # command to separate the debug information from the executable into
-# its own file; this must be called for each target
+# its own file; this must be called for each target; optionally takes
+# the name of a variable to receive the list of .debug files
 function (strip_debug_symbols targets)
   if (CMAKE_COMPILER_IS_GNUCXX AND OBJCOPY)
 	foreach (target IN LISTS targets)
@@ -83,7 +84,14 @@ function (strip_debug_symbols targets)
 		COMMAND ${OBJCOPY} ARGS --add-gnu-debuglink=${_target_file_name}.debug ${_target_file}
 		VERBATIM
 		)
+	  # add this .debug file to the list
+	  file (RELATIVE_PATH _this_debug_file "${PROJECT_BINARY_DIR}" "${_target_file}.debug")
+	  set (_debug_files ${_debug_files} ${_this_debug_file})
 	endforeach (target)
+	# if optional debug list was requested, then copy to output parameter
+	if (ARGV1)
+	  set (${ARGV1} ${_debug_files} PARENT_SCOPE)
+	endif (ARGV1)
   endif (CMAKE_COMPILER_IS_GNUCXX AND OBJCOPY)
 endfunction (strip_debug_symbols targets)
 
