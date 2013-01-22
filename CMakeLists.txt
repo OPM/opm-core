@@ -198,7 +198,7 @@ install (
 	)
 install (
 	FILES dune.module
-	DESTINATION lib/dunecontrol/opm-core
+	DESTINATION ${CMAKE_INSTALL_LIBDIR_NOARCH}/dunecontrol/opm-core
 	)
 message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")
 
