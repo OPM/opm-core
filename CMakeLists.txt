@@ -187,7 +187,7 @@ set_target_properties (opmcore PROPERTIES
 target_link_libraries (opmcore ${opm-core_LIBRARIES})
 
 # queue this executable to be stripped
-strip_debug_symbols (opmcore)
+strip_debug_symbols (opmcore opm-core_DEBUG)
 
 # we need to know the name of the library which is generated
 get_target_property (opm-core_LIBRARY opmcore LOCATION)
@@ -221,6 +221,10 @@ install (
 	TARGETS opmcore
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	)
+install (
+	FILES ${PROJECT_BINARY_DIR}/${opm-core_DEBUG}
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	)
 install (
 	FILES dune.module
