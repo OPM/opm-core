@@ -203,13 +203,12 @@ configure_vars (
 	)
 
 ### installation ###
-string (LENGTH ${PROJECT_SOURCE_DIR} _prefix_length)
 foreach (_hdr IN LISTS opmcore_HEADERS)
 	get_filename_component (_dir ${_hdr} PATH)
-	string (SUBSTRING ${_dir} ${_prefix_length} -1 _rel_dir)
+	file (RELATIVE_PATH _rel_dir "${PROJECT_SOURCE_DIR}" "${_dir}")
 	install (
 		FILES ${_hdr}
-		DESTINATION include${_rel_dir}
+		DESTINATION include/${_rel_dir}
 		)
 endforeach (_hdr)
 install (
