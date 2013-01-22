@@ -85,11 +85,25 @@ file (GLOB_RECURSE opmcore_HEADERS "opm/core/*.h" "opm/core/*.hpp")
 find_package (AGMG)
 if (AGMG_FOUND)
 	list (APPEND opmcore_SOURCES ${AGMG_SOURCES})
-else (AGMG_FOUND)
+endif (AGMG_FOUND)
+
+# these solvers are only compiled in if their dependency is found
+if (NOT AGMG_FOUND)
 	list (REMOVE_ITEM opmcore_SOURCES
 		${PROJECT_SOURCE_DIR}/opm/core/linalg/LinearSolverAGMG.cpp
 		)
-endif (AGMG_FOUND)
+endif (NOT AGMG_FOUND)
+if (NOT dune-istl_FOUND)
+	list (REMOVE_ITEM opmcore_SOURCES
+		${PROJECT_SOURCE_DIR}/opm/core/linalg/LinearSolverIstl.cpp
+		)
+endif (NOT dune-istl_FOUND)
+if (NOT SuiteSparse_FOUND)
+	list (REMOVE_ITEM opmcore_SOURCES
+		${PROJECT_SOURCE_DIR}/opm/core/linalg/call_umfpack.c
+		${PROJECT_SOURCE_DIR}/opm/core/linalg/LinearSolverUmfpack.cpp
+		)
+endif (NOT SuiteSparse_FOUND)
 
 # these files are provided in source control, but can only compile with Matlab
 # available; we are not supposed to include the TinyXML test prog. regardless
