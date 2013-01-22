@@ -259,7 +259,7 @@ if (DOXYGEN_FOUND)
 		COMMENT "Generating API documentation with Doxygen"
 		VERBATIM
 		)
-	set (_formats html pdf)
+	set (_formats html)
 	foreach (format IN LISTS _formats)
 		string (TOUPPER ${format} FORMAT)
 		install (
