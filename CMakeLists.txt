@@ -41,7 +41,7 @@ list (APPEND opm-core_DEPS
 	# solver
 	"SUPERLU"
 	# xml processing (for config parsing)	
-	"LibXml2 REQUIRED"
+	"TinyXML"
 	# various runtime library enhancements
 	"Boost 1.39.0
 		COMPONENTS date_time filesystem system unit_test_framework REQUIRED"
@@ -92,12 +92,20 @@ else (AGMG_FOUND)
 endif (AGMG_FOUND)
 
 # these files are provided in source control, but can only compile with Matlab
-# available
+# available; we are not supposed to include the TinyXML test prog. regardless
 list (REMOVE_ITEM opmcore_SOURCES
 	${PROJECT_SOURCE_DIR}/opm/core/grid/cpgpreprocess/mxgrdecl.c
 	${PROJECT_SOURCE_DIR}/opm/core/grid/cpgpreprocess/processgrid.c
 	${PROJECT_SOURCE_DIR}/opm/core/utility/parameters/tinyxml/xmltest.cpp
 	)
+
+# remove inline TinyXML if a system version was found
+if (TinyXML_FOUND)
+	file (GLOB_RECURSE _inline_tinyxml "opm/core/utility/parameters/tinyxml/*")
+	foreach (_file IN LISTS _inline_tinyxml)
+		list (REMOVE_ITEM opmcore_SOURCES ${_file})
+	endforeach (_file)
+endif (TinyXML_FOUND)
 
 # HAVE_ERT is used as an #ifdef, not as an #if in the source code, if it
 # is not true, then it should be unset altogether
