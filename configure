@@ -26,6 +26,9 @@ Optional Packages:
                           working Fortran 90 environment.
   --with-umfpack=PATH     use UMFPACK/SuiteSparse from a specified location
   --with-ert=PATH         Use ERT libraries
+  --with-tinyxml=PATH     use TinyXML library from a specified location
+                          (Note: if not found, then a bundled library will
+                           be used)
 
 Some influential environment variables:
   CC          C compiler command
@@ -94,6 +97,9 @@ while getopts -- ":-:" optchar; do
             umfpack)
               pkgname="SuiteSparse"
               ;;
+            tinyxml)
+              pkgname="TinyXML"
+              ;;
           esac
           # packages need different suffix for their root (sic)
           case "${pkgname}" in
@@ -105,7 +111,8 @@ while getopts -- ":-:" optchar; do
               ;;
             dune-common |\
             dune-istl   |\
-            SuiteSparse)
+            SuiteSparse |\
+            TinyXML)
               rootvar="${pkgname}_ROOT"
               ;;
             superlu)
