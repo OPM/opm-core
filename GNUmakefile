@@ -26,7 +26,7 @@ export CCACHE_DISABLE:=1
 # in a nice environment so that it doesn't hog our workstation. if there
 # is nothing else happening on the box, then it will run just as fast
 __everything:
-	@$(IONICE) $(NICE) $(MAKE) -f Makefile -j $(PROCS) $(MAKECMDGOALS)
+	@$(IONICE) $(NICE) $(MAKE) --no-print-directory -f Makefile -j $(PROCS) $(MAKECMDGOALS)
 
 # automatically generate all the goals we are asked to make and delegate
 # processing of them to the real makefile through the dependency (since
