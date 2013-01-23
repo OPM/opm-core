@@ -15,6 +15,9 @@ PROCS:=$(shell echo "("$(NUM_CPUS)+1")"/1 | bc)
 IONICE:=$(shell test -x "$$(which ionice)" && echo ionice -c2 -n7)
 NICE:=$(shell test -x "$$(which nice)" && echo nice)
 
+# we do dependency management the right way; don't attempt to cache
+export CCACHE_DISABLE:=1
+
 # ignore that there may be files with these names, we are going to call
 # the other make regardless
 .PHONY: __everything $(MAKECMDGOALS)
