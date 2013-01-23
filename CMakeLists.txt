@@ -226,6 +226,11 @@ configure_vars (
 	FILE CMAKE "${PROJECT_BINARY_DIR}/opm-core-config.cmake"
 	APPEND "${opm-core_CONFIG_VARS}"
 	)
+configure_file (
+	${PROJECT_SOURCE_DIR}/dune.module.in
+	${PROJECT_BINARY_DIR}/dune.module
+	@ONLY
+	)
 
 # pre-compile common headers; this is setup *after* the library to pick
 # up extra options set there
@@ -261,7 +266,7 @@ install (
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	)
 install (
-	FILES dune.module
+	FILES ${PROJECT_BINARY_DIR}/dune.module
 	DESTINATION ${CMAKE_INSTALL_LIBDIR_NOARCH}/dunecontrol/opm-core
 	)
 message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")
