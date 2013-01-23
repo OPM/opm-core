@@ -127,6 +127,10 @@ if (TinyXML_FOUND)
 	endforeach (_file)
 endif (TinyXML_FOUND)
 
+# anyhow remove it from the header list (so it doesn't get installed)
+list (REMOVE_ITEM opmcore_HEADERS "opm/core/utility/parameters/tinyxml/tinystr.h")
+list (REMOVE_ITEM opmcore_HEADERS "opm/core/utility/parameters/tinyxml/tinyxml.h")
+
 # HAVE_ERT is used as an #ifdef, not as an #if in the source code, if it
 # is not true, then it should be unset altogether
 if (NOT HAVE_ERT)
