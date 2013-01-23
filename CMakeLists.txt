@@ -30,6 +30,9 @@ endif (CMAKE_VERSION VERSION_LESS "2.8.7")
 # use tricks to do faster builds
 include (UseFastBuilds)
 
+# precompiled headers
+include (UsePrecompHeaders)
+
 # macro to set standard variables (INCLUDE_DIRS, LIBRARIES etc.)
 include (OpmFind)
 
@@ -83,8 +86,20 @@ set (CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/CMakeFiles")
 # against using globs to enumerate source code, but if you list the
 # files explicitly you'll change the build files every time you add to
 # the project as well as having to rebuild completely anyway.
-file (GLOB_RECURSE opmcore_SOURCES "opm/core/[^.]*.c" "opm/core/[^.]*.cpp")
-file (GLOB_RECURSE opmcore_HEADERS "opm/core/[^.]*.h" "opm/core/[^.]*.hpp")
+file (GLOB_RECURSE opmcore_C_SOURCES "opm/core/[^.]*.c")
+file (GLOB_RECURSE opmcore_CXX_SOURCES "opm/core/[^.]*.cpp")
+file (GLOB_RECURSE opmcore_C_HEADERS "opm/core/[^.]*.h")
+file (GLOB_RECURSE opmcore_CXX_HEADERS "opm/core/[^.]*.hpp")
+
+# remove pre-compile headers from output list
+set (opmcore_PRECOMP_CXX_HEADER "opm/core/opm-core-pch.hpp")
+list (REMOVE_ITEM opmcore_CXX_HEADERS
+	${PROJECT_SOURCE_DIR}/${opmcore_PRECOMP_CXX_HEADER}
+	)
+
+# merge both languages into one compilation/installation
+set (opmcore_SOURCES ${opmcore_C_SOURCES} ${opmcore_CXX_SOURCES})
+set (opmcore_HEADERS ${opmcore_C_HEADERS} ${opmcore_CXX_HEADERS})
 
 # Algebraic Multigrid must be compiled together with our program;
 # if it is not available, then remove our corresponding component
@@ -210,6 +225,21 @@ configure_file (
 configure_vars (
 	FILE CMAKE "${PROJECT_BINARY_DIR}/opm-core-config.cmake"
 	APPEND "${opm-core_CONFIG_VARS}"
+	)
+
+# pre-compile common headers; this is setup *after* the library to pick
+# up extra options set there
+get_target_property (_type opmcore TYPE)
+precompile_header (CXX ${_type}
+	HEADER "${opmcore_PRECOMP_CXX_HEADER}"
+	TARGET opmcore_CXX_pch
+	FLAGS  opmcore_PRECOMP_CXX_FLAGS
+	)
+# must set property on source files instead of entire target, because
+# it only applies to C++ modules (and cannot be used for C)
+set_source_files_properties (${opmcore_CXX_SOURCES} PROPERTIES
+	OBJECT_DEPENDS "${opmcore_CXX_pch}"
+	COMPILE_FLAGS  "${opmcore_PRECOMP_CXX_FLAGS}"
 	)
 
 ### installation ###
