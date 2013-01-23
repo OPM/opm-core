@@ -52,13 +52,13 @@
 #include <boost/filesystem.hpp>
 
 #ifdef HAVE_ERT
-#include <fortio.h>
-#include <ecl_grid.h>
-#include <ecl_kw_magic.h>
-#include <ecl_kw.h>
-#include <ecl_util.h>
-#include <ecl_init_file.h>
-#include <ecl_file.h>
+#include <ert/ecl/fortio.h>
+#include <ert/ecl/ecl_grid.h>
+#include <ert/ecl/ecl_kw_magic.h>
+#include <ert/ecl/ecl_kw.h>
+#include <ert/ecl/ecl_util.h>
+#include <ert/ecl/ecl_init_file.h>
+#include <ert/ecl/ecl_file.h>
 #endif
 
 using namespace std;

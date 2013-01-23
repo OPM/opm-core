@@ -47,8 +47,8 @@ along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <opm/core/grid/cornerpoint_grid.h>
 #ifdef HAVE_ERT
-#include <ecl_kw.h>
-#include <ecl_grid.h>
+#include <ert/ecl/ecl_kw.h>
+#include <ert/ecl/ecl_grid.h>
 #endif
 
 

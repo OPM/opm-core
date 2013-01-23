@@ -32,9 +32,9 @@
 
 #ifdef HAVE_ERT // This one goes almost to the bottom of the file
 
-#include <ecl_grid.h>
-#include <ecl_util.h>
-#include <ecl_rst_file.h>
+#include <ert/ecl/ecl_grid.h>
+#include <ert/ecl/ecl_util.h>
+#include <ert/ecl/ecl_rst_file.h>
 
 
 namespace Opm
