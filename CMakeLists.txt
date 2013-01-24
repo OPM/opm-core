@@ -234,18 +234,25 @@ configure_file (
 
 # pre-compile common headers; this is setup *after* the library to pick
 # up extra options set there
-get_target_property (_type opmcore TYPE)
-precompile_header (CXX ${_type}
-	HEADER "${opmcore_PRECOMP_CXX_HEADER}"
-	TARGET opmcore_CXX_pch
-	FLAGS  opmcore_PRECOMP_CXX_FLAGS
-	)
-# must set property on source files instead of entire target, because
-# it only applies to C++ modules (and cannot be used for C)
-set_source_files_properties (${opmcore_CXX_SOURCES} PROPERTIES
-	OBJECT_DEPENDS "${opmcore_CXX_pch}"
-	COMPILE_FLAGS  "${opmcore_PRECOMP_CXX_FLAGS}"
-	)
+option (PRECOMPILE_HEADERS "Precompile common headers for speed." ON)
+mark_as_advanced (PRECOMPILE_HEADERS)
+if (PRECOMPILE_HEADERS)
+	get_target_property (_type opmcore TYPE)
+	precompile_header (CXX ${_type}
+		HEADER "${opmcore_PRECOMP_CXX_HEADER}"
+		TARGET opmcore_CXX_pch
+		FLAGS  opmcore_PRECOMP_CXX_FLAGS
+		)
+	# must set property on source files instead of entire target, because
+	# it only applies to C++ modules (and cannot be used for C)
+	set_source_files_properties (${opmcore_CXX_SOURCES} PROPERTIES
+		OBJECT_DEPENDS "${opmcore_CXX_pch}"
+		COMPILE_FLAGS  "${opmcore_PRECOMP_CXX_FLAGS}"
+		)
+	message (STATUS "Precompiled headers: ${opmcore_CXX_pch}")
+else (PRECOMPILE_HEADERS)
+	message (STATUS "Precompiled headers: disabled")
+endif (PRECOMPILE_HEADERS)
 
 ### installation ###
 foreach (_hdr IN LISTS opmcore_HEADERS)
