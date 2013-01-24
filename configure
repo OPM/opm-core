@@ -16,6 +16,7 @@ Optional Features:
                           of the options shared and static may be built.
   --disable-debug         build a release version of the library [default=no]
   --disable-pch           do not use precompiled headers (if buggy compiler)
+  --disable-silent-rules  print every compilation statement as executed
 
 Optional Packages:
   --with-dune-common=PATH use DUNE-common library from a specified location
@@ -67,6 +68,8 @@ prefix=/usr/local
 buildtype=Debug
 #pch_use=" -DPRECOMPILE_HEADERS:BOOL=ON"
 pch_use=
+#silent_rules=" -DCMAKE_VERBOSE_MAKEFILE=OFF"
+silent_rules=
 
 # this variable will get feature options
 FEATURES=
@@ -149,6 +152,10 @@ while getopts -- ":-:" optchar; do
               pch_use=" -DPRECOMPILE_HEADERS:BOOL=OFF"
               pkgname=""
               ;;
+            silent-rules)
+              silent_rules=" -DCMAKE_VERBOSE_MAKEFILE=ON"
+              pkgname=""
+              ;;
             agmg |\
             ert  |\
             superlu)
@@ -203,7 +210,7 @@ shift $((OPTIND-1))
 ENVVARS=${@/ACLOCAL_*=*/}
 
 # pass everything on to CMake
-CMDLINE="env ${ENVVARS} cmake \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use} ${FEATURES}"
+CMDLINE="env ${ENVVARS} cmake \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules} ${FEATURES}"
 echo --- calling CMake for opm-core ---
 echo ${CMDLINE}
 eval exec ${CMDLINE}
