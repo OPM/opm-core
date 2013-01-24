@@ -279,6 +279,8 @@ include (OpmProject)
 opm_cmake_config (opm-core)
 
 ### test programs ###
+enable_testing ()
+include (CTest)
 
 # enumerate all testing programs
 file (GLOB_RECURSE tests_SOURCES "tests/test_*.cpp")
@@ -308,6 +310,9 @@ foreach (test_FILE IN LISTS tests_SOURCES)
 		)
 	target_link_libraries (${test_NAME} opmcore ${opm-core_LIBRARIES})
 	strip_debug_symbols (${test_NAME})
+	string (REGEX REPLACE "^test_([^/]*)$" "\\1" test_FANCY "${test_NAME}")
+	get_target_property (test_LOC ${test_NAME} LOCATION)
+	add_test (${test_FANCY} ${test_LOC})
 endforeach (test_FILE)
 
 # ideally this should run the tests, but for now we only test if they
