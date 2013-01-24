@@ -261,9 +261,12 @@ install (
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	)
+# only this directory seems to be searched for debug info
+set (DEBUG_FILE_DIRECTORY /usr/lib/debug CACHE LOCATION "GDB debug file directory")
+mark_as_advanced (DEBUG_FILE_DIRECTORY)
 install (
 	FILES ${PROJECT_BINARY_DIR}/${opm-core_DEBUG}
-	DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	DESTINATION ${DEBUG_FILE_DIRECTORY}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
 	)
 install (
 	FILES ${PROJECT_BINARY_DIR}/dune.module
