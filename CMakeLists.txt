@@ -288,6 +288,29 @@ message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")
 include (OpmProject)
 opm_cmake_config (opm-core)
 
+### tutorials ###
+
+# enumerate tutorials in project
+file (GLOB tutorial_SOURCES "tutorials/tutorial[0-9].cpp")
+
+# add each tutorial as a target of its own
+add_custom_target (tutorials)
+foreach (tutorial_FILE IN LISTS tutorial_SOURCES)
+	# get the name of the executable based on the source code file
+	get_filename_component (tutorial_NAME "${tutorial_FILE}" NAME_WE)
+
+	# setup an executable, linking to the main library
+	add_executable (${tutorial_NAME} EXCLUDE_FROM_ALL ${tutorial_FILE})
+	set_target_properties (${tutorial_NAME} PROPERTIES
+		LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
+		)
+	target_link_libraries (${tutorial_NAME} opmcore ${opm-core_LIBRARIES})
+	strip_debug_symbols (${tutorial_NAME})
+
+	# add to list of tutorials to build
+	add_dependencies (tutorials ${tutorial_NAME})
+endforeach (tutorial_FILE)
+
 ### test programs ###
 enable_testing ()
 include (CTest)
