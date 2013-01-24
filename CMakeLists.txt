@@ -280,8 +280,10 @@ opm_cmake_config (opm-core)
 
 ### test programs ###
 
-# find the source code
-file (GLOB_RECURSE tests_SOURCES "tests/[^.]*.c" "tests/[^.]*.cpp")
+# enumerate all testing programs
+file (GLOB_RECURSE tests_SOURCES "tests/test_*.cpp")
+file (GLOB_RECURSE not_tests_SOURCES "tests/not-unit/test_*.cpp")
+list (REMOVE_ITEM tests_SOURCES ${not_tests_SOURCES})
 
 # conditionally disable tests when features aren't available
 macro (cond_disable_test name)
