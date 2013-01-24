@@ -318,6 +318,7 @@ endforeach (test_FILE)
 # ideally this should run the tests, but for now we only test if they
 # compile without errors
 add_custom_target (check
+	COMMAND ${CMAKE_CTEST_COMMAND}
 	DEPENDS tests
 	COMMENT Checking if library is functional
 	VERBATIM
