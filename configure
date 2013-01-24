@@ -5,7 +5,8 @@ usage () {
   cat <<EOF
 Installation directories:
   --prefix=PREFIX         install architecture-independent files in PREFIX
-                          [/usr/local]
+                          [/usr/local]. Note: set DESTDIR=PATH when doing
+                          \`make install' to install to a different sysroot.
 
 Optional Features:
   --disable-FEATURE       do not include FEATURE
