@@ -150,10 +150,14 @@ foreach (module IN LISTS SuiteSparse_MODULES)
   mark_as_advanced (${MODULE}_LIBRARY)
 endforeach (module)
 
-list (REMOVE_DUPLICATES SuiteSparse_INCLUDE_DIRS)
-list (REVERSE SuiteSparse_LIBRARIES)
-list (REMOVE_DUPLICATES SuiteSparse_LIBRARIES)
-list (REVERSE SuiteSparse_LIBRARIES)
+if (SuiteSparse_INCLUDE_DIRS)
+  list (REMOVE_DUPLICATES SuiteSparse_INCLUDE_DIRS)
+endif (SuiteSparse_INCLUDE_DIRS)
+if (SuiteSparse_LIBRARIES)
+  list (REVERSE SuiteSparse_LIBRARIES)
+  list (REMOVE_DUPLICATES SuiteSparse_LIBRARIES)
+  list (REVERSE SuiteSparse_LIBRARIES)
+endif (SuiteSparse_LIBRARIES)
 
 # on MacOS X the libraries are in a framework directory and an option must be
 # added on the compile line to relate headers to that directory
