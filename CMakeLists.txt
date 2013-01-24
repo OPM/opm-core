@@ -27,6 +27,9 @@ if (CMAKE_VERSION VERSION_LESS "2.8.7")
 	list (APPEND CMAKE_MODULE_PATH "${opm-core_MODULE_DIR}/compat-2.8.7")
 endif (CMAKE_VERSION VERSION_LESS "2.8.7")
 
+# don't import more libraries than we need to
+include (UseOnlyNeeded)
+
 # use tricks to do faster builds
 include (UseFastBuilds)
 
