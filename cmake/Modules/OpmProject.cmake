@@ -2,7 +2,28 @@
 
 # installation of CMake modules to help user programs locate the library
 function (opm_cmake_config name)
-  #  replace the build directory with the target directory in the
+  # write configuration file to locate library
+  configure_file (
+	${PROJECT_SOURCE_DIR}/${name}-config.cmake.in
+	${PROJECT_BINARY_DIR}/${name}-config.cmake
+	@ONLY
+	)
+  configure_file (
+	${PROJECT_SOURCE_DIR}/${name}-config-version.cmake.in
+	${PROJECT_BINARY_DIR}/${name}-config-version.cmake
+	@ONLY
+	)
+  configure_vars (
+	FILE CMAKE "${PROJECT_BINARY_DIR}/${name}-config.cmake"
+	APPEND "${${name}_CONFIG_VARS}"
+	)
+  configure_file (
+	${PROJECT_SOURCE_DIR}/dune.module.in
+	${PROJECT_BINARY_DIR}/dune.module
+	@ONLY
+	)
+
+  # replace the build directory with the target directory in the
   # variables that contains build paths
   string (REPLACE
 	"${PROJECT_SOURCE_DIR}"

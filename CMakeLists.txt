@@ -211,30 +211,6 @@ target_link_libraries (opmcore ${opm-core_LIBRARIES})
 # queue this executable to be stripped
 strip_debug_symbols (opmcore opm-core_DEBUG)
 
-# we need to know the name of the library which is generated
-get_target_property (opm-core_LIBRARY opmcore LOCATION)
-
-# write configuration file to locate library
-configure_file (
-	${PROJECT_SOURCE_DIR}/opm-core-config.cmake.in
-	${PROJECT_BINARY_DIR}/opm-core-config.cmake
-	@ONLY
-	)
-configure_file (
-	${PROJECT_SOURCE_DIR}/opm-core-config-version.cmake.in
-	${PROJECT_BINARY_DIR}/opm-core-config-version.cmake
-	@ONLY
-	)
-configure_vars (
-	FILE CMAKE "${PROJECT_BINARY_DIR}/opm-core-config.cmake"
-	APPEND "${opm-core_CONFIG_VARS}"
-	)
-configure_file (
-	${PROJECT_SOURCE_DIR}/dune.module.in
-	${PROJECT_BINARY_DIR}/dune.module
-	@ONLY
-	)
-
 # pre-compile common headers; this is setup *after* the library to pick
 # up extra options set there
 option (PRECOMPILE_HEADERS "Precompile common headers for speed." ON)
@@ -283,6 +259,9 @@ install (
 	DESTINATION ${CMAKE_INSTALL_LIBDIR_NOARCH}/dunecontrol/opm-core
 	)
 message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")
+
+# we need to know the name of the library which is generated
+get_target_property (opm-core_LIBRARY opmcore LOCATION)
 
 # installation of CMake modules to help user programs locate the library
 include (OpmProject)
