@@ -95,7 +95,7 @@ function (find_opm_package module deps header lib defs prog conf)
 	  NAMES "${lib}"
 	  PATHS ${${module}_DIR} ${${module}_ROOT}
 	  HINTS ${PkgConf_${module}_LIBRARY_DIRS}
-	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib32" "lib64"
+	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
 	  )
   else (NOT "${lib}" STREQUAL "")
 	set (${module}_LIBRARY "")

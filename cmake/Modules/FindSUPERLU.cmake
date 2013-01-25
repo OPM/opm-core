@@ -53,14 +53,14 @@ find_path(SUPERLU_INCLUDE_DIR
 find_library(SUPERLU_LIBRARY
   NAMES "superlu_4.3" "superlu_4.2" "superlu_4.1" "superlu_4.0" "superlu_3.1" "superlu_3.0" "superlu"
   PATHS ${SUPERLU_PREFIX}
-  PATH_SUFFIXES "lib" "lib32" "lib64"
+  PATH_SUFFIXES "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   NO_DEFAULT_PATH
 )
 
 # look for library files, including default paths
 find_library(SUPERLU_LIBRARY
   NAMES "superlu_4.3" "superlu_4.2" "superlu_4.1" "superlu_4.0" "superlu_3.1" "superlu_3.0" "superlu"
-  PATH_SUFFIXES "lib" "lib32" "lib64"
+  PATH_SUFFIXES "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
 )
 
 # check version specific macros

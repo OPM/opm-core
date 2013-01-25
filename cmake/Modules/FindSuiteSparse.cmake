@@ -91,7 +91,7 @@ foreach (module IN LISTS SuiteSparse_MODULES)
   find_library (${MODULE}_LIBRARY
 	NAMES ${module}
 	PATHS ${SuiteSparse_SEARCH_LIBS}
-	PATH_SUFFIXES ".libs" "lib" "lib32" "lib64"
+	PATH_SUFFIXES ".libs" "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
 	)
   # start out by including the module itself; other dependencies will be added later
   set (${MODULE}_INCLUDE_DIRS ${${MODULE}_INCLUDE_DIR})
