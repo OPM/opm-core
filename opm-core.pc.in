@@ -1,0 +1,6 @@
+Name: OPM Core
+Description: Open Porous Media Initiative Core Library @major@.@minor@
+Version: @major@.@minor@
+URL: http://opm-project.org
+Libs: -l@target@ @libs@
+Cflags: @includes@ @defs@
