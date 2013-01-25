@@ -80,12 +80,25 @@ function (find_opm_package module deps header lib defs prog conf)
   set (${module}_DEFINITIONS ${PkgConf_${module}_CFLAGS_OTHER})
   set (${module}_LINKER_FLAG ${PkgConf_${module}_LDFLAGS_OTHER})
 
+  # if the user hasn't specified any location, and it isn't found
+  # in standard system locations either, then start to wander
+  # about and look for it in proximity to ourself. Qt Creator likes
+  # to put the build-directories as siblings to the source trees,
+  # but with a -build suffix
+  if (NOT (${module}_DIR OR ${module}_ROOT))
+	string (TOLOWER "${module}" _module_lower)
+	set (_guess "../${module}" "../${module}-build"
+	  "../${_module_lower}" "../${_module_lower}-build"
+	  )
+  endif (NOT (${module}_DIR OR ${module}_ROOT))
+
   # search for this include and library file to get the installation
-  # directory of the package
+  # directory of the package; hints are searched before the system locations,
+  # paths are searched afterwards
   find_path (${module}_INCLUDE_DIR
 	NAMES "${header}"
-	PATHS ${${module}_DIR} ${${module}_ROOT}
-	HINTS ${PkgConf_${module}_INCLUDE_DIRS}
+	PATHS ${_guess}
+	HINTS ${${module}_DIR} ${${module}_ROOT} ${PkgConf_${module}_INCLUDE_DIRS}
 	PATH_SUFFIXES "include"
 	)
 
@@ -93,8 +106,8 @@ function (find_opm_package module deps header lib defs prog conf)
   if (NOT "${lib}" STREQUAL "")
 	find_library (${module}_LIBRARY
 	  NAMES "${lib}"
-	  PATHS ${${module}_DIR} ${${module}_ROOT}
-	  HINTS ${PkgConf_${module}_LIBRARY_DIRS}
+	  PATHS ${_guess}
+	  HINTS ${${module}_DIR} ${${module}_ROOT} ${PkgConf_${module}_LIBRARY_DIRS}
 	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
 	  )
   else (NOT "${lib}" STREQUAL "")
