@@ -33,3 +33,11 @@ bin/
 lib/
 Doxyfile
 Documentation
+dune.module
+*.pc
+install_manifest.txt
+
+# testing framework
+CTestTestfile.cmake
+DartConfiguration.tcl
+Testing/
