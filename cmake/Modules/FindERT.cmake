@@ -22,34 +22,56 @@ endif (FIND_QUIETLY)
 
 # ERT doesn't have any config-mode file, so we need to specify the root
 # directory in its own variable
-find_path (ERT_INCLUDE_DIR
-  NAMES "ecl_util.h"
-  HINTS "${PROJECT_BINARY_DIR}/../ert"
-  PATHS "${ERT_ROOT}"
-  PATH_SUFFIXES "devel/libecl/src" "include"
+find_path (ERT_ECL_INCLUDE_DIR
+  NAMES "ert/ecl/ecl_util.h"
+  HINTS "${ERT_ROOT}"
+  PATHS "../ert"
+  PATH_SUFFIXES "devel/libecl/include/" "include"
   DOC "Path to ERT Eclipse library header files"
+  )
+find_path (ERT_UTIL_INCLUDE_DIR
+  NAMES "ert/util/stringlist.h"
+  HINTS "${ERT_ROOT}"
+  PATHS "../ert"
+  PATH_SUFFIXES "devel/libert_util/include/" "include"
+  DOC "Path to ERT Eclipse library header files"
+  )
+find_path (ERT_GEN_INCLUDE_DIR
+  NAMES "ert/util/int_vector.h"
+  HINTS "${ERT_ROOT}"
+  PATHS "${PROJECT_BINARY_DIR}/../ert" "${PROJECT_BINARY_DIR}/../ert-build"
+  PATH_SUFFIXES "libert_util/include/" "include"
+  DOC "Path to ERT generated library header files"
   )
 
 # need all of these libraries
 find_library (ERT_LIBRARY_ECL
   NAMES "ecl"
-  PATHS "${ERT_ROOT}"
-  PATH_SUFFIXES "devel/lib" "lib" "lib64" "lib32"
+  HINTS "${ERT_ROOT}"
+  PATHS "${PROJECT_BINARY_DIR}/../ert" "${PROJECT_BINARY_DIR}/../ert-build"
+  PATH_SUFFIXES "lib" "lib64" "lib32" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   DOC "Path to ERT Eclipse library archive/shared object files"
   )
 find_library (ERT_LIBRARY_GEOMETRY
-  NAMES "geometry"
-  PATHS "${ERT_ROOT}"
-  PATH_SUFFIXES "devel/lib" "lib" "lib64" "lib32"
+  NAMES "ert_geometry"
+  HINTS "${ERT_ROOT}"
+  PATHS "${PROJECT_BINARY_DIR}/../ert" "${PROJECT_BINARY_DIR}/../ert-build"
+  PATH_SUFFIXES "lib" "lib64" "lib32" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   DOC "Path to ERT Geometry library archive/shared object files"
   )
 find_library (ERT_LIBRARY_UTIL
   NAMES "ert_util"
+  HINTS "${PROJECT_BINARY_DIR}/../ert" "${PROJECT_BINARY_DIR}/../ert-build"
   PATHS "${ERT_ROOT}"
-  PATH_SUFFIXES "devel/lib" "lib" "lib64" "lib32"
+  PATH_SUFFIXES "lib" "lib64" "lib32" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   DOC "Path to ERT Utilities library archive/shared object files"
   )
 # the "library" found here is actually a list of several files
+list (APPEND ERT_INCLUDE_DIR
+  ${ERT_ECL_INCLUDE_DIR}
+  ${ERT_UTIL_INCLUDE_DIR}
+  ${ERT_GEN_INCLUDE_DIR}
+  )
 list (APPEND ERT_LIBRARY
   ${ERT_LIBRARY_ECL}
   ${ERT_LIBRARY_GEOMETRY}
@@ -140,10 +162,14 @@ endif (UNIX)
 # since OpenMP often implies pthreads, we need to tidy up
 # (last instance of library must be left standing, thus reversing that
 # list before removing duplicates)
-list (REMOVE_DUPLICATES ERT_INCLUDE_DIRS)
-list (REVERSE ERT_LIBRARIES)
-list (REMOVE_DUPLICATES ERT_LIBRARIES)
-list (REVERSE ERT_LIBRARIES)
+if (ERT_INCLUDE_DIRS)
+  list (REMOVE_DUPLICATES ERT_INCLUDE_DIRS)
+endif (ERT_INCLUDE_DIRS)
+if (ERT_LIBRARIES)
+  list (REVERSE ERT_LIBRARIES)
+  list (REMOVE_DUPLICATES ERT_LIBRARIES)
+  list (REVERSE ERT_LIBRARIES)
+endif (ERT_LIBRARIES)
 
 # linker flags may not be specified at all
 if (DEFINED ERT_LINKER_FLAGS)
@@ -158,7 +184,7 @@ if (NOT ERT_LIBRARIES MATCHES "-NOTFOUND")
   set (CMAKE_REQUIRED_INCLUDES ${ERT_INCLUDE_DIR})
   set (CMAKE_REQUIRED_LIBRARIES ${ERT_LIBRARIES})
   check_c_source_compiles (
-	"#include <ecl_util.h>
+	"#include <ert/ecl/ecl_util.h>
 int main (void) {
   int sz;
   sz = ecl_util_get_sizeof_ctype (ECL_INT_TYPE);
