@@ -32,16 +32,13 @@ function (opm_cmake_config name)
 	"${${name}_INCLUDE_DIRS}"
 	)
   string (REPLACE
-	"${PROJECT_BINARY_DIR}/lib"
-	"${CMAKE_INSTALL_PREFIX}/lib"
+	"${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+	"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}"
 	${name}_LIBRARY
 	"${${name}_LIBRARY}"
 	)
-  string (REPLACE
-	"${PROJECT_BINARY_DIR}/lib"
-	"${CMAKE_INSTALL_PREFIX}/lib"
-	CMAKE_LIBRARY_OUTPUT_DIRECTORY
-	"${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+  set (CMAKE_LIBRARY_OUTPUT_DIRECTORY
+	"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}"
 	)
   # create a config mode file which targets the install directory instead
   # of the build directory (using the same input template)
