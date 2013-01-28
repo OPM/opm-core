@@ -12,6 +12,8 @@
 #include <opm/core/GridManager.hpp>
 #include <opm/core/eclipse/EclipseGridParser.hpp>
 
+#include <cstddef>
+
 BOOST_AUTO_TEST_CASE(SingleColumnTest)
 {
     using namespace Opm;
@@ -29,7 +31,6 @@ BOOST_AUTO_TEST_CASE(SingleColumnTest)
 
     BOOST_CHECK_EQUAL_COLLECTIONS(correct_answer.begin(), correct_answer.end(),
                                   columns[0].begin(), columns[0].end());
-
 }
 
 
@@ -54,7 +55,6 @@ BOOST_AUTO_TEST_CASE(FourByFourColumnTest)
         BOOST_CHECK_EQUAL_COLLECTIONS(correct_answer[i].begin(), correct_answer[i].end(),
                                       columns[i].begin(), columns[i].end());
     }
-
 }
 
 
@@ -101,47 +101,58 @@ BOOST_AUTO_TEST_CASE(DisjointColumn)
 "13*1                                            \n"
 "/                                               \n"
 "\n";
-    using namespace Opm;
-    std::istringstream is(grdecl);
-    EclipseGridParser deck;
-    deck.read(is);
-    GridManager manager(deck);
 
-    std::vector<std::vector<int> > columns;
-    extractColumn(*manager.c_grid(), columns);
-    // for (size_t i = 0; i < columns.size(); ++i) {
-    //     for (size_t j = 0; j < columns[i].size(); ++j) {
-    //         std::cout << columns[i][j] << ' ';
-    //     }
-    //     std::cout << '\n';
-    // }
-    // std::cout << std::endl;
+    typedef std::vector< std::vector<int> > VVI;
 
-    const int correct[10][3] = { { 0, 1, 2 },
-                                 { 3, 4, 5 },
-                                 { 6, 7, 8 },
-                                 { 9, 10, 11 },
-                                 { 13, -1, -1 },
-                                 { 14, 15, 16 },
-                                 { 17, 18, 19 },
-                                 { 20, 21, 22 },
-                                 { 23, 24, 25 },
-                                 { 12, -1, -1 } };
-    std::vector<std::vector<int> > correct_answer;
-    correct_answer.resize(10);
-    for(int i = 0; i < 10; i++) {
-        for(int j = 0; j < 3; j++) {
+    const int correct[][3] = { {  0,   9,  17 }  ,  // 0
+                               {  1,  10,  18 }  ,  // 1
+                               {  2,  11,  19 }  ,  // 2
+                               {  3,  12,  20 }  ,  // 3
+                               { 21, - 1, - 1 }  ,  // 4
+                               {  5,  13,  22 }  ,  // 5
+                               {  6,  14,  23 }  ,  // 6
+                               {  7,  15,  24 }  ,  // 7
+                               {  8,  16,  25 }  ,  // 8
+                               {  4, - 1, - 1 } };  // 9
+
+    const std::size_t ncol = (sizeof correct) / (sizeof correct[0]);
+
+    VVI correct_answer(ncol);
+
+    for (std::size_t i = 0; i < ncol; ++i) {
+        for (std::size_t j = 0; j < 3; ++j) {
             correct_answer[i].push_back(correct[i][j]);
         }
     }
     correct_answer[4].resize(1);
     correct_answer[9].resize(1);
 
-    BOOST_CHECK_EQUAL(columns.size(), 10);
+    std::istringstream is(grdecl);
 
-    for(int i = 0; i < 10; i++) {
-        BOOST_CHECK_EQUAL_COLLECTIONS(correct_answer[i].begin(), correct_answer[i].end(),
-                                      columns[i].begin(), columns[i].end());
+    Opm::EclipseGridParser deck;
+    deck.read(is);
+    Opm::GridManager manager(deck);
+
+    VVI columns;
+    Opm::extractColumn(*manager.c_grid(), columns);
+
+#if 0
+    for (size_t i = 0; i < columns.size(); ++i) {
+        for (size_t j = 0; j < columns[i].size(); ++j) {
+            std::cout << columns[i][j] << ' ';
+        }
+        std::cout << '\n';
     }
+#endif
 
+    BOOST_CHECK_EQUAL(columns.size(), correct_answer.size());
+
+    for (VVI::iterator
+        xb = correct_answer.begin(), xe = correct_answer.end(),
+        cb = columns       .begin(), ce = columns       .end();
+        xb != xe; ++xb, ++cb) {
+
+        BOOST_CHECK_EQUAL_COLLECTIONS((*xb).begin(), (*xb).end(),
+                                      (*cb).begin(), (*cb).end());
+    }
 }
