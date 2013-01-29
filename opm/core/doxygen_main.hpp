@@ -46,8 +46,8 @@ resources used by a grid.
 For C++ users, the Opm::GridManager class can be used to encapsulate
 creation and destruction of an UnstructuredGrid. The method
 Opm::GridManager::c_grid() provides access to the underlying
-UnstructuredGrid struct. This class also provides an easy way
-to initialize a grid from an Eclipse-format input deck, via the
+UnstructuredGrid structure. This class also provides an easy way
+to initialize a grid from an ECLIPSE-format input deck, via the
 constructor taking an Opm::EclipseGridParser.
 
 
@@ -80,9 +80,8 @@ the C++ classes
 - Opm::IncompTpfa (incompressible TPFA discretization)
 - Opm::CompressibleTpfa (compressible TPFA discretization)
 
-A number of other solvers and interfaces are available, but are not
-recommended for use at this time.
-
+A number of other solvers and interfaces are available.
+These solvers wrap low-level features that should not be used in client code.
 
 <h3>Transport solvers</h3>
 
