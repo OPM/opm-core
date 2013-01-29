@@ -46,12 +46,57 @@ resources used by a grid.
 For C++ users, the Opm::GridManager class can be used to encapsulate
 creation and destruction of an UnstructuredGrid. The method
 Opm::GridManager::c_grid() provides access to the underlying
-UnstructuredGrid struct.
+UnstructuredGrid struct. This class also provides an easy way
+to initialize a grid from an Eclipse-format input deck, via the
+constructor taking an Opm::EclipseGridParser.
 
 
 <h3>Well handling</h3>
 
+A well in opm-core can have an arbitrary number of perforations
+connecting it to the reservoir. Wells can be open or closed, and they
+can be controlled by bottom hole pressure (BHP), volumetric
+(reservoir) rates or surface rates. Multiple controls can be
+specified, then one control will be the active control and the others
+will be interpreted as constraints.
+
+A small collection of structs is used to communicate well information,
+the most important ones being the Wells struct and its contained
+WellControls structs. A set of C functions to manipulate these are
+provided, the most important ones are create_wells(),
+add_well(), append_well_controls() and destroy_wells().
+
+The C++ class Opm::WellsManager encapsulates creation and management
+of well objects, making the underlying Wells struct available in the
+method Opm::WellsManager::c_wells(). It goes beyond this, however, and
+also provides methods such as Opm::WellsManager::conditionsMet() that
+checks if all well constraints are met, and switches controls if not.
+
+
 <h3>Pressure solvers</h3>
+
+The currently recommended pressure solvers available in opm-core are
+the C++ classes
+<ul>
+<li> Opm::IncompTpfa (incompressible TPFA discretization)
+<li> Opm::CompressibleTpfa (compressible TPFA discretization)
+</ul>
+
+A number of other solvers and interfaces are available, but are not
+recommended for use at this time.
+
+There are multiple low-level pressure system assemblers in opm-core.
+Each is capable of assembling the linear system for a given
+discretization of a pressure equation, and provide a C interface.
+
+<ul>
+<li> ifs_tpfa: Incompressible TPFA discretization.
+<li> cfs_tpfa: Compressible TPFA discretization.
+<li> cfs_tpfa_residual: Compressible TPFA, residual formulation.
+<li> ifsh: Incompressible hybridized mimetic finite difference method.
+<li> cfsh: Compressible hybridized mimetic finite difference method.
+</ul>
+
 
 <h3>Transport solvers</h3>
 
