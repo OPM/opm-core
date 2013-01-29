@@ -77,25 +77,11 @@ checks if all well constraints are met, and switches controls if not.
 
 The currently recommended pressure solvers available in opm-core are
 the C++ classes
-<ul>
-<li> Opm::IncompTpfa (incompressible TPFA discretization)
-<li> Opm::CompressibleTpfa (compressible TPFA discretization)
-</ul>
+- Opm::IncompTpfa (incompressible TPFA discretization)
+- Opm::CompressibleTpfa (compressible TPFA discretization)
 
 A number of other solvers and interfaces are available, but are not
 recommended for use at this time.
-
-There are multiple low-level pressure system assemblers in opm-core.
-Each is capable of assembling the linear system for a given
-discretization of a pressure equation, and provide a C interface.
-
-<ul>
-<li> ifs_tpfa: Incompressible TPFA discretization.
-<li> cfs_tpfa: Compressible TPFA discretization.
-<li> cfs_tpfa_residual: Compressible TPFA, residual formulation.
-<li> ifsh: Incompressible hybridized mimetic finite difference method.
-<li> cfsh: Compressible hybridized mimetic finite difference method.
-</ul>
 
 
 <h3>Transport solvers</h3>
