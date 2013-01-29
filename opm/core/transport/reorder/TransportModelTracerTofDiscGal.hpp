@@ -33,6 +33,8 @@ namespace Opm
 
     class IncompPropertiesInterface;
     class VelocityInterpolationInterface;
+    class DGBasisInterface;
+    namespace parameter { class ParameterGroup; }
 
     /// Implements a discontinuous Galerkin solver for
     /// (single-phase) time-of-flight using reordering.
@@ -48,10 +50,26 @@ namespace Opm
     public:
         /// Construct solver.
         /// \param[in] grid      A 2d or 3d grid.
-        /// \param[in] use_cvi   If true, use corner point velocity interpolation.
-        ///                      Otherwise, use the basic constant interpolation.
+        /// \param[in] param     Parameters for the solver.
+        ///                      The following parameters are accepted (defaults):
+        ///   dg_degree (0)                           Polynomial degree of basis functions.
+        ///   use_tensorial_basis (false)             Use tensor-product basis, interpreting dg_degree as
+        ///                                           bi/tri-degree not total degree.
+        ///   use_cvi (false)                         Use ECVI velocity interpolation.
+        ///   use_limiter (false)                     Use a slope limiter. If true, the next three parameters are used.
+        ///   limiter_relative_flux_threshold (1e-3)  Ignore upstream fluxes below this threshold, relative to total cell flux.
+        ///   limiter_method ("MinUpwindFace")        Limiter method used. Accepted methods are:
+        ///                                             MinUpwindFace              Limit cell tof to >= inflow face tofs.
+        ///   limiter_usage ("DuringComputations")    Usage pattern for limiter. Accepted choices are:
+        ///                                             DuringComputations         Apply limiter to cells as they are computed,
+        ///                                                                        so downstream cells' solutions may be affected
+        ///                                                                        by limiting in upstream cells.
+        ///                                             AsPostProcess              Apply in dependency order, but only after
+        ///                                                                        computing (unlimited) solution.
+        ///                                             AsSimultaneousPostProcess  Apply to each cell independently, using un-
+        ///                                                                        limited solution in neighbouring cells.
         TransportModelTracerTofDiscGal(const UnstructuredGrid& grid,
-                                       const bool use_cvi);
+                                       const parameter::ParameterGroup& param);
 
 
         /// Solve for time-of-flight.
@@ -60,7 +78,6 @@ namespace Opm
         /// \param[in]  source            Source term. Sign convention is:
         ///                                 (+) inflow flux,
         ///                                 (-) outflow flux.
-        /// \param[in]  degree            Polynomial degree of DG basis functions used.
         /// \param[out] tof_coeff         Array of time-of-flight solution coefficients.
         ///                               The values are ordered by cell, meaning that
         ///                               the K coefficients corresponding to the first
@@ -70,7 +87,6 @@ namespace Opm
         void solveTof(const double* darcyflux,
                       const double* porevolume,
                       const double* source,
-                      const int degree,
                       std::vector<double>& tof_coeff);
 
     private:
@@ -82,12 +98,20 @@ namespace Opm
         TransportModelTracerTofDiscGal(const TransportModelTracerTofDiscGal&);
         TransportModelTracerTofDiscGal& operator=(const TransportModelTracerTofDiscGal&);
 
+        // Data members
         const UnstructuredGrid& grid_;
         boost::shared_ptr<VelocityInterpolationInterface> velocity_interpolation_;
+        bool use_cvi_;
+        bool use_limiter_;
+        double limiter_relative_flux_threshold_;
+        enum LimiterMethod { MinUpwindFace, MinUpwindAverage };
+        LimiterMethod limiter_method_;
+        enum LimiterUsage { DuringComputations, AsPostProcess, AsSimultaneousPostProcess };
+        LimiterUsage limiter_usage_;
         const double* darcyflux_;   // one flux per grid face
         const double* porevolume_;  // one volume per cell
         const double* source_;      // one volumetric source term per cell
-        int degree_;
+        boost::shared_ptr<DGBasisInterface> basis_func_;
         double* tof_coeff_;
         std::vector<double> rhs_;   // single-cell right-hand-side
         std::vector<double> jac_;   // single-cell jacobian
@@ -95,10 +119,22 @@ namespace Opm
         std::vector<double> orig_jac_;   // single-cell jacobian (copy)
         // Below: storage for quantities needed by solveSingleCell().
         std::vector<double> coord_;
-        std::vector<double> basis_;
-        std::vector<double> basis_nb_;
+        mutable std::vector<double> basis_;
+        mutable std::vector<double> basis_nb_;
         std::vector<double> grad_basis_;
         std::vector<double> velocity_;
+
+        // Private methods
+
+        // Apply some limiter, writing to array tof
+        // (will read data from tof_coeff_, it is ok to call
+        //  with tof_coeff as tof argument.
+        void applyLimiter(const int cell, double* tof);
+        void applyMinUpwindLimiter(const int cell, const bool face_min, double* tof);
+        void applyLimiterAsPostProcess();
+        void applyLimiterAsSimultaneousPostProcess();
+        double totalFlux(const int cell) const;
+        double minCornerVal(const int cell, const int face) const;
     };
 
 } // namespace Opm

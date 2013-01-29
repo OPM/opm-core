@@ -46,6 +46,9 @@ namespace Opm
             const std::vector<double>& krw = swof_table[table_num][1];
             const std::vector<double>& krow = swof_table[table_num][2];
             const std::vector<double>& pcow = swof_table[table_num][3];
+            if (krw.front() != 0.0 || krow.back() != 0.0) {
+                THROW("Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
+            }
             buildUniformMonotoneTable(sw, krw,  samples, krw_);
             buildUniformMonotoneTable(sw, krow, samples, krow_);
             buildUniformMonotoneTable(sw, pcow, samples, pcow_);
@@ -54,6 +57,27 @@ namespace Opm
             smin_[phase_usage.phase_pos[Aqua]] = sw[0];
             swmax = sw.back();
             smax_[phase_usage.phase_pos[Aqua]] = sw.back();
+
+            krwmax_ = krw.back();
+            kromax_ = krow.front();
+            swcr_ = swmax;
+            sowcr_ = 1.0 - swco;
+            krwr_ = krw.back();
+            krorw_ = krow.front();
+            for (std::vector<double>::size_type i=1; i<sw.size(); ++i) {
+                if (krw[i]> 0.0) {
+                   swcr_ = sw[i-1];
+                   krorw_ = krow[i-1];
+                   break;
+                }
+            }
+            for (std::vector<double>::size_type i=sw.size()-1; i>=1; --i) {
+                if (krow[i-1]> 0.0) {
+                   sowcr_ = 1.0 - sw[i];
+                   krwr_ = krw[i];
+                   break;
+                }
+            }
         }
         if (phase_usage.phase_used[Vapour]) {
             const SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
@@ -102,7 +126,8 @@ namespace Opm
             int opos = phase_usage.phase_pos[Liquid];
             double sw = s[wpos];
             double krw = krw_(sw);
-            double krow = krow_(sw);
+            double so = s[opos];
+            double krow = krow_(1.0-so);
             kr[wpos] = krw;
             kr[opos] = krow;
         } else {
@@ -160,8 +185,9 @@ namespace Opm
             double sw = s[wpos];
             double krw = krw_(sw);
             double dkrww = krw_.derivative(sw);
-            double krow = krow_(sw);
-            double dkrow = krow_.derivative(sw);
+            double so = s[opos];
+            double krow = krow_(1.0-so);
+            double dkrow = krow_.derivative(1.0-so);
             kr[wpos] = krw;
             kr[opos] = krow;
             dkrds[wpos + wpos*np] = dkrww;
@@ -245,6 +271,9 @@ namespace Opm
             const std::vector<double>& krw = swof_table[table_num][1];
             const std::vector<double>& krow = swof_table[table_num][2];
             const std::vector<double>& pcow = swof_table[table_num][3];
+            if (krw.front() != 0.0 || krow.back() != 0.0) {
+                THROW("Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
+            }
             krw_ = NonuniformTableLinear<double>(sw, krw);
             krow_ = NonuniformTableLinear<double>(sw, krow);
             pcow_ = NonuniformTableLinear<double>(sw, pcow);
@@ -253,6 +282,28 @@ namespace Opm
             smin_[phase_usage.phase_pos[Aqua]] = sw[0];
             swmax = sw.back();
             smax_[phase_usage.phase_pos[Aqua]] = sw.back();
+
+            krwmax_ = krw.back();
+            kromax_ = krow.front();
+            swcr_ = swmax;
+            sowcr_ = 1.0 - swco;
+            krwr_ = krw.back();
+            krorw_ = krow.front();
+            for (std::vector<double>::size_type i=1; i<sw.size(); ++i) {
+                if (krw[i]> 0.0) {
+                   swcr_ = sw[i-1];
+                   krorw_ = krow[i-1];
+                   break;
+                }
+            }
+            for (std::vector<double>::size_type i=sw.size()-1; i>=1; --i) {
+                if (krow[i-1]> 0.0) {
+                   sowcr_ = 1.0 - sw[i];
+                   krwr_ = krw[i];
+                   break;
+                }
+            }
+
         }
         if (phase_usage.phase_used[Vapour]) {
             const SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
@@ -301,7 +352,8 @@ namespace Opm
             int opos = phase_usage.phase_pos[Liquid];
             double sw = s[wpos];
             double krw = krw_(sw);
-            double krow = krow_(sw);
+            double so = s[opos];
+            double krow = krow_(1.0-so);
             kr[wpos] = krw;
             kr[opos] = krow;
         } else {
@@ -359,8 +411,9 @@ namespace Opm
             double sw = s[wpos];
             double krw = krw_(sw);
             double dkrww = krw_.derivative(sw);
-            double krow = krow_(sw);
-            double dkrow = krow_.derivative(sw);
+            double so = s[opos];
+            double krow = krow_(1.0-so);
+            double dkrow = krow_.derivative(1.0-so);
             kr[wpos] = krw;
             kr[opos] = krow;
             dkrds[wpos + wpos*np] = dkrww;
