@@ -99,6 +99,18 @@ if (SuiteSparse_EVERYTHING_FOUND)
   return ()
 endif (SuiteSparse_EVERYTHING_FOUND)
 
+# if SuiteSparse >= 4.0 we must also link with libsuitesparseconfig
+# assume that this is the case if we find the library; otherwise just
+# ignore it (older versions don't have a file named like this)
+find_library (config_LIBRARY
+  NAMES suitesparseconfig
+  PATHS ${SuiteSparse_SEARCH_LIBS}
+  PATH_SUFFIXES ".libs" "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
+  )
+if (NOT config_LIBRARY)
+  set (config_LIBRARY "")
+endif (NOT config_LIBRARY)
+
 # search filesystem for each of the module individually
 foreach (module IN LISTS SuiteSparse_MODULES)
   string (TOUPPER ${module} MODULE)
@@ -115,7 +127,7 @@ foreach (module IN LISTS SuiteSparse_MODULES)
 	)
   # start out by including the module itself; other dependencies will be added later
   set (${MODULE}_INCLUDE_DIRS ${${MODULE}_INCLUDE_DIR})
-  set (${MODULE}_LIBRARIES ${${MODULE}_LIBRARY})
+  set (${MODULE}_LIBRARIES ${${MODULE}_LIBRARY} ${config_LIBRARY})
 endforeach (module)
 
 # insert any inter-modular dependencies here
