@@ -132,7 +132,7 @@ endif (UMFPACK_LIBRARY)
 # were satisfied; create a list of ALL modules (specified) that was found
 # (to be included in one swoop in CMakeLists.txt)
 set (SuiteSparse_FOUND TRUE)
-foreach (module IN LISTS SuiteSparse_MODULES)
+foreach (module IN LISTS SuiteSparse_FIND_COMPONENTS)
   string (TOUPPER ${module} MODULE)
   set (SuiteSparse_${MODULE}_FOUND TRUE)
   foreach (file IN LISTS ${MODULE}_INCLUDE_DIRS ${MODULE}_LIBRARIES)
