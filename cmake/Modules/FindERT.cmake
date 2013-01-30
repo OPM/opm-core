@@ -179,8 +179,9 @@ endif (DEFINED ERT_LINKER_FLAGS)
 # see if we can compile a minimum example
 # CMake logical test doesn't handle lists (sic)
 if (NOT ERT_LIBRARIES MATCHES "-NOTFOUND")
-  cmake_push_check_state ()
+  include (CMakePushCheckState)
   include (CheckCSourceCompiles)
+  cmake_push_check_state ()
   set (CMAKE_REQUIRED_INCLUDES ${ERT_INCLUDE_DIR})
   set (CMAKE_REQUIRED_LIBRARIES ${ERT_LIBRARIES})
   check_c_source_compiles (
