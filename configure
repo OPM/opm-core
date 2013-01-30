@@ -188,6 +188,11 @@ while getopts -- ":-:" optchar; do
               debug_loc=" -DSYSTEM_DEBUG=ON"
               # special flag; don't set shared/static
               shared=""
+              ;;
+            # this flag is just for compatibility with the deprecation
+            # flag in DUNE, so we can build without warnings
+            fieldvector-size-is-method)
+              shared=""
               ;;              
             shared)
               shared="ON"
