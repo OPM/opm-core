@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(DisjointColumn)
 
     for (VVI::iterator
         xb = correct_answer.begin(), xe = correct_answer.end(),
-        cb = columns       .begin(), ce = columns       .end();
+        cb = columns       .begin();
         xb != xe; ++xb, ++cb) {
 
         BOOST_CHECK_EQUAL_COLLECTIONS((*xb).begin(), (*xb).end(),
