@@ -269,7 +269,7 @@ install (
 	DESTINATION ${_dbg_prefix}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
 	)
 install (
-	FILES ${PROJECT_BINARY_DIR}/dune.module
+	FILES ${PROJECT_SOURCE_DIR}/dune.module
 	DESTINATION ${CMAKE_INSTALL_LIBDIR_NOARCH}/dunecontrol/opm-core
 	)
 message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")

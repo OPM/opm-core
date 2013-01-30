@@ -46,11 +46,6 @@ function (opm_cmake_config name)
 	FILE CMAKE "${PROJECT_BINARY_DIR}/${name}-config.cmake"
 	APPEND "${${name}_CONFIG_VARS}"
 	)
-  configure_file (
-	${PROJECT_SOURCE_DIR}/dune.module.in
-	${PROJECT_BINARY_DIR}/dune.module
-	@ONLY
-	)
 
   # config-mode .pc file; use this to find the build tree
   configure_pc_file (
