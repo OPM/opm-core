@@ -25,6 +25,23 @@
 # Copyright (C) 2012 Uni Research AS
 # This file is licensed under the GNU General Public License v3.0
 
+function (try_compile_umfpack varname extralibs)
+  include (CMakePushCheckState)
+  include (CheckCSourceCompiles)
+  cmake_push_check_state ()
+  set (CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIRS})
+  set (CMAKE_REQUIRED_LIBRARIES ${UMFPACK_LIBRARY} ${extralibs})
+  check_c_source_compiles (
+        "#include <umfpack.h>
+int main (void) {
+  double t;
+  t = umfpack_timer ();
+  return 0;
+}" ${varname})
+  cmake_pop_check_state ()
+  set (${varname} "${${varname}}" PARENT_SCOPE)
+endfunction (try_compile_umfpack)
+
 # search paths for the library outside of standard system paths. these are the
 # paths in which the package managers on various distros put the files
 list (APPEND SuiteSparse_SEARCH_INCS "/usr/include/suitesparse")      # Linux
@@ -117,7 +134,18 @@ if (CHOLMOD_LIBRARY)
   list (REVERSE CHOLMOD_LIBRARIES)
 endif (CHOLMOD_LIBRARY)
 if (UMFPACK_LIBRARY)
-  list (APPEND UMFPACK_LIBRARIES ${CHOLMOD_LIBRARIES} ${AMD_LIBRARIES})
+  # test if umfpack is usable with only amd and not cholmod
+  try_compile_umfpack (HAVE_UMFPACK_WITHOUT_CHOLMOD ${AMD_LIBRARIES})
+  if (HAVE_UMFPACK_WITHOUT_CHOLMOD)
+	list (APPEND UMFPACK_LIBRARIES ${AMD_LIBRARIES})
+  else (HAVE_UMFPACK_WITHOUT_CHOLMOD)
+	try_compile_umfpack (HAVE_UMFPACK_WITH_CHOLMOD ${CHOLMOD_LIBRARIES})
+	if (HAVE_UMFPACK_WITH_CHOLMOD)
+	  list (APPEND UMFPACK_LIBRARIES ${CHOLMOD_LIBRARIES})
+	else (HAVE_UMFPACK_WITH_CHOLMOD)
+	  set (UMFPACK_LIBRARIES "-NOTFOUND")
+	endif (HAVE_UMFPACK_WITH_CHOLMOD)
+  endif (HAVE_UMFPACK_WITHOUT_CHOLMOD)
   list (REVERSE UMFPACK_LIBRARIES)
   list (REMOVE_DUPLICATES UMFPACK_LIBRARIES)
   list (REVERSE UMFPACK_LIBRARIES)
