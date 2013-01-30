@@ -247,12 +247,26 @@ install (
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	)
-# only this directory seems to be searched for debug info
+# only /usr/lib/debug seems to be searched for debug info; if we have
+# write access to that directory (package installation), then default
+# to use it; otherwise put the debug files together with the library
+# (local installation). everything can be overridden by the option.
+if (CMAKE_INSTALL_PREFIX STREQUAL "/usr")
+	set (_sys_dbg_def ON)
+else (CMAKE_INSTALL_PREFIX STREQUAL "/usr")
+	set (_sys_dbg_def OFF)
+endif (CMAKE_INSTALL_PREFIX STREQUAL "/usr")
+option (SYSTEM_DEBUG "Put .debug files in GDB debug file directory" ${_sys_dbg_def})
 set (DEBUG_FILE_DIRECTORY /usr/lib/debug CACHE LOCATION "GDB debug file directory")
 mark_as_advanced (DEBUG_FILE_DIRECTORY)
+if (SYSTEM_DEBUG)
+	set (_dbg_prefix "${DEBUG_FILE_DIRECTORY}/")
+else (SYSTEM_DEBUG)
+	set (_dbg_prefix "")
+endif (SYSTEM_DEBUG)
 install (
 	FILES ${PROJECT_BINARY_DIR}/${opm-core_DEBUG}
-	DESTINATION ${DEBUG_FILE_DIRECTORY}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
+	DESTINATION ${_dbg_prefix}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
 	)
 install (
 	FILES ${PROJECT_BINARY_DIR}/dune.module
