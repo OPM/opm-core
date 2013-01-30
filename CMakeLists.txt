@@ -311,8 +311,35 @@ endmacro (cond_disable_test name)
 cond_disable_test ("AGMG")
 cond_disable_test ("ERT")
 
+# if ever huge test datafiles are necessary, then change this
+# into "create_symlink" (on UNIX only, apparently)
+set (make_avail "copy")
+
+# provide datafiles as inputs for the tests, by copying them
+# to a tests/ directory in the output tree (if different)
+set (test_INPUT_FILES)
+file (GLOB test_DATA "tests/*.xml")
+foreach (input_datafile IN LISTS test_DATA)
+	file (RELATIVE_PATH rel_datafile "${PROJECT_SOURCE_DIR}" ${input_datafile})
+	set (output_datafile "${PROJECT_BINARY_DIR}/${rel_datafile}")
+	if (NOT output_datafile STREQUAL input_datafile)
+		add_custom_command (
+			OUTPUT ${output_datafile}
+			COMMAND ${CMAKE_COMMAND}
+			ARGS -E ${make_avail} ${input_datafile} ${output_datafile}
+			DEPENDS ${input_datafile}
+			VERBATIM
+			)
+	endif (NOT output_datafile STREQUAL input_datafile)
+	list (APPEND test_INPUT_FILES "${output_datafile}")
+endforeach (input_datafile)
+add_custom_target (datafiles
+	DEPENDS ${test_INPUT_FILES}
+	COMMENT "Making test data available in output tree"
+	)
+
 # compile each of these separately
-add_custom_target (tests)
+add_custom_target (tests DEPENDS datafiles)
 foreach (test_FILE IN LISTS tests_SOURCES)
 	get_filename_component (test_NAME "${test_FILE}" NAME_WE)
 	add_executable (${test_NAME} EXCLUDE_FROM_ALL ${test_FILE})
@@ -325,6 +352,10 @@ foreach (test_FILE IN LISTS tests_SOURCES)
 	string (REGEX REPLACE "^test_([^/]*)$" "\\1" test_FANCY "${test_NAME}")
 	get_target_property (test_LOC ${test_NAME} LOCATION)
 	add_test (${test_FANCY} ${test_LOC})
+	# run the test in the directory where the data files are
+	set_tests_properties (${test_FANCY} PROPERTIES
+		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/tests
+		)
 endforeach (test_FILE)
 
 # ideally this should run the tests, but for now we only test if they
