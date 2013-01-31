@@ -44,31 +44,25 @@ endfunction (try_compile_umfpack)
 
 # search paths for the library outside of standard system paths. these are the
 # paths in which the package managers on various distros put the files
-list (APPEND SuiteSparse_SEARCH_INCS "/usr/include/suitesparse")      # Linux
-list (APPEND SuiteSparse_SEARCH_INCS "/opt/local/include/ufsparse")   # MacOS X
-list (APPEND SuiteSparse_SEARCH_LIBS "/usr/lib")                      # Linux
-list (APPEND SuiteSparse_SEARCH_LIBS "/opt/local/lib/ufsparse")       # MacOS X
+list (APPEND SuiteSparse_SEARCH_PATH "/usr")              # Linux
+list (APPEND SuiteSparse_SEARCH_PATH "/opt/local")        # MacOS X
 
 # pick up paths from the environment if specified there; these replace the
 # pre-defined paths so that we don't accidentially pick up old stuff
 if (NOT $ENV{SuiteSparse_DIR} STREQUAL "")
-  set (SuiteSparse_SEARCH_INCS "$ENV{SuiteSparse_DIR}")
-  set (SuiteSparse_SEARCH_LIBS "$ENV{SuiteSparse_DIR}")
+  set (SuiteSparse_SEARCH_PATH "$ENV{SuiteSparse_DIR}")
 endif (NOT $ENV{SuiteSparse_DIR} STREQUAL "")
 if (${SuiteSparse_DIR})
-  set (SuiteSparse_SEARCH_INCS "${SuiteSparse_DIR}")
-  set (SuiteSparse_SEARCH_LIBS "${SuiteSparse_DIR}")
+  set (SuiteSparse_SEARCH_PATH "${SuiteSparse_DIR}")
 endif (${SuiteSparse_DIR})
 # CMake uses _DIR suffix as default for config-mode files; it is unlikely
 # that we are building SuiteSparse ourselves; use _ROOT suffix to specify
 # location to pre-canned binaries
 if (NOT $ENV{SuiteSparse_ROOT} STREQUAL "")
-  set (SuiteSparse_SEARCH_INCS "$ENV{SuiteSparse_ROOT}")
-  set (SuiteSparse_SEARCH_LIBS "$ENV{SuiteSparse_ROOT}")
+  set (SuiteSparse_SEARCH_PATH "$ENV{SuiteSparse_ROOT}")
 endif (NOT $ENV{SuiteSparse_ROOT} STREQUAL "")
 if (${SuiteSparse_ROOT})
-  set (SuiteSparse_SEARCH_INCS "${SuiteSparse_ROOT}")
-  set (SuiteSparse_SEARCH_LIBS "${SuiteSparse_ROOT}")
+  set (SuiteSparse_SEARCH_PATH "${SuiteSparse_ROOT}")
 endif (${SuiteSparse_ROOT})
 
 # transitive closure of dependencies; after this SuiteSparse_MODULES is the
@@ -104,8 +98,8 @@ endif (SuiteSparse_EVERYTHING_FOUND)
 # ignore it (older versions don't have a file named like this)
 find_library (config_LIBRARY
   NAMES suitesparseconfig
-  PATHS ${SuiteSparse_SEARCH_LIBS}
-  PATH_SUFFIXES ".libs" "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
+  PATHS ${SuiteSparse_SEARCH_PATH}
+  PATH_SUFFIXES ".libs" "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}" "lib/ufsparse"
   )
 if (NOT config_LIBRARY)
   set (config_LIBRARY "")
@@ -117,13 +111,13 @@ foreach (module IN LISTS SuiteSparse_MODULES)
   # search for files which implements this module
   find_path (${MODULE}_INCLUDE_DIR
 	NAMES ${module}.h
-	PATHS ${SuiteSparse_SEARCH_INCS}
-	PATH_SUFFIXES "include"
+	PATHS ${SuiteSparse_SEARCH_PATH}
+	PATH_SUFFIXES "include" "include/suitesparse" "include/ufsparse"
 	)
   find_library (${MODULE}_LIBRARY
 	NAMES ${module}
-	PATHS ${SuiteSparse_SEARCH_LIBS}
-	PATH_SUFFIXES ".libs" "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
+	PATHS ${SuiteSparse_SEARCH_PATH}
+	PATH_SUFFIXES "lib/.libs" "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}" "lib/ufsparse"
 	)
   # start out by including the module itself; other dependencies will be added later
   set (${MODULE}_INCLUDE_DIRS ${${MODULE}_INCLUDE_DIR})
