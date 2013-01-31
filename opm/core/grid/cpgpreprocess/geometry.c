@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "geometry.h"
+#include <assert.h>
 
 /* ------------------------------------------------------------------ */
 static void
@@ -25,16 +26,16 @@ norm(const double w[3])
 }
 
 
-
 /* ------------------------------------------------------------------ */
-void
-compute_face_geometry(int ndims, double *coords, int nfaces,
-                      int *nodepos, int *facenodes, double *fnormals,
-                      double *fcentroids, double *fareas)
+static void
+compute_face_geometry_3d(double *coords, int nfaces,
+                         int *nodepos, int *facenodes, double *fnormals,
+                         double *fcentroids, double *fareas)
 /* ------------------------------------------------------------------ */
 {
 
    /* Assume 3D for now */
+   const int ndims = 3;
    int f;
    double x[3];
    double u[3];
@@ -109,18 +110,108 @@ compute_face_geometry(int ndims, double *coords, int nfaces,
    }
 }
 
+/* ------------------------------------------------------------------ */
+static void
+compute_edge_geometry_2d(
+      /* in  */ double *node_coords,
+      /* in  */ int     num_edges,
+      /* in  */ int    *edge_node_pos,
+      /* in  */ int    *edge_nodes,
+      /* out */ double *edge_normals,
+      /* out */ double *edge_midpoints,
+      /* out */ double *edge_lengths)
+{
+   const int num_dims = 2;
+
+   /* offsets to each of the nodes in a compacted edge */
+   const int a_ofs = 0;
+   const int b_ofs = 1;
+
+   /* offsets to each dimension is a compacted point */
+   const int x_ofs = 0;
+   const int y_ofs = 1;
+
+   int edge;                     /* edge index       */
+   int a_nod, b_nod;             /* node indices     */
+   double a_x, a_y, b_x, b_y;    /* node coordinates */
+   double v_x, v_y;              /* vector elements  */
+
+   /* decompose each edge into a tuple (a,b) between two points and
+    * compute properties for that face. hopefully the host has enough
+    * cache pages to keep both input and output at the same time, and
+    * registers for all the local variables */
+   for (edge = 0; edge < num_edges; ++edge)
+   {
+      /* an edge in 2D can only have starting and ending point
+       * check that there are exactly two nodes till the next edge */
+      assert (edge_node_pos[edge + 1] - edge_node_pos[edge] == num_dims);
+
+      /* get the first and last point on the edge */
+      a_nod = edge_nodes[edge_node_pos[edge] + a_ofs];
+      b_nod = edge_nodes[edge_node_pos[edge] + b_ofs];
+
+      /* extract individual coordinates for the points */
+      a_x = node_coords[a_nod * num_dims + x_ofs];
+      a_y = node_coords[a_nod * num_dims + y_ofs];
+      b_x = node_coords[b_nod * num_dims + x_ofs];
+      b_y = node_coords[b_nod * num_dims + y_ofs];
+
+      /* compute edge center -- average of node coordinates */
+      edge_midpoints[edge * num_dims + x_ofs] = (a_x + b_x) * 0.5;
+      edge_midpoints[edge * num_dims + y_ofs] = (a_y + b_y) * 0.5;
+
+      /* vector from first to last point */
+      v_x = b_x - a_x;
+      v_y = b_y - a_y;
+
+      /* two-dimensional (unary) cross product analog that makes the
+       * "triple" (dot-cross) product zero, i.e. it's a normal; the
+       * direction of this vector is such that it will be pointing
+       * inwards when enumerating nodes clock-wise */
+      edge_normals[edge * num_dims + x_ofs] = +v_y;
+      edge_normals[edge * num_dims + y_ofs] = -v_x;
+
+      /* Euclidian norm in two dimensions is magnitude of edge */
+      edge_lengths[edge] = sqrt(v_x*v_x + v_y*v_y);
+   }
+}
 
 /* ------------------------------------------------------------------ */
 void
-compute_cell_geometry(int ndims, double *coords,
-                      int *nodepos, int *facenodes, int *neighbors,
-                      double *fnormals,
-                      double *fcentroids,
-                      int ncells, int *facepos, int *cellfaces,
-                      double *ccentroids, double *cvolumes)
+compute_face_geometry(int ndims, double *coords, int nfaces,
+                      int *nodepos, int *facenodes, double *fnormals,
+                      double *fcentroids, double *fareas)
 /* ------------------------------------------------------------------ */
 {
+   if (ndims == 3)
+   {
+      compute_face_geometry_3d(coords, nfaces, nodepos, facenodes,
+                               fnormals, fcentroids, fareas);
+   }
+   else if (ndims == 2)
+   {
+      /* two-dimensional interfaces are called 'edges' */
+      compute_edge_geometry_2d(coords, nfaces, nodepos, facenodes,
+                               fnormals, fcentroids, fareas);
+   }
+   else
+   {
+      assert(0);
+   }
+}
 
+
+/* ------------------------------------------------------------------ */
+static void
+compute_cell_geometry_3d(double *coords,
+                         int *nodepos, int *facenodes, int *neighbors,
+                         double *fnormals,
+                         double *fcentroids,
+                         int ncells, int *facepos, int *cellfaces,
+                         double *ccentroids, double *cvolumes)
+/* ------------------------------------------------------------------ */
+{
+   const int ndims = 3;
    int i,k, f,c;
    int face,node;
    double x[3];
@@ -238,5 +329,127 @@ compute_cell_geometry(int ndims, double *coords,
 
       for (i=0; i<ndims; ++i) ccentroids[3*c+i] = xcell[i] + ccell[i]/volume;
       cvolumes[c] = volume;
+   }
+}
+
+/* ------------------------------------------------------------------ */
+static void
+compute_cell_geometry_2d(
+      /* in  */ double *node_coords,
+      /* in  */ int     *edge_node_pos,
+      /* in  */ int    *edge_nodes,
+      /* in  */ double *edge_midpoints,
+      /* in  */ int     num_cells,
+      /* in  */ int    *cell_edge_pos,
+      /* in  */ int    *cell_edges,
+      /* out */ double *cell_centers,
+      /* out */ double *cell_areas)
+{
+   const int num_dims = 2;
+
+   /* offsets to each of the nodes in a compacted edge */
+   const int a_ofs = 0;
+   const int b_ofs = 1;
+
+   /* offsets to each dimension is a compacted point */
+   const int x_ofs = 0;
+   const int y_ofs = 1;
+
+   int cell;            /* cell index */
+   int num_nodes;       /* number of vertices in current cell */
+   int edge_ndx;        /* relative edge index within cell */
+   int edge;            /* absolute cell index */
+   double center_x;     /* x-coordinate for cell barycenter */
+   double center_y;     /* y-coordinate for cell barycenter */
+   double area;         /* (accumulated) cell area */
+   int a_nod, b_nod;    /* node indices for edge start and end points */
+   double a_x, a_y,
+          b_x, b_y;     /* vectors from center to edge points */
+
+   for (cell = 0; cell < num_cells; ++cell)
+   {
+      /* since the cell is a closed polygon, each point serves as the starting
+       * point of one edge and the ending point of another; thus there is as
+       * many vertices as there are edges */
+      num_nodes = cell_edge_pos[cell + 1] - cell_edge_pos[cell];
+
+      /* to enumerate all vertices of a cell, we would have to expand the
+       * edges and then remove duplicates. however, the centroid of each
+       * edge contains half of the two vertices that are incident on it. if
+       * we instead sum all the face centroids, we get the sum of all the
+       * vertices */
+      center_x = 0.;
+      center_y = 0.;
+      for (edge_ndx = cell_edge_pos[cell];
+           edge_ndx < cell_edge_pos[cell + 1]; ++edge_ndx)
+      {
+         edge = cell_edges[edge_ndx];
+         center_x += edge_midpoints[edge * num_dims + x_ofs];
+         center_y += edge_midpoints[edge * num_dims + y_ofs];
+      }
+      center_x /= (double) num_nodes;
+      center_y /= (double) num_nodes;
+      cell_centers[cell * num_dims + x_ofs] = center_x;
+      cell_centers[cell * num_dims + y_ofs] = center_y;
+
+      /* triangulate the polygon by introducing the cell center and then new
+       * internal edges from this center to the vertices. the total area of
+       * the cell is the sum of area of these sub-triangles */
+      area = 0.;
+      for (edge_ndx = cell_edge_pos[cell];
+           edge_ndx < cell_edge_pos[cell + 1]; ++edge_ndx)
+      {
+         /* indirect lookup of edge index (from array that contains all the
+          * edge indices for a certain cell) */
+         edge = cell_edges[edge_ndx];
+
+         /* get the first and last point on the edge */
+         a_nod = edge_nodes[edge_node_pos[edge] + a_ofs];
+         b_nod = edge_nodes[edge_node_pos[edge] + b_ofs];
+
+         /* vector from center to each of the nodes */
+         a_x = node_coords[a_nod * num_dims + x_ofs] - center_x;
+         a_y = node_coords[a_nod * num_dims + y_ofs] - center_y;
+         b_x = node_coords[b_nod * num_dims + x_ofs] - center_x;
+         b_y = node_coords[b_nod * num_dims + y_ofs] - center_y;
+
+         /* two-dimensional (binary) cross product analog that has length
+          * equal to the parallelogram spanned by the two vectors (but which
+          * is a scalar). the sign tells us the orientation between the nodes
+          * a and b, but we are not interested in that, just the area */
+         area += fabs(a_x * b_y - a_y * b_x);
+      }
+      /* we summed parallelograms which are twice the size of the triangles
+       * that make up the cell; divide out the half for all terms here */
+      area *= 0.5;
+      cell_areas[cell] = area;
+   }
+}
+
+/* ------------------------------------------------------------------ */
+void
+compute_cell_geometry(int ndims, double *coords,
+                      int *nodepos, int *facenodes, int *neighbors,
+                      double *fnormals,
+                      double *fcentroids,
+                      int ncells, int *facepos, int *cellfaces,
+                      double *ccentroids, double *cvolumes)
+/* ------------------------------------------------------------------ */
+{
+   if (ndims == 3)
+   {
+      compute_cell_geometry_3d(coords, nodepos, facenodes,
+                               neighbors, fnormals, fcentroids, ncells,
+                               facepos, cellfaces, ccentroids, cvolumes);
+   }
+   else if (ndims == 2)
+   {
+      compute_cell_geometry_2d(coords, nodepos, facenodes, fcentroids,
+                               ncells, facepos, cellfaces, ccentroids,
+                               cvolumes);
+   }
+   else
+   {
+      assert(0);
    }
 }
