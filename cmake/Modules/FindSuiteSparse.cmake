@@ -101,9 +101,16 @@ find_library (config_LIBRARY
   PATHS ${SuiteSparse_SEARCH_PATH}
   PATH_SUFFIXES ".libs" "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}" "lib/ufsparse"
   )
-if (NOT config_LIBRARY)
-  set (config_LIBRARY "")
-endif (NOT config_LIBRARY)
+if (config_LIBRARY)
+  set (config_LIBRARIES ${config_LIBRARY})
+  # POSIX.1-2001 REALTIME portion require us to link this library too for
+  # clock_gettime() which is used by suitesparseconfig
+  if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+	list (APPEND config_LIBRARIES "-lrt")
+  endif ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+else (config_LIBRARY)
+  set (config_LIBRARIES "")
+endif (config_LIBRARY)
 
 # search filesystem for each of the module individually
 foreach (module IN LISTS SuiteSparse_MODULES)
@@ -121,7 +128,7 @@ foreach (module IN LISTS SuiteSparse_MODULES)
 	)
   # start out by including the module itself; other dependencies will be added later
   set (${MODULE}_INCLUDE_DIRS ${${MODULE}_INCLUDE_DIR})
-  set (${MODULE}_LIBRARIES ${${MODULE}_LIBRARY} ${config_LIBRARY})
+  set (${MODULE}_LIBRARIES ${${MODULE}_LIBRARY} ${config_LIBRARIES})
 endforeach (module)
 
 # insert any inter-modular dependencies here
