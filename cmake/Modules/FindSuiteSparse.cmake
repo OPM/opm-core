@@ -49,26 +49,26 @@ list (APPEND SuiteSparse_SEARCH_INCS "/opt/local/include/ufsparse")   # MacOS X
 list (APPEND SuiteSparse_SEARCH_LIBS "/usr/lib")                      # Linux
 list (APPEND SuiteSparse_SEARCH_LIBS "/opt/local/lib/ufsparse")       # MacOS X
 
-# pick up paths from the environment if specified there; these should go in
-# front of any pre-defined paths
+# pick up paths from the environment if specified there; these replace the
+# pre-defined paths so that we don't accidentially pick up old stuff
 if (NOT $ENV{SuiteSparse_DIR} STREQUAL "")
-  list (INSERT SuiteSparse_SEARCH_INCS 0 "$ENV{SuiteSparse_DIR}")
-  list (INSERT SuiteSparse_SEARCH_LIBS 0 "$ENV{SuiteSparse_DIR}")
+  set (SuiteSparse_SEARCH_INCS "$ENV{SuiteSparse_DIR}")
+  set (SuiteSparse_SEARCH_LIBS "$ENV{SuiteSparse_DIR}")
 endif (NOT $ENV{SuiteSparse_DIR} STREQUAL "")
 if (${SuiteSparse_DIR})
-  list (INSERT SuiteSparse_SEARCH_INCS 0 "${SuiteSparse_DIR}")
-  list (INSERT SuiteSparse_SEARCH_LIBS 0 "${SuiteSparse_DIR}")
+  set (SuiteSparse_SEARCH_INCS "${SuiteSparse_DIR}")
+  set (SuiteSparse_SEARCH_LIBS "${SuiteSparse_DIR}")
 endif (${SuiteSparse_DIR})
 # CMake uses _DIR suffix as default for config-mode files; it is unlikely
 # that we are building SuiteSparse ourselves; use _ROOT suffix to specify
 # location to pre-canned binaries
 if (NOT $ENV{SuiteSparse_ROOT} STREQUAL "")
-  list (INSERT SuiteSparse_SEARCH_INCS 0 "$ENV{SuiteSparse_ROOT}")
-  list (INSERT SuiteSparse_SEARCH_LIBS 0 "$ENV{SuiteSparse_ROOT}")
+  set (SuiteSparse_SEARCH_INCS "$ENV{SuiteSparse_ROOT}")
+  set (SuiteSparse_SEARCH_LIBS "$ENV{SuiteSparse_ROOT}")
 endif (NOT $ENV{SuiteSparse_ROOT} STREQUAL "")
 if (${SuiteSparse_ROOT})
-  list (INSERT SuiteSparse_SEARCH_INCS 0 "${SuiteSparse_ROOT}")
-  list (INSERT SuiteSparse_SEARCH_LIBS 0 "${SuiteSparse_ROOT}")
+  set (SuiteSparse_SEARCH_INCS "${SuiteSparse_ROOT}")
+  set (SuiteSparse_SEARCH_LIBS "${SuiteSparse_ROOT}")
 endif (${SuiteSparse_ROOT})
 
 # transitive closure of dependencies; after this SuiteSparse_MODULES is the
