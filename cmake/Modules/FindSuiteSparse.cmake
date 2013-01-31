@@ -25,12 +25,12 @@
 # Copyright (C) 2012 Uni Research AS
 # This file is licensed under the GNU General Public License v3.0
 
-function (try_compile_umfpack varname extralibs)
+function (try_compile_umfpack varname)
   include (CMakePushCheckState)
   include (CheckCSourceCompiles)
   cmake_push_check_state ()
   set (CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIRS})
-  set (CMAKE_REQUIRED_LIBRARIES ${UMFPACK_LIBRARY} ${extralibs})
+  set (CMAKE_REQUIRED_LIBRARIES ${UMFPACK_LIBRARY} ${ARGN} ${SuiteSparse_EXTRA_LIBS})
   check_c_source_compiles (
         "#include <umfpack.h>
 int main (void) {
@@ -40,7 +40,23 @@ int main (void) {
 }" ${varname})
   cmake_pop_check_state ()
   set (${varname} "${${varname}}" PARENT_SCOPE)
-endfunction (try_compile_umfpack)
+endfunction (try_compile_umfpack varname)
+
+# variables to pass on to other packages
+if (FIND_QUIETLY)
+  set (SuiteSparse_QUIET "QUIET")
+else (FIND_QUIETLY)
+  set (SuiteSparse_QUIET "")
+endif (FIND_QUIETLY)
+
+# we need to link to BLAS and LAPACK
+if (NOT BLAS_FOUND)
+  find_package (BLAS ${SuiteSparse_QUIET} REQUIRED)
+endif (NOT BLAS_FOUND)
+if (NOT LAPACK_FOUND)
+  find_package (LAPACK ${SuiteSparse_QUIET} REQUIRED)
+endif (NOT LAPACK_FOUND)
+set (SuiteSparse_EXTRA_LIBS ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
 
 # search paths for the library outside of standard system paths. these are the
 # paths in which the package managers on various distros put the files
@@ -102,14 +118,12 @@ find_library (config_LIBRARY
   PATH_SUFFIXES ".libs" "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}" "lib/ufsparse"
   )
 if (config_LIBRARY)
-  set (config_LIBRARIES ${config_LIBRARY})
+  list (APPEND SuiteSparse_EXTRA_LIBS ${config_LIBRARY})
   # POSIX.1-2001 REALTIME portion require us to link this library too for
   # clock_gettime() which is used by suitesparseconfig
   if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-	list (APPEND config_LIBRARIES "-lrt")
+	list (APPEND SuiteSparse_EXTRA_LIBS "-lrt")
   endif ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-else (config_LIBRARY)
-  set (config_LIBRARIES "")
 endif (config_LIBRARY)
 
 # search filesystem for each of the module individually
@@ -128,7 +142,7 @@ foreach (module IN LISTS SuiteSparse_MODULES)
 	)
   # start out by including the module itself; other dependencies will be added later
   set (${MODULE}_INCLUDE_DIRS ${${MODULE}_INCLUDE_DIR})
-  set (${MODULE}_LIBRARIES ${${MODULE}_LIBRARY} ${config_LIBRARIES})
+  set (${MODULE}_LIBRARIES ${${MODULE}_LIBRARY})
 endforeach (module)
 
 # insert any inter-modular dependencies here
@@ -216,3 +230,8 @@ find_package_handle_standard_args (SuiteSparse
   SuiteSparse_LIBRARIES
   SuiteSparse_INCLUDE_DIRS
   )
+
+# add these after checking to not pollute the message output (checking for
+# BLAS and LAPACK is REQUIRED so if they are not found, we'll have failed
+# already; suitesparseconfig is "optional" anyway)
+list (APPEND SuiteSparse_LIBRARIES ${SuiteSparse_EXTRA_LIBS})
