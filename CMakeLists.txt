@@ -183,11 +183,11 @@ define_fc_func (
 # some CMake properties do not do list expansion
 string (REPLACE ";" " " opm-core_LINKER_FLAGS_STR "${opm-core_LINKER_FLAGS}")
 
-# default to building a shared library, but let user override
+# default to building a static library, but let user override
 if (DEFINED BUILD_SHARED_LIBS)
 	set (_shared_def ${BUILD_SHARED_LIBS})
 else (DEFINED BUILD_SHARED_LIBS)
-	set (_shared_def ON)
+	set (_shared_def OFF)
 endif (DEFINED BUILD_SHARED_LIBS)
 option (BUILD_opm-core_SHARED "Build opm-core as a shared library" ${_shared_def})
 if (BUILD_opm-core_SHARED)
