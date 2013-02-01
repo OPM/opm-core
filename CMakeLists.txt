@@ -264,10 +264,14 @@ if (SYSTEM_DEBUG)
 else (SYSTEM_DEBUG)
 	set (_dbg_prefix "")
 endif (SYSTEM_DEBUG)
-install (
-	FILES ${PROJECT_BINARY_DIR}/${opm-core_DEBUG}
-	DESTINATION ${_dbg_prefix}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
-	)
+# static libraries don't have their debug info stripped, so there is
+# only a separate file when we are building shared objects
+if (BUILD_opm-core_SHARED)
+	install (
+		FILES ${PROJECT_BINARY_DIR}/${opm-core_DEBUG}
+		DESTINATION ${_dbg_prefix}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
+		)
+endif (BUILD_opm-core_SHARED)
 install (
 	FILES ${PROJECT_SOURCE_DIR}/dune.module
 	DESTINATION ${CMAKE_INSTALL_LIBDIR_NOARCH}/dunecontrol/opm-core
