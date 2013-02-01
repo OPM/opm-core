@@ -446,3 +446,6 @@ file (COPY
 	GNUmakefile
 	DESTINATION ${PROJECT_BINARY_DIR}
 	)
+
+# provide compatibility with using this build in dunecontrol
+include (DuneCompat)
