@@ -454,3 +454,5 @@ file (COPY
 
 # provide compatibility with using this build in dunecontrol
 include (DuneCompat)
+include (LibtoolArchives)
+configure_la (opm-core opmcore)
