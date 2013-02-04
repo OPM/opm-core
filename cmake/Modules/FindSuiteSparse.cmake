@@ -34,8 +34,9 @@ function (try_compile_umfpack varname)
   check_c_source_compiles (
         "#include <umfpack.h>
 int main (void) {
-  double t;
-  t = umfpack_timer ();
+  double info, sym, num;
+  umfpack_dl_solve (UMFPACK_A, 0, 0, 0, 0, 0, &sym, &num, &info);
+  umfpack_timer ();
   return 0;
 }" ${varname})
   cmake_pop_check_state ()
