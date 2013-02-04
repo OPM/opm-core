@@ -15,7 +15,7 @@ function (unseparate_args var_name prefix value)
 endfunction (unseparate_args var_name prefix value)
 
 # wrapper to set variables in pkg-config file
-function (configure_pc_file name source dest libdir includedir)
+function (configure_pc_file name source dest prefix libdir includedir)
   # escape set of standard strings
   unseparate_args (includes "-I" "${${name}_INCLUDE_DIRS}")
   unseparate_args (libs "-l" "${${name}_LIBRARIES}")
@@ -27,7 +27,7 @@ function (configure_pc_file name source dest libdir includedir)
   set (minor "${${name}_VERSION_MINOR}")
 
   configure_file (${source} ${dest} @ONLY)
-endfunction (configure_pc_file name source dist libdir includedir)
+endfunction (configure_pc_file name source dist prefix libdir includedir)
 
 # installation of CMake modules to help user programs locate the library
 function (opm_cmake_config name)
@@ -52,6 +52,7 @@ function (opm_cmake_config name)
 	${name}
 	${PROJECT_SOURCE_DIR}/${name}.pc.in
 	${PROJECT_BINARY_DIR}/${name}.pc
+	${PROJECT_BINARY_DIR}
 	${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
 	${PROJECT_SOURCE_DIR}
 	)
@@ -101,7 +102,8 @@ function (opm_cmake_config name)
 	${name}
 	${PROJECT_SOURCE_DIR}/${name}.pc.in
 	${PROJECT_BINARY_DIR}/${name}-install.pc
-	${CMAKE_INSTALL_LIBDIR}
+	${CMAKE_INSTALL_PREFIX}
+	${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
 	${CMAKE_INSTALL_PREFIX}/include
 	)
 
