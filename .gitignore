@@ -32,7 +32,7 @@ Makefile
 bin/
 lib/
 Doxyfile
-Documentation
+Documentation/html
 dune.module
 *.pc
 install_manifest.txt
