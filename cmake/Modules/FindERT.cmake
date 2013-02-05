@@ -40,6 +40,7 @@ find_path (ERT_GEN_INCLUDE_DIR
   NAMES "ert/util/int_vector.h"
   HINTS "${ERT_ROOT}"
   PATHS "${PROJECT_BINARY_DIR}/../ert" "${PROJECT_BINARY_DIR}/../ert-build"
+        "${PROJECT_BINARY_DIR}/../ert/devel"
   PATH_SUFFIXES "libert_util/include/" "include"
   DOC "Path to ERT generated library header files"
   )
@@ -49,6 +50,7 @@ find_library (ERT_LIBRARY_ECL
   NAMES "ecl"
   HINTS "${ERT_ROOT}"
   PATHS "${PROJECT_BINARY_DIR}/../ert" "${PROJECT_BINARY_DIR}/../ert-build"
+        "${PROJECT_BINARY_DIR}/../ert/devel"
   PATH_SUFFIXES "lib" "lib64" "lib32" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   DOC "Path to ERT Eclipse library archive/shared object files"
   )
@@ -56,13 +58,15 @@ find_library (ERT_LIBRARY_GEOMETRY
   NAMES "ert_geometry"
   HINTS "${ERT_ROOT}"
   PATHS "${PROJECT_BINARY_DIR}/../ert" "${PROJECT_BINARY_DIR}/../ert-build"
+        "${PROJECT_BINARY_DIR}/../ert/devel"
   PATH_SUFFIXES "lib" "lib64" "lib32" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   DOC "Path to ERT Geometry library archive/shared object files"
   )
 find_library (ERT_LIBRARY_UTIL
   NAMES "ert_util"
-  HINTS "${PROJECT_BINARY_DIR}/../ert" "${PROJECT_BINARY_DIR}/../ert-build"
-  PATHS "${ERT_ROOT}"
+  HINTS "${ERT_ROOT}"
+  PATHS "${PROJECT_BINARY_DIR}/../ert" "${PROJECT_BINARY_DIR}/../ert-build"
+        "${PROJECT_BINARY_DIR}/../ert/devel"
   PATH_SUFFIXES "lib" "lib64" "lib32" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   DOC "Path to ERT Utilities library archive/shared object files"
   )
