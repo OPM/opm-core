@@ -421,6 +421,16 @@ if (DOXYGEN_FOUND)
 	endforeach (format)
 endif (DOXYGEN_FOUND)
 
+# stylesheets must be specified with relative path in Doxyfile, or the
+# full path (to the source directory!) will be put in the output HTML.
+# thus, we'll need to copy the stylesheet to this path relative to where
+# Doxygen will be run (in the output tree)
+if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+	file (COPY ${PROJECT_SOURCE_DIR}/style.css
+		DESTINATION ${PROJECT_BINARY_DIR}
+		)
+endif (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+
 ### clean in-source builds ###
 set (DISTCLEAN_FILES
 	CMakeCache.txt
