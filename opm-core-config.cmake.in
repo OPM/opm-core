@@ -1,4 +1,4 @@
-# - Open Porous Media Initiative Core Library config mode
+# - @opm-core_DESCRIPTION@ config mode
 #
 # Defines the following variables:
 #  opm-core_FOUND        - true

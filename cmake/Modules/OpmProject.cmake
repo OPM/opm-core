@@ -22,6 +22,8 @@ function (configure_pc_file name source dest prefix libdir includedir)
   unseparate_args (defs "" "${${name}_DEFINITIONS}")
 
   # necessary to make these variables visible to configure_file
+  set (name "${PROJECT_NAME}")
+  set (description "${${name}_DESCRIPTION}")
   set (target "${${name}_LIBRARY}")
   set (major "${${name}_VERSION_MAJOR}")
   set (minor "${${name}_VERSION_MINOR}")

@@ -6,6 +6,7 @@ set (opm-core_VERSION_MAJOR 1)
 set (opm-core_VERSION_MINOR 0)
 enable_language (C)
 enable_language (CXX)
+set (opm-core_DESCRIPTION "Open Porous Media Initiative Core Library")
 
 # build debug by default
 if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
