@@ -31,19 +31,45 @@ function (configure_pc_file name source dest prefix libdir includedir)
   configure_file (${source} ${dest} @ONLY)
 endfunction (configure_pc_file name source dist prefix libdir includedir)
 
+function (configure_cmake_file name variant version)
+  # declarative list of the variable names that are used in the template
+  # and that must be defined in the project to be exported
+  set (variable_suffices
+	DESCRIPTION
+	VERSION
+	DEFINITIONS
+	INCLUDE_DIRS
+	LIBRARY_DIRS
+	LINKER_FLAGS
+	CONFIG_VARS
+	LIBRARY
+	LIBRARIES
+	TARGET
+	)
+
+  # set these variables temporarily (this is in a function scope) so
+  # they are available to the template (only)
+  foreach (suffix IN LISTS variable_suffices)
+	set (opm-project_${suffix} "${${name}_${suffix}}")
+  endforeach (suffix)
+  set (opm-project_NAME "${PROJECT_NAME}")
+
+  # assume that the template in located in the root of the source
+  set (template_dir "${PROJECT_SOURCE_DIR}")
+
+  # make the file substitutions
+  configure_file (
+	${template_dir}/${name}-config${version}.cmake.in
+	${PROJECT_BINARY_DIR}/${name}-${variant}${version}.cmake
+	@ONLY
+	)
+endfunction (configure_cmake_file name)
+
 # installation of CMake modules to help user programs locate the library
 function (opm_cmake_config name)
   # write configuration file to locate library
-  configure_file (
-	${PROJECT_SOURCE_DIR}/${name}-config.cmake.in
-	${PROJECT_BINARY_DIR}/${name}-config.cmake
-	@ONLY
-	)
-  configure_file (
-	${PROJECT_SOURCE_DIR}/${name}-config-version.cmake.in
-	${PROJECT_BINARY_DIR}/${name}-config-version.cmake
-	@ONLY
-	)
+  configure_cmake_file (${name} "config" "")
+  configure_cmake_file (${name} "config" "-version")
   configure_vars (
 	FILE CMAKE "${PROJECT_BINARY_DIR}/${name}-config.cmake"
 	APPEND "${${name}_CONFIG_VARS}"
@@ -78,11 +104,7 @@ function (opm_cmake_config name)
 	)
   # create a config mode file which targets the install directory instead
   # of the build directory (using the same input template)
-  configure_file (
-	${PROJECT_SOURCE_DIR}/${name}-config.cmake.in
-	${PROJECT_BINARY_DIR}/${name}-install.cmake
-	@ONLY
-	)
+  configure_cmake_file (${name} "install" "")
   configure_vars (
 	FILE CMAKE "${PROJECT_BINARY_DIR}/${name}-install.cmake"
 	APPEND "${${name}_CONFIG_VARS}"

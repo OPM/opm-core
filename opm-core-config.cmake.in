@@ -1,41 +1,41 @@
-# - @opm-core_DESCRIPTION@ config mode
+# - @opm-project_DESCRIPTION@ config mode
 #
 # Defines the following variables:
-#  opm-core_FOUND        - true
-#  opm-core_VERSION      - version of the opm-core library found, e.g. 0.2
-#  opm-core_DEFINITIONS  - defines to be made on the command line
-#  opm-core_INCLUDE_DIRS - header directories with which to compile
-#  opm-core_LINKER_FLAGS - flags that must be passed to the linker
-#  opm-core_LIBRARIES    - names of the libraries with which to link
-#  opm-core_LIBRARY_DIRS - directories in which the libraries are situated
+#  @opm-project_NAME@_FOUND        - true
+#  @opm-project_NAME@_VERSION      - version of the @opm-project_NAME@ library found, e.g. 0.2
+#  @opm-project_NAME@_DEFINITIONS  - defines to be made on the command line
+#  @opm-project_NAME@_INCLUDE_DIRS - header directories with which to compile
+#  @opm-project_NAME@_LINKER_FLAGS - flags that must be passed to the linker
+#  @opm-project_NAME@_LIBRARIES    - names of the libraries with which to link
+#  @opm-project_NAME@_LIBRARY_DIRS - directories in which the libraries are situated
 #
 # You should put lines like this in your CMakeLists.txt
-#  set (opm-core_DIR "${PROJECT_BINARY_DIR}/../opm-core" CACHE LOCATION "Build tree of opm-core")
-#  find_package (opm-core)
+#  set (@opm-project_NAME@_DIR "${PROJECT_BINARY_DIR}/../@opm-project_NAME@" CACHE LOCATION "Build tree of @opm-project_NAME@")
+#  find_package (@opm-project_NAME@)
 #  configure_vars (
 #    FILE  CXX  "${PROJECT_BINARY_DIR}/config.h"
-#    WRITE ${opm-core_CONFIG_VARS}
+#    WRITE ${@opm-project_NAME@_CONFIG_VARS}
 #    )
 
 # <http://www.vtk.org/Wiki/CMake/Tutorials/How_to_create_a_ProjectConfig.cmake_file>
 
 # propagate these properties from one build system to the other
-set (opm-core_VERSION "@opm-core_VERSION@")
-set (opm-core_DEFINITIONS "@opm-core_DEFINITIONS@")
-set (opm-core_INCLUDE_DIRS "@opm-core_INCLUDE_DIRS@")
-set (opm-core_LIBRARY_DIRS "@CMAKE_LIBRARY_OUTPUT_DIRECTORY@")
-set (opm-core_LINKER_FLAGS "@opm-core_LINKER_FLAGS@")
-set (opm-core_CONFIG_VARS "@opm-core_CONFIG_VARS@")
+set (@opm-project_NAME@_VERSION "@opm-project_VERSION@")
+set (@opm-project_NAME@_DEFINITIONS "@opm-project_DEFINITIONS@")
+set (@opm-project_NAME@_INCLUDE_DIRS "@opm-project_INCLUDE_DIRS@")
+set (@opm-project_NAME@_LIBRARY_DIRS "@CMAKE_LIBRARY_OUTPUT_DIRECTORY@")
+set (@opm-project_NAME@_LINKER_FLAGS "@opm-project_LINKER_FLAGS@")
+set (@opm-project_NAME@_CONFIG_VARS "@opm-project_CONFIG_VARS@")
 
 # libraries come from the build tree where this file was generated
-set (opm-core_LIBRARY "@opm-core_LIBRARY@")
-set (opm-core_LIBRARIES ${opm-core_LIBRARY} "@opm-core_LIBRARIES@")
-mark_as_advanced (opm-core_LIBRARY)
+set (@opm-project_NAME@_LIBRARY "@opm-project_LIBRARY@")
+set (@opm-project_NAME@_LIBRARIES ${@opm-project_NAME@_LIBRARY} "@opm-project_LIBRARIES@")
+mark_as_advanced (@opm-project_NAME@_LIBRARY)
 
 # add the library as a target, so that other things in the project including
 # this file may depend on it and get rebuild if this library changes.
-add_library (@opm-core_TARGET@ UNKNOWN IMPORTED)
-set_property (TARGET @opm-core_TARGET@ PROPERTY IMPORTED_LOCATION "${opm-core_LIBRARY}")
+add_library (@opm-project_TARGET@ UNKNOWN IMPORTED)
+set_property (TARGET @opm-project_TARGET@ PROPERTY IMPORTED_LOCATION "${@opm-project_NAME@_LIBRARY}")
 
 # ensure that we build with support for C++11 to preserve ABI
 string (REPLACE "@CXX_STD0X_FLAGS@" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")

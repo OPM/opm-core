@@ -1,4 +1,4 @@
-# - CMake version file for OPM-core
+# - CMake version file for @opm-project_NAME@
 #
 # Determine if requested version matches exactly or is compatible with
 # the installed package. It sets the following variables:
@@ -13,7 +13,7 @@
 # see <http://www.cmake.org/Wiki/CMake/Tutorials/Packaging#Package_Version_Files>
 
 # this is the version that is installed
-set (PACKAGE_VERSION @opm-core_VERSION@)
+set (PACKAGE_VERSION @opm-project_VERSION@)
 
 # if we wanted this exact version, then everything's fine
 if (PACKAGE_VERSION VERSION_EQUAL PACKAGE_FIND_VERSION)
