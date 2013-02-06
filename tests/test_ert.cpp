@@ -29,7 +29,7 @@
 #include <opm/core/fluid/IncompPropertiesFromDeck.hpp>
 
 
-#include <ecl_grid.h>
+#include <ert/ecl/ecl_grid.h>
 
 using namespace std;
 
