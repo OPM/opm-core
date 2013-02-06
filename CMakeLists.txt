@@ -21,6 +21,10 @@ list (APPEND opm-core_INCLUDE_DIRS "${opm-core_INCLUDE_DIR}")
 set (opm-core_MODULE_DIR "${PROJECT_SOURCE_DIR}/cmake/Modules")
 list (APPEND CMAKE_MODULE_PATH ${opm-core_MODULE_DIR})
 
+# very early try to print repo id (to pinpoint version if something goes wrong)
+include (UseVCSInfo)
+vcs_info ()
+
 # include special
 if (CMAKE_VERSION VERSION_LESS "2.8.7")
 	message (STATUS "Enabling backward compatibility modules for CMake ${CMAKE_VERSION}")
