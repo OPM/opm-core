@@ -122,13 +122,18 @@ function (configure_la name target)
 	  ${ltversion_STRING}
 	  )
   endif (ltversion_STRING)
+
+  # assume that we are in cmake/Modules, and that the template have been
+  # put in cmake/Templates. we cannot use CMAKE_CURRENT_LIST_DIR because
+  # this is in a function, and we cannot know who's calling us
+  set (templ_dir "${PROJECT_SOURCE_DIR}/cmake/Templates")
   
   # only write an .la if libtool is found; otherwise we have no use
   # for it.
   if (ltversion)
 	message (STATUS "Writing libtool archive for ${target}")
 	configure_file (
-	  ${PROJECT_SOURCE_DIR}/la.in
+	  ${templ_dir}/la.in
 	  ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/lib${target}.la
 	  @ONLY@
 	  )
