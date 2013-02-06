@@ -396,6 +396,8 @@ add_custom_target (check
 	)
 
 ### documentation ###
+set (docu_dir "Documentation")
+
 configure_file (
 	${PROJECT_SOURCE_DIR}/Doxyfile.in
 	${PROJECT_BINARY_DIR}/Doxyfile
@@ -406,7 +408,7 @@ if (DOXYGEN_FOUND)
 	add_custom_target (doc
 		COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
 		SOURCES ${PROJECT_BINARY_DIR}/Doxyfile
-		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${docu_dir}
 		COMMENT "Generating API documentation with Doxygen"
 		VERBATIM
 		)
@@ -414,8 +416,8 @@ if (DOXYGEN_FOUND)
 	foreach (format IN LISTS _formats)
 		string (TOUPPER ${format} FORMAT)
 		install (
-			DIRECTORY ${PROJECT_BINARY_DIR}/Documentation/${format}
-			DESTINATION share/doc/opm-core/
+			DIRECTORY ${PROJECT_BINARY_DIR}/${docu_dir}/${format}
+			DESTINATION share/doc/${PROJECT_NAME}/
 			COMPONENT ${format}
 			OPTIONAL
 			)
@@ -435,8 +437,8 @@ endif (DOXYGEN_FOUND)
 # thus, we'll need to copy the stylesheet to this path relative to where
 # Doxygen will be run (in the output tree)
 if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
-	file (COPY ${PROJECT_SOURCE_DIR}/style.css
-		DESTINATION ${PROJECT_BINARY_DIR}
+	file (COPY ${PROJECT_SOURCE_DIR}/${docu_dir}/style.css
+		DESTINATION ${PROJECT_BINARY_DIR}/${docu_dir}
 		)
 endif (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 
