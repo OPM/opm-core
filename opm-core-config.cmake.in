@@ -34,8 +34,8 @@ mark_as_advanced (opm-core_LIBRARY)
 
 # add the library as a target, so that other things in the project including
 # this file may depend on it and get rebuild if this library changes.
-add_library (opmcore UNKNOWN IMPORTED)
-set_property (TARGET opmcore PROPERTY IMPORTED_LOCATION "${opm-core_LIBRARY}")
+add_library (@opm-core_TARGET@ UNKNOWN IMPORTED)
+set_property (TARGET @opm-core_TARGET@ PROPERTY IMPORTED_LOCATION "${opm-core_LIBRARY}")
 
 # ensure that we build with support for C++11 to preserve ABI
 string (REPLACE "@CXX_STD0X_FLAGS@" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")

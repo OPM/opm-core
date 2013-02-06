@@ -201,28 +201,32 @@ else (BUILD_opm-core_SHARED)
 	set (opm-core_LIBRARY_TYPE STATIC)
 endif (BUILD_opm-core_SHARED)
 
+# name of the library should not contain dashes, as CMake will
+# define a symbol with that name, and those cannot contain dashes
+string (REPLACE "-" "" opm-core_TARGET "${PROJECT_NAME}")
+
 # create this library
 include_directories (${opm-core_INCLUDE_DIRS})
 link_directories (${opm-core_LIBRARY_DIRS})
 add_definitions (${opm-core_DEFINITIONS})
-add_library (opmcore ${opm-core_LIBRARY_TYPE} ${opmcore_SOURCES})
+add_library (${opm-core_TARGET} ${opm-core_LIBRARY_TYPE} ${opmcore_SOURCES})
 set (opm-core_VERSION "${opm-core_VERSION_MAJOR}.${opm-core_VERSION_MINOR}")
-set_target_properties (opmcore PROPERTIES
+set_target_properties (${opm-core_TARGET} PROPERTIES
 	SOVERSION ${opm-core_VERSION_MAJOR}
 	VERSION ${opm-core_VERSION}
 	LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
 	)
-target_link_libraries (opmcore ${opm-core_LIBRARIES})
+target_link_libraries (${opm-core_TARGET} ${opm-core_LIBRARIES})
 
 # queue this executable to be stripped
-strip_debug_symbols (opmcore opm-core_DEBUG)
+strip_debug_symbols (${opm-core_TARGET} opm-core_DEBUG)
 
 # pre-compile common headers; this is setup *after* the library to pick
 # up extra options set there
 option (PRECOMPILE_HEADERS "Precompile common headers for speed." ON)
 mark_as_advanced (PRECOMPILE_HEADERS)
 if (PRECOMPILE_HEADERS)
-	get_target_property (_type opmcore TYPE)
+	get_target_property (_type ${opm-core_TARGET} TYPE)
 	precompile_header (CXX ${_type}
 		HEADER "${opmcore_PRECOMP_CXX_HEADER}"
 		TARGET opmcore_CXX_pch
@@ -249,7 +253,7 @@ foreach (_hdr IN LISTS opmcore_HEADERS)
 		)
 endforeach (_hdr)
 install (
-	TARGETS opmcore
+	TARGETS ${opm-core_TARGET}
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	)
@@ -285,7 +289,7 @@ install (
 message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")
 
 # we need to know the name of the library which is generated
-get_target_property (opm-core_LIBRARY opmcore LOCATION)
+get_target_property (opm-core_LIBRARY ${opm-core_TARGET} LOCATION)
 
 # installation of CMake modules to help user programs locate the library
 include (OpmProject)
@@ -307,7 +311,7 @@ foreach (tutorial_FILE IN LISTS tutorial_SOURCES)
 	set_target_properties (${tutorial_NAME} PROPERTIES
 		LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
 		)
-	target_link_libraries (${tutorial_NAME} opmcore ${opm-core_LIBRARIES})
+	target_link_libraries (${tutorial_NAME} ${opm-core_TARGET} ${opm-core_LIBRARIES})
 	strip_debug_symbols (${tutorial_NAME})
 
 	# add to list of tutorials to build
@@ -371,7 +375,7 @@ foreach (test_FILE IN LISTS tests_SOURCES)
 	set_target_properties (${test_NAME} PROPERTIES
 		LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
 		)
-	target_link_libraries (${test_NAME} opmcore ${opm-core_LIBRARIES})
+	target_link_libraries (${test_NAME} ${opm-core_TARGET} ${opm-core_LIBRARIES})
 	strip_debug_symbols (${test_NAME})
 	string (REGEX REPLACE "^test_([^/]*)$" "\\1" test_FANCY "${test_NAME}")
 	get_target_property (test_LOC ${test_NAME} LOCATION)
@@ -470,4 +474,4 @@ file (COPY
 # provide compatibility with using this build in dunecontrol
 include (DuneCompat)
 include (LibtoolArchives)
-configure_la (opm-core opmcore)
+configure_la (opm-core ${opm-core_TARGET})
