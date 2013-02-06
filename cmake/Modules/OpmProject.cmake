@@ -54,12 +54,9 @@ function (configure_cmake_file name variant version)
   endforeach (suffix)
   set (opm-project_NAME "${PROJECT_NAME}")
 
-  # assume that the template in located in the root of the source
-  set (template_dir "${PROJECT_SOURCE_DIR}")
-
   # make the file substitutions
   configure_file (
-	${template_dir}/${name}-config${version}.cmake.in
+	${template_dir}/opm-project-config${version}.cmake.in
 	${PROJECT_BINARY_DIR}/${name}-${variant}${version}.cmake
 	@ONLY
 	)
@@ -67,6 +64,11 @@ endfunction (configure_cmake_file name)
 
 # installation of CMake modules to help user programs locate the library
 function (opm_cmake_config name)
+  # assume that the template is located in cmake/Templates (cannot use
+  # the current directory since this is in a function and the directory
+  # at runtime not at definition will be used
+  set (template_dir "${PROJECT_SOURCE_DIR}/cmake/Templates")
+
   # write configuration file to locate library
   configure_cmake_file (${name} "config" "")
   configure_cmake_file (${name} "config" "-version")
@@ -78,7 +80,7 @@ function (opm_cmake_config name)
   # config-mode .pc file; use this to find the build tree
   configure_pc_file (
 	${name}
-	${PROJECT_SOURCE_DIR}/${name}.pc.in
+	${template_dir}/opm-project.pc.in
 	${PROJECT_BINARY_DIR}/${name}.pc
 	${PROJECT_BINARY_DIR}
 	${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
@@ -124,7 +126,7 @@ function (opm_cmake_config name)
   # find-mode .pc file; use this to locate system installation
   configure_pc_file (
 	${name}
-	${PROJECT_SOURCE_DIR}/${name}.pc.in
+	${template_dir}/opm-project.pc.in
 	${PROJECT_BINARY_DIR}/${name}-install.pc
 	${CMAKE_INSTALL_PREFIX}
 	${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
