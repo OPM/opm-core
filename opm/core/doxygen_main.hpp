@@ -79,9 +79,8 @@ The currently recommended pressure solvers available in opm-core are
 the C++ classes
 - Opm::IncompTpfa (incompressible TPFA discretization)
 - Opm::CompressibleTpfa (compressible TPFA discretization)
-
-A number of other solvers and interfaces are available.
-These solvers wrap low-level features that should not be used in client code.
+Both solvers (also Opm::IncompTpfa) support rock compaction, while
+only Opm::CompressibleTpfa supports fluid compressibility.
 
 <h3>Transport solvers</h3>
 
