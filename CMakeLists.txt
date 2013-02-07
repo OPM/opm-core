@@ -99,41 +99,41 @@ set (CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/CMakeFiles")
 # against using globs to enumerate source code, but if you list the
 # files explicitly you'll change the build files every time you add to
 # the project as well as having to rebuild completely anyway.
-file (GLOB_RECURSE opmcore_C_SOURCES "${opm-core_DIR}/[^.]*.c")
-file (GLOB_RECURSE opmcore_CXX_SOURCES "${opm-core_DIR}/[^.]*.cpp")
-file (GLOB_RECURSE opmcore_C_HEADERS "${opm-core_DIR}/[^.]*.h")
-file (GLOB_RECURSE opmcore_CXX_HEADERS "${opm-core_DIR}/[^.]*.hpp")
+file (GLOB_RECURSE opm-core_C_SOURCES "${opm-core_DIR}/[^.]*.c")
+file (GLOB_RECURSE opm-core_CXX_SOURCES "${opm-core_DIR}/[^.]*.cpp")
+file (GLOB_RECURSE opm-core_C_HEADERS "${opm-core_DIR}/[^.]*.h")
+file (GLOB_RECURSE opm-core_CXX_HEADERS "${opm-core_DIR}/[^.]*.hpp")
 
 # remove pre-compile headers from output list
-set (opmcore_PRECOMP_CXX_HEADER "${opm-core_DIR}/${opm-core_NAME}-pch.hpp")
-list (REMOVE_ITEM opmcore_CXX_HEADERS
-	${PROJECT_SOURCE_DIR}/${opmcore_PRECOMP_CXX_HEADER}
+set (opm-core_PRECOMP_CXX_HEADER "${opm-core_DIR}/${opm-core_NAME}-pch.hpp")
+list (REMOVE_ITEM opm-core_CXX_HEADERS
+	${PROJECT_SOURCE_DIR}/${opm-core_PRECOMP_CXX_HEADER}
 	)
 
 # merge both languages into one compilation/installation
-set (opmcore_SOURCES ${opmcore_C_SOURCES} ${opmcore_CXX_SOURCES})
-set (opmcore_HEADERS ${opmcore_C_HEADERS} ${opmcore_CXX_HEADERS})
+set (opm-core_SOURCES ${opm-core_C_SOURCES} ${opm-core_CXX_SOURCES})
+set (opm-core_HEADERS ${opm-core_C_HEADERS} ${opm-core_CXX_HEADERS})
 
 # Algebraic Multigrid must be compiled together with our program;
 # if it is not available, then remove our corresponding component
 find_package (AGMG)
 if (AGMG_FOUND)
-	list (APPEND opmcore_SOURCES ${AGMG_SOURCES})
+	list (APPEND opm-core_SOURCES ${AGMG_SOURCES})
 endif (AGMG_FOUND)
 
 # these solvers are only compiled in if their dependency is found
 if (NOT AGMG_FOUND)
-	list (REMOVE_ITEM opmcore_SOURCES
+	list (REMOVE_ITEM opm-core_SOURCES
 		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/LinearSolverAGMG.cpp
 		)
 endif (NOT AGMG_FOUND)
 if (NOT dune-istl_FOUND)
-	list (REMOVE_ITEM opmcore_SOURCES
+	list (REMOVE_ITEM opm-core_SOURCES
 		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/LinearSolverIstl.cpp
 		)
 endif (NOT dune-istl_FOUND)
 if (NOT SuiteSparse_FOUND)
-	list (REMOVE_ITEM opmcore_SOURCES
+	list (REMOVE_ITEM opm-core_SOURCES
 		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/call_umfpack.c
 		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/LinearSolverUmfpack.cpp
 		)
@@ -141,7 +141,7 @@ endif (NOT SuiteSparse_FOUND)
 
 # these files are provided in source control, but can only compile with Matlab
 # available; we are not supposed to include the TinyXML test prog. regardless
-list (REMOVE_ITEM opmcore_SOURCES
+list (REMOVE_ITEM opm-core_SOURCES
 	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/grid/cpgpreprocess/mxgrdecl.c
 	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/grid/cpgpreprocess/processgrid.c
 	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/utility/parameters/tinyxml/xmltest.cpp
@@ -151,13 +151,13 @@ list (REMOVE_ITEM opmcore_SOURCES
 if (TinyXML_FOUND)
 	file (GLOB_RECURSE _inline_tinyxml "${opm-core_DIR}/utility/parameters/tinyxml/*")
 	foreach (_file IN LISTS _inline_tinyxml)
-		list (REMOVE_ITEM opmcore_SOURCES ${_file})
+		list (REMOVE_ITEM opm-core_SOURCES ${_file})
 	endforeach (_file)
 endif (TinyXML_FOUND)
 
 # anyhow remove it from the header list (so it doesn't get installed)
-list (REMOVE_ITEM opmcore_HEADERS "${opm-core_DIR}/utility/parameters/tinyxml/tinystr.h")
-list (REMOVE_ITEM opmcore_HEADERS "${opm-core_DIR}/utility/parameters/tinyxml/tinyxml.h")
+list (REMOVE_ITEM opm-core_HEADERS "${opm-core_DIR}/utility/parameters/tinyxml/tinystr.h")
+list (REMOVE_ITEM opm-core_HEADERS "${opm-core_DIR}/utility/parameters/tinyxml/tinyxml.h")
 
 # HAVE_ERT is used as an #ifdef, not as an #if in the source code, if it
 # is not true, then it should be unset altogether
@@ -213,7 +213,7 @@ string (REPLACE "-" "" opm-core_TARGET "${opm-core_NAME}")
 include_directories (${opm-core_INCLUDE_DIRS})
 link_directories (${opm-core_LIBRARY_DIRS})
 add_definitions (${opm-core_DEFINITIONS})
-add_library (${opm-core_TARGET} ${opm-core_LIBRARY_TYPE} ${opmcore_SOURCES})
+add_library (${opm-core_TARGET} ${opm-core_LIBRARY_TYPE} ${opm-core_SOURCES})
 set (opm-core_VERSION "${opm-core_VERSION_MAJOR}.${opm-core_VERSION_MINOR}")
 set_target_properties (${opm-core_TARGET} PROPERTIES
 	SOVERSION ${opm-core_VERSION_MAJOR}
@@ -232,23 +232,23 @@ mark_as_advanced (PRECOMPILE_HEADERS)
 if (PRECOMPILE_HEADERS)
 	get_target_property (_type ${opm-core_TARGET} TYPE)
 	precompile_header (CXX ${_type}
-		HEADER "${opmcore_PRECOMP_CXX_HEADER}"
-		TARGET opmcore_CXX_pch
-		FLAGS  opmcore_PRECOMP_CXX_FLAGS
+		HEADER "${opm-core_PRECOMP_CXX_HEADER}"
+		TARGET opm-core_CXX_pch
+		FLAGS  opm-core_PRECOMP_CXX_FLAGS
 		)
 	# must set property on source files instead of entire target, because
 	# it only applies to C++ modules (and cannot be used for C)
-	set_source_files_properties (${opmcore_CXX_SOURCES} PROPERTIES
-		OBJECT_DEPENDS "${opmcore_CXX_pch}"
-		COMPILE_FLAGS  "${opmcore_PRECOMP_CXX_FLAGS}"
+	set_source_files_properties (${opm-core_CXX_SOURCES} PROPERTIES
+		OBJECT_DEPENDS "${opm-core_CXX_pch}"
+		COMPILE_FLAGS  "${opm-core_PRECOMP_CXX_FLAGS}"
 		)
-	message (STATUS "Precompiled headers: ${opmcore_CXX_pch}")
+	message (STATUS "Precompiled headers: ${opm-core_CXX_pch}")
 else (PRECOMPILE_HEADERS)
 	message (STATUS "Precompiled headers: disabled")
 endif (PRECOMPILE_HEADERS)
 
 ### installation ###
-foreach (_hdr IN LISTS opmcore_HEADERS)
+foreach (_hdr IN LISTS opm-core_HEADERS)
 	get_filename_component (_dir ${_hdr} PATH)
 	file (RELATIVE_PATH _rel_dir "${PROJECT_SOURCE_DIR}" "${_dir}")
 	install (
