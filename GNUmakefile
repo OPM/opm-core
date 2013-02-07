@@ -28,7 +28,11 @@ export CCACHE_DISABLE:=1
 # the leading plus makes us run this regardless of options, see
 # http://www.gnu.org/software/make/manual/make.html#Instead-of-Execution
 __everything:
-	+@$(IONICE) $(NICE) $(MAKE) --no-print-directory -f Makefile -j $(PROCS) $(MAKECMDGOALS)
+# only put on a parallel flag if there isn't already one; otherwise we
+# get the warning "-jN forced in submake: disabling jobserver mode".
+# this have to happen inside the rule, because -j option is removed from
+# MAKEFLAGS outside
+	+@$(IONICE) $(NICE) $(MAKE) --no-print-directory -f Makefile $(if $(findstring -j,$(MAKEFLAGS)),,-j $(PROCS)) $(MAKECMDGOALS)
 
 # automatically generate all the goals we are asked to make and delegate
 # processing of them to the real makefile through the dependency (since
