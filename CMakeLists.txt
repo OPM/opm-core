@@ -1,12 +1,16 @@
 # -*- mode: cmake; tab-width: 2; indent-tabs-mode: t; truncate-lines: t; compile-command: "cmake -Wdev" -*-
 # vim: set filetype=cmake autoindent tabstop=2 shiftwidth=2 noexpandtab softtabstop=2 nowrap:
 cmake_minimum_required (VERSION 2.8)
-project (opm-core)
+set (opm-core_NAME "opm-core")
+project (${opm-core_NAME})
 set (opm-core_VERSION_MAJOR 1)
 set (opm-core_VERSION_MINOR 0)
 enable_language (C)
 enable_language (CXX)
 set (opm-core_DESCRIPTION "Open Porous Media Initiative Core Library")
+
+# source is located under this directory
+set (opm-core_DIR "opm/core")
 
 # build debug by default
 if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
@@ -67,7 +71,7 @@ list (APPEND opm-core_DEPS
 	# Ensembles-based Reservoir Tools (ERT)
 	"ERT"
 	)
-find_and_append_package_list (${opm-core_DEPS})
+find_and_append_package_list_to (opm-core ${opm-core_DEPS})
 
 # put debug information into every executable
 include (UseDebugSymbols)
@@ -95,13 +99,13 @@ set (CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/CMakeFiles")
 # against using globs to enumerate source code, but if you list the
 # files explicitly you'll change the build files every time you add to
 # the project as well as having to rebuild completely anyway.
-file (GLOB_RECURSE opmcore_C_SOURCES "opm/core/[^.]*.c")
-file (GLOB_RECURSE opmcore_CXX_SOURCES "opm/core/[^.]*.cpp")
-file (GLOB_RECURSE opmcore_C_HEADERS "opm/core/[^.]*.h")
-file (GLOB_RECURSE opmcore_CXX_HEADERS "opm/core/[^.]*.hpp")
+file (GLOB_RECURSE opmcore_C_SOURCES "${opm-core_DIR}/[^.]*.c")
+file (GLOB_RECURSE opmcore_CXX_SOURCES "${opm-core_DIR}/[^.]*.cpp")
+file (GLOB_RECURSE opmcore_C_HEADERS "${opm-core_DIR}/[^.]*.h")
+file (GLOB_RECURSE opmcore_CXX_HEADERS "${opm-core_DIR}/[^.]*.hpp")
 
 # remove pre-compile headers from output list
-set (opmcore_PRECOMP_CXX_HEADER "opm/core/opm-core-pch.hpp")
+set (opmcore_PRECOMP_CXX_HEADER "${opm-core_DIR}/${opm-core_NAME}-pch.hpp")
 list (REMOVE_ITEM opmcore_CXX_HEADERS
 	${PROJECT_SOURCE_DIR}/${opmcore_PRECOMP_CXX_HEADER}
 	)
@@ -120,40 +124,40 @@ endif (AGMG_FOUND)
 # these solvers are only compiled in if their dependency is found
 if (NOT AGMG_FOUND)
 	list (REMOVE_ITEM opmcore_SOURCES
-		${PROJECT_SOURCE_DIR}/opm/core/linalg/LinearSolverAGMG.cpp
+		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/LinearSolverAGMG.cpp
 		)
 endif (NOT AGMG_FOUND)
 if (NOT dune-istl_FOUND)
 	list (REMOVE_ITEM opmcore_SOURCES
-		${PROJECT_SOURCE_DIR}/opm/core/linalg/LinearSolverIstl.cpp
+		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/LinearSolverIstl.cpp
 		)
 endif (NOT dune-istl_FOUND)
 if (NOT SuiteSparse_FOUND)
 	list (REMOVE_ITEM opmcore_SOURCES
-		${PROJECT_SOURCE_DIR}/opm/core/linalg/call_umfpack.c
-		${PROJECT_SOURCE_DIR}/opm/core/linalg/LinearSolverUmfpack.cpp
+		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/call_umfpack.c
+		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/LinearSolverUmfpack.cpp
 		)
 endif (NOT SuiteSparse_FOUND)
 
 # these files are provided in source control, but can only compile with Matlab
 # available; we are not supposed to include the TinyXML test prog. regardless
 list (REMOVE_ITEM opmcore_SOURCES
-	${PROJECT_SOURCE_DIR}/opm/core/grid/cpgpreprocess/mxgrdecl.c
-	${PROJECT_SOURCE_DIR}/opm/core/grid/cpgpreprocess/processgrid.c
-	${PROJECT_SOURCE_DIR}/opm/core/utility/parameters/tinyxml/xmltest.cpp
+	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/grid/cpgpreprocess/mxgrdecl.c
+	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/grid/cpgpreprocess/processgrid.c
+	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/utility/parameters/tinyxml/xmltest.cpp
 	)
 
 # remove inline TinyXML if a system version was found
 if (TinyXML_FOUND)
-	file (GLOB_RECURSE _inline_tinyxml "opm/core/utility/parameters/tinyxml/*")
+	file (GLOB_RECURSE _inline_tinyxml "${opm-core_DIR}/utility/parameters/tinyxml/*")
 	foreach (_file IN LISTS _inline_tinyxml)
 		list (REMOVE_ITEM opmcore_SOURCES ${_file})
 	endforeach (_file)
 endif (TinyXML_FOUND)
 
 # anyhow remove it from the header list (so it doesn't get installed)
-list (REMOVE_ITEM opmcore_HEADERS "opm/core/utility/parameters/tinyxml/tinystr.h")
-list (REMOVE_ITEM opmcore_HEADERS "opm/core/utility/parameters/tinyxml/tinyxml.h")
+list (REMOVE_ITEM opmcore_HEADERS "${opm-core_DIR}/utility/parameters/tinyxml/tinystr.h")
+list (REMOVE_ITEM opmcore_HEADERS "${opm-core_DIR}/utility/parameters/tinyxml/tinyxml.h")
 
 # HAVE_ERT is used as an #ifdef, not as an #if in the source code, if it
 # is not true, then it should be unset altogether
@@ -194,16 +198,16 @@ if (DEFINED BUILD_SHARED_LIBS)
 else (DEFINED BUILD_SHARED_LIBS)
 	set (_shared_def OFF)
 endif (DEFINED BUILD_SHARED_LIBS)
-option (BUILD_opm-core_SHARED "Build opm-core as a shared library" ${_shared_def})
-if (BUILD_opm-core_SHARED)
+option (BUILD_${opm-core_NAME}_SHARED "Build ${opm-core_NAME} as a shared library" ${_shared_def})
+if (BUILD_${opm-core_NAME}_SHARED)
 	set (opm-core_LIBRARY_TYPE SHARED)
-else (BUILD_opm-core_SHARED)
+else (BUILD_${opm-core_NAME}_SHARED)
 	set (opm-core_LIBRARY_TYPE STATIC)
-endif (BUILD_opm-core_SHARED)
+endif (BUILD_${opm-core_NAME}_SHARED)
 
 # name of the library should not contain dashes, as CMake will
 # define a symbol with that name, and those cannot contain dashes
-string (REPLACE "-" "" opm-core_TARGET "${PROJECT_NAME}")
+string (REPLACE "-" "" opm-core_TARGET "${opm-core_NAME}")
 
 # create this library
 include_directories (${opm-core_INCLUDE_DIRS})
@@ -276,15 +280,15 @@ else (SYSTEM_DEBUG)
 endif (SYSTEM_DEBUG)
 # static libraries don't have their debug info stripped, so there is
 # only a separate file when we are building shared objects
-if (BUILD_opm-core_SHARED)
+if (opm-core_LIBRARY_TYPE STREQUAL "SHARED")
 	install (
 		FILES ${PROJECT_BINARY_DIR}/${opm-core_DEBUG}
 		DESTINATION ${_dbg_prefix}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
 		)
-endif (BUILD_opm-core_SHARED)
+endif (opm-core_LIBRARY_TYPE STREQUAL "SHARED")
 install (
 	FILES ${PROJECT_SOURCE_DIR}/dune.module
-	DESTINATION ${CMAKE_INSTALL_LIBDIR_NOARCH}/dunecontrol/opm-core
+	DESTINATION ${CMAKE_INSTALL_LIBDIR_NOARCH}/dunecontrol/${opm-core_NAME}
 	)
 message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")
 
@@ -417,7 +421,7 @@ if (DOXYGEN_FOUND)
 		string (TOUPPER ${format} FORMAT)
 		install (
 			DIRECTORY ${PROJECT_BINARY_DIR}/${docu_dir}/${format}
-			DESTINATION share/doc/${PROJECT_NAME}/
+			DESTINATION share/doc/${opm-core_NAME}/
 			COMPONENT ${format}
 			OPTIONAL
 			)
@@ -456,13 +460,13 @@ set (DISTCLEAN_FILES
 	CMakeCache.txt
 	cmake_install.cmake
 	Makefile
-  config.h
-  opm-core-config.cmake
-	opm-core-config-version.cmake
-  opm-core-install.cmake
-	opm-core.pc
-	opm-core-install.pc
-  Doxyfile
+	config.h
+	${opm-core_NAME}-config.cmake
+	${opm-core_NAME}-config-version.cmake
+	${opm-core_NAME}-install.cmake
+	${opm-core_NAME}.pc
+	${opm-core_NAME}-install.pc
+	Doxyfile
 	CTestTestfile.cmake
 	DartConfiguration.tcl
 	GNUmakefile

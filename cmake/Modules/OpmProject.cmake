@@ -22,7 +22,7 @@ function (configure_pc_file name source dest prefix libdir includedir)
   unseparate_args (defs "" "${${name}_DEFINITIONS}")
 
   # necessary to make these variables visible to configure_file
-  set (name "${PROJECT_NAME}")
+  set (name "${${name}_NAME}")
   set (description "${${name}_DESCRIPTION}")
   set (target "${${name}_LIBRARY}")
   set (major "${${name}_VERSION_MAJOR}")
@@ -52,12 +52,12 @@ function (configure_cmake_file name variant version)
   foreach (suffix IN LISTS variable_suffices)
 	set (opm-project_${suffix} "${${name}_${suffix}}")
   endforeach (suffix)
-  set (opm-project_NAME "${PROJECT_NAME}")
+  set (opm-project_NAME "${${name}_NAME}")
 
   # make the file substitutions
   configure_file (
 	${template_dir}/opm-project-config${version}.cmake.in
-	${PROJECT_BINARY_DIR}/${name}-${variant}${version}.cmake
+	${PROJECT_BINARY_DIR}/${${name}_NAME}-${variant}${version}.cmake
 	@ONLY
 	)
 endfunction (configure_cmake_file name)
@@ -73,7 +73,7 @@ function (opm_cmake_config name)
   configure_cmake_file (${name} "config" "")
   configure_cmake_file (${name} "config" "-version")
   configure_vars (
-	FILE CMAKE "${PROJECT_BINARY_DIR}/${name}-config.cmake"
+	FILE CMAKE "${PROJECT_BINARY_DIR}/${${name}_NAME}-config.cmake"
 	APPEND "${${name}_CONFIG_VARS}"
 	)
 
@@ -81,7 +81,7 @@ function (opm_cmake_config name)
   configure_pc_file (
 	${name}
 	${template_dir}/opm-project.pc.in
-	${PROJECT_BINARY_DIR}/${name}.pc
+	${PROJECT_BINARY_DIR}/${${name}_NAME}.pc
 	${PROJECT_BINARY_DIR}
 	${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
 	${PROJECT_SOURCE_DIR}
@@ -108,26 +108,26 @@ function (opm_cmake_config name)
   # of the build directory (using the same input template)
   configure_cmake_file (${name} "install" "")
   configure_vars (
-	FILE CMAKE "${PROJECT_BINARY_DIR}/${name}-install.cmake"
+	FILE CMAKE "${PROJECT_BINARY_DIR}/${${name}_NAME}-install.cmake"
 	APPEND "${${name}_CONFIG_VARS}"
 	)
   # this file gets copied to the final installation directory
   install (
-	FILES ${PROJECT_BINARY_DIR}/${name}-install.cmake
-	DESTINATION share/cmake/${name}
-	RENAME ${name}-config.cmake
+	FILES ${PROJECT_BINARY_DIR}/${${name}_NAME}-install.cmake
+	DESTINATION share/cmake/${${name}_NAME}
+	RENAME ${${name}_NAME}-config.cmake
 	)
   # assume that there exists a version file already
   install (
-	FILES ${PROJECT_BINARY_DIR}/${name}-config-version.cmake
-	DESTINATION share/cmake/${name}
+	FILES ${PROJECT_BINARY_DIR}/${${name}_NAME}-config-version.cmake
+	DESTINATION share/cmake/${${name}_NAME}
 	)
 
   # find-mode .pc file; use this to locate system installation
   configure_pc_file (
 	${name}
 	${template_dir}/opm-project.pc.in
-	${PROJECT_BINARY_DIR}/${name}-install.pc
+	${PROJECT_BINARY_DIR}/${${name}_NAME}-install.pc
 	${CMAKE_INSTALL_PREFIX}
 	${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
 	${CMAKE_INSTALL_PREFIX}/include
@@ -135,8 +135,8 @@ function (opm_cmake_config name)
 
   # put this in the right system location; assume that we have binaries
   install (
-	FILES ${PROJECT_BINARY_DIR}/${name}-install.pc
+	FILES ${PROJECT_BINARY_DIR}/${${name}_NAME}-install.pc
 	DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/pkgconfig/
-	RENAME ${name}.pc
+	RENAME ${${name}_NAME}.pc
 	)
 endfunction (opm_cmake_config name)
