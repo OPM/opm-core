@@ -442,6 +442,12 @@ if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 		)
 endif (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 
+# provide compatibility with using this build in dunecontrol
+include (DuneCompat)
+include (LibtoolArchives)
+configure_la (opm-core ${opm-core_TARGET} opm-core_LIBTOOL_ARCHIVE)
+message (STATUS "Writing libtool archive ${opm-core_LIBTOOL_ARCHIVE}")
+
 ### clean in-source builds ###
 set (DISTCLEAN_FILES
 	CMakeCache.txt
@@ -472,8 +478,3 @@ file (COPY
 	GNUmakefile
 	DESTINATION ${PROJECT_BINARY_DIR}
 	)
-
-# provide compatibility with using this build in dunecontrol
-include (DuneCompat)
-include (LibtoolArchives)
-configure_la (opm-core ${opm-core_TARGET})
