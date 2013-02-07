@@ -25,8 +25,10 @@ export CCACHE_DISABLE:=1
 # outsource the processing to the real makefile, running in parallel and
 # in a nice environment so that it doesn't hog our workstation. if there
 # is nothing else happening on the box, then it will run just as fast
+# the leading plus makes us run this regardless of options, see
+# http://www.gnu.org/software/make/manual/make.html#Instead-of-Execution
 __everything:
-	@$(IONICE) $(NICE) $(MAKE) --no-print-directory -f Makefile -j $(PROCS) $(MAKECMDGOALS)
+	+@$(IONICE) $(NICE) $(MAKE) --no-print-directory -f Makefile -j $(PROCS) $(MAKECMDGOALS)
 
 # automatically generate all the goals we are asked to make and delegate
 # processing of them to the real makefile through the dependency (since
