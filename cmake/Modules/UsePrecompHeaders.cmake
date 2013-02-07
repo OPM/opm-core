@@ -95,6 +95,15 @@ function (precompile_header
   if (NOT flgs_kw STREQUAL "FLAGS")
 	message (FATAL "Seventh token to precompile_header should be \"FLAGS\"")
   endif (NOT flgs_kw STREQUAL "FLAGS")
+
+  # check language
+  if (language STREQUAL "CXX")
+	set (gcc_lang "c++-header")
+  elseif (language STREQUAL "C")
+	set (gcc_lang "c-header")
+  else (language STREQUAL "CXX")
+	message (FATAL "Only C or C++ can have precompiled headers")
+  endif (language STREQUAL "CXX")
   
   # only support precompiled headers if the compiler is gcc >= 3.4
   if (CMAKE_COMPILER_IS_GNUCXX)
@@ -128,7 +137,7 @@ function (precompile_header
 	  add_custom_command (
 		OUTPUT  ${PROJECT_BINARY_DIR}/${_pch_file}
 		COMMAND ${_cmd}
-		ARGS    ${_args} "-o" "${_pch_file}" "${_pch_dir}/${header}"
+		ARGS    ${_args} "-o" "${_pch_file}" "-x" "${gcc_lang}" "-c" "${_pch_dir}/${header}"
 		DEPENDS "${_pch_dir}/${header}"
 		COMMENT "Precompiling headers ${_pch_file}"
 		)
