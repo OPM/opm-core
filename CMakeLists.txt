@@ -440,6 +440,9 @@ if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 	file (COPY ${PROJECT_SOURCE_DIR}/${docu_dir}/style.css
 		DESTINATION ${PROJECT_BINARY_DIR}/${docu_dir}
 		)
+	set (opm-core_STYLESHEET_COPIED "${docu_dir}/style.css")
+else (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+	set (opm-core_STYLESHEET_COPIED "")
 endif (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 
 # provide compatibility with using this build in dunecontrol
@@ -457,14 +460,21 @@ set (DISTCLEAN_FILES
   opm-core-config.cmake
 	opm-core-config-version.cmake
   opm-core-install.cmake
+	opm-core.pc
+	opm-core-install.pc
   Doxyfile
-	)
-set (DISTCLEAN_DIRS
-	CMakeFiles/
+	CTestTestfile.cmake
+	DartConfiguration.tcl
+	GNUmakefile
+	lib/${opm-core_LIBTOOL_ARCHIVE}
+	${opm-core_DEBUG}
+	install_manifest.txt
+	${opm-core_STYLESHEET_COPIED}
 	)
 add_custom_target (distclean
-	COMMAND ${CMAKE_COMMAND} -E remove ${DISTCLEAN_FILES}
-	COMMAND ${CMAKE_COMMAND} -E remove_directory ${DISTCLEAN_DIRS}
+	COMMAND ${CMAKE_COMMAND} -E remove -f ${DISTCLEAN_FILES}
+	COMMAND ${CMAKE_COMMAND} -E remove_directory CMakeFiles/
+	COMMAND ${CMAKE_COMMAND} -E remove_directory Testing/
 # cannot depend on clean because it is only defined in the master Makefile
 # not in CMakeFiles/Makefile where this target will end up
 #	DEPENDS clean
