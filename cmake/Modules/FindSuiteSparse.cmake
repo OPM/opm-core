@@ -34,8 +34,17 @@ function (try_compile_umfpack varname)
   check_c_source_compiles (
         "#include <umfpack.h>
 int main (void) {
-  double info, sym, num;
-  umfpack_dl_solve (UMFPACK_A, 0, 0, 0, 0, 0, &sym, &num, &info);
+  void *Symbolic, *Numeric;
+  double Info[UMFPACK_INFO], Control[UMFPACK_CONTROL];
+  umfpack_dl_defaults(Control);
+  umfpack_dl_symbolic(0, 0, 0, 0, 0,
+                      &Symbolic, Control, Info);
+  umfpack_dl_numeric (0, 0, 0,
+                      Symbolic, &Numeric, Control, Info);
+  umfpack_dl_free_symbolic(&Symbolic);
+  umfpack_dl_solve(UMFPACK_A, 0, 0, 0, 0, 0,
+                   Numeric, Control, Info);
+  umfpack_dl_free_numeric(&Numeric);
   umfpack_timer ();
   return 0;
 }" ${varname})
