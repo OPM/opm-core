@@ -116,7 +116,7 @@ function (configure_la name target)
   endif (libtool_MAIN)
   if (ltversion_STRING)	
 	string (REGEX REPLACE
-	  "^VERSION=\"(.*)\""
+	  "^VERSION=\"?(.*)\"?"
 	  "\\1"
 	  ltversion
 	  ${ltversion_STRING}
