@@ -32,6 +32,9 @@
 #		COMPILE_FLAGS  "${opmcore_PRECOMP_CXX_FLAGS}"
 #	)
 
+# get compiler version
+include (UseCompVer)
+
 # reconstruct the compiler command line; this does NOT include the
 # DEFINE_SYMBOL that is added for shared libraries. type is the TYPE
 # target property.
@@ -72,16 +75,6 @@ function (compiler_cmdline language type cmd_name args_name)
   set (${args_name} "${_args}" PARENT_SCOPE)
 endfunction (compiler_cmdline language type cmd_name args_name)
 
-# probe the GCC version
-function (get_gcc_version language ver_name)
-  # exec_program is deprecated, but execute_process does't work :-(
-  exec_program (${CMAKE_${language}_COMPILER}
-	ARGS ${CMAKE_${language}_COMPILER_ARG1} -dumpversion
-	OUTPUT_VARIABLE _version
-	)
-  set (${ver_name} ${_version} PARENT_SCOPE)
-endfunction (get_gcc_version ver_name)
-
 function (precompile_header
 	language type hdr_kw header tgt_kw target flgs_kw flags_name)
   
@@ -106,8 +99,8 @@ function (precompile_header
   endif (language STREQUAL "CXX")
   
   # only support precompiled headers if the compiler is gcc >= 3.4
-  if (CMAKE_COMPILER_IS_GNUCXX)
-	get_gcc_version (${language} GCC_VERSION)
+  get_gcc_version (${language} GCC_VERSION)
+  if (GCC_VERSION)
 	if (GCC_VERSION VERSION_EQUAL 3.4 OR GCC_VERSION VERSION_GREATER 3.4)
 	  # command-line used to compile modules in this kind of target
 	  compiler_cmdline (${language} ${type} _cmd _args)
@@ -153,7 +146,7 @@ function (precompile_header
 	  set (${target} "${_pch_file}" PARENT_SCOPE)
 	  set (${flags_name} "-Winvalid-pch -include ${_pch_dir}/${header}" PARENT_SCOPE)
 	endif (GCC_VERSION VERSION_EQUAL 3.4 OR GCC_VERSION VERSION_GREATER 3.4)
-  endif (CMAKE_COMPILER_IS_GNUCXX)
+  endif (GCC_VERSION)
   
 endfunction (precompile_header
   language type header tgt_kw target flgs_kw flags_name)
