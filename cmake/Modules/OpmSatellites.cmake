@@ -55,7 +55,8 @@ macro (opm_compile_satellites opm satellite excl_all test_regexp)
 	  LINK_FLAGS "${${opm}_LINKER_FLAGS_STR}"
 	  )
 	target_link_libraries (${_sat_NAME} ${${opm}_TARGET} ${${opm}_LIBRARIES})
-	strip_debug_symbols (${_sat_NAME})
+	strip_debug_symbols (${_sat_NAME} _sat_DEBUG)
+	list (APPEND ${satellite}_DEBUG ${_sat_DEBUG})
 
 	# variable with regular expression doubles as a flag for
 	# whether tests should be setup or not

@@ -28,13 +28,22 @@ macro (opm_dist_clean opm)
 	GNUmakefile
 	lib/${${opm}_LIBTOOL_ARCHIVE}
 	${${opm}_DEBUG}
+	${tests_DEBUG}
+	${examples_DEBUG}
+	${tutorial_DEBUG}
 	install_manifest.txt
 	${${opm}_STYLESHEET_COPIED}
 	)
+  # script to remove empty directories (can't believe this isn't included!)
+  set (rmdir "${PROJECT_SOURCE_DIRECTORY}/cmake/Scripts/RemoveEmptyDir.cmake")
   add_custom_target (distclean
 	COMMAND ${CMAKE_COMMAND} -E remove -f ${DISTCLEAN_FILES}
 	COMMAND ${CMAKE_COMMAND} -E remove_directory CMakeFiles/
 	COMMAND ${CMAKE_COMMAND} -E remove_directory Testing/
+	COMMAND ${CMAKE_COMMAND} -DDIR=${CMAKE_LIBRARY_OUTPUT_DIRECTORY} -P ${rmdir}
+	COMMAND ${CMAKE_COMMAND} -DDIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY} -P ${rmdir}
+	COMMAND ${CMAKE_COMMAND} -DDIR:LOCATION=${docu_dir} -P ${rmdir}
+	COMMAND ${CMAKE_COMMAND} -DDIR:LOCATION=${tests_DIR} -P ${rmdir}
 # cannot depend on clean because it is only defined in the master Makefile
 # not in CMakeFiles/Makefile where this target will end up
 #	DEPENDS clean
