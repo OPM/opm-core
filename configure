@@ -124,6 +124,10 @@ while getopts -- ":-:" optchar; do
           esac
           # packages need different suffix for their root (sic)
           case "${pkgname}" in
+            pch)
+              pch_use=" -DPRECOMPILE_HEADERS:BOOL=ON"
+              rootvar=""
+              ;;
             agmg  |\
             boost |\
             ert   |\

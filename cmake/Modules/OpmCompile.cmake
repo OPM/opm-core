@@ -30,8 +30,6 @@ macro (opm_compile opm)
 
   # pre-compile common headers; this is setup *after* the library to pick
   # up extra options set there
-  option (PRECOMPILE_HEADERS "Precompile common headers for speed." ON)
-  mark_as_advanced (PRECOMPILE_HEADERS)
   if (PRECOMPILE_HEADERS)
 	get_target_property (_type ${${opm}_TARGET} TYPE)
 	precompile_header (CXX ${_type}
@@ -46,8 +44,6 @@ macro (opm_compile opm)
 	  COMPILE_FLAGS  "${${opm}_PRECOMP_CXX_FLAGS}"
 	  )
 	message (STATUS "Precompiled headers: ${${opm}_CXX_pch}")
-  else (PRECOMPILE_HEADERS)
-	message (STATUS "Precompiled headers: disabled")
   endif (PRECOMPILE_HEADERS)
 
   # we need to know the name of the library which is generated
