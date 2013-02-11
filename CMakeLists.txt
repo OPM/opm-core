@@ -12,12 +12,6 @@ set (opm-core_DESCRIPTION "Open Porous Media Initiative Core Library")
 # source is located under this directory
 set (opm-core_DIR "opm/core")
 
-# build debug by default
-if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-	set (CMAKE_BUILD_TYPE "Debug")
-endif (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-message (STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-
 # additional search modules
 set (opm-core_MODULE_DIR "${PROJECT_SOURCE_DIR}/cmake/Modules")
 list (APPEND CMAKE_MODULE_PATH ${opm-core_MODULE_DIR})
@@ -31,6 +25,11 @@ if (CMAKE_VERSION VERSION_LESS "2.8.7")
 	message (STATUS "Enabling backward compatibility modules for CMake ${CMAKE_VERSION}")
 	list (APPEND CMAKE_MODULE_PATH "${opm-core_MODULE_DIR}/compat-2.8.7")
 endif (CMAKE_VERSION VERSION_LESS "2.8.7")
+
+# default settings: build static debug library
+include (OpmDefaults)
+opm_defaults (opm-core)
+message (STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # don't import more libraries than we need to
 include (UseOnlyNeeded)
@@ -167,19 +166,6 @@ include (UseFortranWrappers)
 define_fc_func (
 	APPEND "${PROJECT_BINARY_DIR}/config.h"
 	)
-
-# default to building a static library, but let user override
-if (DEFINED BUILD_SHARED_LIBS)
-	set (_shared_def ${BUILD_SHARED_LIBS})
-else (DEFINED BUILD_SHARED_LIBS)
-	set (_shared_def OFF)
-endif (DEFINED BUILD_SHARED_LIBS)
-option (BUILD_${opm-core_NAME}_SHARED "Build ${opm-core_NAME} as a shared library" ${_shared_def})
-if (BUILD_${opm-core_NAME}_SHARED)
-	set (opm-core_LIBRARY_TYPE SHARED)
-else (BUILD_${opm-core_NAME}_SHARED)
-	set (opm-core_LIBRARY_TYPE STATIC)
-endif (BUILD_${opm-core_NAME}_SHARED)
 
 # compile main library; pull in all required includes and libraries
 include (OpmCompile)
