@@ -94,6 +94,12 @@ opm_out_dirs ()
 # identify the compilation units in the library
 opm_sources (opm-core)
 
+# enumerate all testing programs in test/ directory
+opm_find_tests ()
+
+# tutorial programs are found in the tutorials/ directory
+opm_find_tutorials ()
+
 # Algebraic Multigrid must be compiled together with our program;
 # if it is not available, then remove our corresponding component
 find_package (AGMG)
@@ -193,9 +199,6 @@ opm_compile_satellites (opm-core tutorial "" "")
 # infrastructure for testing
 enable_testing ()
 include (CTest)
-
-# enumerate all testing programs in test/ directory
-opm_find_tests ()
 
 # conditionally disable tests when features aren't available
 macro (cond_disable_test name)
