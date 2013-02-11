@@ -123,6 +123,11 @@ if (NOT SuiteSparse_FOUND)
 		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/call_umfpack.c
 		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/LinearSolverUmfpack.cpp
 		)
+	list (REMOVE_ITEM tutorial_SOURCES
+		${PROJECT_SOURCE_DIR}/${tutorial_DIR}/tutorial2.cpp
+		${PROJECT_SOURCE_DIR}/${tutorial_DIR}/tutorial3.cpp
+		${PROJECT_SOURCE_DIR}/${tutorial_DIR}/tutorial4.cpp
+		)
 endif (NOT SuiteSparse_FOUND)
 
 # these files are provided in source control, but can only compile with Matlab
