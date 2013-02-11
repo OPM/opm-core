@@ -33,12 +33,14 @@ endmacro (opm_sources opm)
 macro (opm_find_tests)
   # every C++ program prefixed with test_ under tests/ directory should
   # be automatically set up as a test
-  file (GLOB_RECURSE tests_SOURCES "tests/test_*.cpp")
-  file (GLOB_RECURSE not_tests_SOURCES "tests/not-unit/test_*.cpp")
+  set (tests_DIR "tests")
+  file (GLOB_RECURSE tests_SOURCES "${tests_DIR}/test_*.cpp")
+  file (GLOB_RECURSE not_tests_SOURCES "${tests_DIR}/not-unit/test_*.cpp")
   list (REMOVE_ITEM tests_SOURCES ${not_tests_SOURCES})
 endmacro (opm_find_tests)
 
 macro (opm_find_tutorials)
   # enumerate tutorials in project
-  file (GLOB tutorial_SOURCES "tutorials/tutorial[0-9].cpp")
+  set (tutorial_DIR "tutorials")
+  file (GLOB tutorial_SOURCES "${tutorial_DIR}/tutorial[0-9].cpp")
 endmacro (opm_find_tutorials)
