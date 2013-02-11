@@ -183,30 +183,14 @@ message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")
 include (OpmProject)
 opm_cmake_config (opm-core)
 
-### tutorials ###
+# routines to build satellites such as tests, tutorials and samples
+include (OpmSatellites)
 
 # tutorial programs are found in the tutorials/ directory
 opm_find_tutorials ()
+opm_compile_satellites (opm-core tutorial "" "")
 
-# add each tutorial as a target of its own
-add_custom_target (tutorials)
-foreach (tutorial_FILE IN LISTS tutorial_SOURCES)
-	# get the name of the executable based on the source code file
-	get_filename_component (tutorial_NAME "${tutorial_FILE}" NAME_WE)
-
-	# setup an executable, linking to the main library
-	add_executable (${tutorial_NAME} EXCLUDE_FROM_ALL ${tutorial_FILE})
-	set_target_properties (${tutorial_NAME} PROPERTIES
-		LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
-		)
-	target_link_libraries (${tutorial_NAME} ${opm-core_TARGET} ${opm-core_LIBRARIES})
-	strip_debug_symbols (${tutorial_NAME})
-
-	# add to list of tutorials to build
-	add_dependencies (tutorials ${tutorial_NAME})
-endforeach (tutorial_FILE)
-
-### test programs ###
+# infrastructure for testing
 enable_testing ()
 include (CTest)
 
@@ -226,31 +210,10 @@ cond_disable_test ("AGMG")
 cond_disable_test ("ERT")
 
 # make datafiles necessary for tests available in output directory
-include (OpmSatellites)
-opm_data (test datafiles "tests/*.xml")
+opm_data (tests datafiles "tests/*.xml")
+opm_compile_satellites (opm-core tests "" "^test_([^/]*)$")
 
-# compile each of these separately
-add_custom_target (tests DEPENDS datafiles)
-foreach (test_FILE IN LISTS tests_SOURCES)
-	get_filename_component (test_NAME "${test_FILE}" NAME_WE)
-	add_executable (${test_NAME} EXCLUDE_FROM_ALL ${test_FILE})
-	add_dependencies (tests ${test_NAME})
-	set_target_properties (${test_NAME} PROPERTIES
-		LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
-		)
-	target_link_libraries (${test_NAME} ${opm-core_TARGET} ${opm-core_LIBRARIES})
-	strip_debug_symbols (${test_NAME})
-	string (REGEX REPLACE "^test_([^/]*)$" "\\1" test_FANCY "${test_NAME}")
-	get_target_property (test_LOC ${test_NAME} LOCATION)
-	add_test (${test_FANCY} ${test_LOC})
-	# run the test in the directory where the data files are
-	set_tests_properties (${test_FANCY} PROPERTIES
-		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/tests
-		)
-endforeach (test_FILE)
-
-# ideally this should run the tests, but for now we only test if they
-# compile without errors
+# use this target to run all tests
 add_custom_target (check
 	COMMAND ${CMAKE_CTEST_COMMAND}
 	DEPENDS tests
