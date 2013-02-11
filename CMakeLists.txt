@@ -84,31 +84,14 @@ include (UseDynamicBoost)
 # needed for Debian installation scheme
 include (UseMultiArch)
 
-# put libraries in lib/ (no multi-arch support in build tree)
-set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
-set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
-set (CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/CMakeFiles")
+# this module contains code to figure out which files is where
+include (OpmFiles)
 
-# find all the source code (note that these variables have name after
-# the target library and not the project). the documentation recommends
-# against using globs to enumerate source code, but if you list the
-# files explicitly you'll change the build files every time you add to
-# the project as well as having to rebuild completely anyway.
-file (GLOB_RECURSE opm-core_C_SOURCES "${opm-core_DIR}/[^.]*.c")
-file (GLOB_RECURSE opm-core_CXX_SOURCES "${opm-core_DIR}/[^.]*.cpp")
-file (GLOB_RECURSE opm-core_C_HEADERS "${opm-core_DIR}/[^.]*.h")
-file (GLOB_RECURSE opm-core_CXX_HEADERS "${opm-core_DIR}/[^.]*.hpp")
+# put libraries in lib/
+opm_out_dirs ()
 
-# remove pre-compile headers from output list
-set (opm-core_PRECOMP_CXX_HEADER "${opm-core_DIR}/${opm-core_NAME}-pch.hpp")
-list (REMOVE_ITEM opm-core_CXX_HEADERS
-	${PROJECT_SOURCE_DIR}/${opm-core_PRECOMP_CXX_HEADER}
-	)
-
-# merge both languages into one compilation/installation
-set (opm-core_SOURCES ${opm-core_C_SOURCES} ${opm-core_CXX_SOURCES})
-set (opm-core_HEADERS ${opm-core_C_HEADERS} ${opm-core_CXX_HEADERS})
+# identify the compilation units in the library
+opm_sources (opm-core)
 
 # Algebraic Multigrid must be compiled together with our program;
 # if it is not available, then remove our corresponding component
@@ -214,8 +197,8 @@ opm_cmake_config (opm-core)
 
 ### tutorials ###
 
-# enumerate tutorials in project
-file (GLOB tutorial_SOURCES "tutorials/tutorial[0-9].cpp")
+# tutorial programs are found in the tutorials/ directory
+opm_find_tutorials ()
 
 # add each tutorial as a target of its own
 add_custom_target (tutorials)
@@ -239,10 +222,8 @@ endforeach (tutorial_FILE)
 enable_testing ()
 include (CTest)
 
-# enumerate all testing programs
-file (GLOB_RECURSE tests_SOURCES "tests/test_*.cpp")
-file (GLOB_RECURSE not_tests_SOURCES "tests/not-unit/test_*.cpp")
-list (REMOVE_ITEM tests_SOURCES ${not_tests_SOURCES})
+# enumerate all testing programs in test/ directory
+opm_find_tests ()
 
 # conditionally disable tests when features aren't available
 macro (cond_disable_test name)
