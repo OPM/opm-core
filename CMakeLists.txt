@@ -1,16 +1,18 @@
 # -*- mode: cmake; tab-width: 2; indent-tabs-mode: t; truncate-lines: t; compile-command: "cmake -Wdev" -*-
 # vim: set filetype=cmake autoindent tabstop=2 shiftwidth=2 noexpandtab softtabstop=2 nowrap:
-cmake_minimum_required (VERSION 2.8)
+
+# key information about the library
 set (opm-core_NAME "opm-core")
+set (opm-core_DESCRIPTION "Open Porous Media Initiative Core Library")
+set (opm-core_DIR "opm/core")
+
+# C++ project
+cmake_minimum_required (VERSION 2.8)
 project (${opm-core_NAME})
 set (opm-core_VERSION_MAJOR 1)
 set (opm-core_VERSION_MINOR 0)
 enable_language (C)
 enable_language (CXX)
-set (opm-core_DESCRIPTION "Open Porous Media Initiative Core Library")
-
-# source is located under this directory
-set (opm-core_DIR "opm/core")
 
 # additional search modules
 set (opm-core_MODULE_DIR "${PROJECT_SOURCE_DIR}/cmake/Modules")
