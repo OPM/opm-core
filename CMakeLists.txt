@@ -399,55 +399,11 @@ add_custom_target (check
 	VERBATIM
 	)
 
-### documentation ###
+# generate documentation from source code with Doxygen;
+# setup install target for this documentation
 set (docu_dir "Documentation")
-
-configure_file (
-	${PROJECT_SOURCE_DIR}/Doxyfile.in
-	${PROJECT_BINARY_DIR}/Doxyfile
-	@ONLY
-	)
-find_package (Doxygen)
-if (DOXYGEN_FOUND)
-	add_custom_target (doc
-		COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-		SOURCES ${PROJECT_BINARY_DIR}/Doxyfile
-		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${docu_dir}
-		COMMENT "Generating API documentation with Doxygen"
-		VERBATIM
-		)
-	set (_formats html)
-	foreach (format IN LISTS _formats)
-		string (TOUPPER ${format} FORMAT)
-		install (
-			DIRECTORY ${PROJECT_BINARY_DIR}/${docu_dir}/${format}
-			DESTINATION share/doc/${opm-core_NAME}/
-			COMPONENT ${format}
-			OPTIONAL
-			)
-		# target to install just HTML documentation
-		add_custom_target (install-${format}
-			COMMAND ${CMAKE_COMMAND} -DCOMPONENT=${format} -P cmake_install.cmake
-			COMMENT Installing ${FORMAT} documentation
-			VERBATIM
-			)
-		# since the documentation is optional, it is not automatically built
-		add_dependencies (install-${format} doc)
-	endforeach (format)
-endif (DOXYGEN_FOUND)
-
-# stylesheets must be specified with relative path in Doxyfile, or the
-# full path (to the source directory!) will be put in the output HTML.
-# thus, we'll need to copy the stylesheet to this path relative to where
-# Doxygen will be run (in the output tree)
-if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
-	file (COPY ${PROJECT_SOURCE_DIR}/${docu_dir}/style.css
-		DESTINATION ${PROJECT_BINARY_DIR}/${docu_dir}
-		)
-	set (opm-core_STYLESHEET_COPIED "${docu_dir}/style.css")
-else (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
-	set (opm-core_STYLESHEET_COPIED "")
-endif (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+include (OpmDoc)
+opm_doc (opm-core ${docu_dir})
 
 # provide compatibility with using this build in dunecontrol
 include (DuneCompat)
