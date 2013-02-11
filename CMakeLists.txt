@@ -18,10 +18,6 @@ if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 endif (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 message (STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-# all public header files are together with the source
-set (opm-core_INCLUDE_DIR "${PROJECT_SOURCE_DIR}")
-list (APPEND opm-core_INCLUDE_DIRS "${opm-core_INCLUDE_DIR}")
-
 # additional search modules
 set (opm-core_MODULE_DIR "${PROJECT_SOURCE_DIR}/cmake/Modules")
 list (APPEND CMAKE_MODULE_PATH ${opm-core_MODULE_DIR})
@@ -189,9 +185,6 @@ define_fc_func (
 	APPEND "${PROJECT_BINARY_DIR}/config.h"
 	)
 
-# some CMake properties do not do list expansion
-string (REPLACE ";" " " opm-core_LINKER_FLAGS_STR "${opm-core_LINKER_FLAGS}")
-
 # default to building a static library, but let user override
 if (DEFINED BUILD_SHARED_LIBS)
 	set (_shared_def ${BUILD_SHARED_LIBS})
@@ -205,56 +198,15 @@ else (BUILD_${opm-core_NAME}_SHARED)
 	set (opm-core_LIBRARY_TYPE STATIC)
 endif (BUILD_${opm-core_NAME}_SHARED)
 
-# name of the library should not contain dashes, as CMake will
-# define a symbol with that name, and those cannot contain dashes
-string (REPLACE "-" "" opm-core_TARGET "${opm-core_NAME}")
-
-# create this library
-include_directories (${opm-core_INCLUDE_DIRS})
-link_directories (${opm-core_LIBRARY_DIRS})
-add_definitions (${opm-core_DEFINITIONS})
-add_library (${opm-core_TARGET} ${opm-core_LIBRARY_TYPE} ${opm-core_SOURCES})
-set (opm-core_VERSION "${opm-core_VERSION_MAJOR}.${opm-core_VERSION_MINOR}")
-set_target_properties (${opm-core_TARGET} PROPERTIES
-	SOVERSION ${opm-core_VERSION_MAJOR}
-	VERSION ${opm-core_VERSION}
-	LINK_FLAGS "${opm-core_LINKER_FLAGS_STR}"
-	)
-target_link_libraries (${opm-core_TARGET} ${opm-core_LIBRARIES})
-
-# queue this executable to be stripped
-strip_debug_symbols (${opm-core_TARGET} opm-core_DEBUG)
-
-# pre-compile common headers; this is setup *after* the library to pick
-# up extra options set there
-option (PRECOMPILE_HEADERS "Precompile common headers for speed." ON)
-mark_as_advanced (PRECOMPILE_HEADERS)
-if (PRECOMPILE_HEADERS)
-	get_target_property (_type ${opm-core_TARGET} TYPE)
-	precompile_header (CXX ${_type}
-		HEADER "${opm-core_PRECOMP_CXX_HEADER}"
-		TARGET opm-core_CXX_pch
-		FLAGS  opm-core_PRECOMP_CXX_FLAGS
-		)
-	# must set property on source files instead of entire target, because
-	# it only applies to C++ modules (and cannot be used for C)
-	set_source_files_properties (${opm-core_CXX_SOURCES} PROPERTIES
-		OBJECT_DEPENDS "${opm-core_CXX_pch}"
-		COMPILE_FLAGS  "${opm-core_PRECOMP_CXX_FLAGS}"
-		)
-	message (STATUS "Precompiled headers: ${opm-core_CXX_pch}")
-else (PRECOMPILE_HEADERS)
-	message (STATUS "Precompiled headers: disabled")
-endif (PRECOMPILE_HEADERS)
+# compile main library; pull in all required includes and libraries
+include (OpmCompile)
+opm_compile (opm-core)
 
 # installation target: copy the library together with debug and
 # configuration files to system directories
 include (OpmInstall)
 opm_install (opm-core)
 message (STATUS "This build defaults to installing in ${CMAKE_INSTALL_PREFIX}")
-
-# we need to know the name of the library which is generated
-get_target_property (opm-core_LIBRARY ${opm-core_TARGET} LOCATION)
 
 # installation of CMake modules to help user programs locate the library
 include (OpmProject)
