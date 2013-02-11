@@ -56,7 +56,7 @@ AC_CONFIG_FILES([
  tests/Makefile
  examples/Makefile
  tutorials/Makefile
- opm-core.pc
+ opm-core.pc:opmcore.pc.in
  lib/pkgconfig/opm-core.pc
  opmcore-config.cmake
 ])
