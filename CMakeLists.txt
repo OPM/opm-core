@@ -456,36 +456,8 @@ configure_la (opm-core ${opm-core_TARGET} opm-core_LIBTOOL_ARCHIVE)
 message (STATUS "Writing libtool archive ${opm-core_LIBTOOL_ARCHIVE}")
 
 ### clean in-source builds ###
-set (DISTCLEAN_FILES
-	CMakeCache.txt
-	cmake_install.cmake
-	Makefile
-	config.h
-	${opm-core_NAME}-config.cmake
-	${opm-core_NAME}-config-version.cmake
-	${opm-core_NAME}-install.cmake
-	${opm-core_NAME}.pc
-	${opm-core_NAME}-install.pc
-	Doxyfile
-	CTestTestfile.cmake
-	DartConfiguration.tcl
-	GNUmakefile
-	lib/${opm-core_LIBTOOL_ARCHIVE}
-	${opm-core_DEBUG}
-	install_manifest.txt
-	${opm-core_STYLESHEET_COPIED}
-	)
-add_custom_target (distclean
-	COMMAND ${CMAKE_COMMAND} -E remove -f ${DISTCLEAN_FILES}
-	COMMAND ${CMAKE_COMMAND} -E remove_directory CMakeFiles/
-	COMMAND ${CMAKE_COMMAND} -E remove_directory Testing/
-# cannot depend on clean because it is only defined in the master Makefile
-# not in CMakeFiles/Makefile where this target will end up
-#	DEPENDS clean
-	WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-	COMMENT Removing CMake-generated files
-	VERBATIM
-	)
+include (OpmDistClean)
+opm_dist_clean (opm-core)
 
 # smart wrapper that auto-parallelizes builds
 file (COPY
