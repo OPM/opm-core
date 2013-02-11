@@ -100,6 +100,9 @@ opm_find_tests ()
 # tutorial programs are found in the tutorials/ directory
 opm_find_tutorials ()
 
+# example programs are found in the examples/ directory
+opm_find_examples ()
+
 # Algebraic Multigrid must be compiled together with our program;
 # if it is not available, then remove our corresponding component
 find_package (AGMG)
@@ -128,6 +131,9 @@ if (NOT SuiteSparse_FOUND)
 		${PROJECT_SOURCE_DIR}/${tutorial_DIR}/tutorial3.cpp
 		${PROJECT_SOURCE_DIR}/${tutorial_DIR}/tutorial4.cpp
 		)
+	list (REMOVE_ITEM examples_SOURCES
+		${PROJECT_SOURCE_DIR}/${examples_DIR}/spu2p.cpp
+		)
 endif (NOT SuiteSparse_FOUND)
 
 # these files are provided in source control, but can only compile with Matlab
@@ -154,6 +160,9 @@ list (REMOVE_ITEM opm-core_HEADERS "${opm-core_DIR}/utility/parameters/tinyxml/t
 # is not true, then it should be unset altogether
 if (NOT HAVE_ERT)
 	set (HAVE_ERT)
+	list (REMOVE_ITEM examples_SOURCES
+		${PROJECT_SOURCE_DIR}/examples/import_rewrite.cpp
+		)
 endif (NOT HAVE_ERT)
 
 # create configuration header which describes available features
@@ -200,6 +209,7 @@ include (OpmSatellites)
 # tutorial programs are found in the tutorials/ directory
 opm_find_tutorials ()
 opm_compile_satellites (opm-core tutorial "" "")
+opm_compile_satellites (opm-core examples "" "")
 
 # infrastructure for testing
 enable_testing ()

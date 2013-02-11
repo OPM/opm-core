@@ -44,3 +44,8 @@ macro (opm_find_tutorials)
   set (tutorial_DIR "tutorials")
   file (GLOB tutorial_SOURCES "${tutorial_DIR}/tutorial[0-9].cpp")
 endmacro (opm_find_tutorials)
+
+macro (opm_find_examples)
+  set (examples_DIR "examples")
+  file (GLOB examples_SOURCES "${examples_DIR}/*.cpp")
+endmacro (opm_find_examples)
