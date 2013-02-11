@@ -5,26 +5,33 @@
 #
 # http://www.paraview.org/paraview/resources/software.php
 #
-# Eventually, set up the paths (figure_path, tutorial_data_path, tutorial_path) according to your own installation.
+# Eventually, set up the paths (figure_path, tutorial_data_path) according to your own installation.
 # (The default values should be ok.)
 #
 # Make sure that pvpython is in your path of executables.
 #
-# Run the following command at the root of the directory where
-# opm-core is installed (which also corresponds to the directory where
-# generate_doc_figures is located):
+# After all the tutorial programs have been executed, run the following
+# command in the same directory:
 #
-#   pvpython generate_doc_figures.py
+#   pvpython generate_doc_figures.py Documentation/Figure
 #
 
-from subprocess import call
 from paraview.simple import *
 from os import remove, mkdir, curdir
 from os.path import join, isdir
+from sys import argv, exit
 
-figure_path = "../Documentation/Figure"
-tutorial_data_path = curdir
-tutorial_path = "tutorials"
+# we need at least the output directory
+if len(argv) <= 1:
+	exit('Synopsis: pvpython generate_doc_figures.py dest-dir [src-dir]')
+
+figure_path = argv[1]
+
+# default for the input directory is the current one
+if len(argv) <= 2:
+    tutorial_data_path = curdir
+else:
+    tutorial_data_path = argv[2]
 
 collected_garbage_file = []
 
@@ -33,7 +40,6 @@ if not isdir(figure_path):
     
 
 # tutorial 1
-call(join(tutorial_path, "tutorial1"))
 data_file_name = join(tutorial_data_path, "tutorial1.vtu")
 # grid = servermanager.sources.XMLUnstructuredGridReader(FileName = data_file_name)
 grid = XMLUnstructuredGridReader(FileName = data_file_name)
@@ -56,7 +62,6 @@ WriteImage(join(figure_path, "tutorial1.png"))
 Hide(grid)
 
 # tutorial 2
-call(join(tutorial_path, "tutorial2"))
 data_file_name = join(tutorial_data_path, "tutorial2.vtu")
 grid = XMLUnstructuredGridReader(FileName = data_file_name)
 collected_garbage_file.append(data_file_name)
@@ -80,7 +85,6 @@ WriteImage(join(figure_path, "tutorial2.png"))
 Hide(grid)
 
 # tutorial 3
-call(join(tutorial_path, "tutorial3"))
 for case in range(0,20):
     data_file_name = join(tutorial_data_path, "tutorial3-"+"%(case)03d"%{"case": case}+".vtu")
     collected_garbage_file.append(data_file_name)
@@ -108,7 +112,6 @@ for case in cases:
 Hide(grid)
 
 # tutorial 4
-call(join(tutorial_path, "tutorial4"))
 for case in range(0,20):
     data_file_name = join(tutorial_data_path, "tutorial4-"+"%(case)03d"%{"case": case}+".vtu")
     collected_garbage_file.append(data_file_name)

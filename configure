@@ -1,0 +1,260 @@
+#!/bin/bash
+
+# display help text
+usage () {
+  cat <<EOF
+Installation directories:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [/usr/local]. Note: set DESTDIR=PATH when doing
+                          \`make install' to install to a different sysroot.
+
+Optional Features:
+  --disable-FEATURE       do not include FEATURE
+  --disable-gxx11check    do not try flag -std=c++11 to enable C++11 features
+  --enable-shared         build a shared library [default=yes]
+  --enable-static         build a static library [default=no]. Note: only one
+                          of the options shared and static may be built.
+  --disable-debug         build a release version of the library [default=no]
+  --disable-pch           do not use precompiled headers (if buggy compiler)
+  --disable-silent-rules  print every compilation statement as executed
+  --enable-system-debug   put .debug files in global GDB debug dir
+                          [default=yes if prefix=/usr, no otherwise]
+  --disable-option-checking  ignore unrecognized --enable/--with options
+
+Optional Packages:
+  --with-dune-common=PATH use DUNE-common library from a specified location
+  --with-dune-istl=PATH   use DUNE-ISTL library from a specified location
+  --with-boost=PATH       use Boost library from a specified location
+  --with-superlu=PATH     user defined path to SuperLU library
+  --with-agmg=PATH        Include DOUBLE PRECISION version Notay's of AGMG
+                          Algebraic Multigrid solver from specified source
+                          location. Note: this option requires a complete,
+                          working Fortran 90 environment.
+  --with-umfpack=PATH     use UMFPACK/SuiteSparse from a specified location
+  --with-ert=PATH         Use ERT libraries
+  --with-tinyxml=PATH     use TinyXML library from a specified location
+                          (Note: if not found, then a bundled library will
+                           be used)
+
+Some influential environment variables:
+  CC          C compiler command
+  CFLAGS      C compiler flags
+  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+              nonstandard directory <lib dir>
+  LIBS        libraries to pass to the linker, e.g. -l<library>
+  CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
+              you have headers in a nonstandard directory <include dir>
+  CPP         C preprocessor
+  CXX         C++ compiler command
+  CXXFLAGS    C++ compiler flags
+  CXXCPP      C++ preprocessor
+  F77         Fortran 77 compiler command
+  FFLAGS      Fortran 77 compiler flags
+  FC          Fortran compiler command
+  FCFLAGS     Fortran compiler flags
+
+Use these variables to override the choices made by \`configure' or to help
+it to find libraries and programs with nonstandard names/locations.
+EOF
+}
+
+# report an error regarding the arguments
+invalid_arg () {
+  cat <<EOF
+configure: error: unrecognized option: \`$1'
+Try \`$0 --help' for more information
+EOF
+}
+
+# exit only if option checking is enabled, otherwise ignore
+invalid_opt () {
+  if [ "${option_check}" = "yes" ]; then
+    invalid_arg $@
+    exit 1
+  fi
+}
+
+# default values
+prefix=/usr/local
+buildtype=Debug
+#pch_use=" -DPRECOMPILE_HEADERS:BOOL=ON"
+pch_use=
+#silent_rules=" -DCMAKE_VERBOSE_MAKEFILE=OFF"
+silent_rules=
+#debug_loc=" -DSYSTEM_DEBUG=OFF"
+debug_loc=
+option_check=yes
+
+# this variable will get feature options
+FEATURES=
+
+# long arguments are implemented by putting a dash character followed by
+# a colon in the optspec, see trick by Arvid Requate at
+# <http://stackoverflow.com/questions/402377/#7680682>
+while getopts -- ":-:" optchar; do
+  case "${optchar}" in
+    -)
+      # OPTARG now contains everything after double dashes
+      case "${OPTARG}" in
+        prefix=*)
+          # remove prefix consisting of everything up to equal sign
+          prefix=${OPTARG#*=}
+          ;;
+        help)
+          usage
+          exit 0
+          ;;
+        with-*)
+          # get the name of the package; everything before equal sign
+          pkgname=${OPTARG%=*}
+          pkgname=${pkgname#with-}
+          # get the location of the package; everyhing after equal sign
+          pkgloc=${OPTARG#*=}
+          # expand to full path since CMake changes to source directory (!)
+          # this also normalize the path name wrt. not having a trailing slash
+          pkgloc=$(test -d "${pkgloc}" && sh -c "cd \"${pkgloc}\"; pwd")
+          # special aliases
+          case "${pkgname}" in
+            umfpack)
+              pkgname="SuiteSparse"
+              ;;
+            tinyxml)
+              pkgname="TinyXML"
+              ;;
+          esac
+          # packages need different suffix for their root (sic)
+          case "${pkgname}" in
+            pch)
+              pch_use=" -DPRECOMPILE_HEADERS:BOOL=ON"
+              rootvar=""
+              ;;
+            agmg  |\
+            boost |\
+            ert   |\
+            zlib)
+              rootvar="${pkgname^^}_ROOT"
+              ;;
+            dune-common |\
+            dune-istl   |\
+            SuiteSparse |\
+            TinyXML)
+              rootvar="${pkgname}_ROOT"
+              ;;
+            superlu)
+              rootvar="${pkgname^^}_PREFIX"
+              ;;
+            *)
+              invalid_opt --with-${pkgname}
+              rootvar=""
+              ;;
+          esac
+          # add this to the list of existing features
+          test -n "${rootvar}" && \
+          FEATURES="${FEATURES} \"-D${rootvar}=${pkgloc}\""
+          ;;
+        disable-*)
+          # get the name of the package
+          pkgname=${OPTARG#disable-}
+          # special aliases
+          case "${pkgname}" in
+            umfpack)
+              pkgname="SuiteSparse"
+              ;;
+          esac
+          # casing is of course different
+          case "${pkgname}" in
+            option-checking)
+              option_check=no
+              # special flag: don't disable any particular package
+              pkgname=""
+              ;;
+            debug)
+              buildtype=Release
+              # special flag: don't disable any particular package
+              pkgname=""
+              ;;
+            pch)
+              pch_use=" -DPRECOMPILE_HEADERS:BOOL=OFF"
+              pkgname=""
+              ;;
+            silent-rules)
+              silent_rules=" -DCMAKE_VERBOSE_MAKEFILE=ON"
+              pkgname=""
+              ;;
+            system-debug)
+              silent_rules=" -DSYSTEM_DEBUG=OFF"
+              pkgname=""
+              ;;
+            agmg |\
+            ert  |\
+            superlu)
+              pkgname="${pkgname^^}"
+              ;;
+            openmp)
+              pkgname="OpenMP"
+              ;;
+            gxx11check)
+              pkgname="CXX11Features"
+              ;;
+            *)
+              invalid_opt --disable-${pkgname}
+              pkgname=""
+              ;;
+          esac
+          # only disable packages if the flag refers to a proper one
+          test -n "${pkgname}" && \
+          FEATURES="${FEATURES} -DCMAKE_DISABLE_FIND_PACKAGE_${pkgname}=TRUE"
+          ;;
+        enable-*)
+          # what kind of library are we building; shared or static?
+          kind=${OPTARG#enable-}
+          case "${kind}" in
+            system-debug)
+              debug_loc=" -DSYSTEM_DEBUG=ON"
+              # special flag; don't set shared/static
+              shared=""
+              ;;
+            # this flag is just for compatibility with the deprecation
+            # flag in DUNE, so we can build without warnings
+            fieldvector-size-is-method)
+              shared=""
+              ;;              
+            shared)
+              shared="ON"
+              ;;
+            static)
+              shared="OFF"
+              ;;
+            *)
+              invalid_opt --enable-${kind}
+              shared=""
+              ;;
+          esac
+          test -n "${shared}" && \
+          FEATURES="${FEATURES} -DBUILD_opm-core_SHARED:BOOL=${shared}"
+          ;;
+        *)
+          # remove everything *after* the equal sign
+          arg=${OPTARG%=*}
+          invalid_arg --$arg
+          exit 1
+          ;;
+      esac
+      ;;
+    *)
+      invalid_arg -$OPTARG
+      exit 1
+      ;;
+  esac
+done
+# remove all arguments processed by getopts
+shift $((OPTIND-1))
+
+# remove Autotools-specific variables
+ENVVARS=${@/ACLOCAL_*=*/}
+
+# pass everything on to CMake
+CMDLINE="env ${ENVVARS} cmake \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc} ${FEATURES}"
+echo --- calling CMake for opm-core ---
+echo ${CMDLINE}
+eval exec ${CMDLINE}

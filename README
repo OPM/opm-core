@@ -39,8 +39,7 @@ DEPENDENCIES FOR DEBIAN BASED DISTRIBUTIONS (Debian Squeeze/Ubuntu Precise)
 ---------------------------------------------------------------------------
 
 # packages necessary for building
-sudo apt-get install -y build-essential gfortran pkg-config libtool \
-                        automake autoconf
+sudo apt-get install -y build-essential gfortran cmake cmake-data util-linux
 
 # packages necessary for documentation
 sudo apt-get install -y doxygen ghostscript texlive-latex-recommended pgf
@@ -71,10 +70,10 @@ DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
 -----------------------------------------
 
 # libraries
-sudo zypper in blas libblas3 lapack liblapack3 libboost libxml2 umfpack
+sudo zypper in libblas3 liblapack3 libboost libxml2 libumfpack
 
 # tools
-sudo zypper in gcc automake autoconf git doxygen
+sudo zypper in gcc cmake git doxygen
 
 # DUNE libraries
 sudo zypper ar http://download.opensuse.org/repositories/science/openSUSE_12.2/science.repo
@@ -97,12 +96,11 @@ There are two ways to build the opm-core library:
 
 1. As a stand-alone library.
  cd opm-core
- autoreconf -i
  ./configure
- make -j -l 0.9
+ make
+
 If you want to install the library:
- make install
-or (if installing to /usr/local or similar)
+
  sudo make install
 
 2. As a dune module.
@@ -120,5 +118,7 @@ DOCUMENTATION
 
 Efforts have been made to document the code with Doxygen.
 In order to build the documentation, enter the command
-$ doxygen
+
+ make doc
+
 in the topmost directory.
