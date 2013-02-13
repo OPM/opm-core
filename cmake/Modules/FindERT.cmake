@@ -182,7 +182,7 @@ endif (DEFINED ERT_LINKER_FLAGS)
 
 # see if we can compile a minimum example
 # CMake logical test doesn't handle lists (sic)
-if (NOT ERT_LIBRARIES MATCHES "-NOTFOUND")
+if (NOT (ERT_INCLUDE_DIR MATCHES "-NOTFOUND" OR ERT_LIBRARIES MATCHES "-NOTFOUND"))
   include (CMakePushCheckState)
   include (CheckCSourceCompiles)
   cmake_push_check_state ()
@@ -196,9 +196,9 @@ int main (void) {
   return 0;
 }" HAVE_ERT)
   cmake_pop_check_state ()
-else (NOT ERT_LIBRARIES MATCHES "-NOTFOUND")
+else (NOT (ERT_INCLUDE_DIR MATCHES "-NOTFOUND" OR ERT_LIBRARIES MATCHES "-NOTFOUND"))
   set (HAVE_ERT 0)
-endif (NOT ERT_LIBRARIES MATCHES "-NOTFOUND")
+endif (NOT (ERT_INCLUDE_DIR MATCHES "-NOTFOUND" OR ERT_LIBRARIES MATCHES "-NOTFOUND"))
 
 # if the test program didn't compile, but was required to do so, bail
 # out now and display an error; otherwise limp on
