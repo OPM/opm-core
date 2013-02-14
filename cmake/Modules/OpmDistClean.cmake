@@ -35,7 +35,7 @@ macro (opm_dist_clean opm)
 	${${opm}_STYLESHEET_COPIED}
 	)
   # script to remove empty directories (can't believe this isn't included!)
-  set (rmdir "${PROJECT_SOURCE_DIRECTORY}/cmake/Scripts/RemoveEmptyDir.cmake")
+  set (rmdir "${PROJECT_SOURCE_DIR}/cmake/Scripts/RemoveEmptyDir.cmake")
   add_custom_target (distclean
 	COMMAND ${CMAKE_COMMAND} -E remove -f ${DISTCLEAN_FILES}
 	COMMAND ${CMAKE_COMMAND} -E remove_directory CMakeFiles/
