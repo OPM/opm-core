@@ -25,7 +25,6 @@ macro (opm_dist_clean opm)
 	Doxyfile
 	CTestTestfile.cmake
 	DartConfiguration.tcl
-	GNUmakefile
 	lib/${${opm}_LIBTOOL_ARCHIVE}
 	${${opm}_DEBUG}
 	${tests_DEBUG}
@@ -34,6 +33,12 @@ macro (opm_dist_clean opm)
 	install_manifest.txt
 	${${opm}_STYLESHEET_COPIED}
 	)
+  # only remove these files if they were actually copied
+  if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+	list (APPEND DISTCLEAN_FILES
+	  GNUmakefile
+	  )
+  endif (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   # script to remove empty directories (can't believe this isn't included!)
   set (rmdir "${PROJECT_SOURCE_DIR}/cmake/Scripts/RemoveEmptyDir.cmake")
   add_custom_target (distclean
