@@ -61,7 +61,7 @@ sudo apt-get update
 sudo apt-get install libdune-common-dev libdune-istl-dev libdune-grid-dev
 
 # libraries necessary for OPM
-sudo apt-get install -y libxml2-dev
+sudo apt-get install -y libtinyxml-dev
 
 Note: You should compile the OPM modules using the same toolchain that
       was used to build DUNE. Otherwise, you can get strange ABI errors.
@@ -71,7 +71,7 @@ DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
 -----------------------------------------
 
 # libraries
-sudo zypper in libblas3 liblapack3 libboost libxml2 libumfpack
+sudo zypper in libblas3 liblapack3 libboost libtinyxml-devel libumfpack
 
 # tools
 sudo zypper in gcc cmake git doxygen
@@ -97,7 +97,7 @@ sudo yum install git
 sudo yum install boost-devel suitesparse-devel blas-devel lapack-devel
 
 # libraries necessary for OPM
-sudo yum install libxml2-devel
+sudo yum install tinyxml-devel
 
 
 DOWNLOADING
