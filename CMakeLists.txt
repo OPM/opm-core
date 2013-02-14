@@ -132,7 +132,7 @@ if (NOT SuiteSparse_FOUND)
 		${PROJECT_SOURCE_DIR}/${tutorial_DIR}/tutorial4.cpp
 		)
 	list (REMOVE_ITEM examples_SOURCES
-		${PROJECT_SOURCE_DIR}/${examples_DIR}/spu2p.cpp
+		${PROJECT_SOURCE_DIR}/${examples_DIR}/spu_2p.cpp
 		)
 endif (NOT SuiteSparse_FOUND)
 
@@ -207,7 +207,6 @@ opm_cmake_config (opm-core)
 include (OpmSatellites)
 
 # tutorial programs are found in the tutorials/ directory
-opm_find_tutorials ()
 opm_compile_satellites (opm-core tutorial "" "")
 opm_compile_satellites (opm-core examples "" "")
 
