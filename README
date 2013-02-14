@@ -66,6 +66,7 @@ sudo apt-get install -y libxml2-dev
 Note: You should compile the OPM modules using the same toolchain that
       was used to build DUNE. Otherwise, you can get strange ABI errors.
 
+
 DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
 -----------------------------------------
 
@@ -78,6 +79,25 @@ sudo zypper in gcc cmake git doxygen
 # DUNE libraries
 sudo zypper ar http://download.opensuse.org/repositories/science/openSUSE_12.2/science.repo
 sudo zypper in dune-common dune-istl
+
+
+DEPENDENCIES FOR RHEL BASED DISTRIBUTIONS
+-----------------------------------------
+
+# packages necessary for building
+sudo yum install make gcc-c++ gcc-gfortran cmake28 util-linux
+
+# packages necessary for documentation
+sudo yum install doxygen ghostscript texlive
+
+# packages necessary for version control
+sudo yum install git
+
+# basic libraries necessary for both DUNE and OPM
+sudo yum install boost-devel suitesparse-devel blas-devel lapack-devel
+
+# libraries necessary for OPM
+sudo yum install libxml2-devel
 
 
 DOWNLOADING
