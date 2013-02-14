@@ -89,8 +89,12 @@ option_check=yes
 # this variable will get feature options
 FEATURES=
 
-# command that launches cmake
+# command that launches cmake; look for 2.8 if available
+if which cmake28 >/dev/null 2>&1; then
+CMAKE=cmake28
+else
 CMAKE=cmake
+fi
 
 # long arguments are implemented by putting a dash character followed by
 # a colon in the optspec, see trick by Arvid Requate at
