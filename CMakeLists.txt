@@ -5,18 +5,22 @@
 set (opm-core_NAME "opm-core")
 set (opm-core_DESCRIPTION "Open Porous Media Initiative Core Library")
 set (opm-core_DIR "opm/core")
+set (opm-core_VERSION_MAJOR 1)
+set (opm-core_VERSION_MINOR 0)
 
 # C++ project
 cmake_minimum_required (VERSION 2.8)
 project (${opm-core_NAME})
-set (opm-core_VERSION_MAJOR 1)
-set (opm-core_VERSION_MINOR 0)
 enable_language (C)
 enable_language (CXX)
 
 # additional search modules
 set (opm-core_MODULE_DIR "${PROJECT_SOURCE_DIR}/cmake/Modules")
 list (APPEND CMAKE_MODULE_PATH ${opm-core_MODULE_DIR})
+
+# print system information to better pinpoint issues from log alone
+include (UseSystemInfo)
+system_info ()
 
 # very early try to print repo id (to pinpoint version if something goes wrong)
 include (UseVCSInfo)
