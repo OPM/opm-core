@@ -54,7 +54,15 @@ macro (opm_compile_satellites opm satellite excl_all test_regexp)
 	set_target_properties (${_sat_NAME} PROPERTIES
 	  LINK_FLAGS "${${opm}_LINKER_FLAGS_STR}"
 	  )
-	target_link_libraries (${_sat_NAME} ${${opm}_TARGET} ${${opm}_LIBRARIES})
+	# are we building a test? luckily, the testing framework doesn't
+	# require anything else, so we don't have to figure out where it
+	# should go in the library list
+	if (NOT ${test_regexp} STREQUAL "")
+	  set (_test_lib "${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}")
+	else (NOT ${test_regexp} STREQUAL "")
+	  set (_test_lib "")
+	endif (NOT ${test_regexp} STREQUAL "")
+	target_link_libraries (${_sat_NAME} ${${opm}_TARGET} ${${opm}_LIBRARIES} ${_test_lib})
 	strip_debug_symbols (${_sat_NAME} _sat_DEBUG)
 	list (APPEND ${satellite}_DEBUG ${_sat_DEBUG})
 
