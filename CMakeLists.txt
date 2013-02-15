@@ -5,12 +5,12 @@
 set (opm-core_NAME "opm-core")
 set (opm-core_DESCRIPTION "Open Porous Media Initiative Core Library")
 set (opm-core_DIR "opm/core")
+set (opm-core_VERSION_MAJOR 1)
+set (opm-core_VERSION_MINOR 0)
 
 # C++ project
 cmake_minimum_required (VERSION 2.8)
 project (${opm-core_NAME})
-set (opm-core_VERSION_MAJOR 1)
-set (opm-core_VERSION_MINOR 0)
 enable_language (C)
 enable_language (CXX)
 
