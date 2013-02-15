@@ -74,6 +74,10 @@ list (APPEND opm-core_DEPS
 	)
 find_and_append_package_list_to (opm-core ${opm-core_DEPS})
 
+# remove the dependency on the testing framework from the main library;
+# it is not possible to query for Boost twice with different components.
+list (REMOVE_ITEM opm-core_LIBRARIES ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+
 # put debug information into every executable
 include (UseDebugSymbols)
 
