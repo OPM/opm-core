@@ -18,6 +18,10 @@ enable_language (CXX)
 set (opm-core_MODULE_DIR "${PROJECT_SOURCE_DIR}/cmake/Modules")
 list (APPEND CMAKE_MODULE_PATH ${opm-core_MODULE_DIR})
 
+# print system information to better pinpoint issues from log alone
+include (UseSystemInfo)
+system_info ()
+
 # very early try to print repo id (to pinpoint version if something goes wrong)
 include (UseVCSInfo)
 vcs_info ()
