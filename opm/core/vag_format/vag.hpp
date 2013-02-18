@@ -44,7 +44,6 @@
 #include <string>
 #include <vector>
 #include <cassert>
-#include <cmath>
 
 namespace OPM
 {
@@ -119,18 +118,19 @@ namespace OPM
        \param[in]  os is is stream of the file.
        \param[out] vag_grid is a resized and filled vector containing the quantiy read.
        \param[in]  n number of doubles on each line.
-       The function will only write full lines an potentially skip numbers at end of the vector.
     */  
     template <typename T>
     void writeVector(std::ostream& os,std::vector<T>& vec,int n){
-	using namespace std;
-        int lines = floor(vec.size()/n);
-        assert(vec.size()%n==0);
-	for(int j=0;j< lines;++j){
-            for(int i=0;i< n;++i){
-                os << vec[j*n+i] << " ";
-            }
-            os << endl;
+        typedef typename std::vector<T>::size_type sz_t;
+
+        const sz_t nn = n;
+
+        for (sz_t i = 0; i < vec.size(); ++i) {
+            os << vec[i] << (((i % nn) == 0) ? '\n' : ' ');
+        }
+
+        if ((vec.size() % nn) != 0) {
+            os << '\n';
         }
     }
 
