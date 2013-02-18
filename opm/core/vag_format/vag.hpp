@@ -39,11 +39,10 @@
 
 
 #include <opm/core/grid.h>
-#include <iostream>
-#include <fstream>
+#include <istream>
+#include <ostream>
 #include <string>
 #include <vector>
-#include <cassert>
 
 namespace OPM
 {
