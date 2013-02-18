@@ -35,6 +35,7 @@ Optional Packages:
   --with-tinyxml=PATH     use TinyXML library from a specified location
                           (Note: if not found, then a bundled library will
                            be used)
+  --with-cmake=PROGRAM    use this program instead of \`cmake' to configure
 
 Some influential environment variables:
   CC          C compiler command
@@ -52,6 +53,7 @@ Some influential environment variables:
   FFLAGS      Fortran 77 compiler flags
   FC          Fortran compiler command
   FCFLAGS     Fortran compiler flags
+  CMAKE_COMMAND  Executable used to run cmake scripts
 
 Use these variables to override the choices made by \`configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -88,6 +90,15 @@ option_check=yes
 # this variable will get feature options
 FEATURES=
 
+# command that launches cmake; look for 2.8 if available
+if [ "${CMAKE_COMMAND}" = "" ]; then
+  if which cmake28 >/dev/null 2>&1; then
+    CMAKE_COMMAND=cmake28
+  else
+    CMAKE_COMMAND=cmake
+  fi
+fi
+
 # long arguments are implemented by putting a dash character followed by
 # a colon in the optspec, see trick by Arvid Requate at
 # <http://stackoverflow.com/questions/402377/#7680682>
@@ -110,6 +121,12 @@ while getopts -- ":-:" optchar; do
           pkgname=${pkgname#with-}
           # get the location of the package; everyhing after equal sign
           pkgloc=${OPTARG#*=}
+          # the parameter to this option is an executable program, so
+          # skip the directory test in that case
+          if [ "${pkgname}" = "cmake" ]; then
+            CMAKE_COMMAND="${pkgloc}"
+            break
+          fi
           # expand to full path since CMake changes to source directory (!)
           # this also normalize the path name wrt. not having a trailing slash
           pkgloc=$(test -d "${pkgloc}" && sh -c "cd \"${pkgloc}\"; pwd")
@@ -254,7 +271,7 @@ shift $((OPTIND-1))
 ENVVARS=${@/ACLOCAL_*=*/}
 
 # pass everything on to CMake
-CMDLINE="env ${ENVVARS} cmake \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc} ${FEATURES}"
+CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc} ${FEATURES}"
 echo --- calling CMake for opm-core ---
 echo ${CMDLINE}
 eval exec ${CMDLINE}
