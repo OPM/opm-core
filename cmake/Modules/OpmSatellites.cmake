@@ -39,13 +39,21 @@
 #	opm_compile_satellites (opm-core test "" "^test_([^/]*)$")
 #
 macro (opm_compile_satellites opm satellite excl_all test_regexp)
+  # if we are going to build the tests always, then make sure that
+  # the datafiles are present too
+  if (NOT (${excl_all} MATCHES "EXCLUDE_ALL"))
+	set (_incl_all "ALL")
+  else (NOT (${excl_all} MATCHES "EXCLUDE_ALL"))
+	set (_incl_all "")
+  endif (NOT (${excl_all} MATCHES "EXCLUDE_ALL"))
+
   # if a set of datafiles has been setup, pull those in
   if (${satellite}_DATAFILES)
-	add_custom_target (${satellite} DEPENDS ${${satellite}_DATAFILES})
+	add_custom_target (${satellite} ${_incl_all} DEPENDS ${${satellite}_DATAFILES})
   else (${satellite}_DATAFILES)
-	add_custom_target (${satellite})
+	add_custom_target (${satellite} ${_incl_all})
   endif (${satellite}_DATAFILES)
-  
+
   # compile each of these separately
   foreach (_sat_FILE IN LISTS ${satellite}_SOURCES)
 	get_filename_component (_sat_NAME "${_sat_FILE}" NAME_WE)
