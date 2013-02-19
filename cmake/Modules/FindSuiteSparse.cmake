@@ -19,6 +19,7 @@
 #   SuiteSparse_INCLUDE_DIRS     Paths containing the SuiteSparse header files
 #   SuiteSparse_LIBRARIES        Name of the libraries which must be linked
 #   SuiteSparse_DEFINITIONS      Defines that must be passed to the compiler
+#   SuiteSparse_LINKER_FLAGS     Options that must be passed when linking
 #
 # See <http://www.cise.ufl.edu/research/sparse/SuiteSparse>.
 
@@ -171,18 +172,28 @@ if (CHOLMOD_LIBRARY)
   list (REVERSE CHOLMOD_LIBRARIES)
 endif (CHOLMOD_LIBRARY)
 if (UMFPACK_LIBRARY)
+  set (UMFPACK_EXTRA_LIBS)
   # test if umfpack is usable with only amd and not cholmod
   try_compile_umfpack (HAVE_UMFPACK_WITHOUT_CHOLMOD ${AMD_LIBRARIES})
   if (HAVE_UMFPACK_WITHOUT_CHOLMOD)
-	list (APPEND UMFPACK_LIBRARIES ${AMD_LIBRARIES})
+	list (APPEND UMFPACK_EXTRA_LIBS ${AMD_LIBRARIES})
   else (HAVE_UMFPACK_WITHOUT_CHOLMOD)
 	try_compile_umfpack (HAVE_UMFPACK_WITH_CHOLMOD ${CHOLMOD_LIBRARIES})
 	if (HAVE_UMFPACK_WITH_CHOLMOD)
-	  list (APPEND UMFPACK_LIBRARIES ${CHOLMOD_LIBRARIES})
+	  list (APPEND UMFPACK_EXTRA_LIBS ${CHOLMOD_LIBRARIES})
 	else (HAVE_UMFPACK_WITH_CHOLMOD)
-	  set (UMFPACK_LIBRARIES "-NOTFOUND")
+	  set (UMFPACK_EXTRA_LIBS "-NOTFOUND")
 	endif (HAVE_UMFPACK_WITH_CHOLMOD)
   endif (HAVE_UMFPACK_WITHOUT_CHOLMOD)
+  # test if umfpack is underlinked (CentOS 5.9), i.e. doesn't specify
+  # that it depends on amd. in that case, force amd to be linked
+  if ((CMAKE_CXX_PLATFORM_ID STREQUAL "Linux") AND CMAKE_COMPILER_IS_GNUCC)
+	try_compile_umfpack (HAVE_UMFPACK_NOT_UNDERLINKED "-Wl,--as-needed" ${UMFPACK_EXTRA_LIBS})
+	if (NOT HAVE_UMFPACK_NOT_UNDERLINKED)
+	  list (APPEND UMFPACK_LINKER_FLAGS "-Wl,--no-as-needed")
+	endif (NOT HAVE_UMFPACK_NOT_UNDERLINKED)
+  endif ((CMAKE_CXX_PLATFORM_ID STREQUAL "Linux") AND CMAKE_COMPILER_IS_GNUCC)
+  list (APPEND UMFPACK_LIBRARIES ${UMFPACK_EXTRA_LIBS})
   list (REVERSE UMFPACK_LIBRARIES)
   list (REMOVE_DUPLICATES UMFPACK_LIBRARIES)
   list (REVERSE UMFPACK_LIBRARIES)
@@ -211,6 +222,7 @@ foreach (module IN LISTS SuiteSparse_FIND_COMPONENTS)
   else (NOT SuiteSparse_${MODULE}_FOUND)
 	set (HAVE_SUITESPARSE_${MODULE}_H 1 CACHE INT "Is ${module} header present?")
 	list (APPEND SuiteSparse_LIBRARIES "${${MODULE}_LIBRARIES}")
+	list (APPEND SuiteSparse_LINKER_FLAGS "${${MODULE}_LINKER_FLAGS}")
 	list (APPEND SuiteSparse_INCLUDE_DIRS "${${MODULE}_INCLUDE_DIRS}")
   endif (NOT SuiteSparse_${MODULE}_FOUND)
   mark_as_advanced (HAVE_SUITESPARSE_${MODULE}_H)
