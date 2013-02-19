@@ -32,6 +32,7 @@ macro (opm_dist_clean opm)
 	${tutorial_DEBUG}
 	install_manifest.txt
 	${${opm}_STYLESHEET_COPIED}
+	${tests_INPUT_FILES}
 	)
   # only remove these files if they were actually copied
   if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
