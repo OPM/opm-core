@@ -85,7 +85,7 @@ endmacro (opm_compile_satellites opm prefix)
 #
 # provides these output variables:
 #
-#	${satellite_INPUT_FILES}   List of all files that are copied
+#	${satellite}_INPUT_FILES   List of all files that are copied
 #	${satellite}_DATAFILES     Name of target which copies these files
 #
 # Example:
@@ -100,7 +100,7 @@ macro (opm_data satellite target files)
   # provide datafiles as inputs for the tests, by copying them
   # to a tests/ directory in the output tree (if different)
   set (${satellite}_INPUT_FILES)
-  file (GLOB ${satellite}_DATA "tests/*.xml")
+  file (GLOB ${satellite}_DATA ${files})
   if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 	foreach (input_datafile IN LISTS ${satellite}_DATA)
 	  file (RELATIVE_PATH rel_datafile "${PROJECT_SOURCE_DIR}" ${input_datafile})
