@@ -79,11 +79,18 @@ macro (opm_compile_satellites opm satellite excl_all test_regexp)
 	if (NOT ${test_regexp} STREQUAL "")
 	  string (REGEX REPLACE "${test_regexp}" "\\1" _sat_FANCY "${_sat_NAME}")
 	  get_target_property (_sat_LOC ${_sat_NAME} LOCATION)
-	  add_test (${_sat_FANCY} ${_sat_LOC})
-	  # run the test in the directory where the data files are
-	  set_tests_properties (${_sat_FANCY} PROPERTIES
-		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${${satellite}_DIR}
-		)
+	  if (CMAKE_VERSION VERSION_LESS "2.8.4")
+		add_test (
+		  NAME ${_sat_FANCY}
+		  COMMAND ${CMAKE_COMMAND} -E chdir "${PROJECT_BINARY_DIR}/${${satellite}_DIR}" ${_sat_LOC}
+		  )
+	  else (CMAKE_VERSION VERSION_LESS "2.8.4")
+		add_test (${_sat_FANCY} ${_sat_LOC})
+		# run the test in the directory where the data files are
+		set_tests_properties (${_sat_FANCY} PROPERTIES
+		  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${${satellite}_DIR}
+		  )
+	  endif (CMAKE_VERSION VERSION_LESS "2.8.4")
 	endif(NOT ${test_regexp} STREQUAL "")
   endforeach (_sat_FILE)
 endmacro (opm_compile_satellites opm prefix)
