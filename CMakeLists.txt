@@ -242,7 +242,7 @@ opm_compile_satellites (opm-core tests "" "^test_([^/]*)$")
 add_custom_target (check
 	COMMAND ${CMAKE_CTEST_COMMAND}
 	DEPENDS tests
-	COMMENT Checking if library is functional
+	COMMENT "Checking if library is functional"
 	VERBATIM
 	)
 
