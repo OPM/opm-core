@@ -48,10 +48,9 @@ macro (opm_compile_satellites opm satellite excl_all test_regexp)
   endif (NOT (${excl_all} MATCHES "EXCLUDE_ALL"))
 
   # if a set of datafiles has been setup, pull those in
+  add_custom_target (${satellite} ${_incl_all})
   if (${satellite}_DATAFILES)
-	add_custom_target (${satellite} ${_incl_all} DEPENDS ${${satellite}_DATAFILES})
-  else (${satellite}_DATAFILES)
-	add_custom_target (${satellite} ${_incl_all})
+	add_dependencies (${satellite} ${${satellite}_DATAFILES})
   endif (${satellite}_DATAFILES)
 
   # compile each of these separately
