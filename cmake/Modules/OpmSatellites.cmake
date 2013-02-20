@@ -39,13 +39,20 @@
 #	opm_compile_satellites (opm-core test "" "^test_([^/]*)$")
 #
 macro (opm_compile_satellites opm satellite excl_all test_regexp)
+  # if we are going to build the tests always, then make sure that
+  # the datafiles are present too
+  if (NOT (${excl_all} MATCHES "EXCLUDE_ALL"))
+	set (_incl_all "ALL")
+  else (NOT (${excl_all} MATCHES "EXCLUDE_ALL"))
+	set (_incl_all "")
+  endif (NOT (${excl_all} MATCHES "EXCLUDE_ALL"))
+
   # if a set of datafiles has been setup, pull those in
+  add_custom_target (${satellite} ${_incl_all})
   if (${satellite}_DATAFILES)
-	add_custom_target (${satellite} DEPENDS ${${satellite}_DATAFILES})
-  else (${satellite}_DATAFILES)
-	add_custom_target (${satellite})
+	add_dependencies (${satellite} ${${satellite}_DATAFILES})
   endif (${satellite}_DATAFILES)
-  
+
   # compile each of these separately
   foreach (_sat_FILE IN LISTS ${satellite}_SOURCES)
 	get_filename_component (_sat_NAME "${_sat_FILE}" NAME_WE)
@@ -71,11 +78,18 @@ macro (opm_compile_satellites opm satellite excl_all test_regexp)
 	if (NOT ${test_regexp} STREQUAL "")
 	  string (REGEX REPLACE "${test_regexp}" "\\1" _sat_FANCY "${_sat_NAME}")
 	  get_target_property (_sat_LOC ${_sat_NAME} LOCATION)
-	  add_test (${_sat_FANCY} ${_sat_LOC})
-	  # run the test in the directory where the data files are
-	  set_tests_properties (${_sat_FANCY} PROPERTIES
-		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${${satellite}_DIR}
-		)
+	  if (CMAKE_VERSION VERSION_LESS "2.8.4")
+		add_test (
+		  NAME ${_sat_FANCY}
+		  COMMAND ${CMAKE_COMMAND} -E chdir "${PROJECT_BINARY_DIR}/${${satellite}_DIR}" ${_sat_LOC}
+		  )
+	  else (CMAKE_VERSION VERSION_LESS "2.8.4")
+		add_test (${_sat_FANCY} ${_sat_LOC})
+		# run the test in the directory where the data files are
+		set_tests_properties (${_sat_FANCY} PROPERTIES
+		  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${${satellite}_DIR}
+		  )
+	  endif (CMAKE_VERSION VERSION_LESS "2.8.4")
 	endif(NOT ${test_regexp} STREQUAL "")
   endforeach (_sat_FILE)
 endmacro (opm_compile_satellites opm prefix)
@@ -85,7 +99,7 @@ endmacro (opm_compile_satellites opm prefix)
 #
 # provides these output variables:
 #
-#	${satellite_INPUT_FILES}   List of all files that are copied
+#	${satellite}_INPUT_FILES   List of all files that are copied
 #	${satellite}_DATAFILES     Name of target which copies these files
 #
 # Example:
@@ -100,7 +114,7 @@ macro (opm_data satellite target files)
   # provide datafiles as inputs for the tests, by copying them
   # to a tests/ directory in the output tree (if different)
   set (${satellite}_INPUT_FILES)
-  file (GLOB ${satellite}_DATA "tests/*.xml")
+  file (GLOB ${satellite}_DATA ${files})
   if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 	foreach (input_datafile IN LISTS ${satellite}_DATA)
 	  file (RELATIVE_PATH rel_datafile "${PROJECT_SOURCE_DIR}" ${input_datafile})
