@@ -137,22 +137,6 @@ function (find_opm_package module deps header lib defs prog conf)
   remove_duplicate_libraries (${module})
   list (REMOVE_DUPLICATES ${module}_DEFINITIONS)
 
-  # check that we can compile a small test-program
-  include (CMakePushCheckState)
-  cmake_push_check_state ()
-  include (CheckCXXSourceCompiles)
-  # only add these if they are actually found; otherwise it won't
-  # compile and the variable won't be set
-  append_found (${module}_INCLUDE_DIR CMAKE_REQUIRED_INCLUDES)
-  append_found (${module}_LIBRARIES CMAKE_REQUIRED_LIBRARIES)
-  # since we don't have any config.h yet
-  list (APPEND CMAKE_REQUIRED_DEFINITIONS ${${module}_DEFINITIONS})
-  list (APPEND CMAKE_REQUIRED_DEFINITIONS "-DHAVE_NULLPTR=${HAVE_NULLPTR}")
-  string (TOUPPER ${module} MODULE)
-  string (REPLACE "-" "_" MODULE ${MODULE})
-  check_cxx_source_compiles ("${prog}" HAVE_${MODULE})
-  cmake_pop_check_state ()
-
   # these defines are used in dune/${module} headers, and should be put
   # in config.h when we include those
   foreach (_var IN LISTS conf)
@@ -169,6 +153,26 @@ function (find_opm_package module deps header lib defs prog conf)
   if (${module}_CONFIG_VARS)
 	list (REMOVE_DUPLICATES ${module}_CONFIG_VARS)
   endif (${module}_CONFIG_VARS)
+
+  # these are the defines that should be set when compiling
+  # without config.h
+  config_cmd_line (${module}_CMD_CONFIG ${module}_CONFIG_VARS)
+
+  # check that we can compile a small test-program
+  include (CMakePushCheckState)
+  cmake_push_check_state ()
+  include (CheckCXXSourceCompiles)
+  # only add these if they are actually found; otherwise it won't
+  # compile and the variable won't be set
+  append_found (${module}_INCLUDE_DIR CMAKE_REQUIRED_INCLUDES)
+  append_found (${module}_LIBRARIES CMAKE_REQUIRED_LIBRARIES)
+  # since we don't have any config.h yet
+  list (APPEND CMAKE_REQUIRED_DEFINITIONS ${${module}_DEFINITIONS})
+  list (APPEND CMAKE_REQUIRED_DEFINITIONS ${${module}_CMD_CONFIG})
+  string (TOUPPER ${module} MODULE)
+  string (REPLACE "-" "_" MODULE ${MODULE})
+  check_cxx_source_compiles ("${prog}" HAVE_${MODULE})
+  cmake_pop_check_state ()
 
   # write status message in the same manner as everyone else
   include (FindPackageHandleStandardArgs)
@@ -212,3 +216,26 @@ function (debug_find_vars module)
   string (REPLACE "-" "_" MODULE ${MODULE})  
   message (STATUS "HAVE_${MODULE}         = ${HAVE_${MODULE}}")
 endfunction (debug_find_vars module)
+
+# generate a command-line that can be used to pass variables before
+# config.h is available (such as probe tests). varname is the *name*
+# of the variable to receive the result, defs is a list of the *names*
+# which should be passed
+function (config_cmd_line varname defs)
+  # process each variable
+  foreach (_var IN LISTS ${defs})
+	# only generate an entry if the define was actually set
+	if ((DEFINED ${_var}) AND (NOT "${${_var}}" STREQUAL ""))
+	  # numbers are not quoted, strings are
+	  if (${_var} MATCHES "[0-9]+")
+		set (_quoted "${${_var}}")
+	  else (${_var} MATCHES "[0-9]+")
+		set (_quoted "\"${${_var}}\"")
+	  endif (${_var} MATCHES "[0-9]+")
+	  # add command-line option to define this variable
+	  list (APPEND _cmdline "-D${_var}=${_quoted}")
+	endif ((DEFINED ${_var}) AND (NOT "${${_var}}" STREQUAL ""))
+  endforeach (_var)
+  # return the resulting command-line options for defining vars
+  set (${varname} "${_cmdline}" PARENT_SCOPE)
+endfunction (config_cmd_line)
