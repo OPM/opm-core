@@ -46,13 +46,6 @@ PROJECT_BRIEF          =
 
 PROJECT_LOGO           =
 
-# The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute)
-# base path where the generated documentation will be put.
-# If a relative path is entered, it will be relative to the location
-# where doxygen was started. If left blank the current directory will be used.
-
-OUTPUT_DIRECTORY       = @PROJECT_BINARY_DIR@/Documentation
-
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create
 # 4096 sub-directories (in 2 levels) under the output directory of each output
 # format and will distribute the generated files over these directories.
@@ -119,15 +112,6 @@ INLINE_INHERITED_MEMB  = NO
 # to NO the shortest path that makes the file name unique will be used.
 
 FULL_PATH_NAMES        = YES
-
-# If the FULL_PATH_NAMES tag is set to YES then the STRIP_FROM_PATH tag
-# can be used to strip a user-defined part of the path. Stripping is
-# only done if one of the specified strings matches the left-hand part of
-# the path. The tag can be used to show relative paths in the file list.
-# If left blank the directory from which doxygen is run is used as the
-# path to strip.
-
-STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of
 # the path mentioned in the documentation of a class, which tells
@@ -541,15 +525,6 @@ SHOW_NAMESPACES        = YES
 
 FILE_VERSION_FILTER    =
 
-# The LAYOUT_FILE tag can be used to specify a layout file which will be parsed
-# by doxygen. The layout file controls the global structure of the generated
-# output files in an output format independent way. The create the layout file
-# that represents doxygen's defaults, run doxygen with the -l option.
-# You can optionally specify a file name after the option, if omitted
-# DoxygenLayout.xml will be used as the name of the layout file.
-
-LAYOUT_FILE            = @PROJECT_SOURCE_DIR@/Documentation/DoxygenLayout.xml
-
 #---------------------------------------------------------------------------
 # configuration options related to warning and progress messages
 #---------------------------------------------------------------------------
@@ -605,13 +580,6 @@ WARN_LOGFILE           =
 # configuration options related to the input files
 #---------------------------------------------------------------------------
 
-# The INPUT tag can be used to specify the files and/or directories that contain
-# documented source files. You may enter file names like "myfile.cpp" or
-# directories like "/usr/src/myproject". Separate the files or directories
-# with spaces.
-
-INPUT                  = @PROJECT_SOURCE_DIR@/opm/core/ @PROJECT_SOURCE_DIR@/tutorials/ @PROJECT_SOURCE_DIR@/examples/
-
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
 # also the default input encoding. Doxygen uses libiconv (or the iconv built
@@ -664,12 +632,6 @@ EXCLUDE_PATTERNS       =
 
 EXCLUDE_SYMBOLS        =
 
-# The EXAMPLE_PATH tag can be used to specify one or more files or
-# directories that contain example code fragments that are included (see
-# the \include command).
-
-EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/tutorials/
-
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp
 # and *.h) to filter out the source-files in the directories. If left
@@ -683,12 +645,6 @@ EXAMPLE_PATTERNS       =
 # Possible values are YES and NO. If left blank NO is used.
 
 EXAMPLE_RECURSIVE      = NO
-
-# The IMAGE_PATH tag can be used to specify one or more files or
-# directories that contain image that are included in the documentation (see
-# the \image command).
-
-IMAGE_PATH             = @PROJECT_SOURCE_DIR@/Documentation/Figure
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -843,15 +799,6 @@ HTML_HEADER            =
 # standard footer.
 
 HTML_FOOTER            =
-
-# The HTML_STYLESHEET tag can be used to specify a user-defined cascading
-# style sheet that is used by each HTML page. It can be used to
-# fine-tune the look of the HTML output. If the tag is left blank doxygen
-# will generate a default style sheet. Note that doxygen will try to copy
-# the style sheet file to the HTML output directory, so don't put your own
-# stylesheet in the HTML output directory as well, or it will be erased!
-
-HTML_STYLESHEET        = style.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note

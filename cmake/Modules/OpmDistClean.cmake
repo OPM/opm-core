@@ -22,7 +22,8 @@ macro (opm_dist_clean opm)
 	${${opm}_NAME}-install.cmake
 	${${opm}_NAME}.pc
 	${${opm}_NAME}-install.pc
-	Doxyfile
+	${docu_dir}/Doxyfile
+	${docu_dir}/Doxyfile.in
 	CTestTestfile.cmake
 	DartConfiguration.tcl
 	lib/${${opm}_LIBTOOL_ARCHIVE}
