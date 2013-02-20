@@ -26,12 +26,17 @@ macro (opm_doc opm docu_dir)
 	  COMMENT "Generating API documentation with Doxygen"
 	  VERBATIM
 	  )
+	# distributions have various naming conventions; this enables the packager
+	# to direct where the install target should put the documentation. the names
+	# here are taken from GNUInstallDirs.cmake
+	option (CMAKE_INSTALL_DATAROOTDIR "Read-only arch.-indep. data root" "share")
+	option (CMAKE_INSTALL_DOCDIR "Documentation root" "${CMAKE_INSTALL_DATAROOTDIR}/doc/${${opm}_NAME}")
 	set (_formats html)
 	foreach (format IN LISTS _formats)
 	  string (TOUPPER ${format} FORMAT)
 	  install (
 		DIRECTORY ${PROJECT_BINARY_DIR}/${docu_dir}/${format}
-		DESTINATION share/doc/${${opm}_NAME}
+		DESTINATION ${CMAKE_INSTALL_DOCDIR}
 		COMPONENT ${format}
 		OPTIONAL
 		)
