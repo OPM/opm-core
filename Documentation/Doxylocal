@@ -3,7 +3,7 @@
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = @PROJECT_SOURCE_DIR@/opm/core/ \
+INPUT                  = @PROJECT_SOURCE_DIR@/@opm-core_DIR@/ \
                          @PROJECT_SOURCE_DIR@/tutorials/ \
                          @PROJECT_SOURCE_DIR@/examples/
 
@@ -27,13 +27,13 @@ EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/tutorials/
 # If a relative path is entered, it will be relative to the location
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = @PROJECT_BINARY_DIR@/Documentation
+OUTPUT_DIRECTORY       = @PROJECT_BINARY_DIR@/@docu_dir@
 
 # The IMAGE_PATH tag can be used to specify one or more files or
 # directories that contain image that are included in the documentation (see
 # the \image command).
 
-IMAGE_PATH             = @PROJECT_SOURCE_DIR@/Documentation/Figure
+IMAGE_PATH             = @PROJECT_SOURCE_DIR@/@docu_dir@/Figure
 
 # The LAYOUT_FILE tag can be used to specify a layout file which will be parsed
 # by doxygen. The layout file controls the global structure of the generated
@@ -42,7 +42,7 @@ IMAGE_PATH             = @PROJECT_SOURCE_DIR@/Documentation/Figure
 # You can optionally specify a file name after the option, if omitted
 # DoxygenLayout.xml will be used as the name of the layout file.
 
-LAYOUT_FILE            = @PROJECT_SOURCE_DIR@/Documentation/DoxygenLayout.xml
+LAYOUT_FILE            = @PROJECT_SOURCE_DIR@/@docu_dir@/DoxygenLayout.xml
 
 # The HTML_STYLESHEET tag can be used to specify a user-defined cascading
 # style sheet that is used by each HTML page. It can be used to
