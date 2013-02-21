@@ -249,9 +249,9 @@ add_custom_target (check
 
 # generate documentation from source code with Doxygen;
 # setup install target for this documentation
-set (docu_dir "Documentation")
+set (doxy_dir "Documentation")
 include (OpmDoc)
-opm_doc (opm-core ${docu_dir})
+opm_doc (opm-core ${doxy_dir})
 
 # provide compatibility with using this build in dunecontrol
 include (DuneCompat)

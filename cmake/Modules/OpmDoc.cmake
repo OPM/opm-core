@@ -11,30 +11,30 @@
 # Output the following variables:
 # ${opm}_STYLESHEET_COPIED   Location of stylesheet to be removed in distclean
 
-macro (opm_doc opm docu_dir)
+macro (opm_doc opm doxy_dir)
   # combine the template with local customization
   file (READ ${PROJECT_SOURCE_DIR}/cmake/Templates/Doxyfile _doxy_templ)
   string (REPLACE ";" "\\;" _doxy_templ "${_doxy_templ}")
-  if (EXISTS ${PROJECT_SOURCE_DIR}/${docu_dir}/Doxylocal)
-	file (READ ${PROJECT_SOURCE_DIR}/${docu_dir}/Doxylocal _doxy_local)
+  if (EXISTS ${PROJECT_SOURCE_DIR}/${doxy_dir}/Doxylocal)
+	file (READ ${PROJECT_SOURCE_DIR}/${doxy_dir}/Doxylocal _doxy_local)
 	string (REPLACE ";" "\\;" _doxy_local "${_doxy_local}")
-  else (EXISTS ${PROJECT_SOURCE_DIR}/${docu_dir}/Doxylocal)
+  else (EXISTS ${PROJECT_SOURCE_DIR}/${doxy_dir}/Doxylocal)
 	set (_doxy_local)
-  endif (EXISTS ${PROJECT_SOURCE_DIR}/${docu_dir}/Doxylocal)
-  file (MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${docu_dir})
-  file (WRITE ${PROJECT_BINARY_DIR}/${docu_dir}/Doxyfile.in ${_doxy_templ} ${_doxy_local})
+  endif (EXISTS ${PROJECT_SOURCE_DIR}/${doxy_dir}/Doxylocal)
+  file (MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${doxy_dir})
+  file (WRITE ${PROJECT_BINARY_DIR}/${doxy_dir}/Doxyfile.in ${_doxy_templ} ${_doxy_local})
   # replace variables in this combined file
   configure_file (
-	${PROJECT_BINARY_DIR}/${docu_dir}/Doxyfile.in
-	${PROJECT_BINARY_DIR}/${docu_dir}/Doxyfile
+	${PROJECT_BINARY_DIR}/${doxy_dir}/Doxyfile.in
+	${PROJECT_BINARY_DIR}/${doxy_dir}/Doxyfile
 	@ONLY
 	)
   find_package (Doxygen)
   if (DOXYGEN_FOUND)
 	add_custom_target (doc
-	  COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/${docu_dir}/Doxyfile
-	  SOURCES ${PROJECT_BINARY_DIR}/${docu_dir}/Doxyfile
-	  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${docu_dir}
+	  COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/${doxy_dir}/Doxyfile
+	  SOURCES ${PROJECT_BINARY_DIR}/${doxy_dir}/Doxyfile
+	  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${doxy_dir}
 	  COMMENT "Generating API documentation with Doxygen"
 	  VERBATIM
 	  )
@@ -47,7 +47,7 @@ macro (opm_doc opm docu_dir)
 	foreach (format IN LISTS _formats)
 	  string (TOUPPER ${format} FORMAT)
 	  install (
-		DIRECTORY ${PROJECT_BINARY_DIR}/${docu_dir}/${format}
+		DIRECTORY ${PROJECT_BINARY_DIR}/${doxy_dir}/${format}
 		DESTINATION ${CMAKE_INSTALL_DOCDIR}
 		COMPONENT ${format}
 		OPTIONAL
@@ -68,10 +68,10 @@ macro (opm_doc opm docu_dir)
   # thus, we'll need to copy the stylesheet to this path relative to where
   # Doxygen will be run (in the output tree)
   if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
-	file (COPY ${PROJECT_SOURCE_DIR}/${docu_dir}/style.css
-	  DESTINATION ${PROJECT_BINARY_DIR}/${docu_dir}
+	file (COPY ${PROJECT_SOURCE_DIR}/${doxy_dir}/style.css
+	  DESTINATION ${PROJECT_BINARY_DIR}/${doxy_dir}
 	  )
-	set (${opm}_STYLESHEET_COPIED "${docu_dir}/style.css")
+	set (${opm}_STYLESHEET_COPIED "${doxy_dir}/style.css")
   else (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 	set (${opm}_STYLESHEET_COPIED "")
   endif (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
