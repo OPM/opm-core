@@ -41,8 +41,8 @@ macro (opm_doc opm doxy_dir)
 	# distributions have various naming conventions; this enables the packager
 	# to direct where the install target should put the documentation. the names
 	# here are taken from GNUInstallDirs.cmake
-	option (CMAKE_INSTALL_DATAROOTDIR "Read-only arch.-indep. data root" "share")
-	option (CMAKE_INSTALL_DOCDIR "Documentation root" "${CMAKE_INSTALL_DATAROOTDIR}/doc/${${opm}_NAME}")
+	set (CMAKE_INSTALL_DATAROOTDIR "share" CACHE STRING "Read-only arch.-indep. data root")
+	set (CMAKE_INSTALL_DOCDIR "${CMAKE_INSTALL_DATAROOTDIR}/doc/${${opm}_NAME}" CACHE STRING "Documentation root")
 	set (_formats html)
 	foreach (format IN LISTS _formats)
 	  string (TOUPPER ${format} FORMAT)
