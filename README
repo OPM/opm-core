@@ -99,6 +99,9 @@ sudo yum install boost-devel suitesparse-devel blas-devel lapack-devel
 # libraries necessary for OPM
 sudo yum install tinyxml-devel
 
+# optional libraries
+sudo yum-config-manager --add-repo http://opm-project.org/packages/redhat/opm.repo
+sudo yum install libsuperlu3 ert.ecl-devel dune-istl-devel
 
 DOWNLOADING
 -----------
