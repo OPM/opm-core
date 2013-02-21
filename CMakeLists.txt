@@ -256,7 +256,6 @@ opm_doc (opm-core ${docu_dir})
 include (DuneCompat)
 include (LibtoolArchives)
 configure_la (opm-core ${opm-core_TARGET} opm-core_LIBTOOL_ARCHIVE)
-message (STATUS "Writing libtool archive ${opm-core_LIBTOOL_ARCHIVE}")
 
 ### clean in-source builds ###
 include (OpmDistClean)

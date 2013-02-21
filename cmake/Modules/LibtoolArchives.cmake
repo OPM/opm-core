@@ -133,13 +133,14 @@ function (configure_la name target)
   # for it.
   if (ltversion)
 	set (la_file "lib${target}.la")
+	message (STATUS "Writing libtool archive for ${target}")
 	configure_file (
 	  ${templ_dir}/la.in
 	  ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${la_file}
 	  @ONLY@
 	  )
   else (ltversion)
-	set (${name}_LIBTOOL_ARCHIVE "")
+	set (la_file "")
   endif (ltversion)
 
   # return this variable to the caller
