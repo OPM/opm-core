@@ -67,13 +67,13 @@ macro (opm_doc opm doxy_dir)
   # full path (to the source directory!) will be put in the output HTML.
   # thus, we'll need to copy the stylesheet to this path relative to where
   # Doxygen will be run (in the output tree)
-  if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  if ((NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR) AND (EXISTS ${PROJECT_SOURCE_DIR}/${doxy_dir}/style.css))
 	file (COPY ${PROJECT_SOURCE_DIR}/${doxy_dir}/style.css
 	  DESTINATION ${PROJECT_BINARY_DIR}/${doxy_dir}
 	  )
 	set (${opm}_STYLESHEET_COPIED "${doxy_dir}/style.css")
-  else (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  else ((NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR) AND (EXISTS ${PROJECT_SOURCE_DIR}/${doxy_dir}/style.css))
 	set (${opm}_STYLESHEET_COPIED "")
-  endif (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  endif ((NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR) AND (EXISTS ${PROJECT_SOURCE_DIR}/${doxy_dir}/style.css))
   
 endmacro (opm_doc opm)
