@@ -95,6 +95,7 @@ include (UseMultiArch)
 
 # this module contains code to figure out which files is where
 include (OpmFiles)
+opm_auto_dirs ()
 
 # put libraries in lib/
 opm_out_dirs ()

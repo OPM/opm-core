@@ -8,6 +8,13 @@ macro (opm_out_dirs)
   set (CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/CMakeFiles")
 endmacro (opm_out_dirs)
 
+# support for some of the variables that are used in Autotools
+# template files
+macro (opm_auto_dirs)
+  set (abs_top_builddir "${PROJECT_BINARY_DIR}")
+  set (abs_top_srcdir "${PROJECT_SOURCE_DIR}")
+endmacro (opm_auto_dirs)
+
 macro (opm_sources opm)
   # find all the source code (note that these variables have name after
   # the target library and not the project). the documentation recommends
