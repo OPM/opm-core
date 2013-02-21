@@ -236,7 +236,7 @@ cond_disable_test ("AGMG")
 cond_disable_test ("ERT")
 
 # make datafiles necessary for tests available in output directory
-opm_data (tests datafiles "tests/*.xml")
+opm_data (tests datafiles "${tests_DIR}" "*.xml")
 opm_compile_satellites (opm-core tests "" "^test_([^/]*)$")
 
 # use this target to run all tests

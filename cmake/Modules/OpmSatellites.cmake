@@ -95,7 +95,7 @@ macro (opm_compile_satellites opm satellite excl_all test_regexp)
 endmacro (opm_compile_satellites opm prefix)
 
 # Synopsis:
-#	opm_data (satellite target files)
+#	opm_data (satellite target dirname files)
 #
 # provides these output variables:
 #
@@ -104,9 +104,15 @@ endmacro (opm_compile_satellites opm prefix)
 #
 # Example:
 #
-#	opm_data (test datafiles "tests/*.xml")
+#	opm_data (tests datafiles "tests/" "*.xml")
 #
-macro (opm_data satellite target files)
+macro (opm_data satellite target dirname files)
+  # even if there are no datafiles, create the directory so the
+  # satellite programs have a homedir to run in
+  execute_process (
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${dirname}
+	)
+
   # if ever huge test datafiles are necessary, then change this
   # into "create_symlink" (on UNIX only, apparently)
   set (make_avail "copy")
@@ -114,7 +120,11 @@ macro (opm_data satellite target files)
   # provide datafiles as inputs for the tests, by copying them
   # to a tests/ directory in the output tree (if different)
   set (${satellite}_INPUT_FILES)
-  file (GLOB ${satellite}_DATA ${files})
+  set (${satellite}_DATA)
+  foreach (_fileset IN ITEMS ${files})
+	file (GLOB _fileset_DATA "${dirname}/${_fileset}")
+	list (APPEND ${satellite}_DATA ${_fileset_DATA})
+  endforeach (_fileset)
   if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 	foreach (input_datafile IN LISTS ${satellite}_DATA)
 	  file (RELATIVE_PATH rel_datafile "${PROJECT_SOURCE_DIR}" ${input_datafile})
@@ -134,6 +144,6 @@ macro (opm_data satellite target files)
   set (${satellite}_DATAFILES "${target}")
   add_custom_target (${${satellite}_DATAFILES}
 	DEPENDS ${${satellite}_INPUT_FILES}
-	COMMENT "Making test data available in output tree"
+	COMMENT "Making \"${satellite}\" data available in output tree"
 	)
-endmacro (opm_data satellite target files)
+endmacro (opm_data satellite target dirname files)
