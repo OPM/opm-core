@@ -4,7 +4,7 @@
 # key information about the library
 set (opm-core_NAME "opm-core")
 set (opm-core_DESCRIPTION "Open Porous Media Initiative Core Library")
-set (opm-core_DIR "opm/core")
+set (opm-core_DIR "opm")
 set (opm-core_VERSION_MAJOR 1)
 set (opm-core_VERSION_MINOR 0)
 
@@ -122,18 +122,18 @@ endif (AGMG_FOUND)
 # these solvers are only compiled in if their dependency is found
 if (NOT AGMG_FOUND)
 	list (REMOVE_ITEM opm-core_SOURCES
-		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/LinearSolverAGMG.cpp
+		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverAGMG.cpp
 		)
 endif (NOT AGMG_FOUND)
 if (NOT dune-istl_FOUND)
 	list (REMOVE_ITEM opm-core_SOURCES
-		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/LinearSolverIstl.cpp
+		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverIstl.cpp
 		)
 endif (NOT dune-istl_FOUND)
 if (NOT SuiteSparse_FOUND)
 	list (REMOVE_ITEM opm-core_SOURCES
-		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/call_umfpack.c
-		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/linalg/LinearSolverUmfpack.cpp
+		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/call_umfpack.c
+		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverUmfpack.cpp
 		)
 	list (REMOVE_ITEM tutorial_SOURCES
 		${PROJECT_SOURCE_DIR}/${tutorial_DIR}/tutorial2.cpp
@@ -148,22 +148,22 @@ endif (NOT SuiteSparse_FOUND)
 # these files are provided in source control, but can only compile with Matlab
 # available; we are not supposed to include the TinyXML test prog. regardless
 list (REMOVE_ITEM opm-core_SOURCES
-	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/grid/cpgpreprocess/mxgrdecl.c
-	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/grid/cpgpreprocess/processgrid.c
-	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/utility/parameters/tinyxml/xmltest.cpp
+	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/grid/cpgpreprocess/mxgrdecl.c
+	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/grid/cpgpreprocess/processgrid.c
+	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/utility/parameters/tinyxml/xmltest.cpp
 	)
 
 # remove inline TinyXML if a system version was found
 if (TinyXML_FOUND)
-	file (GLOB_RECURSE _inline_tinyxml "${opm-core_DIR}/utility/parameters/tinyxml/*")
+	file (GLOB_RECURSE _inline_tinyxml "${opm-core_DIR}/core/utility/parameters/tinyxml/*")
 	foreach (_file IN LISTS _inline_tinyxml)
 		list (REMOVE_ITEM opm-core_SOURCES ${_file})
 	endforeach (_file)
 endif (TinyXML_FOUND)
 
 # anyhow remove it from the header list (so it doesn't get installed)
-list (REMOVE_ITEM opm-core_HEADERS "${opm-core_DIR}/utility/parameters/tinyxml/tinystr.h")
-list (REMOVE_ITEM opm-core_HEADERS "${opm-core_DIR}/utility/parameters/tinyxml/tinyxml.h")
+list (REMOVE_ITEM opm-core_HEADERS "${opm-core_DIR}/core/utility/parameters/tinyxml/tinystr.h")
+list (REMOVE_ITEM opm-core_HEADERS "${opm-core_DIR}/core/utility/parameters/tinyxml/tinyxml.h")
 
 # HAVE_ERT is used as an #ifdef, not as an #if in the source code, if it
 # is not true, then it should be unset altogether

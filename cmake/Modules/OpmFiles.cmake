@@ -27,7 +27,10 @@ macro (opm_sources opm)
   file (GLOB_RECURSE ${opm}_CXX_HEADERS "${${opm}_DIR}/[^.]*.hpp")
 
   # remove pre-compile headers from output list
-  set (${opm}_PRECOMP_CXX_HEADER "${${opm}_DIR}/${${opm}_NAME}-pch.hpp")
+  file (GLOB_RECURSE ${opm}_PRECOMP_CXX_HEADER "${${opm}_DIR}/${${opm}_NAME}-pch.hpp")
+  if ("${${opm}_PRECOMP_CXX_HEADER}" MATCHES ";")
+	message (FATAL_ERROR "There can only be one precompiled header!")
+  endif ("${${opm}_PRECOMP_CXX_HEADER}" MATCHES ";")
   list (REMOVE_ITEM ${opm}_CXX_HEADERS
 	${PROJECT_SOURCE_DIR}/${${opm}_PRECOMP_CXX_HEADER}
 	)
