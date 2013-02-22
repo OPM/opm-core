@@ -169,13 +169,19 @@ while getopts -- ":-:" optchar; do
           test -n "${rootvar}" && \
           FEATURES="${FEATURES} \"-D${rootvar}=${pkgloc}\""
           ;;
+        without-* | \
         disable-*)
           # get the name of the package
-          pkgname=${OPTARG#disable-}
+          pkgname=$OPTARG
+          pkgname=${pkgname#disable-}
+          pkgname=${pkgname#without-}
           # special aliases
           case "${pkgname}" in
             umfpack)
               pkgname="SuiteSparse"
+              ;;
+            tinyxml)
+              pkgname="TinyXML"
               ;;
           esac
           # casing is of course different
