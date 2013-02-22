@@ -64,19 +64,23 @@ macro (opm_compile_satellites opm satellite excl_all test_regexp)
 	# are we building a test? luckily, the testing framework doesn't
 	# require anything else, so we don't have to figure out where it
 	# should go in the library list
-	if (NOT ${test_regexp} STREQUAL "")
+	if (NOT "${test_regexp}" STREQUAL "")
 	  set (_test_lib "${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}")
-	else (NOT ${test_regexp} STREQUAL "")
+	else (NOT "${test_regexp}" STREQUAL "")
 	  set (_test_lib "")
-	endif (NOT ${test_regexp} STREQUAL "")
+	endif (NOT "${test_regexp}" STREQUAL "")
 	target_link_libraries (${_sat_NAME} ${${opm}_TARGET} ${${opm}_LIBRARIES} ${_test_lib})
 	strip_debug_symbols (${_sat_NAME} _sat_DEBUG)
 	list (APPEND ${satellite}_DEBUG ${_sat_DEBUG})
 
 	# variable with regular expression doubles as a flag for
 	# whether tests should be setup or not
-	if (NOT ${test_regexp} STREQUAL "")
-	  string (REGEX REPLACE "${test_regexp}" "\\1" _sat_FANCY "${_sat_NAME}")
+	if (NOT "${test_regexp}" STREQUAL "")
+	  foreach (_regexp IN ITEMS ${test_regexp})
+		if ("${_sat_NAME}" MATCHES "${_regexp}")
+		  string (REGEX REPLACE "${_regexp}" "\\1" _sat_FANCY "${_sat_NAME}")
+		endif ("${_sat_NAME}" MATCHES "${_regexp}")
+	  endforeach (_regexp)
 	  get_target_property (_sat_LOC ${_sat_NAME} LOCATION)
 	  if (CMAKE_VERSION VERSION_LESS "2.8.4")
 		add_test (
@@ -90,7 +94,7 @@ macro (opm_compile_satellites opm satellite excl_all test_regexp)
 		  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${${satellite}_DIR}
 		  )
 	  endif (CMAKE_VERSION VERSION_LESS "2.8.4")
-	endif(NOT ${test_regexp} STREQUAL "")
+	endif(NOT "${test_regexp}" STREQUAL "")
   endforeach (_sat_FILE)
 endmacro (opm_compile_satellites opm prefix)
 

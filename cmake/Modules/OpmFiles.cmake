@@ -41,8 +41,19 @@ macro (opm_find_tests)
   # every C++ program prefixed with test_ under tests/ directory should
   # be automatically set up as a test
   set (tests_DIR "tests")
-  file (GLOB_RECURSE tests_SOURCES "${tests_DIR}/test_*.cpp")
-  file (GLOB_RECURSE not_tests_SOURCES "${tests_DIR}/not-unit/test_*.cpp")
+  file (GLOB_RECURSE tests_SOURCES
+	"${tests_DIR}/test_*.cpp"
+	"${tests_DIR}/*_test.cpp"
+	)
+  file (GLOB_RECURSE not_tests_SOURCES
+	"${tests_DIR}/not-unit/test_*.cpp"
+	"${tests_DIR}/not-unit/*_test.cpp"
+	)
+  # how to retrieve the "fancy" name from the filename
+  set (tests_REGEXP
+	"^test_([^/]*)$"
+	"^([^/]*)_test$"
+	)
   if (tests_SOURCES AND not_tests_SOURCES)
 	list (REMOVE_ITEM tests_SOURCES ${not_tests_SOURCES})
   endif (tests_SOURCES AND not_tests_SOURCES)

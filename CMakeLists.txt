@@ -237,7 +237,7 @@ cond_disable_test ("ERT")
 
 # make datafiles necessary for tests available in output directory
 opm_data (tests datafiles "${tests_DIR}" "*.xml")
-opm_compile_satellites (opm-core tests "" "^test_([^/]*)$")
+opm_compile_satellites (opm-core tests "" "${tests_REGEXP}")
 
 # use this target to run all tests
 add_custom_target (check
