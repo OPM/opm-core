@@ -22,9 +22,9 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
 
 Optional Packages:
+  --with-boost=PATH       use Boost library from a specified location
   --with-dune-common=PATH use DUNE-common library from a specified location
   --with-dune-istl=PATH   use DUNE-ISTL library from a specified location
-  --with-boost=PATH       use Boost library from a specified location
   --with-superlu=PATH     user defined path to SuperLU library
   --with-agmg=PATH        Include DOUBLE PRECISION version Notay's of AGMG
                           Algebraic Multigrid solver from specified source
@@ -146,19 +146,19 @@ while getopts -- ":-:" optchar; do
               rootvar=""
               ;;
             agmg  |\
-            boost |\
             ert   |\
+            boost |\
             zlib)
               rootvar="${pkgname^^}_ROOT"
               ;;
-            dune-common |\
-            dune-istl   |\
-            SuiteSparse |\
-            TinyXML)
-              rootvar="${pkgname}_ROOT"
-              ;;
             superlu)
               rootvar="${pkgname^^}_PREFIX"
+              ;;
+            SuiteSparse |\
+            TinyXML     |\
+            dune-istl   |\
+            dune-common)
+              rootvar="${pkgname}_ROOT"
               ;;
             *)
               invalid_opt --with-${pkgname}
