@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# name of the project
+project=opm-core
+
 # display help text
 usage () {
   cat <<EOF
@@ -22,9 +25,9 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
 
 Optional Packages:
+  --with-boost=PATH       use Boost library from a specified location
   --with-dune-common=PATH use DUNE-common library from a specified location
   --with-dune-istl=PATH   use DUNE-ISTL library from a specified location
-  --with-boost=PATH       use Boost library from a specified location
   --with-superlu=PATH     user defined path to SuperLU library
   --with-agmg=PATH        Include DOUBLE PRECISION version Notay's of AGMG
                           Algebraic Multigrid solver from specified source
@@ -146,19 +149,19 @@ while getopts -- ":-:" optchar; do
               rootvar=""
               ;;
             agmg  |\
-            boost |\
             ert   |\
+            boost |\
             zlib)
               rootvar="${pkgname^^}_ROOT"
               ;;
-            dune-common |\
-            dune-istl   |\
-            SuiteSparse |\
-            TinyXML)
-              rootvar="${pkgname}_ROOT"
-              ;;
             superlu)
               rootvar="${pkgname^^}_PREFIX"
+              ;;
+            SuiteSparse |\
+            TinyXML     |\
+            dune-istl   |\
+            dune-common)
+              rootvar="${pkgname}_ROOT"
               ;;
             *)
               invalid_opt --with-${pkgname}
@@ -169,13 +172,19 @@ while getopts -- ":-:" optchar; do
           test -n "${rootvar}" && \
           FEATURES="${FEATURES} \"-D${rootvar}=${pkgloc}\""
           ;;
+        without-* | \
         disable-*)
           # get the name of the package
-          pkgname=${OPTARG#disable-}
+          pkgname=$OPTARG
+          pkgname=${pkgname#disable-}
+          pkgname=${pkgname#without-}
           # special aliases
           case "${pkgname}" in
             umfpack)
               pkgname="SuiteSparse"
+              ;;
+            tinyxml)
+              pkgname="TinyXML"
               ;;
           esac
           # casing is of course different
@@ -248,7 +257,7 @@ while getopts -- ":-:" optchar; do
               ;;
           esac
           test -n "${shared}" && \
-          FEATURES="${FEATURES} -DBUILD_opm-core_SHARED:BOOL=${shared}"
+          FEATURES="${FEATURES} -DBUILD_${project}_SHARED:BOOL=${shared}"
           ;;
         *)
           # remove everything *after* the equal sign
@@ -272,6 +281,6 @@ ENVVARS=${@/ACLOCAL_*=*/}
 
 # pass everything on to CMake
 CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc} ${FEATURES}"
-echo --- calling CMake for opm-core ---
+echo --- calling CMake for ${project} ---
 echo ${CMDLINE}
 eval exec ${CMDLINE}

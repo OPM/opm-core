@@ -64,19 +64,23 @@ macro (opm_compile_satellites opm satellite excl_all test_regexp)
 	# are we building a test? luckily, the testing framework doesn't
 	# require anything else, so we don't have to figure out where it
 	# should go in the library list
-	if (NOT ${test_regexp} STREQUAL "")
+	if (NOT "${test_regexp}" STREQUAL "")
 	  set (_test_lib "${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}")
-	else (NOT ${test_regexp} STREQUAL "")
+	else (NOT "${test_regexp}" STREQUAL "")
 	  set (_test_lib "")
-	endif (NOT ${test_regexp} STREQUAL "")
+	endif (NOT "${test_regexp}" STREQUAL "")
 	target_link_libraries (${_sat_NAME} ${${opm}_TARGET} ${${opm}_LIBRARIES} ${_test_lib})
 	strip_debug_symbols (${_sat_NAME} _sat_DEBUG)
 	list (APPEND ${satellite}_DEBUG ${_sat_DEBUG})
 
 	# variable with regular expression doubles as a flag for
 	# whether tests should be setup or not
-	if (NOT ${test_regexp} STREQUAL "")
-	  string (REGEX REPLACE "${test_regexp}" "\\1" _sat_FANCY "${_sat_NAME}")
+	if (NOT "${test_regexp}" STREQUAL "")
+	  foreach (_regexp IN ITEMS ${test_regexp})
+		if ("${_sat_NAME}" MATCHES "${_regexp}")
+		  string (REGEX REPLACE "${_regexp}" "\\1" _sat_FANCY "${_sat_NAME}")
+		endif ("${_sat_NAME}" MATCHES "${_regexp}")
+	  endforeach (_regexp)
 	  get_target_property (_sat_LOC ${_sat_NAME} LOCATION)
 	  if (CMAKE_VERSION VERSION_LESS "2.8.4")
 		add_test (
@@ -90,12 +94,12 @@ macro (opm_compile_satellites opm satellite excl_all test_regexp)
 		  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${${satellite}_DIR}
 		  )
 	  endif (CMAKE_VERSION VERSION_LESS "2.8.4")
-	endif(NOT ${test_regexp} STREQUAL "")
+	endif(NOT "${test_regexp}" STREQUAL "")
   endforeach (_sat_FILE)
 endmacro (opm_compile_satellites opm prefix)
 
 # Synopsis:
-#	opm_data (satellite target files)
+#	opm_data (satellite target dirname files)
 #
 # provides these output variables:
 #
@@ -104,9 +108,15 @@ endmacro (opm_compile_satellites opm prefix)
 #
 # Example:
 #
-#	opm_data (test datafiles "tests/*.xml")
+#	opm_data (tests datafiles "tests/" "*.xml")
 #
-macro (opm_data satellite target files)
+macro (opm_data satellite target dirname files)
+  # even if there are no datafiles, create the directory so the
+  # satellite programs have a homedir to run in
+  execute_process (
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${dirname}
+	)
+
   # if ever huge test datafiles are necessary, then change this
   # into "create_symlink" (on UNIX only, apparently)
   set (make_avail "copy")
@@ -114,7 +124,11 @@ macro (opm_data satellite target files)
   # provide datafiles as inputs for the tests, by copying them
   # to a tests/ directory in the output tree (if different)
   set (${satellite}_INPUT_FILES)
-  file (GLOB ${satellite}_DATA ${files})
+  set (${satellite}_DATA)
+  foreach (_fileset IN ITEMS ${files})
+	file (GLOB _fileset_DATA "${dirname}/${_fileset}")
+	list (APPEND ${satellite}_DATA ${_fileset_DATA})
+  endforeach (_fileset)
   if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 	foreach (input_datafile IN LISTS ${satellite}_DATA)
 	  file (RELATIVE_PATH rel_datafile "${PROJECT_SOURCE_DIR}" ${input_datafile})
@@ -134,6 +148,6 @@ macro (opm_data satellite target files)
   set (${satellite}_DATAFILES "${target}")
   add_custom_target (${${satellite}_DATAFILES}
 	DEPENDS ${${satellite}_INPUT_FILES}
-	COMMENT "Making test data available in output tree"
+	COMMENT "Making \"${satellite}\" data available in output tree"
 	)
-endmacro (opm_data satellite target files)
+endmacro (opm_data satellite target dirname files)

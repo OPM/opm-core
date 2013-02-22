@@ -8,6 +8,13 @@ macro (opm_out_dirs)
   set (CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/CMakeFiles")
 endmacro (opm_out_dirs)
 
+# support for some of the variables that are used in Autotools
+# template files
+macro (opm_auto_dirs)
+  set (abs_top_builddir "${PROJECT_BINARY_DIR}")
+  set (abs_top_srcdir "${PROJECT_SOURCE_DIR}")
+endmacro (opm_auto_dirs)
+
 macro (opm_sources opm)
   # find all the source code (note that these variables have name after
   # the target library and not the project). the documentation recommends
@@ -20,7 +27,10 @@ macro (opm_sources opm)
   file (GLOB_RECURSE ${opm}_CXX_HEADERS "${${opm}_DIR}/[^.]*.hpp")
 
   # remove pre-compile headers from output list
-  set (${opm}_PRECOMP_CXX_HEADER "${${opm}_DIR}/${${opm}_NAME}-pch.hpp")
+  file (GLOB_RECURSE ${opm}_PRECOMP_CXX_HEADER "${${opm}_DIR}/${${opm}_NAME}-pch.hpp")
+  if ("${${opm}_PRECOMP_CXX_HEADER}" MATCHES ";")
+	message (FATAL_ERROR "There can only be one precompiled header!")
+  endif ("${${opm}_PRECOMP_CXX_HEADER}" MATCHES ";")
   list (REMOVE_ITEM ${opm}_CXX_HEADERS
 	${PROJECT_SOURCE_DIR}/${${opm}_PRECOMP_CXX_HEADER}
 	)
@@ -34,9 +44,22 @@ macro (opm_find_tests)
   # every C++ program prefixed with test_ under tests/ directory should
   # be automatically set up as a test
   set (tests_DIR "tests")
-  file (GLOB_RECURSE tests_SOURCES "${tests_DIR}/test_*.cpp")
-  file (GLOB_RECURSE not_tests_SOURCES "${tests_DIR}/not-unit/test_*.cpp")
-  list (REMOVE_ITEM tests_SOURCES ${not_tests_SOURCES})
+  file (GLOB_RECURSE tests_SOURCES
+	"${tests_DIR}/test_*.cpp"
+	"${tests_DIR}/*_test.cpp"
+	)
+  file (GLOB_RECURSE not_tests_SOURCES
+	"${tests_DIR}/not-unit/test_*.cpp"
+	"${tests_DIR}/not-unit/*_test.cpp"
+	)
+  # how to retrieve the "fancy" name from the filename
+  set (tests_REGEXP
+	"^test_([^/]*)$"
+	"^([^/]*)_test$"
+	)
+  if (tests_SOURCES AND not_tests_SOURCES)
+	list (REMOVE_ITEM tests_SOURCES ${not_tests_SOURCES})
+  endif (tests_SOURCES AND not_tests_SOURCES)
 endmacro (opm_find_tests)
 
 macro (opm_find_tutorials)

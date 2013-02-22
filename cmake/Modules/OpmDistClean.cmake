@@ -22,7 +22,8 @@ macro (opm_dist_clean opm)
 	${${opm}_NAME}-install.cmake
 	${${opm}_NAME}.pc
 	${${opm}_NAME}-install.pc
-	Doxyfile
+	${doxy_dir}/Doxyfile
+	${doxy_dir}/Doxyfile.in
 	CTestTestfile.cmake
 	DartConfiguration.tcl
 	lib/${${opm}_LIBTOOL_ARCHIVE}
@@ -48,7 +49,7 @@ macro (opm_dist_clean opm)
 	COMMAND ${CMAKE_COMMAND} -E remove_directory Testing/
 	COMMAND ${CMAKE_COMMAND} -DDIR=${CMAKE_LIBRARY_OUTPUT_DIRECTORY} -P ${rmdir}
 	COMMAND ${CMAKE_COMMAND} -DDIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY} -P ${rmdir}
-	COMMAND ${CMAKE_COMMAND} -DDIR:LOCATION=${docu_dir} -P ${rmdir}
+	COMMAND ${CMAKE_COMMAND} -DDIR:LOCATION=${doxy_dir} -P ${rmdir}
 	COMMAND ${CMAKE_COMMAND} -DDIR:LOCATION=${tests_DIR} -P ${rmdir}
 # cannot depend on clean because it is only defined in the master Makefile
 # not in CMakeFiles/Makefile where this target will end up
