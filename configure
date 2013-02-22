@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# name of the project
+project=opm-core
+
 # display help text
 usage () {
   cat <<EOF
@@ -254,7 +257,7 @@ while getopts -- ":-:" optchar; do
               ;;
           esac
           test -n "${shared}" && \
-          FEATURES="${FEATURES} -DBUILD_opm-core_SHARED:BOOL=${shared}"
+          FEATURES="${FEATURES} -DBUILD_${project}_SHARED:BOOL=${shared}"
           ;;
         *)
           # remove everything *after* the equal sign
@@ -278,6 +281,6 @@ ENVVARS=${@/ACLOCAL_*=*/}
 
 # pass everything on to CMake
 CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc} ${FEATURES}"
-echo --- calling CMake for opm-core ---
+echo --- calling CMake for ${project} ---
 echo ${CMDLINE}
 eval exec ${CMDLINE}
