@@ -203,12 +203,11 @@ configure_vars (
 	WRITE ${${project}_CONFIG_VARS}
 	)
 
-### --- begin AGMG specific --- ###
 include (UseFortranWrappers)
 define_fc_func (
 	APPEND ${CONFIG_H}
+	IF HAVE_AGMG # HAVE_BLAS HAVE_LAPACK
 	)
-### --- end AGMG specific --- ###
 
 # compile main library; pull in all required includes and libraries
 include (OpmCompile)
