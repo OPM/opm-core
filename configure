@@ -26,8 +26,8 @@ Optional Features:
 
 Optional Packages:
   --with-boost=PATH       use Boost library from a specified location
-  --with-dune-common=PATH use DUNE-common library from a specified location
-  --with-dune-istl=PATH   use DUNE-ISTL library from a specified location
+  --with-dune-MODULE=PATH use given DUNE module from a specified location
+  --with-opm-MODULE=PATH  use given OPM module from a specified location
   --with-superlu=PATH     user defined path to SuperLU library
   --with-agmg=PATH        Include DOUBLE PRECISION version Notay's of AGMG
                           Algebraic Multigrid solver from specified source
@@ -159,8 +159,8 @@ while getopts -- ":-:" optchar; do
               ;;
             SuiteSparse |\
             TinyXML     |\
-            dune-istl   |\
-            dune-common)
+            opm-*       |\
+            dune-*)
               rootvar="${pkgname}_ROOT"
               ;;
             *)
