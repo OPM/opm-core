@@ -1,7 +1,10 @@
 #!/bin/bash
 
+# where is the source tree located
+srcdir=$(dirname "$0")
+
 # name of the project
-project=opm-core
+project=$(sed -n "s,^Module:[\ \t]*\([^\ \t]*\),\1,p" "${srcdir}/dune.module")
 
 # display help text
 usage () {
@@ -280,7 +283,7 @@ shift $((OPTIND-1))
 ENVVARS=${@/ACLOCAL_*=*/}
 
 # pass everything on to CMake
-CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc} ${FEATURES}"
+CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"${srcdir}\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc} ${FEATURES}"
 echo --- calling CMake for ${project} ---
 echo ${CMDLINE}
 eval exec ${CMDLINE}
