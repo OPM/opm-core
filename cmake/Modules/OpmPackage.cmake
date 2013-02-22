@@ -175,7 +175,7 @@ function (find_opm_package module deps header lib defs prog conf)
   include (CheckCXXSourceCompiles)
   # only add these if they are actually found; otherwise it won't
   # compile and the variable won't be set
-  append_found (${module}_INCLUDE_DIR CMAKE_REQUIRED_INCLUDES)
+  append_found (${module}_INCLUDE_DIRS CMAKE_REQUIRED_INCLUDES)
   append_found (${module}_LIBRARIES CMAKE_REQUIRED_LIBRARIES)
   # since we don't have any config.h yet
   list (APPEND CMAKE_REQUIRED_DEFINITIONS ${${module}_DEFINITIONS})
