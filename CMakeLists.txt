@@ -27,6 +27,9 @@ set (${project}_DEPS
 	"C99"
 	# compile with C++0x/11 support if available
 	"CXX11Features"
+	# various runtime library enhancements
+	"Boost 1.39.0
+		COMPONENTS date_time filesystem system unit_test_framework REQUIRED"
 	# matrix library
 	"BLAS REQUIRED"
 	"LAPACK REQUIRED"
@@ -36,13 +39,10 @@ set (${project}_DEPS
 	"SUPERLU"
 	# xml processing (for config parsing)
 	"TinyXML"
-	# various runtime library enhancements
-	"Boost 1.39.0
-		COMPONENTS date_time filesystem system unit_test_framework REQUIRED"
-	# DUNE dependency
-	"dune-istl"
 	# Ensembles-based Reservoir Tools (ERT)
 	"ERT"
+	# DUNE dependency
+	"dune-istl"
 	)
 
 # C++ project
