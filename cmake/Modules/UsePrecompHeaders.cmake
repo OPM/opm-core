@@ -97,6 +97,11 @@ function (precompile_header
   else (language STREQUAL "CXX")
 	message (FATAL "Only C or C++ can have precompiled headers")
   endif (language STREQUAL "CXX")
+
+  # if no precompiled header was found, then we shouldn't do anything here
+  if (NOT header)
+	return ()
+  endif (NOT header)
   
   # only support precompiled headers if the compiler is gcc >= 3.4
   get_gcc_version (${language} GCC_VERSION)
