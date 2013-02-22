@@ -80,6 +80,11 @@ macro (find_and_append_package_to prefix name)
 		endif ("${var}" STREQUAL "LIBRARIES")
 	  endif (DEFINED ${name}_${var})
 	endforeach (var)
+	# some libraries only define xxx_FOUND and not a corresponding HAVE_xxx
+	string (TOUPPER "${name}" NAME)
+	if (NOT DEFINED HAVE_${NAME})
+	  set (HAVE_${NAME} 1)
+	endif (NOT DEFINED HAVE_${NAME})
   endif (${name}_FOUND)
 endmacro (find_and_append_package_to prefix name)
 
