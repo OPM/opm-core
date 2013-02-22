@@ -17,14 +17,16 @@ find_opm_package (
   "opm-core"
 
   # dependencies
-  "CXX11Features REQUIRED;
+  "C99;
+  CXX11Features;
+  Boost 1.39.0
+    COMPONENTS date_time filesystem system unit_test_framework REQUIRED;
   BLAS REQUIRED;
   LAPACK REQUIRED;
   SuiteSparse COMPONENTS umfpack;
   SUPERLU;
-  LibXml2 REQUIRED;
-  Boost 1.39.0
-    COMPONENTS date_time filesystem system unit_test_framework REQUIRED;
+  TinyXML;
+  ERT;
   dune-istl
   "
   # header to search for
