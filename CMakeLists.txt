@@ -7,6 +7,42 @@ set (opm-core_DESCRIPTION "Open Porous Media Initiative Core Library")
 set (opm-core_DIR "opm")
 set (opm-core_VERSION_MAJOR 1)
 set (opm-core_VERSION_MINOR 0)
+set (doxy_dir "Documentation")
+
+# defines that must be present in config.h for our headers
+set (opm-core_CONFIG_VAR
+	HAVE_AGMG
+	HAVE_DUNE_ISTL
+	HAVE_DYNAMIC_BOOST_TEST
+	HAVE_ERT
+	HAVE_SUITESPARSE_UMFPACK_H
+	HAVE_NULLPTR
+	HAVE_STATIC_ASSERT
+	)
+
+# dependencies
+set (opm-core_DEPS
+	# compile with C99 support if available
+	"C99"
+	# compile with C++0x/11 support if available
+	"CXX11Features"
+	# matrix library
+	"BLAS REQUIRED"
+	"LAPACK REQUIRED"
+	# Tim Davis' SuiteSparse archive
+	"SuiteSparse COMPONENTS umfpack"
+	# solver
+	"SUPERLU"
+	# xml processing (for config parsing)
+	"TinyXML"
+	# various runtime library enhancements
+	"Boost 1.39.0
+		COMPONENTS date_time filesystem system unit_test_framework REQUIRED"
+	# DUNE dependency
+	"dune-istl"
+	# Ensembles-based Reservoir Tools (ERT)
+	"ERT"
+	)
 
 # C++ project
 cmake_minimum_required (VERSION 2.8)
@@ -45,30 +81,6 @@ include (UsePrecompHeaders)
 
 # macro to set standard variables (INCLUDE_DIRS, LIBRARIES etc.)
 include (OpmFind)
-
-# dependencies
-list (APPEND opm-core_DEPS
-	# compile with C99 support if available
-	"C99"
-	# compile with C++0x/11 support if available
-	"CXX11Features"
-	# matrix library
-	"BLAS REQUIRED"
-	"LAPACK REQUIRED"
-	# Tim Davis' SuiteSparse archive	
-	"SuiteSparse COMPONENTS umfpack"
-	# solver
-	"SUPERLU"
-	# xml processing (for config parsing)	
-	"TinyXML"
-	# various runtime library enhancements
-	"Boost 1.39.0
-		COMPONENTS date_time filesystem system unit_test_framework REQUIRED"
-	# DUNE dependency
-	"dune-istl"
-	# Ensembles-based Reservoir Tools (ERT)
-	"ERT"
-	)
 find_and_append_package_list_to (opm-core ${opm-core_DEPS})
 
 # remove the dependency on the testing framework from the main library;
@@ -112,6 +124,7 @@ opm_find_tutorials ()
 # example programs are found in the examples/ directory
 opm_find_examples ()
 
+### --- begin opm-core specific --- ###
 # Algebraic Multigrid must be compiled together with our program;
 # if it is not available, then remove our corresponding component
 find_package (AGMG)
@@ -173,29 +186,22 @@ if (NOT HAVE_ERT)
 		${PROJECT_SOURCE_DIR}/examples/import_rewrite.cpp
 		)
 endif (NOT HAVE_ERT)
+### --- end opm-core specific --- ###
 
 # create configuration header which describes available features
 # necessary to compile this library. singular version is the names that
 # is required by this project alone, plural version transitively
 # includes the necessary defines by the dependencies
 include (ConfigVars)
-set (opm-core_CONFIG_VAR
-	HAVE_AGMG
-	HAVE_DUNE_ISTL
-	HAVE_DYNAMIC_BOOST_TEST
-	HAVE_ERT
-	HAVE_SUITESPARSE_UMFPACK_H
-	HAVE_NULLPTR
-	HAVE_STATIC_ASSERT
-	)
 list (APPEND opm-core_CONFIG_VARS ${opm-core_CONFIG_VAR})
+set (CONFIG_H "${PROJECT_BINARY_DIR}/config.h")
 configure_vars (
-	FILE  CXX  "${PROJECT_BINARY_DIR}/config.h"
+	FILE  CXX  ${CONFIG_H}
 	WRITE ${opm-core_CONFIG_VARS}
 	)
 include (UseFortranWrappers)
 define_fc_func (
-	APPEND "${PROJECT_BINARY_DIR}/config.h"
+	APPEND ${CONFIG_H}
 	)
 
 # compile main library; pull in all required includes and libraries
@@ -223,6 +229,7 @@ opm_compile_satellites (opm-core examples "" "")
 enable_testing ()
 include (CTest)
 
+### --- begin opm-core specific --- ###
 # conditionally disable tests when features aren't available
 macro (cond_disable_test name)
 	if ((NOT DEFINED HAVE_${name}) OR (NOT HAVE_${name}))
@@ -234,6 +241,7 @@ macro (cond_disable_test name)
 endmacro (cond_disable_test name)
 cond_disable_test ("AGMG")
 cond_disable_test ("ERT")
+### --- end opm-core specific --- ###
 
 # make datafiles necessary for tests available in output directory
 opm_data (tests datafiles "${tests_DIR}" "*.xml")
@@ -249,7 +257,6 @@ add_custom_target (check
 
 # generate documentation from source code with Doxygen;
 # setup install target for this documentation
-set (doxy_dir "Documentation")
 include (OpmDoc)
 opm_doc (opm-core ${doxy_dir})
 
