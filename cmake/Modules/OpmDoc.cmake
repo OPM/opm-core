@@ -23,6 +23,8 @@ macro (opm_doc opm doxy_dir)
   endif (EXISTS ${PROJECT_SOURCE_DIR}/${doxy_dir}/Doxylocal)
   file (MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${doxy_dir})
   file (WRITE ${PROJECT_BINARY_DIR}/${doxy_dir}/Doxyfile.in ${_doxy_templ} ${_doxy_local})
+  # set this generically named variable so even the custom file can be shared
+  set (src_DIR "${${opm}_DIR}")
   # replace variables in this combined file
   configure_file (
 	${PROJECT_BINARY_DIR}/${doxy_dir}/Doxyfile.in

@@ -3,7 +3,7 @@
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = @PROJECT_SOURCE_DIR@/@opm-core_DIR@/ \
+INPUT                  = @PROJECT_SOURCE_DIR@/@src_DIR@/ \
                          @PROJECT_SOURCE_DIR@/tutorials/ \
                          @PROJECT_SOURCE_DIR@/examples/
 
