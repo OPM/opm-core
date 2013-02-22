@@ -87,9 +87,16 @@ function (find_opm_package module deps header lib defs prog conf)
   # but with a -build suffix
   if (NOT (${module}_DIR OR ${module}_ROOT))
 	string (TOLOWER "${module}" _module_lower)
-	set (_guess "../${module}" "../${module}-build"
-	  "../${_module_lower}" "../${_module_lower}-build"
+	set (_guess
+	  "../${module}"
+	  "../${module}-build"
+	  "../${_module_lower}"
+	  "../${_module_lower}-build"
 	  )
+	set (_guess_bin)
+	foreach (_item IN ITEMS ${_guess})
+	  list (APPEND _guess_bin "${PROJECT_BINARY_DIR}/${_item}")
+	endforeach (_item)
   endif (NOT (${module}_DIR OR ${module}_ROOT))
 
   # search for this include and library file to get the installation
@@ -106,7 +113,7 @@ function (find_opm_package module deps header lib defs prog conf)
   if (NOT "${lib}" STREQUAL "")
 	find_library (${module}_LIBRARY
 	  NAMES "${lib}"
-	  PATHS ${_guess}
+	  PATHS ${_guess_bin}
 	  HINTS ${${module}_DIR} ${${module}_ROOT} ${PkgConf_${module}_LIBRARY_DIRS}
 	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
 	  )
