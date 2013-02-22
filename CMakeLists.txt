@@ -125,14 +125,16 @@ opm_find_tutorials ()
 # example programs are found in the examples/ directory
 opm_find_examples ()
 
-### --- begin opm-core specific --- ###
+### --- begin AGMG specific --- ###
 # Algebraic Multigrid must be compiled together with our program;
 # if it is not available, then remove our corresponding component
 find_package (AGMG)
 if (AGMG_FOUND)
-	list (APPEND opm-core_SOURCES ${AGMG_SOURCES})
+	list (APPEND ${project}_SOURCES ${AGMG_SOURCES})
 endif (AGMG_FOUND)
+### --- end AGMG specific --- ###
 
+### --- begin opm-core specific --- ###
 # these solvers are only compiled in if their dependency is found
 if (NOT AGMG_FOUND)
 	list (REMOVE_ITEM opm-core_SOURCES
@@ -200,10 +202,13 @@ configure_vars (
 	FILE  CXX  ${CONFIG_H}
 	WRITE ${${project}_CONFIG_VARS}
 	)
+
+### --- begin AGMG specific --- ###
 include (UseFortranWrappers)
 define_fc_func (
 	APPEND ${CONFIG_H}
 	)
+### --- end AGMG specific --- ###
 
 # compile main library; pull in all required includes and libraries
 include (OpmCompile)
