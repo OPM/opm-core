@@ -36,6 +36,7 @@
 #ifndef OPM_CSRMATRIXBLOCKASSEMBLER_HPP_HEADER
 #define OPM_CSRMATRIXBLOCKASSEMBLER_HPP_HEADER
 
+#include <cassert>
 #include <cstddef>
 #include <cstdlib>
 
