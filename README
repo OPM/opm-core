@@ -118,10 +118,20 @@ BUILDING
 There are two ways to build the opm-core library:
 
 1. As a stand-alone library.
- cd opm-core
- ./configure
+Assuming you are standing in the directory containing your checked out
+clone of opm-core, issue the commands
+
+ mkdir opm-core-build
+ cd opm-core-build
+ cmake ../opm-core
  make
 
+If you have a multi-core computer you may want to do a parallel
+build. To do so, replace the make command with:
+
+ nice make -j 2
+
+This will start a parallel build appropriate for a two-core system.
 If you want to install the library:
 
  sudo make install
