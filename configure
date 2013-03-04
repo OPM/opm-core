@@ -256,8 +256,10 @@ while getopts -- ":-:" optchar; do
               shared=""
               ;;
           esac
+          projuppr=${project^^}
+          projuppr=${projuppr/-/_}
           test -n "${shared}" && \
-          FEATURES="${FEATURES} -DBUILD_${project}_SHARED:BOOL=${shared}"
+          FEATURES="${FEATURES} -DBUILD_${projuppr}_SHARED:BOOL=${shared}"
           ;;
         *)
           # remove everything *after* the equal sign
