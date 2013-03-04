@@ -87,9 +87,16 @@ function (find_opm_package module deps header lib defs prog conf)
   # but with a -build suffix
   if (NOT (${module}_DIR OR ${module}_ROOT))
 	string (TOLOWER "${module}" _module_lower)
-	set (_guess "../${module}" "../${module}-build"
-	  "../${_module_lower}" "../${_module_lower}-build"
+	set (_guess
+	  "../${module}"
+	  "../${module}-build"
+	  "../${_module_lower}"
+	  "../${_module_lower}-build"
 	  )
+	set (_guess_bin)
+	foreach (_item IN ITEMS ${_guess})
+	  list (APPEND _guess_bin "${PROJECT_BINARY_DIR}/${_item}")
+	endforeach (_item)
   endif (NOT (${module}_DIR OR ${module}_ROOT))
 
   # search for this include and library file to get the installation
@@ -106,7 +113,7 @@ function (find_opm_package module deps header lib defs prog conf)
   if (NOT "${lib}" STREQUAL "")
 	find_library (${module}_LIBRARY
 	  NAMES "${lib}"
-	  PATHS ${_guess}
+	  PATHS ${_guess_bin}
 	  HINTS ${${module}_DIR} ${${module}_ROOT} ${PkgConf_${module}_LIBRARY_DIRS}
 	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
 	  )
@@ -119,11 +126,15 @@ function (find_opm_package module deps header lib defs prog conf)
   set (${module}_INCLUDE_DIRS "${${module}_INCLUDE_DIR}")
   set (${module}_LIBRARIES "${${module}_LIBRARY}")
   foreach (_dep IN LISTS _deps)
-	list (APPEND ${module}_INCLUDE_DIRS ${${_dep}_INCLUDE_DIRS})
-	list (APPEND ${module}_LIBRARIES ${${_dep}_LIBRARIES})
-	list (APPEND ${module}_DEFINITIONS ${${_dep}_DEFINITIONS})
-	list (APPEND ${module}_CONFIG_VARS ${${_dep}_CONFIG_VARS})
-	list (APPEND ${module}_LINKER_FLAGS ${${_dep}_LINKER_FLAGS})
+	# only add those packages we actually found (find_package will show
+	# an error if it was marked as REQUIRED)
+	if (${_dep}_FOUND)
+	  list (APPEND ${module}_INCLUDE_DIRS ${${_dep}_INCLUDE_DIRS})
+	  list (APPEND ${module}_LIBRARIES ${${_dep}_LIBRARIES})
+	  list (APPEND ${module}_DEFINITIONS ${${_dep}_DEFINITIONS})
+	  list (APPEND ${module}_CONFIG_VARS ${${_dep}_CONFIG_VARS})
+	  list (APPEND ${module}_LINKER_FLAGS ${${_dep}_LINKER_FLAGS})
+	endif (${_dep}_FOUND)
   endforeach (_dep)
 
   # compile with this option to avoid avalanche of warnings
@@ -164,7 +175,7 @@ function (find_opm_package module deps header lib defs prog conf)
   include (CheckCXXSourceCompiles)
   # only add these if they are actually found; otherwise it won't
   # compile and the variable won't be set
-  append_found (${module}_INCLUDE_DIR CMAKE_REQUIRED_INCLUDES)
+  append_found (${module}_INCLUDE_DIRS CMAKE_REQUIRED_INCLUDES)
   append_found (${module}_LIBRARIES CMAKE_REQUIRED_LIBRARIES)
   # since we don't have any config.h yet
   list (APPEND CMAKE_REQUIRED_DEFINITIONS ${${module}_DEFINITIONS})

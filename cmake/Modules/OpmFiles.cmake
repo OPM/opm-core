@@ -40,6 +40,27 @@ macro (opm_sources opm)
   set (${opm}_HEADERS ${${opm}_C_HEADERS} ${${opm}_CXX_HEADERS})
 endmacro (opm_sources opm)
 
+# disable an entire directory from sources
+macro (opm_disable_source opm)
+  foreach (_exp IN ITEMS ${ARGN})
+	# regexp or directory?
+	if (IS_ABSOLUTE "${_exp}")
+	  set (_prefix "")
+	else (IS_ABSOLUTE "${_exp}")
+	  set (_prefix "${PROJECT_SOURCE_DIR}/")
+	endif (IS_ABSOLUTE "${_exp}")
+	if (IS_DIRECTORY "${_prefix}${_exp}")
+	  set (_glob "/*")
+	else (IS_DIRECTORY "${_prefix}${_exp}")
+	  set (_glob "")
+	endif (IS_DIRECTORY "${_prefix}${_exp}")
+	file (GLOB_RECURSE _disabled RELATIVE ${PROJECT_SOURCE_DIR} "${_prefix}${_exp}${_glob}")
+	foreach (_file IN ITEMS ${_disabled})
+	  list (REMOVE_ITEM ${opm}_SOURCES "${PROJECT_SOURCE_DIR}/${_file}")
+	endforeach (_file)
+  endforeach (_exp)
+endmacro (opm_disable_source opm reldir)
+
 macro (opm_find_tests)
   # every C++ program prefixed with test_ under tests/ directory should
   # be automatically set up as a test

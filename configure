@@ -1,7 +1,10 @@
 #!/bin/bash
 
+# where is the source tree located
+srcdir=$(dirname "$0")
+
 # name of the project
-project=opm-core
+project=$(sed -n "s,^Module:[\ \t]*\([^\ \t]*\),\1,p" "${srcdir}/dune.module")
 
 # display help text
 usage () {
@@ -26,8 +29,8 @@ Optional Features:
 
 Optional Packages:
   --with-boost=PATH       use Boost library from a specified location
-  --with-dune-common=PATH use DUNE-common library from a specified location
-  --with-dune-istl=PATH   use DUNE-ISTL library from a specified location
+  --with-dune-MODULE=PATH use given DUNE module from a specified location
+  --with-opm-MODULE=PATH  use given OPM module from a specified location
   --with-superlu=PATH     user defined path to SuperLU library
   --with-agmg=PATH        Include DOUBLE PRECISION version Notay's of AGMG
                           Algebraic Multigrid solver from specified source
@@ -159,8 +162,8 @@ while getopts -- ":-:" optchar; do
               ;;
             SuiteSparse |\
             TinyXML     |\
-            dune-istl   |\
-            dune-common)
+            opm-*       |\
+            dune-*)
               rootvar="${pkgname}_ROOT"
               ;;
             *)
@@ -280,7 +283,7 @@ shift $((OPTIND-1))
 ENVVARS=${@/ACLOCAL_*=*/}
 
 # pass everything on to CMake
-CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"$(dirname "$0")\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc} ${FEATURES}"
+CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"${srcdir}\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc} ${FEATURES}"
 echo --- calling CMake for ${project} ---
 echo ${CMDLINE}
 eval exec ${CMDLINE}
