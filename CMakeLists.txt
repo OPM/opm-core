@@ -273,9 +273,3 @@ configure_la (${project} ${${project}_TARGET} ${project}_LIBTOOL_ARCHIVE)
 ### clean in-source builds ###
 include (OpmDistClean)
 opm_dist_clean (${project})
-
-# smart wrapper that auto-parallelizes builds
-file (COPY
-	GNUmakefile
-	DESTINATION ${PROJECT_BINARY_DIR}
-	)

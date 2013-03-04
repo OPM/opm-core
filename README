@@ -115,16 +115,61 @@ If you want to contribute, fork OPM/opm-core on github.
 BUILDING
 --------
 
-There are two ways to build the opm-core library:
+There are two ways to build the opm-core library.
 
 1. As a stand-alone library.
- cd opm-core
- ./configure
- make
+In this setup we recommend creating an entirely separate directory
+outside the directory containing the source code and doing the build
+from that separate directory (termed "the build directory").  This
+configuration is sometimes referred to as an "out-of-source build".
 
-If you want to install the library:
+As an example, consider the following layout in which "opm-core" refers
+to the directory containing the package source code as downloaded from
+GitHub
 
- sudo make install
+    workspace
+      |
+      +-- build
+      |
+      +-- opm-core
+      |     |
+      |     +-- ...
+      |     |
+      |     +-- opm
+      |     |
+      |     +-- ...
+
+We will configure a release-type (optimised) build using traditional
+Unix Makefiles within the "build" directory.  The following command
+configures the build
+
+    cd path/to/build
+    cmake ../opm-core -DCMAKE_BUILD_TYPE=Release
+
+Building the software then amounts to typing
+
+    make
+
+in the top-level "build" directory; i.e., the directory from which we
+invoked the "cmake" utility.  On a multi-core computer system you may
+want to build the software in parallel (make(1)'s "job-server" mode) in
+order to reduce the total amount of time needed to complete the build.
+To do so, replace the above "make" command with
+
+    make -j N
+
+or, possibly,
+
+    nice -20 make -j N
+
+in which "N" is an integer that should typically not exceed the number
+of cores in the system.
+
+Once the library has been built, it can be installed in a central,
+system-wide location (often in "/usr/local") through the command
+
+    sudo make install
+
 
 2. As a dune module.
  - Put the opm-core directory in the same directory
