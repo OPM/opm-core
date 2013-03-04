@@ -280,7 +280,10 @@ done
 shift $((OPTIND-1))
 
 # remove Autotools-specific variables
-ENVVARS=${@/ACLOCAL_*=*/}
+for a in "$@"; do
+  a="${a/ACLOCAL_*=*/}"
+  [ -n "$a" ] && ENVVARS="$ENVVARS \"${a/\"/\\\"}\""
+done
 
 # pass everything on to CMake
 CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"${srcdir}\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc} ${FEATURES}"
