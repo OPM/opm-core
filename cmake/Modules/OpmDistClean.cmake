@@ -17,6 +17,7 @@ macro (opm_dist_clean opm)
 	cmake_install.cmake
 	Makefile
 	config.h
+	config.h.tmp
 	${${opm}_NAME}-config.cmake
 	${${opm}_NAME}-config-version.cmake
 	${${opm}_NAME}-install.cmake
