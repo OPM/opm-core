@@ -83,15 +83,14 @@ function (find_opm_package module deps header lib defs prog conf)
   # in addition to accepting mod-ule_ROOT, we also accept the somewhat
   # more idiomatic MOD_ULE_ROOT variant
   string (TOUPPER ${module} MODULE_UPPER)
-  set (MODULE_ROOT "${MODULE_UPPER}_ROOT")
-  string (REPLACE "-" "_" MODULE_ROOT "${MODULE_ROOT}")
+  string (REPLACE "-" "_" MODULE ${MODULE_UPPER})
 
   # if the user hasn't specified any location, and it isn't found
   # in standard system locations either, then start to wander
   # about and look for it in proximity to ourself. Qt Creator likes
   # to put the build-directories as siblings to the source trees,
   # but with a -build suffix
-  if (NOT (${module}_DIR OR ${module}_ROOT OR ${MODULE_ROOT}))
+  if (NOT (${module}_DIR OR ${module}_ROOT OR ${MODULE}_ROOT))
 	string (TOLOWER "${module}" _module_lower)
 	set (_guess
 	  "../${module}"
@@ -103,7 +102,7 @@ function (find_opm_package module deps header lib defs prog conf)
 	foreach (_item IN ITEMS ${_guess})
 	  list (APPEND _guess_bin "${PROJECT_BINARY_DIR}/${_item}")
 	endforeach (_item)
-  endif (NOT (${module}_DIR OR ${module}_ROOT OR ${MODULE_ROOT}))
+  endif (NOT (${module}_DIR OR ${module}_ROOT OR ${MODULE}_ROOT))
 
   # search for this include and library file to get the installation
   # directory of the package; hints are searched before the system locations,
@@ -111,7 +110,7 @@ function (find_opm_package module deps header lib defs prog conf)
   find_path (${module}_INCLUDE_DIR
 	NAMES "${header}"
 	PATHS ${_guess}
-	HINTS ${${module}_DIR} ${${module}_ROOT} ${${MODULE_ROOT}} ${PkgConf_${module}_INCLUDE_DIRS}
+	HINTS ${${module}_DIR} ${${module}_ROOT} ${${MODULE}_ROOT} ${PkgConf_${module}_INCLUDE_DIRS}
 	PATH_SUFFIXES "include"
 	)
 
@@ -120,7 +119,7 @@ function (find_opm_package module deps header lib defs prog conf)
 	find_library (${module}_LIBRARY
 	  NAMES "${lib}"
 	  PATHS ${_guess_bin}
-	  HINTS ${${module}_DIR} ${${module}_ROOT} ${${MODULE_ROOT}} ${PkgConf_${module}_LIBRARY_DIRS}
+	  HINTS ${${module}_DIR} ${${module}_ROOT} ${${MODULE}_ROOT} ${PkgConf_${module}_LIBRARY_DIRS}
 	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
 	  )
   else (NOT "${lib}" STREQUAL "")
@@ -186,8 +185,6 @@ function (find_opm_package module deps header lib defs prog conf)
   # since we don't have any config.h yet
   list (APPEND CMAKE_REQUIRED_DEFINITIONS ${${module}_DEFINITIONS})
   list (APPEND CMAKE_REQUIRED_DEFINITIONS ${${module}_CMD_CONFIG})
-  string (TOUPPER ${module} MODULE)
-  string (REPLACE "-" "_" MODULE ${MODULE})
   check_cxx_source_compiles ("${prog}" HAVE_${MODULE})
   cmake_pop_check_state ()
 
