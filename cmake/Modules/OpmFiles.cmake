@@ -16,28 +16,53 @@ macro (opm_auto_dirs)
 endmacro (opm_auto_dirs)
 
 macro (opm_sources opm)
-  # find all the source code (note that these variables have name after
-  # the target library and not the project). the documentation recommends
-  # against using globs to enumerate source code, but if you list the
-  # files explicitly you'll change the build files every time you add to
-  # the project as well as having to rebuild completely anyway.
-  file (GLOB_RECURSE ${opm}_C_SOURCES "${${opm}_DIR}/[^.]*.c")
-  file (GLOB_RECURSE ${opm}_CXX_SOURCES "${${opm}_DIR}/[^.]*.cpp")
-  file (GLOB_RECURSE ${opm}_C_HEADERS "${${opm}_DIR}/[^.]*.h")
-  file (GLOB_RECURSE ${opm}_CXX_HEADERS "${${opm}_DIR}/[^.]*.hpp")
+  # this is necessary to set so that we know where we are going to
+  # execute the test programs (and make datafiles available)
+  set (tests_DIR "tests")
 
-  # remove pre-compile headers from output list
-  file (GLOB_RECURSE ${opm}_PRECOMP_CXX_HEADER "${${opm}_DIR}/${${opm}_NAME}-pch.hpp")
-  if ("${${opm}_PRECOMP_CXX_HEADER}" MATCHES ";")
-	message (FATAL_ERROR "There can only be one precompiled header!")
-  endif ("${${opm}_PRECOMP_CXX_HEADER}" MATCHES ";")
-  list (REMOVE_ITEM ${opm}_CXX_HEADERS
-	${PROJECT_SOURCE_DIR}/${${opm}_PRECOMP_CXX_HEADER}
+  # how to retrieve the "fancy" name from the filename
+  set (tests_REGEXP
+	"^test_([^/]*)$"
+	"^([^/]*)_test$"
 	)
 
-  # merge both languages into one compilation/installation
-  set (${opm}_SOURCES ${${opm}_C_SOURCES} ${${opm}_CXX_SOURCES})
-  set (${opm}_HEADERS ${${opm}_C_HEADERS} ${${opm}_CXX_HEADERS})
+  # start out with defined, empty lists which will be specified externally
+  set (MAIN_SOURCE_FILES)
+  set (EXAMPLE_SOURCE_FILES)
+  set (TEST_SOURCE_FILES)
+  set (TEST_DATA_FILES)
+  set (PUBLIC_HEADER_FILES)
+
+  # read the list of components from this file; it should set the above
+  # lists (which are generic names)
+  include (${PROJECT_SOURCE_DIR}/CMakeLists_files.cmake)
+
+  # rename from "friendly" names to ones that fit the "almost-structural"
+  # scheme used in the .cmake modules, converting them to absolute file
+  # names in the process
+  foreach (_file IN LISTS MAIN_SOURCE_FILES)
+	list (APPEND ${opm}_SOURCES ${PROJECT_SOURCE_DIR}/${_file})
+  endforeach (_file)
+  foreach (_file IN LISTS PUBLIC_HEADER_FILES)
+	list (APPEND ${opm}_HEADERS ${PROJECT_SOURCE_DIR}/${_file})
+  endforeach (_file)
+  foreach (_file IN LISTS TEST_SOURCE_FILES)
+	list (APPEND tests_SOURCES ${PROJECT_SOURCE_DIR}/${_file})
+  endforeach (_file)
+  foreach (_file IN LISTS TEST_DATA_FILES)
+	list (APPEND tests_DATA ${PROJECT_SOURCE_DIR}/${_file})
+  endforeach (_file)
+  foreach (_file IN LISTS EXAMPLE_SOURCE_FILES)
+	list (APPEND examples_SOURCES ${PROJECT_SOURCE_DIR}/${_file})
+  endforeach (_file)
+
+  # identify pre-compile header; if the project is called opm-foobar,
+  # then it should be in opm/foobar/opm-foobar-pch.hpp
+  string (REPLACE "-" "/" opm_NAME_AS_DIR ${${opm}_NAME})
+  set (${opm}_PRECOMP_CXX_HEADER "${opm_NAME_AS_DIR}/${${opm}_NAME}-pch.hpp")
+  if (NOT EXISTS ${PROJECT_SOURCE_DIR}/${${opm}_PRECOMP_CXX_HEADER})
+	set (${opm}_PRECOMP_CXX_HEADER "")
+  endif (NOT EXISTS ${PROJECT_SOURCE_DIR}/${${opm}_PRECOMP_CXX_HEADER})
 endmacro (opm_sources opm)
 
 # disable an entire directory from sources
@@ -60,36 +85,3 @@ macro (opm_disable_source opm)
 	endforeach (_file)
   endforeach (_exp)
 endmacro (opm_disable_source opm reldir)
-
-macro (opm_find_tests)
-  # every C++ program prefixed with test_ under tests/ directory should
-  # be automatically set up as a test
-  set (tests_DIR "tests")
-  file (GLOB_RECURSE tests_SOURCES
-	"${tests_DIR}/test_*.cpp"
-	"${tests_DIR}/*_test.cpp"
-	)
-  file (GLOB_RECURSE not_tests_SOURCES
-	"${tests_DIR}/not-unit/test_*.cpp"
-	"${tests_DIR}/not-unit/*_test.cpp"
-	)
-  # how to retrieve the "fancy" name from the filename
-  set (tests_REGEXP
-	"^test_([^/]*)$"
-	"^([^/]*)_test$"
-	)
-  if (tests_SOURCES AND not_tests_SOURCES)
-	list (REMOVE_ITEM tests_SOURCES ${not_tests_SOURCES})
-  endif (tests_SOURCES AND not_tests_SOURCES)
-endmacro (opm_find_tests)
-
-macro (opm_find_tutorials)
-  # enumerate tutorials in project
-  set (tutorial_DIR "tutorials")
-  file (GLOB tutorial_SOURCES "${tutorial_DIR}/tutorial[0-9].cpp")
-endmacro (opm_find_tutorials)
-
-macro (opm_find_examples)
-  set (examples_DIR "examples")
-  file (GLOB examples_SOURCES "${examples_DIR}/*.cpp")
-endmacro (opm_find_examples)
