@@ -113,17 +113,9 @@ opm_auto_dirs ()
 # put libraries in lib/
 opm_out_dirs ()
 
-# identify the compilation units in the library
+# identify the compilation units in the library; sources in opm/,
+# tests files in tests/, examples in tutorials/ and examples/
 opm_sources (${project})
-
-# enumerate all testing programs in test/ directory
-opm_find_tests ()
-
-# tutorial programs are found in the tutorials/ directory
-opm_find_tutorials ()
-
-# example programs are found in the examples/ directory
-opm_find_examples ()
 
 ### --- begin AGMG specific --- ###
 # Algebraic Multigrid must be compiled together with our program;
@@ -151,13 +143,11 @@ if (NOT SuiteSparse_FOUND)
 		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/call_umfpack.c
 		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverUmfpack.cpp
 		)
-	list (REMOVE_ITEM tutorial_SOURCES
-		${PROJECT_SOURCE_DIR}/${tutorial_DIR}/tutorial2.cpp
-		${PROJECT_SOURCE_DIR}/${tutorial_DIR}/tutorial3.cpp
-		${PROJECT_SOURCE_DIR}/${tutorial_DIR}/tutorial4.cpp
-		)
 	list (REMOVE_ITEM examples_SOURCES
-		${PROJECT_SOURCE_DIR}/${examples_DIR}/spu_2p.cpp
+		${PROJECT_SOURCE_DIR}/tutorials/tutorial2.cpp
+		${PROJECT_SOURCE_DIR}/tutorials/tutorial3.cpp
+		${PROJECT_SOURCE_DIR}/tutorials/tutorial4.cpp
+		${PROJECT_SOURCE_DIR}/examples/spu_2p.cpp
 		)
 endif (NOT SuiteSparse_FOUND)
 
@@ -197,7 +187,10 @@ endif (NOT HAVE_ERT)
 # includes the necessary defines by the dependencies
 include (ConfigVars)
 list (APPEND ${project}_CONFIG_VARS ${${project}_CONFIG_VAR})
-set (CONFIG_H "${PROJECT_BINARY_DIR}/config.h")
+
+# write configuration variables to this file. note that it is a temporary.
+message (STATUS "Writing config file \"${PROJECT_BINARY_DIR}/config.h\"...")
+set (CONFIG_H "${PROJECT_BINARY_DIR}/config.h.tmp")
 configure_vars (
 	FILE  CXX  ${CONFIG_H}
 	WRITE ${${project}_CONFIG_VARS}
@@ -207,6 +200,13 @@ include (UseFortranWrappers)
 define_fc_func (
 	APPEND ${CONFIG_H}
 	IF HAVE_AGMG # HAVE_BLAS HAVE_LAPACK
+	)
+
+# overwrite the config.h that is used by the code only if we have some
+# real changes. thus, we don't have to recompile if a reconfigure is run
+# due to some files being added, for instance
+execute_process (COMMAND
+	${CMAKE_COMMAND} -E copy_if_different ${CONFIG_H} ${PROJECT_BINARY_DIR}/config.h
 	)
 
 # compile main library; pull in all required includes and libraries
@@ -226,8 +226,7 @@ opm_cmake_config (${project})
 # routines to build satellites such as tests, tutorials and samples
 include (OpmSatellites)
 
-# tutorial programs are found in the tutorials/ directory
-opm_compile_satellites (${project} tutorial "" "")
+# example programs are found in the tutorials/ and examples/ directory
 opm_compile_satellites (${project} examples "" "")
 
 # infrastructure for testing
@@ -249,7 +248,7 @@ cond_disable_test ("ERT")
 ### --- end opm-core specific --- ###
 
 # make datafiles necessary for tests available in output directory
-opm_data (tests datafiles "${tests_DIR}" "*.xml")
+opm_data (tests datafiles "${tests_DIR}")
 opm_compile_satellites (${project} tests "" "${tests_REGEXP}")
 
 # use this target to run all tests

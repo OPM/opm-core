@@ -108,9 +108,9 @@ endmacro (opm_compile_satellites opm prefix)
 #
 # Example:
 #
-#	opm_data (tests datafiles "tests/" "*.xml")
+#	opm_data (tests datafiles "tests/")
 #
-macro (opm_data satellite target dirname files)
+macro (opm_data satellite target dirname)
   # even if there are no datafiles, create the directory so the
   # satellite programs have a homedir to run in
   execute_process (
@@ -124,11 +124,6 @@ macro (opm_data satellite target dirname files)
   # provide datafiles as inputs for the tests, by copying them
   # to a tests/ directory in the output tree (if different)
   set (${satellite}_INPUT_FILES)
-  set (${satellite}_DATA)
-  foreach (_fileset IN ITEMS ${files})
-	file (GLOB _fileset_DATA "${dirname}/${_fileset}")
-	list (APPEND ${satellite}_DATA ${_fileset_DATA})
-  endforeach (_fileset)
   if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 	foreach (input_datafile IN LISTS ${satellite}_DATA)
 	  file (RELATIVE_PATH rel_datafile "${PROJECT_SOURCE_DIR}" ${input_datafile})
