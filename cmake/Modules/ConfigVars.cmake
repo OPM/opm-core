@@ -27,7 +27,6 @@
 
 function (configure_vars obj syntax filename verb)
   # this is just to make the syntax look like the build-in commands
-  message (STATUS "Writing config file \"${filename}\"...")
   if (NOT ("${obj}" STREQUAL "FILE" AND
 		(("${verb}" STREQUAL "WRITE") OR ("${verb}" STREQUAL "APPEND"))))
 	message (FATAL_ERROR "Syntax error in argument list")
@@ -47,10 +46,10 @@ function (configure_vars obj syntax filename verb)
   # to avoid confusion from other configuration files.
   get_filename_component (_config_path "${filename}" PATH)
   get_filename_component (_config_file "${filename}" NAME)
-  if ("${_config_file}" STREQUAL "config.h")
+  if ("${_config_file}" MATCHES "config\\.h(\\..+)?")
 	add_definitions (-DHAVE_CONFIG_H=1)
 	include_directories (BEFORE "${_config_path}")
-  endif ("${_config_file}" STREQUAL "config.h")
+  endif ("${_config_file}" MATCHES "config\\.h(\\..+)?")
   
   # only write the current value of each variable once
   set (_args ${ARGN})

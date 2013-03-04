@@ -187,7 +187,10 @@ endif (NOT HAVE_ERT)
 # includes the necessary defines by the dependencies
 include (ConfigVars)
 list (APPEND ${project}_CONFIG_VARS ${${project}_CONFIG_VAR})
-set (CONFIG_H "${PROJECT_BINARY_DIR}/config.h")
+
+# write configuration variables to this file. note that it is a temporary.
+message (STATUS "Writing config file \"${PROJECT_BINARY_DIR}/config.h\"...")
+set (CONFIG_H "${PROJECT_BINARY_DIR}/config.h.tmp")
 configure_vars (
 	FILE  CXX  ${CONFIG_H}
 	WRITE ${${project}_CONFIG_VARS}
@@ -197,6 +200,13 @@ include (UseFortranWrappers)
 define_fc_func (
 	APPEND ${CONFIG_H}
 	IF HAVE_AGMG # HAVE_BLAS HAVE_LAPACK
+	)
+
+# overwrite the config.h that is used by the code only if we have some
+# real changes. thus, we don't have to recompile if a reconfigure is run
+# due to some files being added, for instance
+execute_process (COMMAND
+	${CMAKE_COMMAND} -E copy_if_different ${CONFIG_H} ${PROJECT_BINARY_DIR}/config.h
 	)
 
 # compile main library; pull in all required includes and libraries
