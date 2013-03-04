@@ -195,7 +195,7 @@ function (find_opm_package module deps header lib defs prog conf)
   find_package_handle_standard_args (
 	${module}
 	DEFAULT_MSG
-	${module}_INCLUDE_DIR ${_lib_var}
+	${module}_INCLUDE_DIR ${_lib_var} HAVE_${MODULE}
 	)
 
   # allow the user to override these from user interface
