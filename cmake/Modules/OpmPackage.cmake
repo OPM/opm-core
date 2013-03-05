@@ -26,6 +26,7 @@
 #   ${module}_LIBRARIES       Directory of shared object files
 #   ${module}_DEFINITIONS     Defines that must be set to compile
 #   ${module}_CONFIG_VARS     List of defines that should be in config.h
+#	${module}_QUIET           Verbosity of last find of this module
 #   HAVE_${MODULE}            Binary value to use in config.h
 #
 # Note: Arguments should be quoted, otherwise a list will spill into the
@@ -36,16 +37,7 @@
 
 # <http://www.vtk.org/Wiki/CMake:How_To_Find_Libraries>
 
-# libraries should always be trimmed from the beginning, so that also
-# missing functions in those later in the list will be resolved
-macro (remove_duplicate_libraries module)
-  if (DEFINED ${module}_LIBRARIES)
-	list (REVERSE ${module}_LIBRARIES)
-	list (REMOVE_DUPLICATES ${module}_LIBRARIES)
-	list (REVERSE ${module}_LIBRARIES)
-  endif (DEFINED ${module}_LIBRARIES)
-endmacro (remove_duplicate_libraries module)
-
+include (Duplicates)
 # append all items from src into dst; both must be *names* of lists
 macro (append_found src dst)
   foreach (_item IN LISTS ${src})
@@ -56,6 +48,13 @@ macro (append_found src dst)
 endmacro (append_found src dst)
 
 function (find_opm_package module deps header lib defs prog conf)
+  # variables to pass on to other packages
+  if (FIND_QUIETLY)
+	set (${module}_QUIET "QUIET")
+  else (FIND_QUIETLY)
+	set (${module}_QUIET "")
+  endif (FIND_QUIETLY)
+
   # if someone else has included this test, don't do it again
   if (${${module}_FOUND})
 	return ()
@@ -215,6 +214,7 @@ function (find_opm_package module deps header lib defs prog conf)
   set (${module}_DEFINITIONS "${${module}_DEFINITIONS}" PARENT_SCOPE)
   set (${module}_CONFIG_VARS "${${module}_CONFIG_VARS}" PARENT_SCOPE)
   set (${module}_LINKER_FLAGS "${${module}_LINKER_FLAGS}" PARENT_SCOPE)
+  set (${module}_QUIET "${${module}_QUIET}" PARENT_SCOPE)
   set (HAVE_${MODULE} "${HAVE_${MODULE}}" PARENT_SCOPE)
 endfunction (find_opm_package module deps header lib defs prog conf)
 
@@ -225,6 +225,8 @@ function (debug_find_vars module)
   message (STATUS "${module}_LIBRARIES    = ${${module}_LIBRARIES}")
   message (STATUS "${module}_DEFINITIONS  = ${${module}_DEFINITIONS}")
   message (STATUS "${module}_CONFIG_VARS  = ${${module}_CONFIG_VARS}")
+  message (STATUS "${module}_LINKER_FLAGS = ${${module}_LINKER_FLAGS}")
+  message (STATUS "${module}_QUIET        = ${${module}_QUIET}")
   string (TOUPPER ${module} MODULE)
   string (REPLACE "-" "_" MODULE ${MODULE})  
   message (STATUS "HAVE_${MODULE}         = ${HAVE_${MODULE}}")
