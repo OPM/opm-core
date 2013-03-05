@@ -166,19 +166,8 @@ endif (UNIX)
 # since OpenMP often implies pthreads, we need to tidy up
 # (last instance of library must be left standing, thus reversing that
 # list before removing duplicates)
-if (ERT_INCLUDE_DIRS)
-  list (REMOVE_DUPLICATES ERT_INCLUDE_DIRS)
-endif (ERT_INCLUDE_DIRS)
-if (ERT_LIBRARIES)
-  list (REVERSE ERT_LIBRARIES)
-  list (REMOVE_DUPLICATES ERT_LIBRARIES)
-  list (REVERSE ERT_LIBRARIES)
-endif (ERT_LIBRARIES)
-
-# linker flags may not be specified at all
-if (DEFINED ERT_LINKER_FLAGS)
-  list (REMOVE_DUPLICATES ERT_LINKER_FLAGS)
-endif (DEFINED ERT_LINKER_FLAGS)
+include (Duplicates)
+remove_dup_deps (ERT)
 
 # see if we can compile a minimum example
 # CMake logical test doesn't handle lists (sic)

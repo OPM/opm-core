@@ -36,16 +36,7 @@
 
 # <http://www.vtk.org/Wiki/CMake:How_To_Find_Libraries>
 
-# libraries should always be trimmed from the beginning, so that also
-# missing functions in those later in the list will be resolved
-macro (remove_duplicate_libraries module)
-  if (DEFINED ${module}_LIBRARIES)
-	list (REVERSE ${module}_LIBRARIES)
-	list (REMOVE_DUPLICATES ${module}_LIBRARIES)
-	list (REVERSE ${module}_LIBRARIES)
-  endif (DEFINED ${module}_LIBRARIES)
-endmacro (remove_duplicate_libraries module)
-
+include (Duplicates)
 # append all items from src into dst; both must be *names* of lists
 macro (append_found src dst)
   foreach (_item IN LISTS ${src})

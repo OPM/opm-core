@@ -31,16 +31,8 @@
 #		"Boost COMPONENTS filesystem REQUIRED"
 #		SUPERLU
 #	)
-########################################################################
-#
-# - Remove duplicate library declarations
-#
-# Synopsis:
-#
-#	remove_duplicate_libraries (module)
-#
-# where
-#	module         Name of the module whose libraries should be pruned
+
+include (Duplicates)
 
 # list of suffixes for all the project variables
 set (_opm_proj_vars
@@ -108,13 +100,3 @@ endmacro (find_and_append_package_list_to prefix)
 macro (find_and_append_package_list)
   find_and_append_package_list_to (${CMAKE_PROJECT_NAME} ${ARGN})
 endmacro (find_and_append_package_list)
-
-# libraries should always be trimmed from the beginning, so that also
-# missing functions in those later in the list will be resolved
-macro (remove_duplicate_libraries module)
-  if (DEFINED ${module}_LIBRARIES)
-	list (REVERSE ${module}_LIBRARIES)
-	list (REMOVE_DUPLICATES ${module}_LIBRARIES)
-	list (REVERSE ${module}_LIBRARIES)
-  endif (DEFINED ${module}_LIBRARIES)
-endmacro (remove_duplicate_libraries module)
