@@ -118,21 +118,8 @@ endif (UNIX)
 # dependencies
 
 # parallel programming
-# enabling OpenMP is supposedly enough to make the compiler link with
-# the appropriate libraries
-find_package (OpenMP ${ERT_QUIET})
-list (APPEND ERT_LIBRARIES ${OpenMP_LIBRARIES})
-if (OPENMP_FOUND)
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif (OPENMP_FOUND)
-
-# threading library (search for this *after* OpenMP
-set (CMAKE_THREAD_PREFER_PTHREAD TRUE)
-find_package (Threads ${ERT_QUIET})
-if (CMAKE_USE_PTHREADS_INIT)
-  list (APPEND ERT_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
-endif (CMAKE_USE_PTHREADS_INIT)
+include (UseOpenMP)
+find_openmp (ERT)
 
 # compression library
 find_package (ZLIB ${ERT_QUIET})
