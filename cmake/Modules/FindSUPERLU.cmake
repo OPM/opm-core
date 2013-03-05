@@ -3,7 +3,7 @@
 # SuperLU must be a version released after the year 2005.
 #
 # Variables used by this module which you may want to set:
-# SUPERLU_PREFIX          Path list to search for SuperLU
+# SUPERLU_ROOT                Path list to search for SuperLU
 #
 # Sets the follwing variable:
 #
@@ -38,7 +38,7 @@ endif(NOT BLAS_FOUND)
 # look for header files, only at positions given by the user
 find_path(SUPERLU_INCLUDE_DIR
   NAMES supermatrix.h
-  PATHS ${SUPERLU_PREFIX}
+  PATHS ${SUPERLU_PREFIX} ${SUPERLU_ROOT}
   PATH_SUFFIXES "superlu" "include/superlu" "include" "SRC"
   NO_DEFAULT_PATH
 )
@@ -52,7 +52,7 @@ find_path(SUPERLU_INCLUDE_DIR
 # look for library, only at positions given by the user
 find_library(SUPERLU_LIBRARY
   NAMES "superlu_4.3" "superlu_4.2" "superlu_4.1" "superlu_4.0" "superlu_3.1" "superlu_3.0" "superlu"
-  PATHS ${SUPERLU_PREFIX}
+  PATHS ${SUPERLU_PREFIX} ${SUPERLU_ROOT}
   PATH_SUFFIXES "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   NO_DEFAULT_PATH
 )

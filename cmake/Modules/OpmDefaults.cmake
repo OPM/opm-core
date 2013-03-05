@@ -14,12 +14,14 @@ macro (opm_defaults opm)
   else (DEFINED BUILD_SHARED_LIBS)
 	set (_shared_def OFF)
   endif (DEFINED BUILD_SHARED_LIBS)
-  option (BUILD_${${opm}_NAME}_SHARED "Build ${${opm}_NAME} as a shared library" ${_shared_def})
-  if (BUILD_${${opm}_NAME}_SHARED)
+  string (TOUPPER "${${opm}_NAME}" opm_UPPER)
+  string (REPLACE "-" "_" opm_UPPER "${opm_UPPER}")
+  option (BUILD_${opm_UPPER}_SHARED "Build ${${opm}_NAME} as a shared library" ${_shared_def})
+  if (BUILD_${opm_UPPER}_SHARED)
 	set (${opm}_LIBRARY_TYPE SHARED)
-  else (BUILD_${${opm}_NAME}_SHARED)
+  else (BUILD_${opm_UPPER}_SHARED)
 	set (${opm}_LIBRARY_TYPE STATIC)
-  endif (BUILD_${${opm}_NAME}_SHARED)
+  endif (BUILD_${opm_UPPER}_SHARED)
 
   # precompile standard headers to speed up compilation
   # unfortunately, this functionality is buggy and tends to segfault at

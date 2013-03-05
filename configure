@@ -151,20 +151,17 @@ while getopts -- ":-:" optchar; do
               pch_use=" -DPRECOMPILE_HEADERS:BOOL=ON"
               rootvar=""
               ;;
-            agmg  |\
-            ert   |\
-            boost |\
-            zlib)
-              rootvar="${pkgname^^}_ROOT"
-              ;;
-            superlu)
-              rootvar="${pkgname^^}_PREFIX"
-              ;;
+            agmg        |\
+            ert         |\
+            boost       |\
+            superlu     |\
             SuiteSparse |\
             TinyXML     |\
             opm-*       |\
-            dune-*)
-              rootvar="${pkgname}_ROOT"
+            dune-*      |\
+            zlib)
+              rootvar="${pkgname^^}_ROOT"
+              rootvar="${rootvar/-/_}"
               ;;
             *)
               invalid_opt --with-${pkgname}
@@ -259,8 +256,10 @@ while getopts -- ":-:" optchar; do
               shared=""
               ;;
           esac
+          projuppr=${project^^}
+          projuppr=${projuppr/-/_}
           test -n "${shared}" && \
-          FEATURES="${FEATURES} -DBUILD_${project}_SHARED:BOOL=${shared}"
+          FEATURES="${FEATURES} -DBUILD_${projuppr}_SHARED:BOOL=${shared}"
           ;;
         *)
           # remove everything *after* the equal sign
