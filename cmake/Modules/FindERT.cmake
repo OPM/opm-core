@@ -173,7 +173,10 @@ int main (void) {
 }" HAVE_ERT)
   cmake_pop_check_state ()
 else (NOT (ERT_INCLUDE_DIR MATCHES "-NOTFOUND" OR ERT_LIBRARIES MATCHES "-NOTFOUND"))
-  set (HAVE_ERT 0)
+  # write unsuccessful result to the cache, as the check_c_source_compiles
+  # would do if it failed
+  set (HAVE_ERT)
+  set (HAVE_ERT "${HAVE_ERT}" CACHE INTERNAL "Did an ERT sample program compile?")
 endif (NOT (ERT_INCLUDE_DIR MATCHES "-NOTFOUND" OR ERT_LIBRARIES MATCHES "-NOTFOUND"))
 
 # if the test program didn't compile, but was required to do so, bail
