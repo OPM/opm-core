@@ -74,11 +74,17 @@ Try \`$0 --help' for more information
 EOF
 }
 
-# exit only if option checking is enabled, otherwise ignore
+# notify the user that this argument is not known
+unknown_arg () {
+  cat <<EOF
+configure: warning: unrecognized option: \`$1'
+EOF
+}
+
+# warn only if option checking is enabled
 invalid_opt () {
   if [ "${option_check}" = "yes" ]; then
-    invalid_arg $@
-    exit 1
+    unknown_arg $@
   fi
 }
 
@@ -91,6 +97,8 @@ pch_use=
 silent_rules=
 #debug_loc=" -DSYSTEM_DEBUG=OFF"
 debug_loc=
+
+# default is to warn for unknown options, but this can be disabled
 option_check=yes
 
 # this variable will get feature options
