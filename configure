@@ -104,6 +104,9 @@ option_check=yes
 # this variable will get feature options
 FEATURES=
 
+# this array will get all variable assignments from command-line
+VARS=()
+
 # command that launches cmake; look for 2.8 if available
 if [ "${CMAKE_COMMAND}" = "" ]; then
   if which cmake28 >/dev/null 2>&1; then
@@ -113,12 +116,10 @@ if [ "${CMAKE_COMMAND}" = "" ]; then
   fi
 fi
 
-# long arguments are implemented by putting a dash character followed by
-# a colon in the optspec, see trick by Arvid Requate at
-# <http://stackoverflow.com/questions/402377/#7680682>
-while getopts -- ":-:" optchar; do
-  case "${optchar}" in
-    -)
+for OPT in "$@"; do
+  case "$OPT" in
+    --*)
+      OPTARG=${OPT#--}
       # OPTARG now contains everything after double dashes
       case "${OPTARG}" in
         prefix=*)
@@ -279,8 +280,12 @@ while getopts -- ":-:" optchar; do
           ;;
       esac
       ;;
+    [A-Za-z0-9_]*=*)
+      # collect for further processing later
+      VARS+=("$OPT")
+      ;;
     *)
-      invalid_arg -$OPTARG
+      invalid_arg $OPT
       exit 1
       ;;
   esac
@@ -288,8 +293,9 @@ done
 # remove all arguments processed by getopts
 shift $((OPTIND-1))
 
-# remove Autotools-specific variables
-for a in "$@"; do
+# remove Autotools-specific variables. notice the usage of a quoted
+# array: each element will be returned even with spaces.
+for a in "${VARS[@]}"; do
   a="${a/ACLOCAL_*=*/}"
   [ -n "$a" ] && ENVVARS="$ENVVARS \"${a/\"/\\\"}\""
 done
