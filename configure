@@ -210,7 +210,7 @@ while getopts -- ":-:" optchar; do
               pkgname=""
               ;;
             system-debug)
-              silent_rules=" -DSYSTEM_DEBUG=OFF"
+              debug_loc=" -DSYSTEM_DEBUG=OFF"
               pkgname=""
               ;;
             agmg |\
