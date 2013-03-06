@@ -146,7 +146,7 @@ for OPT in "$@"; do
           eval pkgloc=$(printf "%q" "${pkgloc}")
           # expand to full path since CMake changes to source directory (!)
           # this also normalize the path name wrt. not having a trailing slash
-          pkgloc=$(test -d "${pkgloc}" && sh -c "cd \"${pkgloc}\"; pwd")
+          test -d "${pkgloc}" && pkgloc=$(sh -c "cd \"${pkgloc}\"; pwd")
           # special aliases
           case "${pkgname}" in
             umfpack)
