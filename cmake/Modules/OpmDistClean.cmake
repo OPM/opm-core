@@ -39,7 +39,7 @@ macro (opm_dist_clean opm)
   # only remove these files if they were actually copied
   if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 	list (APPEND DISTCLEAN_FILES
-	  GNUmakefile
+	  dune.module
 	  )
   endif (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   # script to remove empty directories (can't believe this isn't included!)

@@ -21,3 +21,11 @@ if (CMAKE_GENERATOR MATCHES "Unix Makefiles")
 	COMMENT "Patching Makefile to be DUNE compatible"
 	)
 endif (CMAKE_GENERATOR MATCHES "Unix Makefiles")
+
+# dunecontrol refuses to use a build tree as module directory unless
+# there is a dune.module in it
+if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  execute_process (COMMAND
+	${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/dune.module ${PROJECT_BINARY_DIR}/dune.module
+	)
+endif (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
