@@ -38,6 +38,9 @@ macro (opm_defaults opm)
 	message (STATUS "Precompiled headers: disabled")
   endif(NOT PRECOMPILE_HEADERS)
 
+  # Use of OpenMP is considered experimental
+  set (USE_OPENMP_DEFAULT OFF)
+
   # if we are on a system where CMake 2.6 is the default (Hi RHEL 6!),
   # the configuration files for Boost will trip up the library paths
   # (look for /usr/lib64/lib64/ in the log) when used with FindBoost

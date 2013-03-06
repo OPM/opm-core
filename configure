@@ -25,6 +25,7 @@ Optional Features:
   --disable-silent-rules  print every compilation statement as executed
   --enable-system-debug   put .debug files in global GDB debug dir
                           [default=yes if prefix=/usr, no otherwise]
+  --enable-openmp         activate experimental support for OpenMP
   --disable-option-checking  ignore unrecognized --enable/--with options
 
 Optional Packages:
@@ -87,6 +88,8 @@ prefix=/usr/local
 buildtype=Debug
 #pch_use=" -DPRECOMPILE_HEADERS:BOOL=ON"
 pch_use=
+#use_openmp=" -DUSE_OPENMP=OFF"
+use_openmp=
 #silent_rules=" -DCMAKE_VERBOSE_MAKEFILE=OFF"
 silent_rules=
 #debug_loc=" -DSYSTEM_DEBUG=OFF"
@@ -213,6 +216,10 @@ while getopts -- ":-:" optchar; do
               debug_loc=" -DSYSTEM_DEBUG=OFF"
               pkgname=""
               ;;
+            openmp)
+              use_openmp=" -DUSE_OPENMP=OFF"
+              pkgname=""
+              ;;
             agmg |\
             ert  |\
             superlu)
@@ -239,6 +246,11 @@ while getopts -- ":-:" optchar; do
           case "${kind}" in
             system-debug)
               debug_loc=" -DSYSTEM_DEBUG=ON"
+              # special flag; don't set shared/static
+              shared=""
+              ;;
+            openmp)
+              use_openmp=" -DUSE_OPENMP=ON"
               # special flag; don't set shared/static
               shared=""
               ;;
@@ -287,7 +299,7 @@ for a in "$@"; do
 done
 
 # pass everything on to CMake
-CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"${srcdir}\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc} ${FEATURES}"
+CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"${srcdir}\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc}${use_openmp} ${FEATURES}"
 echo --- calling CMake for ${project} ---
 echo ${CMDLINE}
 eval exec ${CMDLINE}
