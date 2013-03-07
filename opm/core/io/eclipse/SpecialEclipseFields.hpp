@@ -41,8 +41,8 @@
 #include <fstream>
 #include <limits>
 #include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/eclipse/EclipseGridParserHelpers.hpp>
-#include <opm/core/eclipse/EclipseUnits.hpp>
+#include <opm/core/io/eclipse/EclipseGridParserHelpers.hpp>
+#include <opm/core/io/eclipse/EclipseUnits.hpp>
 
 namespace Opm
 {

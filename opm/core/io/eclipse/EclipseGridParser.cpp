@@ -43,9 +43,9 @@
 #include <limits>
 #include <numeric>
 #include <cfloat>
-#include <opm/core/eclipse/EclipseGridParser.hpp>
-#include <opm/core/eclipse/EclipseGridParserHelpers.hpp>
-#include <opm/core/eclipse/SpecialEclipseFields.hpp>
+#include <opm/core/io/eclipse/EclipseGridParser.hpp>
+#include <opm/core/io/eclipse/EclipseGridParserHelpers.hpp>
+#include <opm/core/io/eclipse/SpecialEclipseFields.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/grid/cpgpreprocess/preprocess.h>

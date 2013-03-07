@@ -2,7 +2,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/io/eclipse/EclipseGridParser.hpp>
 
 #include <boost/filesystem/convenience.hpp>
 

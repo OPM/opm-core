@@ -26,7 +26,7 @@
 #include <opm/core/fluid/blackoil/SinglePvtLiveGas.hpp>
 #include <opm/core/fluid/blackoil/SinglePvtConstCompr.hpp>
 #include <opm/core/fluid/blackoil/phaseUsageFromDeck.hpp>
-#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/linInt.hpp>

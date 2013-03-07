@@ -41,8 +41,8 @@
 #include <map>
 #include <set>
 #include <tr1/memory>
-#include <opm/core/eclipse/SpecialEclipseFields.hpp>
-#include <opm/core/eclipse/EclipseUnits.hpp>
+#include <opm/core/io/eclipse/SpecialEclipseFields.hpp>
+#include <opm/core/io/eclipse/EclipseUnits.hpp>
 #include <opm/core/utility/Factory.hpp>
 
 #include <opm/core/grid/cornerpoint_grid.h>

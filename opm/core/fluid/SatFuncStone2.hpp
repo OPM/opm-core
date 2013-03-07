@@ -19,7 +19,7 @@
 #ifndef SATFUNCSTONE2_HPP
 #define SATFUNCSTONE2_HPP
 
-#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/utility/UniformTableLinear.hpp>
 #include <opm/core/utility/NonuniformTableLinear.hpp>
 #include <opm/core/fluid/blackoil/BlackoilPhases.hpp>

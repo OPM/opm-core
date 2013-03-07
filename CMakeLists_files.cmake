@@ -26,8 +26,6 @@
 # originally generated with the command:
 # find opm -name '*.c*' -printf '\t%p\n' | sort
 list (APPEND MAIN_SOURCE_FILES
-	opm/core/eclipse/EclipseGridInspector.cpp
-	opm/core/eclipse/EclipseGridParser.cpp
 	opm/core/fluid/blackoil/BlackoilPvtProperties.cpp
 	opm/core/fluid/BlackoilPropertiesBasic.cpp
 	opm/core/fluid/BlackoilPropertiesFromDeck.cpp
@@ -58,6 +56,8 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/grid/cpgpreprocess/processgrid.c
 	opm/core/grid/cpgpreprocess/uniquepoints.c
 	opm/core/GridManager.cpp
+	opm/core/io/eclipse/EclipseGridInspector.cpp
+	opm/core/io/eclipse/EclipseGridParser.cpp
 	opm/core/linalg/call_umfpack.c
 	opm/core/linalg/LinearSolverAGMG.cpp
 	opm/core/linalg/LinearSolverFactory.cpp
@@ -199,13 +199,13 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/GravityColumnSolver.hpp
 	opm/core/transport/NormSupport.hpp
 	opm/core/transport/spu_explicit.h
-	opm/core/eclipse/SpecialEclipseFields.hpp
-	opm/core/eclipse/EclipseUnits.hpp
-	opm/core/eclipse/EclipseGridParserHelpers.hpp
-	opm/core/eclipse/CornerpointChopper.hpp
-	opm/core/eclipse/EclipseGridParser.hpp
-	opm/core/eclipse/EclipseGridInspector.hpp
 	opm/core/GridManager.hpp
+	opm/core/io/eclipse/SpecialEclipseFields.hpp
+	opm/core/io/eclipse/EclipseUnits.hpp
+	opm/core/io/eclipse/EclipseGridParserHelpers.hpp
+	opm/core/io/eclipse/CornerpointChopper.hpp
+	opm/core/io/eclipse/EclipseGridParser.hpp
+	opm/core/io/eclipse/EclipseGridInspector.hpp
 	opm/core/linalg/blas_lapack.h
 	opm/core/linalg/LinearSolverAGMG.hpp
 	opm/core/linalg/LinearSolverFactory.hpp
