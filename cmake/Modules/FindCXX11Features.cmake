@@ -15,9 +15,12 @@
 # HAVE_VARIADIC_TEMPLATES          True if variadic templates are supprt
 # HAVE_VARIADIC_CONSTRUCTOR_SFINAE True if variadic constructor sfinae is supported
 # HAVE_RVALUE_REFERENCES           True if rvalue references are supported
+# HAVE_TUPLE                       True if std::tuple is available
+# HAVE_TR1_TUPLE                   True if std::tr1::tuple is available
 
 # test for C++11 flags
 include(TestCXXAcceptsFlag)
+include(CheckIncludeFileCXX)
 
 # macro to only add option once
 include(AddOptions)
@@ -84,6 +87,12 @@ CHECK_CXX_SOURCE_COMPILES("
     }
 " HAVE_INTEGRAL_CONSTANT
 )
+
+# Check whether if <tuple> is available
+check_include_file_cxx("tuple" HAVE_TUPLE)
+
+# Check whether if <tr1/tuple> is available
+check_include_file_cxx("tr1/tuple" HAVE_TR1_TUPLE)
 
 # __attribute__((always_inline))
 CHECK_CXX_SOURCE_COMPILES("
