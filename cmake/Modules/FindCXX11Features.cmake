@@ -9,14 +9,18 @@
 # HAS_ATTRIBUTE_UNUSED             True if attribute unused is supported
 # HAS_ATTRIBUTE_DEPRECATED         True if attribute deprecated is supported
 # HAS_ATTRIBUTE_DEPRECATED_MSG     True if attribute deprecated("msg") is supported
+# HAVE_CONSTEXPR                   True if constexpr attribute is available
 # HAVE_INTEGRAL_CONSTANT           True if compiler supports integral_constant
 # HAVE_STATIC_ASSERT               True if static_assert is available
 # HAVE_VARIADIC_TEMPLATES          True if variadic templates are supprt
 # HAVE_VARIADIC_CONSTRUCTOR_SFINAE True if variadic constructor sfinae is supported
 # HAVE_RVALUE_REFERENCES           True if rvalue references are supported
+# HAVE_TUPLE                       True if std::tuple is available
+# HAVE_TR1_TUPLE                   True if std::tr1::tuple is available
 
 # test for C++11 flags
 include(TestCXXAcceptsFlag)
+include(CheckIncludeFileCXX)
 
 # macro to only add option once
 include(AddOptions)
@@ -48,6 +52,18 @@ CHECK_CXX_SOURCE_COMPILES("
 "  HAVE_NULLPTR
 )
 
+# constexpr
+CHECK_CXX_SOURCE_COMPILES("
+    template <class T>
+    inline constexpr int foo(T bar) { return bar*2; }
+    int main(void)
+    {
+      constexpr int foobar = foo(100);
+      return 0;
+    }
+"  HAVE_CONSTEXPR
+)
+
 # array and fill
 CHECK_CXX_SOURCE_COMPILES("
     #include <array>
@@ -71,6 +87,12 @@ CHECK_CXX_SOURCE_COMPILES("
     }
 " HAVE_INTEGRAL_CONSTANT
 )
+
+# Check whether if <tuple> is available
+check_include_file_cxx("tuple" HAVE_TUPLE)
+
+# Check whether if <tr1/tuple> is available
+check_include_file_cxx("tr1/tuple" HAVE_TR1_TUPLE)
 
 # __attribute__((always_inline))
 CHECK_CXX_SOURCE_COMPILES("
