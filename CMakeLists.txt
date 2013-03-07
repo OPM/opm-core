@@ -80,6 +80,13 @@ include (UseFastBuilds)
 # precompiled headers
 include (UsePrecompHeaders)
 
+# optimize full if we're not doing a debug build
+include (UseOptimization)
+
+# turn on all warnings; this must be done before adding any
+# dependencies, in case they alter the list of warnings
+include (UseWarnings)
+
 # macro to set standard variables (INCLUDE_DIRS, LIBRARIES etc.)
 include (OpmFind)
 find_and_append_package_list_to (${project} ${${project}_DEPS})
@@ -93,12 +100,6 @@ include (UseOnlyNeeded)
 
 # put debug information into every executable
 include (UseDebugSymbols)
-
-# optimize full if we're not doing a debug build
-include (UseOptimization)
-
-# turn on all warnings
-include (UseWarnings)
 
 # detect if Boost is in a shared library
 include (UseDynamicBoost)

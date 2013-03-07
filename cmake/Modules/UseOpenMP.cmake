@@ -23,6 +23,13 @@
 
 include (AddOptions)
 macro (find_openmp opm)
+  # user code can be conservative by setting USE_OPENMP_DEFAULT
+  if (NOT DEFINED USE_OPENMP_DEFAULT)
+	set (USE_OPENMP_DEFAULT ON)
+  endif (NOT DEFINED USE_OPENMP_DEFAULT)
+  option (USE_OPENMP "Enable OpenMP for parallelization" ${USE_OPENMP_DEFAULT})
+  if (USE_OPENMP)
+
   # enabling OpenMP is supposedly enough to make the compiler link with
   # the appropriate libraries
   find_package (OpenMP ${${opm}_QUIET})
@@ -38,4 +45,16 @@ macro (find_openmp opm)
   if (CMAKE_USE_PTHREADS_INIT)
 	list (APPEND ${opm}_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
   endif (CMAKE_USE_PTHREADS_INIT)
+
+  else (USE_OPENMP)
+	message (STATUS "OpenMP: disabled")
+
+	# if we don't have OpenMP support, then don't show warnings that these
+	# pragmas are unknown
+	if (CMAKE_COMPILER_IS_GNUCXX)
+	  add_options (ALL_LANGUAGES ALL_BUILDS "-Wno-unknown-pragmas")
+	elseif (MSVC)
+	  add_options (ALL_LANGUAGES ALL_BUILDS "-wd4068")
+	endif(CMAKE_COMPILER_IS_GNUCXX)
+  endif (USE_OPENMP)
 endmacro (find_openmp opm)
