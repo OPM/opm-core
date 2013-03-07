@@ -63,6 +63,10 @@ system_info ()
 include (UseVCSInfo)
 vcs_info ()
 
+# print toolchain information to identify compilers with potential bugs
+include (UseCompVer)
+compiler_info ()
+
 # include special
 if (CMAKE_VERSION VERSION_LESS "2.8.7")
 	message (STATUS "Enabling backward compatibility modules for CMake ${CMAKE_VERSION}")
