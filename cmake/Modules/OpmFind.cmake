@@ -76,7 +76,7 @@ macro (find_and_append_package_to prefix name)
   # stored them in the config file for us
   if (${name}_DIR)
 	message (STATUS "Finding package ${name} using config mode")
-	find_package (${name} ${ARGN} CONFIG PATHS ${${name}_DIR} NO_DEFAULT_PATH)
+	find_package (${name} ${ARGN} NO_MODULE PATHS ${${name}_DIR} NO_DEFAULT_PATH)
   else (${name}_DIR)
 	message (STATUS "Finding package ${name} using module mode")
 	find_package (${name} ${ARGN})
