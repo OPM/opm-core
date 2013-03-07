@@ -9,6 +9,7 @@
 # HAS_ATTRIBUTE_UNUSED             True if attribute unused is supported
 # HAS_ATTRIBUTE_DEPRECATED         True if attribute deprecated is supported
 # HAS_ATTRIBUTE_DEPRECATED_MSG     True if attribute deprecated("msg") is supported
+# HAVE_CONSTEXPR                   True if constexpr attribute is available
 # HAVE_INTEGRAL_CONSTANT           True if compiler supports integral_constant
 # HAVE_STATIC_ASSERT               True if static_assert is available
 # HAVE_VARIADIC_TEMPLATES          True if variadic templates are supprt
@@ -46,6 +47,18 @@ CHECK_CXX_SOURCE_COMPILES("
       return 0;
     }
 "  HAVE_NULLPTR
+)
+
+# constexpr
+CHECK_CXX_SOURCE_COMPILES("
+    template <class T>
+    inline constexpr int foo(T bar) { return bar*2; }
+    int main(void)
+    {
+      constexpr int foobar = foo(100);
+      return 0;
+    }
+"  HAVE_CONSTEXPR
 )
 
 # array and fill
