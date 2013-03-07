@@ -84,6 +84,20 @@ list (APPEND ERT_LIBRARY
 list (APPEND ERT_LIBRARIES ${ERT_LIBRARY})
 list (APPEND ERT_INCLUDE_DIRS ${ERT_INCLUDE_DIR})
 
+# if we didn't find any files, then don't proceed through the entire dependency list
+include (FindPackageHandleStandardArgs)
+if (ERT_INCLUDE_DIR MATCHES "-NOTFOUND" OR ERT_LIBRARIES MATCHES "-NOTFOUND")
+  find_package_handle_standard_args (ERT
+	DEFAULT_MSG
+	ERT_INCLUDE_DIR ERT_LIBRARY
+	)
+  # write unsuccessful result to the cache, as the check_c_source_compiles
+  # would do if it failed
+  set (HAVE_ERT)
+  set (HAVE_ERT "${HAVE_ERT}" CACHE INTERNAL "Did an ERT sample program compile?")
+  return ()
+endif (ERT_INCLUDE_DIR MATCHES "-NOTFOUND" OR ERT_LIBRARIES MATCHES "-NOTFOUND")
+
 # these system variables are probed for, and used in HEADER files (sic)
 list (APPEND ERT_CONFIG_VARS
   HAVE_ISFINITE
@@ -181,7 +195,6 @@ endif (NOT (ERT_INCLUDE_DIR MATCHES "-NOTFOUND" OR ERT_LIBRARIES MATCHES "-NOTFO
 
 # if the test program didn't compile, but was required to do so, bail
 # out now and display an error; otherwise limp on
-include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (ERT
   DEFAULT_MSG
   ERT_INCLUDE_DIR ERT_LIBRARY HAVE_ERT
