@@ -31,7 +31,7 @@ function (get_gcc_patch language ver_name)
 	# only keep first line
 	list (GET _version 0 _version)
 	# extract version number from it (this is the fragile part)
-	string (REGEX REPLACE "^.+(\\(.*\\))?.*([0-9]+\\.[0-9]+\\.[0-9]+)" "\\2" _version "${_version}")
+	string (REGEX REPLACE "^[^\\(]+(\\([^\\)]*\\))?[\ \t]*([0-9]+\\.[0-9]+\\.[0-9]+)(.*\\(.*\\))?" "\\2" _version "${_version}")
 	# return this to the caller
 	set (${ver_name} ${_version} PARENT_SCOPE)
   else (CMAKE_${language}_COMPILER_ID STREQUAL GNU)
