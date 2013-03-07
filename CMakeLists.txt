@@ -91,6 +91,12 @@ include (UseOptimization)
 # dependencies, in case they alter the list of warnings
 include (UseWarnings)
 
+### --- begin opm-core specific --- ###
+# parallel programming
+include (UseOpenMP)
+find_openmp (${project})
+### --- end opm-core specific --- ###
+
 # macro to set standard variables (INCLUDE_DIRS, LIBRARIES etc.)
 include (OpmFind)
 find_and_append_package_list_to (${project} ${${project}_DEPS})
