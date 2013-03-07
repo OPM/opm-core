@@ -10,18 +10,14 @@ macro (opm_defaults opm)
 
   # default to building a static library, but let user override
   if (DEFINED BUILD_SHARED_LIBS)
-	set (_shared_def ${BUILD_SHARED_LIBS})
+	if (BUILD_SHARED_LIBS)
+	  set (${opm}_LIBRARY_TYPE SHARED)
+	else (BUILD_SHARED_LIBS)
+	  set (${opm}_LIBRARY_TYPE STATIC)
+	endif (BUILD_SHARED_LIBS)
   else (DEFINED BUILD_SHARED_LIBS)
-	set (_shared_def OFF)
-  endif (DEFINED BUILD_SHARED_LIBS)
-  string (TOUPPER "${${opm}_NAME}" opm_UPPER)
-  string (REPLACE "-" "_" opm_UPPER "${opm_UPPER}")
-  option (BUILD_${opm_UPPER}_SHARED "Build ${${opm}_NAME} as a shared library" ${_shared_def})
-  if (BUILD_${opm_UPPER}_SHARED)
-	set (${opm}_LIBRARY_TYPE SHARED)
-  else (BUILD_${opm_UPPER}_SHARED)
 	set (${opm}_LIBRARY_TYPE STATIC)
-  endif (BUILD_${opm_UPPER}_SHARED)
+  endif (DEFINED BUILD_SHARED_LIBS)
 
   # precompile standard headers to speed up compilation
   # unfortunately, this functionality is buggy and tends to segfault at

@@ -3,9 +3,6 @@
 # where is the source tree located
 srcdir=$(dirname "$0")
 
-# name of the project
-project=$(sed -n "s,^Module:[\ \t]*\([^\ \t]*\),\1,p" "${srcdir}/dune.module")
-
 # display help text
 usage () {
   cat <<EOF
@@ -279,10 +276,8 @@ for OPT in "$@"; do
               shared=""
               ;;
           esac
-          projuppr=${project^^}
-          projuppr=${projuppr/-/_}
           test -n "${shared}" && \
-          FEATURES="${FEATURES} -DBUILD_${projuppr}_SHARED:BOOL=${shared}"
+          FEATURES="${FEATURES} -DBUILD_SHARED_LIBS:BOOL=${shared}"
           ;;
         *)
           # remove everything *after* the equal sign
@@ -314,6 +309,6 @@ done
 
 # pass everything on to CMake
 CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"${srcdir}\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc}${use_openmp} ${FEATURES}"
-echo --- calling CMake for ${project} ---
+echo --- calling CMake ---
 echo ${CMDLINE}
 eval exec ${CMDLINE}
