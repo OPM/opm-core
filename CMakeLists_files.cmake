@@ -58,6 +58,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/GridManager.cpp
 	opm/core/io/eclipse/EclipseGridInspector.cpp
 	opm/core/io/eclipse/EclipseGridParser.cpp
+	opm/core/io/vag/vag.cpp
 	opm/core/linalg/call_umfpack.c
 	opm/core/linalg/LinearSolverAGMG.cpp
 	opm/core/linalg/LinearSolverFactory.cpp
@@ -125,7 +126,6 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/utility/WachspressCoord.cpp
 	opm/core/utility/writeECLData.cpp
 	opm/core/utility/writeVtkData.cpp
-	opm/core/vag_format/vag.cpp
 	opm/core/wells/InjectionSpecification.cpp
 	opm/core/wells/ProductionSpecification.cpp
 	opm/core/wells/WellCollection.cpp
@@ -206,6 +206,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/io/eclipse/CornerpointChopper.hpp
 	opm/core/io/eclipse/EclipseGridParser.hpp
 	opm/core/io/eclipse/EclipseGridInspector.hpp
+	opm/core/io/vag/vag.hpp
 	opm/core/linalg/blas_lapack.h
 	opm/core/linalg/LinearSolverAGMG.hpp
 	opm/core/linalg/LinearSolverFactory.hpp
@@ -215,7 +216,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/linalg/sparse_sys.h
 	opm/core/linalg/LinearSolverInterface.hpp
 	opm/core/newwells.h
-	opm/core/vag_format/vag.hpp
 	opm/core/doxygen_main.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
 	opm/core/simulator/WellState.hpp
