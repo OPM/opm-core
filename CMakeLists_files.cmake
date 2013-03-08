@@ -58,7 +58,9 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/GridManager.cpp
 	opm/core/io/eclipse/EclipseGridInspector.cpp
 	opm/core/io/eclipse/EclipseGridParser.cpp
+	opm/core/io/eclipse/writeECLData.cpp
 	opm/core/io/vag/vag.cpp
+	opm/core/io/vtk/writeVtkData.cpp
 	opm/core/linalg/call_umfpack.c
 	opm/core/linalg/LinearSolverAGMG.cpp
 	opm/core/linalg/LinearSolverFactory.cpp
@@ -124,8 +126,6 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/utility/StopWatch.cpp
 	opm/core/utility/VelocityInterpolation.cpp
 	opm/core/utility/WachspressCoord.cpp
-	opm/core/utility/writeECLData.cpp
-	opm/core/utility/writeVtkData.cpp
 	opm/core/wells/InjectionSpecification.cpp
 	opm/core/wells/ProductionSpecification.cpp
 	opm/core/wells/WellCollection.cpp
@@ -206,7 +206,9 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/io/eclipse/CornerpointChopper.hpp
 	opm/core/io/eclipse/EclipseGridParser.hpp
 	opm/core/io/eclipse/EclipseGridInspector.hpp
+	opm/core/io/eclipse/writeECLData.hpp
 	opm/core/io/vag/vag.hpp
+	opm/core/io/vtk/writeVtkData.hpp
 	opm/core/linalg/blas_lapack.h
 	opm/core/linalg/LinearSolverAGMG.hpp
 	opm/core/linalg/LinearSolverFactory.hpp
@@ -245,7 +247,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/miscUtilitiesBlackoil.hpp
 	opm/core/utility/MonotCubicInterpolator.hpp
 	opm/core/utility/UniformTableLinear.hpp
-	opm/core/utility/writeVtkData.hpp
 	opm/core/utility/Average.hpp
 	opm/core/utility/Factory.hpp
 	opm/core/utility/VelocityInterpolation.hpp
@@ -258,7 +259,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/RootFinders.hpp
 	opm/core/utility/SparseTable.hpp
 	opm/core/utility/have_boost_redef.hpp
-	opm/core/utility/writeECLData.hpp
 	opm/core/grid/CellQuadrature.hpp
 	opm/core/grid/cornerpoint_grid.h
 	opm/core/grid/cpgpreprocess/geometry.h
