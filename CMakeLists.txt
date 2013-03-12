@@ -42,6 +42,7 @@ set (${project}_DEPS
 	# Ensembles-based Reservoir Tools (ERT)
 	"ERT"
 	# DUNE dependency
+	"dune-common"
 	"dune-istl"
 	)
 
