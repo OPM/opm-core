@@ -51,7 +51,6 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/grid/cornerpoint_grid.c
 	opm/core/grid/cpgpreprocess/facetopology.c
 	opm/core/grid/cpgpreprocess/geometry.c
-	opm/core/grid/cpgpreprocess/mxgrdecl.c
 	opm/core/grid/cpgpreprocess/preprocess.c
 	opm/core/grid/cpgpreprocess/processgrid.c
 	opm/core/grid/cpgpreprocess/uniquepoints.c
@@ -263,7 +262,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/grid/cornerpoint_grid.h
 	opm/core/grid/cpgpreprocess/geometry.h
 	opm/core/grid/cpgpreprocess/uniquepoints.h
-	opm/core/grid/cpgpreprocess/mxgrdecl.h
 	opm/core/grid/cpgpreprocess/preprocess.h
 	opm/core/grid/cpgpreprocess/grdecl.h
 	opm/core/grid/cpgpreprocess/facetopology.h
