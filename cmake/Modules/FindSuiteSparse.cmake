@@ -67,7 +67,10 @@ endif (NOT BLAS_FOUND)
 if (NOT LAPACK_FOUND)
   find_package (LAPACK ${SuiteSparse_QUIET} REQUIRED)
 endif (NOT LAPACK_FOUND)
-set (SuiteSparse_EXTRA_LIBS ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+
+# we also need the math part of the runtime library
+find_library (MATH_LIBRARY NAMES "m")
+set (SuiteSparse_EXTRA_LIBS ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${MATH_LIBRARY})
 
 # search paths for the library outside of standard system paths. these are the
 # paths in which the package managers on various distros put the files
