@@ -115,11 +115,14 @@ function (find_opm_package module deps header lib defs prog conf)
 
   # some modules are all in headers
   if (NOT "${lib}" STREQUAL "")
+	if (CMAKE_SIZEOF_VOID_P)
+	  math (EXPR _BITS "8 * ${CMAKE_SIZEOF_VOID_P}")
+	endif (CMAKE_SIZEOF_VOID_P)
 	find_library (${module}_LIBRARY
 	  NAMES "${lib}"
 	  PATHS ${_guess_bin}
 	  HINTS ${${module}_DIR} ${${module}_ROOT} ${${MODULE}_ROOT} ${PkgConf_${module}_LIBRARY_DIRS}
-	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
+	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
 	  )
   else (NOT "${lib}" STREQUAL "")
 	set (${module}_LIBRARY "")
