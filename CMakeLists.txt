@@ -42,6 +42,7 @@ set (${project}_DEPS
 	# Ensembles-based Reservoir Tools (ERT)
 	"ERT"
 	# DUNE dependency
+	"dune-common"
 	"dune-istl"
 	)
 
@@ -55,6 +56,17 @@ enable_language (CXX)
 set (${project}_MODULE_DIR "${PROJECT_SOURCE_DIR}/cmake/Modules")
 list (APPEND CMAKE_MODULE_PATH ${${project}_MODULE_DIR})
 
+# include special
+if (CMAKE_VERSION VERSION_LESS "2.8.5")
+	message (STATUS "Enabling compatibility modules for CMake 2.8.5")
+	list (APPEND CMAKE_MODULE_PATH "${${project}_MODULE_DIR}/compat-2.8.5")	
+endif (CMAKE_VERSION VERSION_LESS "2.8.5")	
+
+if (CMAKE_VERSION VERSION_LESS "2.8.7")
+	message (STATUS "Enabling compatibility modules for CMake 2.8.7")
+	list (APPEND CMAKE_MODULE_PATH "${${project}_MODULE_DIR}/compat-2.8.7")
+endif (CMAKE_VERSION VERSION_LESS "2.8.7")
+
 # print system information to better pinpoint issues from log alone
 include (UseSystemInfo)
 system_info ()
@@ -66,12 +78,6 @@ vcs_info ()
 # print toolchain information to identify compilers with potential bugs
 include (UseCompVer)
 compiler_info ()
-
-# include special
-if (CMAKE_VERSION VERSION_LESS "2.8.7")
-	message (STATUS "Enabling backward compatibility modules for CMake ${CMAKE_VERSION}")
-	list (APPEND CMAKE_MODULE_PATH "${${project}_MODULE_DIR}/compat-2.8.7")
-endif (CMAKE_VERSION VERSION_LESS "2.8.7")
 
 # default settings: build static debug library
 include (OpmDefaults)

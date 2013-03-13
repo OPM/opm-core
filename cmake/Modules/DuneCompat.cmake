@@ -23,9 +23,15 @@ if (CMAKE_GENERATOR MATCHES "Unix Makefiles")
 endif (CMAKE_GENERATOR MATCHES "Unix Makefiles")
 
 # dunecontrol refuses to use a build tree as module directory unless
-# there is a dune.module in it
-if (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+# there is a dune.module in it. however, if we are in a sub-dir. of
+# the source, we are probably using dunecontrol with a --build-dir
+# argument, and won't call dunecontrol from the parent (which is the
+# source dir and most likely doesn't contain other projects) anyway,
+# i.e. we only copy if we are truly out-of-source
+string (LENGTH "${PROJECT_SOURCE_DIR}/" _src_dir_len)
+string (SUBSTRING "${PROJECT_BINARY_DIR}/" 0 ${_src_dir_len} _proj_prefix)
+if (NOT "${PROJECT_SOURCE_DIR}/" STREQUAL "${_proj_prefix}")
   execute_process (COMMAND
 	${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/dune.module ${PROJECT_BINARY_DIR}/dune.module
 	)
-endif (NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+endif (NOT "${PROJECT_SOURCE_DIR}/" STREQUAL "${_proj_prefix}")
