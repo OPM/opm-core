@@ -49,7 +49,7 @@
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/Units.hpp>
-#include <opm/core/utility/writeVtkData.hpp>
+#include <opm/core/io/vtk/writeVtkData.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
@@ -95,7 +95,7 @@
 
 
 #ifdef HAVE_ERT
-#include <opm/core/utility/writeECLData.hpp>
+#include <opm/core/io/eclipse/writeECLData.hpp>
 #endif
 
 

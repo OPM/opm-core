@@ -42,9 +42,9 @@
 #include <cmath>
 #include <cfloat>
 #include <algorithm>
-#include <opm/core/eclipse/EclipseGridInspector.hpp>
-#include <opm/core/eclipse/EclipseGridParser.hpp>
-#include <opm/core/eclipse/SpecialEclipseFields.hpp>
+#include <opm/core/io/eclipse/EclipseGridInspector.hpp>
+#include <opm/core/io/eclipse/EclipseGridParser.hpp>
+#include <opm/core/io/eclipse/SpecialEclipseFields.hpp>
 
 namespace Opm
 {

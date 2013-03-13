@@ -23,7 +23,7 @@
 #endif
 
 #include <opm/core/grid.h>
-#include <opm/core/utility/writeECLData.hpp>
+#include <opm/core/io/eclipse/writeECLData.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 

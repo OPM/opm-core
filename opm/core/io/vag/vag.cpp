@@ -33,7 +33,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opm/core/vag_format/vag.hpp>
+#include <opm/core/io/vag/vag.hpp>
 #include <opm/core/grid/cornerpoint_grid.h>	 	      
 #include <iostream>
 #include <fstream>
