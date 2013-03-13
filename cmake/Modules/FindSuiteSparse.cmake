@@ -120,13 +120,18 @@ if (SuiteSparse_EVERYTHING_FOUND)
   return ()
 endif (SuiteSparse_EVERYTHING_FOUND)
 
+# only search in architecture-relevant directory
+if (CMAKE_SIZEOF_VOID_P)
+  math (EXPR _BITS "8 * ${CMAKE_SIZEOF_VOID_P}")
+endif (CMAKE_SIZEOF_VOID_P)
+
 # if SuiteSparse >= 4.0 we must also link with libsuitesparseconfig
 # assume that this is the case if we find the library; otherwise just
 # ignore it (older versions don't have a file named like this)
 find_library (config_LIBRARY
   NAMES suitesparseconfig
   PATHS ${SuiteSparse_SEARCH_PATH}
-  PATH_SUFFIXES ".libs" "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}" "lib/ufsparse"
+  PATH_SUFFIXES ".libs" "lib" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}" "lib/ufsparse"
   )
 if (config_LIBRARY)
   list (APPEND SuiteSparse_EXTRA_LIBS ${config_LIBRARY})
@@ -149,7 +154,7 @@ foreach (module IN LISTS SuiteSparse_MODULES)
   find_library (${MODULE}_LIBRARY
 	NAMES ${module}
 	PATHS ${SuiteSparse_SEARCH_PATH}
-	PATH_SUFFIXES "lib/.libs" "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}" "lib/ufsparse"
+	PATH_SUFFIXES "lib/.libs" "lib" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}" "lib/ufsparse"
 	)
   # start out by including the module itself; other dependencies will be added later
   set (${MODULE}_INCLUDE_DIRS ${${MODULE}_INCLUDE_DIR})

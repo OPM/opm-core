@@ -49,18 +49,23 @@ find_path(SUPERLU_INCLUDE_DIR
   PATH_SUFFIXES "superlu" "include/superlu" "include" "SRC"
 )
 
+# only search in architecture-relevant directory
+if (CMAKE_SIZEOF_VOID_P)
+  math (EXPR _BITS "8 * ${CMAKE_SIZEOF_VOID_P}")
+endif (CMAKE_SIZEOF_VOID_P)
+
 # look for library, only at positions given by the user
 find_library(SUPERLU_LIBRARY
   NAMES "superlu_4.3" "superlu_4.2" "superlu_4.1" "superlu_4.0" "superlu_3.1" "superlu_3.0" "superlu"
   PATHS ${SUPERLU_PREFIX} ${SUPERLU_ROOT}
-  PATH_SUFFIXES "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
+  PATH_SUFFIXES "lib" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   NO_DEFAULT_PATH
 )
 
 # look for library files, including default paths
 find_library(SUPERLU_LIBRARY
   NAMES "superlu_4.3" "superlu_4.2" "superlu_4.1" "superlu_4.0" "superlu_3.1" "superlu_3.0" "superlu"
-  PATH_SUFFIXES "lib" "lib32" "lib64" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
+  PATH_SUFFIXES "lib" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
 )
 
 # check version specific macros
