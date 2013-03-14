@@ -238,7 +238,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/IncompPropertiesBasic.hpp
 	opm/core/props/IncompPropertiesFromDeck.hpp
 	opm/core/props/IncompPropertiesInterface.hpp
-	opm/core/props/SimpleFluid2p.hpp
 	opm/core/props/phaseUsageFromDeck.hpp
 	opm/core/props/pvt/BlackoilPvtProperties.hpp
 	opm/core/props/pvt/PvtPropertiesBasic.hpp
@@ -274,7 +273,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/ImplicitTransport.hpp
 	opm/core/transport/JacobianSystem.hpp
 	opm/core/transport/NormSupport.hpp
-	opm/core/transport/SimpleFluid2pWrapper.hpp
 	opm/core/transport/SinglePointUpwindTwoPhase.hpp
 	opm/core/transport/reorder/DGBasis.hpp
 	opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp
