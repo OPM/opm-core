@@ -30,7 +30,7 @@
 #define IMPLICITTWOPHASETRANSPORTSOLVER_HPP
 #include <vector>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
-#include <opm/core/transport/TwoPhaseTransportSolver.hpp>
+#include <opm/core/transport/TransportSolverTwophaseInterface.hpp>
 #include <opm/core/props/IncompPropertiesInterface.hpp>
 #include <opm/core/transport/SimpleFluid2pWrappingProps.hpp>
 #include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
@@ -53,7 +53,7 @@
 #include <opm/core/simulator/WellState.hpp>
 namespace Opm{
     // implicite transprot solver
-    class ImplicitTwoPhaseTransportSolver : public TwoPhaseTransportSolver
+    class ImplicitTwoPhaseTransportSolver : public TransportSolverTwophaseInterface
     {
     public:
         /// Construct solver.
@@ -84,7 +84,7 @@ namespace Opm{
                    const double* source,
                    const double dt,
                    Opm::TwophaseState& state,
-                   Opm::WellState& well_state);
+                   const Opm::WellState& well_state);
 
     private:
         ImplicitTwoPhaseTransportSolver(const ImplicitTwoPhaseTransportSolver&);

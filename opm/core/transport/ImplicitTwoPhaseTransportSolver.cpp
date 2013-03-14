@@ -56,7 +56,7 @@ namespace Opm{
                                                  const double* source,
                                                  const double dt,
                                                  TwophaseState& state,
-                                                 WellState& well_state)
+                                                 const WellState& well_state)
     {
         std::vector<double> porevol;
         if (rock_comp_.isActive()) {

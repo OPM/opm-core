@@ -99,7 +99,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/simulator/SimulatorReport.cpp
 	opm/core/simulator/SimulatorTimer.cpp
 	opm/core/transport/ImplicitTwoPhaseTransportSolver.cpp
-	opm/core/transport/TwoPhaseTransportSolver.cpp
+	opm/core/transport/TransportSolverTwophaseInterface.cpp
 	opm/core/transport/reorder/DGBasis.cpp
 	opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.cpp
 	opm/core/transport/reorder/ReorderSolverInterface.cpp
@@ -264,6 +264,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/BlackoilState.hpp
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
+	opm/core/simulator/SimulatorIncompTwophaseReorder.hpp
 	opm/core/simulator/SimulatorReport.hpp
 	opm/core/simulator/SimulatorTimer.hpp
 	opm/core/simulator/TwophaseState.hpp
@@ -277,12 +278,16 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/JacobianSystem.hpp
 	opm/core/transport/NormSupport.hpp
 	opm/core/transport/SinglePointUpwindTwoPhase.hpp
+	opm/core/transport/ImplicitTwoPhaseTransportSolver.hpp
+	opm/core/transport/SimpleFluid2pWrappingProps.hpp
+	opm/core/transport/SimpleFluid2pWrappingProps_impl.hpp
+	opm/core/transport/TransportSolverTwophaseInterface.hpp
 	opm/core/transport/reorder/DGBasis.hpp
-	opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp
-	opm/core/transport/reorder/TransportModelInterface.hpp
-	opm/core/transport/reorder/TransportModelTracerTof.hpp
-	opm/core/transport/reorder/TransportModelTracerTofDiscGal.hpp
-	opm/core/transport/reorder/TransportModelTwophase.hpp
+	opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.hpp
+	opm/core/transport/reorder/ReorderSolverInterface.hpp
+	opm/core/transport/reorder/TofReorder.hpp
+	opm/core/transport/reorder/TofDiscGalReorder.hpp
+	opm/core/transport/reorder/TransportSolverTwophaseReorder.hpp
 	opm/core/transport/reorder/nlsolvers.h
 	opm/core/transport/reorder/reordersequence.h
 	opm/core/transport/reorder/tarjan.h
