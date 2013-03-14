@@ -1,26 +1,26 @@
 /*
   Copyright 2011 SINTEF ICT, Applied Mathematics.
   Copyright 2011 Statoil ASA.
-  
+
   This file is part of the Open Porous Media Project (OPM).
-  
+
   OPM is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
-  
+
   OPM is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-  
+
   You should have received a copy of the GNU General Public License
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef OPM_TRANSPORTSOLVERTWOPHASEIMPLICIT_HEADER_INCLUDED
 #define OPM_TRANSPORTSOLVERTWOPHASEIMPLICIT_HEADER_INCLUDED
-#include <vector>
+
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/transport/TransportSolverTwophaseInterface.hpp>
 #include <opm/core/props/IncompPropertiesInterface.hpp>
@@ -38,13 +38,20 @@
 #include <opm/core/transport/JacobianSystem.hpp>
 #include <opm/core/transport/CSRMatrixBlockAssembler.hpp>
 #include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include <opm/core/props/rock/RockCompressibility.hpp>
 #include <opm/core/wells/WellsManager.hpp>
 #include <opm/core/simulator/WellState.hpp>
-namespace Opm{
-    // implicite transprot solver
+
+#include <boost/scoped_ptr.hpp>
+#include <vector>
+
+
+
+namespace Opm
+{
+
+    // Implicit transport solver using Newton-Raphson.
     class TransportSolverTwophaseImplicit : public TransportSolverTwophaseInterface
     {
     public:
@@ -53,42 +60,38 @@ namespace Opm{
         /// \param[in] props     Rock and fluid properties.
         /// \param[in] tol       Tolerance used in the solver.
         /// \param[in] maxit     Maximum number of non-linear iterations used.
-        TransportSolverTwophaseImplicit(
-                const Opm::WellsManager& wells,
-                const Opm::RockCompressibility& rock_comp,
-                const ImplicitTransportDetails::NRControl& ctrl,
-                SinglePointUpwindTwoPhase<Opm::SimpleFluid2pWrappingProps>& model,
-                const UnstructuredGrid& grid,
-                const Opm::IncompPropertiesInterface& props,
-                const parameter::ParameterGroup& param);
+        TransportSolverTwophaseImplicit(const Opm::WellsManager& wells,
+                                        const Opm::RockCompressibility& rock_comp,
+                                        const ImplicitTransportDetails::NRControl& ctrl,
+                                        SinglePointUpwindTwoPhase<Opm::SimpleFluid2pWrappingProps>& model,
+                                        const UnstructuredGrid& grid,
+                                        const Opm::IncompPropertiesInterface& props,
+                                        const parameter::ParameterGroup& param);
 
-        ~TransportSolverTwophaseImplicit(){
-           destroy_transport_source(tsrc_);
-        }
+        virtual ~TransportSolverTwophaseImplicit();
 
         /// Solve for saturation at next timestep.
-        /// \param[in] darcyflux         Array of signed face fluxes.
-        /// \param[in] porevolume        Array of pore volumes.
-        /// \param[in] source            Transport source term.
-        /// \param[in] dt                Time step.
-        /// \param[in, out] saturation   Phase saturations.
-        void solve(const double* porevolume,
-                   const double* source,
-                   const double dt,
-                   Opm::TwophaseState& state,
-                   const Opm::WellState& well_state);
+        /// \param[in]      porevolume   Array of pore volumes.
+        /// \param[in]      source       Transport source term.
+        /// \param[in]      dt           Time step.
+        /// \param[in]      wstate       Well state.
+        /// \param[in, out] state        Reservoir state. Saturation will be modified.
+        virtual void solve(const double* porevolume,
+                           const double* source,
+                           const double dt,
+                           const Opm::WellState& well_state,
+                           Opm::TwophaseState& state);
 
     private:
+        // Disallow copying and assignment.
         TransportSolverTwophaseImplicit(const TransportSolverTwophaseImplicit&);
         TransportSolverTwophaseImplicit& operator=(const TransportSolverTwophaseImplicit&);
+
+        // Defining types for the underlying transport solver.
         typedef Opm::SimpleFluid2pWrappingProps TwophaseFluid;
         typedef Opm::SinglePointUpwindTwoPhase<TwophaseFluid> TransportModel;
-
-        //using namespace ImplicitTransportDefault;
-
         typedef ImplicitTransportDefault::NewtonVectorCollection< ::std::vector<double> >      NVecColl;
         typedef ImplicitTransportDefault::JacobianSystem        < struct CSRMatrix, NVecColl > JacSys;
-
         template <class Vector>
         class MaxNorm {
         public:
@@ -97,15 +100,15 @@ namespace Opm{
                 return ImplicitTransportDefault::AccumulationNorm <Vector, ImplicitTransportDefault::MaxAbs>::norm(v);
             }
         };
-
         typedef Opm::ImplicitTransport<TransportModel,
-        JacSys        ,
-        MaxNorm       ,
-        ImplicitTransportDefault::VectorNegater ,
-        ImplicitTransportDefault::VectorZero    ,
-        ImplicitTransportDefault::MatrixZero    ,
-        ImplicitTransportDefault::VectorAssign  > TransportSolver;
-        //Opm::LinearSolverFactory
+                                       JacSys        ,
+                                       MaxNorm       ,
+                                       ImplicitTransportDefault::VectorNegater ,
+                                       ImplicitTransportDefault::VectorZero    ,
+                                       ImplicitTransportDefault::MatrixZero    ,
+                                       ImplicitTransportDefault::VectorAssign  > TransportSolver;
+
+        // Data members.
         Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver linsolver_;
         TransportSolver tsolver_;
         const UnstructuredGrid& grid_;
@@ -113,9 +116,9 @@ namespace Opm{
         const Opm::IncompPropertiesInterface& props_;
         const Opm::RockCompressibility& rock_comp_;
         const Opm::WellsManager& wells_;
-
         TransportSource* tsrc_;
-
     };
-}
+
+} // namespace Opm
+
 #endif // OPM_TRANSPORTSOLVERTWOPHASEIMPLICIT_HEADER_INCLUDED

@@ -30,7 +30,9 @@
 #include <opm/core/transport/TransportSolverTwophaseImplicit.hpp>
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
-namespace Opm{
+
+namespace Opm
+{
 
     TransportSolverTwophaseImplicit::TransportSolverTwophaseImplicit(
             const Opm::WellsManager& wells,
@@ -48,22 +50,30 @@ namespace Opm{
           wells_(wells)
     {
         tsrc_ = create_transport_source(2, 2);
-        //linsolver_(param),
-        //src_(num_cells, 0.0);
     }
 
+    TransportSolverTwophaseImplicit::~TransportSolverTwophaseImplicit()
+    {
+        destroy_transport_source(tsrc_);
+    }
+
+    /// Solve for saturation at next timestep.
+    /// \param[in]      porevolume   Array of pore volumes.
+    /// \param[in]      source       Transport source term.
+    /// \param[in]      dt           Time step.
+    /// \param[in]      wstate       Well state.
+    /// \param[in, out] state        Reservoir state. Saturation will be modified.
     void TransportSolverTwophaseImplicit::solve(const double* porevolume,
                                                 const double* source,
                                                 const double dt,
-                                                TwophaseState& state,
-                                                const WellState& well_state)
+                                                const WellState& well_state,
+                                                TwophaseState& state)
     {
         std::vector<double> porevol;
         if (rock_comp_.isActive()) {
             computePorevolume(grid_, props_.porosity(), rock_comp_, state.pressure(), porevol);
         }
         std::vector<double> src(grid_.number_of_cells, 0.0);
-        //Opm::wellsToSrc(*wells->c_wells(), num_cells, src);
         Opm::computeTransportSource(grid_, src, state.faceflux(), 1.0,
                                     wells_.c_wells(), well_state.perfRates(), src);
         double ssrc[]   = { 1.0, 0.0 };
@@ -77,10 +87,9 @@ namespace Opm{
                 append_transport_source(cell, 2, 0, src[cell], ssink, zdummy, tsrc_);
             }
         }
-        // Boundary conditions.
         Opm::ImplicitTransportDetails::NRReport  rpt;
         tsolver_.solve(grid_, tsrc_, dt, ctrl_, state, linsolver_, rpt);
         std::cout << rpt;
-
     }
-}
+
+} // namespace Opm
