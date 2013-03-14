@@ -98,7 +98,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/simulator/SimulatorIncompTwophaseReorder.cpp
 	opm/core/simulator/SimulatorReport.cpp
 	opm/core/simulator/SimulatorTimer.cpp
-	opm/core/transport/ImplicitTwoPhaseTransportSolver.cpp
+	opm/core/transport/TransportSolverTwophaseImplicit.cpp
 	opm/core/transport/TransportSolverTwophaseInterface.cpp
 	opm/core/transport/reorder/DGBasis.cpp
 	opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.cpp
@@ -278,7 +278,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/JacobianSystem.hpp
 	opm/core/transport/NormSupport.hpp
 	opm/core/transport/SinglePointUpwindTwoPhase.hpp
-	opm/core/transport/ImplicitTwoPhaseTransportSolver.hpp
+	opm/core/transport/TransportSolverTwophaseImplicit.hpp
 	opm/core/transport/SimpleFluid2pWrappingProps.hpp
 	opm/core/transport/SimpleFluid2pWrappingProps_impl.hpp
 	opm/core/transport/TransportSolverTwophaseInterface.hpp

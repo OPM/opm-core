@@ -27,12 +27,12 @@
 */
 
 
-#include <opm/core/transport/ImplicitTwoPhaseTransportSolver.hpp>
+#include <opm/core/transport/TransportSolverTwophaseImplicit.hpp>
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 namespace Opm{
 
-    ImplicitTwoPhaseTransportSolver::ImplicitTwoPhaseTransportSolver(
+    TransportSolverTwophaseImplicit::TransportSolverTwophaseImplicit(
             const Opm::WellsManager& wells,
             const Opm::RockCompressibility& rock_comp,
             const ImplicitTransportDetails::NRControl& ctrl,
@@ -52,11 +52,11 @@ namespace Opm{
         //src_(num_cells, 0.0);
     }
 
-    void ImplicitTwoPhaseTransportSolver::solve(const double* porevolume,
-                                                 const double* source,
-                                                 const double dt,
-                                                 TwophaseState& state,
-                                                 const WellState& well_state)
+    void TransportSolverTwophaseImplicit::solve(const double* porevolume,
+                                                const double* source,
+                                                const double dt,
+                                                TwophaseState& state,
+                                                const WellState& well_state)
     {
         std::vector<double> porevol;
         if (rock_comp_.isActive()) {

@@ -1,11 +1,3 @@
-/*===========================================================================
-//
-// File: ImpliciteTwoPhaseTransportSolver.hpp
-//
-// Author: hnil <hnil@sintef.no>
-//
-// Created: 9 Nov 2012
-//==========================================================================*/
 /*
   Copyright 2011 SINTEF ICT, Applied Mathematics.
   Copyright 2011 Statoil ASA.
@@ -26,8 +18,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IMPLICITETWOPHASETRANSPORTSOLVER_HPP
-#define IMPLICITTWOPHASETRANSPORTSOLVER_HPP
+#ifndef OPM_TRANSPORTSOLVERTWOPHASEIMPLICIT_HEADER_INCLUDED
+#define OPM_TRANSPORTSOLVERTWOPHASEIMPLICIT_HEADER_INCLUDED
 #include <vector>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/transport/TransportSolverTwophaseInterface.hpp>
@@ -53,7 +45,7 @@
 #include <opm/core/simulator/WellState.hpp>
 namespace Opm{
     // implicite transprot solver
-    class ImplicitTwoPhaseTransportSolver : public TransportSolverTwophaseInterface
+    class TransportSolverTwophaseImplicit : public TransportSolverTwophaseInterface
     {
     public:
         /// Construct solver.
@@ -61,7 +53,7 @@ namespace Opm{
         /// \param[in] props     Rock and fluid properties.
         /// \param[in] tol       Tolerance used in the solver.
         /// \param[in] maxit     Maximum number of non-linear iterations used.
-        ImplicitTwoPhaseTransportSolver(
+        TransportSolverTwophaseImplicit(
                 const Opm::WellsManager& wells,
                 const Opm::RockCompressibility& rock_comp,
                 const ImplicitTransportDetails::NRControl& ctrl,
@@ -70,7 +62,7 @@ namespace Opm{
                 const Opm::IncompPropertiesInterface& props,
                 const parameter::ParameterGroup& param);
 
-        ~ImplicitTwoPhaseTransportSolver(){
+        ~TransportSolverTwophaseImplicit(){
            destroy_transport_source(tsrc_);
         }
 
@@ -87,8 +79,8 @@ namespace Opm{
                    const Opm::WellState& well_state);
 
     private:
-        ImplicitTwoPhaseTransportSolver(const ImplicitTwoPhaseTransportSolver&);
-        ImplicitTwoPhaseTransportSolver& operator=(const ImplicitTwoPhaseTransportSolver&);
+        TransportSolverTwophaseImplicit(const TransportSolverTwophaseImplicit&);
+        TransportSolverTwophaseImplicit& operator=(const TransportSolverTwophaseImplicit&);
         typedef Opm::SimpleFluid2pWrappingProps TwophaseFluid;
         typedef Opm::SinglePointUpwindTwoPhase<TwophaseFluid> TransportModel;
 
@@ -126,4 +118,4 @@ namespace Opm{
 
     };
 }
-#endif // IMPLICITETWOPHASETRANSPORTSOLVER_HPP
+#endif // OPM_TRANSPORTSOLVERTWOPHASEIMPLICIT_HEADER_INCLUDED
