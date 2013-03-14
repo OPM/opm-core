@@ -18,7 +18,7 @@
 */
 
 
-#include <opm/core/fluid/blackoil/SinglePvtDead.hpp>
+#include <opm/core/props/pvt/SinglePvtDead.hpp>
 #include <algorithm>
 
 // Extra includes for debug dumping of tables.

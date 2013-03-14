@@ -20,7 +20,7 @@
 #ifndef OPM_SINGLEPVTLIVEGAS_HEADER_INCLUDED
 #define OPM_SINGLEPVTLIVEGAS_HEADER_INCLUDED
 
-#include <opm/core/fluid/blackoil/SinglePvtInterface.hpp>
+#include <opm/core/props/pvt/SinglePvtInterface.hpp>
 #include <vector>
 
 namespace Opm

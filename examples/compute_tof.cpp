@@ -35,8 +35,8 @@
 #include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
-#include <opm/core/fluid/IncompPropertiesBasic.hpp>
-#include <opm/core/fluid/IncompPropertiesFromDeck.hpp>
+#include <opm/core/props/IncompPropertiesBasic.hpp>
+#include <opm/core/props/IncompPropertiesFromDeck.hpp>
 
 #include <opm/core/linalg/LinearSolverFactory.hpp>
 

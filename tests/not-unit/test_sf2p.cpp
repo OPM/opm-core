@@ -3,7 +3,7 @@
 #include <iostream>
 #include <iterator>
 
-#include <opm/core/fluid/SimpleFluid2p.hpp>
+#include <opm/core/props/SimpleFluid2p.hpp>
 
 template <class Ostream, typename T, size_t n>
 Ostream&

@@ -22,8 +22,8 @@
 
 
 
-#include <opm/core/fluid/blackoil/SinglePvtInterface.hpp>
-#include <opm/core/fluid/blackoil/BlackoilPhases.hpp>
+#include <opm/core/props/pvt/SinglePvtInterface.hpp>
+#include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <string>
 #include <tr1/memory>

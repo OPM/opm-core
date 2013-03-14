@@ -19,13 +19,13 @@
 
 
 
-#include <opm/core/fluid/blackoil/BlackoilPvtProperties.hpp>
-#include <opm/core/fluid/blackoil/SinglePvtDead.hpp>
-#include <opm/core/fluid/blackoil/SinglePvtDeadSpline.hpp>
-#include <opm/core/fluid/blackoil/SinglePvtLiveOil.hpp>
-#include <opm/core/fluid/blackoil/SinglePvtLiveGas.hpp>
-#include <opm/core/fluid/blackoil/SinglePvtConstCompr.hpp>
-#include <opm/core/fluid/blackoil/phaseUsageFromDeck.hpp>
+#include <opm/core/props/pvt/BlackoilPvtProperties.hpp>
+#include <opm/core/props/pvt/SinglePvtDead.hpp>
+#include <opm/core/props/pvt/SinglePvtDeadSpline.hpp>
+#include <opm/core/props/pvt/SinglePvtLiveOil.hpp>
+#include <opm/core/props/pvt/SinglePvtLiveGas.hpp>
+#include <opm/core/props/pvt/SinglePvtConstCompr.hpp>
+#include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>

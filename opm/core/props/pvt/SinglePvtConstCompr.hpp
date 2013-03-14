@@ -21,7 +21,7 @@
 #define OPM_SINGLEPVTCONSTCOMPR_HEADER_INCLUDED
 
 
-#include <opm/core/fluid/blackoil/SinglePvtInterface.hpp>
+#include <opm/core/props/pvt/SinglePvtInterface.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <vector>
 #include <algorithm>

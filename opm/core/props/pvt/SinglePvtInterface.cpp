@@ -17,7 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opm/core/fluid/blackoil/SinglePvtInterface.hpp>
+#include <opm/core/props/pvt/SinglePvtInterface.hpp>
 
 
 namespace Opm

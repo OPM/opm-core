@@ -17,7 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opm/core/fluid/blackoil/SinglePvtLiveOil.hpp>
+#include <opm/core/props/pvt/SinglePvtLiveOil.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/linInt.hpp>
 #include <algorithm>

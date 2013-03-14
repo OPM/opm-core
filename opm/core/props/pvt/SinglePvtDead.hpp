@@ -21,7 +21,7 @@
 #define OPM_SINGLEPVTDEAD_HEADER_INCLUDED
 
 
-#include <opm/core/fluid/blackoil/SinglePvtInterface.hpp>
+#include <opm/core/props/pvt/SinglePvtInterface.hpp>
 #include <opm/core/utility/NonuniformTableLinear.hpp>
 #include <vector>
 

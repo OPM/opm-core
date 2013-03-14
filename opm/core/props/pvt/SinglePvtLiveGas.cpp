@@ -28,7 +28,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opm/core/fluid/blackoil/SinglePvtLiveGas.hpp>
+#include <opm/core/props/pvt/SinglePvtLiveGas.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/linInt.hpp>
 #include <algorithm>
