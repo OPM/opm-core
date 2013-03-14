@@ -1090,7 +1090,7 @@ void EclipseGridParser::getNumericErtFields(const string& filename)
 {
 #ifdef HAVE_ERT
     // Read file
-    ecl_file_type * ecl_file = ecl_file_open(filename.c_str());
+  ecl_file_type * ecl_file = ecl_file_open(filename.c_str() , 0);
     if (ecl_file == NULL) {
         THROW("Could not open IMPORTed file " << filename);
     }
