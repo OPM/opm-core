@@ -31,7 +31,7 @@
 #include <vector>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/transport/TwoPhaseTransportSolver.hpp>
-#include <opm/core/fluid/IncompPropertiesInterface.hpp>
+#include <opm/core/props/IncompPropertiesInterface.hpp>
 #include <opm/core/transport/SimpleFluid2pWrappingProps.hpp>
 #include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
 #include <opm/core/transport/ImplicitTransport.hpp>
@@ -48,7 +48,7 @@
 #include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include <opm/core/fluid/RockCompressibility.hpp>
+#include <opm/core/props/rock/RockCompressibility.hpp>
 #include <opm/core/wells/WellsManager.hpp>
 #include <opm/core/simulator/WellState.hpp>
 namespace Opm{

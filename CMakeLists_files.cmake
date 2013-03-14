@@ -95,14 +95,17 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/satfunc/SaturationPropsFromDeck.cpp
 	opm/core/simulator/SimulatorCompressibleTwophase.cpp
 	opm/core/simulator/SimulatorIncompTwophase.cpp
+	opm/core/simulator/SimulatorIncompTwophaseReorder.cpp
 	opm/core/simulator/SimulatorReport.cpp
 	opm/core/simulator/SimulatorTimer.cpp
+	opm/core/transport/ImplicitTwoPhaseTransportSolver.cpp
+	opm/core/transport/TwoPhaseTransportSolver.cpp
 	opm/core/transport/reorder/DGBasis.cpp
-	opm/core/transport/reorder/TransportModelCompressibleTwophase.cpp
-	opm/core/transport/reorder/TransportModelInterface.cpp
-	opm/core/transport/reorder/TransportModelTracerTof.cpp
-	opm/core/transport/reorder/TransportModelTracerTofDiscGal.cpp
-	opm/core/transport/reorder/TransportModelTwophase.cpp
+	opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.cpp
+	opm/core/transport/reorder/ReorderSolverInterface.cpp
+	opm/core/transport/reorder/TofReorder.cpp
+	opm/core/transport/reorder/TofDiscGalReorder.cpp
+	opm/core/transport/reorder/TransportSolverTwophaseReorder.cpp
 	opm/core/transport/reorder/nlsolvers.c
 	opm/core/transport/reorder/reordersequence.cpp
 	opm/core/transport/reorder/tarjan.c

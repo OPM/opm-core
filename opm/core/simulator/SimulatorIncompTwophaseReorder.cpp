@@ -34,13 +34,13 @@
 #include <opm/core/simulator/SimulatorReport.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/StopWatch.hpp>
-#include <opm/core/utility/writeVtkData.hpp>
+#include <opm/core/io/vtk/writeVtkData.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 
 #include <opm/core/wells/WellsManager.hpp>
 
-#include <opm/core/fluid/IncompPropertiesInterface.hpp>
-#include <opm/core/fluid/RockCompressibility.hpp>
+#include <opm/core/props/IncompPropertiesInterface.hpp>
+#include <opm/core/props/rock/RockCompressibility.hpp>
 
 #include <opm/core/utility/ColumnExtract.hpp>
 #include <opm/core/simulator/TwophaseState.hpp>

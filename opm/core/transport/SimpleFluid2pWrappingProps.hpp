@@ -30,7 +30,7 @@
 #ifndef SIMPLEFLUID2PWRAPPINGPROPS_HPP
 #define SIMPLEFLUID2PWRAPPINGPROPS_HPP
 
-#include <opm/core/fluid/IncompPropertiesInterface.hpp>
+#include <opm/core/props/IncompPropertiesInterface.hpp>
 #include <vector>
 
 namespace Opm{
