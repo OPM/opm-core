@@ -24,7 +24,7 @@ find_opm_package (
   BLAS REQUIRED;
   LAPACK REQUIRED;
   SuiteSparse COMPONENTS umfpack;
-  SUPERLU;
+  SuperLU;
   TinyXML;
   ERT;
   dune-istl

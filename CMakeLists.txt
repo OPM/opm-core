@@ -36,7 +36,7 @@ set (${project}_DEPS
 	# Tim Davis' SuiteSparse archive
 	"SuiteSparse COMPONENTS umfpack"
 	# solver
-	"SUPERLU"
+	"SuperLU"
 	# xml processing (for config parsing)
 	"TinyXML"
 	# Ensembles-based Reservoir Tools (ERT)
