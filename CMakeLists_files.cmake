@@ -163,7 +163,6 @@ list (APPEND EXAMPLE_SOURCE_FILES
 	examples/scaneclipsedeck.c
 	examples/sim_2p_comp_reorder.cpp
 	examples/sim_2p_incomp_reorder.cpp
-	examples/sim_wateroil.cpp
 	examples/spu_2p.cpp
 	examples/wells_example.cpp
 	tutorials/tutorial1.cpp
