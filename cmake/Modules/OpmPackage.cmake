@@ -219,6 +219,11 @@ function (find_opm_package module deps header lib defs prog conf)
   set (${module}_LINKER_FLAGS "${${module}_LINKER_FLAGS}" PARENT_SCOPE)
   set (${module}_QUIET "${${module}_QUIET}" PARENT_SCOPE)
   set (HAVE_${MODULE} "${HAVE_${MODULE}}" PARENT_SCOPE)
+
+  # print everything out if we're asked to
+  if (${module}_DEBUG)
+	debug_find_vars (${module})
+  endif (${module}_DEBUG)
 endfunction (find_opm_package module deps header lib defs prog conf)
 
 # print all variables defined by the above macro
