@@ -62,10 +62,11 @@ namespace Opm
         /// \param[in] maxit     Maximum number of non-linear iterations used.
         TransportSolverTwophaseImplicit(const Opm::WellsManager& wells,
                                         const Opm::RockCompressibility& rock_comp,
-                                        const ImplicitTransportDetails::NRControl& ctrl,
-                                        SinglePointUpwindTwoPhase<Opm::SimpleFluid2pWrappingProps>& model,
                                         const UnstructuredGrid& grid,
                                         const Opm::IncompPropertiesInterface& props,
+                                        const std::vector<double>& porevol,
+                                        const double* gravity,
+                                        const std::vector<double>& half_trans,
                                         const parameter::ParameterGroup& param);
 
         virtual ~TransportSolverTwophaseImplicit();
@@ -109,9 +110,11 @@ namespace Opm
 
         // Data members.
         Opm::ImplicitTransportLinAlgSupport::CSRMatrixUmfpackSolver linsolver_;
+        Opm::SimpleFluid2pWrappingProps fluid_;
+        SinglePointUpwindTwoPhase<Opm::SimpleFluid2pWrappingProps> model_;
         TransportSolver tsolver_;
         const UnstructuredGrid& grid_;
-        const Opm::ImplicitTransportDetails::NRControl& ctrl_;
+        Opm::ImplicitTransportDetails::NRControl ctrl_;
         const Opm::IncompPropertiesInterface& props_;
         const Opm::RockCompressibility& rock_comp_;
         const Opm::WellsManager& wells_;

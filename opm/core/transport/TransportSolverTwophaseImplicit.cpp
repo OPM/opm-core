@@ -9,19 +9,19 @@
 /*
   Copyright 2011 SINTEF ICT, Applied Mathematics.
   Copyright 2011 Statoil ASA.
-  
+
   This file is part of the Open Porous Media Project (OPM).
-  
+
   OPM is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
-  
+
   OPM is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-  
+
   You should have received a copy of the GNU General Public License
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -37,18 +37,24 @@ namespace Opm
     TransportSolverTwophaseImplicit::TransportSolverTwophaseImplicit(
             const Opm::WellsManager& wells,
             const Opm::RockCompressibility& rock_comp,
-            const ImplicitTransportDetails::NRControl& ctrl,
-            SinglePointUpwindTwoPhase<Opm::SimpleFluid2pWrappingProps>& model,
             const UnstructuredGrid& grid,
             const Opm::IncompPropertiesInterface& props,
+            const std::vector<double>& porevol,
+            const double* gravity,
+            const std::vector<double>& half_trans,
             const parameter::ParameterGroup& param)
-        : tsolver_(model),
+        : fluid_(props),
+          model_(fluid_, grid, porevol, gravity, param.getDefault("guess_old_solution", false)),
+          tsolver_(model_),
           grid_(grid),
-          ctrl_(ctrl),
           props_(props),
           rock_comp_(rock_comp),
           wells_(wells)
     {
+        ctrl_.max_it = param.getDefault("max_it", 20);
+        ctrl_.verbosity = param.getDefault("verbosity", 0);
+        ctrl_.max_it_ls = param.getDefault("max_it_ls", 5);
+        model_.initGravityTrans(grid_, half_trans);
         tsrc_ = create_transport_source(2, 2);
     }
 
@@ -75,11 +81,16 @@ namespace Opm
         double ssrc[] = { 1.0, 0.0 };
         double dummy[] = { 0.0, 0.0 };
         clear_transport_source(tsrc_);
+        const int num_phases = 2;
         for (int cell = 0; cell < grid_.number_of_cells; ++cell) {
+            int success = 1;
             if (source[cell] > 0.0) {
-                append_transport_source(cell, 2, 0, source[cell], ssrc, dummy, tsrc_);
+                success = append_transport_source(cell, num_phases, state.pressure()[cell], source[cell], ssrc, dummy, tsrc_);
             } else if (source[cell] < 0.0) {
-                append_transport_source(cell, 2, 0, source[cell], dummy, dummy, tsrc_);
+                success = append_transport_source(cell, num_phases, state.pressure()[cell], source[cell], dummy, dummy, tsrc_);
+            }
+            if (!success) {
+                THROW("Failed building TransportSource struct.");
             }
         }
         Opm::ImplicitTransportDetails::NRReport  rpt;
