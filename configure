@@ -271,6 +271,10 @@ for OPT in "$@"; do
               # special flag; don't set shared/static
               shared=""
               ;;
+            pch)
+              pch_use=" -DPRECOMPILE_HEADERS:BOOL=ON"
+              shared=""
+              ;;
             # this flag is just for compatibility with the deprecation
             # flag in DUNE, so we can build without warnings
             fieldvector-size-is-method)
