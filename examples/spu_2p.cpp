@@ -628,8 +628,7 @@ main(int argc, char** argv)
         }
         for (int tr_substep = 0; tr_substep < num_transport_substeps; ++tr_substep) {
             if (use_reorder) {
-                reorder_model.solve(&state.faceflux()[0], &porevol[0], &reorder_src[0],
-                                    stepsize, state.saturation());
+                reorder_model.solve(&porevol[0], &reorder_src[0], stepsize, state);
                 Opm::computeInjectedProduced(*props, state.saturation(), reorder_src, stepsize, injected, produced);
                 if (use_segregation_split) {
                     if (use_column_solver) {
