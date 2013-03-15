@@ -37,7 +37,8 @@
 
 # <http://www.vtk.org/Wiki/CMake:How_To_Find_Libraries>
 
-include (Duplicates)
+include (OpmFind)
+
 # append all items from src into dst; both must be *names* of lists
 macro (append_found src dst)
   foreach (_item IN LISTS ${src})
@@ -47,7 +48,7 @@ macro (append_found src dst)
   endforeach (_item)
 endmacro (append_found src dst)
 
-function (find_opm_package module deps header lib defs prog conf)
+macro (find_opm_package module deps header lib defs prog conf)
   # variables to pass on to other packages
   if (FIND_QUIETLY)
 	set (${module}_QUIET "QUIET")
@@ -59,16 +60,6 @@ function (find_opm_package module deps header lib defs prog conf)
   if (${${module}_FOUND})
 	return ()
   endif (${${module}_FOUND})
-
-  # dependencies on other packages; underscore version only contains the
-  # name of the other package
-  set (_deps)
-  foreach (_dep IN LISTS deps)
-	separate_arguments (_args UNIX_COMMAND ${_dep})
-	find_package (${_args} QUIET)
-	list (GET _args 0 _name_only)
-	list (APPEND _deps ${_name_only})
-  endforeach (_dep)
 
   # see if there is a pkg-config entry for this package, and use those
   # settings as a starting point
@@ -132,45 +123,32 @@ function (find_opm_package module deps header lib defs prog conf)
   # list of necessities to build with the software
   set (${module}_INCLUDE_DIRS "${${module}_INCLUDE_DIR}")
   set (${module}_LIBRARIES "${${module}_LIBRARY}")
-  foreach (_dep IN LISTS _deps)
-	# only add those packages we actually found (find_package will show
-	# an error if it was marked as REQUIRED)
-	if (${_dep}_FOUND)
-	  list (APPEND ${module}_INCLUDE_DIRS ${${_dep}_INCLUDE_DIRS})
-	  list (APPEND ${module}_LIBRARIES ${${_dep}_LIBRARIES})
-	  list (APPEND ${module}_DEFINITIONS ${${_dep}_DEFINITIONS})
-	  list (APPEND ${module}_CONFIG_VARS ${${_dep}_CONFIG_VARS})
-	  list (APPEND ${module}_LINKER_FLAGS ${${_dep}_LINKER_FLAGS})
-	endif (${_dep}_FOUND)
+  set (_deps)
+  foreach (_dep IN ITEMS ${deps})
+	separate_arguments (_args UNIX_COMMAND ${_dep})
+	find_and_append_package_to (${module} ${_args} ${${module}_QUIET})
+	find_package (${_args} QUIET)
+	list (GET _args 0 _name_only)
+	list (APPEND _deps ${_name_only})
   endforeach (_dep)
 
   # compile with this option to avoid avalanche of warnings
   set (${module}_DEFINITIONS "${${module}_DEFINITIONS}")
-  foreach (_def IN LISTS defs)
+  foreach (_def IN ITEMS ${defs})
 	list (APPEND ${module}_DEFINITIONS "-D${_def}")
   endforeach (_def)
 
   # tidy the lists before returning them
-  list (REMOVE_DUPLICATES ${module}_INCLUDE_DIRS)
-  remove_duplicate_libraries (${module})
-  list (REMOVE_DUPLICATES ${module}_DEFINITIONS)
+  remove_dup_deps (${module})
 
   # these defines are used in dune/${module} headers, and should be put
   # in config.h when we include those
-  foreach (_var IN LISTS conf)
+  foreach (_var IN ITEMS ${conf})
 	# massage the name to remove source code formatting
 	string (REGEX REPLACE "^[\n\t\ ]+" "" _var "${_var}")
 	string (REGEX REPLACE "[\n\t\ ]+$" "" _var "${_var}")
 	list (APPEND ${module}_CONFIG_VARS ${_var})
   endforeach (_var)
-  foreach (_dep in _deps)
-	if (DEFINED ${_dep}_CONFIG_VARS)
-	  list (APPEND ${module}_CONFIG_VARS ${_dep}_CONFIG_VARS)
-	endif (DEFINED ${_dep}_CONFIG_VARS)
-  endforeach (_dep)
-  if (${module}_CONFIG_VARS)
-	list (REMOVE_DUPLICATES ${module}_CONFIG_VARS)
-  endif (${module}_CONFIG_VARS)
 
   # these are the defines that should be set when compiling
   # without config.h
@@ -209,22 +187,13 @@ function (find_opm_package module deps header lib defs prog conf)
 
   # some genius that coded the FindPackageHandleStandardArgs figured out
   # that the module name should be in uppercase (?!)
-  set (${module}_FOUND "${${MODULE_UPPER}_FOUND}" PARENT_SCOPE)
-
-  # return these variables to the caller
-  set (${module}_INCLUDE_DIRS "${${module}_INCLUDE_DIRS}" PARENT_SCOPE)
-  set (${module}_LIBRARIES "${${module}_LIBRARIES}" PARENT_SCOPE)
-  set (${module}_DEFINITIONS "${${module}_DEFINITIONS}" PARENT_SCOPE)
-  set (${module}_CONFIG_VARS "${${module}_CONFIG_VARS}" PARENT_SCOPE)
-  set (${module}_LINKER_FLAGS "${${module}_LINKER_FLAGS}" PARENT_SCOPE)
-  set (${module}_QUIET "${${module}_QUIET}" PARENT_SCOPE)
-  set (HAVE_${MODULE} "${HAVE_${MODULE}}" PARENT_SCOPE)
+  set (${module}_FOUND "${${MODULE_UPPER}_FOUND}")
 
   # print everything out if we're asked to
   if (${module}_DEBUG)
 	debug_find_vars (${module})
   endif (${module}_DEBUG)
-endfunction (find_opm_package module deps header lib defs prog conf)
+endmacro (find_opm_package module deps header lib defs prog conf)
 
 # print all variables defined by the above macro
 function (debug_find_vars module)
