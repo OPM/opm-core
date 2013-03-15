@@ -161,11 +161,8 @@ list (APPEND EXAMPLE_SOURCE_FILES
 	examples/compute_tof.cpp
 	examples/compute_tof_from_files.cpp
 	examples/import_rewrite.cpp
-	examples/refine_wells.cpp
-	examples/scaneclipsedeck.c
 	examples/sim_2p_comp_reorder.cpp
 	examples/sim_2p_incomp.cpp
-	examples/spu_2p.cpp
 	examples/wells_example.cpp
 	tutorials/tutorial1.cpp
 	tutorials/tutorial2.cpp
