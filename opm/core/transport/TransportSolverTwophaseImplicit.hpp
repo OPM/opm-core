@@ -39,10 +39,6 @@
 #include <opm/core/transport/CSRMatrixBlockAssembler.hpp>
 #include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
 
-#include <opm/core/props/rock/RockCompressibility.hpp>
-#include <opm/core/wells/WellsManager.hpp>
-#include <opm/core/simulator/WellState.hpp>
-
 #include <boost/scoped_ptr.hpp>
 #include <vector>
 
@@ -60,8 +56,7 @@ namespace Opm
         /// \param[in] props     Rock and fluid properties.
         /// \param[in] tol       Tolerance used in the solver.
         /// \param[in] maxit     Maximum number of non-linear iterations used.
-        TransportSolverTwophaseImplicit(const Opm::RockCompressibility& rock_comp,
-                                        const UnstructuredGrid& grid,
+        TransportSolverTwophaseImplicit(const UnstructuredGrid& grid,
                                         const Opm::IncompPropertiesInterface& props,
                                         const std::vector<double>& porevol,
                                         const double* gravity,
@@ -115,8 +110,8 @@ namespace Opm
         const UnstructuredGrid& grid_;
         Opm::ImplicitTransportDetails::NRControl ctrl_;
         const Opm::IncompPropertiesInterface& props_;
-        const Opm::RockCompressibility& rock_comp_;
         TransportSource* tsrc_;
+        double initial_porevolume_cell0_;
     };
 
 } // namespace Opm

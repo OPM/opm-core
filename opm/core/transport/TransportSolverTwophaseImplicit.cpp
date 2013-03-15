@@ -35,7 +35,6 @@ namespace Opm
 {
 
     TransportSolverTwophaseImplicit::TransportSolverTwophaseImplicit(
-            const Opm::RockCompressibility& rock_comp,
             const UnstructuredGrid& grid,
             const Opm::IncompPropertiesInterface& props,
             const std::vector<double>& porevol,
@@ -46,14 +45,14 @@ namespace Opm
           model_(fluid_, grid, porevol, gravity, param.getDefault("guess_old_solution", false)),
           tsolver_(model_),
           grid_(grid),
-          props_(props),
-          rock_comp_(rock_comp)
+          props_(props)
     {
         ctrl_.max_it = param.getDefault("max_it", 20);
         ctrl_.verbosity = param.getDefault("verbosity", 0);
         ctrl_.max_it_ls = param.getDefault("max_it_ls", 5);
         model_.initGravityTrans(grid_, half_trans);
         tsrc_ = create_transport_source(2, 2);
+        initial_porevolume_cell0_ = porevol[0];
     }
 
     TransportSolverTwophaseImplicit::~TransportSolverTwophaseImplicit()
@@ -72,9 +71,9 @@ namespace Opm
                                                 const double dt,
                                                 TwophaseState& state)
     {
-        std::vector<double> porevol;
-        if (rock_comp_.isActive()) {
-            computePorevolume(grid_, props_.porosity(), rock_comp_, state.pressure(), porevol);
+        // A very crude check for constant porosity (i.e. no rock-compressibility).
+        if (porevolume[0] != initial_porevolume_cell0_) {
+            THROW("Detected changed pore volumes, but solver cannot handle rock compressibility.");
         }
         double ssrc[] = { 1.0, 0.0 };
         double dummy[] = { 0.0, 0.0 };
