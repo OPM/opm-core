@@ -95,7 +95,6 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/satfunc/SaturationPropsFromDeck.cpp
 	opm/core/simulator/SimulatorCompressibleTwophase.cpp
 	opm/core/simulator/SimulatorIncompTwophase.cpp
-	opm/core/simulator/SimulatorIncompTwophaseReorder.cpp
 	opm/core/simulator/SimulatorReport.cpp
 	opm/core/simulator/SimulatorTimer.cpp
 	opm/core/transport/TransportSolverTwophaseImplicit.cpp
@@ -165,7 +164,7 @@ list (APPEND EXAMPLE_SOURCE_FILES
 	examples/refine_wells.cpp
 	examples/scaneclipsedeck.c
 	examples/sim_2p_comp_reorder.cpp
-	examples/sim_2p_incomp_reorder.cpp
+	examples/sim_2p_incomp.cpp
 	examples/spu_2p.cpp
 	examples/wells_example.cpp
 	tutorials/tutorial1.cpp
@@ -264,7 +263,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/BlackoilState.hpp
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
-	opm/core/simulator/SimulatorIncompTwophaseReorder.hpp
 	opm/core/simulator/SimulatorReport.hpp
 	opm/core/simulator/SimulatorTimer.hpp
 	opm/core/simulator/TwophaseState.hpp
