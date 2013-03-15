@@ -43,7 +43,7 @@
 
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/simulator/WellState.hpp>
-#include <opm/core/simulator/SimulatorIncompTwophaseReorder.hpp>
+#include <opm/core/simulator/SimulatorIncompTwophase.hpp>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/filesystem.hpp>
@@ -200,7 +200,7 @@ main(int argc, char** argv)
     if (!use_deck) {
         // Simple simulation without a deck.
         WellsManager wells; // no wells.
-        SimulatorIncompTwophaseReorder simulator(param,
+        SimulatorIncompTwophase simulator(param,
                                           *grid->c_grid(),
                                           *props,
                                           rock_comp->isActive() ? rock_comp.get() : 0,
@@ -255,7 +255,7 @@ main(int argc, char** argv)
             }
 
             // Create and run simulator.
-            SimulatorIncompTwophaseReorder simulator(param,
+            SimulatorIncompTwophase simulator(param,
                                               *grid->c_grid(),
                                               *props,
                                               rock_comp->isActive() ? rock_comp.get() : 0,
