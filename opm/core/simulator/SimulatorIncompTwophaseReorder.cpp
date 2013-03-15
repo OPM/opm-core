@@ -42,7 +42,6 @@
 #include <opm/core/props/IncompPropertiesInterface.hpp>
 #include <opm/core/props/rock/RockCompressibility.hpp>
 
-#include <opm/core/utility/ColumnExtract.hpp>
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/transport/reorder/TransportSolverTwophaseReorder.hpp>
@@ -109,14 +108,14 @@ namespace Opm
 
 
     SimulatorIncompTwophaseReorder::SimulatorIncompTwophaseReorder(const parameter::ParameterGroup& param,
-                                                     const UnstructuredGrid& grid,
-                                                     const IncompPropertiesInterface& props,
-                                                     const RockCompressibility* rock_comp_props,
-                                                     WellsManager& wells_manager,
-                                                     const std::vector<double>& src,
-                                                     const FlowBoundaryConditions* bcs,
-                                                     LinearSolverInterface& linsolver,
-                                                     const double* gravity)
+                                                                   const UnstructuredGrid& grid,
+                                                                   const IncompPropertiesInterface& props,
+                                                                   const RockCompressibility* rock_comp_props,
+                                                                   WellsManager& wells_manager,
+                                                                   const std::vector<double>& src,
+                                                                   const FlowBoundaryConditions* bcs,
+                                                                   LinearSolverInterface& linsolver,
+                                                                   const double* gravity)
     {
         pimpl_.reset(new Impl(param, grid, props, rock_comp_props, wells_manager, src, bcs, linsolver, gravity));
     }
@@ -126,8 +125,8 @@ namespace Opm
 
 
     SimulatorReport SimulatorIncompTwophaseReorder::run(SimulatorTimer& timer,
-                                                 TwophaseState& state,
-                                                 WellState& well_state)
+                                                        TwophaseState& state,
+                                                        WellState& well_state)
     {
         return pimpl_->run(timer, state, well_state);
     }
@@ -310,15 +309,16 @@ namespace Opm
 
 
     SimulatorIncompTwophaseReorder::Impl::Impl(const parameter::ParameterGroup& param,
-                                        const UnstructuredGrid& grid,
-                                        const IncompPropertiesInterface& props,
-                                        const RockCompressibility* rock_comp_props,
-                                        WellsManager& wells_manager,
-                                        const std::vector<double>& src,
-                                        const FlowBoundaryConditions* bcs,
-                                        LinearSolverInterface& linsolver,
-                                        const double* gravity)
-        : grid_(grid),
+                                               const UnstructuredGrid& grid,
+                                               const IncompPropertiesInterface& props,
+                                               const RockCompressibility* rock_comp_props,
+                                               WellsManager& wells_manager,
+                                               const std::vector<double>& src,
+                                               const FlowBoundaryConditions* bcs,
+                                               LinearSolverInterface& linsolver,
+                                               const double* gravity)
+        : use_segregation_split_(param.getDefault("use_segregation_split", false)),
+          grid_(grid),
           props_(props),
           rock_comp_props_(rock_comp_props),
           wells_manager_(wells_manager),
@@ -330,7 +330,7 @@ namespace Opm
                    param.getDefault("nl_pressure_change_tolerance", 1.0),
                    param.getDefault("nl_pressure_maxiter", 10),
                    gravity, wells_manager.c_wells(), src, bcs),
-          tsolver_(grid, props,
+          tsolver_(grid, props, use_segregation_split_ ? gravity : NULL,
                    param.getDefault("nl_tolerance", 1e-9),
                    param.getDefault("nl_maxiter", 30))
     {
@@ -356,11 +356,6 @@ namespace Opm
 
         // Transport related init.
         num_transport_substeps_ = param.getDefault("num_transport_substeps", 1);
-        use_segregation_split_ = param.getDefault("use_segregation_split", false);
-        if (gravity != 0 && use_segregation_split_){
-            tsolver_.initGravity(gravity);
-            extractColumn(grid_, columns_);
-        }
 
         // Misc init.
         const int num_cells = grid.number_of_cells;
@@ -533,7 +528,7 @@ namespace Opm
                 produced[0] += substep_produced[0];
                 produced[1] += substep_produced[1];
                 if (use_segregation_split_) {
-                    tsolver_.solveGravity(columns_, &initial_porevol[0], stepsize, state.saturation());
+                    tsolver_.solveGravity(&initial_porevol[0], stepsize, state);
                 }
                 watercut.push(timer.currentTime() + timer.currentStepLength(),
                               produced[0]/(produced[0] + produced[1]),

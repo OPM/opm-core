@@ -455,10 +455,9 @@ main(int argc, char** argv)
     // Reordering solver.
     const double nl_tolerance = param.getDefault("nl_tolerance", 1e-9);
     const int nl_maxiter = param.getDefault("nl_maxiter", 30);
-    Opm::TransportSolverTwophaseReorder reorder_model(*grid->c_grid(), *props, nl_tolerance, nl_maxiter);
-    if (use_gauss_seidel_gravity) {
-        reorder_model.initGravity(grav);
-    }
+    const double* transport_grav = use_gauss_seidel_gravity ? grav : NULL;
+    Opm::TransportSolverTwophaseReorder reorder_model(*grid->c_grid(), *props, transport_grav, nl_tolerance, nl_maxiter);
+
     // Non-reordering solver.
     TransportModel  model  (fluid, *grid->c_grid(), porevol, grav, guess_old_solution);
     if (use_gravity) {
@@ -633,7 +632,7 @@ main(int argc, char** argv)
                 if (use_segregation_split) {
                     if (use_column_solver) {
                         if (use_gauss_seidel_gravity) {
-                            reorder_model.solveGravity(columns, &porevol[0], stepsize, state.saturation());
+                            reorder_model.solveGravity(&porevol[0], stepsize, state);
                         } else {
                             colsolver.solve(columns, stepsize, state.saturation());
                         }
