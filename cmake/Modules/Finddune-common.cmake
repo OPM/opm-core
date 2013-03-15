@@ -18,7 +18,8 @@ find_opm_package (
   # dependencies
   "CXX11Features REQUIRED;
   BLAS REQUIRED;
-  LAPACK REQUIRED
+  LAPACK REQUIRED;
+  MPI
   "
   # header to search for
   "dune/common/fvector.hh"

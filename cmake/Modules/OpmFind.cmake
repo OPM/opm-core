@@ -81,6 +81,12 @@ macro (find_and_append_package_to prefix name)
 	message (STATUS "Finding package ${name} using module mode")
 	find_package (${name} ${ARGN})
   endif (${name}_DIR)
+
+  # the variable "NAME" may be replaced during find_package (as this is
+  # now a macro, and not a function anymore), so we must reinitialize
+  string (TOUPPER "${name}" NAME)
+  string (REPLACE "-" "_" NAME "${NAME}")
+
   if (${name}_FOUND OR ${NAME}_FOUND)
 	foreach (var IN LISTS _opm_proj_vars)
 	  if (DEFINED ${name}_${var})
@@ -92,9 +98,9 @@ macro (find_and_append_package_to prefix name)
 	  # some packages define _PATH instead of _DIRS (Hi, MPI!)
 	  if ("${var}" STREQUAL "INCLUDE_DIRS")
 		if (DEFINED ${name}_INCLUDE_PATH)
-		  list (APPEND ${prefix}_INCLUDE_DIRS ${name}_INCLUDE_PATH)
+		  list (APPEND ${prefix}_INCLUDE_DIRS ${${name}_INCLUDE_PATH})
 		elseif (DEFINED ${NAME}_INCLUDE_PATH)
-		  list (APPEND ${prefix}_INCLUDE_DIRS ${NAME}_INCLUDE_PATH)
+		  list (APPEND ${prefix}_INCLUDE_DIRS ${${NAME}_INCLUDE_PATH})
 		endif (DEFINED ${name}_INCLUDE_PATH)
 	  endif ("${var}" STREQUAL "INCLUDE_DIRS")
 	  # cleanup lists
