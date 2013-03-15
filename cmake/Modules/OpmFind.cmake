@@ -101,7 +101,7 @@ macro (find_and_append_package_to prefix name)
 	  if ("${var}" STREQUAL "LIBRARIES")
 		remove_duplicate_libraries (${prefix})
 	  else ("${var}" STREQUAL "LIBRARIES")
-		list (REMOVE_DUPLICATES ${prefix}_${var})
+		remove_duplicate_var (${prefix} ${var})
 	  endif ("${var}" STREQUAL "LIBRARIES")
 	endforeach (var)
 	# some libraries only define xxx_FOUND and not a corresponding HAVE_xxx
