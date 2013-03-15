@@ -59,32 +59,27 @@ namespace Opm
 
     /// Solve for saturation at next timestep.
     /// \param[in]      porevolume   Array of pore volumes.
-    /// \param[in]      source       Transport source term.
+    /// \param[in]      source       Transport source term. For interpretation see Opm::computeTransportSource().
     /// \param[in]      dt           Time step.
-    /// \param[in]      wstate       Well state.
-    /// \param[in, out] state        Reservoir state. Saturation will be modified.
+    /// \param[in, out] state        Reservoir state. Calling solve() will read state.faceflux() and
+    ///                              read and write state.saturation().
     void TransportSolverTwophaseImplicit::solve(const double* porevolume,
                                                 const double* source,
                                                 const double dt,
-                                                const WellState& well_state,
                                                 TwophaseState& state)
     {
         std::vector<double> porevol;
         if (rock_comp_.isActive()) {
             computePorevolume(grid_, props_.porosity(), rock_comp_, state.pressure(), porevol);
         }
-        std::vector<double> src(grid_.number_of_cells, 0.0);
-        Opm::computeTransportSource(grid_, src, state.faceflux(), 1.0,
-                                    wells_.c_wells(), well_state.perfRates(), src);
-        double ssrc[]   = { 1.0, 0.0 };
-        double ssink[]  = { 0.0, 1.0 };
-        double zdummy[] = { 0.0, 0.0 };
+        double ssrc[] = { 1.0, 0.0 };
+        double dummy[] = { 0.0, 0.0 };
+        clear_transport_source(tsrc_);
         for (int cell = 0; cell < grid_.number_of_cells; ++cell) {
-            clear_transport_source(tsrc_);
-            if (src[cell] > 0.0) {
-                append_transport_source(cell, 2, 0, src[cell], ssrc, zdummy, tsrc_);
-            } else if (src[cell] < 0.0) {
-                append_transport_source(cell, 2, 0, src[cell], ssink, zdummy, tsrc_);
+            if (source[cell] > 0.0) {
+                append_transport_source(cell, 2, 0, source[cell], ssrc, dummy, tsrc_);
+            } else if (source[cell] < 0.0) {
+                append_transport_source(cell, 2, 0, source[cell], dummy, dummy, tsrc_);
             }
         }
         Opm::ImplicitTransportDetails::NRReport  rpt;
