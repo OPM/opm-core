@@ -60,8 +60,7 @@ namespace Opm
         /// \param[in] props     Rock and fluid properties.
         /// \param[in] tol       Tolerance used in the solver.
         /// \param[in] maxit     Maximum number of non-linear iterations used.
-        TransportSolverTwophaseImplicit(const Opm::WellsManager& wells,
-                                        const Opm::RockCompressibility& rock_comp,
+        TransportSolverTwophaseImplicit(const Opm::RockCompressibility& rock_comp,
                                         const UnstructuredGrid& grid,
                                         const Opm::IncompPropertiesInterface& props,
                                         const std::vector<double>& porevol,
@@ -117,7 +116,6 @@ namespace Opm
         Opm::ImplicitTransportDetails::NRControl ctrl_;
         const Opm::IncompPropertiesInterface& props_;
         const Opm::RockCompressibility& rock_comp_;
-        const Opm::WellsManager& wells_;
         TransportSource* tsrc_;
     };
 

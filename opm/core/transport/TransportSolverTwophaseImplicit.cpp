@@ -35,7 +35,6 @@ namespace Opm
 {
 
     TransportSolverTwophaseImplicit::TransportSolverTwophaseImplicit(
-            const Opm::WellsManager& wells,
             const Opm::RockCompressibility& rock_comp,
             const UnstructuredGrid& grid,
             const Opm::IncompPropertiesInterface& props,
@@ -48,8 +47,7 @@ namespace Opm
           tsolver_(model_),
           grid_(grid),
           props_(props),
-          rock_comp_(rock_comp),
-          wells_(wells)
+          rock_comp_(rock_comp)
     {
         ctrl_.max_it = param.getDefault("max_it", 20);
         ctrl_.verbosity = param.getDefault("verbosity", 0);
