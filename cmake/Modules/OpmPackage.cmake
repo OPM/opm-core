@@ -79,7 +79,8 @@ macro (find_opm_package module deps header lib defs prog conf)
   # in standard system locations either, then start to wander
   # about and look for it in proximity to ourself. Qt Creator likes
   # to put the build-directories as siblings to the source trees,
-  # but with a -build suffix
+  # but with a -build suffix, DUNE likes to have the the build tree
+  # in a "build-cmake" sub-directory of each module
   if (NOT (${module}_DIR OR ${module}_ROOT OR ${MODULE}_ROOT))
 	string (TOLOWER "${module}" _module_lower)
 	set (_guess
@@ -87,6 +88,8 @@ macro (find_opm_package module deps header lib defs prog conf)
 	  "../${module}-build"
 	  "../${_module_lower}"
 	  "../${_module_lower}-build"
+	  "../../${module}/build-cmake"
+	  "../../${_module_lower}/build-cmake"
 	  )
 	set (_guess_bin)
 	foreach (_item IN ITEMS ${_guess})
