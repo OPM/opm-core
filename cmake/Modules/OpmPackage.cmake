@@ -118,7 +118,7 @@ macro (find_opm_package module deps header lib defs prog conf)
 	  NAMES "${lib}"
 	  PATHS ${_guess_bin}
 	  HINTS ${${module}_DIR} ${${module}_ROOT} ${${MODULE}_ROOT} ${PkgConf_${module}_LIBRARY_DIRS}
-	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
+	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}" "build-cmake/lib"
 	  )
   else (NOT "${lib}" STREQUAL "")
 	set (${module}_LIBRARY "")
