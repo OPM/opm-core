@@ -85,14 +85,16 @@ macro (find_opm_package module deps header lib defs prog conf)
 	string (TOLOWER "${module}" _module_lower)
 	set (_guess
 	  "../${module}"
-	  "../${module}-build"
 	  "../${_module_lower}"
+	  )
+	set (_guess_bin_only
+	  "../${module}-build"
 	  "../${_module_lower}-build"
 	  "../../${module}/build-cmake"
 	  "../../${_module_lower}/build-cmake"
 	  )
 	set (_guess_bin)
-	foreach (_item IN ITEMS ${_guess})
+	foreach (_item IN ITEMS ${_guess} ${_guess_bin_only})
 	  list (APPEND _guess_bin "${PROJECT_BINARY_DIR}/${_item}")
 	endforeach (_item)
   endif (NOT (${module}_DIR OR ${module}_ROOT OR ${MODULE}_ROOT))
@@ -116,7 +118,7 @@ macro (find_opm_package module deps header lib defs prog conf)
 	  NAMES "${lib}"
 	  PATHS ${_guess_bin}
 	  HINTS ${${module}_DIR} ${${module}_ROOT} ${${MODULE}_ROOT} ${PkgConf_${module}_LIBRARY_DIRS}
-	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
+	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}" "build-cmake/lib"
 	  )
   else (NOT "${lib}" STREQUAL "")
 	set (${module}_LIBRARY "")
