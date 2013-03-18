@@ -26,8 +26,8 @@
 # originally generated with the command:
 # find opm -name '*.c*' -printf '\t%p\n' | sort
 list (APPEND MAIN_SOURCE_FILES
-	opm/core/GridManager.cpp
-	opm/core/grid.c
+	opm/core/grid/GridManager.cpp
+	opm/core/grid/grid.c
 	opm/core/grid/cart_grid.c
 	opm/core/grid/cornerpoint_grid.c
 	opm/core/grid/cpgpreprocess/facetopology.c
@@ -173,12 +173,11 @@ list (APPEND EXAMPLE_SOURCE_FILES
 # originally generated with the command:
 # find opm -name '*.h*' -a ! -name '*-pch.hpp' -printf '\t%p\n' | sort
 list (APPEND PUBLIC_HEADER_FILES
-	opm/core/GridAdapter.hpp
-	opm/core/GridManager.hpp
 	opm/core/doxygen_main.hpp
 	opm/core/grid.h
 	opm/core/grid/CellQuadrature.hpp
 	opm/core/grid/FaceQuadrature.hpp
+	opm/core/grid/GridManager.hpp
 	opm/core/grid/cart_grid.h
 	opm/core/grid/cornerpoint_grid.h
 	opm/core/grid/cpgpreprocess/facetopology.h
