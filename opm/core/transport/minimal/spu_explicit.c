@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 #include <opm/core/grid.h>
-#include <opm/core/transport/spu_explicit.h>
+#include <opm/core/transport/minimal/spu_explicit.h>
 
 
 /* Twophase mobility-weighted upwind */

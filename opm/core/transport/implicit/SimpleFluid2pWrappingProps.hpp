@@ -66,5 +66,5 @@ namespace Opm{
     };
 }
 
-#include <opm/core/transport/SimpleFluid2pWrappingProps_impl.hpp>
+#include <opm/core/transport/implicit/SimpleFluid2pWrappingProps_impl.hpp>
 #endif // SIMPLEFLUID2PWRAPPINGPROPS_HPP

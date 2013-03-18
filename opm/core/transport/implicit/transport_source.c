@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <opm/core/transport/transport_source.h>
+#include <opm/core/transport/implicit/transport_source.h>
 
 
 /* ---------------------------------------------------------------------- */

@@ -21,23 +21,21 @@
 #ifndef OPM_TRANSPORTSOLVERTWOPHASEIMPLICIT_HEADER_INCLUDED
 #define OPM_TRANSPORTSOLVERTWOPHASEIMPLICIT_HEADER_INCLUDED
 
-#include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/transport/TransportSolverTwophaseInterface.hpp>
+#include <opm/core/transport/implicit/SimpleFluid2pWrappingProps.hpp>
+#include <opm/core/transport/implicit/SinglePointUpwindTwoPhase.hpp>
+#include <opm/core/transport/implicit/ImplicitTransport.hpp>
+#include <opm/core/transport/implicit/transport_source.h>
+#include <opm/core/transport/implicit/CSRMatrixUmfpackSolver.hpp>
+#include <opm/core/transport/implicit/NormSupport.hpp>
+#include <opm/core/transport/implicit/ImplicitAssembly.hpp>
+#include <opm/core/transport/implicit/ImplicitTransport.hpp>
+#include <opm/core/transport/implicit/JacobianSystem.hpp>
+#include <opm/core/transport/implicit/CSRMatrixBlockAssembler.hpp>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/props/IncompPropertiesInterface.hpp>
-#include <opm/core/transport/SimpleFluid2pWrappingProps.hpp>
-#include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
-#include <opm/core/transport/ImplicitTransport.hpp>
 #include <opm/core/grid.h>
 #include <opm/core/linalg/LinearSolverFactory.hpp>
-
-#include <opm/core/transport/transport_source.h>
-#include <opm/core/transport/CSRMatrixUmfpackSolver.hpp>
-#include <opm/core/transport/NormSupport.hpp>
-#include <opm/core/transport/ImplicitAssembly.hpp>
-#include <opm/core/transport/ImplicitTransport.hpp>
-#include <opm/core/transport/JacobianSystem.hpp>
-#include <opm/core/transport/CSRMatrixBlockAssembler.hpp>
-#include <opm/core/transport/SinglePointUpwindTwoPhase.hpp>
 
 #include <boost/scoped_ptr.hpp>
 #include <vector>

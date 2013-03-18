@@ -28,7 +28,7 @@
 #ifndef SIMPLEFLUID2PWRAPPINGPROPS_IMPL_HPP
 #define SIMPLEFLUID2PWRAPPINGPROPS_IMPL_HPP
 
-#include <opm/core/transport/SimpleFluid2pWrappingProps.hpp>
+#include <opm/core/transport/implicit/SimpleFluid2pWrappingProps.hpp>
 #include <cassert>
 #include <opm/core/utility/ErrorMacros.hpp>
 namespace Opm{

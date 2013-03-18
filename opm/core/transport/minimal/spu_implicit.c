@@ -11,7 +11,7 @@
 #include <math.h>
 
 #include <opm/core/grid.h>
-#include <opm/core/transport/spu_implicit.h>
+#include <opm/core/transport/minimal/spu_implicit.h>
 
 
 

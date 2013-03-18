@@ -27,7 +27,7 @@
 */
 
 
-#include <opm/core/transport/TransportSolverTwophaseImplicit.hpp>
+#include <opm/core/transport/implicit/TransportSolverTwophaseImplicit.hpp>
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 

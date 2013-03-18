@@ -36,7 +36,7 @@
 #ifndef OPM_IMPLICITTRANSPORT_HPP_HEADER
 #define OPM_IMPLICITTRANSPORT_HPP_HEADER
 
-#include <opm/core/transport/ImplicitAssembly.hpp>
+#include <opm/core/transport/implicit/ImplicitAssembly.hpp>
 
 namespace Opm {
     namespace ImplicitTransportDetails {
