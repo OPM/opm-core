@@ -69,12 +69,15 @@ namespace Opm
 
     LinearSolverAGMG::LinearSolverAGMG(const parameter::ParameterGroup& param)
         : max_it_(100)   ,
-          rtol_  (1.0e-6),
-          is_spd_(false)
+          rtol_  (1.0e-8),
+          is_spd_(false),
+          linsolver_verbosity_(0)
     {
         max_it_ = param.getDefault("max_it", max_it_);
         rtol_   = param.getDefault("rtol"  , rtol_  );
         is_spd_ = param.getDefault("is_spd", is_spd_);
+        linsolver_verbosity_ = param.getDefault("linsolver_verbosity",
+                                                linsolver_verbosity_);
     }
 
     LinearSolverAGMG::~LinearSolverAGMG() {}
@@ -121,7 +124,7 @@ namespace Opm
             nrest = 10;         // Suggested default number of GCR restarts.
         }
 
-        int iprint = 0;         // Suppress most output
+        int iprint = linsolver_verbosity_;         // Suppress most output
         DAGMG_(& size, & a[0], & j[0], & i[0], rhs, solution,
                & ijob, & iprint, & nrest, & rpt.iterations, & rtol_);
 
