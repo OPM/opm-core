@@ -28,7 +28,7 @@
 #include <opm/core/pressure/CompressibleTpfa.hpp>
 
 #include <opm/core/grid.h>
-#include <opm/core/newwells.h>
+#include <opm/core/wells.h>
 #include <opm/core/pressure/flow_bc.h>
 
 #include <opm/core/simulator/SimulatorReport.hpp>
@@ -40,13 +40,13 @@
 
 #include <opm/core/wells/WellsManager.hpp>
 
-#include <opm/core/fluid/BlackoilPropertiesInterface.hpp>
-#include <opm/core/fluid/RockCompressibility.hpp>
+#include <opm/core/props/BlackoilPropertiesInterface.hpp>
+#include <opm/core/props/rock/RockCompressibility.hpp>
 
-#include <opm/core/utility/ColumnExtract.hpp>
+#include <opm/core/grid/ColumnExtract.hpp>
 #include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/simulator/WellState.hpp>
-#include <opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp>
+#include <opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -101,7 +101,7 @@ namespace Opm
         const double* gravity_;
         // Solvers
         CompressibleTpfa psolver_;
-        TransportModelCompressibleTwophase tsolver_;
+        TransportSolverCompressibleTwophaseReorder tsolver_;
         // Needed by column-based gravity segregation solver.
         std::vector< std::vector<int> > columns_;
         // Misc. data

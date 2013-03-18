@@ -25,7 +25,7 @@
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/eclipse/EclipseGridParser.hpp>
 #include <opm/core/eclipse/EclipseGridInspector.hpp>
-#include <opm/core/fluid/BlackoilPropertiesFromDeck.hpp>
+#include <opm/core/props/BlackoilPropertiesFromDeck.hpp>
 #include <opm/core/grid.h>
 
 #include <algorithm>

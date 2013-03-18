@@ -28,14 +28,14 @@
 #include <vector>
 #include <cassert>
 #include <opm/core/grid.h>
-#include <opm/core/GridManager.hpp>
+#include <opm/core/grid/GridManager.hpp>
 #include <opm/core/io/vtk/writeVtkData.hpp>
 #include <opm/core/linalg/LinearSolverUmfpack.hpp>
 #include <opm/core/pressure/IncompTpfa.hpp>
 #include <opm/core/pressure/FlowBCManager.hpp>
-#include <opm/core/fluid/IncompPropertiesBasic.hpp>
+#include <opm/core/props/IncompPropertiesBasic.hpp>
 
-#include <opm/core/transport/reorder/TransportModelTwophase.hpp>
+#include <opm/core/transport/reorder/TransportSolverTwophaseReorder.hpp>
 
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/simulator/WellState.hpp>
@@ -232,7 +232,7 @@ int main ()
     /// \internal [transport solver]
     const double tolerance = 1e-9;
     const int max_iterations = 30;
-    Opm::TransportModelTwophase transport_solver(grid, props, tolerance, max_iterations);
+    Opm::TransportSolverTwophaseReorder transport_solver(grid, props, NULL, tolerance, max_iterations);
     /// \internal [transport solver]
     /// \endinternal
 
@@ -301,8 +301,7 @@ int main ()
         /// \details  Solve the transport equation.
         /// \snippet tutorial3.cpp transport solve
 	/// \internal [transport solve]
-        transport_solver.solve(&state.faceflux()[0], &porevol[0], &src[0],
-                               dt, state.saturation());
+        transport_solver.solve(&porevol[0], &src[0], dt, state);
         /// \internal [transport solve]
 	/// \endinternal
 

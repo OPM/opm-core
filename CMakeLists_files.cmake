@@ -26,56 +26,34 @@
 # originally generated with the command:
 # find opm -name '*.c*' -printf '\t%p\n' | sort
 list (APPEND MAIN_SOURCE_FILES
-	opm/core/fluid/blackoil/BlackoilPvtProperties.cpp
-	opm/core/fluid/BlackoilPropertiesBasic.cpp
-	opm/core/fluid/BlackoilPropertiesFromDeck.cpp
-	opm/core/fluid/blackoil/SinglePvtDead.cpp
-	opm/core/fluid/blackoil/SinglePvtDeadSpline.cpp
-	opm/core/fluid/blackoil/SinglePvtInterface.cpp
-	opm/core/fluid/blackoil/SinglePvtLiveGas.cpp
-	opm/core/fluid/blackoil/SinglePvtLiveOil.cpp
-	opm/core/fluid/IncompPropertiesBasic.cpp
-	opm/core/fluid/IncompPropertiesFromDeck.cpp
-	opm/core/fluid/PvtPropertiesBasic.cpp
-	opm/core/fluid/PvtPropertiesIncompFromDeck.cpp
-	opm/core/fluid/RockBasic.cpp
-	opm/core/fluid/RockCompressibility.cpp
-	opm/core/fluid/RockFromDeck.cpp
-	opm/core/fluid/SatFuncGwseg.cpp
-	opm/core/fluid/SatFuncSimple.cpp
-	opm/core/fluid/SatFuncStone2.cpp
-	opm/core/fluid/SaturationPropsBasic.cpp
-	opm/core/fluid/SaturationPropsFromDeck.cpp
-	opm/core/grid.c
+	opm/core/grid/GridManager.cpp
+	opm/core/grid/grid.c
 	opm/core/grid/cart_grid.c
 	opm/core/grid/cornerpoint_grid.c
 	opm/core/grid/cpgpreprocess/facetopology.c
 	opm/core/grid/cpgpreprocess/geometry.c
 	opm/core/grid/cpgpreprocess/preprocess.c
-	opm/core/grid/cpgpreprocess/processgrid.c
 	opm/core/grid/cpgpreprocess/uniquepoints.c
-	opm/core/GridManager.cpp
 	opm/core/io/eclipse/EclipseGridInspector.cpp
 	opm/core/io/eclipse/EclipseGridParser.cpp
 	opm/core/io/eclipse/writeECLData.cpp
 	opm/core/io/vag/vag.cpp
 	opm/core/io/vtk/writeVtkData.cpp
-	opm/core/linalg/call_umfpack.c
 	opm/core/linalg/LinearSolverAGMG.cpp
 	opm/core/linalg/LinearSolverFactory.cpp
 	opm/core/linalg/LinearSolverInterface.cpp
 	opm/core/linalg/LinearSolverIstl.cpp
 	opm/core/linalg/LinearSolverUmfpack.cpp
+	opm/core/linalg/call_umfpack.c
 	opm/core/linalg/sparse_sys.c
-	opm/core/newwells.c
-	opm/core/pressure/cfsh.c
 	opm/core/pressure/CompressibleTpfa.cpp
-	opm/core/pressure/flow_bc.c
 	opm/core/pressure/FlowBCManager.cpp
+	opm/core/pressure/IncompTpfa.cpp
+	opm/core/pressure/cfsh.c
+	opm/core/pressure/flow_bc.c
 	opm/core/pressure/fsh.c
 	opm/core/pressure/fsh_common_impl.c
 	opm/core/pressure/ifsh.c
-	opm/core/pressure/IncompTpfa.cpp
 	opm/core/pressure/mimetic/hybsys.c
 	opm/core/pressure/mimetic/hybsys_global.c
 	opm/core/pressure/mimetic/mimetic.c
@@ -93,26 +71,50 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/pressure/tpfa/compr_source.c
 	opm/core/pressure/tpfa/ifs_tpfa.c
 	opm/core/pressure/tpfa/trans_tpfa.c
-	opm/core/pressure/well.c
+	opm/core/pressure/legacy_well.c
+	opm/core/props/BlackoilPropertiesBasic.cpp
+	opm/core/props/BlackoilPropertiesFromDeck.cpp
+	opm/core/props/IncompPropertiesBasic.cpp
+	opm/core/props/IncompPropertiesFromDeck.cpp
+	opm/core/props/pvt/BlackoilPvtProperties.cpp
+	opm/core/props/pvt/PvtPropertiesBasic.cpp
+	opm/core/props/pvt/PvtPropertiesIncompFromDeck.cpp
+	opm/core/props/pvt/SinglePvtDead.cpp
+	opm/core/props/pvt/SinglePvtDeadSpline.cpp
+	opm/core/props/pvt/SinglePvtInterface.cpp
+	opm/core/props/pvt/SinglePvtLiveGas.cpp
+	opm/core/props/pvt/SinglePvtLiveOil.cpp
+	opm/core/props/rock/RockBasic.cpp
+	opm/core/props/rock/RockCompressibility.cpp
+	opm/core/props/rock/RockFromDeck.cpp
+	opm/core/props/satfunc/SatFuncGwseg.cpp
+	opm/core/props/satfunc/SatFuncSimple.cpp
+	opm/core/props/satfunc/SatFuncStone2.cpp
+	opm/core/props/satfunc/SaturationPropsBasic.cpp
+	opm/core/props/satfunc/SaturationPropsFromDeck.cpp
 	opm/core/simulator/SimulatorCompressibleTwophase.cpp
 	opm/core/simulator/SimulatorIncompTwophase.cpp
 	opm/core/simulator/SimulatorReport.cpp
 	opm/core/simulator/SimulatorTimer.cpp
-	opm/core/transport/reorder/DGBasis.cpp
-	opm/core/transport/reorder/nlsolvers.c
+	opm/core/tof/DGBasis.cpp
+	opm/core/tof/TofReorder.cpp
+	opm/core/tof/TofDiscGalReorder.cpp
+	opm/core/transport/TransportSolverTwophaseInterface.cpp
+	opm/core/transport/implicit/TransportSolverTwophaseImplicit.cpp
+	opm/core/transport/implicit/transport_source.c
+	opm/core/transport/minimal/spu_explicit.c
+	opm/core/transport/minimal/spu_implicit.c
+	opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.cpp
+	opm/core/transport/reorder/ReorderSolverInterface.cpp
+	opm/core/transport/reorder/TransportSolverTwophaseReorder.cpp
 	opm/core/transport/reorder/reordersequence.cpp
 	opm/core/transport/reorder/tarjan.c
-	opm/core/transport/reorder/TransportModelCompressibleTwophase.cpp
-	opm/core/transport/reorder/TransportModelInterface.cpp
-	opm/core/transport/reorder/TransportModelTracerTof.cpp
-	opm/core/transport/reorder/TransportModelTracerTofDiscGal.cpp
-	opm/core/transport/reorder/TransportModelTwophase.cpp
-	opm/core/transport/spu_explicit.c
-	opm/core/transport/spu_implicit.c
-	opm/core/transport/transport_source.c
-	opm/core/utility/miscUtilitiesBlackoil.cpp
-	opm/core/utility/miscUtilities.cpp
 	opm/core/utility/MonotCubicInterpolator.cpp
+	opm/core/utility/StopWatch.cpp
+	opm/core/utility/VelocityInterpolation.cpp
+	opm/core/utility/WachspressCoord.cpp
+	opm/core/utility/miscUtilities.cpp
+	opm/core/utility/miscUtilitiesBlackoil.cpp
 	opm/core/utility/parameters/Parameter.cpp
 	opm/core/utility/parameters/ParameterGroup.cpp
 	opm/core/utility/parameters/ParameterTools.cpp
@@ -122,14 +124,12 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp
 	opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp
 	opm/core/utility/parameters/tinyxml/xmltest.cpp
-	opm/core/utility/StopWatch.cpp
-	opm/core/utility/VelocityInterpolation.cpp
-	opm/core/utility/WachspressCoord.cpp
 	opm/core/wells/InjectionSpecification.cpp
 	opm/core/wells/ProductionSpecification.cpp
 	opm/core/wells/WellCollection.cpp
 	opm/core/wells/WellsGroup.cpp
 	opm/core/wells/WellsManager.cpp
+	opm/core/wells/wells.c
 	)
 
 # originally generated with the command:
@@ -160,12 +160,8 @@ list (APPEND EXAMPLE_SOURCE_FILES
 	examples/compute_tof.cpp
 	examples/compute_tof_from_files.cpp
 	examples/import_rewrite.cpp
-	examples/refine_wells.cpp
-	examples/scaneclipsedeck.c
 	examples/sim_2p_comp_reorder.cpp
-	examples/sim_2p_incomp_reorder.cpp
-	examples/sim_wateroil.cpp
-	examples/spu_2p.cpp
+	examples/sim_2p_incomp.cpp
 	examples/wells_example.cpp
 	tutorials/tutorial1.cpp
 	tutorials/tutorial2.cpp
@@ -176,157 +172,154 @@ list (APPEND EXAMPLE_SOURCE_FILES
 # originally generated with the command:
 # find opm -name '*.h*' -a ! -name '*-pch.hpp' -printf '\t%p\n' | sort
 list (APPEND PUBLIC_HEADER_FILES
-	opm/core/transport/ImplicitTransport.hpp
-	opm/core/transport/SimpleFluid2pWrapper.hpp
-	opm/core/transport/CSRMatrixBlockAssembler.hpp
-	opm/core/transport/ImplicitAssembly.hpp
-	opm/core/transport/CSRMatrixUmfpackSolver.hpp
-	opm/core/transport/GravityColumnSolver_impl.hpp
-	opm/core/transport/spu_implicit.h
-	opm/core/transport/transport_source.h
-	opm/core/transport/SinglePointUpwindTwoPhase.hpp
-	opm/core/transport/JacobianSystem.hpp
-	opm/core/transport/reorder/TransportModelTwophase.hpp
-	opm/core/transport/reorder/TransportModelTracerTof.hpp
-	opm/core/transport/reorder/TransportModelCompressibleTwophase.hpp
-	opm/core/transport/reorder/DGBasis.hpp
-	opm/core/transport/reorder/reordersequence.h
-	opm/core/transport/reorder/tarjan.h
-	opm/core/transport/reorder/TransportModelInterface.hpp
-	opm/core/transport/reorder/nlsolvers.h
-	opm/core/transport/reorder/TransportModelTracerTofDiscGal.hpp
-	opm/core/transport/GravityColumnSolver.hpp
-	opm/core/transport/NormSupport.hpp
-	opm/core/transport/spu_explicit.h
-	opm/core/GridManager.hpp
-	opm/core/io/eclipse/SpecialEclipseFields.hpp
-	opm/core/io/eclipse/EclipseUnits.hpp
-	opm/core/io/eclipse/EclipseGridParserHelpers.hpp
+	opm/core/doxygen_main.hpp
+	opm/core/grid.h
+	opm/core/grid/CellQuadrature.hpp
+	opm/core/grid/ColumnExtract.hpp
+	opm/core/grid/FaceQuadrature.hpp
+	opm/core/grid/GridManager.hpp
+	opm/core/grid/cart_grid.h
+	opm/core/grid/cornerpoint_grid.h
+	opm/core/grid/cpgpreprocess/facetopology.h
+	opm/core/grid/cpgpreprocess/geometry.h
+	opm/core/grid/cpgpreprocess/grdecl.h
+	opm/core/grid/cpgpreprocess/preprocess.h
+	opm/core/grid/cpgpreprocess/uniquepoints.h
 	opm/core/io/eclipse/CornerpointChopper.hpp
-	opm/core/io/eclipse/EclipseGridParser.hpp
 	opm/core/io/eclipse/EclipseGridInspector.hpp
+	opm/core/io/eclipse/EclipseGridParser.hpp
+	opm/core/io/eclipse/EclipseGridParserHelpers.hpp
+	opm/core/io/eclipse/EclipseUnits.hpp
+	opm/core/io/eclipse/SpecialEclipseFields.hpp
 	opm/core/io/eclipse/writeECLData.hpp
 	opm/core/io/vag/vag.hpp
 	opm/core/io/vtk/writeVtkData.hpp
-	opm/core/linalg/blas_lapack.h
 	opm/core/linalg/LinearSolverAGMG.hpp
 	opm/core/linalg/LinearSolverFactory.hpp
-	opm/core/linalg/LinearSolverUmfpack.hpp
+	opm/core/linalg/LinearSolverInterface.hpp
 	opm/core/linalg/LinearSolverIstl.hpp
+	opm/core/linalg/LinearSolverUmfpack.hpp
+	opm/core/linalg/blas_lapack.h
 	opm/core/linalg/call_umfpack.h
 	opm/core/linalg/sparse_sys.h
-	opm/core/linalg/LinearSolverInterface.hpp
-	opm/core/newwells.h
-	opm/core/doxygen_main.hpp
-	opm/core/simulator/SimulatorIncompTwophase.hpp
-	opm/core/simulator/WellState.hpp
+	opm/core/wells.h
+	opm/core/pressure/CompressibleTpfa.hpp
+	opm/core/pressure/FlowBCManager.hpp
+	opm/core/pressure/IncompTpfa.hpp
+	opm/core/pressure/flow_bc.h
+	opm/core/pressure/fsh.h
+	opm/core/pressure/fsh_common_impl.h
+	opm/core/pressure/legacy_well.h
+	opm/core/pressure/mimetic/hybsys.h
+	opm/core/pressure/mimetic/hybsys_global.h
+	opm/core/pressure/mimetic/mimetic.h
+	opm/core/pressure/msmfem/coarse_conn.h
+	opm/core/pressure/msmfem/coarse_sys.h
+	opm/core/pressure/msmfem/dfs.h
+	opm/core/pressure/msmfem/hash_set.h
+	opm/core/pressure/msmfem/ifsh_ms.h
+	opm/core/pressure/msmfem/partition.h
+	opm/core/pressure/tpfa/cfs_tpfa.h
+	opm/core/pressure/tpfa/cfs_tpfa_residual.h
+	opm/core/pressure/tpfa/compr_bc.h
+	opm/core/pressure/tpfa/compr_quant.h
+	opm/core/pressure/tpfa/compr_quant_general.h
+	opm/core/pressure/tpfa/compr_source.h
+	opm/core/pressure/tpfa/ifs_tpfa.h
+	opm/core/pressure/tpfa/trans_tpfa.h
+	opm/core/props/BlackoilPhases.hpp
+	opm/core/props/BlackoilPropertiesBasic.hpp
+	opm/core/props/BlackoilPropertiesFromDeck.hpp
+	opm/core/props/BlackoilPropertiesInterface.hpp
+	opm/core/props/IncompPropertiesBasic.hpp
+	opm/core/props/IncompPropertiesFromDeck.hpp
+	opm/core/props/IncompPropertiesInterface.hpp
+	opm/core/props/phaseUsageFromDeck.hpp
+	opm/core/props/pvt/BlackoilPvtProperties.hpp
+	opm/core/props/pvt/PvtPropertiesBasic.hpp
+	opm/core/props/pvt/PvtPropertiesIncompFromDeck.hpp
+	opm/core/props/pvt/SinglePvtConstCompr.hpp
+	opm/core/props/pvt/SinglePvtDead.hpp
+	opm/core/props/pvt/SinglePvtDeadSpline.hpp
+	opm/core/props/pvt/SinglePvtInterface.hpp
+	opm/core/props/pvt/SinglePvtLiveGas.hpp
+	opm/core/props/pvt/SinglePvtLiveOil.hpp
+	opm/core/props/rock/RockBasic.hpp
+	opm/core/props/rock/RockCompressibility.hpp
+	opm/core/props/rock/RockFromDeck.hpp
+	opm/core/props/satfunc/SatFuncGwseg.hpp
+	opm/core/props/satfunc/SatFuncSimple.hpp
+	opm/core/props/satfunc/SatFuncStone2.hpp
+	opm/core/props/satfunc/SaturationPropsBasic.hpp
+	opm/core/props/satfunc/SaturationPropsFromDeck.hpp
+	opm/core/props/satfunc/SaturationPropsFromDeck_impl.hpp
+	opm/core/props/satfunc/SaturationPropsInterface.hpp
+	opm/core/simulator/BlackoilState.hpp
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
+	opm/core/simulator/SimulatorIncompTwophase.hpp
 	opm/core/simulator/SimulatorReport.hpp
 	opm/core/simulator/SimulatorTimer.hpp
 	opm/core/simulator/TwophaseState.hpp
-	opm/core/simulator/BlackoilState.hpp
-	opm/core/utility/linearInterpolation.hpp
-	opm/core/utility/WachspressCoord.hpp
-	opm/core/utility/initState_impl.hpp
-	opm/core/utility/initState.hpp
-	opm/core/utility/NonuniformTableLinear.hpp
-	opm/core/utility/Units.hpp
-	opm/core/utility/DataMap.hpp
-	opm/core/utility/linInt.hpp
-	opm/core/utility/parameters/ParameterXML.hpp
-	opm/core/utility/parameters/ParameterGroup_impl.hpp
-	opm/core/utility/parameters/Parameter.hpp
-	opm/core/utility/parameters/ParameterTools.hpp
-	opm/core/utility/parameters/ParameterRequirement.hpp
-	opm/core/utility/parameters/ParameterMapItem.hpp
-	opm/core/utility/parameters/ParameterGroup.hpp
-	opm/core/utility/parameters/tinyxml/tinystr.h
-	opm/core/utility/parameters/tinyxml/tinyxml.h
-	opm/core/utility/parameters/ParameterStrings.hpp
-	opm/core/utility/miscUtilitiesBlackoil.hpp
-	opm/core/utility/MonotCubicInterpolator.hpp
-	opm/core/utility/UniformTableLinear.hpp
+	opm/core/simulator/WellState.hpp
+	opm/core/simulator/initState.hpp
+	opm/core/simulator/initState_impl.hpp
+	opm/core/tof/DGBasis.hpp
+	opm/core/tof/TofReorder.hpp
+	opm/core/tof/TofDiscGalReorder.hpp
+	opm/core/transport/TransportSolverTwophaseInterface.hpp
+	opm/core/transport/implicit/CSRMatrixBlockAssembler.hpp
+	opm/core/transport/implicit/CSRMatrixUmfpackSolver.hpp
+	opm/core/transport/implicit/GravityColumnSolver.hpp
+	opm/core/transport/implicit/GravityColumnSolver_impl.hpp
+	opm/core/transport/implicit/ImplicitAssembly.hpp
+	opm/core/transport/implicit/ImplicitTransport.hpp
+	opm/core/transport/implicit/JacobianSystem.hpp
+	opm/core/transport/implicit/NormSupport.hpp
+	opm/core/transport/implicit/SinglePointUpwindTwoPhase.hpp
+	opm/core/transport/implicit/TransportSolverTwophaseImplicit.hpp
+	opm/core/transport/implicit/SimpleFluid2pWrappingProps.hpp
+	opm/core/transport/implicit/SimpleFluid2pWrappingProps_impl.hpp
+	opm/core/transport/implicit/transport_source.h
+	opm/core/transport/minimal/spu_explicit.h
+	opm/core/transport/minimal/spu_implicit.h
+	opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.hpp
+	opm/core/transport/reorder/ReorderSolverInterface.hpp
+	opm/core/transport/reorder/TransportSolverTwophaseReorder.hpp
+	opm/core/transport/reorder/reordersequence.h
+	opm/core/transport/reorder/tarjan.h
 	opm/core/utility/Average.hpp
-	opm/core/utility/Factory.hpp
-	opm/core/utility/VelocityInterpolation.hpp
-	opm/core/utility/SparseVector.hpp
-	opm/core/utility/StopWatch.hpp
-	opm/core/utility/buildUniformMonotoneTable.hpp
+	opm/core/utility/DataMap.hpp
 	opm/core/utility/ErrorMacros.hpp
-	opm/core/utility/miscUtilities.hpp
-	opm/core/utility/ColumnExtract.hpp
+	opm/core/utility/Factory.hpp
+	opm/core/utility/MonotCubicInterpolator.hpp
+	opm/core/utility/NonuniformTableLinear.hpp
 	opm/core/utility/RootFinders.hpp
 	opm/core/utility/SparseTable.hpp
+	opm/core/utility/SparseVector.hpp
+	opm/core/utility/StopWatch.hpp
+	opm/core/utility/UniformTableLinear.hpp
+	opm/core/utility/Units.hpp
+	opm/core/utility/VelocityInterpolation.hpp
+	opm/core/utility/WachspressCoord.hpp
+	opm/core/utility/buildUniformMonotoneTable.hpp
 	opm/core/utility/have_boost_redef.hpp
-	opm/core/grid/CellQuadrature.hpp
-	opm/core/grid/cornerpoint_grid.h
-	opm/core/grid/cpgpreprocess/geometry.h
-	opm/core/grid/cpgpreprocess/uniquepoints.h
-	opm/core/grid/cpgpreprocess/preprocess.h
-	opm/core/grid/cpgpreprocess/grdecl.h
-	opm/core/grid/cpgpreprocess/facetopology.h
-	opm/core/grid/cart_grid.h
-	opm/core/grid/FaceQuadrature.hpp
-	opm/core/pressure/TPFAPressureSolver.hpp
-	opm/core/pressure/fsh_common_impl.h
-	opm/core/pressure/msmfem/dfs.h
-	opm/core/pressure/msmfem/coarse_conn.h
-	opm/core/pressure/msmfem/hash_set.h
-	opm/core/pressure/msmfem/partition.h
-	opm/core/pressure/msmfem/ifsh_ms.h
-	opm/core/pressure/msmfem/coarse_sys.h
-	opm/core/pressure/IncompTpfa.hpp
-	opm/core/pressure/HybridPressureSolver.hpp
-	opm/core/pressure/fsh.h
-	opm/core/pressure/flow_bc.h
-	opm/core/pressure/tpfa/compr_quant_general.h
-	opm/core/pressure/tpfa/compr_bc.h
-	opm/core/pressure/tpfa/trans_tpfa.h
-	opm/core/pressure/tpfa/compr_quant.h
-	opm/core/pressure/tpfa/cfs_tpfa_residual.h
-	opm/core/pressure/tpfa/ifs_tpfa.h
-	opm/core/pressure/tpfa/compr_source.h
-	opm/core/pressure/tpfa/cfs_tpfa.h
-	opm/core/pressure/mimetic/hybsys_global.h
-	opm/core/pressure/mimetic/hybsys.h
-	opm/core/pressure/mimetic/mimetic.h
-	opm/core/pressure/FlowBCManager.hpp
-	opm/core/pressure/CompressibleTpfa.hpp
-	opm/core/pressure/TPFACompressiblePressureSolver.hpp
+	opm/core/utility/linInt.hpp
+	opm/core/utility/linearInterpolation.hpp
+	opm/core/utility/miscUtilities.hpp
+	opm/core/utility/miscUtilitiesBlackoil.hpp
+	opm/core/utility/parameters/Parameter.hpp
+	opm/core/utility/parameters/ParameterGroup.hpp
+	opm/core/utility/parameters/ParameterGroup_impl.hpp
+	opm/core/utility/parameters/ParameterMapItem.hpp
+	opm/core/utility/parameters/ParameterRequirement.hpp
+	opm/core/utility/parameters/ParameterStrings.hpp
+	opm/core/utility/parameters/ParameterTools.hpp
+	opm/core/utility/parameters/ParameterXML.hpp
+	opm/core/utility/parameters/tinyxml/tinystr.h
+	opm/core/utility/parameters/tinyxml/tinyxml.h
 	opm/core/wells/InjectionSpecification.hpp
-	opm/core/wells/WellsGroup.hpp
-	opm/core/wells/WellsManager.hpp
 	opm/core/wells/ProductionSpecification.hpp
 	opm/core/wells/WellCollection.hpp
-	opm/core/fluid/SaturationPropsInterface.hpp
-	opm/core/fluid/SaturationPropsFromDeck_impl.hpp
-	opm/core/fluid/RockFromDeck.hpp
-	opm/core/fluid/BlackoilPropertiesBasic.hpp
-	opm/core/fluid/RockCompressibility.hpp
-	opm/core/fluid/PvtPropertiesIncompFromDeck.hpp
-	opm/core/fluid/IncompPropertiesBasic.hpp
-	opm/core/fluid/SaturationPropsFromDeck.hpp
-	opm/core/fluid/SaturationPropsBasic.hpp
-	opm/core/fluid/BlackoilPropertiesFromDeck.hpp
-	opm/core/fluid/BlackoilPropertiesInterface.hpp
-	opm/core/fluid/blackoil/SinglePvtInterface.hpp
-	opm/core/fluid/blackoil/BlackoilPhases.hpp
-	opm/core/fluid/blackoil/SinglePvtDeadSpline.hpp
-	opm/core/fluid/blackoil/SinglePvtLiveOil.hpp
-	opm/core/fluid/blackoil/SinglePvtConstCompr.hpp
-	opm/core/fluid/blackoil/SinglePvtDead.hpp
-	opm/core/fluid/blackoil/phaseUsageFromDeck.hpp
-	opm/core/fluid/blackoil/BlackoilPvtProperties.hpp
-	opm/core/fluid/blackoil/SinglePvtLiveGas.hpp
-	opm/core/fluid/SimpleFluid2p.hpp
-	opm/core/fluid/IncompPropertiesInterface.hpp
-	opm/core/fluid/PvtPropertiesBasic.hpp
-	opm/core/fluid/SatFuncSimple.hpp
-	opm/core/fluid/SatFuncGwseg.hpp
-	opm/core/fluid/IncompPropertiesFromDeck.hpp
-	opm/core/fluid/RockBasic.hpp
-	opm/core/fluid/SatFuncStone2.hpp
-	opm/core/grid.h
-	opm/core/well.h
-	opm/core/GridAdapter.hpp
+	opm/core/wells/WellsGroup.hpp
+	opm/core/wells/WellsManager.hpp
 	)

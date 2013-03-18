@@ -52,7 +52,7 @@
  */
 
 #include <opm/core/grid.h>
-#include <opm/core/well.h>
+#include <opm/core/pressure/legacy_well.h>
 #include <opm/core/pressure/flow_bc.h>
 
 #ifdef __cplusplus

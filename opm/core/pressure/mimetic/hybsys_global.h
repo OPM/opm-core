@@ -93,7 +93,7 @@ extern "C" {
 #endif
 
 #include <opm/core/grid.h>
-#include <opm/core/well.h>
+#include <opm/core/pressure/legacy_well.h>
 #include <opm/core/linalg/sparse_sys.h>
 
 

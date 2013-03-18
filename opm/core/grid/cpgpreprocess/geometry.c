@@ -2,6 +2,7 @@
  * Copyright 2010 (c) SINTEF ICT, Applied Mathematics.
  * Jostein R. Natvig <Jostein.R.Natvig at sintef.no>
  */
+#include <omp.h>
 #include <math.h>
 #include <stdio.h>
 #include "geometry.h"
@@ -47,11 +48,20 @@ compute_face_geometry_3d(double *coords, int nfaces,
 
    double cface[3]  = {0};
    double n[3]  = {0};
-   const double twothirds = 0.666666666666666666666666666667;
+   double twothirds = 0.666666666666666666666666666667;
+   double a;
+   int    num_face_nodes;
+   double area;
+   /*#pragma omp parallel for  */
+ 
+   /*#pragma omp parallel for shared(fnormals,fcentroids,fareas)*/
+#pragma omp parallel for default(none) 			   \
+    private(f,x,u,v,w,i,k,node,cface,n,a,num_face_nodes,area)		\
+    shared(fnormals,fcentroids,fareas  \
+	   ,coords, nfaces, nodepos, facenodes) \
+    firstprivate(ndims, twothirds)
    for (f=0; f<nfaces; ++f)
    {
-      int    num_face_nodes;
-      double area = 0.0;
       for(i=0; i<ndims; ++i) x[i] = 0.0;
       for(i=0; i<ndims; ++i) n[i] = 0.0;
       for(i=0; i<ndims; ++i) cface[i] = 0.0;
@@ -71,11 +81,11 @@ compute_face_geometry_3d(double *coords, int nfaces,
       node = facenodes[nodepos[f+1]-1];
       for(i=0; i<ndims; ++i) u[i] = coords[3*node+i] - x[i];
 
-
+      area=0.0;
       /* Compute triangular contrib. to face normal and face centroid*/
       for(k=nodepos[f]; k<nodepos[f+1]; ++k)
       {
-         double a;
+
 
          node = facenodes[k];
          for (i=0; i<ndims; ++i) v[i] = coords[3*node+i] - x[i];
@@ -83,11 +93,11 @@ compute_face_geometry_3d(double *coords, int nfaces,
          cross(u,v,w);
          a = 0.5*norm(w);
          area += a;
-         if(!(a>0))
+	 /*         if(!(a>0))
          {
             fprintf(stderr, "Internal error in compute_face_geometry.");
          }
-
+	 */
          /* face normal */
          for (i=0; i<ndims; ++i) n[i] += w[i];
 
@@ -221,17 +231,19 @@ compute_cell_geometry_3d(double *coords,
    double xcell[3];
    double ccell[3];
    double cface[3]  = {0};
-   const double twothirds = 0.666666666666666666666666666667;
-
-   int ndigits;
-
-   ndigits = ((int) (log(ncells) / log(10.0))) + 1;
-
-
+   int num_faces;
+   double volume;
+   double tet_volume, subnormal_sign;
+   double twothirds = 0.666666666666666666666666666667;
+#pragma omp parallel for default(none)     \
+    private(i,k,f,c,face,node,x,u,v,w,xcell				\
+	    ,ccell ,cface,num_faces,volume, tet_volume, subnormal_sign) \
+   shared(coords,nodepos,facenodes,neighbors,				\
+	  fnormals,fcentroids,facepos,cellfaces,ccentroids,cvolumes)	\
+    firstprivate(ncells,ndims,twothirds)
    for (c=0; c<ncells; ++c)
    {
-      int num_faces;
-      double volume = 0.0;
+
 
       for(i=0; i<ndims; ++i) xcell[i] = 0.0;
       for(i=0; i<ndims; ++i) ccell[i] = 0.0;
@@ -255,6 +267,7 @@ compute_cell_geometry_3d(double *coords,
        * For all faces, add tetrahedron's volume and centroid to
        * 'cvolume' and 'ccentroid'.
        */
+      volume=0.0;
       for(f=facepos[c]; f<facepos[c+1]; ++f)
       {
          int num_face_nodes;
@@ -279,38 +292,38 @@ compute_cell_geometry_3d(double *coords,
          node = facenodes[nodepos[face+1]-1];
          for(i=0; i<ndims; ++i) u[i] = coords[3*node+i] - x[i];
 
-
+	 
          /* Compute triangular contributions to face normal and face centroid */
          for(k=nodepos[face]; k<nodepos[face+1]; ++k)
          {
-            double tet_volume, subnormal_sign;
+
             node = facenodes[k];
             for (i=0; i<ndims; ++i) v[i] = coords[3*node+i] - x[i];
 
             cross(u,v,w);
 
-            tet_volume = 0;
+
+
+            tet_volume = 0.0;
             for(i=0; i<ndims; ++i){
-                tet_volume += w[i] * (x[i] - xcell[i]);
-            }
+		tet_volume += w[i]*(x[i]-xcell[i]);
+	    }
             tet_volume *= 0.5 / 3;
+	    
+	    subnormal_sign=0.0;
+	    for(i=0; i<ndims; ++i){
+		subnormal_sign += w[i]*fnormals[3*face+i];
+	    }
 
-            subnormal_sign=0.0;
-            for(i=0; i<ndims; ++i){
-                subnormal_sign += w[i]*fnormals[3*face+i];
-            }
-
-            if (subnormal_sign < 0.0) {
-                tet_volume = - tet_volume;
-            }
-            if (neighbors[2*face + 0] != c) {
-                tet_volume = - tet_volume;
-            }
-
-            volume += tet_volume;
-
+	    if(subnormal_sign < 0.0){
+		tet_volume =- tet_volume;
+	    }
+	    if(!(neighbors[2*face+0]==c)){
+		tet_volume = -tet_volume;
+	    }
+	    volume += tet_volume;
             /* face centroid of triangle  */
-            for (i=0; i<ndims; ++i) cface[i] = (x[i]+twothirds*0.5*(u[i]+v[i]));
+            for (i=0; i<ndims; ++i) cface[i] = (x[i]+(twothirds)*0.5*(u[i]+v[i]));
 
             /* Cell centroid */
             for (i=0; i<ndims; ++i) ccell[i] += tet_volume * 3/4.0*(cface[i] - xcell[i]);
@@ -320,13 +333,6 @@ compute_cell_geometry_3d(double *coords,
             for (i=0; i<ndims; ++i) u[i] = v[i];
          }
       }
-
-      if (! (volume > 0.0)) {
-          fprintf(stderr,
-                  "Internal error in mex_compute_geometry(%*d): "
-                  "negative volume\n", ndigits, c);
-      }
-
       for (i=0; i<ndims; ++i) ccentroids[3*c+i] = xcell[i] + ccell[i]/volume;
       cvolumes[c] = volume;
    }

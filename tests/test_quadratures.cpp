@@ -30,7 +30,7 @@
 
 #include <opm/core/grid/CellQuadrature.hpp>
 #include <opm/core/grid/FaceQuadrature.hpp>
-#include <opm/core/GridManager.hpp>
+#include <opm/core/grid/GridManager.hpp>
 #include <opm/core/grid.h>
 #include <cmath>
 
