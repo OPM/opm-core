@@ -96,20 +96,19 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/simulator/SimulatorIncompTwophase.cpp
 	opm/core/simulator/SimulatorReport.cpp
 	opm/core/simulator/SimulatorTimer.cpp
-	opm/core/transport/TransportSolverTwophaseImplicit.cpp
+	opm/core/tof/DGBasis.cpp
+	opm/core/tof/TofReorder.cpp
+	opm/core/tof/TofDiscGalReorder.cpp
 	opm/core/transport/TransportSolverTwophaseInterface.cpp
-	opm/core/transport/reorder/DGBasis.cpp
+	opm/core/transport/implicit/TransportSolverTwophaseImplicit.cpp
+	opm/core/transport/implicit/transport_source.c
+	opm/core/transport/minimal/spu_explicit.c
+	opm/core/transport/minimal/spu_implicit.c
 	opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.cpp
 	opm/core/transport/reorder/ReorderSolverInterface.cpp
-	opm/core/transport/reorder/TofReorder.cpp
-	opm/core/transport/reorder/TofDiscGalReorder.cpp
 	opm/core/transport/reorder/TransportSolverTwophaseReorder.cpp
-	opm/core/transport/reorder/nlsolvers.c
 	opm/core/transport/reorder/reordersequence.cpp
 	opm/core/transport/reorder/tarjan.c
-	opm/core/transport/spu_explicit.c
-	opm/core/transport/spu_implicit.c
-	opm/core/transport/transport_source.c
 	opm/core/utility/MonotCubicInterpolator.cpp
 	opm/core/utility/StopWatch.cpp
 	opm/core/utility/VelocityInterpolation.cpp
@@ -205,10 +204,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/wells.h
 	opm/core/pressure/CompressibleTpfa.hpp
 	opm/core/pressure/FlowBCManager.hpp
-	opm/core/pressure/HybridPressureSolver.hpp
 	opm/core/pressure/IncompTpfa.hpp
-	opm/core/pressure/TPFACompressiblePressureSolver.hpp
-	opm/core/pressure/TPFAPressureSolver.hpp
 	opm/core/pressure/flow_bc.h
 	opm/core/pressure/fsh.h
 	opm/core/pressure/fsh_common_impl.h
@@ -264,31 +260,30 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/SimulatorTimer.hpp
 	opm/core/simulator/TwophaseState.hpp
 	opm/core/simulator/WellState.hpp
-	opm/core/transport/CSRMatrixBlockAssembler.hpp
-	opm/core/transport/CSRMatrixUmfpackSolver.hpp
-	opm/core/transport/GravityColumnSolver.hpp
-	opm/core/transport/GravityColumnSolver_impl.hpp
-	opm/core/transport/ImplicitAssembly.hpp
-	opm/core/transport/ImplicitTransport.hpp
-	opm/core/transport/JacobianSystem.hpp
-	opm/core/transport/NormSupport.hpp
-	opm/core/transport/SinglePointUpwindTwoPhase.hpp
-	opm/core/transport/TransportSolverTwophaseImplicit.hpp
-	opm/core/transport/SimpleFluid2pWrappingProps.hpp
-	opm/core/transport/SimpleFluid2pWrappingProps_impl.hpp
+	opm/core/tof/DGBasis.hpp
+	opm/core/tof/TofReorder.hpp
+	opm/core/tof/TofDiscGalReorder.hpp
 	opm/core/transport/TransportSolverTwophaseInterface.hpp
-	opm/core/transport/reorder/DGBasis.hpp
+	opm/core/transport/implicit/CSRMatrixBlockAssembler.hpp
+	opm/core/transport/implicit/CSRMatrixUmfpackSolver.hpp
+	opm/core/transport/implicit/GravityColumnSolver.hpp
+	opm/core/transport/implicit/GravityColumnSolver_impl.hpp
+	opm/core/transport/implicit/ImplicitAssembly.hpp
+	opm/core/transport/implicit/ImplicitTransport.hpp
+	opm/core/transport/implicit/JacobianSystem.hpp
+	opm/core/transport/implicit/NormSupport.hpp
+	opm/core/transport/implicit/SinglePointUpwindTwoPhase.hpp
+	opm/core/transport/implicit/TransportSolverTwophaseImplicit.hpp
+	opm/core/transport/implicit/SimpleFluid2pWrappingProps.hpp
+	opm/core/transport/implicit/SimpleFluid2pWrappingProps_impl.hpp
+	opm/core/transport/implicit/transport_source.h
+	opm/core/transport/minimal/spu_explicit.h
+	opm/core/transport/minimal/spu_implicit.h
 	opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.hpp
 	opm/core/transport/reorder/ReorderSolverInterface.hpp
-	opm/core/transport/reorder/TofReorder.hpp
-	opm/core/transport/reorder/TofDiscGalReorder.hpp
 	opm/core/transport/reorder/TransportSolverTwophaseReorder.hpp
-	opm/core/transport/reorder/nlsolvers.h
 	opm/core/transport/reorder/reordersequence.h
 	opm/core/transport/reorder/tarjan.h
-	opm/core/transport/spu_explicit.h
-	opm/core/transport/spu_implicit.h
-	opm/core/transport/transport_source.h
 	opm/core/utility/Average.hpp
 	opm/core/utility/ColumnExtract.hpp
 	opm/core/utility/DataMap.hpp
