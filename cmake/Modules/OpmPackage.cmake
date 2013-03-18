@@ -136,6 +136,13 @@ macro (find_opm_package module deps header lib defs prog conf)
 	list (APPEND _deps ${_name_only})
   endforeach (_dep)
 
+  # since find_and_append_package_to is a macro, this variable have
+  # probably been overwritten (due to its common name); it is now
+  # this module's last dependency instead of the name of the module
+  # itself, so it must be restored
+  string (TOUPPER ${module} MODULE_UPPER)
+  string (REPLACE "-" "_" MODULE ${MODULE_UPPER})
+
   # compile with this option to avoid avalanche of warnings
   set (${module}_DEFINITIONS "${${module}_DEFINITIONS}")
   foreach (_def IN ITEMS ${defs})
