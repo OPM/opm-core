@@ -175,6 +175,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/doxygen_main.hpp
 	opm/core/grid.h
 	opm/core/grid/CellQuadrature.hpp
+	opm/core/grid/ColumnExtract.hpp
 	opm/core/grid/FaceQuadrature.hpp
 	opm/core/grid/GridManager.hpp
 	opm/core/grid/cart_grid.h
@@ -260,6 +261,8 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/SimulatorTimer.hpp
 	opm/core/simulator/TwophaseState.hpp
 	opm/core/simulator/WellState.hpp
+	opm/core/simulator/initState.hpp
+	opm/core/simulator/initState_impl.hpp
 	opm/core/tof/DGBasis.hpp
 	opm/core/tof/TofReorder.hpp
 	opm/core/tof/TofDiscGalReorder.hpp
@@ -285,7 +288,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/reorder/reordersequence.h
 	opm/core/transport/reorder/tarjan.h
 	opm/core/utility/Average.hpp
-	opm/core/utility/ColumnExtract.hpp
 	opm/core/utility/DataMap.hpp
 	opm/core/utility/ErrorMacros.hpp
 	opm/core/utility/Factory.hpp
@@ -301,8 +303,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/WachspressCoord.hpp
 	opm/core/utility/buildUniformMonotoneTable.hpp
 	opm/core/utility/have_boost_redef.hpp
-	opm/core/utility/initState.hpp
-	opm/core/utility/initState_impl.hpp
 	opm/core/utility/linInt.hpp
 	opm/core/utility/linearInterpolation.hpp
 	opm/core/utility/miscUtilities.hpp

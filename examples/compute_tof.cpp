@@ -30,7 +30,6 @@
 #include <opm/core/wells.h>
 #include <opm/core/wells/WellsManager.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/initState.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
@@ -42,6 +41,7 @@
 
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/simulator/WellState.hpp>
+#include <opm/core/simulator/initState.hpp>
 #include <opm/core/pressure/IncompTpfa.hpp>
 #include <opm/core/tof/TofReorder.hpp>
 #include <opm/core/tof/TofDiscGalReorder.hpp>
