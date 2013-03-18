@@ -34,7 +34,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opm/core/newwells.h>
+#include <opm/core/wells.h>
 
 #include <assert.h>
 #include <stddef.h>

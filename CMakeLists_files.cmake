@@ -46,7 +46,6 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/linalg/LinearSolverUmfpack.cpp
 	opm/core/linalg/call_umfpack.c
 	opm/core/linalg/sparse_sys.c
-	opm/core/newwells.c
 	opm/core/pressure/CompressibleTpfa.cpp
 	opm/core/pressure/FlowBCManager.cpp
 	opm/core/pressure/IncompTpfa.cpp
@@ -131,6 +130,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/wells/WellCollection.cpp
 	opm/core/wells/WellsGroup.cpp
 	opm/core/wells/WellsManager.cpp
+	opm/core/wells/wells.c
 	)
 
 # originally generated with the command:
@@ -202,7 +202,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/linalg/blas_lapack.h
 	opm/core/linalg/call_umfpack.h
 	opm/core/linalg/sparse_sys.h
-	opm/core/newwells.h
+	opm/core/wells.h
 	opm/core/pressure/CompressibleTpfa.hpp
 	opm/core/pressure/FlowBCManager.hpp
 	opm/core/pressure/HybridPressureSolver.hpp
