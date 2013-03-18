@@ -72,7 +72,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/pressure/tpfa/compr_source.c
 	opm/core/pressure/tpfa/ifs_tpfa.c
 	opm/core/pressure/tpfa/trans_tpfa.c
-	opm/core/pressure/well.c
+	opm/core/pressure/legacy_well.c
 	opm/core/props/BlackoilPropertiesBasic.cpp
 	opm/core/props/BlackoilPropertiesFromDeck.cpp
 	opm/core/props/IncompPropertiesBasic.cpp
@@ -212,6 +212,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/pressure/flow_bc.h
 	opm/core/pressure/fsh.h
 	opm/core/pressure/fsh_common_impl.h
+	opm/core/pressure/legacy_well.h
 	opm/core/pressure/mimetic/hybsys.h
 	opm/core/pressure/mimetic/hybsys_global.h
 	opm/core/pressure/mimetic/mimetic.h
@@ -321,7 +322,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/parameters/ParameterXML.hpp
 	opm/core/utility/parameters/tinyxml/tinystr.h
 	opm/core/utility/parameters/tinyxml/tinyxml.h
-	opm/core/well.h
 	opm/core/wells/InjectionSpecification.hpp
 	opm/core/wells/ProductionSpecification.hpp
 	opm/core/wells/WellCollection.hpp

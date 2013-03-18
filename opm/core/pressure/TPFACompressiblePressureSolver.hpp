@@ -25,7 +25,7 @@
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
 #include <opm/core/linalg/sparse_sys.h>
 #include <opm/core/pressure/flow_bc.h>
-#include <opm/core/well.h>
+#include <opm/core/pressure/legacy_well.h>
 #include <opm/core/pressure/tpfa/compr_quant.h>
 #include <opm/core/GridAdapter.hpp>
 #include <stdexcept>

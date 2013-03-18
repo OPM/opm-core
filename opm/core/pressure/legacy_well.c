@@ -19,7 +19,7 @@
 
 #include <stdlib.h>
 
-#include <opm/core/well.h>
+#include <opm/core/pressure/legacy_well.h>
 
 
 /* Release memory resources for cell->well mapping. */
