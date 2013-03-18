@@ -36,7 +36,7 @@ set (${project}_DEPS
 	# Tim Davis' SuiteSparse archive
 	"SuiteSparse COMPONENTS umfpack"
 	# solver
-	"SUPERLU"
+	"SuperLU"
 	# xml processing (for config parsing)
 	"TinyXML"
 	# Ensembles-based Reservoir Tools (ERT)
@@ -97,8 +97,13 @@ include (UseOptimization)
 # dependencies, in case they alter the list of warnings
 include (UseWarnings)
 
+# parallel computing must be explicitly enabled
+option (USE_MPI "Use Message Passing Interface for parallel computing" OFF)
+if (NOT USE_MPI)
+	set (CMAKE_DISABLE_FIND_PACKAGE_MPI TRUE)
+endif (NOT USE_MPI)
+
 ### --- begin opm-core specific --- ###
-# parallel programming
 include (UseOpenMP)
 find_openmp (${project})
 ### --- end opm-core specific --- ###
