@@ -19,10 +19,10 @@ override_dh_auto_build:
 	dh_auto_build --buildsystem=cmake
 
 override_dh_auto_configure:
-	dh_auto_configure --buildsystem=cmake -- -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 -DCMAKE_INSTALL_DOCDIR=share/doc/libopm-core1-doc
+	dh_auto_configure --buildsystem=cmake -- -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 -DCMAKE_INSTALL_DOCDIR=share/doc/libopm-core1
 
 override_dh_auto_install:
 	dh_auto_install -- install-html
 
 override_dh_installdocs:
-	dh_installdocs --link-doc=libopm-core1-doc
+	dh_installdocs --link-doc=libopm-core1
