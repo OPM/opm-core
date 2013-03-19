@@ -1079,7 +1079,7 @@ void EclipseGridParser::saveEGRID_INIT( const std::string& output_dir , const st
 void EclipseGridParser::saveEGRID( const std::string & filename) const
 {
     static_cast<void>(filename); // Suppress "unused variable" warning.
-    THROW("Cannot write EGRID format without ERT library support. Reconfigure opm-core with ERT support and recompile.";)
+    THROW("Cannot write EGRID format without ERT library support. Reconfigure opm-core with ERT support and recompile.");
 }
 
 #endif
