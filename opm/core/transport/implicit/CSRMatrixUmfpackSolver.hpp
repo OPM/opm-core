@@ -55,7 +55,7 @@ namespace Opm
                   const Vector            b,
                   Vector                  x)
             {
-#ifdef HAVE_SUITESPARSE_UMFPACK_H
+#if HAVE_SUITESPARSE_UMFPACK_H
                 call_UMFPACK(const_cast<CSRMatrix*>(A), b, x);
 #else
     THROW("Cannot use implicit transport solver without UMFPACK. "
@@ -70,7 +70,7 @@ namespace Opm
                   const Vector&           b,
                   Vector&                 x)
             {
-#ifdef HAVE_SUITESPARSE_UMFPACK_H
+#if HAVE_SUITESPARSE_UMFPACK_H
                 call_UMFPACK(const_cast<CSRMatrix*>(&A), &b[0], &x[0]);
 #else
     THROW("Cannot use implicit transport solver without UMFPACK. "
