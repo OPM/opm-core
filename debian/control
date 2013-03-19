@@ -3,7 +3,7 @@ Priority: extra
 Maintainer: Arne Morten Kvarving <arne.morten.kvarving@sintef.no>
 Build-Depends: build-essential, debhelper (>= 9), libboost-filesystem-dev,
                libboost-system-dev, libboost-date-time-dev, libboost-test-dev,
-               libsuperlu3-dev, gfortran, libsuitesparse-dev,
+               libsuperlu3-dev, gfortran, libsuitesparse-dev, pkg-config,
                libdune-common-dev, libdune-istl-dev, cmake, libtinyxml-dev, bc,
                libert.ecl-dev, git, zlib1g-dev, libtool
 Build-Depends-Indep: doxygen, texlive-latex-extra, texlive-latex-recommended, ghostscript
@@ -17,7 +17,7 @@ Package: libopm-core1-dev
 Section: libdevel
 Architecture: all
 Multi-Arch: foreign
-Depends: libopm-core1 (= ${binary:Version})
+Depends: libopm-core1 (= ${binary:Version}), libdune-istl-dev
 Provides: libopm-core-dev
 Suggests: libopm-core1-doc
 Description: OPM core library -- development files
