@@ -231,7 +231,9 @@ foreach (module IN LISTS SuiteSparse_FIND_COMPONENTS)
   endforeach (file)
   if (NOT SuiteSparse_${MODULE}_FOUND)
 	set (SuiteSparse_FOUND FALSE)
-	set (HAVE_SUITESPARSE_${MODULE}_H 0 CACHE INT "Is ${module} header present?")
+	# use empty string instead of zero, so it can be tested with #ifdef
+	# as well as #if in the source code
+	set (HAVE_SUITESPARSE_${MODULE}_H "" CACHE INT "Is ${module} header present?")
   else (NOT SuiteSparse_${MODULE}_FOUND)
 	set (HAVE_SUITESPARSE_${MODULE}_H 1 CACHE INT "Is ${module} header present?")
 	list (APPEND SuiteSparse_LIBRARIES "${${MODULE}_LIBRARIES}")
