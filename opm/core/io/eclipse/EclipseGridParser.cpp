@@ -1079,7 +1079,7 @@ void EclipseGridParser::saveEGRID_INIT( const std::string& output_dir , const st
 void EclipseGridParser::saveEGRID( const std::string & filename) const
 {
     static_cast<void>(filename); // Suppress "unused variable" warning.
-    THROW("Cannot write EGRID format without ert library support. Reconfigure opm-core with --with-ert and recompile.");
+    THROW("Cannot write EGRID format without ERT library support. Reconfigure opm-core with ERT support and recompile.");
 }
 
 #endif
@@ -1143,7 +1143,7 @@ void EclipseGridParser::getNumericErtFields(const string& filename)
     ecl_file_close(ecl_file);
 #else
     static_cast<void>(filename); // Suppress "unused variable" warning.
-    THROW("Cannot use IMPORT keyword without ert library support. Reconfigure opm-core with --with-ert and recompile.");
+    THROW("Cannot use IMPORT keyword without ERT library support. Reconfigure opm-core with ERT support and recompile.");
 #endif  // HAVE_ERT
 }
 

@@ -169,14 +169,12 @@ if (NOT SuiteSparse_FOUND)
 		${PROJECT_SOURCE_DIR}/tutorials/tutorial2.cpp
 		${PROJECT_SOURCE_DIR}/tutorials/tutorial3.cpp
 		${PROJECT_SOURCE_DIR}/tutorials/tutorial4.cpp
-		${PROJECT_SOURCE_DIR}/examples/spu_2p.cpp
 		)
 endif (NOT SuiteSparse_FOUND)
 
 # these files are provided in source control, but can only compile with Matlab
 # available; we are not supposed to include the TinyXML test prog. regardless
 list (REMOVE_ITEM opm-core_SOURCES
-	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/grid/cpgpreprocess/mxgrdecl.c
 	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/grid/cpgpreprocess/processgrid.c
 	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/utility/parameters/tinyxml/xmltest.cpp
 	)

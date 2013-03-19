@@ -37,32 +37,51 @@
 #define OPM_CSRMATRIXUMFPACKSOLVER_HPP_HEADER
 
 #include <opm/core/linalg/call_umfpack.h>
+#include <opm/core/utility/ErrorMacros.hpp>
 
-namespace Opm {
-    namespace ImplicitTransportLinAlgSupport {
-        class CSRMatrixUmfpackSolver {
+namespace Opm
+{
+    namespace ImplicitTransportLinAlgSupport
+    {
+
+        class CSRMatrixUmfpackSolver
+        {
         public:
+
+
             template <class Vector>
             void
             solve(const struct CSRMatrix* A,
                   const Vector            b,
-                  Vector                  x) {
-
-                call_UMFPACK(const_cast<CSRMatrix*>(A),
-                             b, x);
+                  Vector                  x)
+            {
+#if HAVE_SUITESPARSE_UMFPACK_H
+                call_UMFPACK(const_cast<CSRMatrix*>(A), b, x);
+#else
+    THROW("Cannot use implicit transport solver without UMFPACK. "
+          "Reconfigure opm-core with SuiteSparse/UMFPACK support and recompile.");
+#endif
             }
+
 
             template <class Vector>
             void
             solve(const struct CSRMatrix& A,
                   const Vector&           b,
-                  Vector&                 x) {
-
-                call_UMFPACK(const_cast<CSRMatrix*>(&A),
-                             &b[0], &x[0]);
+                  Vector&                 x)
+            {
+#if HAVE_SUITESPARSE_UMFPACK_H
+                call_UMFPACK(const_cast<CSRMatrix*>(&A), &b[0], &x[0]);
+#else
+    THROW("Cannot use implicit transport solver without UMFPACK. "
+          "Reconfigure opm-core with SuiteSparse/UMFPACK support and recompile.");
+#endif
             }
-        };
-    }
-}
+
+
+        }; // class CSRMatrixUmfpackSolver
+
+    } // namespace ImplicitTransportLinAlgSupport
+} // namespace Opm
 
 #endif  /* OPM_CSRMATRIXUMFPACKSOLVER_HPP_HEADER */
