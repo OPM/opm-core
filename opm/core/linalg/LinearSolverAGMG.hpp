@@ -60,7 +60,7 @@ namespace Opm
          *                    systems are solved using GCR.
          */
         LinearSolverAGMG(const int    max_it = 100   ,
-                         const double rtol   = 1.0e-6,
+                         const double rtol   = 1.0e-8,
                          const bool   is_spd = false);
 
         /**
@@ -104,6 +104,7 @@ namespace Opm
         int    max_it_;
         double rtol_  ;
         bool   is_spd_;
+        int    linsolver_verbosity_;
     };
 
 
