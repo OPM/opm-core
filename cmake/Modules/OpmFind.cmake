@@ -61,6 +61,14 @@ set (_opm_proj_exemptions
 
 # insert this boilerplate whenever we are going to find a new package
 macro (find_and_append_package_to prefix name)
+  # special handling for Boost to avoid inadvertedly picking up system
+  # libraries when we want our own version. this is done here because
+  # having a custom Boost is common, but the logic to search only there
+  # does not follow any particular convention.
+  if (BOOST_ROOT AND NOT DEFINED Boost_NO_SYSTEM_PATHS)
+	set (Boost_NO_SYSTEM_PATHS TRUE)
+  endif (BOOST_ROOT AND NOT DEFINED Boost_NO_SYSTEM_PATHS)
+
   # if we have specified a directory, don't revert to searching the
   # system default paths afterwards
   string (TOUPPER "${name}" NAME)
