@@ -8,9 +8,11 @@ macro (opm_compile opm)
   # define a symbol with that name, and those cannot contain dashes
   string (REPLACE "-" "" ${opm}_TARGET "${${opm}_NAME}")
 
-  # all public header files are together with the source
+  # all public header files are together with the source. prepend our own
+  # source path to the one of the dependencies so that our version of any
+  # ambigious paths are used.
   set (${opm}_INCLUDE_DIR "${PROJECT_SOURCE_DIR}")
-  list (APPEND ${opm}_INCLUDE_DIRS "${${opm}_INCLUDE_DIR}")
+  set (${opm}_INCLUDE_DIRS ${${opm}_INCLUDE_DIR} ${${opm}_INCLUDE_DIRS})
 
   # create this library
   include_directories (${${opm}_INCLUDE_DIRS})
