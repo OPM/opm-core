@@ -61,6 +61,14 @@ set (_opm_proj_exemptions
 
 # insert this boilerplate whenever we are going to find a new package
 macro (find_and_append_package_to prefix name)
+  # special handling for Boost to avoid inadvertedly picking up system
+  # libraries when we want our own version. this is done here because
+  # having a custom Boost is common, but the logic to search only there
+  # does not follow any particular convention.
+  if (BOOST_ROOT AND NOT DEFINED Boost_NO_SYSTEM_PATHS)
+	set (Boost_NO_SYSTEM_PATHS TRUE)
+  endif (BOOST_ROOT AND NOT DEFINED Boost_NO_SYSTEM_PATHS)
+
   # if we have specified a directory, don't revert to searching the
   # system default paths afterwards
   string (TOUPPER "${name}" NAME)
@@ -85,13 +93,7 @@ macro (find_and_append_package_to prefix name)
   # something which is done in our find module
   list (FIND _opm_proj_exemptions "${name}" _${name}_exempted)
   if ((NOT (_${name}_exempted EQUAL -1)) AND (DEFINED ${name}_DIR))
-	# most often we are given the name to the build directory and this
-	# is a sub-directory of the source tree
-	if (${name}_DIR MATCHES "build")
-	  get_filename_component (${name}_ROOT "${${name}_DIR}" PATH)
-	else (${name}_DIR MATCHES "build")
-	  set (${name}_ROOT "${${name}_DIR}")
-	endif (${name}_DIR MATCHES "build")
+	set (${name}_ROOT "${${name}_DIR}")
 	# store this for later, in case we reconfigure
 	set (${name}_ROOT "${${name}_ROOT}" CACHE LOCATION "Path to ${name}")
 	# clear this to not use config mode
