@@ -39,6 +39,9 @@
 
 include (OpmFind)
 
+option (SIBLING_SEARCH "Search sibling directories before system paths" ON)
+mark_as_advanced (SIBLING_SEARCH)
+
 # append all items from src into dst; both must be *names* of lists
 macro (append_found src dst)
   foreach (_item IN LISTS ${src})
@@ -122,13 +125,26 @@ macro (find_opm_package module deps header lib defs prog conf)
 	set (_no_system "NO_DEFAULT_PATH")
   endif (NOT (${module}_DIR OR ${module}_ROOT OR ${MODULE}_ROOT))
 
+  # by specifying _guess in the HINTS section, it gets searched before
+  # the system locations as well. the CMake documentation has a cloudy
+  # recommendation, but it ends up like this: if NO_DEFAULT_PATH is
+  # specified, then PATHS is used. Otherwise, it looks in HINTS, then in
+  # system paths, and the finally in PATHS (!)
+  if (SIBLING_SEARCH)
+	set (_guess_hints ${_guess})
+	set (_guess_hints_bin ${_guess_bin})
+  else (SIBLING_SEARCH)
+	set (_guess_hints)
+	set (_guess_hints_bin)
+  endif (SIBLING_SEARCH)
+
   # search for this include and library file to get the installation
   # directory of the package; hints are searched before the system locations,
   # paths are searched afterwards
   find_path (${module}_INCLUDE_DIR
 	NAMES "${header}"
 	PATHS ${_guess}
-	HINTS ${PkgConf_${module}_INCLUDE_DIRS}
+	HINTS ${PkgConf_${module}_INCLUDE_DIRS} ${_guess_hints}
 	PATH_SUFFIXES "include"
 	${_no_system}
 	)
@@ -141,7 +157,7 @@ macro (find_opm_package module deps header lib defs prog conf)
 	find_library (${module}_LIBRARY
 	  NAMES "${lib}"
 	  PATHS ${_guess_bin}
-	  HINTS ${PkgConf_${module}_LIBRARY_DIRS}
+	  HINTS ${PkgConf_${module}_LIBRARY_DIRS} ${_guess_hints_bin}
 	  PATH_SUFFIXES "lib" "lib/.libs" ".libs" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}" "build-cmake/lib"
 	  ${_no_system}
 	  )
