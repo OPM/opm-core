@@ -93,9 +93,24 @@ macro (find_opm_package module deps header lib defs prog conf)
 	set (_guess_bin_only
 	  "../${module}-build"
 	  "../${_module_lower}-build"
-	  "../../${module}/build-cmake"
-	  "../../${_module_lower}/build-cmake"
 	  )
+	# try to figure out whether we are in a subdir build tree, and attempt
+	# to put the same name as the appropriate build tree for the module
+	get_filename_component (_build_dir "${CMAKE_CURRENT_BINARY_DIR}" NAME)
+
+	# don't bother if we are in a project specific directory already
+	# (assuming no-one wants to name the build dir after another module!)
+	if ("${_build_dir}" STREQUAL "${PROJECT_NAME}")
+	  set (_build_dir "")
+	endif ("${_build_dir}" STREQUAL "${PROJECT_NAME}")
+
+	# look in similar dirs for the other module
+	list (APPEND _guess_bin_only
+	  "../../${module}/${_build_dir}"
+	  "../../${_module_lower}/${_build_dir}"
+	  )
+
+	# generate items that are in the build, not source dir
 	set (_guess_bin)
 	foreach (_item IN ITEMS ${_guess} ${_guess_bin_only})
 	  list (APPEND _guess_bin "${PROJECT_BINARY_DIR}/${_item}")
