@@ -93,13 +93,7 @@ macro (find_and_append_package_to prefix name)
   # something which is done in our find module
   list (FIND _opm_proj_exemptions "${name}" _${name}_exempted)
   if ((NOT (_${name}_exempted EQUAL -1)) AND (DEFINED ${name}_DIR))
-	# most often we are given the name to the build directory and this
-	# is a sub-directory of the source tree
-	if (${name}_DIR MATCHES "build")
-	  get_filename_component (${name}_ROOT "${${name}_DIR}" PATH)
-	else (${name}_DIR MATCHES "build")
-	  set (${name}_ROOT "${${name}_DIR}")
-	endif (${name}_DIR MATCHES "build")
+	set (${name}_ROOT "${${name}_DIR}")
 	# store this for later, in case we reconfigure
 	set (${name}_ROOT "${${name}_ROOT}" CACHE LOCATION "Path to ${name}")
 	# clear this to not use config mode
