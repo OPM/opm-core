@@ -20,6 +20,14 @@ else (FIND_QUIETLY)
   set (ERT_QUIET "")
 endif (FIND_QUIETLY)
 
+# if a directory has been specified by the user, then don't go look
+# in the system directories as well
+if (ERT_ROOT)
+  set (_no_default_path "NO_DEFAULT_PATH")
+else (ERT_ROOT)
+  set (_no_default_path "")
+endif (ERT_ROOT)
+
 # ERT doesn't have any config-mode file, so we need to specify the root
 # directory in its own variable
 find_path (ERT_ECL_INCLUDE_DIR
@@ -28,6 +36,7 @@ find_path (ERT_ECL_INCLUDE_DIR
   PATHS "../ert"
   PATH_SUFFIXES "devel/libecl/include/" "include"
   DOC "Path to ERT Eclipse library header files"
+  ${_no_default_path}
   )
 find_path (ERT_UTIL_INCLUDE_DIR
   NAMES "ert/util/stringlist.h"
@@ -35,6 +44,7 @@ find_path (ERT_UTIL_INCLUDE_DIR
   PATHS "../ert"
   PATH_SUFFIXES "devel/libert_util/include/" "include"
   DOC "Path to ERT Eclipse library header files"
+  ${_no_default_path}
   )
 find_path (ERT_GEN_INCLUDE_DIR
   NAMES "ert/util/int_vector.h"
@@ -43,6 +53,7 @@ find_path (ERT_GEN_INCLUDE_DIR
         "${PROJECT_BINARY_DIR}/../ert/devel"
   PATH_SUFFIXES "libert_util/include/" "include"
   DOC "Path to ERT generated library header files"
+  ${_no_default_path}
   )
 
 # need all of these libraries
@@ -56,6 +67,7 @@ find_library (ERT_LIBRARY_ECL
         "${PROJECT_BINARY_DIR}/../ert/devel"
   PATH_SUFFIXES "lib" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   DOC "Path to ERT Eclipse library archive/shared object files"
+  ${_no_default_path}
   )
 find_library (ERT_LIBRARY_GEOMETRY
   NAMES "ert_geometry"
@@ -64,6 +76,7 @@ find_library (ERT_LIBRARY_GEOMETRY
         "${PROJECT_BINARY_DIR}/../ert/devel"
   PATH_SUFFIXES "lib" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   DOC "Path to ERT Geometry library archive/shared object files"
+  ${_no_default_path}
   )
 find_library (ERT_LIBRARY_UTIL
   NAMES "ert_util"
@@ -72,6 +85,7 @@ find_library (ERT_LIBRARY_UTIL
         "${PROJECT_BINARY_DIR}/../ert/devel"
   PATH_SUFFIXES "lib" "lib${_BITS}" "lib/${CMAKE_LIBRARY_ARCHITECTURE}"
   DOC "Path to ERT Utilities library archive/shared object files"
+  ${_no_default_path}
   )
 # the "library" found here is actually a list of several files
 list (APPEND ERT_INCLUDE_DIR
