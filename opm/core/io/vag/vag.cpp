@@ -44,7 +44,7 @@
 #include <set>
 #include <vector>
 #include <map>
-namespace OPM
+namespace Opm
 {
     void readPosStruct(std::istream& is,int n,PosStruct& pos_struct){
 	using namespace std;
@@ -88,9 +88,9 @@ namespace OPM
 	    os << endl;
 	}
     }
-    void readVagGrid(std::istream& is,OPM::VAG& vag_grid){
+    void readVagGrid(std::istream& is,Opm::VAG& vag_grid){
 	using namespace std;
-	using namespace OPM;
+	using namespace Opm;
 	while (!is.eof()) {
 	    string keyword;
 	    is >> keyword;	
@@ -192,9 +192,9 @@ namespace OPM
 	    }
 	}
     }
-    void vagToUnstructuredGrid(OPM::VAG& vag_grid,UnstructuredGrid& grid){
+    void vagToUnstructuredGrid(Opm::VAG& vag_grid,UnstructuredGrid& grid){
 	using namespace std;
-	using namespace OPM;
+	using namespace Opm;
 	cout << "Converting grid" << endl;
         cout << "Warning:: orignial grid may not be edge confomal" << endl;
         cout << "          inverse mappings from edges will be wrong" << endl;
@@ -233,9 +233,9 @@ namespace OPM
 	
     }
 
-    void unstructuredGridToVag(UnstructuredGrid& grid,OPM::VAG& vag_grid){
+    void unstructuredGridToVag(UnstructuredGrid& grid,Opm::VAG& vag_grid){
         using namespace std;
-        using namespace OPM;
+        using namespace Opm;
         cout << "Converting grid" << endl;
         //	grid.dimensions=3;
         vag_grid.number_of_volumes=grid.number_of_cells;
@@ -369,7 +369,7 @@ namespace OPM
         //  material // can not be extracted from the grid
     }
     
-    void writeVagFormat(std::ostream& os,OPM::VAG& vag_grid){
+    void writeVagFormat(std::ostream& os,Opm::VAG& vag_grid){
 	using namespace std;
 	os << "File in the Vag grid format\n";
         os << "Number of vertices " ;
