@@ -26,6 +26,9 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+namespace Opm
+{
+
 /**
    Class to represent a one-dimensional function f with single-valued
    argument x. The function is represented by a table of function
@@ -574,5 +577,7 @@ private:
    
 }; 
 
+
+} // namespace Opm
 
 #endif

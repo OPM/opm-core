@@ -110,7 +110,7 @@ There are two simulator programs for two-phase immiscible flow in opm-core:
 
 Utilities contained in opm-core include:
 - IO utilities (Opm::EclipseGridParser, binary I/O via the ERT library, vtk output)
-- Interpolation utilities (Opm::MonotCubicInterpolator, Opm::VelocityInterpolation)
+- Interpolation utilities (Opm::MonotCubicInterpolator, Opm::VelocityInterpolationECVI)
 - Support for SI and non-SI units (Opm::unit and Opm::prefix)
 - Low-order quadratures for general geometries (Opm::CellQuadrature, Opm::FaceQuadrature)
 - Timing (Opm::StopWatch)
