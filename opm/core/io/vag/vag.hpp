@@ -44,16 +44,16 @@
 #include <string>
 #include <vector>
 
-namespace OPM
+namespace Opm
 {
     /**
-       Struct to hold maping from the natural number less than pos.size()-1 to
+       Struct to hold mapping from the natural numbers less than pos.size()-1 to
        a set of integers. value(pos(i):pos(i+1)-1) hold the integers corresponding to i.
        pos(end)-1==value.size();
     */               
     struct PosStruct{
 	std::vector<int> pos;
-        std::vector<int>  value;
+        std::vector<int> value;
     };
     /**
       Structure to represent the unstructured vag grid format. The format is only for
@@ -92,14 +92,14 @@ namespace OPM
        \param[in]  is is is stream of the file.
        \param[out] vag_grid is a reference to a vag_grid struct.
     */
-    void readVagGrid(std::istream& is,OPM::VAG& vag_grid);
+    void readVagGrid(std::istream& is,Opm::VAG& vag_grid);
     /**
        Function to write vag format.
        \param[out]  is is is stream of the file.
        \param[in] vag_grid is a reference to a vag_grid struct.
 
     */
-    void writeVagFormat(std::ostream& os,OPM::VAG& vag_grid);
+    void writeVagFormat(std::ostream& os,Opm::VAG& vag_grid);
     /**
        Function to read a vector of some type from a stream.
        \param[in]  os is is stream of the file.
@@ -152,14 +152,14 @@ namespace OPM
        \param[out] vag_grid s is a valid vag_grid struct.
        \param[in] grid is a grid with have allocated correct size to each pointer.
      */
-    void vagToUnstructuredGrid(OPM::VAG& vag_grid,UnstructuredGrid& grid);
+    void vagToUnstructuredGrid(Opm::VAG& vag_grid,UnstructuredGrid& grid);
     
     /**
        Fill a  vag_grid from UnstructuredGrid 
        \param[out] vag_grid s is a valid vag_grid struct.
        \param[in] grid is a grid with have allocated correct size to each pointer.
      */    
-    void unstructuredGridToVag(UnstructuredGrid& grid, OPM::VAG& vag_grid);
+    void unstructuredGridToVag(UnstructuredGrid& grid, Opm::VAG& vag_grid);
 }
 #endif  /* OPM_VAG_HPP_HEADER */	
 

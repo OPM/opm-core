@@ -172,10 +172,8 @@ if (NOT SuiteSparse_FOUND)
 		)
 endif (NOT SuiteSparse_FOUND)
 
-# these files are provided in source control, but can only compile with Matlab
-# available; we are not supposed to include the TinyXML test prog. regardless
+# we are not supposed to include the TinyXML test prog. regardless
 list (REMOVE_ITEM opm-core_SOURCES
-	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/grid/cpgpreprocess/processgrid.c
 	${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/utility/parameters/tinyxml/xmltest.cpp
 	)
 
@@ -188,8 +186,8 @@ if (TinyXML_FOUND)
 endif (TinyXML_FOUND)
 
 # anyhow remove it from the header list (so it doesn't get installed)
-list (REMOVE_ITEM opm-core_HEADERS "${opm-core_DIR}/core/utility/parameters/tinyxml/tinystr.h")
-list (REMOVE_ITEM opm-core_HEADERS "${opm-core_DIR}/core/utility/parameters/tinyxml/tinyxml.h")
+list (REMOVE_ITEM opm-core_HEADERS "${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/utility/parameters/tinyxml/tinystr.h")
+list (REMOVE_ITEM opm-core_HEADERS "${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/utility/parameters/tinyxml/tinyxml.h")
 
 # HAVE_ERT is used as an #ifdef, not as an #if in the source code, if it
 # is not true, then it should be unset altogether

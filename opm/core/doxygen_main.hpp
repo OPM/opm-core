@@ -84,7 +84,37 @@ only Opm::CompressibleTpfa supports fluid compressibility.
 
 <h3>Transport solvers</h3>
 
+There are three transport solvers available in opm-core for two-phase flow.
+All of these solvers use an implicit Euler time discretization,
+upstream mobility weighting and a TPFA discretization for gravity:
+- Opm::TransportSolverTwophaseImplicit (Newton-Raphson method)
+- Opm::TransportSolverTwophaseReorder (reordering Gauss-Seidel method)
+- Opm::TransportSolverCompressibleTwophaseReorder (reordering Gauss-Seidel method).
+
+
+<h3>Time-of-flight solvers</h3>
+
+The time-of-flight equation can be solved by grid-based methods as an
+alternative to the more traditional streamline methods. We provide two
+solvers for this:
+- Opm::TofReorder (finite volume method with reordering)
+- Opm::TofDiscGalReorder (discontinuous Galerkin with reordering).
+
+<h3>Simulators</h3>
+
+There are two simulator programs for two-phase immiscible flow in opm-core:
+- sim_2p_incomp (incompressible fluid)
+- sim_2p_comp_reorder (compressible fluid)
+
 <h3>Various utilities</h3>
+
+Utilities contained in opm-core include:
+- IO utilities (Opm::EclipseGridParser, binary I/O via the ERT library, vtk output)
+- Interpolation utilities (Opm::MonotCubicInterpolator, Opm::VelocityInterpolationECVI)
+- Support for SI and non-SI units (Opm::unit and Opm::prefix)
+- Low-order quadratures for general geometries (Opm::CellQuadrature, Opm::FaceQuadrature)
+- Timing (Opm::StopWatch)
+- Nonlinear scalar solver (Opm::RegulaFalsi)
 
 */
 

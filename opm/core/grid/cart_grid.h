@@ -47,8 +47,8 @@ extern "C" {
 
 
 /**
- * Form geometrically Cartesian grid in two space dimensions with unit-sized
- * cells.
+ * Form geometrically Cartesian grid in two space dimensions with equally
+ * sized cells.
  *
  * @param[in] nx Number of cells in @c x direction.
  * @param[in] ny Number of cells in @c y direction.
@@ -59,7 +59,7 @@ extern "C" {
  * Must be destroyed using function destroy_grid().
  */
 struct UnstructuredGrid *
-create_grid_cart2d(int nx, int ny,double dx, double dy);
+create_grid_cart2d(int nx, int ny, double dx, double dy);
 
 
 /**

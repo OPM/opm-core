@@ -52,7 +52,9 @@ namespace Opm
         /// Construct solver.
         /// \param[in] grid      A 2d or 3d grid.
         /// \param[in] props     Rock and fluid properties.
-        /// \param[in] tol       Tolerance used in the solver.
+        /// \param[in] porevol   Pore volumes
+        /// \param[in] gravity   Gravity vector (null for no gravity).
+        /// \param[in] half_trans Half-transmissibilities (one-sided)
         /// \param[in] maxit     Maximum number of non-linear iterations used.
         TransportSolverTwophaseImplicit(const UnstructuredGrid& grid,
                                         const Opm::IncompPropertiesInterface& props,

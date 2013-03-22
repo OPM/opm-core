@@ -36,25 +36,36 @@ namespace Opm
     /// In general, when arguments call for n values of some vector or
     /// matrix property, such as saturation, they shall always be
     /// ordered cellwise:
-    ///   [s^1_0 s^2_0 s^3_0 s^1_1 s^2_2 ... ]
-    /// in which s^i_j denotes saturation of phase i in cell j.
+    ///   \f[ [s^1_0, s^2_0, s^3_0, s^1_1, s^2_2, \ldots ] \f]
+    /// in which \f$ s^i_j \f$ denotes saturation of phase i in cell j.
     class IncompPropertiesBasic : public IncompPropertiesInterface
     {
     public:
         /// Construct from parameters.
+        /// Note that all values passed through param should be in convenient units,
+        /// as documented below.
         /// The following parameters are accepted (defaults):
-        ///    num_phases         (2)         Must be 1 or 2.
-        ///    relperm_func       ("Linear")  Must be "Constant", "Linear" or "Quadratic".
-        ///    rho1 [rho2, rho3]  (1.0e3)     Density in kg/m^3
-        ///    mu1 [mu2, mu3]     (1.0)       Viscosity in cP
-        ///    porosity           (1.0)       Porosity
-        ///    permeability       (100.0)     Permeability in mD
+        ///   - \c num_phases            (2)        -- Must be 1 or 2.
+        ///   - \c relperm_func          ("Linear") -- Must be "Constant", "Linear" or "Quadratic".
+        ///   - \c rho1 \c rho2, \c rho3 (1.0e3)    -- Density in kg/m^3.
+        ///   - \c mu1 \c mu2, \c mu3    (1.0)      -- Viscosity in cP.
+        ///   - \c porosity              (1.0)      -- Porosity.
+        ///   - \c permeability          (100.0)    -- Permeability in mD.
         IncompPropertiesBasic(const parameter::ParameterGroup& param,
                               const int dim,
                               const int num_cells);
 
 
-        /// Construct from arguments a basic two phase fluid.
+        /// Construct properties from arguments.
+        /// Note that all values should be given in SI units
+        /// for this constructor.
+        /// \param[in] num_phases     Must be 1 or 2.
+        /// \param[in] rho            Phase densities in kg/m^3.
+        /// \param[in] mu             Phase viscosities in Pa*s.
+        /// \param[in] porosity       Must be in [0,1].
+        /// \param[in] permeability   Permeability in m^2.
+        /// \param[in] dim            Must be 2 or 3.
+        /// \param[in] num_cells      The number of grid cells.
         IncompPropertiesBasic(const int num_phases,
                               const SaturationPropsBasic::RelPermFunc& relpermfunc,
                               const std::vector<double>& rho,

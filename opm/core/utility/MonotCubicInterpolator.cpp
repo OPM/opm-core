@@ -92,6 +92,8 @@ using namespace std;
 */
 
 
+namespace Opm
+{
 
 
 MonotCubicInterpolator::
@@ -725,3 +727,6 @@ scaleData(double factor) {
     } 
   } 
 }
+
+
+} // namespace Opm
