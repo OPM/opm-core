@@ -310,7 +310,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/WachspressCoord.hpp
 	opm/core/utility/buildUniformMonotoneTable.hpp
 	opm/core/utility/have_boost_redef.hpp
-	opm/core/utility/linInt.hpp
 	opm/core/utility/linearInterpolation.hpp
 	opm/core/utility/miscUtilities.hpp
 	opm/core/utility/miscUtilitiesBlackoil.hpp
