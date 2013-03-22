@@ -41,7 +41,7 @@
 #include <istream>
 #include <vector>
 #include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/linInt.hpp>
+#include <opm/core/utility/linearInterpolation.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
 
 namespace Opm

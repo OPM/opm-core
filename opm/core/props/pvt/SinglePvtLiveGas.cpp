@@ -30,7 +30,7 @@
 
 #include <opm/core/props/pvt/SinglePvtLiveGas.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/linInt.hpp>
+#include <opm/core/utility/linearInterpolation.hpp>
 #include <algorithm>
 
 
