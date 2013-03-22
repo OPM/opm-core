@@ -35,7 +35,8 @@
 #ifndef OPM_LINEARINTERPOLATION_HEADER
 #define OPM_LINEARINTERPOLATION_HEADER
 
-
+#include <opm/core/utility/linInt.hpp>
+#if 0
 #include <vector>
 #include <algorithm>
 
@@ -103,7 +104,7 @@ namespace Opm
     }
     
     template <typename T>
-    T linearInterpolationExtrap(const std::vector<double>& xv,
+    T linearInterpolation(const std::vector<double>& xv,
 				const std::vector<T>& yv,
 				double x)
     {
@@ -123,5 +124,5 @@ namespace Opm
 } // namespace Opm
 
 
-
+#endif
 #endif // OPM_LINEARINTERPOLATION_HEADER

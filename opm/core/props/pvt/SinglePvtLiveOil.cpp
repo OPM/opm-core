@@ -26,8 +26,8 @@
 namespace Opm
 {
 
-    using Opm::linearInterpolationExtrap;
-    using Opm::linearInterpolDerivative;
+    using Opm::linearInterpolation;
+    using Opm::linearInterpolationDerivative;
     using Opm::tableIndex;
 
 
@@ -254,7 +254,7 @@ namespace Opm
         if (surfvol[phase_pos_[Vapour]] == 0.0) {
             return 0.0;
         }
-        double Rval = linearInterpolationExtrap(saturated_oil_table_[0],
+        double Rval = linearInterpolation(saturated_oil_table_[0],
                                              saturated_oil_table_[3], press);
         double maxR = surfvol[phase_pos_[Vapour]]/surfvol[phase_pos_[Liquid]];
         if (Rval < maxR ) {  // Saturated case
@@ -272,12 +272,12 @@ namespace Opm
             dRdpval = 0.0;
             return;
         }
-        Rval = linearInterpolationExtrap(saturated_oil_table_[0],
+        Rval = linearInterpolation(saturated_oil_table_[0],
                                       saturated_oil_table_[3], press);
         double maxR = surfvol[phase_pos_[Vapour]]/surfvol[phase_pos_[Liquid]];
         if (Rval < maxR ) {
             // Saturated case
-            dRdpval = linearInterpolDerivative(saturated_oil_table_[0],
+            dRdpval = linearInterpolationDerivative(saturated_oil_table_[0],
                                             saturated_oil_table_[3],
                                             press);
         } else {
@@ -294,13 +294,13 @@ namespace Opm
                                           const bool deriv) const
     {
         int section;
-        double Rval = linearInterpolationExtrap(saturated_oil_table_[0],
+        double Rval = linearInterpolation(saturated_oil_table_[0],
                                                 saturated_oil_table_[3],
                                                 press, section);
         double maxR = (surfvol[phase_pos_[Liquid]] == 0.0) ? 0.0 : surfvol[phase_pos_[Vapour]]/surfvol[phase_pos_[Liquid]];
         if (deriv) {
             if (Rval < maxR ) {  // Saturated case
-                return linearInterpolDerivative(saturated_oil_table_[0],
+                return linearInterpolationDerivative(saturated_oil_table_[0],
                                                 saturated_oil_table_[item],
                                                 press);
             } else {  // Undersaturated case
@@ -310,11 +310,11 @@ namespace Opm
                 ASSERT(undersat_oil_tables_[is][0].size() >= 2);
                 ASSERT(undersat_oil_tables_[is+1][0].size() >= 2);
                 double val1 =
-                    linearInterpolDerivative(undersat_oil_tables_[is][0],
+                    linearInterpolationDerivative(undersat_oil_tables_[is][0],
                                              undersat_oil_tables_[is][item],
                                              press);
                 double val2 =
-                    linearInterpolDerivative(undersat_oil_tables_[is+1][0],
+                    linearInterpolationDerivative(undersat_oil_tables_[is+1][0],
                                              undersat_oil_tables_[is+1][item],
                                              press);
                 double val = val1 + w*(val2 - val1);
@@ -322,7 +322,7 @@ namespace Opm
             }
         } else {
             if (Rval < maxR ) {  // Saturated case
-                return linearInterpolationExtrap(saturated_oil_table_[0],
+                return linearInterpolation(saturated_oil_table_[0],
                                                  saturated_oil_table_[item],
                                                  press);
             } else {  // Undersaturated case
@@ -333,11 +333,11 @@ namespace Opm
                 ASSERT(undersat_oil_tables_[is][0].size() >= 2);
                 ASSERT(undersat_oil_tables_[is+1][0].size() >= 2);
                 double val1 =
-                    linearInterpolationExtrap(undersat_oil_tables_[is][0],
+                    linearInterpolation(undersat_oil_tables_[is][0],
                                               undersat_oil_tables_[is][item],
                                               press);
                 double val2 =
-                    linearInterpolationExtrap(undersat_oil_tables_[is+1][0],
+                    linearInterpolation(undersat_oil_tables_[is+1][0],
                                               undersat_oil_tables_[is+1][item],
                                               press);
                 double val = val1 + w*(val2 - val1);

@@ -66,31 +66,18 @@ namespace Opm
 	return jl;
     }
 
-    inline double linearInterpolation(const std::vector<double>& xv,
-                                      const std::vector<double>& yv, double x)
-    {
-	// Returns end point if x is outside xv
-	std::vector<double>::const_iterator lb = lower_bound(xv.begin(), xv.end(), x);
-	int ix2 = lb - xv.begin();
-	if (ix2 == 0) {
-	    return yv[0];
-	} else if (ix2 == int(xv.size())) {
-	    return yv[ix2-1];
-	}
-	int ix1 = ix2 - 1;
-	return  (yv[ix2] - yv[ix1])/(xv[ix2] - xv[ix1])*(x - xv[ix1]) + yv[ix1];
-    }
 
-    inline double linearInterpolDerivative(const std::vector<double>& xv,
-                                           const std::vector<double>& yv, double x)
+    inline double linearInterpolationDerivative(const std::vector<double>& xv,
+                                                const std::vector<double>& yv, double x)
     {
+        // Extrapolates if x is outside xv
 	int ix1 = tableIndex(xv, x);
 	int ix2 = ix1 + 1;
 	return  (yv[ix2] - yv[ix1])/(xv[ix2] - xv[ix1]);
     }
 
-    inline double linearInterpolationExtrap(const std::vector<double>& xv,
-                                            const std::vector<double>& yv, double x)
+    inline double linearInterpolation(const std::vector<double>& xv,
+                                      const std::vector<double>& yv, double x)
     {
 	// Extrapolates if x is outside xv
 	int ix1 = tableIndex(xv, x);
@@ -98,15 +85,17 @@ namespace Opm
 	return  (yv[ix2] - yv[ix1])/(xv[ix2] - xv[ix1])*(x - xv[ix1]) + yv[ix1];
     }
     
-    inline double linearInterpolationExtrap(const std::vector<double>& xv,
-                                            const std::vector<double>& yv,
-                                            double x, int& ix1)
+    inline double linearInterpolation(const std::vector<double>& xv,
+                                      const std::vector<double>& yv,
+                                      double x, int& ix1)
     {
 	// Extrapolates if x is outside xv
 	ix1 = tableIndex(xv, x);
 	int ix2 = ix1 + 1;
 	return (yv[ix2] - yv[ix1])/(xv[ix2] - xv[ix1])*(x - xv[ix1]) + yv[ix1];
     }
+
+
 
 } // namespace Opm
 

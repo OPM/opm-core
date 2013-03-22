@@ -410,7 +410,7 @@ namespace
                 } else if (defaultInterpolation) {
                     // Interpolate
                     for (int i=0; i<int(indx.size()); ++i) {
-                        table[k][indx[i]] = linearInterpolationExtrap(xv, yv, x[i]);
+                        table[k][indx[i]] = linearInterpolation(xv, yv, x[i]);
                     }
                 } else {
                     // Interpolate
