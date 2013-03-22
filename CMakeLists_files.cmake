@@ -141,6 +141,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_sparsetable.cpp
 	tests/test_velocityinterpolation.cpp
 	tests/test_quadratures.cpp
+	tests/test_uniformtablelinear.cpp
 	tests/test_wells.cpp
 	tests/test_wachspresscoord.cpp
 	tests/test_column_extract.cpp
