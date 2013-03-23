@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(table_operations)
 
     // Check some evaluations.
     for (int i = 0; i < numvals; ++i) {
-	BOOST_CHECK_EQUAL(t1(xv[i]), yv[i]);
+        BOOST_CHECK_EQUAL(t1(xv[i]), yv[i]);
     }
     BOOST_CHECK_EQUAL(t1(2.6), 3.5);
     BOOST_CHECK_EQUAL(t1(4.0), 3.0);
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(table_operations)
     BOOST_CHECK_EQUAL(t1.domain().first, new_domain.first);
     BOOST_CHECK_EQUAL(t1.domain().second, new_domain.second);
     for (int i = 0; i < numvals; ++i) {
-	BOOST_CHECK_EQUAL(t1((xv[i] + 1.0)*20.0 - 100.0), yv[i]);
+        BOOST_CHECK_EQUAL(t1((xv[i] + 1.0)*20.0 - 100.0), yv[i]);
     }
     BOOST_CHECK_EQUAL(t1(0.0), 3.0);
     BOOST_CHECK(std::fabs(t1.derivative(0.0)  + 1.0/20.0) < 1e-11);
