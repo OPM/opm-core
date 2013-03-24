@@ -41,7 +41,7 @@
 #include <istream>
 #include <vector>
 #include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/linInt.hpp>
+#include <opm/core/utility/linearInterpolation.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
 
 namespace Opm
@@ -410,7 +410,7 @@ namespace
                 } else if (defaultInterpolation) {
                     // Interpolate
                     for (int i=0; i<int(indx.size()); ++i) {
-                        table[k][indx[i]] = linearInterpolationExtrap(xv, yv, x[i]);
+                        table[k][indx[i]] = linearInterpolation(xv, yv, x[i]);
                     }
                 } else {
                     // Interpolate

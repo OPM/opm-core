@@ -136,10 +136,12 @@ list (APPEND MAIN_SOURCE_FILES
 # find tests -name '*.cpp' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
 list (APPEND TEST_SOURCE_FILES
 	tests/test_dgbasis.cpp
+	tests/test_nonuniformtablelinear.cpp
 	tests/test_sparsevector.cpp
 	tests/test_sparsetable.cpp
 	tests/test_velocityinterpolation.cpp
 	tests/test_quadratures.cpp
+	tests/test_uniformtablelinear.cpp
 	tests/test_wells.cpp
 	tests/test_wachspresscoord.cpp
 	tests/test_column_extract.cpp
@@ -310,7 +312,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/WachspressCoord.hpp
 	opm/core/utility/buildUniformMonotoneTable.hpp
 	opm/core/utility/have_boost_redef.hpp
-	opm/core/utility/linInt.hpp
 	opm/core/utility/linearInterpolation.hpp
 	opm/core/utility/miscUtilities.hpp
 	opm/core/utility/miscUtilitiesBlackoil.hpp

@@ -29,7 +29,7 @@
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/linInt.hpp>
+#include <opm/core/utility/linearInterpolation.hpp>
 
 
 namespace Opm
