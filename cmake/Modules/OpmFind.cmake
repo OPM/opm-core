@@ -59,6 +59,10 @@ set (_opm_proj_exemptions
   dune-geometry
   )
 
+# although a DUNE module, it is delivered in the OPM suite
+set (dune-cornerpoint_SUITE "opm")
+set (ewoms_SUITE "opm")
+
 # insert this boilerplate whenever we are going to find a new package
 macro (find_and_append_package_to prefix name)
   # special handling for Boost to avoid inadvertedly picking up system
