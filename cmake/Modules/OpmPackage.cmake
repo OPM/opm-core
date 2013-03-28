@@ -123,6 +123,13 @@ macro (find_opm_package module deps header lib defs prog conf)
 	  ${${module}_ROOT}
 	  ${${MODULE}_ROOT}
 	  )
+	# if every package is installed directly in the "suite" directory
+	# (e.g. /usr) then allow us to back-track one directory from the
+	# module sub-dir that was added by OpmFind (this happens incidently
+	# already for the source do to the out-of-source support)
+	if ("${${MODULE}_ROOT}" MATCHES "/${module}$")
+	  list (APPEND _guess_bin ${${MODULE}_ROOT}/..)
+	endif ("${${MODULE}_ROOT}" MATCHES "/${module}$")
 	# when we look for the source, it may be that we have been specified
 	# a build directory which is a sub-dir of the source, so we look in
 	# the parent also
