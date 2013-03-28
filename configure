@@ -28,7 +28,9 @@ Optional Features:
 
 Optional Packages:
   --with-boost=PATH       use Boost library from a specified location
+  --with-dune=PATH        specify parent of all DUNE modules not specified
   --with-dune-MODULE=PATH use given DUNE module from a specified location
+  --with-opm=PATH         specify parent of all OPM modules not specified
   --with-opm-MODULE=PATH  use given OPM module from a specified location
   --with-superlu=PATH     user defined path to SuperLU library
   --with-agmg=PATH        Include DOUBLE PRECISION version Notay's of AGMG
@@ -170,7 +172,9 @@ for OPT in "$@"; do
             superlu     |\
             SuiteSparse |\
             TinyXML     |\
+            opm         |\
             opm-*       |\
+            dune        |\
             dune-*      |\
             zlib)
               rootvar="${pkgname^^}_ROOT"
