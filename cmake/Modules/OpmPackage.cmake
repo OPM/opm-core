@@ -128,7 +128,12 @@ macro (find_opm_package module deps header lib defs prog conf)
 	# module sub-dir that was added by OpmFind (this happens incidently
 	# already for the source do to the out-of-source support)
 	if ("${${MODULE}_ROOT}" MATCHES "/${module}$")
-	  list (APPEND _guess_bin ${${MODULE}_ROOT}/..)
+	  get_filename_component (_suite_parent ${${MODULE}_ROOT} PATH)
+	  list (APPEND _guess_bin
+		${_suite_parent}
+		${_suite_parent}/${module}
+		${_suite_parent}/${module}/${_build_dir}
+		)
 	endif ("${${MODULE}_ROOT}" MATCHES "/${module}$")
 	# when we look for the source, it may be that we have been specified
 	# a build directory which is a sub-dir of the source, so we look in
