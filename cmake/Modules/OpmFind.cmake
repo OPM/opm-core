@@ -59,6 +59,10 @@ set (_opm_proj_exemptions
   dune-geometry
   )
 
+# although a DUNE module, it is delivered in the OPM suite
+set (dune-cornerpoint_SUITE "opm")
+set (ewoms_SUITE "opm")
+
 # insert this boilerplate whenever we are going to find a new package
 macro (find_and_append_package_to prefix name)
   # special handling for Boost to avoid inadvertedly picking up system
@@ -73,6 +77,26 @@ macro (find_and_append_package_to prefix name)
   # system default paths afterwards
   string (TOUPPER "${name}" NAME)
   string (REPLACE "-" "_" NAME "${NAME}")
+
+  # only use suite if module-specific variable is not set. this allows
+  # us to override one dir in a suite
+  if (NOT (${name}_DIR OR ${name}_ROOT OR ${NAME}_ROOT))
+	# module is part of a suite if it has name with the pattern xxx-yyy
+	if (("${name}" MATCHES "[^-]+-.+") OR ${name}_SUITE)
+	  # allow to override if the module doesn't quite fit the convention
+	  # e.g. dune-cornerpoint
+	  if (NOT DEFINED ${name}_SUITE)
+		# extract suite name from module
+		string (REGEX REPLACE "([^-]+)-.+" "\\1" ${name}_SUITE "${name}")
+	  endif (NOT DEFINED ${name}_SUITE)
+	  # assume that each module has its own subdir directly under suite dir
+	  string (TOUPPER "${${name}_SUITE}" ${name}_SUITE_UPPER)
+	  if (DEFINED ${${name}_SUITE_UPPER}_ROOT)
+		set (${NAME}_ROOT ${${${name}_SUITE_UPPER}_ROOT}/${name})
+	  endif (DEFINED ${${name}_SUITE_UPPER}_ROOT)
+	endif (("${name}" MATCHES "[^-]+-.+") OR ${name}_SUITE)
+  endif (NOT (${name}_DIR OR ${name}_ROOT OR ${NAME}_ROOT))
+
   # the documentation says that if *-config.cmake files are not found,
   # find_package will revert to doing a full search, but that is not
   # true, so unconditionally setting ${name}_DIR is not safe. however,

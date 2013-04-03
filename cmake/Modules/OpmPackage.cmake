@@ -123,6 +123,18 @@ macro (find_opm_package module deps header lib defs prog conf)
 	  ${${module}_ROOT}
 	  ${${MODULE}_ROOT}
 	  )
+	# if every package is installed directly in the "suite" directory
+	# (e.g. /usr) then allow us to back-track one directory from the
+	# module sub-dir that was added by OpmFind (this happens incidently
+	# already for the source do to the out-of-source support)
+	if ("${${MODULE}_ROOT}" MATCHES "/${module}$")
+	  get_filename_component (_suite_parent ${${MODULE}_ROOT} PATH)
+	  list (APPEND _guess_bin
+		${_suite_parent}
+		${_suite_parent}/${module}
+		${_suite_parent}/${module}/${_build_dir}
+		)
+	endif ("${${MODULE}_ROOT}" MATCHES "/${module}$")
 	# when we look for the source, it may be that we have been specified
 	# a build directory which is a sub-dir of the source, so we look in
 	# the parent also
@@ -239,9 +251,24 @@ macro (find_opm_package module deps header lib defs prog conf)
   include (FindPackageHandleStandardArgs)
   if ("${lib}" STREQUAL "")
 	set (_lib_var "")
+	set (_and_lib_var)
   else ("${lib}" STREQUAL "")
 	set (_lib_var "${module}_LIBRARY")
+	set (_and_lib_var AND ${_lib_var})
   endif ("${lib}" STREQUAL "")
+  # if the search is going to fail, then write these variables to
+  # the console as well as a diagnostics
+  if (NOT (${module}_INCLUDE_DIR ${_and_lib_var} AND HAVE_${MODULE})
+	  AND (${module}_FIND_REQUIRED OR NOT ${module}_FIND_QUIETLY))
+	if (DEFINED ${module}_DIR)
+	  message ("${module}_DIR = ${${module}_DIR}")
+	elseif (DEFINED ${module}_ROOT)
+	  message ("${module}_ROOT = ${${module}_ROOT}")
+	elseif (DEFINED ${MODULE}_ROOT)
+	  message ("${MODULE}_ROOT = ${${MODULE}_ROOT}")
+	endif (DEFINED ${module}_DIR)
+  endif (NOT (${module}_INCLUDE_DIR ${_and_lib_var} AND HAVE_${MODULE})
+	AND (${module}_FIND_REQUIRED OR NOT ${module}_FIND_QUIETLY))
   find_package_handle_standard_args (
 	${module}
 	DEFAULT_MSG
