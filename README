@@ -146,6 +146,10 @@ configures the build
     cd path/to/build
     cmake ../opm-core -DCMAKE_BUILD_TYPE=Release
 
+If you want to debug the library you should specify the build type
+"Debug" instead of "Release" in the command above. This will disable
+optimizations and make it easier to step through the code.
+
 Building the software then amounts to typing
 
     make
