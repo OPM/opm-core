@@ -22,10 +22,13 @@ if (CMAKE_COMPILER_IS_GNUCXX)
   set (_opt_flags "")
 
   # link-time (a.k.a. global) optimizations
-  check_cxx_accepts_flag ("-flto" HAVE_LINK_OPTS)
-  if (HAVE_LINK_OPTS)
-	list (APPEND _opt_flags "-flto")
-  endif (HAVE_LINK_OPTS)
+  option (WHOLE_PROG_OPTIM "Whole program optimization (lto)" ON)
+  if (WHOLE_PROG_OPTIM)
+	check_cxx_accepts_flag ("-flto" HAVE_LINK_OPTS)
+	if (HAVE_LINK_OPTS)
+	  list (APPEND _opt_flags "-flto")
+	endif (HAVE_LINK_OPTS)
+  endif (WHOLE_PROG_OPTIM)
 
   # native instruction set tuning
   option (WITH_NATIVE "Use native instruction set" ON)
