@@ -13,11 +13,16 @@ include (AddOptions)
 
 # only debugging using the GNU toolchain is supported for now
 if (CMAKE_COMPILER_IS_GNUCXX)
+  # default debug level, if not specified by the user
+  set_default_option (_dbg_flag "-ggdb3" "(^|\ )-g")
+
   # add debug symbols to *all* targets, regardless. there WILL come a
   # time when you need to find a bug which only manifests itself in a
   # release target on a production system!
-  message (STATUS "Generating debug symbols: -ggdb3")
-  add_options (ALL_LANGUAGES ALL_BUILDS "-ggdb3")
+  if (_dbg_flag)
+	message (STATUS "Generating debug symbols: ${_dbg_flag}")
+	add_options (ALL_LANGUAGES ALL_BUILDS "${_dbg_flag}")
+  endif (_dbg_flag)
 
   # extracting the debug info is done by a separate utility in the GNU
   # toolchain. check that this is actually installed.

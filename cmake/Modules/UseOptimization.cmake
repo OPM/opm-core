@@ -7,11 +7,15 @@ include (AddOptions)
 # otherwise, turn them on. indicate to the code what we have done
 # so it can turn on assertions etc.
 if (CMAKE_COMPILER_IS_GNUCXX)
+  # default optimization flags, if not set by user
+  set_default_option (_opt_dbg "-O0" "(^|\ )-O")
+  set_default_option (_opt_rel "-O3" "(^|\ )-O")
+
   # use these options for debug builds - no optimizations
   add_options (
 	ALL_LANGUAGES
 	"Debug"
-	"-O0" "-DDEBUG"
+	${_opt_dbg} "-DDEBUG"
 	)
 
   # extra flags passed for optimization
@@ -36,6 +40,25 @@ if (CMAKE_COMPILER_IS_GNUCXX)
   add_options (
 	ALL_LANGUAGES
 	"Release;RelWithDebInfo;MinSizeRel"
-	"-O3" "-DNDEBUG" ${_opt_flags}
+	${_opt_rel} "-DNDEBUG" ${_opt_flags}
 	)
+else (CMAKE_COMPILER_IS_GNUCXX)
+  # mapping from profile name (in CMAKE_BUILD_TYPE) to variable part
+  set (_prof_DEBUG "Debug")
+  set (_prof_RELEASE "Release;RelWithDebInfo;MinSizeRel")
+  
+  # default information from system
+  foreach (lang IN ITEMS C CXX Fortran)
+	if (lang STREQUAL "Fortran")
+	  set (_lang F)
+	else (lang STREQUAL "Fortran")
+	  set (_lang ${lang})
+	endif (lang STREQUAL "Fortran")
+	foreach (profile IN ITEMS DEBUG RELEASE)
+	  if (NOT CMAKE_${lang}_FLAGS_${profile})
+		add_options (${lang} "${_prof_${profile}}"
+		  "$ENV{${_lang}FLAGS} ${CMAKE_${lang}_FLAGS_${profile}_INIT}")
+	  endif (NOT CMAKE_${lang}_FLAGS_${profile})
+	endforeach (profile)
+  endforeach (lang)
 endif (CMAKE_COMPILER_IS_GNUCXX)
