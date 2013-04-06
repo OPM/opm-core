@@ -3,21 +3,15 @@
 include(TestCXXAcceptsFlag)
 include (AddOptions)
 
+# mapping from profile name (in CMAKE_BUILD_TYPE) to variable part
+set (_prof_DEBUG "Debug")
+set (_prof_RELEASE "Release;RelWithDebInfo;MinSizeRel")
+
 # if we are building a debug target, then disable all optimizations
 # otherwise, turn them on. indicate to the code what we have done
 # so it can turn on assertions etc.
+
 if (CMAKE_COMPILER_IS_GNUCXX)
-  # default optimization flags, if not set by user
-  set_default_option (_opt_dbg "-O0" "(^|\ )-O")
-  set_default_option (_opt_rel "-O3" "(^|\ )-O")
-
-  # use these options for debug builds - no optimizations
-  add_options (
-	ALL_LANGUAGES
-	"Debug"
-	${_opt_dbg} "-DDEBUG"
-	)
-
   # extra flags passed for optimization
   set (_opt_flags "")
 
@@ -39,17 +33,17 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 	endif (HAVE_MTUNE)
   endif (WITH_NATIVE)
 
+  # default optimization flags, if not set by user
+  set_default_option (_opt_dbg "-O0" "(^|\ )-O")
+  set_default_option (_opt_rel "-O3" "(^|\ )-O")
+
+  # use these options for debug builds - no optimizations
+  add_options (ALL_LANGUAGES "${_prof_DEBUG}" ${_opt_dbg} "-DDEBUG")
+
   # use these options for release builds - full optimization
-  add_options (
-	ALL_LANGUAGES
-	"Release;RelWithDebInfo;MinSizeRel"
-	${_opt_rel} "-DNDEBUG" ${_opt_flags}
-	)
+  add_options (ALL_LANGUAGES "${_prof_RELEASE}" ${_opt_rel} "-DNDEBUG" ${_opt_flags})
+
 else (CMAKE_COMPILER_IS_GNUCXX)
-  # mapping from profile name (in CMAKE_BUILD_TYPE) to variable part
-  set (_prof_DEBUG "Debug")
-  set (_prof_RELEASE "Release;RelWithDebInfo;MinSizeRel")
-  
   # default information from system
   foreach (lang IN ITEMS C CXX Fortran)
 	if (lang STREQUAL "Fortran")
