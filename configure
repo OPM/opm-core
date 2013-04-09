@@ -17,7 +17,8 @@ Optional Features:
   --enable-shared         build a shared library [default=yes]
   --enable-static         build a static library [default=no]. Note: only one
                           of the options shared and static may be built.
-  --disable-debug         build a release version of the library [default=no]
+  --enable-debug          build a non-optimized version of the library
+                          [default=no]
   --disable-lto           do not use whole program optimization [default=yes]
   --disable-pch           do not use precompiled headers (if buggy compiler)
   --disable-silent-rules  print every compilation statement as executed
@@ -92,7 +93,8 @@ invalid_opt () {
 
 # default values
 prefix=/usr/local
-buildtype=Debug
+#buildtype=" -DCMAKE_BUILD_TYPE=Debug"
+buildtype=
 #pch_use=" -DPRECOMPILE_HEADERS:BOOL=ON"
 pch_use=
 #use_openmp=" -DUSE_OPENMP=OFF"
@@ -219,7 +221,7 @@ for OPT in "$@"; do
               pkgname=""
               ;;
             debug)
-              buildtype=Release
+              buildtype=" -DCMAKE_BUILD_TYPE=Release"
               # special flag: don't disable any particular package
               pkgname=""
               ;;
@@ -289,6 +291,10 @@ for OPT in "$@"; do
               # special flag; don't set shared/static
               shared=""
               ;;
+            debug)
+              buildtype=" -DCMAKE_BUILD_TYPE=Debug"
+              shared=""
+              ;;
             pch)
               pch_use=" -DPRECOMPILE_HEADERS:BOOL=ON"
               shared=""
@@ -341,7 +347,7 @@ for a in "${VARS[@]}"; do
 done
 
 # pass everything on to CMake
-CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"${srcdir}\" \"-DCMAKE_INSTALL_PREFIX=$prefix\" -DCMAKE_BUILD_TYPE=${buildtype}${pch_use}${silent_rules}${debug_loc}${use_openmp}${use_mpi}${use_lto} ${FEATURES}"
+CMDLINE="env ${ENVVARS} ${CMAKE_COMMAND} \"${srcdir}\" \"-DCMAKE_INSTALL_PREFIX=$prefix\"${buildtype}${pch_use}${silent_rules}${debug_loc}${use_openmp}${use_mpi}${use_lto} ${FEATURES}"
 echo --- calling CMake ---
 echo ${CMDLINE}
 eval exec ${CMDLINE}
