@@ -18,6 +18,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 #include <cassert>
 #include <cmath>
 #include <cstddef>

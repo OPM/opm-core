@@ -32,6 +32,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 #include <assert.h>
 #include <float.h>
 #include <math.h>

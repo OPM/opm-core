@@ -19,6 +19,7 @@
 
 
 
+#include "config.h"
 #include <opm/core/props/pvt/BlackoilPvtProperties.hpp>
 #include <opm/core/props/pvt/SinglePvtDead.hpp>
 #include <opm/core/props/pvt/SinglePvtDeadSpline.hpp>

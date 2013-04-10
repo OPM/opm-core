@@ -33,6 +33,7 @@
   along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 #include <opm/core/utility/MonotCubicInterpolator.hpp>
 
 int main()

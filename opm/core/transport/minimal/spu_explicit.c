@@ -3,7 +3,7 @@
  * Jostein R. Natvig <Jostein.R.Natvig at sintef.no>
  */
 
-
+#include "config.h"
 #include <assert.h>
 #include <stdio.h>
 

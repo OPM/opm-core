@@ -18,6 +18,7 @@
 */
 
 
+#include "config.h"
 #include <opm/core/props/pvt/SinglePvtDead.hpp>
 #include <algorithm>
 
