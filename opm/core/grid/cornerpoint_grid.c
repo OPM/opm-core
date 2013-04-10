@@ -11,6 +11,7 @@
   Copyright 2011 SINTEF ICT, Applied Mathematics.
 */
 
+#include "config.h"
 #include <assert.h>
 #include <stdlib.h>
 

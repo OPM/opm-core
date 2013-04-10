@@ -17,6 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 #include <opm/core/props/satfunc/SatFuncStone2.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/props/satfunc/SaturationPropsFromDeck.hpp>

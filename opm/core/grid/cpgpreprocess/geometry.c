@@ -2,7 +2,7 @@
  * Copyright 2010 (c) SINTEF ICT, Applied Mathematics.
  * Jostein R. Natvig <Jostein.R.Natvig at sintef.no>
  */
-#include <omp.h>
+#include "config.h"
 #include <math.h>
 #include <stdio.h>
 #include "geometry.h"

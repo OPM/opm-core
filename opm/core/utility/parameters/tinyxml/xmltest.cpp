@@ -1,6 +1,7 @@
 /*
    Test program for TinyXML.
 */
+#include "config.h"
 
 
 #ifdef TIXML_USE_STL

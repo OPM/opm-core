@@ -17,6 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 #include <opm/core/io/vtk/writeVtkData.hpp>
 #include <opm/core/utility/DataMap.hpp>
 #include <opm/core/grid.h>

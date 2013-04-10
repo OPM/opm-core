@@ -4,7 +4,7 @@
  *  Created on: Aug 28, 2012
  *      Author: bska
  */
-
+#include "config.h"
 #include <stdio.h>
 
 #include <opm/core/grid.h>

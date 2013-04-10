@@ -30,6 +30,7 @@
 */
 
 
+#include "config.h"
 #include <opm/core/utility/MonotCubicInterpolator.hpp>
 
 #include <iostream>
