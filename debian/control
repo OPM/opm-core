@@ -15,7 +15,7 @@ Vcs-Browser: https://github.com/OPM/opm-core
 
 Package: libopm-core1-dev
 Section: libdevel
-Architecture: all
+Architecture: any
 Multi-Arch: foreign
 Depends: libopm-core1 (= ${binary:Version}), libdune-istl-dev
 Provides: libopm-core-dev
