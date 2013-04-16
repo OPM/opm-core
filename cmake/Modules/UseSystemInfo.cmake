@@ -43,7 +43,7 @@ function (read_release valuename FROM filename INTO varname)
 	REGEX "^${valuename}="
 	)
   string (REGEX REPLACE
-	"^${valuename}=\"?\(.*\)" "\\1" ${varname} ${_distrib}
+	"^${valuename}=\"?\(.*\)" "\\1" ${varname} "${_distrib}"
 	)
   # remove trailing quote that got globbed by the wildcard (greedy match)
   string (REGEX REPLACE
