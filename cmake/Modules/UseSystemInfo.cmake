@@ -18,6 +18,7 @@ function (distro_name varname)
   file (GLOB has_os_release /etc/os-release)
   file (GLOB has_lsb_release /etc/lsb-release)
   file (GLOB has_sys_release /etc/system-release)
+  set (_descr)
   # start with /etc/os-release,
   # see <http://0pointer.de/blog/projects/os-release.html>
   if (NOT has_os_release STREQUAL "")
@@ -25,13 +26,16 @@ function (distro_name varname)
   # previous "standard", used on older Ubuntu and Debian
   elseif (NOT has_lsb_release STREQUAL "")
 	read_release (DISTRIB_DESCRIPTION FROM /etc/lsb-release INTO _descr)
-  # RHEL/CentOS etc. has just a text-file
-  elseif (NOT has_sys_release STREQUAL "")
-	file (READ /etc/system-release _descr)
-  else (NOT has_lsb_release STREQUAL "")
-	# no yet known release file found
-	set (_descr "unknown")
   endif (NOT has_os_release STREQUAL "")
+  # RHEL/CentOS etc. has just a text-file
+  if (NOT _descr)
+	if (NOT has_sys_release STREQUAL "")
+	  file (READ /etc/system-release _descr)
+	else (NOT has_sys_release STREQUAL "")
+	  # no yet known release file found
+	  set (_descr "unknown")
+	endif (NOT has_sys_release STREQUAL "")
+  endif (NOT _descr)
   # return from function (into appropriate variable)
   string (STRIP "${_descr}" _descr)
   set (${varname} "${_descr}" PARENT_SCOPE)
@@ -43,7 +47,7 @@ function (read_release valuename FROM filename INTO varname)
 	REGEX "^${valuename}="
 	)
   string (REGEX REPLACE
-	"^${valuename}=\"?\(.*\)" "\\1" ${varname} ${_distrib}
+	"^${valuename}=\"?\(.*\)" "\\1" ${varname} "${_distrib}"
 	)
   # remove trailing quote that got globbed by the wildcard (greedy match)
   string (REGEX REPLACE
