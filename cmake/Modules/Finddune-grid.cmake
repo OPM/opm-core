@@ -34,12 +34,9 @@ find_opm_package (
 
   # test program
 "#include <dune/grid/onedgrid.hh>
-#include <vector>
 int main (void) {
-  std::vector<Dune::OneDGrid::ctype> coords;
-  Dune::OneDGrid grid(coords);
+  Dune::OneDGrid grid(1, 0., 1.);
   return grid.lbegin<0>(0) == grid.lend<0>(0);
-  return 0;
 }
 "
   # config variables
