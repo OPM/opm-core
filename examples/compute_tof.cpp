@@ -30,6 +30,7 @@
 #include <opm/core/wells.h>
 #include <opm/core/wells/WellsManager.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/SparseTable.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
@@ -65,6 +66,25 @@ namespace
             std::cout << "----------------------------------------------------------------" << std::endl;
         }
     }
+
+    void buildTracerheadsFromWells(const Wells* wells,
+                                   const Opm::WellState& well_state,
+                                   Opm::SparseTable<int>& tracerheads)
+    {
+        if (wells == 0) {
+            return;
+        }
+        tracerheads.clear();
+        const int num_wells = wells->number_of_wells;
+        for (int w = 0; w < num_wells; ++w) {
+            if (wells->type[w] != INJECTOR) {
+                continue;
+            }
+            tracerheads.appendRow(wells->well_cells + wells->well_connpos[w],
+                                  wells->well_cells + wells->well_connpos[w + 1]);
+        }
+    }
+
 } // anon namespace
 
 
@@ -239,7 +259,9 @@ main(int argc, char** argv)
     } else {
         Opm::TofReorder tofsolver(*grid->c_grid(), use_multidim_upwind);
         if (compute_tracer) {
-            tofsolver.solveTofTracer(&state.faceflux()[0], &porevol[0], &transport_src[0], tof, tracer);
+            Opm::SparseTable<int> tracerheads;
+            buildTracerheadsFromWells(wells->c_wells(), well_state, tracerheads);
+            tofsolver.solveTofTracer(&state.faceflux()[0], &porevol[0], &transport_src[0], tracerheads, tof, tracer);
         } else {
             tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
         }
