@@ -237,7 +237,7 @@ main(int argc, char** argv)
     if (use_dg) {
         dg_solver->solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
     } else {
-        Opm::TofReorder tofsolver(*grid->c_grid(), linsolver, use_multidim_upwind);
+        Opm::TofReorder tofsolver(*grid->c_grid(), use_multidim_upwind);
         if (compute_tracer) {
             tofsolver.solveTofTracer(&state.faceflux()[0], &porevol[0], &transport_src[0], tof, tracer);
         } else {
