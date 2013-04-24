@@ -197,9 +197,6 @@ main(int argc, char** argv)
         use_multidim_upwind = param.getDefault("use_multidim_upwind", false);
     }
     bool compute_tracer = param.getDefault("compute_tracer", false);
-    if (use_dg && compute_tracer) {
-        THROW("DG for tracer not yet implemented.");
-    }
 
     // Write parameters used for later reference.
     bool output = param.getDefault("output", true);
@@ -254,13 +251,19 @@ main(int argc, char** argv)
     transport_timer.start();
     std::vector<double> tof;
     std::vector<double> tracer;
+    Opm::SparseTable<int> tracerheads;
+    if (compute_tracer) {
+        buildTracerheadsFromWells(wells->c_wells(), well_state, tracerheads);
+    }
     if (use_dg) {
-        dg_solver->solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
+        if (compute_tracer) {
+            dg_solver->solveTofTracer(&state.faceflux()[0], &porevol[0], &transport_src[0], tracerheads, tof, tracer);
+        } else {
+            dg_solver->solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
+        }
     } else {
         Opm::TofReorder tofsolver(*grid->c_grid(), use_multidim_upwind);
         if (compute_tracer) {
-            Opm::SparseTable<int> tracerheads;
-            buildTracerheadsFromWells(wells->c_wells(), well_state, tracerheads);
             tofsolver.solveTofTracer(&state.faceflux()[0], &porevol[0], &transport_src[0], tracerheads, tof, tracer);
         } else {
             tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
