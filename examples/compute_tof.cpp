@@ -30,6 +30,7 @@
 #include <opm/core/wells.h>
 #include <opm/core/wells/WellsManager.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/SparseTable.hpp>
 #include <opm/core/utility/StopWatch.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
@@ -65,6 +66,25 @@ namespace
             std::cout << "----------------------------------------------------------------" << std::endl;
         }
     }
+
+    void buildTracerheadsFromWells(const Wells* wells,
+                                   const Opm::WellState& well_state,
+                                   Opm::SparseTable<int>& tracerheads)
+    {
+        if (wells == 0) {
+            return;
+        }
+        tracerheads.clear();
+        const int num_wells = wells->number_of_wells;
+        for (int w = 0; w < num_wells; ++w) {
+            if (wells->type[w] != INJECTOR) {
+                continue;
+            }
+            tracerheads.appendRow(wells->well_cells + wells->well_connpos[w],
+                                  wells->well_cells + wells->well_connpos[w + 1]);
+        }
+    }
+
 } // anon namespace
 
 
@@ -177,9 +197,6 @@ main(int argc, char** argv)
         use_multidim_upwind = param.getDefault("use_multidim_upwind", false);
     }
     bool compute_tracer = param.getDefault("compute_tracer", false);
-    if (use_dg && compute_tracer) {
-        THROW("DG for tracer not yet implemented.");
-    }
 
     // Write parameters used for later reference.
     bool output = param.getDefault("output", true);
@@ -234,12 +251,20 @@ main(int argc, char** argv)
     transport_timer.start();
     std::vector<double> tof;
     std::vector<double> tracer;
+    Opm::SparseTable<int> tracerheads;
+    if (compute_tracer) {
+        buildTracerheadsFromWells(wells->c_wells(), well_state, tracerheads);
+    }
     if (use_dg) {
-        dg_solver->solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
+        if (compute_tracer) {
+            dg_solver->solveTofTracer(&state.faceflux()[0], &porevol[0], &transport_src[0], tracerheads, tof, tracer);
+        } else {
+            dg_solver->solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
+        }
     } else {
         Opm::TofReorder tofsolver(*grid->c_grid(), use_multidim_upwind);
         if (compute_tracer) {
-            tofsolver.solveTofTracer(&state.faceflux()[0], &porevol[0], &transport_src[0], tof, tracer);
+            tofsolver.solveTofTracer(&state.faceflux()[0], &porevol[0], &transport_src[0], tracerheads, tof, tracer);
         } else {
             tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
         }
