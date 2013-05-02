@@ -966,9 +966,16 @@ ecl_grid_type * EclipseGridParser::newGrid( ) {
 
 void EclipseGridParser::saveEGRID( const std::string & filename) const {
   bool endian_flip = true;//ECL_ENDIAN_FLIP;
-  bool fmt_file     = ecl_util_fmt_file( filename.c_str() );
+  bool fmt_file;
   struct grdecl grdecl = get_grdecl();
-  fortio_type * fortio = fortio_open_writer( filename.c_str() , fmt_file , endian_flip );
+  fortio_type * fortio;
+
+  if (!ecl_util_fmt_file( filename.c_str() , &fmt_file)) {
+    cerr << "Could not determine formatted/unformatted status of file:" << filename << " non-standard name?" << endl;
+    throw exception();
+  }
+  
+  fortio = fortio_open_writer( filename.c_str() , fmt_file , endian_flip );
   {
     float * mapaxes = NULL;
     if (grdecl.mapaxes != NULL) {
@@ -1023,9 +1030,16 @@ void EclipseGridParser::save_kw( fortio_type * fortio , const std::string & kw ,
 
 void EclipseGridParser::saveINIT( const std::string & filename , const ecl_grid_type * ecl_grid) {
   int phases        = ECL_OIL_PHASE + ECL_WATER_PHASE;
-  bool fmt_file     = ecl_util_fmt_file( filename.c_str() );
   bool endian_flip  = true;//ECL_ENDIAN_FLIP;
-  fortio_type * fortio = fortio_open_writer( filename.c_str() , fmt_file , endian_flip );
+  bool fmt_file;
+  fortio_type * fortio;
+
+  if (!ecl_util_fmt_file( filename.c_str() , &fmt_file)) {
+    cerr << "Could not determine formatted/unformatted status of file:" << filename << " non-standard name?" << endl;
+    throw exception();
+  }
+  fortio = fortio_open_writer( filename.c_str() , fmt_file , endian_flip );
+
   {
     ecl_kw_type * poro_kw = newEclKW( PORO_KW , ECL_FLOAT_TYPE );
     time_t start_date;
