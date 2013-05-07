@@ -36,21 +36,28 @@
 #include <ert/ecl/ecl_util.h>
 #include <ert/ecl/ecl_rst_file.h>
 
+#include <boost/shared_ptr.hpp>
+
+#include <cstdlib>
+
 namespace {
-  ecl_kw_type * ecl_kw_wrapper( const UnstructuredGrid& grid,
-                                const std::string& kw_name , 
-                                const std::vector<double> * data , 
-                                int offset , 
-                                int stride ) {
+  boost::shared_ptr<ecl_kw_type>
+  ecl_kw_wrapper( const UnstructuredGrid& grid,
+                  const std::string& kw_name ,
+                  const std::vector<double> * data ,
+                  int offset ,
+                  int stride ) {
 
     if (stride <= 0)
       THROW("Vector strides must be positive. Got stride = " << stride);
     if ((stride * std::vector<double>::size_type(grid.number_of_cells)) != data->size())
       THROW("Internal mismatch grid.number_of_cells: " << grid.number_of_cells << " data size: " << data->size() / stride);
     {
-      ecl_kw_type * ecl_kw = ecl_kw_alloc( kw_name.c_str() , grid.number_of_cells , ECL_FLOAT_TYPE );
+      boost::shared_ptr<ecl_kw_type>
+          ecl_kw(ecl_kw_alloc( kw_name.c_str() , grid.number_of_cells , ECL_FLOAT_TYPE ),
+                 ecl_kw_free);
       for (int i=0; i < grid.number_of_cells; i++) 
-        ecl_kw_iset_float( ecl_kw , i , (*data)[i*stride + offset]);
+        ecl_kw_iset_float( ecl_kw.get() , i , (*data)[i*stride + offset]);
       return ecl_kw;
     }
   }
@@ -97,7 +104,11 @@ namespace Opm
     ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;  // Alternatively ECL_RESTART_FILE for multiple restart files.
     bool fmt_file           = false;
     
-    char * filename         = ecl_util_alloc_filename(output_dir.c_str() , base_name.c_str() , file_type , fmt_file , current_step );
+    boost::shared_ptr<char> filename(ecl_util_alloc_filename(output_dir.c_str() ,
+                                                             base_name.c_str()  ,
+                                                             file_type, fmt_file,
+                                                             current_step       ),
+                                     std::free);
     int phases              = ECL_OIL_PHASE + ECL_WATER_PHASE;
     double days             = Opm::unit::convert::to(current_time, Opm::unit::day);
     time_t date             = 0;
@@ -116,9 +127,9 @@ namespace Opm
     }
     
     if (current_step > 0 && file_type == ECL_UNIFIED_RESTART_FILE)
-      rst_file = ecl_rst_file_open_append( filename );
+      rst_file = ecl_rst_file_open_append( filename.get() );
     else
-      rst_file = ecl_rst_file_open_write( filename );
+      rst_file = ecl_rst_file_open_write( filename.get() );
     
     ecl_rst_file_fwrite_header( rst_file , current_step , date , days , nx , ny , nz , nactive , phases );
     ecl_rst_file_start_solution( rst_file );
@@ -126,9 +137,9 @@ namespace Opm
     {
       DataMap::const_iterator i = data.find("pressure");
       if (i != data.end()) {
-        ecl_kw_type * pressure_kw = ecl_kw_wrapper( grid , "PRESSURE" , i->second , 0 , 1);
-        ecl_rst_file_add_kw( rst_file , pressure_kw );
-        ecl_kw_free( pressure_kw );
+        boost::shared_ptr<ecl_kw_type>
+            pressure_kw = ecl_kw_wrapper( grid , "PRESSURE" , i->second , 0 , 1);
+        ecl_rst_file_add_kw( rst_file , pressure_kw.get() );
       }
     }
     
@@ -138,15 +149,14 @@ namespace Opm
         if (int(i->second->size()) != 2 * grid.number_of_cells) {
           THROW("writeECLData() requires saturation field to have two phases.");
         }
-        ecl_kw_type * swat_kw = ecl_kw_wrapper( grid , "SWAT" , i->second , 0 , 2);
-        ecl_rst_file_add_kw( rst_file , swat_kw );
-        ecl_kw_free( swat_kw );
+        boost::shared_ptr<ecl_kw_type>
+            swat_kw = ecl_kw_wrapper( grid , "SWAT" , i->second , 0 , 2);
+        ecl_rst_file_add_kw( rst_file , swat_kw.get() );
       }
     }
 
     ecl_rst_file_end_solution( rst_file );
     ecl_rst_file_close( rst_file );
-    free(filename);
   } 
 }
 
