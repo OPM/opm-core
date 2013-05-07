@@ -35,15 +35,12 @@
 #include <ert/ecl/ecl_util.h>
 #include <ert/ecl/ecl_rst_file.h>
 
-
-namespace Opm
-{
-  
-  static ecl_kw_type * ecl_kw_wrapper( const UnstructuredGrid& grid,
-                                       const std::string& kw_name , 
-                                       const std::vector<double> * data , 
-                                       int offset , 
-                                       int stride ) {
+namespace {
+  ecl_kw_type * ecl_kw_wrapper( const UnstructuredGrid& grid,
+                                const std::string& kw_name , 
+                                const std::vector<double> * data , 
+                                int offset , 
+                                int stride ) {
 
     if (stride <= 0)
       THROW("Vector strides must be positive. Got stride = " << stride);
@@ -56,8 +53,11 @@ namespace Opm
       return ecl_kw;
     }
   }
+} // Anonymous namespace
 
 
+namespace Opm
+{
   /*
     This function will write the data solution data in the DataMap
     @data as an ECLIPSE restart file, in addition to the solution
