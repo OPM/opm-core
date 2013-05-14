@@ -1,0 +1,26 @@
+<!-- parameter groups contains nested groups, values, or
+     inclusion from files (either at this level, or as a sub-group) -->
+<!ELEMENT ParameterGroup (ParameterGroup |
+                          Parameter |
+                          ParameterGroupFromFile |
+                          MergeWithFile)*>
+<!-- note: top-level group has implied name, sub-groups must be specified -->
+<!ATTLIST ParameterGroup name NMTOKEN #IMPLIED>
+
+<!-- single value parameters. filenames can have either relative or absolute paths -->
+<!ELEMENT Parameter EMPTY>
+<!ATTLIST Parameter type  (bool | int | double | string | file | cmdline) #REQUIRED
+                    name  NMTOKEN    #REQUIRED
+                    value CDATA      #REQUIRED
+>
+
+<!-- include parameters from another file, as a named sub-group
+     (the nameless top-level in that file becomes "name" in this) -->
+<!ELEMENT ParameterGroupFromFile EMPTY>
+<!ATTLIST ParameterGroupFromFile name  NMTOKEN  #REQUIRED
+                                 value CDATA    #REQUIRED
+>
+
+<!-- include parameters from another file as if they were given on this level -->
+<!ELEMENT MergeWithFile EMPTY>
+<!ATTLIST MergeWithFile value CDATA #REQUIRED>
