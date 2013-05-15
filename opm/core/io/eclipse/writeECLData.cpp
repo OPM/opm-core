@@ -39,6 +39,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <cstdlib>
+#include <ctime>
 
 namespace {
   boost::shared_ptr<ecl_kw_type>
@@ -61,6 +62,64 @@ namespace {
       return ecl_kw;
     }
   }
+
+  template <ecl_file_enum FileType  = ECL_UNIFIED_RESTART_FILE,
+            bool          Formatted = false>
+  class RestartFile {
+  public:
+    RestartFile(const UnstructuredGrid&         grid,
+                const int                       current_step,
+                const double                    current_time,
+                const boost::posix_time::ptime& current_date_time,
+                const std::string&              output_dir,
+                const std::string&              base_name)
+      : nactive_(grid.number_of_cells)
+      , rst_file_(0)
+    {
+      const int phases  = ECL_OIL_PHASE + ECL_WATER_PHASE;
+      const double days = Opm::unit::convert::to(current_time, Opm::unit::day);
+      const int nx      = grid_.cartdims[0];
+      const int ny      = grid_.cartdims[1];
+      const int nz      = grid_.cartdims[2];
+
+      std::time_t date  = 0;
+      {
+        using namespace boost::posix_time;
+        ptime t0( boost::gregorian::date(1970 , 1 ,1) );
+        time_duration::sec_type seconds = (current_date_time - t0).total_seconds();
+
+        date = std::time_t( seconds );
+      }
+
+      {
+        boost::shared_ptr<char>
+          filename(ecl_util_alloc_filename(output_dir.c_str() ,
+                                           base_name.c_str()  ,
+                                           FileType, Formatted,
+                                           current_step       ),
+                   std::free);
+
+        if (current_step > 0 && FileType == ECL_UNIFIED_RESTART_FILE)
+          rst_file_ = ecl_rst_file_open_append( filename.get() );
+        else
+          rst_file_ = ecl_rst_file_open_write( filename.get() );
+      }
+
+      ecl_rst_file_fwrite_header( rst_file_ , current_step , date , days ,
+                                  nx , ny , nz , nactive_ , phases );
+      ecl_rst_file_start_solution( rst_file_ );
+    }
+
+    ~RestartFile()
+    {
+      ecl_rst_file_end_solution( rst_file_ );
+      ecl_rst_file_close( rst_file_ );
+    }
+
+  private:
+    const int          nactive_;
+    ecl_rst_file_type* rst_file_;
+  };
 } // Anonymous namespace
 
 
