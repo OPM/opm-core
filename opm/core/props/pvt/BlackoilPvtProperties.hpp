@@ -55,6 +55,9 @@ namespace Opm
         ///                 data without fitting a spline.
         void init(const EclipseGridParser& deck, const int samples);
 
+        /// \return   Object describing the active phases.
+        PhaseUsage phaseUsage() const;
+
         /// Number of active phases.
         int numPhases() const;
 
