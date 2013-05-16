@@ -120,6 +120,11 @@ namespace Opm
     }
 
 
+    PhaseUsage BlackoilPvtProperties::phaseUsage() const
+    {
+        return phase_usage_;
+    }
+
     int BlackoilPvtProperties::numPhases() const
     {
         return phase_usage_.num_phases;
