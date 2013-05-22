@@ -49,6 +49,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/function.hpp>
+#include <boost/signal.hpp>
 
 #include <numeric>
 #include <fstream>
@@ -57,9 +59,8 @@
 namespace Opm
 {
 
-    class SimulatorIncompTwophase::Impl
+    struct SimulatorIncompTwophase::Impl
     {
-    public:
         Impl(const parameter::ParameterGroup& param,
              const UnstructuredGrid& grid,
              const IncompPropertiesInterface& props,
@@ -74,7 +75,6 @@ namespace Opm
                             TwophaseState& state,
                             WellState& well_state);
 
-    private:
         // Data.
         // Parameters for output.
         bool output_;
@@ -101,6 +101,9 @@ namespace Opm
         boost::scoped_ptr<TransportSolverTwophaseInterface> tsolver_;
         // Misc. data
         std::vector<int> allcells_;
+
+        // list of hooks that are notified when a timestep completes
+        boost::signal0 <void> timestep_completed;
     };
 
 
@@ -128,6 +131,11 @@ namespace Opm
                                                  WellState& well_state)
     {
         return pimpl_->run(timer, state, well_state);
+    }
+
+    // connect the hook to the signal in the implementation class
+    void SimulatorIncompTwophase::connect_timestep_impl (boost::function0 <void> hook) {
+        pimpl_->timestep_completed.connect (hook);
     }
 
     static void reportVolumes(std::ostream &os, double satvol[2], double tot_porevol_init,
@@ -411,6 +419,8 @@ namespace Opm
         double ptime = 0.0;
         Opm::time::StopWatch transport_timer;
         double ttime = 0.0;
+        Opm::time::StopWatch callback_timer;
+        double time_in_callbacks = 0.0;
         Opm::time::StopWatch step_timer;
         Opm::time::StopWatch total_timer;
         total_timer.start();
@@ -587,6 +597,12 @@ namespace Opm
             if (output_) {
                 sreport.reportParam(tstep_os);
             }
+
+            // notify all clients that we are done with the timestep
+            callback_timer.start ();
+            timestep_completed ();
+            callback_timer.stop ();
+            time_in_callbacks += callback_timer.secsSinceStart ();
         }
 
         if (output_) {
@@ -612,7 +628,7 @@ namespace Opm
         SimulatorReport report;
         report.pressure_time = ptime;
         report.transport_time = ttime;
-        report.total_time = total_timer.secsSinceStart();
+        report.total_time = total_timer.secsSinceStart() - time_in_callbacks;
         return report;
     }
 
