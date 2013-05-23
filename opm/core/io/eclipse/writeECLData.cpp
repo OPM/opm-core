@@ -78,9 +78,9 @@ namespace {
     {
       const int phases  = ECL_OIL_PHASE + ECL_WATER_PHASE;
       const double days = Opm::unit::convert::to(current_time, Opm::unit::day);
-      const int nx      = grid_.cartdims[0];
-      const int ny      = grid_.cartdims[1];
-      const int nz      = grid_.cartdims[2];
+      const int nx      = grid.cartdims[0];
+      const int ny      = grid.cartdims[1];
+      const int nz      = grid.cartdims[2];
 
       std::time_t date  = 0;
       {
