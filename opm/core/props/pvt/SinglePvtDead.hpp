@@ -49,12 +49,12 @@ namespace Opm
                         double* output_mu) const;
 
         /// Viscosity and its derivatives as a function of p and r.
-              virtual void mu(const int n,
-                                     const double* p,
-                                     const double* r,
-                                     double* output_mu,
-                                     double* output_dmudp,
-                                     double* output_dmudr) const;
+        virtual void mu(const int n,
+                        const double* p,
+                        const double* r,
+                        double* output_mu,
+                        double* output_dmudp,
+                        double* output_dmudr) const;
 
         /// Formation volume factor as a function of p and z.
         virtual void B(const int n,

@@ -81,12 +81,12 @@ namespace Opm
         if (phase_usage_.phase_used[Liquid]) {
             if (deck.hasField("PVDO")) {
                 if (samples > 0) {
-                 //   props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDeadSpline(deck.getPVDO().pvdo_, samples));
+                    props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDeadSpline(deck.getPVDO().pvdo_, samples));
                 } else {
                     props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDead(deck.getPVDO().pvdo_));
                 }
             } else if (deck.hasField("PVTO")) {
-                //props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtLiveOil(deck.getPVTO().pvto_));
+                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtLiveOil(deck.getPVTO().pvto_));
             } else if (deck.hasField("PVCDO")) {
                 props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtConstCompr(deck.getPVCDO().pvcdo_));
             } else {
@@ -97,12 +97,12 @@ namespace Opm
         if (phase_usage_.phase_used[Vapour]) {
             if (deck.hasField("PVDG")) {
                 if (samples > 0) {
-                 //   props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDeadSpline(deck.getPVDG().pvdg_, samples));
+                    props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDeadSpline(deck.getPVDG().pvdg_, samples));
                 } else {
                     props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDead(deck.getPVDG().pvdg_));
                 }
             } else if (deck.hasField("PVTG")) {
-               // props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(deck.getPVTG().pvtg_));
+                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(deck.getPVTG().pvtg_));
             } else {
                 THROW("Input is missing PVDG or PVTG\n");
             }
