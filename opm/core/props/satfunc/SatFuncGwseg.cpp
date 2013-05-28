@@ -136,14 +136,14 @@ namespace Opm
             const double sg = s[Vapour];
             // xw and xg are the fractions occupied by water and gas zones.
             const double eps = 1e-6;
-            const double xw = (sw - swco) / std::max(sg + sw - swco, eps);
-            const double xg = 1 - xw;
             const double ssw = sg + sw;
-            const double ssg = sw - swco + sg;
+            const double ssg = std::max(sg + sw - swco, eps);
             const double krw = krw_(ssw);
             const double krg = krg_(ssg);
             const double krow = krow_(ssw);
             const double krog = krog_(ssg);
+            const double xw = (sw - swco) / ssg;
+            const double xg = 1 - xw;
             kr[Aqua]   = xw*krw;
             kr[Vapour] = xg*krg;
             kr[Liquid] = xw*krow + xg*krog;
@@ -341,14 +341,14 @@ namespace Opm
             const double sg = s[Vapour];
             // xw and xg are the fractions occupied by water and gas zones.
             const double eps = 1e-6;
-            const double xw = (sw - swco) / std::max(sg + sw - swco, eps);
-            const double xg = 1 - xw;
             const double ssw = sg + sw;
-            const double ssg = sw - swco + sg;
+            const double ssg = std::max(sg + sw - swco, eps);
             const double krw = krw_(ssw);
             const double krg = krg_(ssg);
             const double krow = krow_(ssw);
             const double krog = krog_(ssg);
+            const double xw = (sw - swco) / ssg;
+            const double xg = 1 - xw;
             kr[Aqua]   = xw*krw;
             kr[Vapour] = xg*krg;
             kr[Liquid] = xw*krow + xg*krog;
