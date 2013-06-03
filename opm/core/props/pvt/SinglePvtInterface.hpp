@@ -42,8 +42,10 @@ namespace Opm
         ///                          arbitrary two-phase and three-phase situations.
         void setPhaseConfiguration(const int num_phases, const int* phase_pos);
 
-        /// For all the virtual methods, the following apply: p and z
-        /// are expected to be of size n and n*num_phases, respectively.
+        /// The PVT properties can either be given as a function of pressure (p) and surface volume (z)
+        /// or pressure (p) and gas resolution factor (r).
+        /// For all the virtual methods, the following apply: p, r and z
+        /// are expected to be of size n, size n and n*num_phases, respectively.
         /// Output arrays shall be of size n, and must be valid before
         /// calling the method.
 
@@ -52,6 +54,14 @@ namespace Opm
                         const double* p,
                         const double* z,
                         double* output_mu) const = 0;
+
+        /// Viscosity as a function of p and r.
+        virtual void mu(const int n,
+                              const double* p,
+                              const double* r,
+                              double* output_mu,
+                              double* output_dmudp,
+                              double* output_dmudr) const = 0;
 
         /// Formation volume factor as a function of p and z.
         virtual void B(const int n,
@@ -66,6 +76,21 @@ namespace Opm
                           double* output_B,
                           double* output_dBdp) const = 0;
 
+        /// The inverse of the volume factor b = 1 / B as a function of p and r.
+        virtual void b(const int n,
+                          const double* p,
+                          const double* r,
+                          double* output_b,
+                          double* output_dbdp,
+                          double* output_dpdr) const = 0;
+
+        /// Gas resolution at bublepoint as a function of pressure
+        virtual void rbub(const int n,
+                          const double* p,
+                          double* output_rbub,
+                          double* output_drbubdp) const = 0;
+
+
         /// Solution factor as a function of p and z.
         virtual void R(const int n,
                        const double* p,
@@ -78,6 +103,8 @@ namespace Opm
                           const double* z,
                           double* output_R,
                           double* output_dRdp) const = 0;
+
+
     protected:
         int num_phases_;
         int phase_pos_[MaxNumPhases];
