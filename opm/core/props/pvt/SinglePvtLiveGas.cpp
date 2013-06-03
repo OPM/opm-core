@@ -98,6 +98,17 @@ namespace Opm
         }
     }
 
+    /// Viscosity and its derivatives as a function of p and r.
+    void SinglePvtLiveGas::mu(const int n,
+                               const double* p,
+                               const double* r,
+                               double* output_mu,
+                               double* output_dmudp,
+                               double* output_dmudr) const
+    {
+        THROW("The new fluid interface not yet implemented");
+    }
+
 
     /// Formation volume factor as a function of p and z.
     void SinglePvtLiveGas::B(const int n,
@@ -126,6 +137,26 @@ namespace Opm
         }
     }
 
+    /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
+    void SinglePvtLiveGas::b(const int n,
+                          const double* p,
+                          const double* r,
+                          double* output_b,
+                          double* output_dbdp,
+                          double* output_dbdr) const
+
+    {
+        THROW("The new fluid interface not yet implemented");
+    }
+
+    /// Gas resolution and its derivatives at bublepoint as a function of p.
+    void SinglePvtLiveGas::rbub(const int n,
+                             const double* p,
+                             double* output_rbub,
+                             double* output_drbubdp) const
+    {
+        THROW("The new fluid interface not yet implemented");
+    }
 
     /// Solution factor as a function of p and z.
     void SinglePvtLiveGas::R(const int n,

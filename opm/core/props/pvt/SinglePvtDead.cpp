@@ -44,14 +44,14 @@ namespace Opm
         // Copy data
         const int sz = pvd_table[region_number][0].size();
         std::vector<double> press(sz);
-        std::vector<double> B_inv(sz);
+        std::vector<double> b(sz);
         std::vector<double> visc(sz);
         for (int i = 0; i < sz; ++i) {
             press[i] = pvd_table[region_number][0][i];
-            B_inv[i] = 1.0 / pvd_table[region_number][1][i];
+            b[i] = 1.0 / pvd_table[region_number][1][i];
             visc[i]  = pvd_table[region_number][2][i];
         }
-        one_over_B_ = NonuniformTableLinear<double>(press, B_inv);
+        b_ = NonuniformTableLinear<double>(press, b);
         viscosity_ = NonuniformTableLinear<double>(press, visc);
 
         // Dumping the created tables.
@@ -80,14 +80,31 @@ namespace Opm
         }
     }
 
+    void SinglePvtDead::mu(const int n,
+                               const double* p,
+                               const double* /*r*/,
+                               double* output_mu,
+                               double* output_dmudp,
+                               double* output_dmudr) const
+        {
+    // #pragma omp parallel for
+            for (int i = 0; i < n; ++i) {
+                output_mu[i] = viscosity_(p[i]);
+                output_dmudp[i] = viscosity_.derivative(p[i]);
+            }
+            std::fill(output_dmudr, output_dmudr + n, 0.0);
+
+        }
+
     void SinglePvtDead::B(const int n,
                           const double* p,
                           const double* /*z*/,
                           double* output_B) const
     {
 // #pragma omp parallel for
+        // B = 1/b
         for (int i = 0; i < n; ++i) {
-            output_B[i] = 1.0/one_over_B_(p[i]);
+            output_B[i] = 1.0/b_(p[i]);
         }
     }
 
@@ -101,10 +118,36 @@ namespace Opm
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             double Bg = output_B[i];
-            output_dBdp[i] = -Bg*Bg*one_over_B_.derivative(p[i]);
+            output_dBdp[i] = -Bg*Bg*b_.derivative(p[i]);
         }
     }
 
+    void SinglePvtDead::b(const int n,
+                              const double* p,
+                              const double* /*r*/,
+                              double* output_b,
+                              double* output_dbdp,
+                              double* output_dbdr) const
+
+        {
+    // #pragma omp parallel for
+            for (int i = 0; i < n; ++i) {
+                output_b[i] = b_(p[i]);
+                output_dbdp[i] = b_.derivative(p[i]);
+
+            }
+            std::fill(output_dbdr, output_dbdr + n, 0.0);
+
+        }
+
+    void SinglePvtDead::rbub(const int n,
+                             const double* /*p*/,
+                             double* output_rbub,
+                             double* output_drbubdp) const
+    {
+        std::fill(output_rbub, output_rbub + n, 0.0);
+        std::fill(output_drbubdp, output_drbubdp + n, 0.0);
+    }
 
     void SinglePvtDead::R(const int n,
                           const double* /*p*/,
