@@ -147,7 +147,6 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_column_extract.cpp
 	tests/test_geom2d.cpp
 	tests/test_param.cpp
-  tests/not-unit/test_newfluidinterface.cpp
 	)
 
 # originally generated with the command:
