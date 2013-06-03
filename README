@@ -70,15 +70,18 @@ Note: You should compile the OPM modules using the same toolchain that
 DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
 -----------------------------------------
 
-# libraries
-sudo zypper in libblas3 liblapack3 libboost libtinyxml-devel libumfpack
+# math libraries
+sudo zypper in blas-devel lapack-devel suitesparse-devel superlu-devel
 
-# tools
-sudo zypper in gcc cmake git doxygen
+# utility libraries
+sudo zypper in boost-devel tinyxml-devel
+
+# tools necessary for building
+sudo zypper in gcc gcc-c++ gcc-fortran cmake git doxygen
 
 # DUNE libraries
-sudo zypper ar http://download.opensuse.org/repositories/science/openSUSE_12.2/science.repo
-sudo zypper in dune-common dune-istl
+sudo zypper ar http://download.opensuse.org/repositories/science/openSUSE_12.3/science.repo
+sudo zypper in dune-common-devel dune-istl-devel
 
 
 DEPENDENCIES FOR RHEL BASED DISTRIBUTIONS
