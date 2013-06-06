@@ -63,6 +63,9 @@ sudo apt-get install libdune-common-dev libdune-istl-dev libdune-grid-dev
 # libraries necessary for OPM
 sudo apt-get install -y libtinyxml-dev
 
+# optional: Ensemble based Reservoir Tool Eclipse utilities module
+sudo apt-get install ert.ecl
+
 Note: You should compile the OPM modules using the same toolchain that
       was used to build DUNE. Otherwise, you can get strange ABI errors.
 
