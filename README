@@ -88,6 +88,11 @@ sudo zypper in gcc gcc-c++ gcc-fortran cmake git doxygen
 # DUNE libraries
 sudo zypper in dune-common-devel dune-istl-devel
 
+# optional: Ensemble-based Reservoir Tools Eclipse utility module
+git sudo zypper ar http://www.opm-project.org/packages/current/opensuse/12/opm.repo
+sudo zypper in zlib-devel ert.ecl-devel
+
+(to remove the repository, run `sudo zypper removerepo "Open Porous Media Initiative"`)
 
 DEPENDENCIES FOR RHEL BASED DISTRIBUTIONS
 -----------------------------------------
