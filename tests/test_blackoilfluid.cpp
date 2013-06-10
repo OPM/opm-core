@@ -88,20 +88,20 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
 
     // setup a test case. We will check 6 [p,r] pairs and compare them to both the [p,z] interface and a finite difference
     // approximation of the derivatives.
-    int n = 6;
-    int np = phase_usage_.num_phases;
+    const int n = 6;
+    const int np = phase_usage_.num_phases;
 
     // the tolerance for acceptable difference in values
-    double reltol = 1e-9;
+    const double reltol = 1e-9;
 
-    double p[n];
-    double r[n];
-    double z[np*n];
+    std::vector<double> p(n);
+    std::vector<double> r(n);
+    std::vector<double> z(n * np);
 
-    double mu[n];
-    double dmudp[n];
-    double dmudr[n];
-    double mu_new[n];
+    std::vector<double> mu(n);
+    std::vector<double> dmudp(n);
+    std::vector<double> dmudr(n);
+    std::vector<double> mu_new(n);
     double dmudp_diff;
     double dmudr_diff;
     double dmudp_diff_u;
@@ -109,8 +109,8 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
 
 
     // Used for forward difference calculations
-    double h_p = 100000;
-    double h_r = 1;
+    const double h_p = 100000;
+    const double h_r = 1;
 
     // saturated
     p[0] = 10000000;
@@ -140,8 +140,8 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
 
     // test mu
     for (int phase = 1; phase < 2; ++phase) {
-        props_[phase]->mu(n, p, r, mu_new,dmudp,dmudr);
-        props_[phase]->mu(n, p, z, mu);
+        props_[phase]->mu(n, &p[0], &r[0], &mu_new[0], &dmudp[0], &dmudr[0]);
+        props_[phase]->mu(n, &p[0], &z[0], &mu[0]);
         dmudp_diff = (mu_new[1]-mu_new[0])/h_p;
         dmudr_diff = (mu_new[2]-mu_new[0])/h_r;
         dmudp_diff_u = (mu_new[4]-mu_new[3])/h_p;
@@ -161,22 +161,22 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
     }
 
     // test b
-    double b[n];
-    double B[n];
-    double invB[n];
-    double dinvBdp[n];
-    double dBdp[n];
-    double dbdr[n];
-    double dbdp[n];
+    std::vector<double> b(n);
+    std::vector<double> B(n);
+    std::vector<double> invB(n);
+    std::vector<double> dinvBdp(n);
+    std::vector<double> dBdp(n);
+    std::vector<double> dbdr(n);
+    std::vector<double> dbdp(n);
     double dbdp_diff;
     double dbdr_diff;
     double dbdp_diff_u;
     double dbdr_diff_u;
 
     for (int phase = 1; phase < 2; ++phase) {
-        props_[phase]->b(n, p, r, b,dbdp,dbdr);
+        props_[phase]->b(n, &p[0], &r[0], &b[0], &dbdp[0], &dbdr[0]);
         //props_[phase]->B(n, p, z, B);
-        props_[phase]->dBdp(n, p, z, B, dBdp);
+        props_[phase]->dBdp(n, &p[0], &z[0], &B[0], &dBdp[0]);
         dbdp_diff = (b[1]-b[0])/h_p;
         dbdr_diff = (b[2]-b[0])/h_r;
         dbdp_diff_u = (b[4]-b[3])/h_p;
@@ -201,13 +201,13 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
     }
 
     // test bublepoint pressure
-    double rbub[n];
-    double drbubdp[n];
+    std::vector<double> rbub(n);
+    std::vector<double> drbubdp(n);
     double drbubdp_diff;
     double drbubdp_diff_u;
 
     for (int phase = 1; phase < 2; ++phase) {
-        props_[phase] ->rbub(n,p,rbub,drbubdp);
+        props_[phase] ->rbub(n, &p[0], &rbub[0], &drbubdp[0]);
 
         drbubdp_diff = (rbub[1]-rbub[0])/h_p;
         drbubdp_diff_u = (rbub[4]-rbub[3])/h_p;
