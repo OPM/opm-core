@@ -19,6 +19,7 @@ sparsetable_test				\
 sparsevector_test				\
 test_cartgrid					\
 test_column_extract				\
+test_dgbasis					\
 test_lapack					\
 test_quadratures				\
 test_read_grid					\
@@ -53,6 +54,9 @@ test_cartgrid_SOURCES     = test_cartgrid.cpp
 
 test_column_extract_SOURCES = test_column_extract.cpp
 test_column_extract_LDADD = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
+test_dgbasis_SOURCES = test_dgbasis.cpp
+test_dgbasis_LDADD = $(LDADD) $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 test_lapack_SOURCES       = test_lapack.cpp
 test_lapack_LDADD         = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS)

@@ -3,7 +3,7 @@ AC_DEFUN([_ERT_SOURCE_TEXT],
 AC_LANG_PROGRAM(
 [[
 #include <stddef.h>
-#include <ecl_util.h>
+#include <ert/ecl/ecl_util.h>
 ]],dnl
 [[
 int sz;
@@ -30,7 +30,7 @@ AS_IF([test x"${with_ert}" != x"no"],
 
   ERT_CPPFLAGS=
   ERT_LDFLAGS=
-  ERT_LIBS="-lecl -lgeometry -lert_util -lpthread -lz -lgomp"
+  ERT_LIBS="-lecl -lert_geometry -lert_util -lpthread -lz -lgomp"
   AS_IF([test x"${with_ert}" != x"yes"],
     [ERT_LDFLAGS="-L${with_ert}/lib"
      ERT_CPPFLAGS="-I${with_ert}/include"], [:])[]dnl
