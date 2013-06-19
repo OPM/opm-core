@@ -17,6 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 #include <opm/core/utility/VelocityInterpolation.hpp>
 #include <opm/core/grid.h>
 #include <opm/core/linalg/blas_lapack.h>

@@ -27,6 +27,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -91,7 +92,7 @@ static void fill_cart_geometry_2d(struct UnstructuredGrid *G,
                                   const double            *y);
 
 struct UnstructuredGrid*
-create_grid_cart2d(int nx, int ny)
+create_grid_cart2d(int nx, int ny, double dx, double dy)
 {
     int     i;
     double *x, *y;
@@ -104,8 +105,8 @@ create_grid_cart2d(int nx, int ny)
         G = NULL;
     } else {
 
-        for (i = 0; i < nx + 1; i++) { x[i] = i; }
-        for (i = 0; i < ny + 1; i++) { y[i] = i; }
+        for (i = 0; i < nx + 1; i++) { x[i] = i*dx; }
+        for (i = 0; i < ny + 1; i++) { y[i] = i*dy; }
 
         G = create_grid_tensor2d(nx, ny, x, y);
     }

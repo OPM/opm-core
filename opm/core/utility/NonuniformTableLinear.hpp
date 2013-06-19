@@ -33,13 +33,10 @@ namespace Opm
 {
 
 
-    /// @brief Exception used for domain errors.
-    struct OutsideDomainException : public std::exception {};
-
-
     /// @brief This class uses linear interpolation to compute the value
     ///        (and its derivative) of a function f sampled at possibly
-    ///         nonuniform points.
+    ///         nonuniform points. If values outside the domain are sought,
+    ///         values will be extrapolated linearly.
     /// @tparam T the range type of the function (should be an algebraic ring type)
     template<typename T>
     class NonuniformTableLinear
@@ -82,24 +79,11 @@ namespace Opm
         /// @return true if they are represented exactly alike.
         bool operator==(const NonuniformTableLinear& other) const;
 
-        /// @brief Policies for how to behave when trying to evaluate outside the domain.
-        enum RangePolicy {Throw = 0, ClosestValue = 1, Extrapolate = 2};
-
-        /// @brief Sets the behavioural policy for evaluation to the left of the domain.
-        /// @param rp the policy
-        void setLeftPolicy(RangePolicy rp);
-
-        /// @brief Sets the behavioural policy for evaluation to the right of the domain.
-        /// @param rp the policy
-        void setRightPolicy(RangePolicy rp);
-
     protected:
         std::vector<double> x_values_;
         std::vector<T> y_values_;
         mutable std::vector<T> x_values_reversed_;
         mutable std::vector<T> y_values_reversed_;
-        RangePolicy left_;
-        RangePolicy right_;
     };
 
 
@@ -133,7 +117,6 @@ namespace Opm
     inline
     NonuniformTableLinear<T>
     ::NonuniformTableLinear()
-        : left_(ClosestValue), right_(ClosestValue)
     {
     }
 
@@ -142,8 +125,7 @@ namespace Opm
     NonuniformTableLinear<T>
     ::NonuniformTableLinear(const std::vector<double>& x_values,
                             const std::vector<T>& y_values)
-        : x_values_(x_values), y_values_(y_values),
-          left_(ClosestValue), right_(ClosestValue)
+        : x_values_(x_values), y_values_(y_values)
     {
         ASSERT(isNondecreasing(x_values.begin(), x_values.end()));
     }
@@ -212,31 +194,7 @@ namespace Opm
     ::operator==(const NonuniformTableLinear<T>& other) const
     {
         return x_values_ == other.x_values_
-            && y_values_ == other.y_values_
-            && left_ == other.left_
-            && right_ == other.right_;
-    }
-
-    template<typename T>
-    inline void
-    NonuniformTableLinear<T>
-    ::setLeftPolicy(RangePolicy rp)
-    {
-        if (rp != ClosestValue) {
-            THROW("Only ClosestValue RangePolicy implemented.");
-        }
-        left_ = rp;
-    }
-
-    template<typename T>
-    inline void
-    NonuniformTableLinear<T>
-    ::setRightPolicy(RangePolicy rp)
-    {
-        if (rp != ClosestValue) {
-            THROW("Only ClosestValue RangePolicy implemented.");
-        }
-        right_ = rp;
+            && y_values_ == other.y_values_;
     }
 
 } // namespace Opm

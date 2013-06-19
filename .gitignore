@@ -1,68 +1,43 @@
+# editor backup files
 *~
 .\#*
+\#*\#
+.\#*\#
+
+# compiler output
 *.o
 *.mod
+
+# libtool compatible files
 *.lo
 *.la
-.libs
-.deps
-*.pc
-stamp-*
-.dirstamp
-.autotools
+
+# Eclipse project settings
 .cproject
 .project
 .settings/*
 
-Makefile
-Makefile.in
-aclocal.m4
-am
-autom4te.cache
-config.*
-configure
-compile
-depcomp
-dependencies.m4
-install-sh
-libtool
-ltmain.sh
-m4/libtool.m4
-m4/lt*.m4
-missing
-ar-lib
-tutorials/tutorial[1-4]
-opmcore-config.cmake
+# QtCreator project settings
+CMakeLists.txt.user*
 
 # in-tree build with CMake
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
+config.h
+opm-core-config.cmake
+opm-core-config-version.cmake
+opm-core-install.cmake
+Makefile
+bin/
+lib/
+Doxyfile
+Documentation/html
+dune.module
+*.pc
+install_manifest.txt
 
-# Ignoring executables
-*_test
-examples/compute_tof
-examples/scaneclipsedeck
-examples/spu_2p
-examples/reorder-qfs
-examples/refine_wells
-examples/sim_2p_incomp_reorder
-examples/sim_2p_comp_reorder
-examples/sim_wateroil
-examples/wells_example
-tests/test_agmg
-tests/test_cfs_tpfa
-tests/test_jacsys
-tests/test_read_grid
-tests/test_readvector
-tests/test_sf2p
-tests/bo_fluid_p_and_z_deps
-tests/bo_fluid_pressuredeps
-tests/test_cartgrid
-tests/test_column_extract
-tests/test_lapack
-tests/test_read_vag
-tests/test_readpolymer
-tests/test_velocityinterpolation
-tests/test_wells
-tests/test_writeVtkData
+# testing framework
+CTestTestfile.cmake
+DartConfiguration.tcl
+Testing/

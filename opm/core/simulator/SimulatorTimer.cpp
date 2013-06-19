@@ -17,10 +17,11 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/utility/Units.hpp>
-#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <ostream>
 #include <numeric>
 

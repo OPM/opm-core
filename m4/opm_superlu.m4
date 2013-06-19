@@ -20,7 +20,7 @@
 #      for my_slu_found=yes.
 #   my_slu_found
 #      Whether HEADER was found at all.  Either "yes" or "no".
-AC_DEFUN([_slu_lib_path],
+AC_DEFUN([_opm_slu_lib_path],
     [
         my_include_path=include/superlu
         my_lib_path=lib
@@ -58,13 +58,13 @@ AC_DEFUN([_slu_lib_path],
 #      for my_slu_found=yes.
 #   my_slu_found
 #      Whether any of the headers.  Either "yes" or "no".
-AC_DEFUN([_slu_search_versions],
+AC_DEFUN([_opm_slu_search_versions],
     [
         my_slu_header=slu_ddefs.h
-        _slu_lib_path($1, $my_slu_header)
+        _opm_slu_lib_path($1, $my_slu_header)
         if test "$my_slu_found" != "yes"; then
             my_slu_header="dsp_defs.h"
-            _slu_lib_path($1, $my_slu_header)
+            _opm_slu_lib_path($1, $my_slu_header)
         fi
     ]
 )
@@ -79,14 +79,14 @@ AC_DEFUN([_slu_search_versions],
 #     Root of the SuperLU installation: first of "/usr" and "/usr/local".
 #     Contents is only meaningful for my_slu_found=yes.
 #   For other output variables see documentation of _slu_search_versions().
-AC_DEFUN([_slu_search_default],
+AC_DEFUN([_opm_slu_search_default],
     [
-        with_superlu=/usr
-        _slu_search_versions($with_superlu)
+        opm_with_superlu=/usr
+        _opm_slu_search_versions($opm_with_superlu)
 
         if test "$my_slu_found" = "no"; then
-            with_superlu=/usr/local
-            _slu_search_versions($with_superlu)
+            opm_with_superlu=/usr/local
+            _opm_slu_search_versions($opm_with_superlu)
         fi
     ]
 )
@@ -156,18 +156,18 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
         [dnl
             if test x"$withval" != xno ; then
                 # get absolute path
-                with_superlu=`eval cd $withval > /dev/null 2>&1 && pwd`
                 if test x"$withval" = xyes; then
                     # Search in default locations
-                    _slu_search_default
+                    _opm_slu_search_default
                 else
+                    opm_with_superlu=`eval cd $withval > /dev/null 2>&1 && pwd`
                     # Search for the headers in the specified location
-                    _slu_search_versions(["$with_superlu"])
+                    _opm_slu_search_versions(["$opm_with_superlu"])
                 fi
             fi
         ], [dnl
             # Search in default locations
-            _slu_search_default
+            _opm_slu_search_default
         ])
 
     AC_ARG_WITH([superlu-lib],
@@ -200,10 +200,10 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
     ac_save_LIBS="$LIBS"
 
     # do nothing if --without-superlu is used
-    if test x"$with_superlu" != x"no" ; then
+    if test x"$opm_with_superlu" != x"no" ; then
         # defaultpath
-        SUPERLU_LIB_PATH="$with_superlu/$my_lib_path"
-        SUPERLU_INCLUDE_PATH="$with_superlu/$my_include_path"
+        SUPERLU_LIB_PATH="$opm_with_superlu/$my_lib_path"
+        SUPERLU_INCLUDE_PATH="$opm_with_superlu/$my_include_path"
 
         # set variables so that tests can use them
         direct_SUPERLU_CPPFLAGS="-I$SUPERLU_INCLUDE_PATH -DENABLE_SUPERLU"
@@ -274,7 +274,7 @@ AC_DEFUN([OPM_PATH_SUPERLU],[
             fi
         fi
 
-    else # $with_superlu = no
+    else # $opm_with_superlu = no
         HAVE_SUPERLU=0
     fi
 

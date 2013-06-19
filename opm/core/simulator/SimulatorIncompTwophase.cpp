@@ -28,28 +28,29 @@
 #include <opm/core/pressure/IncompTpfa.hpp>
 
 #include <opm/core/grid.h>
-#include <opm/core/newwells.h>
+#include <opm/core/wells.h>
 #include <opm/core/pressure/flow_bc.h>
 
 #include <opm/core/simulator/SimulatorReport.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/StopWatch.hpp>
-#include <opm/core/utility/writeVtkData.hpp>
+#include <opm/core/io/vtk/writeVtkData.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 
 #include <opm/core/wells/WellsManager.hpp>
 
-#include <opm/core/fluid/IncompPropertiesInterface.hpp>
-#include <opm/core/fluid/RockCompressibility.hpp>
+#include <opm/core/props/IncompPropertiesInterface.hpp>
+#include <opm/core/props/rock/RockCompressibility.hpp>
 
-#include <opm/core/utility/ColumnExtract.hpp>
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/simulator/WellState.hpp>
-#include <opm/core/transport/reorder/TransportModelTwophase.hpp>
-
+#include <opm/core/transport/reorder/TransportSolverTwophaseReorder.hpp>
+#include <opm/core/transport/implicit/TransportSolverTwophaseImplicit.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/function.hpp>
+#include <boost/signal.hpp>
 
 #include <numeric>
 #include <fstream>
@@ -58,9 +59,8 @@
 namespace Opm
 {
 
-    class SimulatorIncompTwophase::Impl
+    struct SimulatorIncompTwophase::Impl
     {
-    public:
         Impl(const parameter::ParameterGroup& param,
              const UnstructuredGrid& grid,
              const IncompPropertiesInterface& props,
@@ -75,7 +75,6 @@ namespace Opm
                             TwophaseState& state,
                             WellState& well_state);
 
-    private:
         // Data.
         // Parameters for output.
         bool output_;
@@ -87,6 +86,7 @@ namespace Opm
         int max_well_control_iterations_;
         // Parameters for transport solver.
         int num_transport_substeps_;
+        bool use_reorder_;
         bool use_segregation_split_;
         // Observed objects.
         const UnstructuredGrid& grid_;
@@ -98,11 +98,12 @@ namespace Opm
         const FlowBoundaryConditions* bcs_;
         // Solvers
         IncompTpfa psolver_;
-        TransportModelTwophase tsolver_;
-        // Needed by column-based gravity segregation solver.
-        std::vector< std::vector<int> > columns_;
+        boost::scoped_ptr<TransportSolverTwophaseInterface> tsolver_;
         // Misc. data
         std::vector<int> allcells_;
+
+        // list of hooks that are notified when a timestep completes
+        boost::signal0 <void> timestep_completed;
     };
 
 
@@ -130,6 +131,11 @@ namespace Opm
                                                  WellState& well_state)
     {
         return pimpl_->run(timer, state, well_state);
+    }
+
+    // connect the hook to the signal in the implementation class
+    void SimulatorIncompTwophase::connect_timestep_impl (boost::function0 <void> hook) {
+        pimpl_->timestep_completed.connect (hook);
     }
 
     static void reportVolumes(std::ostream &os, double satvol[2], double tot_porevol_init,
@@ -318,7 +324,9 @@ namespace Opm
                                         const FlowBoundaryConditions* bcs,
                                         LinearSolverInterface& linsolver,
                                         const double* gravity)
-        : grid_(grid),
+        : use_reorder_(param.getDefault("use_reorder", true)),
+          use_segregation_split_(param.getDefault("use_segregation_split", false)),
+          grid_(grid),
           props_(props),
           rock_comp_props_(rock_comp_props),
           wells_manager_(wells_manager),
@@ -329,11 +337,33 @@ namespace Opm
                    param.getDefault("nl_pressure_residual_tolerance", 0.0),
                    param.getDefault("nl_pressure_change_tolerance", 1.0),
                    param.getDefault("nl_pressure_maxiter", 10),
-                   gravity, wells_manager.c_wells(), src, bcs),
-          tsolver_(grid, props,
-                   param.getDefault("nl_tolerance", 1e-9),
-                   param.getDefault("nl_maxiter", 30))
+                   gravity, wells_manager.c_wells(), src, bcs)
     {
+        // Initialize transport solver.
+        if (use_reorder_) {
+            tsolver_.reset(new Opm::TransportSolverTwophaseReorder(grid,
+                                                                   props,
+                                                                   use_segregation_split_ ? gravity : NULL,
+                                                                   param.getDefault("nl_tolerance", 1e-9),
+                                                                   param.getDefault("nl_maxiter", 30)));
+
+        } else {
+            if (rock_comp_props && rock_comp_props->isActive()) {
+                THROW("The implicit pressure solver cannot handle rock compressibility.");
+            }
+            if (use_segregation_split_) {
+                THROW("The implicit pressure solver is not set up to use segregation splitting.");
+            }
+            std::vector<double> porevol;
+            computePorevolume(grid, props.porosity(), porevol);
+            tsolver_.reset(new Opm::TransportSolverTwophaseImplicit(grid,
+                                                                    props,
+                                                                    porevol,
+                                                                    gravity,
+                                                                    psolver_.getHalfTrans(),
+                                                                    param));
+        }
+
         // For output.
         output_ = param.getDefault("output", true);
         if (output_) {
@@ -356,11 +386,6 @@ namespace Opm
 
         // Transport related init.
         num_transport_substeps_ = param.getDefault("num_transport_substeps", 1);
-        use_segregation_split_ = param.getDefault("use_segregation_split", false);
-        if (gravity != 0 && use_segregation_split_){
-            tsolver_.initGravity(gravity);
-            extractColumn(grid_, columns_);
-        }
 
         // Misc init.
         const int num_cells = grid.number_of_cells;
@@ -394,6 +419,8 @@ namespace Opm
         double ptime = 0.0;
         Opm::time::StopWatch transport_timer;
         double ttime = 0.0;
+        Opm::time::StopWatch callback_timer;
+        double time_in_callbacks = 0.0;
         Opm::time::StopWatch step_timer;
         Opm::time::StopWatch total_timer;
         total_timer.start();
@@ -427,9 +454,12 @@ namespace Opm
                     outputStateVtk(grid_, state, timer.currentStepNum(), output_dir_);
                 }
                 outputStateMatlab(grid_, state, timer.currentStepNum(), output_dir_);
-                outputVectorMatlab(std::string("reorder_it"),
-                                   tsolver_.getReorderIterations(),
-                                   timer.currentStepNum(), output_dir_);
+                if (use_reorder_) {
+                    // This use of dynamic_cast is not ideal, but should be safe.
+                    outputVectorMatlab(std::string("reorder_it"),
+                                       dynamic_cast<const TransportSolverTwophaseReorder&>(*tsolver_).getReorderIterations(),
+                                       timer.currentStepNum(), output_dir_);
+                }
             }
 
             SimulatorReport sreport;
@@ -523,8 +553,8 @@ namespace Opm
             double injected[2] = { 0.0 };
             double produced[2] = { 0.0 };
             for (int tr_substep = 0; tr_substep < num_transport_substeps_; ++tr_substep) {
-                tsolver_.solve(&state.faceflux()[0], &initial_porevol[0], &transport_src[0],
-                              stepsize, state.saturation());
+                tsolver_->solve(&initial_porevol[0], &transport_src[0], stepsize, state);
+
                 double substep_injected[2] = { 0.0 };
                 double substep_produced[2] = { 0.0 };
                 Opm::computeInjectedProduced(props_, state.saturation(), transport_src, stepsize,
@@ -533,8 +563,11 @@ namespace Opm
                 injected[1] += substep_injected[1];
                 produced[0] += substep_produced[0];
                 produced[1] += substep_produced[1];
-                if (use_segregation_split_) {
-                    tsolver_.solveGravity(columns_, &initial_porevol[0], stepsize, state.saturation());
+                if (use_reorder_ && use_segregation_split_) {
+                    // Again, unfortunate but safe use of dynamic_cast.
+                    // Possible solution: refactor gravity solver to its own class.
+                    dynamic_cast<TransportSolverTwophaseReorder&>(*tsolver_)
+                        .solveGravity(&initial_porevol[0], stepsize, state);
                 }
                 watercut.push(timer.currentTime() + timer.currentStepLength(),
                               produced[0]/(produced[0] + produced[1]),
@@ -564,6 +597,12 @@ namespace Opm
             if (output_) {
                 sreport.reportParam(tstep_os);
             }
+
+            // notify all clients that we are done with the timestep
+            callback_timer.start ();
+            timestep_completed ();
+            callback_timer.stop ();
+            time_in_callbacks += callback_timer.secsSinceStart ();
         }
 
         if (output_) {
@@ -571,9 +610,12 @@ namespace Opm
                 outputStateVtk(grid_, state, timer.currentStepNum(), output_dir_);
             }
             outputStateMatlab(grid_, state, timer.currentStepNum(), output_dir_);
-            outputVectorMatlab(std::string("reorder_it"),
-                               tsolver_.getReorderIterations(),
-                               timer.currentStepNum(), output_dir_);
+            if (use_reorder_) {
+                // This use of dynamic_cast is not ideal, but should be safe.
+                outputVectorMatlab(std::string("reorder_it"),
+                                   dynamic_cast<const TransportSolverTwophaseReorder&>(*tsolver_).getReorderIterations(),
+                                   timer.currentStepNum(), output_dir_);
+                }
             outputWaterCut(watercut, output_dir_);
             if (wells_) {
                 outputWellReport(wellreport, output_dir_);
@@ -586,7 +628,7 @@ namespace Opm
         SimulatorReport report;
         report.pressure_time = ptime;
         report.transport_time = ttime;
-        report.total_time = total_timer.secsSinceStart();
+        report.total_time = total_timer.secsSinceStart() - time_in_callbacks;
         return report;
     }
 

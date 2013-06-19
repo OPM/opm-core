@@ -17,6 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
@@ -25,7 +26,7 @@
 #include <string.h>
 
 #include <opm/core/grid.h>
-#include <opm/core/well.h>
+#include <opm/core/pressure/legacy_well.h>
 #include <opm/core/pressure/flow_bc.h>
 
 #include <opm/core/pressure/fsh.h>

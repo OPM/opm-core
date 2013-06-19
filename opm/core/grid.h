@@ -25,8 +25,8 @@
 /**
  * \file
  *
- * Main OPM-Core grid data structure along with destructor and default
- * constructor.
+ * Main OPM-Core grid data structure along with helper functions for
+ * construction, destruction and reading a grid representation from disk.
  */
 
 #ifdef __cplusplus
@@ -61,12 +61,18 @@ struct UnstructuredGrid
 void destroy_grid(struct UnstructuredGrid *g);
 
 struct UnstructuredGrid *
+create_grid_empty(void);
+
+struct UnstructuredGrid *
 allocate_grid(size_t ndims     ,
               size_t ncells    ,
               size_t nfaces    ,
               size_t nfacenodes,
               size_t ncellfaces,
               size_t nnodes    );
+
+struct UnstructuredGrid *
+read_grid(const char *fname);
 
  ---- end of synopsis of grid.h ----
 */

@@ -30,6 +30,7 @@
 */
 
 
+#include "config.h"
 #include <opm/core/utility/MonotCubicInterpolator.hpp>
 
 #include <iostream>
@@ -92,6 +93,8 @@ using namespace std;
 */
 
 
+namespace Opm
+{
 
 
 MonotCubicInterpolator::
@@ -725,3 +728,6 @@ scaleData(double factor) {
     } 
   } 
 }
+
+
+} // namespace Opm

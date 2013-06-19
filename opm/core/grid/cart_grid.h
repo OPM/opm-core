@@ -44,20 +44,22 @@
 extern "C" {
 #endif
 
-struct UnstructuredGrid;
+
 
 /**
- * Form geometrically Cartesian grid in two space dimensions with unit-sized
- * cells.
+ * Form geometrically Cartesian grid in two space dimensions with equally
+ * sized cells.
  *
  * @param[in] nx Number of cells in @c x direction.
  * @param[in] ny Number of cells in @c y direction.
+ * @param[in] dx Length, in meters, of each cell's @c x extent.
+ * @param[in] dy Length, in meters, of each cell's @c y extent.
  *
  * @return Fully formed grid structure containing valid geometric primitives.
  * Must be destroyed using function destroy_grid().
  */
 struct UnstructuredGrid *
-create_grid_cart2d(int nx, int ny);
+create_grid_cart2d(int nx, int ny, double dx, double dy);
 
 
 /**

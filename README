@@ -39,8 +39,7 @@ DEPENDENCIES FOR DEBIAN BASED DISTRIBUTIONS (Debian Squeeze/Ubuntu Precise)
 ---------------------------------------------------------------------------
 
 # packages necessary for building
-sudo apt-get install -y build-essential gfortran pkg-config libtool \
-                        automake autoconf
+sudo apt-get install -y build-essential gfortran cmake cmake-data util-linux
 
 # packages necessary for documentation
 sudo apt-get install -y doxygen ghostscript texlive-latex-recommended pgf
@@ -62,24 +61,48 @@ sudo apt-get update
 sudo apt-get install libdune-common-dev libdune-istl-dev libdune-grid-dev
 
 # libraries necessary for OPM
-sudo apt-get install -y libxml2-dev
+sudo apt-get install -y libtinyxml-dev
 
 Note: You should compile the OPM modules using the same toolchain that
       was used to build DUNE. Otherwise, you can get strange ABI errors.
+
 
 DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
 -----------------------------------------
 
 # libraries
-sudo zypper in blas libblas3 lapack liblapack3 libboost libxml2 umfpack
+sudo zypper in libblas3 liblapack3 libboost libtinyxml-devel libumfpack
 
 # tools
-sudo zypper in gcc automake autoconf git doxygen
+sudo zypper in gcc cmake git doxygen
 
 # DUNE libraries
 sudo zypper ar http://download.opensuse.org/repositories/science/openSUSE_12.2/science.repo
 sudo zypper in dune-common dune-istl
 
+
+DEPENDENCIES FOR RHEL BASED DISTRIBUTIONS
+-----------------------------------------
+
+# packages necessary for building
+sudo yum install make gcc-c++ gcc-gfortran cmake28 util-linux
+
+# packages necessary for documentation
+sudo yum install doxygen ghostscript texlive
+
+# packages necessary for version control
+sudo yum install git
+
+# basic libraries necessary for both DUNE and OPM
+sudo yum install boost-devel suitesparse-devel blas-devel lapack-devel
+
+# libraries necessary for OPM
+sudo yum install tinyxml-devel
+
+# optional libraries
+sudo yum-config-manager --add-repo \
+    http://www.opm-project.org/packages/current/redhat/6/opm.repo
+sudo yum install libsuperlu3 ert.ecl-devel dune-istl-devel
 
 DOWNLOADING
 -----------
@@ -93,17 +116,65 @@ If you want to contribute, fork OPM/opm-core on github.
 BUILDING
 --------
 
-There are two ways to build the opm-core library:
+There are two ways to build the opm-core library.
 
 1. As a stand-alone library.
- cd opm-core
- autoreconf -i
- ./configure
- make -j -l 0.9
-If you want to install the library:
- make install
-or (if installing to /usr/local or similar)
- sudo make install
+In this setup we recommend creating an entirely separate directory
+outside the directory containing the source code and doing the build
+from that separate directory (termed "the build directory").  This
+configuration is sometimes referred to as an "out-of-source build".
+
+As an example, consider the following layout in which "opm-core" refers
+to the directory containing the package source code as downloaded from
+GitHub
+
+    workspace
+      |
+      +-- build
+      |
+      +-- opm-core
+      |     |
+      |     +-- ...
+      |     |
+      |     +-- opm
+      |     |
+      |     +-- ...
+
+We will configure a release-type (optimised) build using traditional
+Unix Makefiles within the "build" directory.  The following command
+configures the build
+
+    cd path/to/build
+    cmake ../opm-core -DCMAKE_BUILD_TYPE=Release
+
+If you want to debug the library you should specify the build type
+"Debug" instead of "Release" in the command above. This will disable
+optimizations and make it easier to step through the code.
+
+Building the software then amounts to typing
+
+    make
+
+in the top-level "build" directory; i.e., the directory from which we
+invoked the "cmake" utility.  On a multi-core computer system you may
+want to build the software in parallel (make(1)'s "job-server" mode) in
+order to reduce the total amount of time needed to complete the build.
+To do so, replace the above "make" command with
+
+    make -j N
+
+or, possibly,
+
+    nice -20 make -j N
+
+in which "N" is an integer that should typically not exceed the number
+of cores in the system.
+
+Once the library has been built, it can be installed in a central,
+system-wide location (often in "/usr/local") through the command
+
+    sudo make install
+
 
 2. As a dune module.
  - Put the opm-core directory in the same directory
@@ -120,5 +191,28 @@ DOCUMENTATION
 
 Efforts have been made to document the code with Doxygen.
 In order to build the documentation, enter the command
-$ doxygen
+
+ make doc
+
 in the topmost directory.
+
+
+REPORTING ISSUES
+----------------
+
+Issues can be reported in the Git issue tracker online at:
+
+    http://github.com/OPM/opm-core/issues
+
+To help diagnose build errors, please provide a link to a build log together
+with the issue description.
+
+You can capture such a log from the build using the `script' utility, e.g.:
+
+    LOGFILE=$(date +%Y%m%d-%H%M-)build.log ;
+	cmake -E cmake_echo_color --cyan --bold "Log file: $LOGFILE" ;
+    script -q $LOGFILE -c 'cmake ../opm-core -DCMAKE_BUILD_TYPE=Debug' &&
+    script -q $LOGFILE -a -c 'ionice nice make -j 4 -l 3' ||
+    cat CMakeCache.txt CMakeFiles/CMake*.log >> $LOGFILE
+
+The resulting file can be uploaded to for instance gist.github.com.

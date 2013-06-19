@@ -11,6 +11,7 @@
   Copyright 2011 SINTEF ICT, Applied Mathematics.
 */
 
+#include "config.h"
 #include <assert.h>
 #include <stdlib.h>
 
@@ -138,8 +139,6 @@ void compute_geometry(struct UnstructuredGrid *g)
     assert (g != NULL);
     if (g!=NULL)
     {
-        assert (g->dimensions == 3);
-
         assert (g->face_centroids != NULL);
         assert (g->face_normals   != NULL);
         assert (g->face_areas     != NULL);

@@ -1,0 +1,106 @@
+Source: opm-core
+Priority: extra
+Maintainer: Arne Morten Kvarving <arne.morten.kvarving@sintef.no>
+Build-Depends: build-essential, debhelper (>= 9), libboost-filesystem-dev,
+               libboost-system-dev, libboost-date-time-dev, libboost-test-dev,
+               libsuperlu3-dev, gfortran, libsuitesparse-dev, pkg-config,
+               libdune-common-dev, libdune-istl-dev, cmake, libtinyxml-dev, bc,
+               libert.ecl-dev, git, zlib1g-dev, libtool, doxygen,
+               texlive-latex-extra, texlive-latex-recommended, ghostscript
+Standards-Version: 3.9.2
+Section: libs
+Homepage: http://opm-project.org
+Vcs-Git: git://github.com/OPM/opm-core.git
+Vcs-Browser: https://github.com/OPM/opm-core
+
+Package: libopm-core1-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: foreign
+Depends: libopm-core1 (= ${binary:Version}), libdune-istl-dev
+Provides: libopm-core-dev
+Suggests: libopm-core1-doc
+Description: OPM core library -- development files
+ The OPM core library is the core library within OPM and contains
+ * Eclipse deck input and preprosessing
+ * Fluid properties (basic PVT models and rock properties)
+ * Grid handling (cornerpoint grids, unstructured grid interface)
+ * Linear Algebra (interface to different linear solvers)
+ * Pressure solvers (various discretization schemes, flow models)
+ * Simulators (some basic examples of simulators based on sequential splitting schemes)
+ * Transport solvers (various discretization schemes, flow models)
+ * Utilities (input and output processing, unit conversion)
+ * Wells (basic well handling)
+
+Package: libopm-core1
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}, multiarch-support
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Provides: libopm-core
+Description: OPM core library
+ The OPM core library is the core library within OPM and contains
+ * Eclipse deck input and preprosessing
+ * Fluid properties (basic PVT models and rock properties)
+ * Grid handling (cornerpoint grids, unstructured grid interface)
+ * Linear Algebra (interface to different linear solvers)
+ * Pressure solvers (various discretization schemes, flow models)
+ * Simulators (some basic examples of simulators based on sequential splitting schemes)
+ * Transport solvers (various discretization schemes, flow models)
+ * Utilities (input and output processing, unit conversion)
+ * Wells (basic well handling)
+
+Package: libopm-core1-bin
+Section: science
+Pre-Depends: ${misc:Pre-Depends}, multiarch-support
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Provides: libopm-core-bin
+Description: OPM core library -- applications
+ The OPM core library is the core library within OPM and contains
+ * Eclipse deck input and preprosessing
+ * Fluid properties (basic PVT models and rock properties)
+ * Grid handling (cornerpoint grids, unstructured grid interface)
+ * Linear Algebra (interface to different linear solvers)
+ * Pressure solvers (various discretization schemes, flow models)
+ * Simulators (some basic examples of simulators based on sequential splitting schemes)
+ * Transport solvers (various discretization schemes, flow models)
+ * Utilities (input and output processing, unit conversion)
+ * Wells (basic well handling)
+
+Package: libopm-core1-doc
+Section: doc
+Architecture: all
+Multi-Arch: foreign
+Provides: libopm-core-doc
+Description: OPM core library -- documentation
+ The OPM core library is the core library within OPM and contains
+ * Eclipse deck input and preprosessing
+ * Fluid properties (basic PVT models and rock properties)
+ * Grid handling (cornerpoint grids, unstructured grid interface)
+ * Linear Algebra (interface to different linear solvers)
+ * Pressure solvers (various discretization schemes, flow models)
+ * Simulators (some basic examples of simulators based on sequential splitting schemes)
+ * Transport solvers (various discretization schemes, flow models)
+ * Utilities (input and output processing, unit conversion)
+ * Wells (basic well handling)
+
+Package: libopm-core1-dbg
+Section: debug
+Architecture: any
+Multi-Arch: foreign
+Provides: libopm-core-dbg
+Depends: libopm-core1 (= ${binary:Version}), ${misc:Depends}
+Description: OPM core library -- debug symbols
+ The OPM core library is the core library within OPM and contains
+ * Eclipse deck input and preprosessing
+ * Fluid properties (basic PVT models and rock properties)
+ * Grid handling (cornerpoint grids, unstructured grid interface)
+ * Linear Algebra (interface to different linear solvers)
+ * Pressure solvers (various discretization schemes, flow models)
+ * Simulators (some basic examples of simulators based on sequential splitting schemes)
+ * Transport solvers (various discretization schemes, flow models)
+ * Utilities (input and output processing, unit conversion)
+ * Wells (basic well handling)

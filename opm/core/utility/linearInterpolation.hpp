@@ -1,39 +1,25 @@
-//===========================================================================
-//
-// File: linearInterpolation.hpp
-//
-// Created: Tue Sep  9 12:49:39 2008
-//
-// Author(s): Atgeirr F Rasmussen <atgeirr@sintef.no>
-//
-// $Date$
-//
-// $Revision$
-//
-//===========================================================================
-
 /*
-  Copyright 2009, 2010 SINTEF ICT, Applied Mathematics.
+  Copyright 2009, 2010, 2013 SINTEF ICT, Applied Mathematics.
   Copyright 2009, 2010 Statoil ASA.
 
-  This file is part of The Open Reservoir Simulator Project (OpenRS).
+  This file is part of the Open Porous Media project (OPM).
 
-  OpenRS is free software: you can redistribute it and/or modify
+  OPM is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  OpenRS is distributed in the hope that it will be useful,
+  OPM is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with OpenRS.  If not, see <http://www.gnu.org/licenses/>.
+  along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPENRS_LINEARINTERPOLATION_HEADER
-#define OPENRS_LINEARINTERPOLATION_HEADER
+#ifndef OPM_LINEARINTERPOLATION_HEADER_INCLUDED
+#define OPM_LINEARINTERPOLATION_HEADER_INCLUDED
 
 
 #include <vector>
@@ -42,86 +28,64 @@
 namespace Opm
 {
 
-    /** Linear interpolation. 
-     *  Given an increasing vector xv of parameter values and
-     *  a vector yv of point values of the same size,
-     *  the function returns ...
-     */
-    template <typename T>
-    T linearInterpolation(const std::vector<double>& xv,
-			  const std::vector<T>& yv,
-			  double x)
+    inline int tableIndex(const std::vector<double>& table, double x)
     {
-	std::vector<double>::const_iterator lb = std::lower_bound(xv.begin(), xv.end(), x);
-	int lb_ix = lb - xv.begin();
-	if (lb_ix == 0) {
-	    return yv[0];
-	} else if (lb_ix == int(xv.size())) {
-	    return yv.back();
-	} else {
-	    double w = (x - xv[lb_ix - 1])/(xv[lb_ix] - xv[lb_ix - 1]);
-	    return (1.0 - w)*yv[lb_ix - 1] + w*yv[lb_ix];
+	// Returns an index in an ordered table such that x is between
+	// table[j] and table[j+1]. If x is out of range, first or last
+	// interval is returned; Binary search.
+	int n = table.size() - 1;
+	if (n < 2) {
+	    return 0;
 	}
+	int jl = 0;
+	int ju = n;
+	bool ascend = (table[n] > table[0]);
+	while (ju - jl > 1) {
+	    int jm = (ju + jl)/2;   // Compute a midpoint
+	    if ( (x >= table[jm]) == ascend) {
+		jl = jm;     // Replace lower limit
+	    } else {
+		ju = jm;     // Replace upper limit
+	    }
+	}
+	return jl;
     }
 
-    /// @brief
-    /// @todo Doc me!
-    /// @tparam
-    /// @param
-    /// @return
-    template <typename T>
-    T linearInterpolationDerivative(const std::vector<double>& xv,
-				    const std::vector<T>& yv,
-				    double x)
+
+    inline double linearInterpolationDerivative(const std::vector<double>& xv,
+                                                const std::vector<double>& yv, double x)
     {
-	std::vector<double>::const_iterator lb = std::lower_bound(xv.begin(), xv.end(), x);
-	int lb_ix = lb - xv.begin();
-	if (lb_ix == 0) {
-	    return 0.;
-	} else if (lb_ix == int(xv.size())) {
-	    return 0.;
-	} else {
-	    return (yv[lb_ix] - yv[lb_ix - 1])/(xv[lb_ix] - xv[lb_ix - 1]);
-	}
+        // Extrapolates if x is outside xv
+	int ix1 = tableIndex(xv, x);
+	int ix2 = ix1 + 1;
+	return  (yv[ix2] - yv[ix1])/(xv[ix2] - xv[ix1]);
     }
 
-    template <typename T>
-    T linearInterpolationDerivativeExtrap(const std::vector<double>& xv,
-					  const std::vector<T>& yv,
-					  double x)
+    inline double linearInterpolation(const std::vector<double>& xv,
+                                      const std::vector<double>& yv, double x)
     {
-	std::vector<double>::const_iterator lb = std::lower_bound(xv.begin(), xv.end(), x);
-	int lb_ix = lb - xv.begin();
-	int nend =  int(xv.size());
-	if (lb_ix == 0) {
-	    return (yv[1]-yv[0])/(xv[1]-xv[0]);
-	} else if (lb_ix == int(xv.size())) {
-	    return (yv[nend-1]-yv[nend-2])/(xv[nend-1]-xv[nend-2]);
-	} else {
-	    return (yv[lb_ix] - yv[lb_ix - 1])/(xv[lb_ix] - xv[lb_ix - 1]);
-	}
+	// Extrapolates if x is outside xv
+	int ix1 = tableIndex(xv, x);
+	int ix2 = ix1 + 1;
+	return  (yv[ix2] - yv[ix1])/(xv[ix2] - xv[ix1])*(x - xv[ix1]) + yv[ix1];
     }
     
-    template <typename T>
-    T linearInterpolationExtrap(const std::vector<double>& xv,
-				const std::vector<T>& yv,
-				double x)
+    inline double linearInterpolation(const std::vector<double>& xv,
+                                      const std::vector<double>& yv,
+                                      double x, int& ix1)
     {
-	std::vector<double>::const_iterator lb = std::lower_bound(xv.begin(), xv.end(), x);
-	int lb_ix = lb - xv.begin();
-	if (lb_ix == 0) {
-	    lb_ix=1;
-	} else if (lb_ix == int(xv.size())){
-	    lb_ix = int(xv.size())-1;
-	}
-	double w = (x - xv[lb_ix - 1])/(xv[lb_ix] - xv[lb_ix - 1]);
-	return (1.0 - w)*yv[lb_ix - 1] + w*yv[lb_ix];
-	
+	// Extrapolates if x is outside xv
+	ix1 = tableIndex(xv, x);
+	int ix2 = ix1 + 1;
+	return (yv[ix2] - yv[ix1])/(xv[ix2] - xv[ix1])*(x - xv[ix1]) + yv[ix1];
     }
-    
+
+
 
 } // namespace Opm
 
 
 
-#endif // OPENRS_LINEARINTERPOLATION_HEADER
+
+
+#endif // OPM_LINEARINTERPOLATION_HEADER_INCLUDED

@@ -1,10 +1,11 @@
+#include "config.h"
 #include <assert.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <opm/core/well.h>
+#include <opm/core/pressure/legacy_well.h>
 #include <opm/core/linalg/blas_lapack.h>
 #include <opm/core/linalg/sparse_sys.h>
 #include <opm/core/pressure/flow_bc.h>
