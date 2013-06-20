@@ -558,13 +558,15 @@ void EclipseGridParser::convertToSI()
                    key == "LAMEMOD"  || key == "SHEARMOD" || key == "POISSONMOD" ||
                    key == "PWAVEMOD" || key == "MULTPV"   || key == "PWAVEMOD" ||
                    key == "SGAS"     || key == "SWAT"     || key == "SOIL"     ||
-                   key == "RS"       || key == "SWCR"     || key == "SWL"      || 
+                                        key == "SWCR"     || key == "SWL"      ||
                    key == "SWU"      || key == "SOWCR"    || key == "KRW"      || 
                    key == "KRWR"     || key == "KRORW"    || key == "KRO") {
             unit = 1.0;
             do_convert = false; // Dimensionless keywords...
         } else if (key == "PRESSURE") {
             unit = units_.pressure;
+        } else if (key == "RS") {
+            unit = units_.gasvol_s / units_.liqvol_s;
         } else if (key == "MAPAXES") {
             MESSAGE("Not applying units to MAPAXES yet!");
             unit = 1.0;

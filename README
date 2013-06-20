@@ -63,6 +63,9 @@ sudo apt-get install libdune-common-dev libdune-istl-dev libdune-grid-dev
 # libraries necessary for OPM
 sudo apt-get install -y libtinyxml-dev
 
+# optional: Ensemble based Reservoir Tool Eclipse utilities module
+sudo apt-get install ert.ecl
+
 Note: You should compile the OPM modules using the same toolchain that
       was used to build DUNE. Otherwise, you can get strange ABI errors.
 
@@ -70,16 +73,26 @@ Note: You should compile the OPM modules using the same toolchain that
 DEPENDENCIES FOR SUSE BASED DISTRIBUTIONS
 -----------------------------------------
 
-# libraries
-sudo zypper in libblas3 liblapack3 libboost libtinyxml-devel libumfpack
+# repository containing prerequisites
+sudo zypper ar http://download.opensuse.org/repositories/science/openSUSE_12.3/science.repo
 
-# tools
-sudo zypper in gcc cmake git doxygen
+# math libraries
+sudo zypper in blas-devel lapack-devel suitesparse-devel superlu-devel
+
+# utility libraries
+sudo zypper in boost-devel tinyxml-devel
+
+# tools necessary for building
+sudo zypper in gcc gcc-c++ gcc-fortran cmake git doxygen
 
 # DUNE libraries
-sudo zypper ar http://download.opensuse.org/repositories/science/openSUSE_12.2/science.repo
-sudo zypper in dune-common dune-istl
+sudo zypper in dune-common-devel dune-istl-devel
 
+# optional: Ensemble-based Reservoir Tools Eclipse utility module
+git sudo zypper ar http://www.opm-project.org/packages/current/opensuse/12/opm.repo
+sudo zypper in zlib-devel ert.ecl-devel
+
+(to remove the repository, run `sudo zypper removerepo "Open Porous Media Initiative"`)
 
 DEPENDENCIES FOR RHEL BASED DISTRIBUTIONS
 -----------------------------------------

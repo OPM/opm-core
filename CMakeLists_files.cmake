@@ -147,6 +147,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_column_extract.cpp
 	tests/test_geom2d.cpp
 	tests/test_param.cpp
+	tests/test_blackoilfluid.cpp
 	)
 
 # originally generated with the command:
@@ -154,6 +155,7 @@ list (APPEND TEST_SOURCE_FILES
 list (APPEND TEST_DATA_FILES
 	tests/extratestdata.xml
 	tests/testdata.xml
+	tests/testFluid.DATA
 	)
 
 # originally generated with the command:

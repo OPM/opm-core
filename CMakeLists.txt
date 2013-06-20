@@ -51,6 +51,11 @@ set (${project}_MODULE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 list (APPEND CMAKE_MODULE_PATH ${${project}_MODULE_DIR})
 
 # include special
+if (CMAKE_VERSION VERSION_LESS "2.8.3")
+	message (STATUS "Enabling compatibility modules for CMake 2.8.3")
+	list (APPEND CMAKE_MODULE_PATH "${${project}_MODULE_DIR}/compat-2.8.3")
+endif (CMAKE_VERSION VERSION_LESS "2.8.3")
+
 if (CMAKE_VERSION VERSION_LESS "2.8.5")
 	message (STATUS "Enabling compatibility modules for CMake 2.8.5")
 	list (APPEND CMAKE_MODULE_PATH "${${project}_MODULE_DIR}/compat-2.8.5")	
@@ -294,3 +299,6 @@ configure_la (${project} ${${project}_TARGET} ${project}_LIBTOOL_ARCHIVE)
 ### clean in-source builds ###
 include (OpmDistClean)
 opm_dist_clean (${project})
+
+### emulate the with-xxx feature of autotools;
+include (OpmKnown)

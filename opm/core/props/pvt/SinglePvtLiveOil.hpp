@@ -27,8 +27,10 @@
 namespace Opm
 {
     /// Class for miscible live oil (with dissolved gas in liquid phase).
-    /// For all the virtual methods, the following apply: p and z
-    /// are expected to be of size n and n*num_phases, respectively.
+    /// The PVT properties can either be given as a function of pressure (p) and surface volume (z)
+    /// or pressure (p) and gas resolution factor (r).
+    /// For all the virtual methods, the following apply: p, r and z
+    /// are expected to be of size n, size n and n*num_phases, respectively.
     /// Output arrays shall be of size n, and must be valid before
     /// calling the method.
     class SinglePvtLiveOil : public SinglePvtInterface
@@ -45,6 +47,14 @@ namespace Opm
                         const double* z,
                         double* output_mu) const;
 
+        /// Viscosity and its derivatives as a function of p and r.
+        virtual void mu(const int n,
+                        const double* p,
+                        const double* r,
+                        double* output_mu,
+                        double* output_dmudp,
+                        double* output_dmudr) const;
+
         /// Formation volume factor as a function of p and z.
         virtual void B(const int n,
                        const double* p,
@@ -57,6 +67,20 @@ namespace Opm
                           const double* z,
                           double* output_B,
                           double* output_dBdp) const;
+
+        /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
+        virtual void b(const int n,
+                       const double* p,
+                       const double* r,
+                       double* output_b,
+                       double* output_dbdp,
+                       double* output_dbdr) const;
+
+        /// Gas resolution and its derivatives at bublepoint as a function of p.
+        virtual void rbub(const int n,
+                          const double* p,
+                          double* output_rbub,
+                          double* output_drbubdp) const;
 
         /// Solution factor as a function of p and z.
         virtual void R(const int n,
@@ -82,6 +106,11 @@ namespace Opm
                             const double* surfvol,
                             const int item,
                             const bool deriv = false) const;
+
+        double miscible_oil(const double press,
+                            const double r,
+                            const int item,
+                            const int deriv = 0) const;
 
         // PVT properties of live oil (with dissolved gas)
         std::vector<std::vector<double> > saturated_oil_table_;
