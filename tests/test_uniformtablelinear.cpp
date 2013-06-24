@@ -18,8 +18,6 @@
 */
 #include <config.h>
 
-#include <opm/core/utility/have_boost_redef.hpp>
-
 #if defined(HAVE_DYNAMIC_BOOST_TEST)
 #define BOOST_TEST_DYN_LINK
 #endif
