@@ -1,0 +1,34 @@
+#define HAVE_ISFINITE 1
+#define HAVE_GLOB 1
+#define HAVE_FORK 1
+#define HAVE_GETUID 1
+#define HAVE_LOCKF 1
+#define HAVE_OPENDIR 1
+#define HAVE_PROC 1
+#define HAVE_READLINKAT 1
+#define HAVE_SYMLINK 1
+#define HAVE_VA_COPY 1
+/* #undef HAVE_ARRAY */
+/* #undef HAVE_BOOST_MAKE_SHARED_HPP */
+/* #undef HAVE_BOOST_SHARED_PTR_HPP */
+/* #undef HAVE_GMP */
+/* #undef HAVE_MAKE_SHARED */
+/* #undef HAVE_MPI */
+/* #undef HAVE_NULLPTR */
+/* #undef HAVE_STATIC_ASSERT */
+#define HAVE_TR1_TUPLE 1
+/* #undef HAVE_TYPE_TRAITS */
+/* #undef HAVE_TUPLE */
+/* #undef HAVE_BOOST_FUSION */
+/* #undef HAVE_MEM_USAGE_T_EXPANSIONS */
+/* #undef HAVE_PARDISO */
+#define HAVE_BOOST 1
+/* #undef HAVE_PARMETIS */
+#define HAVE_SUPERLU 1
+/* #undef SUPERLU_MIN_VERSION_4_3 */
+#define SUPERLU_POST_2005_VERSION 1
+/* #undef HAVE_AGMG */
+#define HAVE_DUNE_ISTL 1
+#define HAVE_DYNAMIC_BOOST_TEST 1
+#define HAVE_ERT 1
+/* #undef HAVE_SUITESPARSE_UMFPACK_H */
