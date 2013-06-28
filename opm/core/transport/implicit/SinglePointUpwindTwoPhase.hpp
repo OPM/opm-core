@@ -576,9 +576,11 @@ namespace Opm {
                 store_.pc(c)      = pc;
                 store_.dpc(c)     = dpc;
             }
-	    if (!in_range) {
-		std::cout << "Warning: initIteration() - s was clamped in some cells.\n";
-	    }
+            if (!in_range) {
+#ifdef VERBOSE
+                std::cout << "Warning: initIteration() - s was clamped in some cells.\n";
+#endif
+            }
             return in_range;
         }
 
