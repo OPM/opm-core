@@ -15,10 +15,10 @@ set (doxy_dir "Documentation")
 set (${project}_MODULE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 list (APPEND CMAKE_MODULE_PATH ${${project}_MODULE_DIR})
 
-macro (prereqs_hook project)
-endmacro (prereqs_hook project)
+macro (prereqs_hook)
+endmacro (prereqs_hook)
 
-macro (sources_hook project)
+macro (sources_hook)
 	# Algebraic Multigrid must be compiled together with our program;
 	# if it is not available, then remove our corresponding component
 	find_package (AGMG)
@@ -74,17 +74,17 @@ macro (sources_hook project)
 			${PROJECT_SOURCE_DIR}/examples/import_rewrite.cpp
 			)
 	endif (NOT HAVE_ERT)
-endmacro (sources_hook project)
+endmacro (sources_hook)
 
-macro (fortran_hook project)
+macro (fortran_hook)
 	# only include Fortran support if AGMG sources are available
 	set (${project}_FORTRAN_IF HAVE_AGMG)
-endmacro (fortran_hook project)
+endmacro (fortran_hook)
 
-macro (tests_hook project)
+macro (tests_hook)
 	cond_disable_test ("AGMG")
 	cond_disable_test ("ERT")
-endmacro (tests_hook project)
+endmacro (tests_hook)
 
 # all setup common to the OPM library modules is done here
 include (OpmLibMain)
