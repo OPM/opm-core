@@ -38,7 +38,7 @@
 
 
 #include <boost/static_assert.hpp>
-#include <tr1/type_traits>
+#include <boost/type_traits.hpp>
 #include <cmath>
 
 namespace Opm {
@@ -53,7 +53,7 @@ namespace Opm {
 	{
 	    // To avoid some user errors, we disallow taking averages of
 	    // integral values.
-	    BOOST_STATIC_ASSERT(std::tr1::is_integral<T>::value == false);
+	    BOOST_STATIC_ASSERT(boost::is_integral<T>::value == false);
 	    Tresult retval(t1);
 	    retval += t2;
 	    retval *= 0.5;
@@ -71,7 +71,7 @@ namespace Opm {
 	{
 	    // To avoid some user errors, we disallow taking averages of
 	    // integral values.
-	    BOOST_STATIC_ASSERT(std::tr1::is_integral<T>::value == false);
+	    BOOST_STATIC_ASSERT(boost::is_integral<T>::value == false);
 	    return std::sqrt(t1*t2);
 	}
 
@@ -84,7 +84,7 @@ namespace Opm {
 	{
 	    // To avoid some user errors, we disallow taking averages of
 	    // integral values.
-	    BOOST_STATIC_ASSERT(std::tr1::is_integral<T>::value == false);
+	    BOOST_STATIC_ASSERT(boost::is_integral<T>::value == false);
 	    return (2*t1*t2)/(t1 + t2);
 	}
 

@@ -19,6 +19,7 @@
 #define BOOST_TEST_MODULE BlackoilFluidTest
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
+#include <boost/shared_ptr.hpp>
 #include <iostream>
 #include <iterator>
 #include <vector>
@@ -37,7 +38,7 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
     const EclipseGridParser deck (filename);
 
     // setup pvt interface
-    std::vector<std::tr1::shared_ptr<SinglePvtInterface> > props_;
+    std::vector<boost::shared_ptr<SinglePvtInterface> > props_;
     PhaseUsage phase_usage_ = phaseUsageFromDeck(deck);
     enum PhaseIndex { Aqua = 0, Liquid = 1, Vapour = 2 };
     int samples = 0;

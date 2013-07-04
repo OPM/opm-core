@@ -40,7 +40,7 @@
 #include <vector>
 #include <map>
 #include <set>
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <opm/core/io/eclipse/SpecialEclipseFields.hpp>
 #include <opm/core/io/eclipse/EclipseUnits.hpp>
 #include <opm/core/utility/Factory.hpp>
@@ -138,7 +138,7 @@ namespace Opm
     /// corresponding to the given floating-point keyword.
     const std::vector<double>& getFloatingPointValue(const std::string& keyword) const;
 
-    typedef std::tr1::shared_ptr<SpecialBase> SpecialFieldPtr;
+    typedef boost::shared_ptr<SpecialBase> SpecialFieldPtr;
 
     /// Returns a reference to a vector containing pointers to the values 
     /// corresponding to the given keyword when the values are not only integers
@@ -244,7 +244,7 @@ private:
 
     SpecialFieldPtr createSpecialField(std::istream& is, const std::string& fieldname);
     SpecialFieldPtr cloneSpecialField(const std::string& fieldname,
-                                      const std::tr1::shared_ptr<SpecialBase> original);
+                                      const boost::shared_ptr<SpecialBase> original);
     void readImpl(std::istream& is);
     void getNumericErtFields(const std::string& filename);
 

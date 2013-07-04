@@ -26,7 +26,7 @@
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <string>
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 
 namespace Opm
 {
@@ -116,7 +116,7 @@ namespace Opm
 
         int region_number_;
 
-        std::vector<std::tr1::shared_ptr<SinglePvtInterface> > props_;
+        std::vector<boost::shared_ptr<SinglePvtInterface> > props_;
 
         double densities_[MaxNumPhases];
         mutable std::vector<double> data1_;
