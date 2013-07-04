@@ -40,8 +40,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <tr1/memory>
-
+#include <boost/shared_ptr.hpp>
 #include <opm/core/utility/parameters/ParameterMapItem.hpp>
 #include <opm/core/utility/parameters/ParameterRequirement.hpp>
 
@@ -263,13 +262,13 @@ namespace Opm {
 
             /// Insert a new item into the group.
 	    void insert(const std::string& name,
-                        const std::tr1::shared_ptr<ParameterMapItem>& data);
+                        const boost::shared_ptr<ParameterMapItem>& data);
 
             /// Insert a new parameter item into the group.
 	    void insertParameter(const std::string& name, const std::string& value);
 
 	private:
-	    typedef std::tr1::shared_ptr<ParameterMapItem> data_type;
+	    typedef boost::shared_ptr<ParameterMapItem> data_type;
 	    typedef std::pair<std::string, data_type> pair_type;
 	    typedef std::map<std::string, data_type> map_type;
 

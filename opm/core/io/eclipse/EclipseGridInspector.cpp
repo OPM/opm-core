@@ -45,6 +45,7 @@
 #include <opm/core/io/eclipse/EclipseGridInspector.hpp>
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/io/eclipse/SpecialEclipseFields.hpp>
+#include <boost/array.hpp>
 
 namespace Opm
 {
@@ -100,7 +101,7 @@ std::pair<double,double> EclipseGridInspector::cellDips(int i, int j, int k) con
     }
 
     // Pick ZCORN-value for all 8 corners of the given cell
-    std::tr1::array<double, 8> cellz = cellZvals(i, j, k);
+    boost::array<double, 8> cellz = cellZvals(i, j, k);
 
     // Compute rise in positive x-direction for all four edges (and then find mean)
     // Current implementation is for regularly placed and vertical pillars!
@@ -125,7 +126,7 @@ std::pair<double,double> EclipseGridInspector::cellDips(int i, int j, int k) con
     // don't follow an overall dip for the model if it exists.
     int x_edges = 4;
     int y_edges = 4;
-    std::tr1::array<double, 6> gridlimits = getGridLimits();
+    boost::array<double, 6> gridlimits = getGridLimits();
     double zmin = gridlimits[4];
     double zmax = gridlimits[5];
     // LLL -> HLL
@@ -169,11 +170,11 @@ std::pair<double,double> EclipseGridInspector::cellDips(int i, int j, int k) con
 */
 std::pair<double,double> EclipseGridInspector::cellDips(int cell_idx) const
 {
-    std::tr1::array<int, 3> idxs = cellIdxToLogicalCoords(cell_idx);
+    boost::array<int, 3> idxs = cellIdxToLogicalCoords(cell_idx);
     return cellDips(idxs[0], idxs[1], idxs[2]);
 }
 
-std::tr1::array<int, 3> EclipseGridInspector::cellIdxToLogicalCoords(int cell_idx) const
+boost::array<int, 3> EclipseGridInspector::cellIdxToLogicalCoords(int cell_idx) const
 {
     
     int i,j,k; // Position of cell in cell hierarchy
@@ -188,8 +189,8 @@ std::tr1::array<int, 3> EclipseGridInspector::cellIdxToLogicalCoords(int cell_id
     j = (horIdx-i)/logical_gridsize_[0]+1;
     k = ((cell_idx+1)-logical_gridsize_[0]*(j-1)-1)/(logical_gridsize_[0]*logical_gridsize_[1])+1;
 
-    std::tr1::array<int, 3> a = {{i-1, j-1, k-1}};
-    return a; //std::tr1::array<int, 3> {{i-1, j-1, k-1}};
+    boost::array<int, 3> a = {{i-1, j-1, k-1}};
+    return a; //boost::array<int, 3> {{i-1, j-1, k-1}};
 }
 
 double EclipseGridInspector::cellVolumeVerticalPillars(int i, int j, int k) const
@@ -242,7 +243,7 @@ double EclipseGridInspector::cellVolumeVerticalPillars(int i, int j, int k) cons
 
 double EclipseGridInspector::cellVolumeVerticalPillars(int cell_idx) const
 {
-    std::tr1::array<int, 3> idxs = cellIdxToLogicalCoords(cell_idx);
+    boost::array<int, 3> idxs = cellIdxToLogicalCoords(cell_idx);
     return cellVolumeVerticalPillars(idxs[0], idxs[1], idxs[2]);
 }
 
@@ -257,7 +258,7 @@ void EclipseGridInspector::checkLogicalCoords(int i, int j, int k) const
 }
 
 
-std::tr1::array<double, 6> EclipseGridInspector::getGridLimits() const
+boost::array<double, 6> EclipseGridInspector::getGridLimits() const
 {
     if (! (parser_.hasField("COORD") && parser_.hasField("ZCORN") && parser_.hasField("SPECGRID")) ) {
         throw std::runtime_error("EclipseGridInspector: Grid does not have SPECGRID, COORD, and ZCORN, can't find dimensions.");
@@ -293,7 +294,7 @@ std::tr1::array<double, 6> EclipseGridInspector::getGridLimits() const
             ymin = coord[pillarindex * 6 + 4];
     }
 
-    std::tr1::array<double, 6> gridlimits = {{ xmin, xmax, ymin, ymax,
+    boost::array<double, 6> gridlimits = {{ xmin, xmax, ymin, ymax,
                                             *min_element(zcorn.begin(), zcorn.end()),
                                             *max_element(zcorn.begin(), zcorn.end()) }};
     return gridlimits;
@@ -301,16 +302,16 @@ std::tr1::array<double, 6> EclipseGridInspector::getGridLimits() const
 
 
 
-std::tr1::array<int, 3> EclipseGridInspector::gridSize() const
+boost::array<int, 3> EclipseGridInspector::gridSize() const
 {
-    std::tr1::array<int, 3> retval = {{ logical_gridsize_[0],
+    boost::array<int, 3> retval = {{ logical_gridsize_[0],
 				     logical_gridsize_[1],
 				     logical_gridsize_[2] }};
     return retval;
 }
 
 
-std::tr1::array<double, 8> EclipseGridInspector::cellZvals(int i, int j, int k) const
+boost::array<double, 8> EclipseGridInspector::cellZvals(int i, int j, int k) const
 {
     // Get the zcorn field.
     const std::vector<double>& z = parser_.getFloatingPointValue("ZCORN");
@@ -324,7 +325,7 @@ std::tr1::array<double, 8> EclipseGridInspector::cellZvals(int i, int j, int k) 
 		     2*logical_gridsize_[0],
 		     4*logical_gridsize_[0]*logical_gridsize_[1] };
     int ix = 2*(i*delta[0] + j*delta[1] + k*delta[2]);
-    std::tr1::array<double, 8> cellz = {{ z[ix], z[ix + delta[0]],
+    boost::array<double, 8> cellz = {{ z[ix], z[ix + delta[0]],
 				       z[ix + delta[1]], z[ix + delta[1] + delta[0]],
 				       z[ix + delta[2]], z[ix + delta[2] + delta[0]],
 				       z[ix + delta[2] + delta[1]], z[ix + delta[2] + delta[1] + delta[0]] }};

@@ -44,6 +44,7 @@
 #include <iostream>
 #include <string>
 #include <boost/filesystem.hpp>
+#include <boost/shared_ptr.hpp>
 
 
 #include <opm/core/utility/parameters/tinyxml/tinyxml.h>
@@ -104,7 +105,7 @@ namespace Opm {
 			    continue;
 			}
 			std::string name = getProperty(ID_xmlatt__name, elem);
-			std::tr1::shared_ptr<ParameterMapItem> data;
+			boost::shared_ptr<ParameterMapItem> data;
 			if (tag_name == ID_xmltag__param) {
 			    std::string value = getProperty(ID_xmlatt__value, elem);
 			    std::string type = getProperty(ID_xmlatt__type, elem);
