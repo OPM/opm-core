@@ -20,11 +20,12 @@
 #include "config.h"
 #include <opm/core/utility/writeVtkData.hpp>
 #include <fstream>
+#include <boost/array.hpp>
 
 int main()
 {
-    std::tr1::array<int, 3> dims = {{ 2, 2, 2 }};
-    std::tr1::array<double, 3> cell_size = {{ 1.0, 2.0, 3.0 }};
+    boost::array<int, 3> dims = {{ 2, 2, 2 }};
+    boost::array<double, 3> cell_size = {{ 1.0, 2.0, 3.0 }};
     Opm::DataMap m;
     double foov[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
     std::vector<double> foo(foov, foov + sizeof foov/sizeof foov[0]);

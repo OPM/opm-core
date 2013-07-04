@@ -36,7 +36,7 @@
 #define OPM_FACTORY_HEADER
 
 #include <map>
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 
 namespace Opm
 {
@@ -52,7 +52,7 @@ namespace Opm
     {
     public:
         /// The type of pointer returned by createObject().
-        typedef std::tr1::shared_ptr<Base> ProductPtr;
+        typedef boost::shared_ptr<Base> ProductPtr;
 
         /// Creates a new object of the class associated with the given type string,
         /// and returns a pointer to it.
@@ -128,7 +128,7 @@ namespace Opm
             }
         };
 
-        typedef std::tr1::shared_ptr<Creator> CreatorPtr;
+        typedef boost::shared_ptr<Creator> CreatorPtr;
         typedef std::map<std::string, CreatorPtr> CreatorMap;
         // This map contains the whole factory, i.e. all the Creators.
         CreatorMap string_to_creator_;

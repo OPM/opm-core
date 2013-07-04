@@ -35,8 +35,8 @@
 namespace Opm
 {
 
-    void writeVtkData(const std::tr1::array<int, 3>& dims,
-                      const std::tr1::array<double, 3>& cell_size,
+    void writeVtkData(const boost::array<int, 3>& dims,
+                      const boost::array<double, 3>& cell_size,
                       const DataMap& data,
                       std::ostream& os)
     {
