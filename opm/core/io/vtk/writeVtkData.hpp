@@ -24,7 +24,7 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <tr1/array>
+#include <boost/array.hpp>
 #include <iosfwd>
 #include <opm/core/utility/DataMap.hpp>
 
@@ -34,8 +34,8 @@ namespace Opm
 {
 
     /// Vtk output for cartesian grids.
-    void writeVtkData(const std::tr1::array<int, 3>& dims,
-                      const std::tr1::array<double, 3>& cell_size,
+    void writeVtkData(const boost::array<int, 3>& dims,
+                      const boost::array<double, 3>& cell_size,
                       const DataMap& data,
                       std::ostream& os);
 
