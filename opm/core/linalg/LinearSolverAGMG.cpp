@@ -124,7 +124,7 @@ namespace Opm
             nrest = 10;         // Suggested default number of GCR restarts.
         }
 
-        int iprint = linsolver_verbosity_;         // Suppress most output
+        int iprint = linsolver_verbosity_?6:-1;         // Suppress most output
         DAGMG_(& size, & a[0], & j[0], & i[0], rhs, solution,
                & ijob, & iprint, & nrest, & rpt.iterations, & rtol_);
 
