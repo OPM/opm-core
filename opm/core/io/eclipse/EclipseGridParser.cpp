@@ -966,7 +966,7 @@ ecl_grid_type * EclipseGridParser::newGrid( ) {
      }
 */
 
-void EclipseGridParser::saveEGRID( const std::string & filename) const {
+  void EclipseGridParser::saveEGRID( const std::string & filename , std::vector<int>& actnum) const {
   bool endian_flip = true;//ECL_ENDIAN_FLIP;
   bool fmt_file;
   struct grdecl grdecl = get_grdecl();
@@ -994,7 +994,7 @@ void EclipseGridParser::saveEGRID( const std::string & filename) const {
   {
     ecl_kw_type * coord_kw = newEclKW( COORD_KW , ECL_FLOAT_TYPE );
     ecl_kw_type * zcorn_kw = newEclKW( ZCORN_KW , ECL_FLOAT_TYPE );
-    ecl_kw_type * actnum_kw = newEclKW( ACTNUM_KW , ECL_INT_TYPE );
+    ecl_kw_type * actnum_kw = ecl_kw_alloc_new_shared( ACTNUM_KW , grdecl.dims[0] * grdecl.dims[1] * grdecl.dims[2] , ECL_INT_TYPE , &actnum );
     ecl_kw_type * endgrid_kw = ecl_kw_alloc( ENDGRID_KW , 0 , ECL_INT_TYPE );
 
     ecl_kw_fwrite( coord_kw , fortio );
@@ -1092,7 +1092,7 @@ void EclipseGridParser::saveEGRID_INIT( const std::string& output_dir , const st
 }
 #else
 
-void EclipseGridParser::saveEGRID( const std::string & filename) const
+  void EclipseGridParser::saveEGRID( const std::string & filename, std::vector<int>& actnum) const
 {
     static_cast<void>(filename); // Suppress "unused variable" warning.
     THROW("Cannot write EGRID format without ERT library support. Reconfigure opm-core with ERT support and recompile.");
