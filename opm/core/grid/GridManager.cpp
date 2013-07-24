@@ -115,7 +115,19 @@ namespace Opm
         }
     }
 
-
+    void GridManager::saveEGRID(const std::string& filename , const Opm::EclipseGridParser& deck) {
+        int global_size = ug_->cartdims[0] * ug_->cartdims[1] * ug_->cartdims[2];
+        std::vector<int> actnum(global_size);
+        
+        if (ug_->global_cell) {
+            actnum.assign( actnum.size() , 0 );
+            for (int c=0; c < ug_->number_of_cells; c++) 
+                actnum[ug_->global_cell[c]] = 1;
+        } else
+            actnum.assign( actnum.size() , 1 );
+        
+        deck.saveEGRID( "FILE.EGRID" , actnum );
+    }
 
 
     /// Destructor.
@@ -134,7 +146,6 @@ namespace Opm
     {
         return ug_;
     }
-
 
 
     // Construct corner-point grid from deck.
