@@ -966,54 +966,66 @@ ecl_grid_type * EclipseGridParser::newGrid( ) {
      }
 */
 
-  void EclipseGridParser::saveEGRID( const std::string & filename , std::vector<int>& actnum) const {
-  bool endian_flip = true;//ECL_ENDIAN_FLIP;
-  bool fmt_file;
-  struct grdecl grdecl = get_grdecl();
-  fortio_type * fortio;
+    void EclipseGridParser::saveEGRID( const std::string & filename , int num_cells , const int * global_cell) const {
+        bool endian_flip = true;//ECL_ENDIAN_FLIP;
+        bool fmt_file;
+        struct grdecl grdecl = get_grdecl();
+        fortio_type * fortio;
+        
+        if (!ecl_util_fmt_file( filename.c_str() , &fmt_file)) {
+            cerr << "Could not determine formatted/unformatted status of file:" << filename << " non-standard name?" << endl;
+            throw exception();
+        }
+        
+        fortio = fortio_open_writer( filename.c_str() , fmt_file , endian_flip );
+        {
+            float * mapaxes = NULL;
+            if (grdecl.mapaxes != NULL) {
+                mapaxes = new float[6];
+                for (int i=0; i < 6; i++)
+                    mapaxes[i]= grdecl.mapaxes[i];
+            }
+            
+            ecl_grid_fwrite_EGRID_header( grdecl.dims , mapaxes , fortio );
+            
+            if (grdecl.mapaxes != NULL) 
+                delete[] mapaxes;
+        }
 
-  if (!ecl_util_fmt_file( filename.c_str() , &fmt_file)) {
-    cerr << "Could not determine formatted/unformatted status of file:" << filename << " non-standard name?" << endl;
-    throw exception();
-  }
-  
-  fortio = fortio_open_writer( filename.c_str() , fmt_file , endian_flip );
-  {
-    float * mapaxes = NULL;
-    if (grdecl.mapaxes != NULL) {
-      mapaxes = new float[6];
-      for (int i=0; i < 6; i++)
-        mapaxes[i]= grdecl.mapaxes[i];
+        {
+            ecl_kw_type * coord_kw = newEclKW( COORD_KW , ECL_FLOAT_TYPE );
+            ecl_kw_type * zcorn_kw = newEclKW( ZCORN_KW , ECL_FLOAT_TYPE );
+            ecl_kw_type * endgrid_kw = ecl_kw_alloc( ENDGRID_KW , 0 , ECL_INT_TYPE );
+            
+            
+            ecl_kw_fwrite( coord_kw , fortio );
+            ecl_kw_fwrite( zcorn_kw , fortio );
+            if (global_cell) {
+                int global_size = grdecl.dims[0] * grdecl.dims[1] * grdecl.dims[2];
+                ecl_kw_type * actnum_kw = ecl_kw_alloc( ACTNUM_KW , global_size , ECL_INT_TYPE );
+                int * actnum_data = ecl_kw_get_int_ptr( actnum_kw );
+                
+                ecl_kw_scalar_set_int( actnum_kw , 0 );
+                for (int c=0; c < num_cells; c++) 
+                    actnum_data[global_cell[c]] = 1;
+
+                ecl_kw_fwrite( actnum_kw , fortio );
+                ecl_kw_free( actnum_kw );
+            }
+            ecl_kw_fwrite( endgrid_kw , fortio );
+            
+            ecl_kw_free( coord_kw );
+            ecl_kw_free( zcorn_kw );
+            ecl_kw_free( endgrid_kw );
+        }
+        fortio_fclose( fortio );
     }
-
-    ecl_grid_fwrite_EGRID_header( grdecl.dims , mapaxes , fortio );
-
-    if (grdecl.mapaxes != NULL) 
-      delete[] mapaxes;
-  }
-  {
-    ecl_kw_type * coord_kw = newEclKW( COORD_KW , ECL_FLOAT_TYPE );
-    ecl_kw_type * zcorn_kw = newEclKW( ZCORN_KW , ECL_FLOAT_TYPE );
-    ecl_kw_type * actnum_kw = ecl_kw_alloc_new_shared( ACTNUM_KW , grdecl.dims[0] * grdecl.dims[1] * grdecl.dims[2] , ECL_INT_TYPE , &actnum );
-    ecl_kw_type * endgrid_kw = ecl_kw_alloc( ENDGRID_KW , 0 , ECL_INT_TYPE );
-
-    ecl_kw_fwrite( coord_kw , fortio );
-    ecl_kw_fwrite( zcorn_kw , fortio );
-    ecl_kw_fwrite( actnum_kw , fortio );
-    ecl_kw_fwrite( endgrid_kw , fortio );
     
-    ecl_kw_free( coord_kw );
-    ecl_kw_free( zcorn_kw );
-    ecl_kw_free( actnum_kw );
-    ecl_kw_free( endgrid_kw );
-  }
-  fortio_fclose( fortio );
-}
+    /**
+       Will query the deck for keyword @kw; and save it to the @fortio
+       instance if the keyword can be found.  
+    */
 
-/**
-   Will query the deck for keyword @kw; and save it to the @fortio
-   instance if the keyword can be found.  
-*/
 void EclipseGridParser::save_kw( fortio_type * fortio , const std::string & kw , ecl_type_enum ecl_type) {
   ecl_kw_type * ecl_kw = newEclKW( kw , ecl_type );
   if (ecl_kw != NULL) {
@@ -1092,12 +1104,12 @@ void EclipseGridParser::saveEGRID_INIT( const std::string& output_dir , const st
 }
 #else
 
-  void EclipseGridParser::saveEGRID( const std::string & filename, std::vector<int>& actnum) const
-{
-    static_cast<void>(filename); // Suppress "unused variable" warning.
-    THROW("Cannot write EGRID format without ERT library support. Reconfigure opm-core with ERT support and recompile.");
-}
-
+    void EclipseGridParser::saveEGRID( const std::string & filename, int num_cells , const int * global_cell) const
+    {
+        static_cast<void>(filename); // Suppress "unused variable" warning.
+        THROW("Cannot write EGRID format without ERT library support. Reconfigure opm-core with ERT support and recompile.");
+    }
+    
 #endif
 
 // Read an imported fortio data file using Ert. 

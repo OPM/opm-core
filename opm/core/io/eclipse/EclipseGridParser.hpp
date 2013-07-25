@@ -226,7 +226,7 @@ public:                                                                         
     struct grdecl get_grdecl() const;
 
     /// Save grid parts of deck in EGRID format. 
-    void saveEGRID(const std::string & filename, std::vector<int>& actnum) const;
+    void saveEGRID(const std::string & filename, int num_cells , const int * global_cell) const;
 
 #ifdef HAVE_ERT
   void saveEGRID_INIT( const std::string& output_dir , const std::string& basename, bool fmt_file = false);
