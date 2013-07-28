@@ -45,7 +45,7 @@ const ecl_type_enum outputFloatType = ECL_DOUBLE_TYPE;
 /*
   Only keywords which have more >= minImportSize elements are
   converted to binary form. This is to avoid conversion of short
-  keywords like MAPAXES and TABDIMS.  
+  keywords like MAPAXES and TABDIMS.
 */
 const int minImportSize = 10;
 
@@ -64,7 +64,7 @@ static void skipKeyword( std::ifstream& is) {
       break;
     } else
       is >> ignoreLine;
-    
+
     if (!is.good()) {
       is.clear();
       is.seekg( 0 , std::ios::end );
@@ -80,7 +80,7 @@ static void copyKeyword( std::ifstream& is , std::ofstream& os) {
   {
     std::ios::pos_type end_pos = is.tellg();
     long length = end_pos - start_pos;
-    
+
     {
       char * buffer = new char[length];
       {
@@ -121,7 +121,7 @@ static bool convertKeyword( const std::string& inputFile , const std::string& ou
   {
     std::ios::pos_type inputPos = is.tellg();
     ecl_kw_type * ecl_kw = loadFromcstdio( inputFile , inputPos , ecl_type );
-    
+
     if (ecl_kw_get_size( ecl_kw ) >= minImportSize) {
       {
         if (outputPath.empty())
@@ -133,7 +133,7 @@ static bool convertKeyword( const std::string& inputFile , const std::string& ou
           ecl_kw_fwrite( ecl_kw , fortio );
           fortio_fclose( fortio );
         }
-        
+
         os << "IMPORT" << std::endl << "  '" << outputFile << "'  /" << std::endl << std::endl;
       }
       is.seekg( inputPos );
@@ -141,7 +141,7 @@ static bool convertKeyword( const std::string& inputFile , const std::string& ou
       copyKeyword( is , os );
       convert = false;
     }
-    
+
 
     ecl_kw_free( ecl_kw );
   }
@@ -156,7 +156,7 @@ static bool parseFile(const std::string& inputFile, std::string& outputFile, con
   bool updateFile = false;
   std::cout << indent << "Parsing " << inputFile << "\n";
   {
-    std::ifstream is(inputFile.c_str());  
+    std::ifstream is(inputFile.c_str());
     if (is) {
       std::ofstream os;
       std::string keyword;
@@ -165,11 +165,11 @@ static bool parseFile(const std::string& inputFile, std::string& outputFile, con
         boost::filesystem::path inputPath(inputFile);
         path = inputPath.parent_path().string();
       }
-      
+
       {
         std::string basename;
         std::string extension;
-        
+
         outputFile = inputFile;
         size_t ext_pos = inputFile.rfind(".");
         if (ext_pos == std::string::npos) {
@@ -179,14 +179,14 @@ static bool parseFile(const std::string& inputFile, std::string& outputFile, con
           basename = outputFile.substr(0,ext_pos);
           extension = outputFile.substr(ext_pos);
         }
-        
+
         outputFile = basename + "_import" + extension;
       }
       os.open( outputFile.c_str() );
-      
+
       while(is.good()) {
         is >> ignoreWhitespace;
-        { 
+        {
           std::ios::pos_type start_pos = is.tellg();
           if (EclipseGridParser::readKeyword( is , keyword )) {
             FieldType fieldType = EclipseGridParser::classifyKeyword( keyword );
@@ -231,7 +231,7 @@ static bool parseFile(const std::string& inputFile, std::string& outputFile, con
             is >> ignoreLine;  // Not at a valid keyword
         }
       }
-      
+
       os.close();
       is.close();
       if (updateFile)

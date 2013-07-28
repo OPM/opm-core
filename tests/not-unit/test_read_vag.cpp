@@ -61,7 +61,7 @@ int main(int argc, char** argv)
         // Size of mappings found
         std::cout << " faces_to_vertices  " <<   vag_grid.faces_to_vertices.value.size() << endl;
         std::cout << " volumes_to_faces " <<   vag_grid.volumes_to_vertices.value.size() << endl;
-        
+
         grid = allocate_grid(3,
                              vag_grid.number_of_volumes,
                              vag_grid.number_of_faces,
@@ -70,15 +70,15 @@ int main(int argc, char** argv)
                              vag_grid.number_of_vertices);
         vagToUnstructuredGrid(vag_grid,*grid);
 
-        
-        
+
+
         //}
         // {
         std::cout << "*************************************************************\n";
         VAG vag_grid_new;
         unstructuredGridToVag(*grid,vag_grid_new);
-        writeVagFormat(std::cout,vag_grid_new);        
+        writeVagFormat(std::cout,vag_grid_new);
         // }
     destroy_grid(grid);
-    
+
 }

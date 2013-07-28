@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(construction_and_queries)
             row[j] = elem[s];
     }
     BOOST_CHECK(st2 == st2_allocate);
-    
+
     // One element too few.
     BOOST_CHECK_THROW(const SparseTable<int> st3(elem, elem + num_elem - 1, rowsizes, rowsizes + num_rows), std::exception);
 

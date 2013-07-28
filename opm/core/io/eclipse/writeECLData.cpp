@@ -38,11 +38,11 @@
 
 namespace Opm
 {
-  
+
   static ecl_kw_type * ecl_kw_wrapper( const UnstructuredGrid& grid,
-                                       const std::string& kw_name , 
-                                       const std::vector<double> * data , 
-                                       int offset , 
+                                       const std::string& kw_name ,
+                                       const std::vector<double> * data ,
+                                       int offset ,
                                        int stride ) {
 
     if (stride <= 0)
@@ -51,7 +51,7 @@ namespace Opm
       THROW("Internal mismatch grid.number_of_cells: " << grid.number_of_cells << " data size: " << data->size() / stride);
     {
       ecl_kw_type * ecl_kw = ecl_kw_alloc( kw_name.c_str() , grid.number_of_cells , ECL_FLOAT_TYPE );
-      for (int i=0; i < grid.number_of_cells; i++) 
+      for (int i=0; i < grid.number_of_cells; i++)
         ecl_kw_iset_float( ecl_kw , i , (*data)[i*stride + offset]);
       return ecl_kw;
     }
@@ -69,7 +69,7 @@ namespace Opm
     chunk and non-unified restart files which are one file for each
     report step. In addition the files can be either formatted
     (i.e. ASCII) or unformatted (i.e. binary).
-    
+
     The writeECLData() function has two hardcoded settings:
     'file_type' and 'fmt_file' which regulate which type of files the
     should be created. The extension of the files follow a convention:
@@ -92,10 +92,10 @@ namespace Opm
                     const boost::posix_time::ptime& current_date_time,
                     const std::string& output_dir,
                     const std::string& base_name) {
-    
+
     ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;  // Alternatively ECL_RESTART_FILE for multiple restart files.
     bool fmt_file           = false;
-    
+
     char * filename         = ecl_util_alloc_filename(output_dir.c_str() , base_name.c_str() , file_type , fmt_file , current_step );
     int phases              = ECL_OIL_PHASE + ECL_WATER_PHASE;
     double days             = Opm::unit::convert::to(current_time, Opm::unit::day);
@@ -105,20 +105,20 @@ namespace Opm
     int nz                  = grid.cartdims[2];
     int nactive             = grid.number_of_cells;
     ecl_rst_file_type * rst_file;
-    
+
     {
       using namespace boost::posix_time;
       ptime t0( boost::gregorian::date(1970 , 1 ,1) );
       time_duration::sec_type seconds = (current_date_time - t0).total_seconds();
-      
+
       date = time_t( seconds );
     }
-    
+
     if (current_step > 0 && file_type == ECL_UNIFIED_RESTART_FILE)
       rst_file = ecl_rst_file_open_append( filename );
     else
       rst_file = ecl_rst_file_open_write( filename );
-    
+
     ecl_rst_file_fwrite_header( rst_file , current_step , date , days , nx , ny , nz , nactive , phases );
     ecl_rst_file_start_solution( rst_file );
 
@@ -130,7 +130,7 @@ namespace Opm
         ecl_kw_free( pressure_kw );
       }
     }
-    
+
     {
       DataMap::const_iterator i = data.find("saturation");
       if (i != data.end()) {
@@ -146,7 +146,7 @@ namespace Opm
     ecl_rst_file_end_solution( rst_file );
     ecl_rst_file_close( rst_file );
     free(filename);
-  } 
+  }
 }
 
 #else // that is, we have not defined HAVE_ERT

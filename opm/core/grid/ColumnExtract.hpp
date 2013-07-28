@@ -57,7 +57,7 @@ namespace Opm {
 inline void extractColumn( const UnstructuredGrid& grid, std::vector<std::vector<int> >& columns )
 {
     const int* dims = grid.cartdims;
-    
+
     // Keeps track of column_index ---> index of vector
     std::map<int, int> global_to_local;
     for (int cell = 0; cell < grid.number_of_cells; ++cell) {
@@ -73,7 +73,7 @@ inline void extractColumn( const UnstructuredGrid& grid, std::vector<std::vector
             local_index = local_index_iterator->second;
         } else {
             local_index = columns.size();
-            global_to_local[i_cart+j_cart*dims[0]] = local_index;            
+            global_to_local[i_cart+j_cart*dims[0]] = local_index;
             columns.push_back(std::vector<int>());
         }
         columns[local_index].push_back(cell);
@@ -116,7 +116,7 @@ inline void extractColumn( const UnstructuredGrid& grid, std::vector<std::vector
     for (int col = num_cols; col < num_cols_all; ++col) {
         columns[col].swap(new_columns[col - num_cols]);
     }
-    
+
 }
 
 } // namespace Opm

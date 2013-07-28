@@ -87,7 +87,7 @@ namespace Opm
 
         void verifyInscribedShoebox(int imin, int ilen, int imax,
                                     int jmin, int jlen, int jmax,
-                                    double zmin, double zlen, double zmax) 
+                                    double zmin, double zlen, double zmax)
         {
             if (imin < 0) {
                 std::cerr << "Error! imin < 0 (imin = " << imin << ")\n";
@@ -232,7 +232,7 @@ namespace Opm
                     }
                 }
             }
-            
+
             filterIntegerField("ACTNUM", new_ACTNUM_);
             filterDoubleField("PORO", new_PORO_);
             filterDoubleField("PERMX", new_PERMX_);

@@ -50,7 +50,7 @@ namespace Opm {
 	class Parameter : public ParameterMapItem {
 	public:
 	    /// @brief
-	    /// @todo Doc me! 
+	    /// @todo Doc me!
 	    virtual ~Parameter() {}
 	    /// @brief
 	    /// @todo Doc me!
