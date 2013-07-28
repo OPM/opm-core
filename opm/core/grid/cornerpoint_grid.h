@@ -95,7 +95,7 @@ extern "C" {
      * @param[in,out] g Grid structure.
      */
     void compute_geometry(struct UnstructuredGrid *g);
-    
+
 #ifdef __cplusplus
 }
 #endif

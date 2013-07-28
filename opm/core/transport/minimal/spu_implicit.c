@@ -28,25 +28,25 @@ interpolate(int n, double h, double x0, double *tab, double x)
     assert((x-x0) < h*INT_MAX);
     assert((x-x0) > h*INT_MIN);
 
-    if ( x < x0  ) { 
+    if ( x < x0  ) {
         return tab[0];
     }
-    
+
     i = ((x-x0)/h);
 
     assert(i>=0);
-    
-    if (i+1 > n-1) { 
+
+    if (i+1 > n-1) {
         return tab[n-1];
     }
-    
+
     a = (x-x0 - i*h) / h;
-    
+
     return (1-a) * tab[i] + a * tab[i+1];
 }
 
 /* Assume uniformly spaced table. */
-static double 
+static double
 differentiate(int n, double h, double x0, double *tab, double x)
 {
     int           i;
@@ -56,27 +56,27 @@ differentiate(int n, double h, double x0, double *tab, double x)
     assert((x-x0) > h*INT_MIN);
     assert(n>1);
 
-    if ( x < x0  ) { 
+    if ( x < x0  ) {
         return (tab[1]-tab[0])/h;
     }
-    
+
     i = ((x-x0)/h);
 
     assert(i>=0);
-    
-    if (i+1 > n-1) { 
+
+    if (i+1 > n-1) {
         return (tab[n-1]-tab[n-2])/h;
     }
-    
+
     return (tab[i+1]-tab[i])/h;
 }
 
-static void 
+static void
 compute_mobilities(int n, double *s, double *mob, double *dmob, int ntab, double h, double x0, double *tab)
 {
     double *tabw=tab;
     double *tabo=tab+ntab;
-    
+
     int i;
     for (i=0; i<n; ++i) {
         *mob++  = interpolate  (ntab, h, x0, tabw, *s);
@@ -102,25 +102,25 @@ compute_mobilities(int n, double *s, double *mob, double *dmob, int ntab, double
  *    dF      dt      mo       1
  *    --- =   -- · -------  -----  (dflux + mo*gflux)
  *    dmw     pv   mw + mo  mw + mo
- * 
+ *
  *            dt  fo
  *        =   --  --  (dflux + mo*gflux)
  *            pv  mt
- *   
- *   
+ *
+ *
  *    dF          dt  fw
  *    --- = -1 *  --  --  (dflux - mw*gflux)
  *    dmo         pv  mt
  *
  *
- * and the chain rule  
+ * and the chain rule
  *
  *    dF    dF  dmw    dF  dmo
  *    --  = --- ---  + --- ---.
  *    dS    dmw dS     dmo dS
  *
  *
- * If the gravity term is zero, we can use the simpler rule 
+ * If the gravity term is zero, we can use the simpler rule
  *
  *    dF    mo * dmw - mw * dmo
  *    --  = -------------------
@@ -128,16 +128,16 @@ compute_mobilities(int n, double *s, double *mob, double *dmob, int ntab, double
  *
  *
  *
-*/ 
-double 
+*/
+double
 spu_implicit(struct UnstructuredGrid *g, double *s0, double *s, double h, double x0, int ntab, double *tab,
-              double *dflux, double *gflux, double *src, double dt, 
+              double *dflux, double *gflux, double *src, double dt,
               void (*linear_solver)(int, int*, int*, double *, double *, double *))
 {
     int    nc   = g->number_of_cells;
     int    nhf  = g->cell_facepos[nc]; /* Too much */
     double infnorm;
-    double *b; 
+    double *b;
     double *x;
     char *work;
     double *mob, *dmob;
@@ -158,28 +158,28 @@ spu_implicit(struct UnstructuredGrid *g, double *s0, double *s, double h, double
     }
 
     b = malloc(nc * sizeof *b);
-    x = malloc(nc * sizeof *x);    
+    x = malloc(nc * sizeof *x);
 
     work  = malloc(6*sizeof (double));
     mob   = malloc(g->number_of_cells *2* sizeof *mob);
     dmob  = malloc(g->number_of_cells *2* sizeof *dmob);
-    
+
     infnorm = 1.0;
     it      = 0;
     while (infnorm > 1e-9 && it++ < 20) {
         compute_mobilities(g->number_of_cells, s, mob, dmob, ntab, h, x0, tab);
         spu_implicit_assemble(g, s0, s, mob, dmob, dflux, gflux, src, dt, S, b, work);
-        
+
         /* Compute inf-norm of residual */
         infnorm = 0.0;
         for(i=0; i<nc; ++i) {
             infnorm = (infnorm > fabs(b[i]) ? infnorm : fabs(b[i]));
         }
         fprintf(stderr, "  Max norm of residual: %e\n", infnorm);
-        
+
         /* Solve system */
         (*linear_solver)(S->m, S->ia, S->ja, S->sa, b, x);
-        
+
         /* Return x. */
         for(i=0; i<nc; ++i) {
             s[i] = s[i] - x[i];
@@ -191,19 +191,19 @@ spu_implicit(struct UnstructuredGrid *g, double *s0, double *s, double h, double
     free(mob);
     free(dmob);
 
-    free(b); 
+    free(b);
     free(x);
     free(S->ia);
     free(S->ja);
     free(S->sa);
     free(S);
 
-    return infnorm;    
+    return infnorm;
 }
 
 
 static void
-phase_upwind_mobility(double darcyflux, double gravityflux,  int i, int c, 
+phase_upwind_mobility(double darcyflux, double gravityflux,  int i, int c,
                       double *mob, double *dmob, double *m, double *dm, int *cix)
 {
     /* ====================================================== */
@@ -217,7 +217,7 @@ phase_upwind_mobility(double darcyflux, double gravityflux,  int i, int c,
             dm[0]  = dmob[2*i+0];
             cix[0] = i;
         }
-        
+
         /* Negative water phase flux */
         else {
             m [0]  = mob [2*c+0];
@@ -239,11 +239,11 @@ phase_upwind_mobility(double darcyflux, double gravityflux,  int i, int c,
             cix[1] = c;
         }
     }
-            
+
     /* ====================================================== */
     /* If Darcy flux and gravity flux have opposite sign...   */
     else {
-        
+
         /* Positive oil phase flux */
         if (darcyflux>0) {
             m [1]  =  mob[2*i+1];
@@ -274,9 +274,9 @@ phase_upwind_mobility(double darcyflux, double gravityflux,  int i, int c,
     }
 }
 
-void 
+void
 spu_implicit_assemble(struct UnstructuredGrid *g, double *s0, double *s, double *mob, double *dmob,
-                      double *dflux, double *gflux, double *src, double dt, sparse_t *S, 
+                      double *dflux, double *gflux, double *src, double dt, sparse_t *S,
                       double *b, char *work)
 {
     int     i, k, f, c1, c2, c;
@@ -286,7 +286,7 @@ spu_implicit_assemble(struct UnstructuredGrid *g, double *s0, double *s, double 
     double *dm  =  m + 2;
     int    *cix = (int*)(dm + 2);
     double  m1,  m2, dm1, dm2, mt2;
-    
+
     int    *pja;
     double *psa;
     double *d;
@@ -295,9 +295,9 @@ spu_implicit_assemble(struct UnstructuredGrid *g, double *s0, double *s, double 
 
     pja = S->ja;
     psa = S->sa;
-    
+
     /* Assemble system */
-    S->ia[0] = 0;    
+    S->ia[0] = 0;
     for (i=0; i<nc; ++i) {
 
         /* Store position of diagonal element */
@@ -306,9 +306,9 @@ spu_implicit_assemble(struct UnstructuredGrid *g, double *s0, double *s, double 
         *d     = 0.0;
 
         /* Accumulation term */
-        b[i]   = (s[i] - s0[i]);        
+        b[i]   = (s[i] - s0[i]);
         *d    += 1.0;
-        
+
         /* Flux terms follows*/
         for (k=g->cell_facepos[i]; k<g->cell_facepos[i+1]; ++k) {
             f   = g->cell_faces[k];
@@ -316,7 +316,7 @@ spu_implicit_assemble(struct UnstructuredGrid *g, double *s0, double *s, double 
             c2  = g->face_cells[2*f+1];
 
             /* Skip all boundary terms (for now). */
-            if (c1 == -1 || c2 == -1) { continue; } 
+            if (c1 == -1 || c2 == -1) { continue; }
 
             /* Set cell index of other cell, set correct sign of fluxes. */
             c   = (i==c1 ? c2 : c1);
@@ -334,21 +334,21 @@ spu_implicit_assemble(struct UnstructuredGrid *g, double *s0, double *s, double 
                 mt2  = (m[0]+m[1])*(m[0]+m[1]);
                 *psa = 0.0;
                 *pja = c;
-                
+
                 /* dFw/dmw·dmw/dsw */
                 if (cix[0] == c ) { *psa +=  m[1]/mt2*(df + m[1]*gf)*dm[0]; }
                 else              { *d   +=  m[1]/mt2*(df + m[1]*gf)*dm[0]; }
-                
+
                 /* dFw/dmo·dmo/dsw */
                 if (cix[1] == c) { *psa += -m[0]/mt2*(df - m[0]*gf)*dm[1];  }
                 else             { *d   += -m[0]/mt2*(df - m[0]*gf)*dm[1];  }
-                
-                
+
+
                 if (cix[0] == c || cix[1] == c) {
                     ++psa;
                     ++pja;
                 }
-            }            
+            }
         }
 
         /* Injection */
@@ -358,18 +358,18 @@ spu_implicit_assemble(struct UnstructuredGrid *g, double *s0, double *s, double 
             m2    = 0.0;
             b[i] -= dt*src[i] * m1/(m1+m2);
         }
-        
+
         /* Production */
         else {
             m1  = mob [2*i+0];
             m2  = mob [2*i+1];
             dm1 = dmob[2*i+0];
             dm2 = dmob[2*i+1];
-            
+
             *d   -= dt*src[i] *(m2*dm1-m1*dm2)/(m1+m2)/(m1+m2);
             b[i] -= dt*src[i] *m1/(m1+m2);
-            
+
         }
         S->ia[i+1] = pja - S->ja;
     }
-}   
+}

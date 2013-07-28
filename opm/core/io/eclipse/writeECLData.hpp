@@ -41,6 +41,6 @@ namespace Opm
                     const std::string& output_dir,
                     const std::string& base_name);
 
-} 
+}
 
-#endif 
+#endif
