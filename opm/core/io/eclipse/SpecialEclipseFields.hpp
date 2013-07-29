@@ -63,11 +63,11 @@ struct SpecialBase {
 
 
 
-/// Class for keyword SPECGRID 
+/// Class for keyword SPECGRID
 struct SPECGRID : public SpecialBase
 {
     std::vector<int> dimensions; // Number of grid blocks in x-, y- and z-directions.
-    int numres;          // Number of reservoirs. 
+    int numres;          // Number of reservoirs.
     char qrdial;         // Coordinates. F=cartesian, T=Cylindrical(radial).
 
     SPECGRID()
@@ -98,14 +98,14 @@ struct SPECGRID : public SpecialBase
         } else {
             qrdial = candidate[0];
         }
-        
+
         if (ignoreSlashLine(is)) {
             return;
         } else {
             THROW("End of file reading" << name());
         }
     }
-        
+
     virtual void write(std::ostream& os) const
     {
         os << name() << std::endl;
@@ -243,7 +243,7 @@ struct MULTFLT : public SpecialBase
     {
         os << name() << std::endl;
         for (int i=0; i<(int)multflts.size(); ++i) {
-            os << multflts[i].fault_name << "  " 
+            os << multflts[i].fault_name << "  "
                << multflts[i].transmis_multiplier << "  "
                << multflts[i].diffusivity_multiplier <<        std::endl;
         }
@@ -301,7 +301,7 @@ struct GRUPTREE : public SpecialBase {
 
             std::cout << "CHILD = " << child << std::endl << "PARENT = " << parent << std::endl;
             tree[child] = parent;
-            
+
             is >> ignoreSlashLine;
             is >> ignoreWhitespace;
             if(is.peek() == int('/')) {
@@ -396,7 +396,7 @@ struct DENSITY : public SpecialBase
 
 struct PVDG : public SpecialBase
 {
-    table_t pvdg_; 
+    table_t pvdg_;
 
     virtual std::string name() const {return std::string("PVDG");}
 
@@ -433,7 +433,7 @@ struct PVDG : public SpecialBase
 
 struct PVDO : public SpecialBase
 {
-    table_t pvdo_; 
+    table_t pvdo_;
 
     virtual std::string name() const {return std::string("PVDO");}
 
@@ -470,7 +470,7 @@ struct PVDO : public SpecialBase
 
 struct PVTG : public SpecialBase
 {
-    table_t pvtg_; 
+    table_t pvtg_;
 
     virtual std::string name() const {return std::string("PVTG");}
 
@@ -522,7 +522,7 @@ struct PVTG : public SpecialBase
 
 struct PVTO : public SpecialBase
 {
-    table_t pvto_; 
+    table_t pvto_;
 
     virtual std::string name() const {return std::string("PVTO");}
 
@@ -667,7 +667,7 @@ struct ROCK : public SpecialBase
 
 struct ROCKTAB : public SpecialBase
 {
-    table_t rocktab_; 
+    table_t rocktab_;
 
     virtual std::string name() const {return std::string("ROCKTAB");}
 
@@ -702,7 +702,7 @@ struct ROCKTAB : public SpecialBase
 
 struct SGOF : public SpecialBase
 {
-    table_t sgof_; 
+    table_t sgof_;
 
     virtual std::string name() const {return std::string("SGOF");}
 
@@ -733,7 +733,7 @@ struct SGOF : public SpecialBase
 
 struct SWOF : public SpecialBase
 {
-    table_t swof_; 
+    table_t swof_;
 
     virtual std::string name() const {return std::string("SWOF");}
 
@@ -805,7 +805,7 @@ struct WELSPECS : public SpecialBase
     virtual void read(std::istream& is)
     {
         while(is) {
-            std::string wellname = readString(is); 
+            std::string wellname = readString(is);
             if (wellname[0] == '/') {
                 is >> ignoreLine;
                 break;
@@ -839,7 +839,7 @@ struct WELSPECS : public SpecialBase
             // welspecs_line.crossflow_ = readString(is);
             // int_data[0] = 0;
             // readDefaultedVectorData(is, int_data, 1);
-            // welspecs_line.pressure_table_number_ = int_data[0];            
+            // welspecs_line.pressure_table_number_ = int_data[0];
             // welspecs_line.density_calc_type_ = readString(is);
             // int_data[0] = 0;
             // readDefaultedVectorData(is, int_data, 1);
@@ -852,7 +852,7 @@ struct WELSPECS : public SpecialBase
     {
         os << name() << std::endl;
         for (int i=0; i<(int)welspecs.size(); ++i) {
-            os << welspecs[i].name_ << "  " 
+            os << welspecs[i].name_ << "  "
                << welspecs[i].group_ << "  "
                << welspecs[i].I_ << "  "
                << welspecs[i].J_ << "  "
@@ -927,7 +927,7 @@ struct COMPDAT : public SpecialBase
     virtual void read(std::istream& is)
     {
         while(is) {
-            std::string wellname = readString(is); 
+            std::string wellname = readString(is);
             if (wellname[0] == '/') {
                 is >> ignoreLine;
                 break;
@@ -962,7 +962,7 @@ struct COMPDAT : public SpecialBase
     {
         os << name() << std::endl;
         for (int i=0; i<(int)compdat.size(); ++i) {
-            os << compdat[i].well_ << "  " 
+            os << compdat[i].well_ << "  "
                << compdat[i].grid_ind_[0] << "  "
                << compdat[i].grid_ind_[1] << "  "
                << compdat[i].grid_ind_[2] << "  "
@@ -1004,7 +1004,7 @@ struct GconinjeLine
     double resv_flow_max_rate_;    // Reservoir flow rate target or upper limit
     double reinjection_fraction_target_;
     double voidage_replacement_fraction_;
-    
+
     // Default values
     GconinjeLine() :
         surface_flow_max_rate_(-1.0E20),
@@ -1032,7 +1032,7 @@ struct GCONINJE : public SpecialBase
     virtual void read(std::istream& is)
     {
         while(is) {
-            std::string groupname = readString(is); 
+            std::string groupname = readString(is);
             if (groupname[0] == '/') {
                 is >> ignoreLine;
                 break;
@@ -1058,21 +1058,21 @@ struct GCONINJE : public SpecialBase
                 ignoreSlashLine(is);
             }
             gconinje.push_back(gconinje_line);
-            
+
         }
-        
+
     }
 
     virtual void write(std::ostream& os) const
     {
         os << name() << std::endl;
         for (int i=0; i<(int) gconinje.size(); ++i) {
-            os << gconinje[i].group_ << "  " 
-               << gconinje[i].injector_type_ << "  " 
-               << gconinje[i].control_mode_ << "  " 
-               << gconinje[i].surface_flow_max_rate_ << "  " 
+            os << gconinje[i].group_ << "  "
+               << gconinje[i].injector_type_ << "  "
+               << gconinje[i].control_mode_ << "  "
+               << gconinje[i].surface_flow_max_rate_ << "  "
                << gconinje[i].reinjection_fraction_target_
-               << std::endl; 
+               << std::endl;
         }
         os << std::endl;
     }
@@ -1135,7 +1135,7 @@ struct WCONINJE : public SpecialBase
     virtual void read(std::istream& is)
     {
         while(is) {
-            std::string wellname = readString(is); 
+            std::string wellname = readString(is);
             if (wellname[0] == '/') {
                 is >> ignoreLine;
                 break;
@@ -1151,8 +1151,8 @@ struct WCONINJE : public SpecialBase
             wconinje_line.open_shut_flag_ = readString(is);
             wconinje_line.control_mode_ = readString(is);
             std::vector<double> double_data(6, -1.0E20);
-            double_data[2] = wconinje_line.BHP_limit_; 
-            double_data[4] = wconinje_line.VFP_table_number_; 
+            double_data[2] = wconinje_line.BHP_limit_;
+            double_data[4] = wconinje_line.VFP_table_number_;
             double_data[5] = wconinje_line.concentration_;
             const int num_to_read = 6;
             int num_read = readDefaultedVectorData(is, double_data, num_to_read);
@@ -1174,17 +1174,17 @@ struct WCONINJE : public SpecialBase
     {
         os << name() << std::endl;
         for (int i=0; i<(int) wconinje.size(); ++i) {
-            os << wconinje[i].well_ << "  " 
-               << wconinje[i].injector_type_ << "  " 
-               << wconinje[i].open_shut_flag_ << "  " 
-               << wconinje[i].control_mode_ << "  " 
-               << wconinje[i].surface_flow_max_rate_ << "  " 
-               << wconinje[i].reservoir_flow_max_rate_ << "  " 
-               << wconinje[i].BHP_limit_ << "  " 
-               << wconinje[i].THP_limit_ << "  " 
-               << wconinje[i].VFP_table_number_ << "  " 
+            os << wconinje[i].well_ << "  "
+               << wconinje[i].injector_type_ << "  "
+               << wconinje[i].open_shut_flag_ << "  "
+               << wconinje[i].control_mode_ << "  "
+               << wconinje[i].surface_flow_max_rate_ << "  "
+               << wconinje[i].reservoir_flow_max_rate_ << "  "
+               << wconinje[i].BHP_limit_ << "  "
+               << wconinje[i].THP_limit_ << "  "
+               << wconinje[i].VFP_table_number_ << "  "
                << wconinje[i].concentration_
-               << std::endl; 
+               << std::endl;
         }
         os << std::endl;
     }
@@ -1244,7 +1244,7 @@ struct GCONPROD : public SpecialBase
     virtual void read(std::istream& is)
     {
         while(is) {
-            std::string groupname = readString(is); 
+            std::string groupname = readString(is);
             if (groupname[0] == '/') {
                 is >> ignoreLine;
                 break;
@@ -1257,7 +1257,7 @@ struct GCONPROD : public SpecialBase
             GconprodLine gconprod_line;
             gconprod_line.group_ = groupname;
             gconprod_line.control_mode_ = readString(is);
-            if (gconprod_line.control_mode_[gconprod_line.control_mode_.size() - 1] == '*') 
+            if (gconprod_line.control_mode_[gconprod_line.control_mode_.size() - 1] == '*')
             {
                 gconprod_line.control_mode_ = "NONE";
             }
@@ -1282,7 +1282,7 @@ struct GCONPROD : public SpecialBase
                     std::string ignored_value = readString(is);
                     if (ignored_value[ignored_value.size()-1]=='*') {
                         // we've got defaulted argument, increment
-                        
+
                         int num_defaulted;
                         std::string num_defaulted_str = ignored_value.substr(0, ignored_value.size()-1);
                         std::istringstream(num_defaulted_str) >> num_defaulted;
@@ -1311,13 +1311,13 @@ struct GCONPROD : public SpecialBase
             }
             gconprod_line.procedure_ = procedure;
 
-            
+
             gconprod.push_back(gconprod_line);
             // HACK! Ignore any further items
             if (num_read == num_to_read) {
                 ignoreSlashLine(is);
             }
-            
+
 
         }
     }
@@ -1326,15 +1326,15 @@ struct GCONPROD : public SpecialBase
     {
         os << name() << std::endl;
         for (int i=0; i<(int) gconprod.size(); ++i) {
-            os << gconprod[i].group_ << "  " 
-               << gconprod[i].control_mode_ << "  " 
-               << gconprod[i].oil_max_rate_ << "  " 
-               << gconprod[i].water_max_rate_ << "  " 
-               << gconprod[i].gas_max_rate_ << "  " 
-               << gconprod[i].liquid_max_rate_ << "  " 
-               << gconprod[i].procedure_ << " " 
+            os << gconprod[i].group_ << "  "
+               << gconprod[i].control_mode_ << "  "
+               << gconprod[i].oil_max_rate_ << "  "
+               << gconprod[i].water_max_rate_ << "  "
+               << gconprod[i].gas_max_rate_ << "  "
+               << gconprod[i].liquid_max_rate_ << "  "
+               << gconprod[i].procedure_ << " "
                << gconprod[i].resv_max_rate_
-               << std::endl; 
+               << std::endl;
         }
         os << std::endl;
     }
@@ -1384,7 +1384,7 @@ struct WGRUPCON : public SpecialBase
     virtual void read(std::istream& is)
     {
         while(is) {
-            std::string wname = readString(is); 
+            std::string wname = readString(is);
             if (wname[0] == '/') {
                 is >> ignoreLine;
                 break;
@@ -1397,7 +1397,7 @@ struct WGRUPCON : public SpecialBase
             WgrupconLine wgrupcon_line;
             wgrupcon_line.well_ = wname;
             std::string available = readString(is);
-            if (available[available.size()-1] == '*') 
+            if (available[available.size()-1] == '*')
             {
                 available = "YES";
             }
@@ -1406,8 +1406,8 @@ struct WGRUPCON : public SpecialBase
             const int num_to_read = 1;
             int num_read = readDefaultedVectorData(is, double_data, num_to_read);
             wgrupcon_line.guide_rate_ = double_data[0];
-            
-            std::string phase = readString(is); 
+
+            std::string phase = readString(is);
             if (phase[0] == '/') {
                 is >> ignoreLine;
                 break;
@@ -1417,9 +1417,9 @@ struct WGRUPCON : public SpecialBase
                 is >> ignoreLine;
                 phase = readString(is);
             }
-            
+
             wgrupcon_line.phase_ = phase;
-            
+
             wgrupcon.push_back(wgrupcon_line);
             // HACK! Ignore any further items
             if (num_read == num_to_read) {
@@ -1433,11 +1433,11 @@ struct WGRUPCON : public SpecialBase
     {
         os << name() << std::endl;
         for (int i=0; i<(int) wgrupcon.size(); ++i) {
-            os << wgrupcon[i].well_ << "  " 
-               << wgrupcon[i].available_for_group_control_ << "  " 
-               << wgrupcon[i].guide_rate_ << "  " 
-               << wgrupcon[i].phase_ << "  " 
-               << std::endl; 
+            os << wgrupcon[i].well_ << "  "
+               << wgrupcon[i].available_for_group_control_ << "  "
+               << wgrupcon[i].guide_rate_ << "  "
+               << wgrupcon[i].phase_ << "  "
+               << std::endl;
         }
         os << std::endl;
     }
@@ -1495,7 +1495,7 @@ struct WCONPROD : public SpecialBase
     virtual void read(std::istream& is)
     {
         while(is) {
-            std::string wellname = readString(is); 
+            std::string wellname = readString(is);
             if (wellname[0] == '/') {
                 is >> ignoreLine;
                 break;
@@ -1510,9 +1510,9 @@ struct WCONPROD : public SpecialBase
             wconprod_line.open_shut_flag_ = readString(is);
             wconprod_line.control_mode_ = readString(is);
             std::vector<double> double_data(14, -1.0E20);
-            double_data[5] = wconprod_line.BHP_limit_; 
-            double_data[6] = wconprod_line.THP_limit_; 
-            double_data[7] = wconprod_line.VFP_table_number_; 
+            double_data[5] = wconprod_line.BHP_limit_;
+            double_data[6] = wconprod_line.THP_limit_;
+            double_data[7] = wconprod_line.VFP_table_number_;
             double_data[8] = wconprod_line.artif_lift_quantity_;
             const int num_to_read = 14;
             int num_read = readDefaultedVectorData(is, double_data, num_to_read);
@@ -1538,19 +1538,19 @@ struct WCONPROD : public SpecialBase
     {
         os << name() << std::endl;
         for (int i=0; i<(int) wconprod.size(); ++i) {
-            os << wconprod[i].well_ << "  " 
-               << wconprod[i].open_shut_flag_ << "  " 
-               << wconprod[i].control_mode_ << "  " 
-               << wconprod[i].oil_max_rate_ << "  " 
-               << wconprod[i].water_max_rate_ << "  " 
-               << wconprod[i].gas_max_rate_ << "  " 
-               << wconprod[i].liquid_max_rate_ << "  " 
-               << wconprod[i].reservoir_flow_max_rate_ << "  " 
-               << wconprod[i].BHP_limit_ << "  " 
-               << wconprod[i].THP_limit_ << "  " 
-               << wconprod[i].VFP_table_number_ << "  " 
+            os << wconprod[i].well_ << "  "
+               << wconprod[i].open_shut_flag_ << "  "
+               << wconprod[i].control_mode_ << "  "
+               << wconprod[i].oil_max_rate_ << "  "
+               << wconprod[i].water_max_rate_ << "  "
+               << wconprod[i].gas_max_rate_ << "  "
+               << wconprod[i].liquid_max_rate_ << "  "
+               << wconprod[i].reservoir_flow_max_rate_ << "  "
+               << wconprod[i].BHP_limit_ << "  "
+               << wconprod[i].THP_limit_ << "  "
+               << wconprod[i].VFP_table_number_ << "  "
                << wconprod[i].artif_lift_quantity_
-               << std::endl; 
+               << std::endl;
         }
         os << std::endl;
     }
@@ -1604,7 +1604,7 @@ struct WELTARG : public SpecialBase
     virtual void read(std::istream& is)
     {
         while(is) {
-            std::string wellname = readString(is); 
+            std::string wellname = readString(is);
             if (wellname[0] == '/') {
                 is >> ignoreLine;
                 break;
@@ -1627,8 +1627,8 @@ struct WELTARG : public SpecialBase
     {
         os << name() << std::endl;
         for (int i=0; i<(int)weltarg.size(); ++i) {
-            os << weltarg[i].well_ << "  " 
-               << weltarg[i].control_change_ << "  " 
+            os << weltarg[i].well_ << "  "
+               << weltarg[i].control_change_ << "  "
                << weltarg[i].new_value_ << "  "
                << std::endl;
         }
@@ -1643,7 +1643,7 @@ struct WELTARG : public SpecialBase
         for (int i=0; i<(int) weltarg.size(); ++i) {
             if (weltarg[i].control_change_[0] == 'O' ||
                 weltarg[i].control_change_[0] == 'W' ||
-                weltarg[i].control_change_[0] == 'L') { 
+                weltarg[i].control_change_[0] == 'L') {
                 weltarg[i].new_value_ *= lrat;
             } else if (weltarg[i].control_change_[0] == 'G') {
                 weltarg[i].new_value_ *= grat;
@@ -1685,7 +1685,7 @@ struct WELOPEN : public SpecialBase
     virtual void read(std::istream& is)
     {
         while(is) {
-            std::string wellname = readString(is); 
+            std::string wellname = readString(is);
             if (wellname[0] == '/') {
                 is >> ignoreLine;
                 break;
@@ -1707,7 +1707,7 @@ struct WELOPEN : public SpecialBase
     {
         os << name() << std::endl;
         for (int i=0; i<(int)welopen.size(); ++i) {
-            os << welopen[i].well_ << "  " 
+            os << welopen[i].well_ << "  "
                << welopen[i].openshutflag_
                << std::endl;
         }
@@ -1735,7 +1735,7 @@ struct EquilLine
     double gas_oil_cap_pressure_;    // Gas-oil capillary pressure at the gas-oil
                                      // contact.
     int live_oil_table_index_;       // Rs v Depth or Pb v Depth table index for
-                                     // under-saturated live oil. 
+                                     // under-saturated live oil.
     int wet_gas_table_index_;        // Rv v Depth or Pd v Depth table index for
                                      // under-saturated wet gas.
     int N_;                          // Integer defining the accuracy of the
@@ -1793,8 +1793,8 @@ struct EQUIL : public SpecialBase
     {
         os << name() << std::endl;
         for (int i=0; i<(int)equil.size(); ++i) {
-            os << equil[i].datum_depth_ << "  " 
-               << equil[i].datum_depth_pressure_ << "  " 
+            os << equil[i].datum_depth_ << "  "
+               << equil[i].datum_depth_pressure_ << "  "
                << equil[i].water_oil_contact_depth_ << "  "
                << equil[i].oil_water_cap_pressure_ << "  "
                << equil[i].gas_oil_contact_depth_ << "  "
@@ -1925,8 +1925,8 @@ struct MultRec : public SpecialBase
                 if (name.rfind('/') != std::string::npos) {
                     continue;  // Unquoted name
                 } else {
-                    is.seekg(pos);  
-                    break;     // Read next keyword    
+                    is.seekg(pos);
+                    break;     // Read next keyword
                 }
             } else if (ct.is(std::ctype_base::digit, c) || c== '.') {
                 is >> ignoreSlashLine; // Decimal digit. Ignore data.
@@ -2020,7 +2020,7 @@ struct PLYROCK : public SpecialBase
 
     virtual void convertToSI(const EclipseUnits& units)
     {
-        
+
         plyrock_[2] *= units.polymer_density;
     }
 };
@@ -2104,7 +2104,7 @@ struct TLMIXPAR : public SpecialBase
         tlmixpar_.resize(2, -1e100);
         int num_to_read = 2;
         int num_read = readDefaultedVectorData(is, tlmixpar_, num_to_read);
-        if (tlmixpar_[1] < 0) { 
+        if (tlmixpar_[1] < 0) {
             tlmixpar_[1] = tlmixpar_[0];
         }
         if (num_read == num_to_read) {
@@ -2134,7 +2134,7 @@ struct WpolymerLine
     double polymer_concentration_;
     double salt_concentration_;
     std::string polymer_group_;
-    std::string salt_group_; 
+    std::string salt_group_;
 
     WpolymerLine()
     {
@@ -2164,7 +2164,7 @@ struct WPOLYMER : public SpecialBase
             }
             WpolymerLine wpolymer_line;
             wpolymer_line.well_ = wellname;
-            is >> wpolymer_line.polymer_concentration_;    
+            is >> wpolymer_line.polymer_concentration_;
             is >> wpolymer_line.salt_concentration_;
             std::string group = readString(is);
             if (group[0] == '/') {
@@ -2192,7 +2192,7 @@ struct WPOLYMER : public SpecialBase
                <<  "  " << wpolymer_[i].salt_concentration_
                <<  "  " << wpolymer_[i].polymer_group_
                <<  "  " << wpolymer_[i].salt_group_;
-            os << '\n';                    
+            os << '\n';
         }
         os << '\n';
     }
@@ -2316,7 +2316,7 @@ struct ENPTVD : public SpecialBase {
         while (!is.eof()) {
             if(is.peek() == int('/')) {
                 if (sub_table[0].empty() && !(table_[0].empty())) {
-                    is >> ignoreLine; 
+                    is >> ignoreLine;
                     break;
                 } else {
                     THROW("Error reading ENPTVD data - none or incomplete table.");
@@ -2344,7 +2344,7 @@ struct ENPTVD : public SpecialBase {
                 if (sub_table[0].size() >= 2) {
                     insertDefaultValues(sub_table, 5, -1.0, false);
                     std::vector<std::vector<double> >::iterator it_sub = sub_table.begin();
-                    for(std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {  
+                    for(std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {
                         table_[i].push_back(*it_sub);
                         (*it_sub).clear();
                         ++it_sub;
@@ -2370,7 +2370,7 @@ struct ENPTVD : public SpecialBase {
         std::cout << "-----depth-------swl------swcr-------swu-----sowcr" << std::endl;
         for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
             std::cout << "--------------------------------------------------" << std::endl;
-            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) { 
+            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) {
                 for (std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {
                     std::cout << std::setw(10) << table_[i][j][k];
                 }
@@ -2382,7 +2382,7 @@ struct ENPTVD : public SpecialBase {
     virtual void convertToSI(const EclipseUnits& units) {
         //depths
         for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
-            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) { 
+            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) {
                 table_[0][j][k] *= units.length;
             }
         }
@@ -2403,7 +2403,7 @@ struct ENKRVD : public SpecialBase {
         while (!is.eof()) {
             if(is.peek() == int('/')) {
                 if (sub_table[0].empty() && !(table_[0].empty())) {
-                    is >> ignoreLine; 
+                    is >> ignoreLine;
                     break;
                 } else {
                     THROW("Error reading ENKRVD data - none or incomplete table.");
@@ -2431,7 +2431,7 @@ struct ENKRVD : public SpecialBase {
                 if (sub_table[0].size() >= 2) {
                     insertDefaultValues(sub_table, 5, -1.0, false);
                     std::vector<std::vector<double> >::iterator it_sub = sub_table.begin();
-                    for(std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {  
+                    for(std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {
                         table_[i].push_back(*it_sub);
                         (*it_sub).clear();
                         ++it_sub;
@@ -2458,7 +2458,7 @@ struct ENKRVD : public SpecialBase {
         std::cout << "-----depth-------krw------krow------krwr-----krorw" << std::endl;
         for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
             std::cout << "--------------------------------------------------" << std::endl;
-            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) { 
+            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) {
                 for (std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {
                     std::cout << std::setw(10) << table_[i][j][k];
                 }
@@ -2470,7 +2470,7 @@ struct ENKRVD : public SpecialBase {
     virtual void convertToSI(const EclipseUnits& units) {
         //depths
         for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
-            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) { 
+            for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) {
                 table_[0][j][k] *= units.length;
             }
         }

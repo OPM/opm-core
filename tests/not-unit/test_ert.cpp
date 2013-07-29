@@ -38,13 +38,13 @@ static
 void cell_nodes(const UnstructuredGrid * c_grid , int cell , std::vector<int>& nodes) {
   int face_offset = c_grid->cell_facepos[cell];
   int num_faces   = c_grid->cell_facepos[cell + 1] - face_offset;
-  
+
   nodes.clear();
   //printf("cell: %d \n",cell);
   for (int iface = 0; iface < num_faces; iface++) {
     int face = c_grid->cell_faces[ face_offset + iface];
     //printf("face[%d] = %d \n",iface , face );
-    
+
     {
       int node_offset = c_grid->face_nodepos[ face ];
       int num_nodes   = c_grid->face_nodepos[ face + 1] - node_offset;
@@ -84,22 +84,22 @@ void cell_nodes(const UnstructuredGrid * c_grid , int cell , std::vector<int>& n
 static
 void eclExport(Opm::GridManager& grid) {
   const UnstructuredGrid * c_grid = grid.c_grid();
-  
+
   printf("dimensions         : %d \n",c_grid->dimensions);
   printf("number of cells    : %d \n",c_grid->number_of_cells);
   printf("number of nodes    : %d \n",c_grid->number_of_nodes);
   printf("number of faces    : %d \n",c_grid->number_of_faces);
   printf("length(face_nodes) : %d \n",c_grid->face_nodepos[ c_grid->number_of_faces ]);
   printf("cartdims         : %d %d %d \n",
-         c_grid->cartdims[0] , 
-         c_grid->cartdims[1] , 
-         c_grid->cartdims[2]); 
+         c_grid->cartdims[0] ,
+         c_grid->cartdims[1] ,
+         c_grid->cartdims[2]);
 
   printf("global_cell      : %d %d %d %d %d\n",
-         c_grid->global_cell[0] , 
-         c_grid->global_cell[1] , 
-         c_grid->global_cell[2] , 
-         c_grid->global_cell[3] , 
+         c_grid->global_cell[0] ,
+         c_grid->global_cell[1] ,
+         c_grid->global_cell[2] ,
+         c_grid->global_cell[3] ,
          c_grid->global_cell[4]);
 
   {
@@ -109,20 +109,20 @@ void eclExport(Opm::GridManager& grid) {
     cell_nodes( c_grid , 20 , nodes );
     cell_nodes( c_grid , 25 , nodes );
   }
- 
+
   {
     ecl_grid_type * ecl_grid;
     int num_coords  = c_grid->number_of_cells;
     int coords_size = 4;
     int nx          = c_grid->cartdims[0];
     int ny          = c_grid->cartdims[1];
-    int nz          = c_grid->cartdims[2]; 
-    
+    int nz          = c_grid->cartdims[2];
+
     int   ** coords;
     float ** corners;
     // float  * mapaxes = NULL;
     std::vector<int> nodes;
-    
+
     corners = (float **) malloc( num_coords * sizeof * corners );
     coords  = (int **) malloc( num_coords * sizeof * coords );
 
@@ -132,12 +132,12 @@ void eclExport(Opm::GridManager& grid) {
         corners[c] = (float *) malloc( 24 * sizeof * corners[c] );
         coords[c]  = (int *)   malloc( coords_size * sizeof * coords[c] );
       }
-      
+
       for (c=0; c < num_coords; c++) {
         cell_nodes( c_grid , c , nodes );
         for (int p=0; p < 8; p++) {
           int n = nodes[p];
-          for (int d=0; d < c_grid->dimensions; d++) 
+          for (int d=0; d < c_grid->dimensions; d++)
             corners[c][3*p + d] = c_grid->node_coordinates[ c_grid->dimensions * n + d ];
         }
 
@@ -146,7 +146,7 @@ void eclExport(Opm::GridManager& grid) {
           {
             int g = c_grid->global_cell[ c ];
             k =  g / nx*ny; g -= k * nx*ny;
-            j =  g / nx;    g -= j * nx; 
+            j =  g / nx;    g -= j * nx;
             i  = g;
           }
 
@@ -161,7 +161,7 @@ void eclExport(Opm::GridManager& grid) {
     ecl_grid = ecl_grid_alloc( "/private/joaho/ERT/NR/libenkf/src/Gurbat/EXAMPLE_01_BASE.EGRID" );
     printf("Grid loaded ... \n");
     ecl_grid_free( ecl_grid );
-    
+
     printf("Grid discarded ... \n");
 
     ecl_grid = ecl_grid_alloc_GRID_data( num_coords , nx , ny , nz , coords_size , coords , corners , NULL );
@@ -174,7 +174,7 @@ void eclExport(Opm::GridManager& grid) {
     }
 
     ecl_grid_free( ecl_grid );
-    
+
     {
       for (int c=0; c < num_coords; c++) {
         free(corners[c]);
@@ -189,7 +189,7 @@ void eclExport(Opm::GridManager& grid) {
 
 
 /*
-  
+
   #ifdef HAVE_ERT
 ecl_grid_type * create_ecl_grid( const struct UnstructuredGrid * g) {
   int num_coords  = g->number_of_cells;
@@ -200,7 +200,7 @@ ecl_grid_type * create_ecl_grid( const struct UnstructuredGrid * g) {
   int   ** coords;
   float ** corners;
   float  * mapaxes = NULL;
-  
+
   corners = malloc( num_coords * sizeof * corners );
   coords  = malloc( num_coords * sizeof * coords );
 
@@ -221,7 +221,7 @@ ecl_grid_type * create_ecl_grid( const struct UnstructuredGrid * g) {
           coords[global_index][1] = j;
           coords[global_index][2] = k;
           coords[global_index][3] = 1;
-          
+
         }
       }
     }
@@ -255,6 +255,6 @@ int main(int /*argc*/ , char **argv)
   //eclParser.saveEGRID_INIT("/tmp" , "OPM" );
 
   grid.reset(new Opm::GridManager(eclParser));
-  
+
   props.reset(new Opm::IncompPropertiesFromDeck(eclParser , *grid->c_grid()));
 }

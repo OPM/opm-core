@@ -54,7 +54,7 @@ int main(int argc, char** argv)
     grid.cartdims[1] = 1;
     grid.cartdims[2] = 1;
     Opm::BlackoilPropertiesFromDeck props(deck, grid, param);
-  
+
     std::fstream inos(input_file.c_str());//, std::fstream::in);
     if(!inos.good()){
         std::cout << "Could not open :" << input_file << std::endl;
