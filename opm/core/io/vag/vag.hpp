@@ -50,7 +50,7 @@ namespace Opm
        Struct to hold mapping from the natural numbers less than pos.size()-1 to
        a set of integers. value(pos(i):pos(i+1)-1) hold the integers corresponding to i.
        pos(end)-1==value.size();
-    */               
+    */
     struct PosStruct{
 	std::vector<int> pos;
         std::vector<int> value;
@@ -60,7 +60,7 @@ namespace Opm
       3D grids.
      */
     struct VAG{
-	int number_of_vertices;        
+	int number_of_vertices;
 	int number_of_volumes;
 	int number_of_faces;
 	int number_of_edges;
@@ -104,7 +104,7 @@ namespace Opm
        Function to read a vector of some type from a stream.
        \param[in]  os is is stream of the file.
        \param[out] vag_grid is a resized and filled vector containing the quantiy read.
-    */   
+    */
     template <typename T>
     void readVector(std::istream& is,std::vector<T>& vec){
 	using namespace std;
@@ -117,7 +117,7 @@ namespace Opm
        \param[in]  os is is stream of the file.
        \param[out] vag_grid is a resized and filled vector containing the quantiy read.
        \param[in]  n number of doubles on each line.
-    */  
+    */
     template <typename T>
     void writeVector(std::ostream& os,std::vector<T>& vec,int n){
         typedef typename std::vector<T>::size_type sz_t;
@@ -146,20 +146,20 @@ namespace Opm
        \param[in] pos_struct to write
      */
     void writePosStruct(std::ostream& os,PosStruct& pos_struct);
-    
+
     /**
        Fill a UnstructuredGrid from a vag_grid.
        \param[out] vag_grid s is a valid vag_grid struct.
        \param[in] grid is a grid with have allocated correct size to each pointer.
      */
     void vagToUnstructuredGrid(Opm::VAG& vag_grid,UnstructuredGrid& grid);
-    
+
     /**
-       Fill a  vag_grid from UnstructuredGrid 
+       Fill a  vag_grid from UnstructuredGrid
        \param[out] vag_grid s is a valid vag_grid struct.
        \param[in] grid is a grid with have allocated correct size to each pointer.
-     */    
+     */
     void unstructuredGridToVag(UnstructuredGrid& grid, Opm::VAG& vag_grid);
 }
-#endif  /* OPM_VAG_HPP_HEADER */	
+#endif  /* OPM_VAG_HPP_HEADER */
 

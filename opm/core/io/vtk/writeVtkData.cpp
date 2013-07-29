@@ -62,7 +62,7 @@ namespace Opm
             os << 1;
         }
         os << "\n";
-        
+
         os << "ORIGIN " << 0.0 << " " << 0.0 << " " << 0.0 << "\n";
 
         os << "SPACING " << cell_size[0] << " " << cell_size[1];
@@ -106,7 +106,7 @@ namespace Opm
             indent(os);
             os << "<" << tag;
             for (PMap::const_iterator it = props.begin(); it != props.end(); ++it) {
-                os << " " << it->first << "=\"" << it->second << "\""; 
+                os << " " << it->first << "=\"" << it->second << "\"";
             }
             os << ">\n";
             ++indent_;
@@ -310,7 +310,7 @@ namespace Opm
                         || item == num_cells - 1) {
                         os << '\n';
                     }
-                }           
+                }
             }
         }
     }

@@ -96,7 +96,7 @@ int main()
     std::vector<double> AB(nrowAB*N, 0.);
     BandMatrixCoeff bmc(N, ku, kl);
 
-    // Rewrite AA matrix in band format AB 
+    // Rewrite AA matrix in band format AB
     for (MAT_SIZE_T i = 0; i < N; ++i) {
         for (MAT_SIZE_T j = -1; j < 2; ++j) {
             if (i + j > -1 && i + j < N)

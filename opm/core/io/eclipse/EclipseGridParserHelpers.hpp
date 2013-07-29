@@ -147,7 +147,7 @@ namespace
                 std::string dummy;
                 is >> dummy;
                 if (dummy == "/") {
-                    is >> ignoreLine;	
+                    is >> ignoreLine;
                     break;
 		} else if (dummy[0] == '-') {  // "comment test"
                     is >> ignoreLine;   // This line is a comment
@@ -221,7 +221,7 @@ namespace
     }
 
 
-    // Returns month number 1-12. Returns 0 if illegal month name. 
+    // Returns month number 1-12. Returns 0 if illegal month name.
     inline int getMonthNumber(const std::string& month_name)
     {
         const int num_months = 12;
@@ -302,7 +302,7 @@ namespace
 	const std::ctype<char>& ct =
 	    std::use_facet< std::ctype<char> >(std::locale::classic());
 	std::vector<double> record;
-	std::vector<std::vector<double> > table;	
+	std::vector<std::vector<double> > table;
 	while (!is.eof()) {
 	    record.clear();
 	    readVectorData(is, record);
@@ -350,7 +350,7 @@ namespace
 			     const std::string& field_name, int ncol)
     {
 	std::vector<double> record;
-	std::vector<std::vector<double> > table(ncol);	
+	std::vector<std::vector<double> > table(ncol);
 	while (!is.eof()) {
 	    record.clear();
 	    readVectorData(is, record);
@@ -390,15 +390,15 @@ namespace
 	    for (int i=0; i<sz; ++i) {
 		if (table[k][i] == -1) {
 		    indx.push_back(i);
-		    x.push_back(table[0][i]);    
+		    x.push_back(table[0][i]);
 		}
 	    }
 	    if (!indx.empty()) {
 		std::vector<double> xv, yv;
 		for (int i=0; i<sz; ++i) {
 		    if (table[k][i] != -1) {
-			xv.push_back(table[0][i]);		    
-			yv.push_back(table[k][i]);		    
+			xv.push_back(table[0][i]);
+			yv.push_back(table[k][i]);
 		    }
 		}
                 if (xv.empty()) {
@@ -427,7 +427,7 @@ namespace
 			  const std::string& field_name, int ncol)
     {
 	std::vector<double> record;
-	std::vector<std::vector<double> > table(ncol);	
+	std::vector<std::vector<double> > table(ncol);
 	while (!is.eof()) {
 	    record.clear();
 	    readRelPermTable(is, record);

@@ -53,7 +53,7 @@ compute_face_geometry_3d(double *coords, int nfaces,
    int    num_face_nodes;
    double area;
    /*#pragma omp parallel for  */
- 
+
    /*#pragma omp parallel for shared(fnormals,fcentroids,fareas)*/
 #pragma omp parallel for default(none) 			   \
     private(f,x,u,v,w,i,k,node,cface,n,a,num_face_nodes,area)		\
@@ -292,7 +292,7 @@ compute_cell_geometry_3d(double *coords,
          node = facenodes[nodepos[face+1]-1];
          for(i=0; i<ndims; ++i) u[i] = coords[3*node+i] - x[i];
 
-	 
+
          /* Compute triangular contributions to face normal and face centroid */
          for(k=nodepos[face]; k<nodepos[face+1]; ++k)
          {
@@ -309,7 +309,7 @@ compute_cell_geometry_3d(double *coords,
 		tet_volume += w[i]*(x[i]-xcell[i]);
 	    }
             tet_volume *= 0.5 / 3;
-	    
+
 	    subnormal_sign=0.0;
 	    for(i=0; i<ndims; ++i){
 		subnormal_sign += w[i]*fnormals[3*face+i];

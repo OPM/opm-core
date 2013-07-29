@@ -136,7 +136,7 @@ namespace Opm
     chunk and non-unified restart files which are one file for each
     report step. In addition the files can be either formatted
     (i.e. ASCII) or unformatted (i.e. binary).
-    
+
     The writeECLData() function has two hardcoded settings:
     'file_type' and 'fmt_file' which regulate which type of files the
     should be created. The extension of the files follow a convention:
@@ -159,10 +159,10 @@ namespace Opm
                     const boost::posix_time::ptime& current_date_time,
                     const std::string& output_dir,
                     const std::string& base_name) {
-    
+
     ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;  // Alternatively ECL_RESTART_FILE for multiple restart files.
     bool fmt_file           = false;
-    
+
     boost::shared_ptr<char> filename(ecl_util_alloc_filename(output_dir.c_str() ,
                                                              base_name.c_str()  ,
                                                              file_type, fmt_file,
@@ -176,20 +176,20 @@ namespace Opm
     int nz                  = grid.cartdims[2];
     int nactive             = grid.number_of_cells;
     ecl_rst_file_type * rst_file;
-    
+
     {
       using namespace boost::posix_time;
       ptime t0( boost::gregorian::date(1970 , 1 ,1) );
       time_duration::sec_type seconds = (current_date_time - t0).total_seconds();
-      
+
       date = time_t( seconds );
     }
-    
+
     if (current_step > 0 && file_type == ECL_UNIFIED_RESTART_FILE)
       rst_file = ecl_rst_file_open_append( filename.get() );
     else
       rst_file = ecl_rst_file_open_write( filename.get() );
-    
+
     ecl_rst_file_fwrite_header( rst_file , current_step , date , days , nx , ny , nz , nactive , phases );
     ecl_rst_file_start_solution( rst_file );
 
@@ -201,7 +201,7 @@ namespace Opm
         ecl_rst_file_add_kw( rst_file , pressure_kw.get() );
       }
     }
-    
+
     {
       DataMap::const_iterator i = data.find("saturation");
       if (i != data.end()) {
@@ -216,7 +216,7 @@ namespace Opm
 
     ecl_rst_file_end_solution( rst_file );
     ecl_rst_file_close( rst_file );
-  } 
+  }
 }
 
 #else // that is, we have not defined HAVE_ERT

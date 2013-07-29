@@ -65,7 +65,7 @@ namespace Opm
     } // anon namespace
 
 
-    
+
     /// \param[in] columns         for each column columns.second,
     ///                            contains the cells on which to solve the segregation
     ///                            problem. For each column, its cells must be in a single
@@ -90,16 +90,16 @@ namespace Opm
             //   std::map<int, std::vector<int> >::const_iterator it;
             //for (it = columns.begin(); it != columns.end(); ++it) {
             int size = columns.size();
-            
+
             #pragma omp parallel for schedule(dynamic)
             for(int i = 0; i < size; ++i) {
 		solveSingleColumn(columns[i], dt, s, increment);
-	    }   
+	    }
 
 	    for (int cell = 0; cell < grid_.number_of_cells; ++cell) {
 		sys.vector().writableSolution()[cell] += increment[cell];
 	    }
-  
+
 	    const double maxelem = *std::max_element(increment.begin(), increment.end());
 	    const double minelem = *std::min_element(increment.begin(), increment.end());
 	    max_delta = std::max(maxelem, -minelem);
@@ -173,7 +173,7 @@ namespace Opm
 	    D[ci] += j1contrib;
 	    rhs[ci] += rescontrib;
 	}
-	// model_.sourceTerms(); // Not needed 
+	// model_.sourceTerms(); // Not needed
 	// Solve.
 	const MAT_SIZE_T num_rhs = 1, colSize = col_size;
 	MAT_SIZE_T info = 0;

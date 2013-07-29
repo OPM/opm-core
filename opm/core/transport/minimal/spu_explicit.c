@@ -83,11 +83,11 @@ spu_explicit(struct UnstructuredGrid *g, double *s0, double *s, double *mob,
                 }
             }
 
-            /* Water flux */            
+            /* Water flux */
             assert(m1+m2>0.0);
             flux = m1/(m1+m2)*(dflux[f] + m2*gflux[f]);
             s[c1] -= flux*dt;
             s[c2] += flux*dt;
         }
     }
-}   
+}
