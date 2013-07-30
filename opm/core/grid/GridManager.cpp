@@ -115,7 +115,9 @@ namespace Opm
         }
     }
 
-
+    void GridManager::saveEGRID(const std::string& filename , const Opm::EclipseGridParser& deck) {
+        deck.saveEGRID( filename , ug_->number_of_cells , ug_->global_cell );
+    }
 
 
     /// Destructor.
@@ -134,7 +136,6 @@ namespace Opm
     {
         return ug_;
     }
-
 
 
     // Construct corner-point grid from deck.
