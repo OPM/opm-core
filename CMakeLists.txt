@@ -1,5 +1,19 @@
 # -*- mode: cmake; tab-width: 2; indent-tabs-mode: t; truncate-lines: t; compile-command: "cmake -Wdev" -*-
 # vim: set filetype=cmake autoindent tabstop=2 shiftwidth=2 noexpandtab softtabstop=2 nowrap:
+
+###########################################################################
+#                                                                         #
+# Note: The bulk of the build system is located in the cmake/ directory.  #
+#       This file only contains the specializations for this particular   #
+#       project. Most likely you are interested in editing one of these   #
+#       files instead:                                                    #
+#                                                                         #
+#       dune.module                              Name and version number  #
+#       CMakeLists_files.cmake                   Path of source files     #
+#       cmake/Modules/${project}-prereqs.cmake   Dependencies             #
+#                                                                         #
+###########################################################################
+
 cmake_minimum_required (VERSION 2.8)
 
 # additional search modules
