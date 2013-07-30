@@ -139,7 +139,6 @@ spu_implicit(struct UnstructuredGrid *g, double *s0, double *s, double h, double
     double infnorm;
     double *b;
     double *x;
-    double *work;
     double *mob, *dmob;
     int i;
     int it;
@@ -160,7 +159,6 @@ spu_implicit(struct UnstructuredGrid *g, double *s0, double *s, double h, double
     b = malloc(nc * sizeof *b);
     x = malloc(nc * sizeof *x);
 
-    work  = malloc(6*sizeof (double));
     mob   = malloc(g->number_of_cells *2* sizeof *mob);
     dmob  = malloc(g->number_of_cells *2* sizeof *dmob);
 
@@ -168,7 +166,7 @@ spu_implicit(struct UnstructuredGrid *g, double *s0, double *s, double h, double
     it      = 0;
     while (infnorm > 1e-9 && it++ < 20) {
         compute_mobilities(g->number_of_cells, s, mob, dmob, ntab, h, x0, tab);
-        spu_implicit_assemble(g, s0, s, mob, dmob, dflux, gflux, src, dt, S, b, work);
+        spu_implicit_assemble(g, s0, s, mob, dmob, dflux, gflux, src, dt, S, b);
 
         /* Compute inf-norm of residual */
         infnorm = 0.0;
@@ -187,7 +185,6 @@ spu_implicit(struct UnstructuredGrid *g, double *s0, double *s, double h, double
         }
     }
 
-    free(work);
     free(mob);
     free(dmob);
 
@@ -277,14 +274,14 @@ phase_upwind_mobility(double darcyflux, double gravityflux,  int i, int c,
 void
 spu_implicit_assemble(struct UnstructuredGrid *g, double *s0, double *s, double *mob, double *dmob,
                       double *dflux, double *gflux, double *src, double dt, sparse_t *S,
-                      double *b, double *work)
+                      double *b)
 {
     int     i, k, f, c1, c2, c;
     int     nc   = g->number_of_cells;
 
-    double *m   = (double*) work;
-    double *dm  =  m + 2;
-    int    *cix = (int*)(dm + 2);
+    double  m[6] = { 0, 0, 0, 0, 0, 0 };
+    double  dm[2] = { 0, 0 };
+    int     cix[2] = { 0, 0 };
     double  m1,  m2, dm1, dm2, mt2;
 
     int    *pja;
