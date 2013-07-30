@@ -19,7 +19,7 @@ typedef struct Sparse {
 void
 spu_implicit_assemble(struct UnstructuredGrid *g, double *s0, double *s, double *mob, double *dmob,
                       double *dflux, double *gflux, double *src, double dt, sparse_t *S,
-                      double *b, char *work);
+                      double *b);
 
 double
 spu_implicit(struct UnstructuredGrid *g, double *s0, double *s, double h, double x0, int ntab, double *tab,
