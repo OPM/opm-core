@@ -65,6 +65,8 @@ namespace Opm
         /// Destructor.
         ~GridManager();
 
+        void saveEGRID(const std::string& filename , const Opm::EclipseGridParser& deck);
+
         /// Access the managed UnstructuredGrid.
         /// The method is named similarly to c_str() in std::string,
         /// to make it clear that we are returning a C-compatible struct.
