@@ -12,8 +12,7 @@ set (${project}_VERSION_MINOR 0)
 set (doxy_dir "Documentation")
 
 # additional search modules
-set (${project}_MODULE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
-list (APPEND CMAKE_MODULE_PATH ${${project}_MODULE_DIR})
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
 # list of prerequisites for this particular project; this is in a
 # separate file (in cmake/Modules sub-directory) because it is shared
