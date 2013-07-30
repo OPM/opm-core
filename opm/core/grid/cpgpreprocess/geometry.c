@@ -316,7 +316,7 @@ compute_cell_geometry_3d(double *coords,
 	    }
 
 	    if(subnormal_sign < 0.0){
-		tet_volume =- tet_volume;
+		tet_volume = -tet_volume;
 	    }
 	    if(!(neighbors[2*face+0]==c)){
 		tet_volume = -tet_volume;
