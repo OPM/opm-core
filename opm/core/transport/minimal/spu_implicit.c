@@ -139,7 +139,7 @@ spu_implicit(struct UnstructuredGrid *g, double *s0, double *s, double h, double
     double infnorm;
     double *b;
     double *x;
-    char *work;
+    double *work;
     double *mob, *dmob;
     int i;
     int it;
@@ -277,12 +277,12 @@ phase_upwind_mobility(double darcyflux, double gravityflux,  int i, int c,
 void
 spu_implicit_assemble(struct UnstructuredGrid *g, double *s0, double *s, double *mob, double *dmob,
                       double *dflux, double *gflux, double *src, double dt, sparse_t *S,
-                      double *b, char *work)
+                      double *b, double *work)
 {
     int     i, k, f, c1, c2, c;
     int     nc   = g->number_of_cells;
 
-    double *m   = (double*)work;
+    double *m   = (double*) work;
     double *dm  =  m + 2;
     int    *cix = (int*)(dm + 2);
     double  m1,  m2, dm1, dm2, mt2;
