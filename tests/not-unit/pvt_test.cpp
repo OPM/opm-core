@@ -60,8 +60,8 @@ int main(int argc, char** argv)
     Opm::BlackoilPvtProperties pvt;
     int samples = param.getDefault("dead_tab_size", 1025);
     pvt.init(deck, samples);
-    
-  
+
+
     const int n = 1;
     std::fstream inos(input_file.c_str());
     if(!inos.good()){
@@ -103,7 +103,7 @@ int main(int argc, char** argv)
         double p[n];
         double z[max_np*n];
         int cells[n] = { 0 };
-        inos >> p[0];      
+        inos >> p[0];
         for(int i=0; i < np; ++i){
             inos >> z[i];
         }

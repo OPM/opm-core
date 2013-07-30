@@ -35,7 +35,7 @@
 
 #include "config.h"
 #include <opm/core/io/vag/vag.hpp>
-#include <opm/core/grid/cornerpoint_grid.h>	 	      
+#include <opm/core/grid/cornerpoint_grid.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -77,7 +77,7 @@ namespace Opm
         if(pos_struct.pos.size()==0){
             return;
         }
-        int n=pos_struct.pos.size()-1;        
+        int n=pos_struct.pos.size()-1;
 	pos_struct.pos.resize(n+1);
 	pos_struct.pos[0]=0;
 	for(int i=0;i< n;++i){
@@ -94,7 +94,7 @@ namespace Opm
 	using namespace Opm;
 	while (!is.eof()) {
 	    string keyword;
-	    is >> keyword;	
+	    is >> keyword;
 	    //cout << keyword<< endl;
 	    if(keyword == "Number"){
 		string stmp;
@@ -113,8 +113,8 @@ namespace Opm
 			vag_grid.number_of_faces=number;
 		    }else if(entity=="edges"){
 			vag_grid.number_of_edges=number;
-		    }	
-		    cout << "Found Number of: " << entity <<" " << number << endl;		
+		    }
+		    cout << "Found Number of: " << entity <<" " << number << endl;
 		} else {
 		    cerr << "Wrong format: Not of after Number" << endl;
 		    return;
@@ -123,7 +123,7 @@ namespace Opm
 		// read geometry defined by vertices
 		if(keyword=="Vertices"){
 		    int number;
-		    is >> number;	   	    
+		    is >> number;
 		    vag_grid.vertices.resize(3*number);// assume 3d data
 		    readVector(is,vag_grid.vertices);
 		}
@@ -131,33 +131,33 @@ namespace Opm
 		else if(keyword=="Volumes->Faces" || keyword=="Volumes->faces"){
 		    //vag_grid.volumes_to_faces=
 		    int number;
-		    is >> number;	
+		    is >> number;
 		    readPosStruct(is,number,vag_grid.volumes_to_faces);
 		    cout << "Volumes->Faces: Number of " << number << endl;
 		}else if(keyword=="Faces->edges" || keyword=="Faces->Edges" ||  keyword=="Faces->Edgess"){
 		    int number;
-		    is >> number;	   
+		    is >> number;
 		    //vag_grid.volumes_to_faces=
 		    readPosStruct(is,number,vag_grid.faces_to_edges);
 		    cout << "Faces->edges: Number of " << number << endl;
 		}else if(keyword=="Faces->Vertices" || keyword=="Faces->vertices"){
 		    int number;
-		    is >> number;	   
+		    is >> number;
 		    //vag_grid.volumes_to_faces=
 		    readPosStruct(is,number,vag_grid.faces_to_vertices);
-		    cout << "Faces->Vertices: Number of " << number << endl;   
+		    cout << "Faces->Vertices: Number of " << number << endl;
 		}else if(keyword=="Volumes->Vertices" || keyword=="Volumes->Verticess"){
 		    int number;
-		    is >> number;	   
+		    is >> number;
 		    //vag_grid.volumes_to_faces=
 		    readPosStruct(is,number,vag_grid.volumes_to_vertices);
-		    cout << "Volumes->Vertices: Number of " << number << endl;   
+		    cout << "Volumes->Vertices: Number of " << number << endl;
 		}
-	    
+
 		//  read simple mappings
 		else if(keyword=="Edge" || keyword=="Edges"){
 		    int number;
-		    is >> number;	   	    
+		    is >> number;
 		    vag_grid.edges.resize(2*number);
 		    readVector(is,vag_grid.edges);
 		    cout << "Edges: Number of " << number << endl;
@@ -170,7 +170,7 @@ namespace Opm
 		    is >> number;
 		    vag_grid.faces_to_volumes.resize(2*number);
 		    readVector(is,vag_grid.faces_to_volumes);
-		    cout << "Faces->Volumes: Number of " << number << endl;   
+		    cout << "Faces->Volumes: Number of " << number << endl;
 		}
 		// read material
 		else if(keyword=="Material"){
@@ -179,7 +179,7 @@ namespace Opm
 		    int number;
 		    is >> number;
 		    cout << "Material number  " << number << endl;
-		    // we read all the rest into doubles		
+		    // we read all the rest into doubles
 		    while(!is.eof()){
 			double value;
 			is >> value;
@@ -203,18 +203,18 @@ namespace Opm
 	grid.number_of_cells=vag_grid.number_of_volumes;
 	grid.number_of_faces=vag_grid.number_of_faces;
 	grid.number_of_nodes=vag_grid.number_of_vertices;
-        
+
 	// fill face_nodes
 	for(int i=0;i< int(vag_grid.faces_to_vertices.pos.size());++i){
 	    grid.face_nodepos[i] = vag_grid.faces_to_vertices.pos[i];
-	}	    
+	}
 	for(int i=0;i< int(vag_grid.faces_to_vertices.value.size());++i){
 	    grid.face_nodes[i] = vag_grid.faces_to_vertices.value[i]-1;
 	}
 	// fill cell_face
 	for(int i=0;i< int(vag_grid.volumes_to_faces.pos.size());++i){
 	    grid.cell_facepos[i] = vag_grid.volumes_to_faces.pos[i];
-	}	    
+	}
 	for(int i=0;i< int(vag_grid.volumes_to_faces.value.size());++i){
 	    grid.cell_faces[i] = vag_grid.volumes_to_faces.value[i]-1;
 	}
@@ -231,7 +231,7 @@ namespace Opm
 	// is not used
 	cout << "Computing geometry" << endl;
 	compute_geometry(&grid);
-	
+
     }
 
     void unstructuredGridToVag(UnstructuredGrid& grid,Opm::VAG& vag_grid){
@@ -242,7 +242,7 @@ namespace Opm
         vag_grid.number_of_volumes=grid.number_of_cells;
 	vag_grid.number_of_faces=grid.number_of_faces;
 	vag_grid.number_of_vertices=grid.number_of_nodes;
-	
+
         // resizing vectors
         vag_grid.vertices.resize(grid.number_of_nodes*3);
         vag_grid.faces_to_vertices.pos.resize(grid.number_of_faces+1);
@@ -252,8 +252,8 @@ namespace Opm
         vag_grid.volumes_to_faces.value.resize(grid.cell_facepos[grid.number_of_cells]);//not known
 
 
-        
-        
+
+
         // fill face_nodes
 	for(int i=0;i< int(vag_grid.faces_to_vertices.pos.size());++i){
 	    vag_grid.faces_to_vertices.pos[i] = grid.face_nodepos[i];
@@ -262,11 +262,11 @@ namespace Opm
 	for(int i=0;i< int(vag_grid.faces_to_vertices.value.size());++i){
 	    vag_grid.faces_to_vertices.value[i] = grid.face_nodes[i] +1;
 	}
-        
-	// fill cell_face      
+
+	// fill cell_face
 	for(int i=0;i< int(vag_grid.volumes_to_faces.pos.size());++i){
 	    vag_grid.volumes_to_faces.pos[i] = grid.cell_facepos[i];
-	}	    
+	}
 	for(int i=0;i< int(vag_grid.volumes_to_faces.value.size());++i){
 	    vag_grid.volumes_to_faces.value[i] = grid.cell_faces[i] +1;
 	}
@@ -280,7 +280,7 @@ namespace Opm
 	    vag_grid.vertices[i] = grid.node_coordinates[i];
 	}
 
-        
+
         // The missing field need to be constructed
         // gennerate volume to vertice mapping
         std::vector< std::set<int> > volumes_to_vertices(grid.number_of_cells);
@@ -297,7 +297,7 @@ namespace Opm
             }
             volumes_to_vertices[i]=nodes;
         }
-        
+
         // fill volume to vertice map
         vag_grid.volumes_to_vertices.pos.resize(grid.number_of_cells+1);
         vag_grid.volumes_to_vertices.value.resize(0);
@@ -318,15 +318,15 @@ namespace Opm
         for(int i=0;i < grid.number_of_faces;++i){
             int ne=grid.face_nodepos[i+1]-grid.face_nodepos[i];
 	    nfe=nfe+ne;
-            
+
             for(int j=0; j < ne-1;++j){
                 int node1=grid.face_nodes[grid.face_nodepos[i]+j]+1;
                 int node2=grid.face_nodes[grid.face_nodepos[i]+j+1]+1;
                 std::set<int> spair;
                 spair.insert(node1);
-                spair.insert(node2);    
+                spair.insert(node2);
                 edges.insert(spair);
-		faces_spares[i].push_back(spair);     
+		faces_spares[i].push_back(spair);
             }
             // add end segment
             {
@@ -334,12 +334,12 @@ namespace Opm
                 int node1=grid.face_nodes[grid.face_nodepos[i]+ne-1]+1;
                 int node2=grid.face_nodes[grid.face_nodepos[i]]+1;
                 spair.insert(node1);
-                spair.insert(node2);    
+                spair.insert(node2);
                 edges.insert(spair);
-                faces_spares[i].push_back(spair);     
+                faces_spares[i].push_back(spair);
             }
         }
-        
+
 	// make edge numbering and fill edges
 	std::map<std::set<int>, int> edge_map;
 	std::set< std::set<int> >::iterator it;
@@ -358,18 +358,18 @@ namespace Opm
 	vag_grid.faces_to_edges.pos.resize(vag_grid.number_of_faces+1);
 	for(int i=0;i < grid.number_of_faces;++i){
             int ne=grid.face_nodepos[i+1]-grid.face_nodepos[i];
-	    vag_grid.faces_to_edges.pos[i+1]=vag_grid.faces_to_edges.pos[i]+ne;	    
+	    vag_grid.faces_to_edges.pos[i+1]=vag_grid.faces_to_edges.pos[i]+ne;
 	    for(int j=0;j<int(faces_spares[i].size());++j){
 	      int edge_num=edge_map[faces_spares[i][j]];
 	      vag_grid.faces_to_edges.value.push_back(edge_num+1);
-	    }   
-	}   
+	    }
+	}
         // vag_grid.edges(0);//not known
         // vag_grid.faces_to_edges// not known
-        
+
         //  material // can not be extracted from the grid
     }
-    
+
     void writeVagFormat(std::ostream& os,Opm::VAG& vag_grid){
 	using namespace std;
 	os << "File in the Vag grid format\n";
@@ -384,20 +384,20 @@ namespace Opm
         os <<"Vertices      "   << vag_grid.vertices.size() << endl;
         writeVector(os, vag_grid.vertices,3);
         os << "Volumes->faces   " << vag_grid.volumes_to_faces.pos.size()-1 << endl;
-        writePosStruct(os, vag_grid.volumes_to_faces);        
+        writePosStruct(os, vag_grid.volumes_to_faces);
         os << "Volumes->Vertices   " << vag_grid.volumes_to_vertices.pos.size()-1 << endl;
-        writePosStruct(os, vag_grid.volumes_to_vertices);       
+        writePosStruct(os, vag_grid.volumes_to_vertices);
         os << "Faces->edges   " << vag_grid.faces_to_edges.pos.size()-1 << endl;
         writePosStruct(os, vag_grid.faces_to_edges);
         os << "Faces->vertices   " << vag_grid.faces_to_vertices.pos.size()-1 << endl;
         writePosStruct(os, vag_grid.faces_to_vertices);
         os << "Faces->Control volumes   " << floor(vag_grid.faces_to_volumes.size()/2) << endl;
-        writeVector(os,vag_grid.faces_to_volumes,2);        
+        writeVector(os,vag_grid.faces_to_volumes,2);
         os << "Edges   " << floor(vag_grid.edges.size()/2) << endl;
         writeVector(os,vag_grid.edges,2);
         /*
         assert(vag_grid.material.size()%vag_grid.number_of_volumes==0);
-        int lines= floor(vag_grid.material.size()/vag_grid.number_of_volumes);  
+        int lines= floor(vag_grid.material.size()/vag_grid.number_of_volumes);
         os << "Material number   " << 1 << endl;
         writeVector(os,vag_grid.material,lines);
         */

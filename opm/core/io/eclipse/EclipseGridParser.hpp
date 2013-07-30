@@ -1,15 +1,15 @@
 //===========================================================================
-//                                                                           
-// File: EclipseGridParser.h                                                 
-//                                                                           
-// Created: Wed Dec  5 17:05:13 2007                                         
-//                                                                           
+//
+// File: EclipseGridParser.h
+//
+// Created: Wed Dec  5 17:05:13 2007
+//
 // Author: Atgeirr F Rasmussen <atgeirr@sintef.no>
 //
 // $Date$
-//                                                                           
+//
 // Revision: $Id: EclipseGridParser.h,v 1.3 2008/08/18 14:16:13 atgeirr Exp $
-//                                                                           
+//
 //===========================================================================
 
 /*
@@ -57,7 +57,7 @@ namespace Opm
 
 /**
    @brief A class for reading and parsing all fields of an eclipse file.
-   
+
    This object is constructed using an Eclipse .grdecl-file. All data
    fields are extracted upon construction and written to vector data
    structures, which can then be read out afterwards via
@@ -140,7 +140,7 @@ namespace Opm
 
     typedef boost::shared_ptr<SpecialBase> SpecialFieldPtr;
 
-    /// Returns a reference to a vector containing pointers to the values 
+    /// Returns a reference to a vector containing pointers to the values
     /// corresponding to the given keyword when the values are not only integers
     /// or floats.
     const SpecialFieldPtr getSpecialValue(const std::string& keyword) const;
@@ -229,9 +229,9 @@ public:                                                                         
     void saveEGRID(const std::string & filename, int num_cells , const int * global_cell) const;
 
 #ifdef HAVE_ERT
-  void saveEGRID_INIT( const std::string& output_dir , const std::string& basename, bool fmt_file = false);
-  void saveINIT( const std::string & filename , const ecl_grid_type * ecl_grid);
-  ecl_grid_type * newGrid( );
+    //void saveEGRID_INIT( const std::string& output_dir , const std::string& basename, bool fmt_file = false);
+    void saveINIT( const std::string & filename , const ecl_grid_type * ecl_grid);
+    ecl_grid_type * newGrid( );
 #endif
 
 

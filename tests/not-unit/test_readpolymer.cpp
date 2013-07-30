@@ -1,13 +1,13 @@
 //===========================================================================
-//                                                                           
-// File: test_readpolymer.cpp                                                       
-//                                                                           
-// Created: Thu Jan 12 15:18:46 2012                                         
-//                                                                           
+//
+// File: test_readpolymer.cpp
+//
+// Created: Thu Jan 12 15:18:46 2012
+//
 // Author: Bjørn Spjelkavik <bsp@sintef.no>
-//                                                                           
+//
 // Revision: $Id$
-//                                                                           
+//
 //===========================================================================
 
 #ifdef HAVE_CONFIG_H
@@ -42,13 +42,13 @@ int main(int argc, char** argv)
     if (parser.hasField("PLYROCK")) {
 	parser.getPLYROCK().write(std::cout);
     }
-    if (parser.hasField("PLYADS")) { 
+    if (parser.hasField("PLYADS")) {
 	parser.getPLYADS().write(std::cout);
     }
     if (parser.hasField("TLMIXPAR")) {
 	parser.getTLMIXPAR().write(std::cout);
     }
-    if (parser.hasField("PLYMAX")) { 
+    if (parser.hasField("PLYMAX")) {
 	parser.getPLYMAX().write(std::cout);
     }
     if (parser.hasField("WPOLYMER")) {

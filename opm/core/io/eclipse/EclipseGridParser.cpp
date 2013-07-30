@@ -176,7 +176,7 @@ namespace {
         return us;
     }
 
-    
+
 
 } // anon namespace
 
@@ -242,7 +242,7 @@ EclipseGridParser::EclipseGridParser(const string& filename, bool convert_to_SI)
       return Unknown;
     }
   }
-  
+
 
 bool EclipseGridParser::readKeyword(std::istream& is, std::string& keyword)
 {
@@ -253,7 +253,7 @@ bool EclipseGridParser::readKeyword(std::istream& is, std::string& keyword)
   for (i=0; i<9; ++i) {
     buf[i] = '\0';
   }
-  
+
   /* Read first character and check if it is uppercase*/
   //buf[0] = fgetc(fp);
   is.get(buf[0]);
@@ -261,7 +261,7 @@ bool EclipseGridParser::readKeyword(std::istream& is, std::string& keyword)
     is.unget();
     return false;          /* NOT VALID CHARACTER */
   }
-  
+
   /* Scan as much as possible possible keyword, 8 characters long */
   i = 1;
   is.get(c);
@@ -275,7 +275,7 @@ bool EclipseGridParser::readKeyword(std::istream& is, std::string& keyword)
     buf[i++] = c;
     is.get(c);
   }
-  
+
   /* Skip rest of line */
   if (c != '\n'){
     is.get(c);
@@ -288,14 +288,14 @@ bool EclipseGridParser::readKeyword(std::istream& is, std::string& keyword)
   if(c == '\n') {
     is.unget();
   }
-  
+
   /* Find first non-uppercase or non-digit character */
   for (i=0; i<8; ++i) {
     if ( !(isupper(buf[i]) || isdigit(buf[i])) ) {
       break;
     }
   }
-  
+
   /* Check if remaining characters are blank */
   for (j = i; j<8; ++j) {
     if(!isspace(buf[j]) && buf[j] != '\0') {
@@ -309,7 +309,7 @@ bool EclipseGridParser::readKeyword(std::istream& is, std::string& keyword)
     keyword = keyword.substr(0, end+1);
   return true;
 }
-  
+
 
 /// Read the given stream, overwriting any previous data.
 //---------------------------------------------------------------------------
@@ -559,7 +559,7 @@ void EclipseGridParser::convertToSI()
                    key == "PWAVEMOD" || key == "MULTPV"   || key == "PWAVEMOD" ||
                    key == "SGAS"     || key == "SWAT"     || key == "SOIL"     ||
                                         key == "SWCR"     || key == "SWL"      ||
-                   key == "SWU"      || key == "SOWCR"    || key == "KRW"      || 
+                   key == "SWU"      || key == "SOWCR"    || key == "KRW"      ||
                    key == "KRWR"     || key == "KRORW"    || key == "KRO") {
             unit = 1.0;
             do_convert = false; // Dimensionless keywords...
@@ -834,11 +834,11 @@ void EclipseGridParser::computeUnits()
         THROW("Unknown unit family " << unit_family);
     }
 }
-    
+
 
 struct grdecl EclipseGridParser::get_grdecl() const {
   struct grdecl grdecl;
-  
+
   // Extract data from deck.
   const std::vector<double>& zcorn = getFloatingPointValue("ZCORN");
   const std::vector<double>& coord = getFloatingPointValue("COORD");
@@ -855,9 +855,9 @@ struct grdecl EclipseGridParser::get_grdecl() const {
   } else {
     THROW("Deck must have either DIMENS or SPECGRID.");
   }
-  
+
   // Collect in input struct for preprocessing.
-  
+
   grdecl.zcorn = &zcorn[0];
   grdecl.coord = &coord[0];
   grdecl.actnum = actnum;
@@ -870,8 +870,8 @@ struct grdecl EclipseGridParser::get_grdecl() const {
     grdecl.mapaxes = &mapaxes[0];
   } else
     grdecl.mapaxes = NULL;
-  
-  
+
+
   return grdecl;
 }
 
@@ -880,16 +880,16 @@ struct grdecl EclipseGridParser::get_grdecl() const {
 /*
   This function will create a ecl_kw instance filled with the data
   from input argument @keyword. The ecl_kw will get it's own copy of
-  the data. 
+  the data.
 
   If the input type ecl_type == ECL_INT_TYPE the function will use the
   getIntegerValue() method to get the keyword data, if ecl_type ==
   ECL_DOUBLE_TYPE || ECL_FLOAT_TYPE the getFloatingPointValue()
   function is invoked. If ecl_type == ECL_FLOAT_TYPE the data will be
   converted to when inserting into the ecl_kw.
-  
+
   When the ecl_kw instance is no longer needed it should be discarded
-  with a call to ecl_kw_free( ).  
+  with a call to ecl_kw_free( ).
 
   If you are asking for a non-existent field the function will return NULL
 */
@@ -909,8 +909,8 @@ ecl_kw_type * EclipseGridParser::newEclKW(const std::string &keyword , ecl_type_
       } else if (ecl_type == ECL_FLOAT_TYPE) {
         ecl_kw = ecl_kw_alloc( keyword.c_str() , data.size() , ecl_type );
         for (std::vector<double>::size_type i=0; i < data.size(); i++)
-          ecl_kw_iset_float( ecl_kw , i , data[i] );      
-      } 
+          ecl_kw_iset_float( ecl_kw , i , data[i] );
+      }
     }
   }
   return ecl_kw;
@@ -920,7 +920,7 @@ ecl_kw_type * EclipseGridParser::newEclKW(const std::string &keyword , ecl_type_
 /**
    This function will extract the COORD, ZCORN, ACTNUM and optionaly
    MAPAXES keywords from the eclipse deck and create an ecl_grid
-   instance. 
+   instance.
 
    When you are finished working with the ecl_grid instance it should
    be disposed with ecl_grid_free( ).
@@ -938,7 +938,7 @@ ecl_grid_type * EclipseGridParser::newGrid( ) {
     mapaxes_kw = newEclKW( MAPAXES_KW , ECL_FLOAT_TYPE );
 
   grid = ecl_grid_alloc_GRDECL_kw( grdecl.dims[0] , grdecl.dims[1] , grdecl.dims[2] , zcorn_kw , coord_kw , actnum_kw , mapaxes_kw );
-  
+
   ecl_kw_free( coord_kw );
   ecl_kw_free( zcorn_kw );
   ecl_kw_free( actnum_kw );
@@ -952,7 +952,7 @@ ecl_grid_type * EclipseGridParser::newGrid( ) {
 
 /**
    This function will save an EGRID file based on the COORD, ZCORN,
-   ACTNUM and optionally MAPAXES keywords included in the deck. 
+   ACTNUM and optionally MAPAXES keywords included in the deck.
 
    This function creates the EGRID file without going through a
    ecl_grid instance; this is obviously somewhat faster and less
@@ -1020,12 +1020,12 @@ ecl_grid_type * EclipseGridParser::newGrid( ) {
         }
         fortio_fclose( fortio );
     }
-    
-    /**
-       Will query the deck for keyword @kw; and save it to the @fortio
-       instance if the keyword can be found.  
-    */
+}
 
+/**
+   Will query the deck for keyword @kw; and save it to the @fortio
+   instance if the keyword can be found.
+*/
 void EclipseGridParser::save_kw( fortio_type * fortio , const std::string & kw , ecl_type_enum ecl_type) {
   ecl_kw_type * ecl_kw = newEclKW( kw , ecl_type );
   if (ecl_kw != NULL) {
@@ -1057,25 +1057,25 @@ void EclipseGridParser::saveINIT( const std::string & filename , const ecl_grid_
   {
     ecl_kw_type * poro_kw = newEclKW( PORO_KW , ECL_FLOAT_TYPE );
     time_t start_date;
-    
+
     {
       tm td_tm = to_tm( start_date_ );
       start_date = mktime( &td_tm );
     }
-    
-    ecl_init_file_fwrite_header( fortio , ecl_grid , poro_kw , phases , start_date ); 
+
+    ecl_init_file_fwrite_header( fortio , ecl_grid , poro_kw , phases , start_date );
     ecl_kw_free( poro_kw );
   }
-  
+
   /* This collection of keywords is somewhat arbitrary and random. */
   save_kw( fortio , "PERMX" , ECL_FLOAT_TYPE);
   save_kw( fortio , "PERMY" , ECL_FLOAT_TYPE);
   save_kw( fortio , "PERMZ" , ECL_FLOAT_TYPE);
-  
+
   save_kw( fortio , "FIPNUM" , ECL_INT_TYPE);
   save_kw( fortio , "SATNUM" , ECL_INT_TYPE);
   save_kw( fortio , "EQLNUM" , ECL_INT_TYPE);
-  
+
   fortio_fclose( fortio );
 }
 
@@ -1083,7 +1083,7 @@ void EclipseGridParser::saveINIT( const std::string & filename , const ecl_grid_
 /**
    This is the main function used to save the state of the ECLIPSE
    deck in ECLIPSE format. The function will save an INIT file and an
-   EGRID file. 
+   EGRID file.
 
    The input arguments are the output directory to store files in, and
    the basename to use for the files; the function will build up a
@@ -1094,25 +1094,25 @@ void EclipseGridParser::saveEGRID_INIT( const std::string& output_dir , const st
   ecl_grid_type * ecl_grid = newGrid();
   char * egrid_file = ecl_util_alloc_filename( output_dir.c_str() , basename.c_str() , ECL_EGRID_FILE , fmt_file , 0);
   char * init_file  = ecl_util_alloc_filename( output_dir.c_str() , basename.c_str() , ECL_INIT_FILE  , fmt_file , 0);
-  
+
   ecl_grid_fwrite_EGRID( ecl_grid , egrid_file );
   saveINIT( init_file , ecl_grid );
-  
+
   free( init_file );
   free( egrid_file );
   ecl_grid_free( ecl_grid );
 }
 #else
 
-    void EclipseGridParser::saveEGRID( const std::string & filename, int num_cells , const int * global_cell) const
-    {
-        static_cast<void>(filename); // Suppress "unused variable" warning.
-        THROW("Cannot write EGRID format without ERT library support. Reconfigure opm-core with ERT support and recompile.");
-    }
+void EclipseGridParser::saveEGRID( const std::string & filename, int num_cells , const int * global_cell) const
+{
+    static_cast<void>(filename); // Suppress "unused variable" warning.
+    THROW("Cannot write EGRID format without ERT library support. Reconfigure opm-core with ERT support and recompile.");
+}
     
 #endif
 
-// Read an imported fortio data file using Ert. 
+// Read an imported fortio data file using Ert.
 // Data stored in 'integer_field_map_' and 'floating_field_map_'.
 void EclipseGridParser::getNumericErtFields(const string& filename)
 {

@@ -1,15 +1,15 @@
 //===========================================================================
-//                                                                           
-// File: EclipseGridInspector.h                                              
-//                                                                           
-// Created: Mon Jun  2 09:46:08 2008                                         
-//                                                                           
+//
+// File: EclipseGridInspector.h
+//
+// Created: Mon Jun  2 09:46:08 2008
+//
 // Author: Atgeirr F Rasmussen <atgeirr@sintef.no>
 //
 // $Date$
-//                                                                           
+//
 // Revision: $Id: EclipseGridInspector.h,v 1.2 2008/08/18 14:16:12 atgeirr Exp $
-//                                                                           
+//
 //===========================================================================
 
 /*
@@ -77,9 +77,9 @@ public:
 
     // Convert global cell index to logical ijk-coordinates
     boost::array<int, 3> cellIdxToLogicalCoords(int cell_idx) const;
-    
+
     /// Returns a vector with the outer limits of grid (in the grid's unit).
-    /// The vector contains [xmin, xmax, ymin, ymax, zmin, zmax], as 
+    /// The vector contains [xmin, xmax, ymin, ymax, zmin, zmax], as
     /// read from COORDS and ZCORN
     boost::array<double, 6> getGridLimits() const;
 
