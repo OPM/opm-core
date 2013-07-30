@@ -2,17 +2,18 @@
 # vim: set filetype=cmake autoindent tabstop=2 shiftwidth=2 noexpandtab softtabstop=2 nowrap:
 cmake_minimum_required (VERSION 2.8)
 
-# key information about the library
-set (project "opm-core")
-set (${project}_NAME "${project}")
-set (${project}_DESCRIPTION "Open Porous Media Initiative Core Library")
-set (${project}_DIR "opm")
-set (${project}_VERSION_MAJOR 1)
-set (${project}_VERSION_MINOR 0)
-set (doxy_dir "Documentation")
-
 # additional search modules
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
+
+# not the same location as most of the other projects; this hook overrides
+macro (dir_hook)
+	set (doxy_dir "Documentation")
+endmacro (dir_hook)
+
+# project information is in dune.module. Read this file and set variables.
+# we cannot generate dune.module since it is read by dunecontrol before
+# the build starts, so it makes sense to keep the data there then.
+include (OpmInit)
 
 # list of prerequisites for this particular project; this is in a
 # separate file (in cmake/Modules sub-directory) because it is shared
