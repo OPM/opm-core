@@ -1020,7 +1020,7 @@ ecl_grid_type * EclipseGridParser::newGrid( ) {
         }
         fortio_fclose( fortio );
     }
-}
+
 
 /**
    Will query the deck for keyword @kw; and save it to the @fortio

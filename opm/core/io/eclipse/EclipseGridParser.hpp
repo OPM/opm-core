@@ -231,6 +231,7 @@ public:                                                                         
 #ifdef HAVE_ERT
     //void saveEGRID_INIT( const std::string& output_dir , const std::string& basename, bool fmt_file = false);
     void saveINIT( const std::string & filename , const ecl_grid_type * ecl_grid);
+    void saveEGRID_INIT( const std::string& output_dir , const std::string& basename, bool fmt_file);
     ecl_grid_type * newGrid( );
 #endif
 
