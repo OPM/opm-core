@@ -148,6 +148,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_geom2d.cpp
 	tests/test_param.cpp
 	tests/test_blackoilfluid.cpp
+	tests/test_shadow.cpp
 	)
 
 # originally generated with the command:
@@ -245,6 +246,8 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/IncompPropertiesBasic.hpp
 	opm/core/props/IncompPropertiesFromDeck.hpp
 	opm/core/props/IncompPropertiesInterface.hpp
+	opm/core/props/IncompPropertiesShadow.hpp
+	opm/core/props/IncompPropertiesShadow_impl.hpp
 	opm/core/props/phaseUsageFromDeck.hpp
 	opm/core/props/pvt/BlackoilPvtProperties.hpp
 	opm/core/props/pvt/PvtPropertiesBasic.hpp
