@@ -36,7 +36,7 @@
 #define OPM_ECLIPSEGRIDINSPECTOR_HEADER
 
 #include <vector>
-#include <boost/array.hpp>
+#include <array>
 
 
 namespace Opm
@@ -76,22 +76,22 @@ public:
     std::pair<double,double> cellDips(int cell_idx) const;
 
     // Convert global cell index to logical ijk-coordinates
-    boost::array<int, 3> cellIdxToLogicalCoords(int cell_idx) const;
+    std::array<int, 3> cellIdxToLogicalCoords(int cell_idx) const;
 
     /// Returns a vector with the outer limits of grid (in the grid's unit).
     /// The vector contains [xmin, xmax, ymin, ymax, zmin, zmax], as
     /// read from COORDS and ZCORN
-    boost::array<double, 6> getGridLimits() const;
+    std::array<double, 6> getGridLimits() const;
 
     /// Returns the extent of the logical cartesian grid
     /// as number of cells in the (i, j, k) directions.
-    boost::array<int, 3> gridSize() const;
+    std::array<int, 3> gridSize() const;
 
     /// Returns the eight z-values associated with a given cell.
     /// The ordering is such that i runs fastest. That is, with
     /// L = low and H = high:
     /// {LLL, HLL, LHL, HHL, LLH, HLH, LHH, HHH }.
-    boost::array<double, 8> cellZvals(int i, int j, int k) const;
+    std::array<double, 8> cellZvals(int i, int j, int k) const;
 
 private:
     const EclipseGridParser& parser_;
