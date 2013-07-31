@@ -124,6 +124,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp
 	opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp
 	opm/core/utility/parameters/tinyxml/xmltest.cpp
+	opm/core/version.c
 	opm/core/wells/InjectionSpecification.cpp
 	opm/core/wells/ProductionSpecification.cpp
 	opm/core/wells/WellCollection.cpp
@@ -214,6 +215,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/linalg/blas_lapack.h
 	opm/core/linalg/call_umfpack.h
 	opm/core/linalg/sparse_sys.h
+	opm/core/version.h
 	opm/core/wells.h
 	opm/core/pressure/CompressibleTpfa.hpp
 	opm/core/pressure/FlowBCManager.hpp

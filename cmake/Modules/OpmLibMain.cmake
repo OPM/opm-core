@@ -223,3 +223,13 @@ opm_dist_clean (${project})
 
 ### emulate the with-xxx feature of autotools;
 include (OpmKnown)
+
+# make sure we rebuild if dune.module changes
+configure_file (
+	"${CMAKE_CURRENT_SOURCE_DIR}/dune.module"
+	"${CMAKE_CURRENT_BINARY_DIR}/dunemod.tmp"
+	COPYONLY
+	)
+
+# make sure updated version information is available in the source code
+include (UseVersion)
