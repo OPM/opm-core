@@ -174,7 +174,10 @@ opm_cmake_config (${project})
 include (OpmSatellites)
 
 # example programs are found in the tutorials/ and examples/ directory
-opm_compile_satellites (${project} examples "" "")
+option (BUILD_EXAMPLES "Build the examples/ tree" ON)
+if (BUILD_EXAMPLES)
+	opm_compile_satellites (${project} examples "" "")
+endif (BUILD_EXAMPLES)
 
 # infrastructure for testing
 enable_testing ()
@@ -196,8 +199,10 @@ if (COMMAND tests_hook)
 endif (COMMAND tests_hook)
 
 # make datafiles necessary for tests available in output directory
-opm_data (tests datafiles "${tests_DIR}")
-opm_compile_satellites (${project} tests "" "${tests_REGEXP}")
+if (BUILD_TESTING)
+	opm_data (tests datafiles "${tests_DIR}")
+	opm_compile_satellites (${project} tests "" "${tests_REGEXP}")
+endif (BUILD_TESTING)
 
 # use this target to run all tests
 add_custom_target (check
