@@ -26,7 +26,7 @@
 int main(void)
 {
     using namespace std;
-    struct UnstructuredGrid *g = create_grid_cart2d(2, 2);
+    struct UnstructuredGrid *g = create_grid_cart2d(2, 2, 1., 1.);
     int i;
     int k;
     for (i = 0; i < g->number_of_cells; ++i) {

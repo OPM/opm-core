@@ -35,6 +35,7 @@
 
 #include "config.h"
 #include <opm/core/utility/MonotCubicInterpolator.hpp>
+using namespace Opm;
 
 int main()
 {

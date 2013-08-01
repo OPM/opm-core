@@ -36,14 +36,14 @@
 #include <fstream>
 #include <string>
 #include <cstdlib>
-#include <opm/core/vag_format/vag.hpp>
+#include <opm/core/io/vag/vag.hpp>
 #include <opm/core/grid.h>
 //#include "../config.h"
 /* test reading of vag grid format */
 int main(int argc, char** argv)
 {
     using namespace std;
-    using namespace OPM;
+    using namespace Opm;
     std::string filename;
     if (argc == 2) {
 	filename = argv[1];
