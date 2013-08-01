@@ -1,5 +1,6 @@
 /*
   Copyright 2012 SINTEF ICT, Applied Mathematics.
+  Portions Copyright 2013 Uni Research AS.
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -17,25 +18,41 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "config.h"
+
+/* --- Boost.Test boilerplate --- */
+#if HAVE_DYNAMIC_BOOST_TEST
+#define BOOST_TEST_DYN_LINK
+#endif
+
+#define NVERBOSE  // Suppress own messages when throw()ing
+
+#define BOOST_TEST_MODULE CartGridTest
+#include <boost/test/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
+/* --- our own headers --- */
 #include <opm/core/grid/cart_grid.h>
 #include <opm/core/grid.h>
-#include <cstdio>
+#include <stdio.h>
 
-int main(void)
+BOOST_AUTO_TEST_SUITE ()
+
+BOOST_AUTO_TEST_CASE (faces)
 {
-    using namespace std;
+    int faces[] = { 0, 6, 1, 8,
+                    1, 7, 2, 9,
+                    3, 8, 4, 10,
+                    4, 9, 5, 11 };
     struct UnstructuredGrid *g = create_grid_cart2d(2, 2, 1., 1.);
     int i;
     int k;
     for (i = 0; i < g->number_of_cells; ++i) {
-        fprintf(stderr, "%d: ", i);
         for (k = g->cell_facepos[i]; k < g->cell_facepos[i + 1]; ++k) {
-            fprintf(stderr, "%d ", g->cell_faces[k]);
+            BOOST_REQUIRE_EQUAL (g->cell_faces[k], faces[k]);
         }
-        fprintf(stderr, "\n");
     }
     destroy_grid(g);
-    return 0;
 }
+
+BOOST_AUTO_TEST_SUITE_END()
