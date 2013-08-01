@@ -152,6 +152,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_param.cpp
 	tests/test_blackoilfluid.cpp
 	tests/test_shadow.cpp
+	tests/test_units.cpp
 	)
 
 # originally generated with the command:
