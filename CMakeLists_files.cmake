@@ -137,6 +137,8 @@ list (APPEND MAIN_SOURCE_FILES
 # find tests -name '*.cpp' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
 list (APPEND TEST_SOURCE_FILES
 	tests/test_dgbasis.cpp
+	tests/test_cartgrid.cpp
+	tests/test_cubic.cpp
 	tests/test_nonuniformtablelinear.cpp
 	tests/test_sparsevector.cpp
 	tests/test_sparsetable.cpp
@@ -150,6 +152,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_param.cpp
 	tests/test_blackoilfluid.cpp
 	tests/test_shadow.cpp
+	tests/test_units.cpp
 	)
 
 # originally generated with the command:
