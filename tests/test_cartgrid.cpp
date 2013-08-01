@@ -38,7 +38,7 @@
 
 BOOST_AUTO_TEST_SUITE ()
 
-BOOST_AUTO_TEST_CASE (faces)
+BOOST_AUTO_TEST_CASE (facenumbers)
 {
     int faces[] = { 0, 6, 1, 8,
                     1, 7, 2, 9,
