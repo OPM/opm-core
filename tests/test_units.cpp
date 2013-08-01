@@ -74,15 +74,15 @@ BOOST_AUTO_TEST_CASE (units)
     BOOST_REQUIRE_CLOSE (convert::to(1*atm, barsa), 1.01325, 0.01);
 
     std::vector<double> flux(10, 10000*cubic(meter)/year);
-	for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10; ++i) {
         BOOST_REQUIRE_CLOSE (flux[i], 3.17098e-4, 0.01); 
-	}
+    }
 
     std::transform(flux.begin(), flux.end(), flux.begin(),
                    boost::bind(convert::to, _1, cubic(meter)/year));
-	for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10; ++i) {
         BOOST_REQUIRE_CLOSE (flux[i], 1e4, 0.01);
-	}
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
