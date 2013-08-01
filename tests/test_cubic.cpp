@@ -16,6 +16,7 @@
 /*
   Copyright 2009, 2010 SINTEF ICT, Applied Mathematics.
   Copyright 2009, 2010 Statoil ASA.
+  Portions Copyright 2013 Uni Research AS.
 
   This file is part of The Open Reservoir Simulator Project (OpenRS).
 
@@ -34,9 +35,25 @@
 */
 
 #include "config.h"
-#include <opm/core/utility/MonotCubicInterpolator.hpp>
 
-int main()
+/* --- Boost.Test boilerplate --- */
+#if HAVE_DYNAMIC_BOOST_TEST
+#define BOOST_TEST_DYN_LINK
+#endif
+
+#define NVERBOSE  // Suppress own messages when throw()ing
+
+#define BOOST_TEST_MODULE CubicTest
+#include <boost/test/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
+/* --- our own headers --- */
+#include <opm/core/utility/MonotCubicInterpolator.hpp>
+using namespace Opm;
+
+BOOST_AUTO_TEST_SUITE ()
+
+BOOST_AUTO_TEST_CASE (cubic)
 {
     const int num_v = 3;
     double xv[num_v] = {0.0, 1.0, 2.0};
@@ -44,11 +61,13 @@ int main()
     std::vector<double> x(xv, xv + num_v);
     std::vector<double> f(fv, fv + num_v);
     MonotCubicInterpolator interp(x, f);
-    interp.evaluate(-1.0);
-    interp.evaluate(0.0);
-    interp.evaluate(0.0001);
-    interp.evaluate(0.5);
-    interp.evaluate(1.0);
-    interp.evaluate(2.0);
-    interp.evaluate(4.0);
+    BOOST_REQUIRE_CLOSE (interp.evaluate(-1.0), 10., 0.00001);
+    BOOST_REQUIRE_CLOSE (interp.evaluate(0.0), 10., 0.00001);
+    BOOST_REQUIRE_CLOSE (interp.evaluate(0.0001), 10.0011, 0.00001);
+    BOOST_REQUIRE_CLOSE (interp.evaluate(0.5), 17.375, 0.00001);
+    BOOST_REQUIRE_CLOSE (interp.evaluate(1.0), 21., 0.00001);
+    BOOST_REQUIRE_CLOSE (interp.evaluate(2.0), 2., 0.00001);
+    BOOST_REQUIRE_CLOSE (interp.evaluate(4.0), 2., 0.00001);
 }
+
+BOOST_AUTO_TEST_SUITE_END()

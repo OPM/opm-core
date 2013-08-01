@@ -19,7 +19,7 @@
 
 
 #include "config.h"
-#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/grid/GridManager.hpp>
 #include <opm/core/grid/cart_grid.h>
 #include <opm/core/grid.h>

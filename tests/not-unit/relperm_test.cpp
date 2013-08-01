@@ -23,8 +23,8 @@
 #endif // HAVE_CONFIG_H
 
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
-#include <opm/core/eclipse/EclipseGridParser.hpp>
-#include <opm/core/eclipse/EclipseGridInspector.hpp>
+#include <opm/core/io/eclipse/EclipseGridParser.hpp>
+#include <opm/core/io/eclipse/EclipseGridInspector.hpp>
 #include <opm/core/props/BlackoilPropertiesFromDeck.hpp>
 #include <opm/core/grid.h>
 
