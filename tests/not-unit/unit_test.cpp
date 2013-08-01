@@ -34,6 +34,18 @@
 */
 
 #include "config.h"
+/* --- Boost.Test boilerplate --- */
+#if HAVE_DYNAMIC_BOOST_TEST
+#define BOOST_TEST_DYN_LINK
+#endif
+
+#define NVERBOSE  // Suppress own messages when throw()ing
+
+#define BOOST_TEST_MODULE UnitsTest
+#include <boost/test/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
+/* --- our own headers --- */
 #include <algorithm>
 #include <iostream>
 #include <iterator>
@@ -46,34 +58,31 @@
 using namespace Opm::prefix;
 using namespace Opm::unit;
 
-int main()
+BOOST_AUTO_TEST_SUITE ()
+
+BOOST_AUTO_TEST_CASE (units)
 {
-    std::cout << "m  = " << meter << '\n';
-    std::cout << "kg = " << kilogram << '\n';
-    std::cout << "s  = " << second << '\n';
+    BOOST_REQUIRE_EQUAL (meter, 1);
+    BOOST_REQUIRE_EQUAL (kilogram, 1);
+    BOOST_REQUIRE_EQUAL (second, 1);
 
-    std::cout << "mD = " << milli*darcy << '\n';
-    std::cout << "MD = " << mega*darcy << '\n';
+    BOOST_REQUIRE_CLOSE (milli*darcy, 9.86923667e-16, 0.01);
+    BOOST_REQUIRE_CLOSE (mega*darcy, 9.86923e-7, 0.01);
+    BOOST_REQUIRE_CLOSE (convert::to(mega*darcy, milli*darcy), 1e9, 0.01);
 
-    std::cout << "MD = " << convert::to(mega*darcy, milli*darcy) << " mD\n";
-
-    std::cout << "1 bar = " << convert::to(convert::from(1.0, barsa), psia) << " psi\n";
-
-    std::cout << "1 atm = " << convert::to(1*atm, barsa) << " bar\n";
+    BOOST_REQUIRE_CLOSE (convert::to(convert::from(1.0, barsa), psia), 14.5038, 0.01);
+    BOOST_REQUIRE_CLOSE (convert::to(1*atm, barsa), 1.01325, 0.01);
 
     std::vector<double> flux(10, 10000*cubic(meter)/year);
-
-    std::cout << "flux = [";
-    std::copy(flux.begin(), flux.end(),
-              std::ostream_iterator<double>(std::cout, " "));
-    std::cout << "\b] (m^3/s)\n";
+	for (int i = 0; i < 10; ++i) {
+        BOOST_REQUIRE_CLOSE (flux[i], 3.17098e-4, 0.01); 
+	}
 
     std::transform(flux.begin(), flux.end(), flux.begin(),
                    boost::bind(convert::to, _1, cubic(meter)/year));
-    std::cout << "     = [";
-    std::copy(flux.begin(), flux.end(),
-              std::ostream_iterator<double>(std::cout, " "));
-    std::cout << "\b] (m^3/year)\n";
-
-    return 0;
+	for (int i = 0; i < 10; ++i) {
+        BOOST_REQUIRE_CLOSE (flux[i], 1e4, 0.01);
+	}
 }
+
+BOOST_AUTO_TEST_SUITE_END()
