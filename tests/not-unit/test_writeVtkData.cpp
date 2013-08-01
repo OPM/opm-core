@@ -18,7 +18,7 @@
 */
 
 #include "config.h"
-#include <opm/core/utility/writeVtkData.hpp>
+#include <opm/core/io/vtk/writeVtkData.hpp>
 #include <fstream>
 #include <array>
 

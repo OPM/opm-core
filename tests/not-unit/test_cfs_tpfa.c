@@ -7,7 +7,6 @@
 #include <suitesparse/umfpack.h>
 
 #include <opm/core/grid.h>
-#include <opm/core/well.h>
 
 #include <opm/core/linalg/sparse_sys.h>
 

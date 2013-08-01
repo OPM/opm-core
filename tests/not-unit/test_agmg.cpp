@@ -108,9 +108,7 @@ int main()
 
     // Create solver for SPD system.
     Opm::LinearSolverAGMG linsolve(100, 1e-9, true);
-
-    Opm::LinearSolverInterface::LinearSolverReport
-        rpt = linsolve.solve(A.get(), & b[0], & x[0]);
+    linsolve.solve(A.get(), & b[0], & x[0]);
 
     double e = 0.0;
     for (std::size_t i = 0; i < m; ++i) {

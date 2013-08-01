@@ -14,7 +14,7 @@
 #include "config.h"
 #endif
 
-#include <opm/core/eclipse/EclipseGridParser.hpp>
+#include <opm/core/io/eclipse/EclipseGridParser.hpp>
 
 // Test program for reading Eclipse Polymer keywords.
 

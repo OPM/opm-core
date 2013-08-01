@@ -16,7 +16,7 @@ main(void)
     struct UnstructuredGrid *G1, *G2;
 
     G1 = read_grid("cart_grid_2d.txt");
-    G2 = create_grid_cart2d(2, 2);
+    G2 = create_grid_cart2d(2, 2, 1., 1.);
 
     destroy_grid(G2);
     destroy_grid(G1);
