@@ -22,6 +22,9 @@
 #	                      files can of course include other files than these;
 #	                      you should only add to this list if the *user* of
 #	                      the library needs it.
+#
+# ATTIC_FILES           Unmaintained files. This for the projects developers
+#                       only. Don't expect these files to build.
 
 # originally generated with the command:
 # find opm -name '*.c*' -printf '\t%p\n' | sort
@@ -176,6 +179,23 @@ list (APPEND EXAMPLE_SOURCE_FILES
 	tutorials/tutorial2.cpp
 	tutorials/tutorial3.cpp
 	tutorials/tutorial4.cpp
+	)
+
+# originally generated with the command:
+# find attic -name '*.c*' -printf '\t%p\n' | sort
+list (APPEND ATTIC_FILES
+	attic/bo_resprop_test.cpp
+	attic/pvt_test.cpp
+	attic/relperm_test.cpp
+	attic/test_agmg.cpp
+	attic/test_cfs_tpfa.c
+	attic/test_ert.cpp
+	attic/test_jacsys.cpp
+	attic/test_lapack.cpp
+	attic/test_read_grid.c
+	attic/test_readpolymer.cpp
+	attic/test_read_vag.cpp
+	attic/test_writeVtkData.cpp
 	)
 
 # programs listed here will not only be compiled, but also marked for

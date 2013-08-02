@@ -54,6 +54,9 @@ macro (sources_hook)
 		list (REMOVE_ITEM opm-core_SOURCES
 			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverAGMG.cpp
 			)
+		list (REMOVE_ITEM attic_SOURCES
+			${PROJECT_SOURCE_DIR}/attic/test_agmg.cpp
+			)
 	endif (NOT AGMG_FOUND)
 	if (NOT dune-istl_FOUND)
 		list (REMOVE_ITEM opm-core_SOURCES
