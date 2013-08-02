@@ -1,5 +1,6 @@
 Module: opm-core
 Description: Open Porous Media Initiative Core Library
+# if you change this, make sure to also change opm/core/version.h
 Version: 1.0
 Label: 2013.03
 Maintainer: atgeirr@sintef.no
