@@ -42,7 +42,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <opm/core/utility/parameters/Parameter.hpp>
 #include <opm/core/utility/parameters/ParameterStrings.hpp>
@@ -173,7 +173,7 @@ namespace Opm {
 	}
 
 	void ParameterGroup::insert(const std::string& name,
-				    const boost::shared_ptr<ParameterMapItem>& data)
+				    const std::shared_ptr<ParameterMapItem>& data)
         {
 	    std::pair<std::string, std::string> name_path = split(name);
 	    map_type::const_iterator it = map_.find(name_path.first);
@@ -214,10 +214,10 @@ namespace Opm {
 	    map_type::const_iterator it = map_.find(name_path.first);
 	    if (it == map_.end()) {
 		if (name_path.second == "") {
-		    boost::shared_ptr<ParameterMapItem> data(new Parameter(value, ID_param_type__cmdline));
+		    std::shared_ptr<ParameterMapItem> data(new Parameter(value, ID_param_type__cmdline));
 		    map_[name_path.first] = data;
 		} else {
-		    boost::shared_ptr<ParameterMapItem> data(new ParameterGroup(this->path() + ID_delimiter_path + name_path.first,
+		    std::shared_ptr<ParameterMapItem> data(new ParameterGroup(this->path() + ID_delimiter_path + name_path.first,
 										   this));
 		    ParameterGroup& child = dynamic_cast<ParameterGroup&>(*data);
 		    child.insertParameter(name_path.second, value);
@@ -235,7 +235,7 @@ namespace Opm {
 			      << ID_xmltag__param
 			      << " element.\n";
 		}
-		boost::shared_ptr<ParameterMapItem> data(new Parameter(value, ID_param_type__cmdline));
+		std::shared_ptr<ParameterMapItem> data(new Parameter(value, ID_param_type__cmdline));
 		map_[name_path.first] = data;
 	    } else {
 		ParameterGroup& pg = dynamic_cast<ParameterGroup&>(*(*it).second);

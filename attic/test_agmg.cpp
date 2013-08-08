@@ -26,7 +26,7 @@
 #include <iostream>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <opm/core/linalg/sparse_sys.h>
 #include <opm/core/linalg/LinearSolverAGMG.hpp>
@@ -46,14 +46,14 @@ namespace {
     }
 
 
-    boost::shared_ptr<CSRMatrix>
+    std::shared_ptr<CSRMatrix>
     build_laplace_1d(const std::size_t m)
     {
         assert (m >= 2);
 
         const std::size_t nnz = compute_nnz(m);
 
-        boost::shared_ptr<CSRMatrix>
+        std::shared_ptr<CSRMatrix>
             A(csrmatrix_new_known_nnz(m, nnz), csrmatrix_delete);
 
         A->ia[ 0 ] = 0;
@@ -97,7 +97,7 @@ int main()
 {
     const std::size_t m = 10;
 
-    boost::shared_ptr<CSRMatrix> A = build_laplace_1d(m);
+    std::shared_ptr<CSRMatrix> A = build_laplace_1d(m);
 
     // Form right-hand side [1, 0, 0, ...., 0, 1]
     std::vector<double> b(m, 0.0);
