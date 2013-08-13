@@ -40,6 +40,7 @@
 #include <fstream>
 #include <exception>
 #include <algorithm>
+#include <memory>
 #include <limits>
 #include <numeric>
 #include <cfloat>
@@ -710,7 +711,7 @@ const std::vector<double>& EclipseGridParser::getFloatingPointValue(const std::s
 
 
 //---------------------------------------------------------------------------
-const boost::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const std::string& keyword) const
+const std::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const std::string& keyword) const
 //---------------------------------------------------------------------------
 {
     SpecialMap::const_iterator it = special_field_by_epoch_[current_epoch_].find(keyword);
@@ -722,13 +723,13 @@ const boost::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const st
 }
 
 //---------------------------------------------------------------------------
-boost::shared_ptr<SpecialBase>
+std::shared_ptr<SpecialBase>
 EclipseGridParser::createSpecialField(std::istream& is,
                                       const std::string& fieldname)
 //---------------------------------------------------------------------------
 {
     string ukey = upcase(fieldname);
-    boost::shared_ptr<SpecialBase> spec_ptr
+    std::shared_ptr<SpecialBase> spec_ptr
         = Factory<SpecialBase>::createObject(fieldname);
     is >> ignoreWhitespace;
     spec_ptr->read(is);
@@ -736,13 +737,13 @@ EclipseGridParser::createSpecialField(std::istream& is,
 }
 
 //---------------------------------------------------------------------------
-boost::shared_ptr<SpecialBase>
+std::shared_ptr<SpecialBase>
 EclipseGridParser::cloneSpecialField(const std::string& fieldname,
-                                     const boost::shared_ptr<SpecialBase> original)
+                                     const std::shared_ptr<SpecialBase> original)
 //---------------------------------------------------------------------------
 {
     string ukey = upcase(fieldname);
-    boost::shared_ptr<SpecialBase> spec_ptr
+    std::shared_ptr<SpecialBase> spec_ptr
         = Factory<SpecialBase>::cloneObject(fieldname, original);
     return spec_ptr;
 }
@@ -766,7 +767,7 @@ void EclipseGridParser::setFloatingPointField(const std::string& keyword,
 
 //---------------------------------------------------------------------------
 void EclipseGridParser::setSpecialField(const std::string& keyword,
-                                        boost::shared_ptr<SpecialBase> field)
+                                        std::shared_ptr<SpecialBase> field)
 //---------------------------------------------------------------------------
 {
     special_field_by_epoch_[current_epoch_][keyword] = field;
