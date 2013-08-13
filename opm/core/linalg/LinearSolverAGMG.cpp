@@ -38,7 +38,11 @@
 // Note that both the matrix entries and column indices are writable.
 // The solver may permute the matrix entries within each row during
 // the setup phase.
+#ifdef HAVE_MPI
+#define DAGMG_ FC_FUNC(dagmgpar, DAGMGPAR)
+#else
 #define DAGMG_ FC_FUNC(dagmg, DAGMG)
+#endif
 
 extern "C"
 void
