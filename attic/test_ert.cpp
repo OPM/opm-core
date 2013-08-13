@@ -24,7 +24,7 @@
 #include <opm/core/grid/cart_grid.h>
 #include <opm/core/grid.h>
 #include <cstdio>
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 #include <opm/core/props/IncompPropertiesBasic.hpp>
 #include <opm/core/props/IncompPropertiesFromDeck.hpp>
 
@@ -248,8 +248,8 @@ ecl_grid_type * create_ecl_grid( const struct UnstructuredGrid * g) {
 int main(int /*argc*/ , char **argv)
 {
   std::string filename( argv[1] );
-  boost::scoped_ptr<Opm::GridManager> grid;
-  boost::scoped_ptr<Opm::IncompPropertiesInterface> props;
+  const std::unique_ptr<Opm::GridManager> grid;
+  const std::unique_ptr<Opm::IncompPropertiesInterface> props;
   Opm::EclipseGridParser eclParser(filename , false);
 
   //eclParser.saveEGRID_INIT("/tmp" , "OPM" );

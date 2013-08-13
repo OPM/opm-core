@@ -47,7 +47,7 @@
 #include <opm/core/tof/TofReorder.hpp>
 #include <opm/core/tof/TofDiscGalReorder.hpp>
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 #include <boost/filesystem.hpp>
 
 #include <algorithm>
@@ -101,10 +101,10 @@ main(int argc, char** argv)
 
     // If we have a "deck_filename", grid and props will be read from that.
     bool use_deck = param.has("deck_filename");
-    boost::scoped_ptr<EclipseGridParser> deck;
-    boost::scoped_ptr<GridManager> grid;
-    boost::scoped_ptr<IncompPropertiesInterface> props;
-    boost::scoped_ptr<Opm::WellsManager> wells;
+    std::unique_ptr<EclipseGridParser> deck;
+    std::unique_ptr<GridManager> grid;
+    std::unique_ptr<IncompPropertiesInterface> props;
+    std::unique_ptr<Opm::WellsManager> wells;
     TwophaseState state;
     // bool check_well_controls = false;
     // int max_well_control_iterations = 0;
@@ -190,7 +190,7 @@ main(int argc, char** argv)
     bool use_dg = param.getDefault("use_dg", false);
     bool use_multidim_upwind = false;
     // Need to initialize dg solver here, since it uses parameters now.
-    boost::scoped_ptr<Opm::TofDiscGalReorder> dg_solver;
+    std::unique_ptr<Opm::TofDiscGalReorder> dg_solver;
     if (use_dg) {
         dg_solver.reset(new Opm::TofDiscGalReorder(*grid->c_grid(), param));
     } else {

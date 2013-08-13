@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace Opm
 {
@@ -253,7 +253,7 @@ namespace Opm
             }
 
             EclipseGridParser sp;
-            boost::shared_ptr<SPECGRID> sg(new SPECGRID);
+            std::shared_ptr<SPECGRID> sg(new SPECGRID);
             for (int dd = 0; dd < 3; ++dd) {
                 sg->dimensions[dd] = new_dims_[dd];
             }

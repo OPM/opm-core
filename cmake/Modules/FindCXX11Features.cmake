@@ -3,6 +3,8 @@
 #
 # Sets the follwing variable:
 #
+# HAVE_SHARED_PTR                  True if std::shared_ptr is available
+# HAVE_UNIQUE_PTR                  True if std::unique_ptr is available
 # HAVE_NULLPTR                     True if nullptr is available
 # HAVE_ARRAY                       True if header <array> and fill() are available
 # HAVE_ATTRIBUTE_ALWAYS_INLINE     True if attribute always inline is supported
@@ -42,6 +44,30 @@ endif(CXX_FLAG_CXX11)
 
 # perform tests
 include(CheckCXXSourceCompiles)
+
+# nullptr
+CHECK_CXX_SOURCE_COMPILES("
+    #include <memory>
+
+    int main(void)
+    {
+      std::shared_ptr<int> foo(new int(123));
+      return 0;
+    }
+"  HAVE_SHARED_PTR
+)
+
+# nullptr
+CHECK_CXX_SOURCE_COMPILES("
+    #include <memory>
+
+    int main(void)
+    {
+      std::unique_ptr<int> foo(new int(123));
+      return 0;
+    }
+"  HAVE_UNIQUE_PTR
+)
 
 # nullptr
 CHECK_CXX_SOURCE_COMPILES("
@@ -296,6 +322,14 @@ endforeach(_HEADER tuple tr1/tuple tr1/type_traits)
 # superset of those provided by GCC 4.4. This makes the test fail on
 # all GCC compilers before 4.4.
 set(CXX_FEATURES_MISSING "")
+if (NOT HAVE_SHARED_PTR)
+  set(CXX_FEATURES_MISSING
+      "${CXX_FEATURES_MISSING} - Shared pointers (the std::shared_ptr class)\n")
+endif()
+if (NOT HAVE_UNIQUE_PTR)
+  set(CXX_FEATURES_MISSING
+      "${CXX_FEATURES_MISSING} - Unique pointers (the std::unique_ptr class)\n")
+endif()
 if (NOT HAVE_ARRAY)
   set(CXX_FEATURES_MISSING
       "${CXX_FEATURES_MISSING} - Statically sized arrays (the std::array class)\n")
