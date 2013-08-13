@@ -36,13 +36,12 @@
 #include <ert/ecl/ecl_util.h>
 #include <ert/ecl/ecl_rst_file.h>
 
-#include <boost/shared_ptr.hpp>
-
 #include <cstdlib>
 #include <ctime>
+#include <memory>
 
 namespace {
-  boost::shared_ptr<ecl_kw_type>
+  std::shared_ptr<ecl_kw_type>
   ecl_kw_wrapper( const UnstructuredGrid& grid,
                   const std::string& kw_name ,
                   const std::vector<double> * data ,
@@ -54,7 +53,7 @@ namespace {
     if ((stride * std::vector<double>::size_type(grid.number_of_cells)) != data->size())
       THROW("Internal mismatch grid.number_of_cells: " << grid.number_of_cells << " data size: " << data->size() / stride);
     {
-      boost::shared_ptr<ecl_kw_type>
+      std::shared_ptr<ecl_kw_type>
           ecl_kw(ecl_kw_alloc( kw_name.c_str() , grid.number_of_cells , ECL_FLOAT_TYPE ),
                  ecl_kw_free);
       for (int i=0; i < grid.number_of_cells; i++) 
@@ -92,7 +91,7 @@ namespace {
       }
 
       {
-        boost::shared_ptr<char>
+        std::shared_ptr<char>
           filename(ecl_util_alloc_filename(output_dir.c_str() ,
                                            base_name.c_str()  ,
                                            FileType, Formatted,
@@ -163,11 +162,11 @@ namespace Opm
     ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;  // Alternatively ECL_RESTART_FILE for multiple restart files.
     bool fmt_file           = false;
 
-    boost::shared_ptr<char> filename(ecl_util_alloc_filename(output_dir.c_str() ,
-                                                             base_name.c_str()  ,
-                                                             file_type, fmt_file,
-                                                             current_step       ),
-                                     std::free);
+    std::shared_ptr<char> filename(ecl_util_alloc_filename(output_dir.c_str() ,
+                                                           base_name.c_str()  ,
+                                                           file_type, fmt_file,
+                                                           current_step       ),
+                                   std::free);
     int phases              = ECL_OIL_PHASE + ECL_WATER_PHASE;
     double days             = Opm::unit::convert::to(current_time, Opm::unit::day);
     time_t date             = 0;
@@ -196,7 +195,7 @@ namespace Opm
     {
       DataMap::const_iterator i = data.find("pressure");
       if (i != data.end()) {
-        boost::shared_ptr<ecl_kw_type>
+        std::shared_ptr<ecl_kw_type>
             pressure_kw = ecl_kw_wrapper( grid , "PRESSURE" , i->second , 0 , 1);
         ecl_rst_file_add_kw( rst_file , pressure_kw.get() );
       }
@@ -208,7 +207,7 @@ namespace Opm
         if (int(i->second->size()) != 2 * grid.number_of_cells) {
           THROW("writeECLData() requires saturation field to have two phases.");
         }
-        boost::shared_ptr<ecl_kw_type>
+        std::shared_ptr<ecl_kw_type>
             swat_kw = ecl_kw_wrapper( grid , "SWAT" , i->second , 0 , 2);
         ecl_rst_file_add_kw( rst_file , swat_kw.get() );
       }
