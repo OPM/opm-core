@@ -46,13 +46,6 @@ macro (prereqs_hook)
 endmacro (prereqs_hook)
 
 macro (sources_hook)
-	# Algebraic Multigrid must be compiled together with our program;
-	# if it is not available, then remove our corresponding component
-	find_package (AGMG)
-	if (AGMG_FOUND)
-		list (APPEND ${project}_SOURCES ${AGMG_SOURCES})
-	endif (AGMG_FOUND)
-
 	# these solvers are only compiled in if their dependency is found
 	if (NOT AGMG_FOUND)
 		list (REMOVE_ITEM opm-core_SOURCES
