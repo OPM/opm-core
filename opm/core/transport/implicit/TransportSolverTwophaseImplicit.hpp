@@ -37,7 +37,7 @@
 #include <opm/core/grid.h>
 #include <opm/core/linalg/LinearSolverFactory.hpp>
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 #include <vector>
 
 
