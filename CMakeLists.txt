@@ -98,5 +98,13 @@ macro (tests_hook)
 	cond_disable_test ("ERT")
 endmacro (tests_hook)
 
+macro (install_hook)
+#	# copy the cmake macros to system when installing
+#	install (
+#		DIRECTORY cmake
+#		DESTINATION share/opm
+#		)
+endmacro (install_hook)
+
 # all setup common to the OPM library modules is done here
 include (OpmLibMain)
