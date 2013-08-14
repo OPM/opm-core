@@ -42,7 +42,6 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/io/eclipse/writeECLData.cpp
 	opm/core/io/vag/vag.cpp
 	opm/core/io/vtk/writeVtkData.cpp
-	opm/core/linalg/LinearSolverAGMG.cpp
 	opm/core/linalg/LinearSolverFactory.cpp
 	opm/core/linalg/LinearSolverInterface.cpp
 	opm/core/linalg/LinearSolverIstl.cpp
@@ -187,7 +186,6 @@ list (APPEND ATTIC_FILES
 	attic/bo_resprop_test.cpp
 	attic/pvt_test.cpp
 	attic/relperm_test.cpp
-	attic/test_agmg.cpp
 	attic/test_cfs_tpfa.c
 	attic/test_ert.cpp
 	attic/test_jacsys.cpp
@@ -230,7 +228,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/io/eclipse/writeECLData.hpp
 	opm/core/io/vag/vag.hpp
 	opm/core/io/vtk/writeVtkData.hpp
-	opm/core/linalg/LinearSolverAGMG.hpp
 	opm/core/linalg/LinearSolverFactory.hpp
 	opm/core/linalg/LinearSolverInterface.hpp
 	opm/core/linalg/LinearSolverIstl.hpp
