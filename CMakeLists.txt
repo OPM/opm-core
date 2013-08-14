@@ -47,14 +47,6 @@ endmacro (prereqs_hook)
 
 macro (sources_hook)
 	# these solvers are only compiled in if their dependency is found
-	if (NOT AGMG_FOUND)
-		list (REMOVE_ITEM opm-core_SOURCES
-			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverAGMG.cpp
-			)
-		list (REMOVE_ITEM attic_SOURCES
-			${PROJECT_SOURCE_DIR}/attic/test_agmg.cpp
-			)
-	endif (NOT AGMG_FOUND)
 	if (NOT dune-istl_FOUND)
 		list (REMOVE_ITEM opm-core_SOURCES
 			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverIstl.cpp
@@ -100,12 +92,9 @@ macro (sources_hook)
 endmacro (sources_hook)
 
 macro (fortran_hook)
-	# only include Fortran support if AGMG sources are available
-	set (${project}_FORTRAN_IF HAVE_AGMG)
 endmacro (fortran_hook)
 
 macro (tests_hook)
-	cond_disable_test ("AGMG")
 	cond_disable_test ("ERT")
 endmacro (tests_hook)
 
