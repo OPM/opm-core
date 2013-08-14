@@ -40,6 +40,9 @@ include (CMakeLists_files.cmake)
 
 macro (config_hook)
 #	opm_need_version_of ("dune-common")
+	list (APPEND ${project}_CONFIG_IMPL_VARS
+		HAVE_DUNE_ISTL
+		)
 endmacro (config_hook)
 
 macro (prereqs_hook)
