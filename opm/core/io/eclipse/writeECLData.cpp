@@ -56,7 +56,7 @@ namespace {
       std::shared_ptr<ecl_kw_type>
           ecl_kw(ecl_kw_alloc( kw_name.c_str() , grid.number_of_cells , ECL_FLOAT_TYPE ),
                  ecl_kw_free);
-      for (int i=0; i < grid.number_of_cells; i++) 
+      for (int i=0; i < grid.number_of_cells; i++)
         ecl_kw_iset_float( ecl_kw.get() , i , (*data)[i*stride + offset]);
       return ecl_kw;
     }
