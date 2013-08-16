@@ -17,7 +17,13 @@
 cmake_minimum_required (VERSION 2.8)
 
 # additional search modules
-list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
+find_path (OPM_MACROS_ROOT cmake/Modules/OpmInit.cmake
+	PATHS ${opm-macros_ROOT}
+	      ${CMAKE_CURRENT_SOURCE_DIR}
+	DOC "Path to build system macros and scripts"
+	NO_DEFAULT_PATH
+	)
+list (APPEND CMAKE_MODULE_PATH "${OPM_MACROS_ROOT}/cmake/Modules")
 
 # not the same location as most of the other projects; this hook overrides
 macro (dir_hook)
@@ -97,6 +103,14 @@ endmacro (fortran_hook)
 macro (tests_hook)
 	cond_disable_test ("ERT")
 endmacro (tests_hook)
+
+macro (install_hook)
+#	# copy the cmake macros to system when installing
+#	install (
+#		DIRECTORY cmake
+#		DESTINATION share/opm
+#		)
+endmacro (install_hook)
 
 # all setup common to the OPM library modules is done here
 include (OpmLibMain)
