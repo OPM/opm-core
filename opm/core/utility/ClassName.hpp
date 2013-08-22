@@ -1,6 +1,9 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set ts=4 sw=2 et sts=2:
 /*****************************************************************************
+ *   Copyright (C) 2012-2013 by Andreas Lauser                               *
+ *   Copyright (C) 2010 by Oliver Sander                                     *
+ *   Copyright (C) 2011 by Martin Nolte                                      *
  *                                                                           *
  *   This program is free software: you can redistribute it and/or modify    *
  *   it under the terms of the GNU General Public License as published by    *
