@@ -326,6 +326,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/reorder/reordersequence.h
 	opm/core/transport/reorder/tarjan.h
 	opm/core/utility/Average.hpp
+	opm/core/utility/ClassName.hpp
 	opm/core/utility/DataMap.hpp
 	opm/core/utility/ErrorMacros.hpp
 	opm/core/utility/Event.hpp
@@ -360,6 +361,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/parameters/ParameterXML.hpp
 	opm/core/utility/parameters/tinyxml/tinystr.h
 	opm/core/utility/parameters/tinyxml/tinyxml.h
+	opm/core/utility/PropertySystem.hpp
 	opm/core/wells/InjectionSpecification.hpp
 	opm/core/wells/ProductionSpecification.hpp
 	opm/core/wells/WellCollection.hpp
