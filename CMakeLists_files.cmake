@@ -295,7 +295,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/BlackoilState.hpp
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
-	opm/core/simulator/SimulatorIncompTwophase_impl.hpp
 	opm/core/simulator/SimulatorReport.hpp
 	opm/core/simulator/SimulatorTimer.hpp
 	opm/core/simulator/TwophaseState.hpp
