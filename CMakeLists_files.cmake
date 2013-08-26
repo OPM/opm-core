@@ -111,6 +111,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/transport/reorder/TransportSolverTwophaseReorder.cpp
 	opm/core/transport/reorder/reordersequence.cpp
 	opm/core/transport/reorder/tarjan.c
+	opm/core/utility/Event.cpp
 	opm/core/utility/MonotCubicInterpolator.cpp
 	opm/core/utility/StopWatch.cpp
 	opm/core/utility/VelocityInterpolation.cpp
@@ -141,6 +142,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_dgbasis.cpp
 	tests/test_cartgrid.cpp
 	tests/test_cubic.cpp
+	tests/test_event.cpp
 	tests/test_nonuniformtablelinear.cpp
 	tests/test_sparsevector.cpp
 	tests/test_sparsetable.cpp
@@ -327,6 +329,8 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/Average.hpp
 	opm/core/utility/DataMap.hpp
 	opm/core/utility/ErrorMacros.hpp
+	opm/core/utility/Event.hpp
+	opm/core/utility/Event_impl.hpp
 	opm/core/utility/Factory.hpp
 	opm/core/utility/MonotCubicInterpolator.hpp
 	opm/core/utility/NonuniformTableLinear.hpp
