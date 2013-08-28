@@ -68,14 +68,14 @@ namespace Opm
     {
         static double handleBracketingFailure(const double x0, const double x1, const double f0, const double f1)
         {
-            MESSAGE("Error in parameters, zero not bracketed: [a, b] = ["
+            OPM_MESSAGE("Error in parameters, zero not bracketed: [a, b] = ["
                     << x0 << ", " << x1 << "]    f(a) = " << f0 << "   f(b) = " << f1
                     << "");
             return std::fabs(f0) < std::fabs(f1) ? x0 : x1;
         }
         static double handleTooManyIterations(const double x0, const double x1, const int maxiter)
         {
-            MESSAGE("Maximum number of iterations exceeded: " << maxiter
+            OPM_MESSAGE("Maximum number of iterations exceeded: " << maxiter
                     << ", current interval is [" << std::min(x0, x1) << ", "
                     << std::max(x0, x1) << "]");
             return 0.5*(x0 + x1);

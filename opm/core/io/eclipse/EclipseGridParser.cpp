@@ -569,7 +569,7 @@ void EclipseGridParser::convertToSI()
         } else if (key == "RS") {
             unit = units_.gasvol_s / units_.liqvol_s;
         } else if (key == "MAPAXES") {
-            MESSAGE("Not applying units to MAPAXES yet!");
+            OPM_MESSAGE("Not applying units to MAPAXES yet!");
             unit = 1.0;
         } else {
             OPM_THROW(std::runtime_error, "Units for field " << key << " not specified. Cannon convert to SI.");
