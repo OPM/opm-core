@@ -75,7 +75,7 @@ namespace Opm
 	    } else if (state_ == Stopped) {
 		run_time = stop_time_;
 	    } else {
-		ASSERT(state_ == UnStarted);
+		assert(state_ == UnStarted);
 		OPM_THROW(std::runtime_error, "Called secsSinceLast() on a StopWatch that had not been started.");
 	    }
 	    boost::posix_time::time_duration dur = run_time - last_time_;
@@ -91,7 +91,7 @@ namespace Opm
 	    } else if (state_ == Stopped) {
 		run_time = stop_time_;
 	    } else {
-		ASSERT(state_ == UnStarted);
+		assert(state_ == UnStarted);
 		OPM_THROW(std::runtime_error, "Called secsSinceStart() on a StopWatch that had not been started.");
 	    }
 	    boost::posix_time::time_duration dur = run_time - start_time_;

@@ -138,7 +138,7 @@ namespace
     template<class Vec>
     inline int readDefaultedVectorData(std::istream& is, Vec& data, int max_values)
     {
-        ASSERT(int(data.size()) >= max_values);
+        assert(int(data.size()) >= max_values);
 	const std::ctype<char>& ct = std::use_facet< std::ctype<char> >(std::locale::classic());
         int num_values = 0;
         while (is) {
@@ -210,7 +210,7 @@ namespace
 	    } else {
 		if (is.peek() == int('*')) {
 		    is.ignore(); // ignore the '*'
-		    ASSERT(int(candidate) == 1);
+		    assert(int(candidate) == 1);
 		    data.push_back(-1); // Set new flag for interpolation.
 		} else {
 		    data.push_back(candidate);

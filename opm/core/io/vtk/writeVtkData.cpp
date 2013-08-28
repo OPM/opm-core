@@ -45,8 +45,8 @@ namespace Opm
         int dimension = 3;
         int num_cells = dims[0]*dims[1]*dims[2];
 
-        ASSERT(dimension == 2 || dimension == 3);
-        ASSERT(num_cells == dims[0]*dims[1]* (dimension == 2 ? 1 : dims[2]));
+        assert(dimension == 2 || dimension == 3);
+        assert(num_cells == dims[0]*dims[1]* (dimension == 2 ? 1 : dims[2]));
 
         os << "# vtk DataFile Version 2.0\n";
         os << "Structured Grid\n \n";

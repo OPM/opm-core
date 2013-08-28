@@ -57,7 +57,7 @@ namespace Opm
         /// the vectors n[i] for i = 0..(dim-1), each n[i] is of size dim.
         double cornerVolume(double** n, const int dim)
         {
-            ASSERT(dim == 2 || dim == 3);
+            assert(dim == 2 || dim == 3);
             double det = (dim == 2) ? determinantOf(n[0], n[1]) : determinantOf(n[0], n[1], n[2]);
             return std::fabs(det);
         }
@@ -140,7 +140,7 @@ namespace Opm
                     fnorm[fi] = grid_.face_normals + dim*(face_it->second);
                     vert_adj_faces[fi] = face_it->second;
                 }
-                ASSERT(fi == dim);
+                assert(fi == dim);
                 adj_faces_.insert(adj_faces_.end(), vert_adj_faces.begin(), vert_adj_faces.end());
                 const double corner_vol = cornerVolume(fnorm, dim);
                 ci.volume = corner_vol;
@@ -154,7 +154,7 @@ namespace Opm
             }
             corner_info_.appendRow(cell_corner_info.begin(), cell_corner_info.end());
         }
-        ASSERT(corner_id_count == corner_info_.dataSize());
+        assert(corner_id_count == corner_info_.dataSize());
     }
 
 
@@ -221,7 +221,7 @@ namespace Opm
                 }
                 // Assumes outward-pointing normals, so negate factor if necessary.
                 if (grid_.face_cells[2*face] != cell) {
-                    ASSERT(grid_.face_cells[2*face + 1] == cell);
+                    assert(grid_.face_cells[2*face + 1] == cell);
                     factor = -factor;
                 }
                 xb[i] *= factor;

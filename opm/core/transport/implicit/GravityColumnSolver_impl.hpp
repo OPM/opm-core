@@ -165,7 +165,7 @@ namespace Opm
 		    if (c1 == prev_cell || c2 == prev_cell) {
 			DL[ci-1] += j2contrib;
 		    } else {
-			ASSERT(c1 == next_cell || c2 == next_cell);
+			assert(c1 == next_cell || c2 == next_cell);
 			DU[ci] += j2contrib;
 		    }
 		    D[ci] += j1contrib;

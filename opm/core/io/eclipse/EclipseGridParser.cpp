@@ -418,7 +418,7 @@ void EclipseGridParser::readImpl(istream& is)
                     tstep = dynamic_cast<TSTEP*>(sb_ptr.get());
                     sm["TSTEP"] = sb_ptr;
                 }
-                ASSERT(tstep != 0);
+                assert(tstep != 0);
                 // Append new steps to current TSTEP object
                 if (keyword == "TSTEP") {
                     const int num_steps_old = tstep->tstep_.size();
@@ -448,7 +448,7 @@ void EclipseGridParser::readImpl(istream& is)
                     current_reading_mode_ = Regular;
                     special_field_by_epoch_.push_back(SpecialMap());
                     ++current_epoch_;
-                    ASSERT(int(special_field_by_epoch_.size()) == current_epoch_ + 1);
+                    assert(int(special_field_by_epoch_.size()) == current_epoch_ + 1);
                     // Add clones of all existing special fields to new map.
                     SpecialMap& oldmap = special_field_by_epoch_[current_epoch_ - 1];
                     SpecialMap& newmap = special_field_by_epoch_[current_epoch_];
@@ -457,7 +457,7 @@ void EclipseGridParser::readImpl(istream& is)
                             newmap[it->first] = cloneSpecialField(it->first, it->second);
                             //}
                     }
-                    //ASSERT(newmap.count("TSTEP") == 0);
+                    //assert(newmap.count("TSTEP") == 0);
                 }
                 // Check if the keyword already exists. If so, append. Otherwise, create new.
                 SpecialMap::iterator it = special_field_by_epoch_[current_epoch_].find(keyword);
@@ -663,7 +663,7 @@ int EclipseGridParser::numberOfEpochs() const
 void EclipseGridParser::setCurrentEpoch(int epoch)
 //---------------------------------------------------------------------------
 {
-    ASSERT(epoch >= 0 && epoch < numberOfEpochs());
+    assert(epoch >= 0 && epoch < numberOfEpochs());
     current_epoch_ = epoch;
 }
 

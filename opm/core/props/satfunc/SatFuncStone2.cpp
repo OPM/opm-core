@@ -107,7 +107,7 @@ namespace Opm
             kr[wpos] = krw;
             kr[opos] = krow;
         } else {
-            ASSERT(phase_usage.phase_used[Vapour]);
+            assert(phase_usage.phase_used[Vapour]);
             int gpos = phase_usage.phase_pos[Vapour];
             int opos = phase_usage.phase_pos[Liquid];
             double sg = s[gpos];
@@ -164,7 +164,7 @@ namespace Opm
             dkrds[wpos + wpos*np] = dkrww;
             dkrds[opos + wpos*np] = dkrow; // Row opos, column wpos, fortran order.
         } else {
-            ASSERT(phase_usage.phase_used[Vapour]);
+            assert(phase_usage.phase_used[Vapour]);
             int gpos = phase_usage.phase_pos[Vapour];
             int opos = phase_usage.phase_pos[Liquid];
             double sg = s[gpos];
@@ -301,7 +301,7 @@ namespace Opm
             kr[wpos] = krw;
             kr[opos] = krow;
         } else {
-            ASSERT(phase_usage.phase_used[Vapour]);
+            assert(phase_usage.phase_used[Vapour]);
             int gpos = phase_usage.phase_pos[Vapour];
             int opos = phase_usage.phase_pos[Liquid];
             double sg = s[gpos];
@@ -358,7 +358,7 @@ namespace Opm
             dkrds[wpos + wpos*np] = dkrww;
             dkrds[opos + wpos*np] = dkrow; // Row opos, column wpos, fortran order.
         } else {
-            ASSERT(phase_usage.phase_used[Vapour]);
+            assert(phase_usage.phase_used[Vapour]);
             int gpos = phase_usage.phase_pos[Vapour];
             int opos = phase_usage.phase_pos[Liquid];
             double sg = s[gpos];

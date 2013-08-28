@@ -149,7 +149,7 @@ namespace Opm
         /// Returns the size of a table row.
         int rowSize(int row) const
         {
-            ASSERT(row >= 0 && row < size());
+            assert(row >= 0 && row < size());
             return row_start_[row + 1] - row_start_[row];
         }
 
@@ -167,7 +167,7 @@ namespace Opm
         /// Returns a row of the table.
         row_type operator[](int row) const
         {
-            ASSERT(row >= 0 && row < size());
+            assert(row >= 0 && row < size());
             const T* start_ptr = data_.empty() ? 0 : &data_[0];
             return row_type(start_ptr + row_start_[row], start_ptr + row_start_[row + 1]);
         }
@@ -175,7 +175,7 @@ namespace Opm
         /// Returns a mutable row of the table.
         mutable_row_type operator[](int row)
         {
-            ASSERT(row >= 0 && row < size());
+            assert(row >= 0 && row < size());
             T* start_ptr = data_.empty() ? 0 : &data_[0];
             return mutable_row_type(start_ptr + row_start_[row], start_ptr + row_start_[row + 1]);
         }

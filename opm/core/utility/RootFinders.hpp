@@ -284,7 +284,7 @@ namespace Opm
                                              const double fa,
                                              const double fb)
         {
-            ASSERT(fa*fb < 0.0);
+            assert(fa*fb < 0.0);
             return (b*fa - a*fb)/(fa - fb);
         }
 

@@ -141,7 +141,7 @@ namespace Opm
             if (grid_.dimensions == 2) {
                 return 3*(grid_.cell_facepos[cell_ + 1] - grid_.cell_facepos[cell_]);
             }
-            ASSERT(grid_.dimensions == 3);
+            assert(grid_.dimensions == 3);
             int sumnodes = 0;
             for (int hf = grid_.cell_facepos[cell_]; hf < grid_.cell_facepos[cell_ + 1]; ++hf) {
                 const int face = grid_.cell_faces[hf];
@@ -181,7 +181,7 @@ namespace Opm
                 }
                 return;
             }
-            ASSERT(dim == 3);
+            assert(dim == 3);
             int tetindex = index / 4;
             const int subindex = index % 4;
             const double* nc = grid_.node_coordinates;
@@ -227,7 +227,7 @@ namespace Opm
                 const double* nc1 = grid_.node_coordinates + dim*nptr[1];
                 return triangleArea2d(nc0, nc1, cc)/3.0;
             }
-            ASSERT(dim == 3);
+            assert(dim == 3);
             int tetindex = index / 4;
             const double* nc = grid_.node_coordinates;
             for (int hf = grid_.cell_facepos[cell_]; hf < grid_.cell_facepos[cell_ + 1]; ++hf) {

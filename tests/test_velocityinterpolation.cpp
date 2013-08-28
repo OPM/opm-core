@@ -41,7 +41,7 @@ namespace
     void computeFlux(const UnstructuredGrid& grid, const std::vector<double>& v, std::vector<double>& flux)
     {
         const int dim = v.size();
-        ASSERT(dim == grid.dimensions);
+        assert(dim == grid.dimensions);
         flux.resize(grid.number_of_faces);
         for (int face = 0; face < grid.number_of_faces; ++face) {
             flux[face] = std::inner_product(v.begin(), v.end(), grid.face_normals + face*dim, 0.0);
@@ -54,7 +54,7 @@ namespace
                           const std::vector<double>& x,
                           std::vector<double>& v)
     {
-        ASSERT(v0.size() == v1.size() && v0.size() == x.size());
+        assert(v0.size() == v1.size() && v0.size() == x.size());
         const int dim = v0.size();
         v.resize(dim);
         for (int dd = 0; dd < dim; ++dd) {
@@ -70,7 +70,7 @@ namespace
                            std::vector<double>& flux)
     {
         const int dim = v0.size();
-        ASSERT(dim == grid.dimensions);
+        assert(dim == grid.dimensions);
         flux.resize(grid.number_of_faces);
         std::vector<double> x(dim);
         std::vector<double> v(dim);
@@ -85,7 +85,7 @@ namespace
 
     double vectorDiff2(const std::vector<double>& v1, const std::vector<double>& v2)
     {
-        ASSERT(v1.size() == v2.size());
+        assert(v1.size() == v2.size());
         const int sz = v1.size();
         double vdiff = 0.0;
         for (int i = 0; i < sz; ++i) {

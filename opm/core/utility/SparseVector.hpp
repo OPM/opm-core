@@ -81,8 +81,8 @@ namespace Opm
 	      default_elem_()
 	{
 #ifndef NDEBUG
-	    ASSERT(sz >= 0);
-	    ASSERT(indices_.size() == data_.size());
+	    assert(sz >= 0);
+	    assert(indices_.size() == data_.size());
 	    int last_index = -1;
 	    int num_ind = indices_.size();
 	    for (int i = 0; i < num_ind; ++i) {
@@ -101,8 +101,8 @@ namespace Opm
 	/// Elements must be added in index order.
 	void addElement(const T& elem, int index)
 	{
-	    ASSERT(indices_.empty() || index > indices_.back());
-	    ASSERT(index < size_);
+	    assert(indices_.empty() || index > indices_.back());
+	    assert(index < size_);
 	    data_.push_back(elem);
 	    indices_.push_back(index);
 	}
@@ -146,8 +146,8 @@ namespace Opm
 	/// the vector has the given index.
 	const T& element(int index) const
 	{
-	    ASSERT(index >= 0);
-	    ASSERT(index < size_);
+	    assert(index >= 0);
+	    assert(index < size_);
 	    std::vector<int>::const_iterator lb = std::lower_bound(indices_.begin(), indices_.end(), index);
 	    if (lb != indices_.end() && *lb == index) {
 		return data_[lb - indices_.begin()];
@@ -161,8 +161,8 @@ namespace Opm
 	/// \return the nzindex'th nonzero element.
 	const T& nonzeroElement(int nzindex) const
 	{
-	    ASSERT(nzindex >= 0);
-	    ASSERT(nzindex < nonzeroSize());
+	    assert(nzindex >= 0);
+	    assert(nzindex < nonzeroSize());
 	    return data_[nzindex];
 	}
 
@@ -171,8 +171,8 @@ namespace Opm
 	/// \return the index of the nzindex'th nonzero element.
 	int nonzeroIndex(int nzindex) const
 	{
-	    ASSERT(nzindex >= 0);
-	    ASSERT(nzindex < nonzeroSize());
+	    assert(nzindex >= 0);
+	    assert(nzindex < nonzeroSize());
 	    return indices_[nzindex];
 	}
 
