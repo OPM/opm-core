@@ -53,7 +53,7 @@ namespace Opm
         } else if (deck.hasField("DXV") && deck.hasField("DYV") && deck.hasField("DZV")) {
             initFromDeckTensorgrid(deck);
         } else {
-            THROW("Could not initialize grid from deck. "
+            OPM_THROW(std::runtime_error, "Could not initialize grid from deck. "
                   "Need either ZCORN + COORD or DXV + DYV + DZV keywords.");
         }
     }
@@ -66,7 +66,7 @@ namespace Opm
     {
         ug_ = create_grid_cart2d(nx, ny, 1.0, 1.0);
         if (!ug_) {
-            THROW("Failed to construct grid.");
+            OPM_THROW(std::runtime_error, "Failed to construct grid.");
         }
     }
 
@@ -74,7 +74,7 @@ namespace Opm
     {
         ug_ = create_grid_cart2d(nx, ny, dx, dy);
         if (!ug_) {
-            THROW("Failed to construct grid.");
+            OPM_THROW(std::runtime_error, "Failed to construct grid.");
         }
     }
 
@@ -84,7 +84,7 @@ namespace Opm
     {
         ug_ = create_grid_cart3d(nx, ny, nz);
         if (!ug_) {
-            THROW("Failed to construct grid.");
+            OPM_THROW(std::runtime_error, "Failed to construct grid.");
         }
     }
 
@@ -97,7 +97,7 @@ namespace Opm
     {
         ug_ = create_grid_hexa3d(nx, ny, nz, dx, dy, dz);
         if (!ug_) {
-            THROW("Failed to construct grid.");
+            OPM_THROW(std::runtime_error, "Failed to construct grid.");
         }
     }
 
@@ -111,7 +111,7 @@ namespace Opm
     {
         ug_ = read_grid(input_filename.c_str());
         if (!ug_) {
-            THROW("Failed to read grid from file " << input_filename);
+            OPM_THROW(std::runtime_error, "Failed to read grid from file " << input_filename);
         }
     }
 
@@ -148,7 +148,7 @@ namespace Opm
         // Process grid.
         ug_ = create_grid_cornerpoint(&grdecl, 0.0);
         if (!ug_) {
-            THROW("Failed to construct grid.");
+            OPM_THROW(std::runtime_error, "Failed to construct grid.");
         }
     }
 
@@ -175,7 +175,7 @@ namespace Opm
         } else if (deck.hasField("SPECGRID")) {
             dims = deck.getSPECGRID().dimensions;
         } else {
-            THROW("Deck must have either DIMENS or SPECGRID.");
+            OPM_THROW(std::runtime_error, "Deck must have either DIMENS or SPECGRID.");
         }
 
         // Extract coordinates (or offsets from top, in case of z).
@@ -188,13 +188,13 @@ namespace Opm
 
         // Check that number of cells given are consistent with DIMENS/SPECGRID.
         if (dims[0] != int(dxv.size())) {
-            THROW("Number of DXV data points do not match DIMENS or SPECGRID.");
+            OPM_THROW(std::runtime_error, "Number of DXV data points do not match DIMENS or SPECGRID.");
         }
         if (dims[1] != int(dyv.size())) {
-            THROW("Number of DYV data points do not match DIMENS or SPECGRID.");
+            OPM_THROW(std::runtime_error, "Number of DYV data points do not match DIMENS or SPECGRID.");
         }
         if (dims[2] != int(dzv.size())) {
-            THROW("Number of DZV data points do not match DIMENS or SPECGRID.");
+            OPM_THROW(std::runtime_error, "Number of DZV data points do not match DIMENS or SPECGRID.");
         }
 
         // Extract top corner depths, if available.
@@ -203,7 +203,7 @@ namespace Opm
         if (deck.hasField("DEPTHZ")) {
             const std::vector<double>& depthz = deck.getFloatingPointValue("DEPTHZ");
             if (depthz.size() != x.size()*y.size()) {
-                THROW("Incorrect size of DEPTHZ: " << depthz.size());
+                OPM_THROW(std::runtime_error, "Incorrect size of DEPTHZ: " << depthz.size());
             }
             top_depths = &depthz[0];
         } else if (deck.hasField("TOPS")) {
@@ -212,7 +212,7 @@ namespace Opm
             // varying TOPS (stair-stepping grid, or not).
             const std::vector<double>& tops = deck.getFloatingPointValue("TOPS");
             if (std::count(tops.begin(), tops.end(), tops[0]) != int(tops.size())) {
-                THROW("We do not support nonuniform TOPS, please use ZCORN/COORDS instead.");
+                OPM_THROW(std::runtime_error, "We do not support nonuniform TOPS, please use ZCORN/COORDS instead.");
             }
             top_depths_vec.resize(x.size()*y.size(), tops[0]);
             top_depths = &top_depths_vec[0];
@@ -222,7 +222,7 @@ namespace Opm
         ug_ = create_grid_tensor3d(dxv.size(), dyv.size(), dzv.size(),
                                    &x[0], &y[0], &z[0], top_depths);
         if (!ug_) {
-            THROW("Failed to construct grid.");
+            OPM_THROW(std::runtime_error, "Failed to construct grid.");
         }
     }
 

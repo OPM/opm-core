@@ -46,9 +46,9 @@ namespace Opm
                                        int stride ) {
 
     if (stride <= 0)
-      THROW("Vector strides must be positive. Got stride = " << stride);
+      OPM_THROW(std::runtime_error, "Vector strides must be positive. Got stride = " << stride);
     if ((stride * std::vector<double>::size_type(grid.number_of_cells)) != data->size())
-      THROW("Internal mismatch grid.number_of_cells: " << grid.number_of_cells << " data size: " << data->size() / stride);
+      OPM_THROW(std::runtime_error, "Internal mismatch grid.number_of_cells: " << grid.number_of_cells << " data size: " << data->size() / stride);
     {
       ecl_kw_type * ecl_kw = ecl_kw_alloc( kw_name.c_str() , grid.number_of_cells , ECL_FLOAT_TYPE );
       for (int i=0; i < grid.number_of_cells; i++)
@@ -135,7 +135,7 @@ namespace Opm
       DataMap::const_iterator i = data.find("saturation");
       if (i != data.end()) {
         if (int(i->second->size()) != 2 * grid.number_of_cells) {
-          THROW("writeECLData() requires saturation field to have two phases.");
+          OPM_THROW(std::runtime_error, "writeECLData() requires saturation field to have two phases.");
         }
         ecl_kw_type * swat_kw = ecl_kw_wrapper( grid , "SWAT" , i->second , 0 , 2);
         ecl_rst_file_add_kw( rst_file , swat_kw );
@@ -162,7 +162,7 @@ namespace Opm
                       const std::string&,
                       const std::string&)
     {
-        THROW("Cannot call writeECLData() without ERT library support. Reconfigure opm-core with ERT support and recompile.");
+        OPM_THROW(std::runtime_error, "Cannot call writeECLData() without ERT library support. Reconfigure opm-core with ERT support and recompile.");
     }
 }
 

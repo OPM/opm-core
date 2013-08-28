@@ -252,7 +252,7 @@ int
 main(int argc, char** argv)
 {
   if (argc != 2)
-    THROW("Need the name of ECLIPSE file on command line");
+    OPM_THROW(std::runtime_error, "Need the name of ECLIPSE file on command line");
   {
     std::string outputFile;
     parseFile(argv[1] , outputFile);

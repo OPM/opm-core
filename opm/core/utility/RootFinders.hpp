@@ -50,13 +50,13 @@ namespace Opm
     {
         static double handleBracketingFailure(const double x0, const double x1, const double f0, const double f1)
         {
-            THROW("Error in parameters, zero not bracketed: [a, b] = ["
+            OPM_THROW(std::runtime_error, "Error in parameters, zero not bracketed: [a, b] = ["
                   << x0 << ", " << x1 << "]    f(a) = " << f0 << "   f(b) = " << f1);
             return -1e100; // Never reached.
         }
         static double handleTooManyIterations(const double x0, const double x1, const int maxiter)
         {
-            THROW("Maximum number of iterations exceeded: " << maxiter << "\n"
+            OPM_THROW(std::runtime_error, "Maximum number of iterations exceeded: " << maxiter << "\n"
                   << "Current interval is [" << std::min(x0, x1) << ", "
                   << std::max(x0, x1) << "]");
             return -1e100; // Never reached.
@@ -315,7 +315,7 @@ namespace Opm
             cur_dx = -2.0*cur_dx;
         }
         if (i == max_iters) {
-            THROW("Could not bracket zero in " << max_iters << "iterations.");
+            OPM_THROW(std::runtime_error, "Could not bracket zero in " << max_iters << "iterations.");
         }
         if (cur_dx < 0.0) {
             a = x0 + cur_dx;

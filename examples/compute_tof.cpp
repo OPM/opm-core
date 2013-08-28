@@ -210,7 +210,7 @@ main(int argc, char** argv)
             create_directories(fpath);
         }
         catch (...) {
-            THROW("Creating directories failed: " << fpath);
+            OPM_THROW(std::runtime_error, "Creating directories failed: " << fpath);
         }
         std::string filename = output_dir + "/epoch_timing.param";
         epoch_os.open(filename.c_str(), std::fstream::trunc | std::fstream::out);

@@ -39,7 +39,7 @@ namespace Opm{
           smax_(props.numCells()*props.numPhases())
     {
         if (props.numPhases() != 2) {
-            THROW("SimpleFluid2pWrapper requires 2 phases.");
+            OPM_THROW(std::runtime_error, "SimpleFluid2pWrapper requires 2 phases.");
         }
         const int num_cells = props.numCells();
         std::vector<int> cells(num_cells);

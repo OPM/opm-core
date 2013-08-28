@@ -51,7 +51,7 @@ namespace Opm
         // GAS, PVTG
         const int region_number = 0;
         if (pvtg.size() != 1) {
-            THROW("More than one PVD-region");
+            OPM_THROW(std::runtime_error, "More than one PVD-region");
         }
         saturated_gas_table_.resize(4);
         const int sz = pvtg[region_number].size();
@@ -106,7 +106,7 @@ namespace Opm
                                double* output_dmudp,
                                double* output_dmudr) const
     {
-        THROW("The new fluid interface not yet implemented");
+        OPM_THROW(std::runtime_error, "The new fluid interface not yet implemented");
     }
 
 
@@ -146,7 +146,7 @@ namespace Opm
                           double* output_dbdr) const
 
     {
-        THROW("The new fluid interface not yet implemented");
+        OPM_THROW(std::runtime_error, "The new fluid interface not yet implemented");
     }
 
     /// Gas resolution and its derivatives at bublepoint as a function of p.
@@ -155,7 +155,7 @@ namespace Opm
                              double* output_rbub,
                              double* output_drbubdp) const
     {
-        THROW("The new fluid interface not yet implemented");
+        OPM_THROW(std::runtime_error, "The new fluid interface not yet implemented");
     }
 
     /// Solution factor as a function of p and z.

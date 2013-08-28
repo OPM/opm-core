@@ -228,7 +228,7 @@ namespace Opm {
 	::setLeftPolicy(RangePolicy rp)
 	{
 	    if (rp != ClosestValue) {
-		THROW("Only ClosestValue RangePolicy implemented.");
+		OPM_THROW(std::runtime_error, "Only ClosestValue RangePolicy implemented.");
 	    }
 	    left_ = rp;
 	}
@@ -239,7 +239,7 @@ namespace Opm {
 	::setRightPolicy(RangePolicy rp)
 	{
 	    if (rp != ClosestValue) {
-		THROW("Only ClosestValue RangePolicy implemented.");
+		OPM_THROW(std::runtime_error, "Only ClosestValue RangePolicy implemented.");
 	    }
 	    right_ = rp;
 	}

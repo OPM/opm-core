@@ -87,10 +87,10 @@ namespace Opm
             : grid_(grid), face_(face), degree_(degree)
         {
             if (grid_.dimensions > 3) {
-                THROW("FaceQuadrature only implemented for up to 3 dimensions.");
+                OPM_THROW(std::runtime_error, "FaceQuadrature only implemented for up to 3 dimensions.");
             }
             if (degree_ > 2) {
-                THROW("FaceQuadrature exact for polynomial degrees > 2 not implemented.");
+                OPM_THROW(std::runtime_error, "FaceQuadrature exact for polynomial degrees > 2 not implemented.");
             }
         }
 

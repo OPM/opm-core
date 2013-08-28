@@ -57,7 +57,7 @@ struct SpecialBase {
     //virtual void write(std::ostream& os) const = 0; // Writes data
     virtual void convertToSI(const EclipseUnits&)
     {
-        THROW("Default conversion not defined.");
+        OPM_THROW(std::runtime_error, "Default conversion not defined.");
     }
     typedef std::vector<std::vector<std::vector<double> > > table_t;
 };
@@ -104,7 +104,7 @@ struct SPECGRID : public SpecialBase
         if (ignoreSlashLine(is)) {
             return;
         } else {
-            THROW("End of file reading" << name());
+            OPM_THROW(std::runtime_error, "End of file reading" << name());
         }
     }
 
@@ -164,7 +164,7 @@ struct FAULTS : public SpecialBase
             fault_segment.fault_name = fltname;
             int nread = readDefaultedVectorData(is, fault_segment.ijk_coord, 6);
             if (nread != 6) {
-                THROW("Error reading fault_segment " << fltname);
+                OPM_THROW(std::runtime_error, "Error reading fault_segment " << fltname);
             }
             is >> fault_segment.face;
             faults.push_back(fault_segment);
@@ -370,7 +370,7 @@ struct DENSITY : public SpecialBase
             if (action == 1) {
                 return;     // Alphabetic char. Read next keyword.
             } else if (action == 2) {
-                THROW("Error reading DENSITY. Next character is "
+                OPM_THROW(std::runtime_error, "Error reading DENSITY. Next character is "
                       << (char)is.peek());
             }
         }
@@ -594,7 +594,7 @@ struct PVTW : public SpecialBase
             if (action == 1) {
                 return;     // Alphabetic char. Read next keyword.
             } else if (action == 2) {
-                THROW("Error reading PVTW. Next character is "
+                OPM_THROW(std::runtime_error, "Error reading PVTW. Next character is "
                       <<  (char)is.peek());
             }
         }
@@ -641,7 +641,7 @@ struct ROCK : public SpecialBase
             if (action == 1) {
                 return;     // Alphabetic char. Read next keyword.
             } else if (action == 2) {
-                THROW("Error reading ROCK. Next character is "
+                OPM_THROW(std::runtime_error, "Error reading ROCK. Next character is "
                       << (char)is.peek());
             }
         }
@@ -1655,7 +1655,7 @@ struct WELTARG : public SpecialBase
                        weltarg[i].control_change_[0] == 'T') {
                 weltarg[i].new_value_ *= units.pressure;
             } else {
-                THROW("WELTARG. Unknown control or constraint "
+                OPM_THROW(std::runtime_error, "WELTARG. Unknown control or constraint "
                       << weltarg[i].control_change_[0]);
             }
         }
@@ -1843,7 +1843,7 @@ struct PVCDO : public SpecialBase
             if (action == 1) {
                 return;     // Alphabetic char. Read next keyword.
             } else if (action == 2) {
-                THROW("Error reading PVCDO. Next character is "
+                OPM_THROW(std::runtime_error, "Error reading PVCDO. Next character is "
                       <<  (char)is.peek());
             }
         }
@@ -2321,19 +2321,19 @@ struct ENPTVD : public SpecialBase {
                     is >> ignoreLine;
                     break;
                 } else {
-                    THROW("Error reading ENPTVD data - none or incomplete table.");
+                    OPM_THROW(std::runtime_error, "Error reading ENPTVD data - none or incomplete table.");
                 }
             }
             std::vector<double> data(9,-1.0);
             int nread = readDefaultedVectorData(is, data, 9);
             if (nread != 9) {
-                THROW("Error reading ENPTVD data - depth and 8 saturations pr line.");
+                OPM_THROW(std::runtime_error, "Error reading ENPTVD data - depth and 8 saturations pr line.");
             }
             if (data[0] == -1.0) {
-                THROW("Error reading ENPTVD data - depth can not be defaulted.");
+                OPM_THROW(std::runtime_error, "Error reading ENPTVD data - depth can not be defaulted.");
             }
             if ((data[4] != -1.0) || (data[5] != -1.0) || (data[6] != -1.0) || (data[8] != -1.0)) {
-                THROW("Error reading ENPTVD data - non-default values in column 5-7,9 not supported.");
+                OPM_THROW(std::runtime_error, "Error reading ENPTVD data - non-default values in column 5-7,9 not supported.");
             }
             sub_table[0].push_back(data[0]); //depth
             sub_table[1].push_back(data[1]); //swl
@@ -2352,7 +2352,7 @@ struct ENPTVD : public SpecialBase {
                         ++it_sub;
                     }
                 } else {
-                    THROW("Error reading ENPTVD data - minimum 2 lines pr sub-table.");
+                    OPM_THROW(std::runtime_error, "Error reading ENPTVD data - minimum 2 lines pr sub-table.");
                 }
             }
         }
@@ -2408,19 +2408,19 @@ struct ENKRVD : public SpecialBase {
                     is >> ignoreLine;
                     break;
                 } else {
-                    THROW("Error reading ENKRVD data - none or incomplete table.");
+                    OPM_THROW(std::runtime_error, "Error reading ENKRVD data - none or incomplete table.");
                 }
             }
             std::vector<double> data(8,-1.0);
             int nread = readDefaultedVectorData(is, data, 8);
             if (nread != 8) {
-                THROW("Error reading ENKRVD data - depth and 7 relperms pr line.");
+                OPM_THROW(std::runtime_error, "Error reading ENKRVD data - depth and 7 relperms pr line.");
             }
             if (data[0] == -1.0) {
-                THROW("Error reading ENKRVD data - depth can not be defaulted.");
+                OPM_THROW(std::runtime_error, "Error reading ENKRVD data - depth can not be defaulted.");
             }
             if ((data[2] != -1.0) || (data[5] != -1.0) || (data[6] != -1.0)) {
-                THROW("Error reading ENKRVD data - non-default values in column 3,6-7 not supported.");
+               OPM_THROW(std::runtime_error, "Error reading ENKRVD data - non-default values in column 3,6-7 not supported.");
             }
             sub_table[0].push_back(data[0]); //depth
             sub_table[1].push_back(data[1]); //krw
@@ -2439,7 +2439,7 @@ struct ENKRVD : public SpecialBase {
                         ++it_sub;
                     }
                 } else {
-                    THROW("Error reading ENKRVD data - minimum 2 lines pr sub-table.");
+                    OPM_THROW(std::runtime_error, "Error reading ENKRVD data - minimum 2 lines pr sub-table.");
                 }
             }
         }

@@ -112,7 +112,7 @@ namespace
                     char buffer[1000];
                     is.getline(buffer, sizeof(buffer));
                     std::cout << buffer<<std::endl;
-                    THROW("Encountered format error while reading data values. Value = " << dummy);
+                    OPM_THROW(std::runtime_error, "Encountered format error while reading data values. Value = " << dummy);
 		}
 	    } else {
 		if (is.peek() == int('*')) {
@@ -126,7 +126,7 @@ namespace
 	    }
 	}
 	if (!is) {
-	    THROW("Encountered error while reading data values.");
+	    OPM_THROW(std::runtime_error, "Encountered error while reading data values.");
 	}
     }
 
@@ -154,7 +154,7 @@ namespace
 		} else if (dummy[0] == '-') {  // "comment test"
                     is >> ignoreLine;   // This line is a comment
                 } else {
-                    THROW("Encountered format error while reading data values. Value = " << dummy);
+                    OPM_THROW(std::runtime_error, "Encountered format error while reading data values. Value = " << dummy);
                 }
             } else {
                 if (is.peek() == int('*')) {
@@ -179,7 +179,7 @@ namespace
             }
         }
         if (!is) {
-            THROW("Encountered error while reading data values.");
+            OPM_THROW(std::runtime_error, "Encountered error while reading data values.");
         }
         return num_values;
     }
@@ -205,7 +205,7 @@ namespace
 		} else if (dummy[0] == '-') {  // "comment test"
 		    is >> ignoreLine; // This line is a comment
 		} else {
-                    THROW("Encountered format error while reading data values. Value = " << dummy);
+                    OPM_THROW(std::runtime_error, "Encountered format error while reading data values. Value = " << dummy);
 		}
 	    } else {
 		if (is.peek() == int('*')) {
@@ -218,7 +218,7 @@ namespace
 	    }
 	}
 	if (!is) {
-	    THROW("Encountered error while reading data values.");
+	    OPM_THROW(std::runtime_error, "Encountered error while reading data values.");
 	}
     }
 
@@ -318,7 +318,7 @@ namespace
                     // the last table, and emptied it. If not,
                     // we have an error.
                     if (!table.empty()) {
-                        THROW("Reached EOF while still building PVT table. Missing end-of-table (slash)?");
+                        OPM_THROW(std::runtime_error, "Reached EOF while still building PVT table. Missing end-of-table (slash)?");
                     }
                     return;
                 }
@@ -341,7 +341,7 @@ namespace
 		    std::ostringstream oss;
 		    oss << "Error reading " << field_name
 		       << ". Next character is " <<  (char)is.peek();
-		    THROW(oss.str());
+		    OPM_THROW(std::runtime_error, oss.str());
 		}
 	    }
 	}
@@ -374,7 +374,7 @@ namespace
 		std::ostringstream oss;
 		oss << "Error reading " << field_name
 		    << ". Next character is " <<  (char)is.peek();
-		THROW(oss.str());
+		OPM_THROW(std::runtime_error, oss.str());
 	    }
 	}
     }
@@ -452,7 +452,7 @@ namespace
 		std::ostringstream oss;
 		oss << "Error reading " << field_name
 		    << ". Next character is " <<  (char)is.peek();
-		THROW(oss.str());
+		OPM_THROW(std::runtime_error, oss.str());
 	    }
 	}
     }

@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
         } else if (deck.hasField("PVCDO")) {
             props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtConstCompr(deck.getPVCDO().pvcdo_));
         } else {
-            THROW("Input is missing PVDO or PVTO\n");
+            OPM_THROW(std::runtime_error, "Input is missing PVDO or PVTO\n");
         }
     }
     // Gas PVT
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
         } else if (deck.hasField("PVTG")) {
             props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(deck.getPVTG().pvtg_));
         } else {
-            THROW("Input is missing PVDG or PVTG\n");
+            OPM_THROW(std::runtime_error, "Input is missing PVDG or PVTG\n");
         }
     }
 

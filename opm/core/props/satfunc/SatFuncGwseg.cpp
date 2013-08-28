@@ -67,7 +67,7 @@ namespace Opm
             buildUniformMonotoneTable(sg, pcog, samples, pcog_);
             smin_[phase_usage.phase_pos[Vapour]] = sg[0];
             if (std::fabs(sg.back() + swco - 1.0) > 1e-3) {
-                THROW("Gas maximum saturation in SGOF table = " << sg.back() <<
+                OPM_THROW(std::runtime_error, "Gas maximum saturation in SGOF table = " << sg.back() <<
                       ", should equal (1.0 - connate water sat) = " << (1.0 - swco));
             }
             smax_[phase_usage.phase_pos[Vapour]] = sg.back();
@@ -272,7 +272,7 @@ namespace Opm
             pcog_ = NonuniformTableLinear<double>(sg, pcog);
             smin_[phase_usage.phase_pos[Vapour]] = sg[0];
             if (std::fabs(sg.back() + swco - 1.0) > 1e-3) {
-                THROW("Gas maximum saturation in SGOF table = " << sg.back() <<
+                OPM_THROW(std::runtime_error, "Gas maximum saturation in SGOF table = " << sg.back() <<
                       ", should equal (1.0 - connate water sat) = " << (1.0 - swco));
             }
             smax_[phase_usage.phase_pos[Vapour]] = sg.back();

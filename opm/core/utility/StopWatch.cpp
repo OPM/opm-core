@@ -61,7 +61,7 @@ namespace Opm
 	void StopWatch::stop()
 	{
 	    if (state_ != Running) {
-		THROW("Called stop() on a StopWatch that was not running.");
+		OPM_THROW(std::runtime_error, "Called stop() on a StopWatch that was not running.");
 	    }
 	    stop_time_ = boost::posix_time::microsec_clock::local_time();
 	    state_ = Stopped;
@@ -76,7 +76,7 @@ namespace Opm
 		run_time = stop_time_;
 	    } else {
 		ASSERT(state_ == UnStarted);
-		THROW("Called secsSinceLast() on a StopWatch that had not been started.");
+		OPM_THROW(std::runtime_error, "Called secsSinceLast() on a StopWatch that had not been started.");
 	    }
 	    boost::posix_time::time_duration dur = run_time - last_time_;
 	    last_time_ = run_time;
@@ -92,7 +92,7 @@ namespace Opm
 		run_time = stop_time_;
 	    } else {
 		ASSERT(state_ == UnStarted);
-		THROW("Called secsSinceStart() on a StopWatch that had not been started.");
+		OPM_THROW(std::runtime_error, "Called secsSinceStart() on a StopWatch that had not been started.");
 	    }
 	    boost::posix_time::time_duration dur = run_time - start_time_;
 	    return double(dur.total_microseconds())/1000000.0;

@@ -42,7 +42,7 @@ namespace Opm
         // OIL, PVTO
         const int region_number = 0;
         if (pvto.size() != 1) {
-            THROW("More than one PVD-region");
+            OPM_THROW(std::runtime_error, "More than one PVD-region");
         }
         saturated_oil_table_.resize(4);
         const int sz =  pvto[region_number].size();

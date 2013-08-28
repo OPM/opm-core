@@ -218,11 +218,11 @@ namespace Opm
             // we have to create the cumulative ones.
             int num_rows = rowsize_end - rowsize_beg;
             if (num_rows < 1) {
-                THROW("Must have at least one row. Got " << num_rows << " rows.");
+                OPM_THROW(std::runtime_error, "Must have at least one row. Got " << num_rows << " rows.");
             }
 #ifndef NDEBUG
             if (*std::min_element(rowsize_beg, rowsize_end) < 0) {
-                THROW("All row sizes must be at least 0.");
+                OPM_THROW(std::runtime_error, "All row sizes must be at least 0.");
             }
 #endif
             row_start_.resize(num_rows + 1);
@@ -230,7 +230,7 @@ namespace Opm
             std::partial_sum(rowsize_beg, rowsize_end, row_start_.begin() + 1);
             // Check that data_ and row_start_ match.
             if (int(data_.size()) != row_start_.back()) {
-                THROW("End of row start indices different from data size.");
+                OPM_THROW(std::runtime_error, "End of row start indices different from data size.");
             }
 
 	}

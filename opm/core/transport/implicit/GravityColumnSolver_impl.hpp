@@ -114,7 +114,7 @@ namespace Opm
 	    ++iter;
 	}
 	if (max_delta >= tol_) {
-	    THROW("Failed to converge!");
+	    OPM_THROW(std::runtime_error, "Failed to converge!");
 	}
 	// Finalize.
 	// model_.finishIteration(); // Doesn't do anything in th 2p model.
@@ -184,7 +184,7 @@ namespace Opm
 	// Solution will be written to rhs.
 	dgtsv_(&colSize, &num_rhs, DL, D, DU, &rhs[0], &colSize, &info);
 	if (info != 0) {
-	    THROW("Lapack reported error in dgtsv: " << info);
+	    OPM_THROW(std::runtime_error, "Lapack reported error in dgtsv: " << info);
 	}
 	for (int ci = 0; ci < col_size; ++ci) {
 	    sol_vec[column_cells[ci]] = -rhs[ci];

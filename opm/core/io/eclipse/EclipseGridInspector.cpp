@@ -59,7 +59,7 @@ EclipseGridInspector::EclipseGridInspector(const EclipseGridParser& parser)
     keywords.push_back("ZCORN");
 
     if (!parser_.hasFields(keywords)) {
-	THROW("Needed field is missing in file");
+	OPM_THROW(std::runtime_error, "Needed field is missing in file");
     }
 
     if (parser_.hasField("SPECGRID")) {
@@ -73,7 +73,7 @@ EclipseGridInspector::EclipseGridInspector(const EclipseGridParser& parser)
         logical_gridsize_[1] = dim[1];
         logical_gridsize_[2] = dim[2];
     } else {
-        THROW("Found neither SPECGRID nor DIMENS in file. At least one is needed.");
+        OPM_THROW(std::runtime_error, "Found neither SPECGRID nor DIMENS in file. At least one is needed.");
     }
 
 }

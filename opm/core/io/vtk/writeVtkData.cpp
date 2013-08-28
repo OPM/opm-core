@@ -144,7 +144,7 @@ namespace Opm
                       std::ostream& os)
     {
         if (grid.dimensions != 3) {
-            THROW("Vtk output for 3d grids only");
+            OPM_THROW(std::runtime_error, "Vtk output for 3d grids only");
         }
         os.precision(12);
         os << "<?xml version=\"1.0\"?>\n";

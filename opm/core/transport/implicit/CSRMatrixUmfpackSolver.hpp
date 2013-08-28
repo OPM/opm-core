@@ -58,7 +58,7 @@ namespace Opm
 #if HAVE_SUITESPARSE_UMFPACK_H
                 call_UMFPACK(const_cast<CSRMatrix*>(A), b, x);
 #else
-    THROW("Cannot use implicit transport solver without UMFPACK. "
+    OPM_THROW(std::runtime_error, "Cannot use implicit transport solver without UMFPACK. "
           "Reconfigure opm-core with SuiteSparse/UMFPACK support and recompile.");
 #endif
             }
@@ -73,7 +73,7 @@ namespace Opm
 #if HAVE_SUITESPARSE_UMFPACK_H
                 call_UMFPACK(const_cast<CSRMatrix*>(&A), &b[0], &x[0]);
 #else
-    THROW("Cannot use implicit transport solver without UMFPACK. "
+    OPM_THROW(std::runtime_error, "Cannot use implicit transport solver without UMFPACK. "
           "Reconfigure opm-core with SuiteSparse/UMFPACK support and recompile.");
 #endif
             }

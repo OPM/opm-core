@@ -149,7 +149,7 @@ namespace Opm
                     for (int row = 0; row < n; ++row) {
                         std::cerr << "    " << orig_f[row] << '\n';
                     }
-                    THROW("Lapack error: " << info << " encountered in cell " << cell);
+                    OPM_THROW(std::runtime_error, "Lapack error: " << info << " encountered in cell " << cell);
                 }
                 // The solution ends up in f, so we must copy it.
                 std::copy(f.begin(), f.end(), corner_velocity_.begin() + dim*cid);

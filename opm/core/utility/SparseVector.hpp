@@ -88,7 +88,7 @@ namespace Opm
 	    for (int i = 0; i < num_ind; ++i) {
 		int index = indices_[i];
 		if (index <= last_index || index >= sz) {
-		    THROW("Error in SparseVector construction, index is nonincreasing or out of range.");
+		    OPM_THROW(std::runtime_error, "Error in SparseVector construction, index is nonincreasing or out of range.");
 		}
 		last_index = index;
 	    }
