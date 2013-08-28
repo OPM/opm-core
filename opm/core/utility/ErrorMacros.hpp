@@ -59,11 +59,4 @@
 // throw an exception if a condition is true
 #define OPM_ERROR_IF(condition, message) do {if(condition){ OPM_THROW(std::runtime_error, message);}} while(false)
 
-// compatibility macros
-#define THROW(x) OPM_THROW(std::runtime_error, x)
-#define ASSERT(cond) assert(cond)
-#define ASSERT2(cond, x) assert(cond)
-#define MESSAGE(x) OPM_MESSAGE(x)
-#define MESSAGE_IF(cond, x) OPM_MESSAGE_IF(cond, x)
-
 #endif // OPM_ERRORMACROS_HPP
