@@ -36,12 +36,12 @@
 #ifndef OPM_ROOTFINDERS_HEADER
 #define OPM_ROOTFINDERS_HEADER
 
-
+#include <opm/core/utility/ErrorMacros.hpp>
 
 #include <algorithm>
 #include <limits>
 #include <cmath>
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <iostream>
 
 namespace Opm
 {

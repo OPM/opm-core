@@ -37,12 +37,14 @@
 #ifndef OPM_SPECIALECLIPSEFIELDS_HEADER
 #define OPM_SPECIALECLIPSEFIELDS_HEADER
 
-#include <string>
-#include <fstream>
-#include <limits>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/io/eclipse/EclipseGridParserHelpers.hpp>
 #include <opm/core/io/eclipse/EclipseUnits.hpp>
+
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <limits>
 
 namespace Opm
 {

@@ -15,6 +15,8 @@
 #include <ert/ecl/fortio.h>
 #endif
 
+#include <iostream>
+
 /*
   Small utility to read through an ECLIPSE input deck and replace
   occurences of (large) numerical fields like COORD and ZCORN with

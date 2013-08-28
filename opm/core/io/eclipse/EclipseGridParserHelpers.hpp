@@ -36,13 +36,15 @@
 #ifndef OPM_ECLIPSEGRIDPARSERHELPERS_HEADER
 #define OPM_ECLIPSEGRIDPARSERHELPERS_HEADER
 
+#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/linearInterpolation.hpp>
+#include <boost/date_time/gregorian/gregorian.hpp>
+
 #include <limits>
 #include <string>
 #include <istream>
 #include <vector>
-#include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/linearInterpolation.hpp>
-#include <boost/date_time/gregorian/gregorian.hpp>
+#include <iostream>
 
 namespace Opm
 {

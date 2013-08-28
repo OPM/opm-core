@@ -37,15 +37,16 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <opm/core/io/eclipse/EclipseGridInspector.hpp>
+#include <opm/core/io/eclipse/EclipseGridParser.hpp>
+#include <opm/core/io/eclipse/SpecialEclipseFields.hpp>
 #include <stdexcept>
 #include <numeric>
 #include <cmath>
 #include <cfloat>
 #include <algorithm>
-#include <opm/core/io/eclipse/EclipseGridInspector.hpp>
-#include <opm/core/io/eclipse/EclipseGridParser.hpp>
-#include <opm/core/io/eclipse/SpecialEclipseFields.hpp>
 #include <array>
+#include <iostream>
 
 namespace Opm
 {

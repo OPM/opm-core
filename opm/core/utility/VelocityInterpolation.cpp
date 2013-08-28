@@ -22,6 +22,8 @@
 #include <opm/core/grid.h>
 #include <opm/core/linalg/blas_lapack.h>
 
+#include <iostream>
+
 namespace Opm
 {
 

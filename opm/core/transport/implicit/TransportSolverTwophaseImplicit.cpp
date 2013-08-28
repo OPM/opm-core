@@ -34,6 +34,8 @@
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 
+#include <iostream>
+
 namespace Opm
 {
 

@@ -20,7 +20,11 @@
 #include <opm/core/transport/GravityColumnSolver.hpp>
 #include <opm/core/linalg/blas_lapack.h>
 #include <opm/core/utility/ErrorMacros.hpp>
+
+#include <iostream>
+
 #include <sys/time.h>
+
 namespace Opm
 {
 
