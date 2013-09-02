@@ -250,6 +250,7 @@ static bool parseFile(const std::string& inputFile, std::string& outputFile, con
 
 int
 main(int argc, char** argv)
+try
 {
   if (argc != 2)
     OPM_THROW(std::runtime_error, "Need the name of ECLIPSE file on command line");
@@ -257,4 +258,8 @@ main(int argc, char** argv)
     std::string outputFile;
     parseFile(argv[1] , outputFile);
   }
+}
+catch (const std::exception &e) {
+    std::cerr << "Program threw an exception: " << e.what() << "\n";
+    throw;
 }
