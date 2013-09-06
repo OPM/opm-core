@@ -149,7 +149,9 @@ namespace Opm
         /// Returns the size of a table row.
         int rowSize(int row) const
         {
-            assert(row >= 0 && row < size());
+#ifndef NDEBUG
+            OPM_ERROR_IF(row < 0 || row >= size(), "Row index " << row << " is out of range");
+#endif
             return row_start_[row + 1] - row_start_[row];
         }
 

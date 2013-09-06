@@ -57,6 +57,6 @@
     } while (false)
 
 // throw an exception if a condition is true
-#define OPM_ERROR_IF(condition, message) do {if(condition){ OPM_THROW(std::runtime_error, message);}} while(false)
+#define OPM_ERROR_IF(condition, message) do {if(condition){ OPM_THROW(std::logic_error, message);}} while(false)
 
 #endif // OPM_ERRORMACROS_HPP
