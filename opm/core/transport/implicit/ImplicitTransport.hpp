@@ -38,6 +38,8 @@
 
 #include <opm/core/transport/implicit/ImplicitAssembly.hpp>
 
+#include <iostream>
+
 namespace Opm {
     namespace ImplicitTransportDetails {
         struct NRControl {

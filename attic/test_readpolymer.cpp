@@ -16,6 +16,8 @@
 
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 
+#include <iostream>
+
 // Test program for reading Eclipse Polymer keywords.
 
 int main(int argc, char** argv)

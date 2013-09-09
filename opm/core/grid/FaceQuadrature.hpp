@@ -87,10 +87,10 @@ namespace Opm
             : grid_(grid), face_(face), degree_(degree)
         {
             if (grid_.dimensions > 3) {
-                THROW("FaceQuadrature only implemented for up to 3 dimensions.");
+                OPM_THROW(std::runtime_error, "FaceQuadrature only implemented for up to 3 dimensions.");
             }
             if (degree_ > 2) {
-                THROW("FaceQuadrature exact for polynomial degrees > 2 not implemented.");
+                OPM_THROW(std::runtime_error, "FaceQuadrature exact for polynomial degrees > 2 not implemented.");
             }
         }
 
@@ -120,12 +120,12 @@ namespace Opm
             const int* fnodes = grid_.face_nodes + grid_.face_nodepos[face_];
             const double* nc = grid_.node_coordinates;
             if (dim == 2) {
-                ASSERT(nn == 2);
+                assert(nn == 2);
                 const double* pa[3] = { nc + dim*fnodes[0], fc, nc + dim*fnodes[1] };
                 std::copy(pa[index], pa[index] + dim, coord);
                 return;
             }
-            ASSERT(dim == 3);
+            assert(dim == 3);
             if (index < nn) {
                 // Boundary edge midpoint.
                 const int node0 = fnodes[index];
@@ -154,7 +154,7 @@ namespace Opm
                 const double simpsonw[3] = { 1.0/6.0, 4.0/6.0, 1.0/6.0 };
                 return grid_.face_areas[face_]*simpsonw[index];
             }
-            ASSERT(dim == 3);
+            assert(dim == 3);
             const double* fc = grid_.face_centroids + dim*face_;
             const int nn = grid_.face_nodepos[face_ + 1] - grid_.face_nodepos[face_];
             const int* fnodes = grid_.face_nodes + grid_.face_nodepos[face_];

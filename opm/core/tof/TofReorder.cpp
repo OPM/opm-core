@@ -22,9 +22,11 @@
 #include <opm/core/grid.h>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/SparseTable.hpp>
+
 #include <algorithm>
 #include <numeric>
 #include <cmath>
+#include <iostream>
 
 namespace Opm
 {
@@ -69,7 +71,7 @@ namespace Opm
         // Sanity check for sources.
         const double cum_src = std::accumulate(source, source + grid_.number_of_cells, 0.0);
         if (std::fabs(cum_src) > *std::max_element(source, source + grid_.number_of_cells)*1e-2) {
-            THROW("Sources do not sum to zero: " << cum_src);
+            OPM_THROW(std::runtime_error, "Sources do not sum to zero: " << cum_src);
         }
 #endif
         tof.resize(grid_.number_of_cells);
@@ -119,7 +121,7 @@ namespace Opm
         // Sanity check for sources.
         const double cum_src = std::accumulate(source, source + grid_.number_of_cells, 0.0);
         if (std::fabs(cum_src) > *std::max_element(source, source + grid_.number_of_cells)*1e-2) {
-            THROW("Sources do not sum to zero: " << cum_src);
+            OPM_THROW(std::runtime_error, "Sources do not sum to zero: " << cum_src);
         }
 #endif
         tof.resize(grid_.number_of_cells);
@@ -146,7 +148,7 @@ namespace Opm
         if (use_multidim_upwind_) {
             face_tof_.resize(grid_.number_of_faces);
             std::fill(face_tof_.begin(), face_tof_.end(), 0.0);
-            THROW("Multidimensional upwind not yet implemented for tracer.");
+            OPM_THROW(std::runtime_error, "Multidimensional upwind not yet implemented for tracer.");
         }
         num_multicell_ = 0;
         max_size_multicell_ = 0;
@@ -329,7 +331,7 @@ namespace Opm
         // Identify the adjacent faces of the upwind cell.
         const int* face_nodes_beg = grid_.face_nodes + grid_.face_nodepos[face];
         const int* face_nodes_end = grid_.face_nodes + grid_.face_nodepos[face + 1];
-        ASSERT(face_nodes_end - face_nodes_beg == 2 || grid_.dimensions != 2);
+        assert(face_nodes_end - face_nodes_beg == 2 || grid_.dimensions != 2);
         adj_faces_.clear();
         for (int hf = grid_.cell_facepos[upwind_cell]; hf < grid_.cell_facepos[upwind_cell + 1]; ++hf) {
             const int f = grid_.cell_faces[hf];
@@ -356,7 +358,7 @@ namespace Opm
         const int num_adj = adj_faces_.size();
         // The assertion below only holds if the grid is edge-conformal.
         // No longer testing, since method no longer requires it.
-        // ASSERT(num_adj == face_nodes_end - face_nodes_beg);
+        // assert(num_adj == face_nodes_end - face_nodes_beg);
         const double flux_face = std::fabs(darcyflux_[face]);
         face_term = 0.0;
         cell_term_factor = 0.0;

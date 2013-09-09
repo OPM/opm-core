@@ -36,13 +36,15 @@
 #ifndef OPM_ECLIPSEGRIDPARSERHELPERS_HEADER
 #define OPM_ECLIPSEGRIDPARSERHELPERS_HEADER
 
+#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/linearInterpolation.hpp>
+#include <boost/date_time/gregorian/gregorian.hpp>
+
 #include <limits>
 #include <string>
 #include <istream>
 #include <vector>
-#include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/linearInterpolation.hpp>
-#include <boost/date_time/gregorian/gregorian.hpp>
+#include <iostream>
 
 namespace Opm
 {
@@ -110,7 +112,7 @@ namespace
                     char buffer[1000];
                     is.getline(buffer, sizeof(buffer));
                     std::cout << buffer<<std::endl;
-                    THROW("Encountered format error while reading data values. Value = " << dummy);
+                    OPM_THROW(std::runtime_error, "Encountered format error while reading data values. Value = " << dummy);
 		}
 	    } else {
 		if (is.peek() == int('*')) {
@@ -124,7 +126,7 @@ namespace
 	    }
 	}
 	if (!is) {
-	    THROW("Encountered error while reading data values.");
+	    OPM_THROW(std::runtime_error, "Encountered error while reading data values.");
 	}
     }
 
@@ -136,7 +138,7 @@ namespace
     template<class Vec>
     inline int readDefaultedVectorData(std::istream& is, Vec& data, int max_values)
     {
-        ASSERT(int(data.size()) >= max_values);
+        assert(int(data.size()) >= max_values);
 	const std::ctype<char>& ct = std::use_facet< std::ctype<char> >(std::locale::classic());
         int num_values = 0;
         while (is) {
@@ -152,7 +154,7 @@ namespace
 		} else if (dummy[0] == '-') {  // "comment test"
                     is >> ignoreLine;   // This line is a comment
                 } else {
-                    THROW("Encountered format error while reading data values. Value = " << dummy);
+                    OPM_THROW(std::runtime_error, "Encountered format error while reading data values. Value = " << dummy);
                 }
             } else {
                 if (is.peek() == int('*')) {
@@ -177,7 +179,7 @@ namespace
             }
         }
         if (!is) {
-            THROW("Encountered error while reading data values.");
+            OPM_THROW(std::runtime_error, "Encountered error while reading data values.");
         }
         return num_values;
     }
@@ -203,12 +205,12 @@ namespace
 		} else if (dummy[0] == '-') {  // "comment test"
 		    is >> ignoreLine; // This line is a comment
 		} else {
-                    THROW("Encountered format error while reading data values. Value = " << dummy);
+                    OPM_THROW(std::runtime_error, "Encountered format error while reading data values. Value = " << dummy);
 		}
 	    } else {
 		if (is.peek() == int('*')) {
 		    is.ignore(); // ignore the '*'
-		    ASSERT(int(candidate) == 1);
+		    assert(int(candidate) == 1);
 		    data.push_back(-1); // Set new flag for interpolation.
 		} else {
 		    data.push_back(candidate);
@@ -216,7 +218,7 @@ namespace
 	    }
 	}
 	if (!is) {
-	    THROW("Encountered error while reading data values.");
+	    OPM_THROW(std::runtime_error, "Encountered error while reading data values.");
 	}
     }
 
@@ -316,7 +318,7 @@ namespace
                     // the last table, and emptied it. If not,
                     // we have an error.
                     if (!table.empty()) {
-                        THROW("Reached EOF while still building PVT table. Missing end-of-table (slash)?");
+                        OPM_THROW(std::runtime_error, "Reached EOF while still building PVT table. Missing end-of-table (slash)?");
                     }
                     return;
                 }
@@ -339,7 +341,7 @@ namespace
 		    std::ostringstream oss;
 		    oss << "Error reading " << field_name
 		       << ". Next character is " <<  (char)is.peek();
-		    THROW(oss.str());
+		    OPM_THROW(std::runtime_error, oss.str());
 		}
 	    }
 	}
@@ -372,7 +374,7 @@ namespace
 		std::ostringstream oss;
 		oss << "Error reading " << field_name
 		    << ". Next character is " <<  (char)is.peek();
-		THROW(oss.str());
+		OPM_THROW(std::runtime_error, oss.str());
 	    }
 	}
     }
@@ -450,7 +452,7 @@ namespace
 		std::ostringstream oss;
 		oss << "Error reading " << field_name
 		    << ". Next character is " <<  (char)is.peek();
-		THROW(oss.str());
+		OPM_THROW(std::runtime_error, oss.str());
 	    }
 	}
     }

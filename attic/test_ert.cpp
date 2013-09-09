@@ -23,13 +23,15 @@
 #include <opm/core/grid/GridManager.hpp>
 #include <opm/core/grid/cart_grid.h>
 #include <opm/core/grid.h>
-#include <cstdio>
-#include <memory>
 #include <opm/core/props/IncompPropertiesBasic.hpp>
 #include <opm/core/props/IncompPropertiesFromDeck.hpp>
 
 
 #include <ert/ecl/ecl_grid.h>
+
+#include <cstdio>
+#include <memory>
+#include <iostream>
 
 using namespace std;
 

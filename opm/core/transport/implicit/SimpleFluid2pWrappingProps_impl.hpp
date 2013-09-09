@@ -39,7 +39,7 @@ namespace Opm{
           smax_(props.numCells()*props.numPhases())
     {
         if (props.numPhases() != 2) {
-            THROW("SimpleFluid2pWrapper requires 2 phases.");
+            OPM_THROW(std::runtime_error, "SimpleFluid2pWrapper requires 2 phases.");
         }
         const int num_cells = props.numCells();
         std::vector<int> cells(num_cells);
@@ -83,11 +83,11 @@ namespace Opm{
         double dpcow[4];
         props_.capPress(1, &s[0], &c, pcow, dpcow);
         pcap = pcow[0];
-        ASSERT(pcow[1] == 0.0);
+        assert(pcow[1] == 0.0);
         dpcap = dpcow[0];
-        ASSERT(dpcow[1] == 0.0);
-        ASSERT(dpcow[2] == 0.0);
-        ASSERT(dpcow[3] == 0.0);
+        assert(dpcow[1] == 0.0);
+        assert(dpcow[2] == 0.0);
+        assert(dpcow[3] == 0.0);
     }
 
     inline double SimpleFluid2pWrappingProps::s_min(int c) const

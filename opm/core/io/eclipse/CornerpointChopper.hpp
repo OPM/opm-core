@@ -249,7 +249,7 @@ namespace Opm
         EclipseGridParser subparser()
         {
             if (parser_.hasField("FIELD") || parser_.hasField("LAB") || parser_.hasField("PVT-M")) {
-                THROW("CornerPointChopper::subparser() cannot handle any eclipse unit system other than METRIC.");
+                OPM_THROW(std::runtime_error, "CornerPointChopper::subparser() cannot handle any eclipse unit system other than METRIC.");
             }
 
             EclipseGridParser sp;

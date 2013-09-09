@@ -33,6 +33,7 @@
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/wells.h>
+#include <iostream>
 #include <iomanip>
 #include <cmath>
 #include <algorithm>
@@ -178,21 +179,21 @@ namespace Opm
         UnstructuredGrid* gg = const_cast<UnstructuredGrid*>(&grid_);
         int ok = ifs_tpfa_assemble(gg, &forces_, &trans_[0], &gpress_omegaweighted_[0], h_);
         if (!ok) {
-            THROW("Failed assembling pressure system.");
+            OPM_THROW(std::runtime_error, "Failed assembling pressure system.");
         }
 
         // Solve.
         linsolver_.solve(h_->A, h_->b, h_->x);
 
         // Obtain solution.
-        ASSERT(int(state.pressure().size()) == grid_.number_of_cells);
-        ASSERT(int(state.faceflux().size()) == grid_.number_of_faces);
+        assert(int(state.pressure().size()) == grid_.number_of_cells);
+        assert(int(state.faceflux().size()) == grid_.number_of_faces);
         ifs_tpfa_solution soln = { NULL, NULL, NULL, NULL };
         soln.cell_press = &state.pressure()[0];
         soln.face_flux  = &state.faceflux()[0];
         if (wells_ != NULL) {
-            ASSERT(int(well_state.bhp().size()) == wells_->number_of_wells);
-            ASSERT(int(well_state.perfRates().size()) == wells_->well_connpos[ wells_->number_of_wells ]);
+            assert(int(well_state.bhp().size()) == wells_->number_of_wells);
+            assert(int(well_state.perfRates().size()) == wells_->well_connpos[ wells_->number_of_wells ]);
             soln.well_flux = &well_state.perfRates()[0];
             soln.well_press = &well_state.bhp()[0];
         }
@@ -268,7 +269,7 @@ namespace Opm
         }
 
         if ((iter == maxiter_) && (res_norm > residual_tol_) && (inc_norm > change_tol_)) {
-            THROW("IncompTpfa::solve() failed to converge in " << maxiter_ << " iterations.");
+            OPM_THROW(std::runtime_error, "IncompTpfa::solve() failed to converge in " << maxiter_ << " iterations.");
         }
 
         std::cout << "Solved pressure in " << iter << " iterations." << std::endl;
@@ -286,7 +287,7 @@ namespace Opm
     void IncompTpfa::computeStaticData()
     {
         if (wells_ && (wells_->number_of_phases != props_.numPhases())) {
-            THROW("Inconsistent number of phases specified (wells vs. props): "
+            OPM_THROW(std::runtime_error, "Inconsistent number of phases specified (wells vs. props): "
                   << wells_->number_of_phases << " != " << props_.numPhases());
         }
         const int num_dofs = grid_.number_of_cells + (wells_ ? wells_->number_of_wells : 0);
@@ -405,7 +406,7 @@ namespace Opm
                                                        &porevol_[0], &rock_comp_[0], dt, pressures,
                                                        &initial_porevol_[0], h_);
         if (!ok) {
-            THROW("Failed assembling pressure system.");
+            OPM_THROW(std::runtime_error, "Failed assembling pressure system.");
         }
     }
 
@@ -472,8 +473,8 @@ namespace Opm
 
 
         // Make sure h_->x contains the direct solution vector.
-        ASSERT(int(state.pressure().size()) == grid_.number_of_cells);
-        ASSERT(int(state.faceflux().size()) == grid_.number_of_faces);
+        assert(int(state.pressure().size()) == grid_.number_of_cells);
+        assert(int(state.faceflux().size()) == grid_.number_of_faces);
         std::copy(state.pressure().begin(), state.pressure().end(), h_->x);
         std::copy(well_state.bhp().begin(), well_state.bhp().end(), h_->x + grid_.number_of_cells);
 
@@ -482,8 +483,8 @@ namespace Opm
         soln.cell_press = &state.pressure()[0];
         soln.face_flux  = &state.faceflux()[0];
         if (wells_ != NULL) {
-            ASSERT(int(well_state.bhp().size()) == wells_->number_of_wells);
-            ASSERT(int(well_state.perfRates().size()) == wells_->well_connpos[ wells_->number_of_wells ]);
+            assert(int(well_state.bhp().size()) == wells_->number_of_wells);
+            assert(int(well_state.perfRates().size()) == wells_->well_connpos[ wells_->number_of_wells ]);
             soln.well_flux = &well_state.perfRates()[0];
             soln.well_press = &well_state.bhp()[0];
         }

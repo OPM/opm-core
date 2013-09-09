@@ -418,7 +418,7 @@ void EclipseGridParser::readImpl(istream& is)
                     tstep = dynamic_cast<TSTEP*>(sb_ptr.get());
                     sm["TSTEP"] = sb_ptr;
                 }
-                ASSERT(tstep != 0);
+                assert(tstep != 0);
                 // Append new steps to current TSTEP object
                 if (keyword == "TSTEP") {
                     const int num_steps_old = tstep->tstep_.size();
@@ -436,7 +436,7 @@ void EclipseGridParser::readImpl(istream& is)
                         current_time_days_ = double(since_start.days());
                     }
                 } else {
-                    THROW("Keyword " << keyword << " cannot be handled here.");
+                    OPM_THROW(std::runtime_error, "Keyword " << keyword << " cannot be handled here.");
                 }
                 break;
             }
@@ -448,7 +448,7 @@ void EclipseGridParser::readImpl(istream& is)
                     current_reading_mode_ = Regular;
                     special_field_by_epoch_.push_back(SpecialMap());
                     ++current_epoch_;
-                    ASSERT(int(special_field_by_epoch_.size()) == current_epoch_ + 1);
+                    assert(int(special_field_by_epoch_.size()) == current_epoch_ + 1);
                     // Add clones of all existing special fields to new map.
                     SpecialMap& oldmap = special_field_by_epoch_[current_epoch_ - 1];
                     SpecialMap& newmap = special_field_by_epoch_[current_epoch_];
@@ -457,7 +457,7 @@ void EclipseGridParser::readImpl(istream& is)
                             newmap[it->first] = cloneSpecialField(it->first, it->second);
                             //}
                     }
-                    //ASSERT(newmap.count("TSTEP") == 0);
+                    //assert(newmap.count("TSTEP") == 0);
                 }
                 // Check if the keyword already exists. If so, append. Otherwise, create new.
                 SpecialMap::iterator it = special_field_by_epoch_[current_epoch_].find(keyword);
@@ -468,7 +468,7 @@ void EclipseGridParser::readImpl(istream& is)
                     if (sb_ptr) {
                         special_field_by_epoch_[current_epoch_][keyword] = sb_ptr;
                     } else {
-                        THROW("Could not create field " << keyword);
+                        OPM_THROW(std::runtime_error, "Could not create field " << keyword);
                     }
                 }
                 break;
@@ -496,7 +496,7 @@ void EclipseGridParser::readImpl(istream& is)
                 }
                 ifstream include_is(include_filename.c_str());
                 if (!include_is) {
-                    THROW("Unable to open INCLUDEd file " << include_filename);
+                    OPM_THROW(std::runtime_error, "Unable to open INCLUDEd file " << include_filename);
                 }
                 readImpl(include_is);
                 //              is >> ignoreSlashLine;
@@ -569,10 +569,10 @@ void EclipseGridParser::convertToSI()
         } else if (key == "RS") {
             unit = units_.gasvol_s / units_.liqvol_s;
         } else if (key == "MAPAXES") {
-            MESSAGE("Not applying units to MAPAXES yet!");
+            OPM_MESSAGE("Not applying units to MAPAXES yet!");
             unit = 1.0;
         } else {
-            THROW("Units for field " << key << " not specified. Cannon convert to SI.");
+            OPM_THROW(std::runtime_error, "Units for field " << key << " not specified. Cannon convert to SI.");
         }
 
         if (do_convert) {
@@ -663,7 +663,7 @@ int EclipseGridParser::numberOfEpochs() const
 void EclipseGridParser::setCurrentEpoch(int epoch)
 //---------------------------------------------------------------------------
 {
-    ASSERT(epoch >= 0 && epoch < numberOfEpochs());
+    assert(epoch >= 0 && epoch < numberOfEpochs());
     current_epoch_ = epoch;
 }
 
@@ -690,7 +690,7 @@ const std::vector<int>& EclipseGridParser::getIntegerValue(const std::string& ke
     map<string, vector<int> >::const_iterator it
         = integer_field_map_.find(keyword);
     if (it == integer_field_map_.end()) {
-        THROW("No such field: " << keyword);
+        OPM_THROW(std::runtime_error, "No such field: " << keyword);
     } else {
         return it->second;
     }
@@ -703,7 +703,7 @@ const std::vector<double>& EclipseGridParser::getFloatingPointValue(const std::s
     map<string, vector<double> >::const_iterator it
         = floating_field_map_.find(keyword);
     if (it == floating_field_map_.end()) {
-        THROW("No such field: " << keyword);
+        OPM_THROW(std::runtime_error, "No such field: " << keyword);
     } else {
         return it->second;
     }
@@ -716,7 +716,7 @@ const std::shared_ptr<SpecialBase> EclipseGridParser::getSpecialValue(const std:
 {
     SpecialMap::const_iterator it = special_field_by_epoch_[current_epoch_].find(keyword);
     if (it == special_field_by_epoch_[current_epoch_].end()) {
-        THROW("No such field: " << keyword);
+        OPM_THROW(std::runtime_error, "No such field: " << keyword);
     } else {
         return it->second;
     }
@@ -826,13 +826,13 @@ void EclipseGridParser::computeUnits()
         units_.transmissibility = centi*Poise * stb / (day * psia);
         break;
     case Lab:
-        THROW("Unhandled unit family " << unit_family);
+        OPM_THROW(std::runtime_error, "Unhandled unit family " << unit_family);
         break;
     case Pvtm:
-        THROW("Unhandled unit family " << unit_family);
+        OPM_THROW(std::runtime_error, "Unhandled unit family " << unit_family);
         break;
     default:
-        THROW("Unknown unit family " << unit_family);
+        OPM_THROW(std::runtime_error, "Unknown unit family " << unit_family);
     }
 }
 
@@ -854,7 +854,7 @@ struct grdecl EclipseGridParser::get_grdecl() const {
   } else if (hasField("SPECGRID")) {
     dims = getSPECGRID().dimensions;
   } else {
-    THROW("Deck must have either DIMENS or SPECGRID.");
+    OPM_THROW(std::runtime_error, "Deck must have either DIMENS or SPECGRID.");
   }
 
   // Collect in input struct for preprocessing.
@@ -1110,7 +1110,7 @@ void EclipseGridParser::saveEGRID( const std::string & filename, int num_cells ,
     static_cast<void>(filename);    // Suppress "unused variable" warning.
     static_cast<void>(num_cells);   // Suppress "unused variable" warning.
     static_cast<void>(global_cell); // Suppress "unused variable" warning.
-    THROW("Cannot write EGRID format without ERT library support. Reconfigure opm-core with ERT support and recompile.");
+    OPM_THROW(std::runtime_error, "Cannot write EGRID format without ERT library support. Reconfigure opm-core with ERT support and recompile.");
 }
     
 #endif
@@ -1123,7 +1123,7 @@ void EclipseGridParser::getNumericErtFields(const string& filename)
     // Read file
   ecl_file_type * ecl_file = ecl_file_open(filename.c_str() , 0);
     if (ecl_file == NULL) {
-        THROW("Could not open IMPORTed file " << filename);
+        OPM_THROW(std::runtime_error, "Could not open IMPORTed file " << filename);
     }
     const int num_kw = ecl_file_get_size(ecl_file);
     std::vector<double> double_vec;
@@ -1174,7 +1174,7 @@ void EclipseGridParser::getNumericErtFields(const string& filename)
     ecl_file_close(ecl_file);
 #else
     static_cast<void>(filename); // Suppress "unused variable" warning.
-    THROW("Cannot use IMPORT keyword without ERT library support. Reconfigure opm-core with ERT support and recompile.");
+    OPM_THROW(std::runtime_error, "Cannot use IMPORT keyword without ERT library support. Reconfigure opm-core with ERT support and recompile.");
 #endif  // HAVE_ERT
 }
 

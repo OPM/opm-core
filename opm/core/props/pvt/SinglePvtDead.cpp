@@ -38,7 +38,7 @@ namespace Opm
     {
         const int region_number = 0;
         if (pvd_table.size() != 1) {
-            THROW("More than one PVT-region");
+            OPM_THROW(std::runtime_error, "More than one PVT-region");
         }
 
         // Copy data

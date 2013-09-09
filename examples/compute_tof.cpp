@@ -92,6 +92,7 @@ namespace
 // ----------------- Main program -----------------
 int
 main(int argc, char** argv)
+try
 {
     using namespace Opm;
 
@@ -210,7 +211,7 @@ main(int argc, char** argv)
             create_directories(fpath);
         }
         catch (...) {
-            THROW("Creating directories failed: " << fpath);
+            OPM_THROW(std::runtime_error, "Creating directories failed: " << fpath);
         }
         std::string filename = output_dir + "/epoch_timing.param";
         epoch_os.open(filename.c_str(), std::fstream::trunc | std::fstream::out);
@@ -296,4 +297,8 @@ main(int argc, char** argv)
               << "Total time taken: " << total_timer.secsSinceStart()
               << "\n  Pressure time:  " << ptime
               << "\n  Transport time: " << ttime << std::endl;
+}
+catch (const std::exception &e) {
+    std::cerr << "Program threw an exception: " << e.what() << "\n";
+    throw;
 }

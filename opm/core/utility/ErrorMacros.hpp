@@ -1,18 +1,5 @@
-//===========================================================================
-//
-// File: ErrorMacros.hpp
-//
-// Created: Tue May 14 12:22:16 2002
-//
-// Author(s): Atgeirr F Rasmussen <atgeirr@sintef.no>
-//
-// $Date$
-//
-// $Revision$
-//
-//===========================================================================
-
 /*
+  Copyright 2013 Andreas Lauser
   Copyright 2009, 2010 SINTEF ICT, Applied Mathematics.
   Copyright 2009, 2010 Statoil ASA.
 
@@ -31,77 +18,45 @@
   You should have received a copy of the GNU General Public License
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
+#ifndef OPM_ERRORMACROS_HPP
+#define OPM_ERRORMACROS_HPP
 
-#ifndef OPM_ERRORMACROS_HEADER
-#define OPM_ERRORMACROS_HEADER
-
-
-/// Error macros. In order to use some of them, you must also
-/// include <iostream> or <exception>, so they are included by
-/// this file. The compile defines NDEBUG and NVERBOSE control
-/// the behaviour of these macros.
-
-#ifndef NVERBOSE
-  #include <iostream>
-#endif
+#include <string>
+#include <sstream>
 #include <exception>
+#include <stdexcept>
 
-/// Usage: REPORT;
-/// Usage: MESSAGE("Message string.");
-#ifdef NVERBOSE // Not verbose mode
-#  ifndef REPORT
-#    define REPORT
-#  endif
-#  ifndef MESSAGE
-#    define MESSAGE(x)
-#  endif
-#  ifndef MESSAGE_IF
-#    define MESSAGE_IF(cond, m)
-#  endif
-#else // Verbose mode
-#  ifndef REPORT
-#    define REPORT std::cerr << "\nIn file " << __FILE__ << ", line " << __LINE__ << std::endl
-#  endif
-#  ifndef MESSAGE
-#    define MESSAGE(x) std::cerr << "\nIn file " << __FILE__ << ", line " << __LINE__ << ": " << x << std::endl
-#  endif
-#  ifndef MESSAGE_IF
-#    define MESSAGE_IF(cond, m) do {if(cond) MESSAGE(m);} while(0)
-#  endif
+#include <cassert>
+
+// macros for reporting to stderr
+#ifdef OPM_VERBOSE // Verbose mode
+# include <iostream>
+# define OPM_REPORT do { std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] " } while (false)
+# define OPM_MESSAGE(x) do { OPM_REPORT; std::cerr << x << "\n"; } while (false)
+# define OPM_MESSAGE_IF(cond, m) do {if(cond) OPM_MESSAGE(m);} while (false)
+#else // non-verbose mode (default)
+# define OPM_REPORT do {} while (false)
+# define OPM_MESSAGE(x) do {} while (false)
+# define OPM_MESSAGE_IF(cond, m) do {} while (false)
 #endif
 
+// Macro to throw an exception. NOTE: For this macro to work, the
+// exception class must exhibit a constructor with the signature
+// (const std::string &message). Since this condition is not fulfilled
+// for the std::exception, you should use this macro with some
+// exception class derived from either std::logic_error or
+// std::runtime_error.
+//
+// Usage: OPM_THROW(ExceptionClass, "Error message " << value);
+#define OPM_THROW(Exception, message)                            \
+    do {                                                                \
+        std::ostringstream oss;                                         \
+        oss << "[" << __FILE__ << ":" << __LINE__ << "] " << message;   \
+        OPM_MESSAGE(message);                                           \
+        throw Exception(oss.str());                                     \
+    } while (false)
 
-/// Usage: THROW("Error message string.");
-#ifndef THROW
-#  define THROW(x) do { MESSAGE(x); throw std::exception(); } while(0)
-#endif
+// throw an exception if a condition is true
+#define OPM_ERROR_IF(condition, message) do {if(condition){ OPM_THROW(std::logic_error, message);}} while(false)
 
-#define ALWAYS_ERROR_IF(condition, message) do {if(condition){ THROW(message);}} while(0)
-
-/// Usage: ASSERT(condition)
-/// Usage: ASSERT2(condition, "Error message string.")
-/// Usage: DEBUG_ERROR_IF(condition, "Error message string.");
-#ifdef NDEBUG // Not in debug mode
-#  ifndef ASSERT
-#    define ASSERT(x)
-#  endif
-#  ifndef ASSERT2
-#    define ASSERT2(cond, x)
-#  endif
-#  ifndef DEBUG_ERROR_IF
-#    define DEBUG_ERROR_IF(cond, x)
-#  endif
-#else // Debug mode
-#  ifndef ASSERT
-#    define ASSERT(cond) if (!(cond)) THROW("Assertion \'" #cond "\' failed.")
-#  endif
-#  ifndef ASSERT2
-#    define ASSERT2(cond, x) do { if (!(cond)) THROW(x);} while(0)
-#  endif
-#  ifndef DEBUG_ERROR_IF
-#    define DEBUG_ERROR_IF(cond, x) do { if (cond) THROW(x); } while(0)
-#  endif
-#endif
-
-
-#endif // OPM_ERRORMACROS_HEADER
+#endif // OPM_ERRORMACROS_HPP

@@ -127,7 +127,7 @@ namespace Opm
                             const std::vector<T>& y_values)
         : x_values_(x_values), y_values_(y_values)
     {
-        ASSERT(isNondecreasing(x_values.begin(), x_values.end()));
+        assert(isNondecreasing(x_values.begin(), x_values.end()));
     }
 
     template<typename T>
@@ -180,7 +180,7 @@ namespace Opm
             if (y_values_reversed_.empty()) {
                 y_values_reversed_ = y_values_;
                 std::reverse(y_values_reversed_.begin(), y_values_reversed_.end());
-                ASSERT(isNondecreasing(y_values_reversed_.begin(), y_values_reversed_.end()));
+                assert(isNondecreasing(y_values_reversed_.begin(), y_values_reversed_.end()));
                 x_values_reversed_ = x_values_;
                 std::reverse(x_values_reversed_.begin(), x_values_reversed_.end());
             }
