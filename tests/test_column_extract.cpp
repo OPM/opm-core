@@ -13,6 +13,7 @@
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 
 #include <cstddef>
+#include <iostream>
 
 BOOST_AUTO_TEST_CASE(SingleColumnTest)
 {

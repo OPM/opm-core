@@ -81,14 +81,14 @@ namespace Opm
 	      default_elem_()
 	{
 #ifndef NDEBUG
-	    ASSERT(sz >= 0);
-	    ASSERT(indices_.size() == data_.size());
+	    OPM_ERROR_IF(sz < 0, "The size of a SparseVector must be non-negative");
+	    OPM_ERROR_IF(indices_.size() != data_.size(), "The number of indices of a SparseVector must equal to the number of entries");
 	    int last_index = -1;
 	    int num_ind = indices_.size();
 	    for (int i = 0; i < num_ind; ++i) {
 		int index = indices_[i];
 		if (index <= last_index || index >= sz) {
-		    THROW("Error in SparseVector construction, index is nonincreasing or out of range.");
+		    OPM_THROW(std::logic_error, "Error in SparseVector construction, index is nonincreasing or out of range.");
 		}
 		last_index = index;
 	    }
@@ -101,8 +101,8 @@ namespace Opm
 	/// Elements must be added in index order.
 	void addElement(const T& elem, int index)
 	{
-	    ASSERT(indices_.empty() || index > indices_.back());
-	    ASSERT(index < size_);
+	    assert(indices_.empty() || index > indices_.back());
+	    assert(index < size_);
 	    data_.push_back(elem);
 	    indices_.push_back(index);
 	}
@@ -146,8 +146,10 @@ namespace Opm
 	/// the vector has the given index.
 	const T& element(int index) const
 	{
-	    ASSERT(index >= 0);
-	    ASSERT(index < size_);
+#ifndef NDEBUG
+	    OPM_ERROR_IF(index < 0, "The index of a SparseVector must be non-negative (is " << index << ")");
+	    OPM_ERROR_IF(index >= size_, "The index of a SparseVector must be smaller than the maximum value (is " << index << ", max value: " << size_ <<")");
+#endif
 	    std::vector<int>::const_iterator lb = std::lower_bound(indices_.begin(), indices_.end(), index);
 	    if (lb != indices_.end() && *lb == index) {
 		return data_[lb - indices_.begin()];
@@ -161,8 +163,10 @@ namespace Opm
 	/// \return the nzindex'th nonzero element.
 	const T& nonzeroElement(int nzindex) const
 	{
-	    ASSERT(nzindex >= 0);
-	    ASSERT(nzindex < nonzeroSize());
+#ifndef NDEBUG
+	    OPM_ERROR_IF(nzindex < 0, "The index of a SparseVector must be non-negative (is " << nzindex << ")");
+	    OPM_ERROR_IF(nzindex >= nonzeroSize(), "The index of a SparseVector must be smaller than the maximum value (is " << nzindex << ", max value: " << nonzeroSize() <<")");
+#endif
 	    return data_[nzindex];
 	}
 
@@ -171,8 +175,8 @@ namespace Opm
 	/// \return the index of the nzindex'th nonzero element.
 	int nonzeroIndex(int nzindex) const
 	{
-	    ASSERT(nzindex >= 0);
-	    ASSERT(nzindex < nonzeroSize());
+	    assert(nzindex >= 0);
+	    assert(nzindex < nonzeroSize());
 	    return indices_[nzindex];
 	}
 

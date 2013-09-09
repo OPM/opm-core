@@ -123,8 +123,8 @@ namespace Opm {
 	    : xmin_(xmin), xmax_(xmax), y_values_(y_values),
 	      left_(ClosestValue), right_(ClosestValue)
 	{
-            ASSERT(xmax > xmin);
-            ASSERT(y_values.size() > 1);
+            assert(xmax > xmin);
+            assert(y_values.size() > 1);
             xdelta_ = (xmax - xmin)/(y_values.size() - 1);
 	}
 
@@ -139,8 +139,8 @@ namespace Opm {
               y_values_(y_values, y_values + num_y_values),
 	      left_(ClosestValue), right_(ClosestValue)
 	{
-            ASSERT(xmax > xmin);
-            ASSERT(y_values_.size() > 1);
+            assert(xmax > xmin);
+            assert(y_values_.size() > 1);
             xdelta_ = (xmax - xmin)/(y_values_.size() - 1);
 	}
 
@@ -228,7 +228,7 @@ namespace Opm {
 	::setLeftPolicy(RangePolicy rp)
 	{
 	    if (rp != ClosestValue) {
-		THROW("Only ClosestValue RangePolicy implemented.");
+		OPM_THROW(std::runtime_error, "Only ClosestValue RangePolicy implemented.");
 	    }
 	    left_ = rp;
 	}
@@ -239,7 +239,7 @@ namespace Opm {
 	::setRightPolicy(RangePolicy rp)
 	{
 	    if (rp != ClosestValue) {
-		THROW("Only ClosestValue RangePolicy implemented.");
+		OPM_THROW(std::runtime_error, "Only ClosestValue RangePolicy implemented.");
 	    }
 	    right_ = rp;
 	}

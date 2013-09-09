@@ -149,7 +149,9 @@ namespace Opm
         /// Returns the size of a table row.
         int rowSize(int row) const
         {
-            ASSERT(row >= 0 && row < size());
+#ifndef NDEBUG
+            OPM_ERROR_IF(row < 0 || row >= size(), "Row index " << row << " is out of range");
+#endif
             return row_start_[row + 1] - row_start_[row];
         }
 
@@ -167,7 +169,7 @@ namespace Opm
         /// Returns a row of the table.
         row_type operator[](int row) const
         {
-            ASSERT(row >= 0 && row < size());
+            assert(row >= 0 && row < size());
             const T* start_ptr = data_.empty() ? 0 : &data_[0];
             return row_type(start_ptr + row_start_[row], start_ptr + row_start_[row + 1]);
         }
@@ -175,7 +177,7 @@ namespace Opm
         /// Returns a mutable row of the table.
         mutable_row_type operator[](int row)
         {
-            ASSERT(row >= 0 && row < size());
+            assert(row >= 0 && row < size());
             T* start_ptr = data_.empty() ? 0 : &data_[0];
             return mutable_row_type(start_ptr + row_start_[row], start_ptr + row_start_[row + 1]);
         }
@@ -218,11 +220,11 @@ namespace Opm
             // we have to create the cumulative ones.
             int num_rows = rowsize_end - rowsize_beg;
             if (num_rows < 1) {
-                THROW("Must have at least one row. Got " << num_rows << " rows.");
+                OPM_THROW(std::runtime_error, "Must have at least one row. Got " << num_rows << " rows.");
             }
 #ifndef NDEBUG
             if (*std::min_element(rowsize_beg, rowsize_end) < 0) {
-                THROW("All row sizes must be at least 0.");
+                OPM_THROW(std::runtime_error, "All row sizes must be at least 0.");
             }
 #endif
             row_start_.resize(num_rows + 1);
@@ -230,7 +232,7 @@ namespace Opm
             std::partial_sum(rowsize_beg, rowsize_end, row_start_.begin() + 1);
             // Check that data_ and row_start_ match.
             if (int(data_.size()) != row_start_.back()) {
-                THROW("End of row start indices different from data size.");
+                OPM_THROW(std::runtime_error, "End of row start indices different from data size.");
             }
 
 	}

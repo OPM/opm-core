@@ -38,7 +38,7 @@ namespace Opm
         pvt_.init(param);
         satprops_.init(param);
         if (pvt_.numPhases() != satprops_.numPhases()) {
-            THROW("BlackoilPropertiesBasic::BlackoilPropertiesBasic() - Inconsistent number of phases in pvt data ("
+            OPM_THROW(std::runtime_error, "BlackoilPropertiesBasic::BlackoilPropertiesBasic() - Inconsistent number of phases in pvt data ("
                   << pvt_.numPhases() << ") and saturation-dependent function data (" << satprops_.numPhases() << ").");
         }
     }
@@ -104,7 +104,7 @@ namespace Opm
                                             double* dmudp) const
     {
         if (dmudp) {
-            THROW("BlackoilPropertiesBasic::viscosity()  --  derivatives of viscosity not yet implemented.");
+            OPM_THROW(std::runtime_error, "BlackoilPropertiesBasic::viscosity()  --  derivatives of viscosity not yet implemented.");
         } else {
             pvt_.mu(n, p, z, mu);
         }
@@ -128,7 +128,7 @@ namespace Opm
                                          double* dAdp) const
     {
         const int np = numPhases();
-        ASSERT(np <= 2);
+        assert(np <= 2);
         double B[2]; // Must be enough since component classes do not handle more than 2.
         pvt_.B(1, 0, 0, B);
         // Compute A matrix

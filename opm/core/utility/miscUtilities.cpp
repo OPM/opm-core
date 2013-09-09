@@ -26,6 +26,7 @@
 #include <opm/core/props/BlackoilPropertiesInterface.hpp>
 #include <opm/core/props/rock/RockCompressibility.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
+#include <iostream>
 #include <algorithm>
 #include <functional>
 #include <cmath>
@@ -105,7 +106,7 @@ namespace Opm
         const int num_cells = pv.size();
         const int np = s.size()/pv.size();
         if (int(s.size()) != num_cells*np) {
-            THROW("Sizes of s and pv vectors do not match.");
+            OPM_THROW(std::runtime_error, "Sizes of s and pv vectors do not match.");
         }
         std::fill(sat_vol, sat_vol + np, 0.0);
         for (int c = 0; c < num_cells; ++c) {
@@ -130,7 +131,7 @@ namespace Opm
         const int num_cells = pv.size();
         const int np = s.size()/pv.size();
         if (int(s.size()) != num_cells*np) {
-            THROW("Sizes of s and pv vectors do not match.");
+            OPM_THROW(std::runtime_error, "Sizes of s and pv vectors do not match.");
         }
         double tot_pv = 0.0;
         // Note that we abuse the output array to accumulate the
@@ -171,7 +172,7 @@ namespace Opm
         const int num_cells = src.size();
         const int np = s.size()/src.size();
         if (int(s.size()) != num_cells*np) {
-            THROW("Sizes of s and src vectors do not match.");
+            OPM_THROW(std::runtime_error, "Sizes of s and src vectors do not match.");
         }
         std::fill(injected, injected + np, 0.0);
         std::fill(produced, produced + np, 0.0);
@@ -272,7 +273,7 @@ namespace Opm
         const std::vector<int>::size_type nc = cells.size();
         const std::size_t                 np = props.numPhases();
 
-        ASSERT (s.size() == nc * np);
+        assert(s.size() == nc * np);
 
         std::vector<double>(nc * np, 0.0).swap(pmobc );
         double*                                dpmobc = 0;
@@ -365,7 +366,7 @@ namespace Opm
             const int nw = wells->number_of_wells;
             const int np = wells->number_of_phases;
             if (np != 2) {
-                THROW("computeTransportSource() requires a 2 phase case.");
+                OPM_THROW(std::runtime_error, "computeTransportSource() requires a 2 phase case.");
             }
             for (int w = 0; w < nw; ++w) {
                 const double* comp_frac = wells->comp_frac + np*w;
@@ -381,7 +382,7 @@ namespace Opm
                                       << perf_rate/Opm::unit::day << " m^3/day." << std::endl;
                             perf_rate = 0.0;
                         } else {
-                            ASSERT(std::fabs(comp_frac[0] + comp_frac[1] - 1.0) < 1e-6);
+                            assert(std::fabs(comp_frac[0] + comp_frac[1] - 1.0) < 1e-6);
                             perf_rate *= comp_frac[0];
                         }
                     }
@@ -452,23 +453,23 @@ namespace Opm
     {
         const int np = wells.number_of_phases;
         if (np != 2) {
-            THROW("wellsToSrc() requires a 2 phase case.");
+            OPM_THROW(std::runtime_error, "wellsToSrc() requires a 2 phase case.");
         }
         src.resize(num_cells);
         for (int w = 0; w < wells.number_of_wells; ++w) {
             const int cur = wells.ctrls[w]->current;
             if (wells.ctrls[w]->num != 1) {
-                MESSAGE("In wellsToSrc(): well has more than one control, all but current control will be ignored.");
+                OPM_MESSAGE("In wellsToSrc(): well has more than one control, all but current control will be ignored.");
             }
             if (wells.ctrls[w]->type[cur] != RESERVOIR_RATE) {
-                THROW("In wellsToSrc(): well is something other than RESERVOIR_RATE.");
+                OPM_THROW(std::runtime_error, "In wellsToSrc(): well is something other than RESERVOIR_RATE.");
             }
             if (wells.well_connpos[w+1] - wells.well_connpos[w] != 1) {
-                THROW("In wellsToSrc(): well has multiple perforations.");
+                OPM_THROW(std::runtime_error, "In wellsToSrc(): well has multiple perforations.");
             }
             for (int p = 0; p < np; ++p) {
                 if (wells.ctrls[w]->distr[np*cur + p] != 1.0) {
-                    THROW("In wellsToSrc(): well not controlled on total rate.");
+                    OPM_THROW(std::runtime_error, "In wellsToSrc(): well not controlled on total rate.");
                 }
             }
             double flow = wells.ctrls[w]->target[cur];
@@ -554,7 +555,7 @@ namespace Opm
     {
         const int np = wells.number_of_phases;
         const int nw = wells.number_of_wells;
-        ASSERT(int(flow_rates_per_well_cell.size()) == wells.well_connpos[nw]);
+        assert(int(flow_rates_per_well_cell.size()) == wells.well_connpos[nw]);
         phase_flow_per_well.resize(nw * np);
         for (int wix = 0; wix < nw; ++wix) {
             for (int phase = 0; phase < np; ++phase) {
@@ -597,11 +598,11 @@ namespace Opm
                           const std::vector<double>& well_perfrates)
     {
         int nw = well_bhp.size();
-        ASSERT(nw == wells.number_of_wells);
+        assert(nw == wells.number_of_wells);
         int np = props.numPhases();
         const int max_np = 3;
         if (np > max_np) {
-            THROW("WellReport for now assumes #phases <= " << max_np);
+            OPM_THROW(std::runtime_error, "WellReport for now assumes #phases <= " << max_np);
         }
         const double* visc = props.viscosity();
         std::vector<double> data_now;
@@ -656,11 +657,11 @@ namespace Opm
     {
         // TODO: refactor, since this is almost identical to the other push().
         int nw = well_bhp.size();
-        ASSERT(nw == wells.number_of_wells);
+        assert(nw == wells.number_of_wells);
         int np = props.numPhases();
         const int max_np = 3;
         if (np > max_np) {
-            THROW("WellReport for now assumes #phases <= " << max_np);
+            OPM_THROW(std::runtime_error, "WellReport for now assumes #phases <= " << max_np);
         }
         std::vector<double> data_now;
         data_now.reserve(1 + 3*nw);

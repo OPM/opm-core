@@ -139,7 +139,7 @@ namespace Opm
             typename CreatorMap::iterator it;
             it = string_to_creator_.find(type);
             if (it == string_to_creator_.end()) {
-                THROW("Creator type " << type
+                OPM_THROW(std::runtime_error, "Creator type " << type
                       << " is not registered in the factory.");
             }
             return it->second->create();
@@ -152,7 +152,7 @@ namespace Opm
             typename CreatorMap::iterator it;
             it = string_to_creator_.find(type);
             if (it == string_to_creator_.end()) {
-                THROW("Creator type " << type
+                OPM_THROW(std::runtime_error, "Creator type " << type
                       << " is not registered in the factory.");
             }
             return it->second->clone(original);

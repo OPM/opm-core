@@ -68,7 +68,7 @@ int main(int argc, char** argv)
     const int np = props.numPhases();
     const int max_np = 3;
     if (np > max_np) {
-        THROW("Max #phases is 3.");
+        OPM_THROW(std::runtime_error, "Max #phases is 3.");
     }
     while((inos.good()) && (!inos.eof())){
       double s[max_np];

@@ -89,7 +89,7 @@ namespace Opm
         const int num_global_cells = grid.cartdims[0]*grid.cartdims[1]*grid.cartdims[2];
         const int nc = grid.number_of_cells;
 
-        ASSERT (num_global_cells > 0);
+        assert(num_global_cells > 0);
 
         permeability_.assign(dim * dim * nc, 0.0);
 
@@ -102,7 +102,7 @@ namespace Opm
         std::array<int,9> kmap;
         PermeabilityKind pkind = fillTensor(parser, tensor, kmap);
         if (pkind == Invalid) {
-            THROW("Invalid permeability field.");
+            OPM_THROW(std::runtime_error, "Invalid permeability field.");
         }
 
         // Assign permeability values only if such values are
@@ -271,9 +271,9 @@ namespace Opm
         {
             PermeabilityKind kind = classifyPermeability(parser);
             if (kind == Invalid) {
-                THROW("Invalid set of permeability fields given.");
+                OPM_THROW(std::runtime_error, "Invalid set of permeability fields given.");
             }
-            ASSERT (tensor.size() == 1);
+            assert(tensor.size() == 1);
             for (int i = 0; i < 9; ++i) { kmap[i] = 0; }
 
             enum { xx, xy, xz,    // 0, 1, 2

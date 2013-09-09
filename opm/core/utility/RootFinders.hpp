@@ -36,12 +36,12 @@
 #ifndef OPM_ROOTFINDERS_HEADER
 #define OPM_ROOTFINDERS_HEADER
 
-
+#include <opm/core/utility/ErrorMacros.hpp>
 
 #include <algorithm>
 #include <limits>
 #include <cmath>
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <iostream>
 
 namespace Opm
 {
@@ -50,13 +50,13 @@ namespace Opm
     {
         static double handleBracketingFailure(const double x0, const double x1, const double f0, const double f1)
         {
-            THROW("Error in parameters, zero not bracketed: [a, b] = ["
+            OPM_THROW(std::runtime_error, "Error in parameters, zero not bracketed: [a, b] = ["
                   << x0 << ", " << x1 << "]    f(a) = " << f0 << "   f(b) = " << f1);
             return -1e100; // Never reached.
         }
         static double handleTooManyIterations(const double x0, const double x1, const int maxiter)
         {
-            THROW("Maximum number of iterations exceeded: " << maxiter << "\n"
+            OPM_THROW(std::runtime_error, "Maximum number of iterations exceeded: " << maxiter << "\n"
                   << "Current interval is [" << std::min(x0, x1) << ", "
                   << std::max(x0, x1) << "]");
             return -1e100; // Never reached.
@@ -68,14 +68,14 @@ namespace Opm
     {
         static double handleBracketingFailure(const double x0, const double x1, const double f0, const double f1)
         {
-            MESSAGE("Error in parameters, zero not bracketed: [a, b] = ["
+            OPM_MESSAGE("Error in parameters, zero not bracketed: [a, b] = ["
                     << x0 << ", " << x1 << "]    f(a) = " << f0 << "   f(b) = " << f1
                     << "");
             return std::fabs(f0) < std::fabs(f1) ? x0 : x1;
         }
         static double handleTooManyIterations(const double x0, const double x1, const int maxiter)
         {
-            MESSAGE("Maximum number of iterations exceeded: " << maxiter
+            OPM_MESSAGE("Maximum number of iterations exceeded: " << maxiter
                     << ", current interval is [" << std::min(x0, x1) << ", "
                     << std::max(x0, x1) << "]");
             return 0.5*(x0 + x1);
@@ -284,7 +284,7 @@ namespace Opm
                                              const double fa,
                                              const double fb)
         {
-            ASSERT(fa*fb < 0.0);
+            assert(fa*fb < 0.0);
             return (b*fa - a*fb)/(fa - fb);
         }
 
@@ -315,7 +315,7 @@ namespace Opm
             cur_dx = -2.0*cur_dx;
         }
         if (i == max_iters) {
-            THROW("Could not bracket zero in " << max_iters << "iterations.");
+            OPM_THROW(std::runtime_error, "Could not bracket zero in " << max_iters << "iterations.");
         }
         if (cur_dx < 0.0) {
             a = x0 + cur_dx;

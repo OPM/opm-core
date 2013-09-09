@@ -204,6 +204,11 @@ struct UnstructuredGrid
        This field is intended for grids that have a (possibly
        degenerate) logical cartesian structure, for example
        cornerpoint grids.
+
+       If null, this indicates that the element indices coincide
+       with the logical cartesian indices, _or_ that the grid has
+       no inherent Cartesian structure. Due to this ambiguity, this
+       field should not be used to check if the grid is Cartesian.
     */
     int    *global_cell;
 
@@ -213,6 +218,10 @@ struct UnstructuredGrid
        This field is intended for grids that have a (possibly
        degenerate) logical cartesian structure, for example
        cornerpoint grids.
+
+       If the grid is unstructured (non-Cartesian), then at least one
+       of the items in the (sub-)array cartdims[0..dimensions-1]
+       _could_ have the value 0 to signal this.
     */
     int     cartdims[3];
     /**
