@@ -42,7 +42,7 @@ namespace Opm
         // OIL, PVTO
         const int region_number = 0;
         if (pvto.size() != 1) {
-            THROW("More than one PVD-region");
+            OPM_THROW(std::runtime_error, "More than one PVD-region");
         }
         saturated_oil_table_.resize(4);
         const int sz =  pvto[region_number].size();
@@ -77,7 +77,7 @@ namespace Opm
         while (undersat_oil_tables_[iNext][0].size() < 2) {
                 ++iNext;
         }
-        ASSERT(iNext < sz);
+        assert(iNext < sz);
         for (int i=0; i<sz; ++i) {
                 if (undersat_oil_tables_[i][0].size() > 1) {
                         iPrev = i;
@@ -356,8 +356,8 @@ namespace Opm
                 int is = tableIndex(saturated_oil_table_[3], maxR);
                 double w = (maxR - saturated_oil_table_[3][is]) /
                     (saturated_oil_table_[3][is+1] - saturated_oil_table_[3][is]);
-                ASSERT(undersat_oil_tables_[is][0].size() >= 2);
-                ASSERT(undersat_oil_tables_[is+1][0].size() >= 2);
+                assert(undersat_oil_tables_[is][0].size() >= 2);
+                assert(undersat_oil_tables_[is+1][0].size() >= 2);
                 double val1 =
                     linearInterpolationDerivative(undersat_oil_tables_[is][0],
                                              undersat_oil_tables_[is][item],
@@ -379,8 +379,8 @@ namespace Opm
                 int is = tableIndex(saturated_oil_table_[3], maxR);
                 double w = (maxR - saturated_oil_table_[3][is]) /
                     (saturated_oil_table_[3][is+1] - saturated_oil_table_[3][is]);
-                ASSERT(undersat_oil_tables_[is][0].size() >= 2);
-                ASSERT(undersat_oil_tables_[is+1][0].size() >= 2);
+                assert(undersat_oil_tables_[is][0].size() >= 2);
+                assert(undersat_oil_tables_[is+1][0].size() >= 2);
                 double val1 =
                     linearInterpolation(undersat_oil_tables_[is][0],
                                               undersat_oil_tables_[is][item],
@@ -414,8 +414,8 @@ namespace Opm
                 int is = tableIndex(saturated_oil_table_[3], r);
                 double w = (r - saturated_oil_table_[3][is]) /
                     (saturated_oil_table_[3][is+1] - saturated_oil_table_[3][is]);
-                ASSERT(undersat_oil_tables_[is][0].size() >= 2);
-                ASSERT(undersat_oil_tables_[is+1][0].size() >= 2);
+                assert(undersat_oil_tables_[is][0].size() >= 2);
+                assert(undersat_oil_tables_[is+1][0].size() >= 2);
                 double val1 =
                     linearInterpolationDerivative(undersat_oil_tables_[is][0],
                                              undersat_oil_tables_[is][item],
@@ -433,8 +433,8 @@ namespace Opm
                 return 0;
             } else {  // Undersaturated case
                 int is = tableIndex(saturated_oil_table_[3], r);
-                ASSERT(undersat_oil_tables_[is][0].size() >= 2);
-                ASSERT(undersat_oil_tables_[is+1][0].size() >= 2);
+                assert(undersat_oil_tables_[is][0].size() >= 2);
+                assert(undersat_oil_tables_[is+1][0].size() >= 2);
                 double val1 =
                     linearInterpolation(undersat_oil_tables_[is][0],
                                               undersat_oil_tables_[is][item],
@@ -459,8 +459,8 @@ namespace Opm
                 int is = tableIndex(saturated_oil_table_[3], r);
                 double w = (r - saturated_oil_table_[3][is]) /
                     (saturated_oil_table_[3][is+1] - saturated_oil_table_[3][is]);
-                ASSERT(undersat_oil_tables_[is][0].size() >= 2);
-                ASSERT(undersat_oil_tables_[is+1][0].size() >= 2);
+                assert(undersat_oil_tables_[is][0].size() >= 2);
+                assert(undersat_oil_tables_[is+1][0].size() >= 2);
                 double val1 =
                     linearInterpolation(undersat_oil_tables_[is][0],
                                               undersat_oil_tables_[is][item],

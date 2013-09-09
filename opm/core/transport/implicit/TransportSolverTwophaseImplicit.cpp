@@ -34,6 +34,8 @@
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 
+#include <iostream>
+
 namespace Opm
 {
 
@@ -76,7 +78,7 @@ namespace Opm
     {
         // A very crude check for constant porosity (i.e. no rock-compressibility).
         if (porevolume[0] != initial_porevolume_cell0_) {
-            THROW("Detected changed pore volumes, but solver cannot handle rock compressibility.");
+            OPM_THROW(std::runtime_error, "Detected changed pore volumes, but solver cannot handle rock compressibility.");
         }
         double ssrc[] = { 1.0, 0.0 };
         double dummy[] = { 0.0, 0.0 };
@@ -90,7 +92,7 @@ namespace Opm
                 success = append_transport_source(cell, num_phases, state.pressure()[cell], source[cell], dummy, dummy, tsrc_);
             }
             if (!success) {
-                THROW("Failed building TransportSource struct.");
+                OPM_THROW(std::runtime_error, "Failed building TransportSource struct.");
             }
         }
         Opm::ImplicitTransportDetails::NRReport  rpt;

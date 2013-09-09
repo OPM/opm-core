@@ -27,6 +27,7 @@
 #include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
+#include <iostream>
 #include <algorithm>
 #include <functional>
 #include <cmath>
@@ -60,11 +61,11 @@ namespace Opm
     {
         const int num_cells = transport_src.size();
         if (props.numCells() != num_cells) {
-            THROW("Size of transport_src vector does not match number of cells in props.");
+            OPM_THROW(std::runtime_error, "Size of transport_src vector does not match number of cells in props.");
         }
         const int np = props.numPhases();
         if (int(state.saturation().size()) != num_cells*np) {
-            THROW("Sizes of state vectors do not match number of cells.");
+            OPM_THROW(std::runtime_error, "Sizes of state vectors do not match number of cells.");
         }
         const std::vector<double>& press = state.pressure();
         const std::vector<double>& s = state.saturation();
@@ -199,7 +200,7 @@ namespace Opm
         const int nc = props.numCells();
         const int np = props.numPhases();
 
-        ASSERT (int(s.size()) == nc * np);
+        assert(int(s.size()) == nc * np);
 
         std::vector<double> mu(nc*np);
         props.viscosity(nc, &p[0], &z[0], &cells[0], &mu[0], 0);
@@ -300,7 +301,7 @@ namespace Opm
             const int nw = wells->number_of_wells;
             const int np = wells->number_of_phases;
             if (np != 2) {
-                THROW("computeTransportSource() requires a 2 phase case.");
+                OPM_THROW(std::runtime_error, "computeTransportSource() requires a 2 phase case.");
             }
             std::vector<double> A(np*np);
             for (int w = 0; w < nw; ++w) {
@@ -317,7 +318,7 @@ namespace Opm
                                       << perf_rate/Opm::unit::day << " m^3/day." << std::endl;
                             perf_rate = 0.0;
                         } else {
-                            ASSERT(std::fabs(comp_frac[0] + comp_frac[1] - 1.0) < 1e-6);
+                            assert(std::fabs(comp_frac[0] + comp_frac[1] - 1.0) < 1e-6);
                             perf_rate *= comp_frac[0]; // Water reservoir volume rate.
                             props.matrix(1, &well_state.perfPress()[perf], comp_frac, &perf_cell, &A[0], 0);
                             perf_rate *= A[0];         // Water surface volume rate.

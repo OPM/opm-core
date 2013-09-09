@@ -37,7 +37,7 @@ namespace Opm
     {
         int num_phases = param.getDefault("num_phases", 2);
         if (num_phases > 3 || num_phases < 1) {
-            THROW("PvtPropertiesBasic::init() illegal num_phases: " << num_phases);
+            OPM_THROW(std::runtime_error, "PvtPropertiesBasic::init() illegal num_phases: " << num_phases);
         }
         density_.resize(num_phases);
         viscosity_.resize(num_phases);
@@ -65,7 +65,7 @@ namespace Opm
                                   const std::vector<double>& visc)
     {
         if (num_phases > 3 || num_phases < 1) {
-            THROW("PvtPropertiesBasic::init() illegal num_phases: " << num_phases);
+            OPM_THROW(std::runtime_error, "PvtPropertiesBasic::init() illegal num_phases: " << num_phases);
         }
         // We currently do not allow the user to set B.
         formation_volume_factor_.clear();
@@ -98,7 +98,7 @@ namespace Opm
             pu.phase_pos[BlackoilPhases::Liquid] = 1;
             pu.phase_pos[BlackoilPhases::Vapour] = 1; // Unused.
         } else {
-            ASSERT(pu.num_phases == 3);
+            assert(pu.num_phases == 3);
             pu.phase_used[BlackoilPhases::Aqua] = true;
             pu.phase_used[BlackoilPhases::Liquid] = true;
             pu.phase_used[BlackoilPhases::Vapour] = true;

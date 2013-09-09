@@ -125,10 +125,10 @@ namespace Opm
             : grid_(grid), cell_(cell), degree_(degree)
         {
             if (grid.dimensions > 3) {
-                THROW("CellQuadrature only implemented for up to 3 dimensions.");
+                OPM_THROW(std::runtime_error, "CellQuadrature only implemented for up to 3 dimensions.");
             }
             if (degree > 2) {
-                THROW("CellQuadrature exact for polynomial degrees > 1 not implemented.");
+                OPM_THROW(std::runtime_error, "CellQuadrature exact for polynomial degrees > 1 not implemented.");
             }
         }
 
@@ -141,7 +141,7 @@ namespace Opm
             if (grid_.dimensions == 2) {
                 return 3*(grid_.cell_facepos[cell_ + 1] - grid_.cell_facepos[cell_]);
             }
-            ASSERT(grid_.dimensions == 3);
+            assert(grid_.dimensions == 3);
             int sumnodes = 0;
             for (int hf = grid_.cell_facepos[cell_]; hf < grid_.cell_facepos[cell_ + 1]; ++hf) {
                 const int face = grid_.cell_faces[hf];
@@ -181,7 +181,7 @@ namespace Opm
                 }
                 return;
             }
-            ASSERT(dim == 3);
+            assert(dim == 3);
             int tetindex = index / 4;
             const int subindex = index % 4;
             const double* nc = grid_.node_coordinates;
@@ -208,7 +208,7 @@ namespace Opm
                 }
                 return;
             }
-            THROW("Should never reach this point.");
+            OPM_THROW(std::runtime_error, "Should never reach this point.");
         }
 
         double quadPtWeight(const int index) const
@@ -227,7 +227,7 @@ namespace Opm
                 const double* nc1 = grid_.node_coordinates + dim*nptr[1];
                 return triangleArea2d(nc0, nc1, cc)/3.0;
             }
-            ASSERT(dim == 3);
+            assert(dim == 3);
             int tetindex = index / 4;
             const double* nc = grid_.node_coordinates;
             for (int hf = grid_.cell_facepos[cell_]; hf < grid_.cell_facepos[cell_ + 1]; ++hf) {
@@ -246,7 +246,7 @@ namespace Opm
                 const double* n1c = nc + dim*node1;
                 return 0.25*tetVolume(cc, fc, n0c, n1c);
             }
-            THROW("Should never reach this point.");
+            OPM_THROW(std::runtime_error, "Should never reach this point.");
         }
 
     private:

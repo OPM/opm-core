@@ -35,6 +35,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <iostream>
 
 
 // Helper structs and functions for the implementation.
@@ -95,7 +96,7 @@ namespace
                 return p->second;
             }
             else {
-                THROW("Unknown well control mode = "
+                OPM_THROW(std::runtime_error, "Unknown well control mode = "
                       << control << " in input file");
             }
         }
@@ -134,7 +135,7 @@ namespace
                 return p->second;
             }
             else {
-                THROW("Unknown well control mode = "
+                OPM_THROW(std::runtime_error, "Unknown well control mode = "
                       << control << " in input file");
             }
         }
@@ -240,7 +241,7 @@ namespace Opm
         : w_(0)
     {
         if (grid.dimensions != 3) {
-            THROW("We cannot initialize wells from a deck unless the corresponding grid is 3-dimensional.");
+            OPM_THROW(std::runtime_error, "We cannot initialize wells from a deck unless the corresponding grid is 3-dimensional.");
         }
         // NOTE: Implementation copied and modified from dune-porsol's class BlackoilWells.
         std::vector<std::string> keywords;
@@ -248,11 +249,11 @@ namespace Opm
         keywords.push_back("COMPDAT");
 //      keywords.push_back("WELTARG");
         if (!deck.hasFields(keywords)) {
-            MESSAGE("Missing well keywords in deck, initializing no wells.");
+            OPM_MESSAGE("Missing well keywords in deck, initializing no wells.");
             return;
         }
         if (!(deck.hasField("WCONINJE") || deck.hasField("WCONPROD")) ) {
-            THROW("Needed field is missing in file");
+            OPM_THROW(std::runtime_error, "Needed field is missing in file");
         }
 
         // Obtain phase usage data.
@@ -372,7 +373,7 @@ namespace Opm
                         std::map<int, int>::const_iterator cgit =
                             cartesian_to_compressed.find(cart_grid_indx);
                         if (cgit == cartesian_to_compressed.end()) {
-                            THROW("Cell with i,j,k indices " << ix << ' ' << jy << ' '
+                            OPM_THROW(std::runtime_error, "Cell with i,j,k indices " << ix << ' ' << jy << ' '
                                   << kz << " not found in grid (well = " << name << ')');
                         }
                         int cell = cgit->second;
@@ -384,7 +385,7 @@ namespace Opm
                             double radius = 0.5*compdat.compdat[kw].diameter_;
                             if (radius <= 0.0) {
                                 radius = 0.5*unit::feet;
-                                MESSAGE("**** Warning: Well bore internal radius set to " << radius);
+                                OPM_MESSAGE("**** Warning: Well bore internal radius set to " << radius);
                             }
                             std::array<double, 3> cubical = getCubeDim(grid, cell);
                             const double* cell_perm = &permeability[grid.dimensions*grid.dimensions*cell];
@@ -398,14 +399,14 @@ namespace Opm
                 }
             }
             if (!found) {
-                THROW("Undefined well name: " << compdat.compdat[kw].well_
+                OPM_THROW(std::runtime_error, "Undefined well name: " << compdat.compdat[kw].well_
                       << " in COMPDAT");
             }
         }
 
         // Set up reference depths that were defaulted. Count perfs.
         int num_perfs = 0;
-        ASSERT(grid.dimensions == 3);
+        assert(grid.dimensions == 3);
         for (int w = 0; w < num_wells; ++w) {
             num_perfs += wellperf_data[w].size();
             if (well_data[w].reference_bhp_depth < 0.0) {
@@ -423,7 +424,7 @@ namespace Opm
         // Create the well data structures.
         w_ = create_wells(pu.num_phases, num_wells, num_perfs);
         if (!w_) {
-            THROW("Failed creating Wells struct.");
+            OPM_THROW(std::runtime_error, "Failed creating Wells struct.");
         }
 
         // Classify wells
@@ -435,7 +436,7 @@ namespace Opm
                     const int well_index = it->second;
                     well_data[well_index].type = INJECTOR;
                 } else {
-                    THROW("Unseen well name: " << lines[i].well_ << " first seen in WCONINJE");
+                    OPM_THROW(std::runtime_error, "Unseen well name: " << lines[i].well_ << " first seen in WCONINJE");
                 }
             }
         }
@@ -447,7 +448,7 @@ namespace Opm
                     const int well_index = it->second;
                     well_data[well_index].type = PRODUCER;
                 } else {
-                    THROW("Unseen well name: " << lines[i].well_ << " first seen in WCONPROD");
+                    OPM_THROW(std::runtime_error, "Unseen well name: " << lines[i].well_ << " first seen in WCONPROD");
                 }
 
             }
@@ -468,7 +469,7 @@ namespace Opm
             int ok = add_well(well_data[w].type, well_data[w].reference_bhp_depth, w_num_perf,
                               comp_frac, &perf_cells[0], &perf_prodind[0], well_names[w].c_str(), w_);
             if (!ok) {
-                THROW("Failed adding well " << well_names[w] << " to Wells data structure.");
+                OPM_THROW(std::runtime_error, "Failed adding well " << well_names[w] << " to Wells data structure.");
             }
         }
 
@@ -492,9 +493,9 @@ namespace Opm
                 for (int wix = 0; wix < num_wells; ++wix) {
                     if (well_names[wix].compare(0,len, name) == 0) { //equal
                         well_found = true;
-                        ASSERT(well_data[wix].type == w_->type[wix]);
+                        assert(well_data[wix].type == w_->type[wix]);
                         if (well_data[wix].type != INJECTOR) {
-                            THROW("Found WCONINJE entry for a non-injector well: " << well_names[wix]);
+                            OPM_THROW(std::runtime_error, "Found WCONINJE entry for a non-injector well: " << well_names[wix]);
                         }
 
                         // Add all controls that are present in well.
@@ -513,7 +514,7 @@ namespace Opm
                             } else if (wci_line.injector_type_ == "GAS") {
                                 distr[pu.phase_pos[BlackoilPhases::Vapour]] = 1.0;
                             } else {
-                                THROW("Injector type " << wci_line.injector_type_ << " not supported."
+                                OPM_THROW(std::runtime_error, "Injector type " << wci_line.injector_type_ << " not supported."
                                       "WellsManager only supports WATER, OIL and GAS injector types.");
                             }
                             ok = append_well_controls(SURFACE_RATE, wci_line.surface_flow_max_rate_,
@@ -529,7 +530,7 @@ namespace Opm
                             } else if (wci_line.injector_type_ == "GAS") {
                                 distr[pu.phase_pos[BlackoilPhases::Vapour]] = 1.0;
                             } else {
-                                THROW("Injector type " << wci_line.injector_type_ << " not supported."
+                                OPM_THROW(std::runtime_error, "Injector type " << wci_line.injector_type_ << " not supported."
                                       "WellsManager only supports WATER, OIL and GAS injector types.");
                             }
                             ok = append_well_controls(RESERVOIR_RATE, wci_line.reservoir_flow_max_rate_,
@@ -541,15 +542,15 @@ namespace Opm
                                                       NULL, wix, w_);
                         }
                         if (ok && wci_line.THP_limit_ > 0.0) {
-                            THROW("We cannot handle THP limit for well " << well_names[wix]);
+                            OPM_THROW(std::runtime_error, "We cannot handle THP limit for well " << well_names[wix]);
                         }
                         if (!ok) {
-                            THROW("Failure occured appending controls for well " << well_names[wix]);
+                            OPM_THROW(std::runtime_error, "Failure occured appending controls for well " << well_names[wix]);
                         }
                         InjectionControl::Mode mode = InjectionControl::mode(wci_line.control_mode_);
                         int cpos = control_pos[mode];
                         if (cpos == -1 && mode != InjectionControl::GRUP) {
-                            THROW("Control for " << wci_line.control_mode_ << " not specified in well " << well_names[wix]);
+                            OPM_THROW(std::runtime_error, "Control for " << wci_line.control_mode_ << " not specified in well " << well_names[wix]);
                         }
                         // We need to check if the well is shut or not
                         if (wci_line.open_shut_flag_ == "SHUT") {
@@ -561,17 +562,17 @@ namespace Opm
                         double cf[3] = { 0.0, 0.0, 0.0 };
                         if (wci_line.injector_type_[0] == 'W') {
                             if (!pu.phase_used[BlackoilPhases::Aqua]) {
-                                THROW("Water phase not used, yet found water-injecting well.");
+                                OPM_THROW(std::runtime_error, "Water phase not used, yet found water-injecting well.");
                             }
                             cf[pu.phase_pos[BlackoilPhases::Aqua]] = 1.0;
                         } else if (wci_line.injector_type_[0] == 'O') {
                             if (!pu.phase_used[BlackoilPhases::Liquid]) {
-                                THROW("Oil phase not used, yet found oil-injecting well.");
+                                OPM_THROW(std::runtime_error, "Oil phase not used, yet found oil-injecting well.");
                             }
                             cf[pu.phase_pos[BlackoilPhases::Liquid]] = 1.0;
                         } else if (wci_line.injector_type_[0] == 'G') {
                             if (!pu.phase_used[BlackoilPhases::Vapour]) {
-                                THROW("Gas phase not used, yet found gas-injecting well.");
+                                OPM_THROW(std::runtime_error, "Gas phase not used, yet found gas-injecting well.");
                             }
                             cf[pu.phase_pos[BlackoilPhases::Vapour]] = 1.0;
                         }
@@ -579,7 +580,7 @@ namespace Opm
                     }
                 }
                 if (!well_found) {
-                    THROW("Undefined well name: " << wci_line.well_
+                    OPM_THROW(std::runtime_error, "Undefined well name: " << wci_line.well_
                           << " in WCONINJE");
                 }
             }
@@ -603,9 +604,9 @@ namespace Opm
                 for (int wix = 0; wix < num_wells; ++wix) {
                     if (well_names[wix].compare(0,len, name) == 0) { //equal
                         well_found = true;
-                        ASSERT(well_data[wix].type == w_->type[wix]);
+                        assert(well_data[wix].type == w_->type[wix]);
                         if (well_data[wix].type != PRODUCER) {
-                            THROW("Found WCONPROD entry for a non-producer well: " << well_names[wix]);
+                            OPM_THROW(std::runtime_error, "Found WCONPROD entry for a non-producer well: " << well_names[wix]);
                         }
                         // Add all controls that are present in well.
                         // First we must clear existing controls, in case the
@@ -615,7 +616,7 @@ namespace Opm
                         int ok = 1;
                         if (ok && wcp_line.oil_max_rate_ >= 0.0) {
                             if (!pu.phase_used[BlackoilPhases::Liquid]) {
-                                THROW("Oil phase not active and ORAT control specified.");
+                                OPM_THROW(std::runtime_error, "Oil phase not active and ORAT control specified.");
                             }
                             control_pos[ProductionControl::ORAT] = w_->ctrls[wix]->num;
                             double distr[3] = { 0.0, 0.0, 0.0 };
@@ -625,7 +626,7 @@ namespace Opm
                         }
                         if (ok && wcp_line.water_max_rate_ >= 0.0) {
                             if (!pu.phase_used[BlackoilPhases::Aqua]) {
-                                THROW("Water phase not active and WRAT control specified.");
+                                OPM_THROW(std::runtime_error, "Water phase not active and WRAT control specified.");
                             }
                             control_pos[ProductionControl::WRAT] = w_->ctrls[wix]->num;
                             double distr[3] = { 0.0, 0.0, 0.0 };
@@ -635,7 +636,7 @@ namespace Opm
                         }
                         if (ok && wcp_line.gas_max_rate_ >= 0.0) {
                             if (!pu.phase_used[BlackoilPhases::Vapour]) {
-                                THROW("Gas phase not active and GRAT control specified.");
+                                OPM_THROW(std::runtime_error, "Gas phase not active and GRAT control specified.");
                             }
                             control_pos[ProductionControl::GRAT] = w_->ctrls[wix]->num;
                             double distr[3] = { 0.0, 0.0, 0.0 };
@@ -645,10 +646,10 @@ namespace Opm
                         }
                         if (ok && wcp_line.liquid_max_rate_ >= 0.0) {
                             if (!pu.phase_used[BlackoilPhases::Aqua]) {
-                                THROW("Water phase not active and LRAT control specified.");
+                                OPM_THROW(std::runtime_error, "Water phase not active and LRAT control specified.");
                             }
                             if (!pu.phase_used[BlackoilPhases::Liquid]) {
-                                THROW("Oil phase not active and LRAT control specified.");
+                                OPM_THROW(std::runtime_error, "Oil phase not active and LRAT control specified.");
                             }
                             control_pos[ProductionControl::LRAT] = w_->ctrls[wix]->num;
                             double distr[3] = { 0.0, 0.0, 0.0 };
@@ -669,15 +670,15 @@ namespace Opm
                                                  NULL, wix, w_);
                         }
                         if (ok && wcp_line.THP_limit_ > 0.0) {
-                            THROW("We cannot handle THP limit for well " << well_names[wix]);
+                            OPM_THROW(std::runtime_error, "We cannot handle THP limit for well " << well_names[wix]);
                         }
                         if (!ok) {
-                            THROW("Failure occured appending controls for well " << well_names[wix]);
+                            OPM_THROW(std::runtime_error, "Failure occured appending controls for well " << well_names[wix]);
                         }
                         ProductionControl::Mode mode = ProductionControl::mode(wcp_line.control_mode_);
                         int cpos = control_pos[mode];
                         if (cpos == -1 && mode != ProductionControl::GRUP) {
-                            THROW("Control mode type " << mode << " not present in well " << well_names[wix]);
+                            OPM_THROW(std::runtime_error, "Control mode type " << mode << " not present in well " << well_names[wix]);
                         }
                         // If it's shut, we complement the cpos
                         if (wcp_line.open_shut_flag_ == "SHUT") {
@@ -687,7 +688,7 @@ namespace Opm
                     }
                 }
                 if (!well_found) {
-                    THROW("Undefined well name: " << wcp_line.well_
+                    OPM_THROW(std::runtime_error, "Undefined well name: " << wcp_line.well_
                           << " in WCONPROD");
                 }
             }
@@ -695,7 +696,7 @@ namespace Opm
 
         // Get WELTARG data
         if (deck.hasField("WELTARG")) {
-            THROW("We currently do not handle WELTARG.");
+            OPM_THROW(std::runtime_error, "We currently do not handle WELTARG.");
             /*
             const WELTARG& weltargs = deck.getWELTARG();
             const int num_weltargs  = weltargs.weltarg.size();
@@ -714,7 +715,7 @@ namespace Opm
                     }
                 }
                 if (!well_found) {
-                    THROW("Undefined well name: " << weltargs.weltarg[kw].well_
+                    OPM_THROW(std::runtime_error, "Undefined well name: " << weltargs.weltarg[kw].well_
                           << " in WELTARG");
                 }
             }
@@ -749,7 +750,7 @@ namespace Opm
                 std::string wellname = line.well_;
                 std::map<std::string, int>::const_iterator it = well_names_to_index.find(wellname);
                 if (it == well_names_to_index.end()) {
-                    THROW("Trying to open/shut well with name: \"" << wellname<<"\" but it's not registered under WELSPECS.");
+                    OPM_THROW(std::runtime_error, "Trying to open/shut well with name: \"" << wellname<<"\" but it's not registered under WELSPECS.");
                 }
                 const int index = it->second;
                 if (line.openshutflag_ == "SHUT") {
@@ -757,15 +758,15 @@ namespace Opm
                     if (cur_ctrl >= 0) {
                         cur_ctrl = ~cur_ctrl;
                     }
-                    ASSERT(w_->ctrls[index]->current < 0);
+                    assert(w_->ctrls[index]->current < 0);
                 } else if (line.openshutflag_ == "OPEN") {
                     int& cur_ctrl = w_->ctrls[index]->current;
                     if (cur_ctrl < 0) {
                         cur_ctrl = ~cur_ctrl;
                     }
-                    ASSERT(w_->ctrls[index]->current >= 0);
+                    assert(w_->ctrls[index]->current >= 0);
                 } else {
-                    THROW("Unknown Open/close keyword: \"" << line.openshutflag_<< "\". Allowed values: OPEN, SHUT.");
+                    OPM_THROW(std::runtime_error, "Unknown Open/close keyword: \"" << line.openshutflag_<< "\". Allowed values: OPEN, SHUT.");
                 }
             }
         }
@@ -796,13 +797,13 @@ namespace Opm
                 std::string name = lines[i].well_;
                 const int wix = well_names_to_index[name];
                 WellNode& wellnode = *well_collection_.getLeafNodes()[wix];
-                ASSERT(wellnode.name() == name);
+                assert(wellnode.name() == name);
                 if (well_data[wix].type == PRODUCER) {
                     wellnode.prodSpec().guide_rate_ = lines[i].guide_rate_;
                     if (lines[i].phase_ == "OIL") {
                         wellnode.prodSpec().guide_rate_type_ = ProductionSpecification::OIL;
                     } else {
-                        THROW("Guide rate type " << lines[i].phase_ << " specified for producer "
+                        OPM_THROW(std::runtime_error, "Guide rate type " << lines[i].phase_ << " specified for producer "
                               << name << " in WGRUPCON, cannot handle.");
                     }
                 } else if (well_data[wix].type == INJECTOR) {
@@ -810,11 +811,11 @@ namespace Opm
                     if (lines[i].phase_ == "RAT") {
                         wellnode.injSpec().guide_rate_type_ = InjectionSpecification::RAT;
                     } else {
-                        THROW("Guide rate type " << lines[i].phase_ << " specified for injector "
+                        OPM_THROW(std::runtime_error, "Guide rate type " << lines[i].phase_ << " specified for injector "
                               << name << " in WGRUPCON, cannot handle.");
                     }
                 } else {
-                    THROW("Unknown well type " << well_data[wix].type << " for well " << name);
+                    OPM_THROW(std::runtime_error, "Unknown well type " << well_data[wix].type << " for well " << name);
                 }
             }
         }

@@ -48,7 +48,7 @@ namespace Opm
             const std::vector<double>& krow = swof_table[table_num][2];
             const std::vector<double>& pcow = swof_table[table_num][3];
             if (krw.front() != 0.0 || krow.back() != 0.0) {
-                THROW("Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
+                OPM_THROW(std::runtime_error, "Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
             }
             buildUniformMonotoneTable(sw, krw,  samples, krw_);
             buildUniformMonotoneTable(sw, krow, samples, krow_);
@@ -91,7 +91,7 @@ namespace Opm
             buildUniformMonotoneTable(sg, pcog, samples, pcog_);
             smin_[phase_usage.phase_pos[Vapour]] = sg[0];
             if (std::fabs(sg.back() + swco - 1.0) > 1e-3) {
-                THROW("Gas maximum saturation in SGOF table = " << sg.back() <<
+                OPM_THROW(std::runtime_error, "Gas maximum saturation in SGOF table = " << sg.back() <<
                       ", should equal (1.0 - connate water sat) = " << (1.0 - swco));
             }
             smax_[phase_usage.phase_pos[Vapour]] = sg.back();
@@ -132,7 +132,7 @@ namespace Opm
             kr[wpos] = krw;
             kr[opos] = krow;
         } else {
-            ASSERT(phase_usage.phase_used[Vapour]);
+            assert(phase_usage.phase_used[Vapour]);
             int gpos = phase_usage.phase_pos[Vapour];
             int opos = phase_usage.phase_pos[Liquid];
             double sg = s[gpos];
@@ -194,7 +194,7 @@ namespace Opm
             dkrds[wpos + wpos*np] = dkrww;
             dkrds[opos + wpos*np] = dkrow; // Row opos, column wpos, fortran order.
         } else {
-            ASSERT(phase_usage.phase_used[Vapour]);
+            assert(phase_usage.phase_used[Vapour]);
             int gpos = phase_usage.phase_pos[Vapour];
             int opos = phase_usage.phase_pos[Liquid];
             double sg = s[gpos];
@@ -273,7 +273,7 @@ namespace Opm
             const std::vector<double>& krow = swof_table[table_num][2];
             const std::vector<double>& pcow = swof_table[table_num][3];
             if (krw.front() != 0.0 || krow.back() != 0.0) {
-                THROW("Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
+                OPM_THROW(std::runtime_error, "Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
             }
             krw_ = NonuniformTableLinear<double>(sw, krw);
             krow_ = NonuniformTableLinear<double>(sw, krow);
@@ -317,7 +317,7 @@ namespace Opm
             pcog_ = NonuniformTableLinear<double>(sg, pcog);
             smin_[phase_usage.phase_pos[Vapour]] = sg[0];
             if (std::fabs(sg.back() + swco - 1.0) > 1e-3) {
-                THROW("Gas maximum saturation in SGOF table = " << sg.back() <<
+                OPM_THROW(std::runtime_error, "Gas maximum saturation in SGOF table = " << sg.back() <<
                       ", should equal (1.0 - connate water sat) = " << (1.0 - swco));
             }
             smax_[phase_usage.phase_pos[Vapour]] = sg.back();
@@ -358,7 +358,7 @@ namespace Opm
             kr[wpos] = krw;
             kr[opos] = krow;
         } else {
-            ASSERT(phase_usage.phase_used[Vapour]);
+            assert(phase_usage.phase_used[Vapour]);
             int gpos = phase_usage.phase_pos[Vapour];
             int opos = phase_usage.phase_pos[Liquid];
             double sg = s[gpos];
@@ -420,7 +420,7 @@ namespace Opm
             dkrds[wpos + wpos*np] = dkrww;
             dkrds[opos + wpos*np] = dkrow; // Row opos, column wpos, fortran order.
         } else {
-            ASSERT(phase_usage.phase_used[Vapour]);
+            assert(phase_usage.phase_used[Vapour]);
             int gpos = phase_usage.phase_pos[Vapour];
             int opos = phase_usage.phase_pos[Liquid];
             double sg = s[gpos];

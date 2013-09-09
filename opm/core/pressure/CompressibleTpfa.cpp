@@ -83,7 +83,7 @@ namespace Opm
           singular_(false)
     {
         if (wells_ && (wells_->number_of_phases != props.numPhases())) {
-            THROW("Inconsistent number of phases specified (wells vs. props): "
+            OPM_THROW(std::runtime_error, "Inconsistent number of phases specified (wells vs. props): "
                   << wells_->number_of_phases << " != " << props.numPhases());
         }
         const int num_dofs = grid.number_of_cells + (wells ? wells->number_of_wells : 0);
@@ -179,7 +179,7 @@ namespace Opm
         }
 
         if ((iter == maxiter_) && (res_norm > residual_tol_) && (inc_norm > change_tol_)) {
-            THROW("CompressibleTpfa::solve() failed to converge in " << maxiter_ << " iterations.");
+            OPM_THROW(std::runtime_error, "CompressibleTpfa::solve() failed to converge in " << maxiter_ << " iterations.");
         }
 
         std::cout << "Solved pressure in " << iter << " iterations." << std::endl;
@@ -488,7 +488,7 @@ namespace Opm
                     // only inject pure fluids.
                     props_.matrix(1, &perf_p, comp_frac, &c, wpA, NULL);
                     props_.viscosity(1, &perf_p, comp_frac, &c, &mu[0], NULL);
-                    ASSERT(std::fabs(std::accumulate(comp_frac, comp_frac + np, 0.0) - 1.0) < 1e-6);
+                    assert(std::fabs(std::accumulate(comp_frac, comp_frac + np, 0.0) - 1.0) < 1e-6);
                     props_.relperm  (1, comp_frac, &c, wpM , NULL);
                     for (int phase = 0; phase < np; ++phase) {
                         wpM[phase] /= mu[phase];

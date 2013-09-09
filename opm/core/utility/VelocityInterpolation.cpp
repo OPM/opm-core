@@ -22,6 +22,8 @@
 #include <opm/core/grid.h>
 #include <opm/core/linalg/blas_lapack.h>
 
+#include <iostream>
+
 namespace Opm
 {
 
@@ -70,7 +72,7 @@ namespace Opm
             if (cell == grid_.face_cells[2*face]) {
                 face_flux = flux_[face];
             } else {
-                ASSERT(cell == grid_.face_cells[2*face + 1]);
+                assert(cell == grid_.face_cells[2*face + 1]);
                 face_flux = -flux_[face];
             }
             for (int dd = 0; dd < dim; ++dd) {
@@ -147,7 +149,7 @@ namespace Opm
                     for (int row = 0; row < n; ++row) {
                         std::cerr << "    " << orig_f[row] << '\n';
                     }
-                    THROW("Lapack error: " << info << " encountered in cell " << cell);
+                    OPM_THROW(std::runtime_error, "Lapack error: " << info << " encountered in cell " << cell);
                 }
                 // The solution ends up in f, so we must copy it.
                 std::copy(f.begin(), f.end(), corner_velocity_.begin() + dim*cid);

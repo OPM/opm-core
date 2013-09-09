@@ -43,7 +43,7 @@ namespace Opm
     {
 	bc_ = flow_conditions_construct(0);
 	if (!bc_) {
-	    THROW("Failed to construct FlowBoundaryConditions struct.");
+	    OPM_THROW(std::runtime_error, "Failed to construct FlowBoundaryConditions struct.");
 	}
     }
 
@@ -79,7 +79,7 @@ namespace Opm
     {
 	int ok = flow_conditions_append(type, face, value, bc_);
 	if (!ok) {
-	    THROW("Failed to append boundary condition for face " << face);
+	    OPM_THROW(std::runtime_error, "Failed to append boundary condition for face " << face);
 	}
     }
 
@@ -98,7 +98,7 @@ namespace Opm
 	findSideFaces(grid, side, faces);
 	int ok = flow_conditions_append_multi(BC_PRESSURE, faces.size(), &faces[0], pressure, bc_);
 	if (!ok) {
-	    THROW("Failed to append pressure boundary conditions for side " << sideString(side));
+	    OPM_THROW(std::runtime_error, "Failed to append pressure boundary conditions for side " << sideString(side));
 	}
     }
 
@@ -132,7 +132,7 @@ namespace Opm
 	    const double face_flux = flux * grid.face_areas[faces[fi]] / tot_area;
 	    int ok = flow_conditions_append(BC_FLUX_TOTVOL, faces[fi], face_flux, bc_);
 	    if (!ok) {
-		THROW("Failed to append flux boundary conditions for face " << faces[fi] << " on side " << sideString(side));
+		OPM_THROW(std::runtime_error, "Failed to append flux boundary conditions for face " << faces[fi] << " on side " << sideString(side));
 	    }
 	}
     }
@@ -164,7 +164,7 @@ namespace Opm
 	    case FlowBCManager::Ymax: return "Ymax";
 	    case FlowBCManager::Zmin: return "Zmin";
 	    case FlowBCManager::Zmax: return "Zmax";
-	    default: THROW("Unknown side tag " << s);
+	    default: OPM_THROW(std::runtime_error, "Unknown side tag " << s);
 	    }
 	}
 
@@ -182,9 +182,9 @@ namespace Opm
                 ix       /=      dims[dim];
             }
 
-            ASSERT2 (ix == 0,
-                     "Lexicographic index is not consistent "
-                     "with grid dimensions.");
+            // Make sure that lexicographic index is consistent with
+            // grid dimensions.
+            assert(ix == 0);
 	}
 
 
@@ -199,15 +199,15 @@ namespace Opm
 			   std::vector<int>& faces)
 	{
 	    if (grid.cell_facetag == 0) {
-		THROW("Faces not tagged - cannot extract " << sideString(side) << " faces.");
+		OPM_THROW(std::runtime_error, "Faces not tagged - cannot extract " << sideString(side) << " faces.");
 	    }
 
-            ASSERT2 (grid.dimensions <= 3,
-                     "Grid must have three dimensions or less.");
+            // make sure that grid has three dimensions or less.
+            assert(grid.dimensions <= 3);
 
-            ASSERT2 (side < 2 * grid.dimensions,
-                     "Boundary condition side not consistent with "
-                     "number of physical grid dimensions.");
+            // Make sure boundary condition side is consistent with
+            // number of physical grid dimensions.
+            assert(side < 2 * grid.dimensions);
 
 	    // Get all boundary faces with the correct tag and with
 	    // min/max i/j/k (depending on side).
@@ -227,7 +227,7 @@ namespace Opm
 			    // Face is on boundary.
 			    faces.push_back(f);
 			} else {
-			    THROW("Face not on boundary, even with correct tag and boundary cell. This should not occur.");
+			    OPM_THROW(std::runtime_error, "Face not on boundary, even with correct tag and boundary cell. This should not occur.");
 			}
 		    }
 		}

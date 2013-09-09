@@ -28,6 +28,7 @@
 #include <opm/core/utility/miscUtilitiesBlackoil.hpp>
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
 
+#include <iostream>
 #include <fstream>
 #include <iterator>
 #include <numeric>
@@ -62,7 +63,7 @@ namespace Opm
           ja_downw_(grid.number_of_faces, -1)
     {
         if (props.numPhases() != 2) {
-            THROW("Property object must have 2 phases");
+            OPM_THROW(std::runtime_error, "Property object must have 2 phases");
         }
         int np = props.numPhases();
         int num_cells = props.numCells();
@@ -99,7 +100,7 @@ namespace Opm
 
         // Check immiscibility requirement (only done for first cell).
         if (A_[1] != 0.0 || A_[2] != 0.0) {
-            THROW("TransportModelCompressibleTwophase requires a property object without miscibility.");
+            OPM_THROW(std::runtime_error, "TransportModelCompressibleTwophase requires a property object without miscibility.");
         }
 
         std::vector<int> seq(grid_.number_of_cells);
@@ -295,7 +296,7 @@ namespace Opm
 
         // Done with iterations, check if we succeeded.
         if (update_count > 0) {
-            THROW("In solveMultiCell(), we did not converge after "
+            OPM_THROW(std::runtime_error, "In solveMultiCell(), we did not converge after "
                   << num_iters << " iterations. Remaining update count = " << update_count);
         }
         std::cout << "Solved " << num_cells << " cell multicell problem in "
@@ -414,7 +415,7 @@ namespace Opm
         const int nc = grid_.number_of_cells;
         const int nf = grid_.number_of_faces;
         const int np = props_.numPhases();
-        ASSERT(np == 2);
+        assert(np == 2);
         const int dim = grid_.dimensions;
         density_.resize(nc*np);
         props_.density(grid_.number_of_cells, &A_[0], &density_[0]);
@@ -497,7 +498,7 @@ namespace Opm
         } while (max_s_change > tol_ && ++num_iters < maxit_);
 
         if (max_s_change > tol_) {
-            THROW("In solveGravityColumn(), we did not converge after "
+            OPM_THROW(std::runtime_error, "In solveGravityColumn(), we did not converge after "
                   << num_iters << " iterations. Delta s = " << max_s_change);
         }
         return num_iters + 1;
