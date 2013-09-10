@@ -36,14 +36,16 @@
 #ifndef OPM_CSRMATRIXBLOCKASSEMBLER_HPP_HEADER
 #define OPM_CSRMATRIXBLOCKASSEMBLER_HPP_HEADER
 
+#include <opm/core/transport/implicit/JacobianSystem.hpp>
+
+#include <opm/core/linalg/sparse_sys.h>
+
 #include <cassert>
 #include <cstddef>
 #include <cstdlib>
-
 #include <algorithm>
 #include <vector>
 
-#include <opm/core/linalg/sparse_sys.h>
 
 namespace Opm {
     namespace ImplicitTransportDefault {

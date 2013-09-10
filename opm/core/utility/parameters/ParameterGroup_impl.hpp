@@ -39,6 +39,7 @@
 #include <iostream>
 #include <string>
 
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/utility/parameters/ParameterStrings.hpp>
 #include <opm/core/utility/parameters/ParameterTools.hpp>
 #include <opm/core/utility/parameters/Parameter.hpp>
