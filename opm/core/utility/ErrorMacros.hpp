@@ -48,12 +48,12 @@
 // std::runtime_error.
 //
 // Usage: OPM_THROW(ExceptionClass, "Error message " << value);
-#define OPM_THROW(Exception, message)                            \
+#define OPM_THROW(Exception, message)                                   \
     do {                                                                \
-        std::ostringstream oss;                                         \
-        oss << "[" << __FILE__ << ":" << __LINE__ << "] " << message;   \
+        std::ostringstream oss__;                                       \
+        oss__ << "[" << __FILE__ << ":" << __LINE__ << "] " << message; \
         OPM_MESSAGE(message);                                           \
-        throw Exception(oss.str());                                     \
+        throw Exception(oss__.str());                                   \
     } while (false)
 
 // throw an exception if a condition is true
