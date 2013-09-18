@@ -209,13 +209,6 @@ list (APPEND PROGRAM_SOURCE_FILES
 # originally generated with the command:
 # find opm -name '*.h*' -a ! -name '*-pch.hpp' -printf '\t%p\n' | sort
 list (APPEND PUBLIC_HEADER_FILES
-	opm/core/FixedLengthSpline_.hpp
-	opm/core/PolynomialUtils.hpp
-	opm/core/Spline.hpp
-	opm/core/SplineCommon_.hpp
-	opm/core/TridiagonalMatrix.hpp
-	opm/core/Unused.hpp
-	opm/core/VariableLengthSpline_.hpp
 	opm/core/doxygen_main.hpp
 	opm/core/grid.h
 	opm/core/grid/CellQuadrature.hpp
@@ -341,12 +334,18 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/Factory.hpp
 	opm/core/utility/MonotCubicInterpolator.hpp
 	opm/core/utility/NonuniformTableLinear.hpp
+	opm/core/utility/PolynomialUtils.hpp
 	opm/core/utility/RootFinders.hpp
 	opm/core/utility/SparseTable.hpp
 	opm/core/utility/SparseVector.hpp
+	opm/core/utility/Spline.hpp
+	opm/core/utility/SplineCommon_.hpp
 	opm/core/utility/StopWatch.hpp
+	opm/core/utility/TridiagonalMatrix.hpp
 	opm/core/utility/UniformTableLinear.hpp
 	opm/core/utility/Units.hpp
+	opm/core/utility/Unused.hpp
+	opm/core/utility/VariableLengthSpline_.hpp
 	opm/core/utility/VelocityInterpolation.hpp
 	opm/core/utility/WachspressCoord.hpp
 	opm/core/utility/buildUniformMonotoneTable.hpp
