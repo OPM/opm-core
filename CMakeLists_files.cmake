@@ -307,8 +307,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/TransportSolverTwophaseInterface.hpp
 	opm/core/transport/implicit/CSRMatrixBlockAssembler.hpp
 	opm/core/transport/implicit/CSRMatrixUmfpackSolver.hpp
-	opm/core/transport/implicit/GravityColumnSolver.hpp
-	opm/core/transport/implicit/GravityColumnSolver_impl.hpp
 	opm/core/transport/implicit/ImplicitAssembly.hpp
 	opm/core/transport/implicit/ImplicitTransport.hpp
 	opm/core/transport/implicit/JacobianSystem.hpp
