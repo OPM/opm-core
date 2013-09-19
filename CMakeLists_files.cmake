@@ -139,6 +139,7 @@ list (APPEND MAIN_SOURCE_FILES
 # originally generated with the command:
 # find tests -name '*.cpp' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
 list (APPEND TEST_SOURCE_FILES
+	tests/test_spline.cpp
 	tests/test_dgbasis.cpp
 	tests/test_cartgrid.cpp
 	tests/test_cubic.cpp
@@ -331,12 +332,16 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/Factory.hpp
 	opm/core/utility/MonotCubicInterpolator.hpp
 	opm/core/utility/NonuniformTableLinear.hpp
+	opm/core/utility/PolynomialUtils.hpp
 	opm/core/utility/RootFinders.hpp
 	opm/core/utility/SparseTable.hpp
 	opm/core/utility/SparseVector.hpp
+	opm/core/utility/Spline.hpp
 	opm/core/utility/StopWatch.hpp
+	opm/core/utility/TridiagonalMatrix.hpp
 	opm/core/utility/UniformTableLinear.hpp
 	opm/core/utility/Units.hpp
+	opm/core/utility/Unused.hpp
 	opm/core/utility/VelocityInterpolation.hpp
 	opm/core/utility/WachspressCoord.hpp
 	opm/core/utility/buildUniformMonotoneTable.hpp
