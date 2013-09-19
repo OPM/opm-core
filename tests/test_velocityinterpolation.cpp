@@ -62,7 +62,8 @@ namespace
         }
     }
 
-
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
     // Compute flux corresponding to a velocity vector v = v0 + x*v1.
     void computeFluxLinear(const UnstructuredGrid& grid,
                            const std::vector<double>& v0,
@@ -81,7 +82,7 @@ namespace
             flux[face] = std::inner_product(v.begin(), v.end(), grid.face_normals + face*dim, 0.0);
         }
     }
-
+#pragma clang diagnostic pop
 
     double vectorDiff2(const std::vector<double>& v1, const std::vector<double>& v2)
     {

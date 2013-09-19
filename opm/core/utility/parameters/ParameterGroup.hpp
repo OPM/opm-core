@@ -282,6 +282,12 @@ namespace Opm {
             template <typename StringArray>
 	    void parseCommandLineArguments(int argc, StringArray argv);
 	    void recursiveSetIsOutputEnabled(bool output_is_enabled);
+
+	    // helper routines to do textual I/O
+	    template <typename T>
+	    static std::string to_string(const T& val);
+	    static std::pair<std::string, std::string>
+	    filename_split(const std::string& filename);
 	};
     } // namespace parameter
 } // namespace Opm

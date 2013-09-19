@@ -67,18 +67,18 @@ namespace Opm {
 	    static std::string type() {return "ParameterGroup";}
 	};
 
-	namespace {
 	    template <typename T>
 	    inline std::string
-	    to_string(const T& val)
+	    ParameterGroup::to_string(const T& val)
 	    {
 		std::ostringstream os;
 		os << val;
 		return os.str();
 	    }
 
+	    template <>
 	    inline std::string
-	    to_string(const bool b) {
+	    ParameterGroup::to_string(const bool& b) {
 		if (b) {
 		    return ID_true;
 		} else {
@@ -86,24 +86,21 @@ namespace Opm {
 		}
 	    }
 
+	    template <>
 	    inline std::string
-	    to_string(const ParameterGroup&)
+	    ParameterGroup::to_string(const ParameterGroup&)
 	    {
 		return std::string("<parameter group>");
 	    }
 
-	    std::pair<std::string, std::string>
-            filename_split(const std::string& filename)
+	    inline std::pair<std::string, std::string>
+	    ParameterGroup::filename_split(const std::string& filename)
             {
 		int fpos = filename.rfind('.');
 		std::string name = filename.substr(0, fpos);
 		std::string type = filename.substr(fpos+1);
 		return std::make_pair(name, type);
 	    }
-
-	}
-
-
 
         template <typename StringArray>
 	ParameterGroup::ParameterGroup(int argc, StringArray argv, bool verify_syntax)
