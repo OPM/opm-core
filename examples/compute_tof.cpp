@@ -226,6 +226,9 @@ try
     Opm::WellState well_state;
     well_state.init(wells->c_wells(), state);
 
+    // Check if we have misspelled anything
+    warnIfUnusedParams(param);
+
     // Main solvers.
     Opm::time::StopWatch pressure_timer;
     double ptime = 0.0;
