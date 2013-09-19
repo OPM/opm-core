@@ -168,53 +168,34 @@ void testAll()
     }
 
     /////////
-    // test fixed length spline, n = 2
+    // test spline with two sampling points
     /////////
 
     // full spline
-    { Opm::Spline<double, 2> sp(x[0], x[1], y[0], y[1], m0, m1); sp.set(x[0],x[1],y[0],y[1],m0, m1); testFull(sp, x, y, m0, m1); };
-    { Opm::Spline<double, 2> sp(x, y, m0, m1); sp.setXYArrays(2, x, y, m0, m1); testFull(sp, x, y, m0, m1);  };
-    { Opm::Spline<double, 2> sp(points, m0, m1); sp.setArrayOfPoints(2, points, m0, m1); testFull(sp, x, y, m0, m1); };
-
-    /////////
-    // test fixed length spline, n > 2
-    /////////
-
-    // full spline
-    { Opm::Spline<double, 5> sp(x, y, m0, m1); sp.setXYArrays(5, x, y, m0, m1); testFull(sp, x, y, m0, m1);  };
-    { Opm::Spline<double, 5> sp; sp.setArrayOfPoints(5, points, m0, m1); testFull(sp, x, y, m0, m1); };
-    { Opm::Spline<double, 5> sp; sp.setContainerOfPoints(pointVec,m0, m1); testFull(sp, x, y, m0, m1); };
-#if GCC_VERSION >= 40500
-    { Opm::Spline<double, 5> sp; sp.setContainerOfTuples(pointsInitList, m0, m1); testFull(sp, x, y, m0, m1); };
-#endif
-
-    // natural spline
-    { Opm::Spline<double, 5> sp(x, y); sp.setXYArrays(5, x, y); testNatural(sp, x, y); };
-    { Opm::Spline<double, 5> sp; sp.setContainerOfPoints(pointVec); testNatural(sp, x, y); };
-#if GCC_VERSION >= 40500
-    { Opm::Spline<double, 5> sp; sp.setContainerOfTuples(pointsInitList); testNatural(sp, x, y); };
-#endif
+    { Opm::Spline<double> sp(x[0], x[1], y[0], y[1], m0, m1); sp.set(x[0],x[1],y[0],y[1],m0, m1); testFull(sp, x, y, m0, m1); };
+    { Opm::Spline<double> sp(2, x, y, m0, m1); sp.setXYArrays(2, x, y, m0, m1); testFull(sp, x, y, m0, m1);  };
+    { Opm::Spline<double> sp(2, points, m0, m1); sp.setArrayOfPoints(2, points, m0, m1); testFull(sp, x, y, m0, m1); };
 
     /////////
     // test variable length splines
     /////////
 
     // full spline
-    { Opm::Spline<double, -1> sp(5, x, y, m0, m1); sp.setXYArrays(5,x,y,m0, m1); testFull(sp, x, y, m0, m1);  };
-    { Opm::Spline<double, -1> sp(xVec, yVec, m0, m1); sp.setXYContainers(xVec,yVec,m0, m1); testFull(sp, x, y, m0, m1);  };
-    { Opm::Spline<double, -1> sp; sp.setArrayOfPoints(5,points,m0, m1); testFull(sp, x, y, m0, m1); };
-    { Opm::Spline<double, -1> sp; sp.setContainerOfPoints(pointVec,m0, m1); testFull(sp, x, y, m0, m1);  };
+    { Opm::Spline<double> sp(5, x, y, m0, m1); sp.setXYArrays(5,x,y,m0, m1); testFull(sp, x, y, m0, m1);  };
+    { Opm::Spline<double> sp(xVec, yVec, m0, m1); sp.setXYContainers(xVec,yVec,m0, m1); testFull(sp, x, y, m0, m1);  };
+    { Opm::Spline<double> sp; sp.setArrayOfPoints(5,points,m0, m1); testFull(sp, x, y, m0, m1); };
+    { Opm::Spline<double> sp; sp.setContainerOfPoints(pointVec,m0, m1); testFull(sp, x, y, m0, m1);  };
 #if GCC_VERSION >= 40500
-    { Opm::Spline<double, -1> sp; sp.setContainerOfTuples(pointsInitList,m0, m1); testFull(sp, x, y, m0, m1); };
+    { Opm::Spline<double> sp; sp.setContainerOfTuples(pointsInitList,m0, m1); testFull(sp, x, y, m0, m1); };
 #endif
 
     // natural spline
-    { Opm::Spline<double, -1> sp(5, x, y); sp.setXYArrays(5,x,y); testNatural(sp, x, y);  };
-    { Opm::Spline<double, -1> sp(xVec, yVec); sp.setXYContainers(xVec,yVec); testNatural(sp, x, y); };
-    { Opm::Spline<double, -1> sp; sp.setArrayOfPoints(5,points); testNatural(sp, x, y); };
-    { Opm::Spline<double, -1> sp; sp.setContainerOfPoints(pointVec); testNatural(sp, x, y); };
+    { Opm::Spline<double> sp(5, x, y); sp.setXYArrays(5,x,y); testNatural(sp, x, y);  };
+    { Opm::Spline<double> sp(xVec, yVec); sp.setXYContainers(xVec,yVec); testNatural(sp, x, y); };
+    { Opm::Spline<double> sp; sp.setArrayOfPoints(5,points); testNatural(sp, x, y); };
+    { Opm::Spline<double> sp; sp.setContainerOfPoints(pointVec); testNatural(sp, x, y); };
 #if GCC_VERSION >= 40500
-    { Opm::Spline<double, -1> sp; sp.setContainerOfTuples(pointsInitList); testNatural(sp, x, y); };
+    { Opm::Spline<double> sp; sp.setContainerOfTuples(pointsInitList); testNatural(sp, x, y); };
 #endif
 }
 
@@ -231,10 +212,10 @@ void plot()
     FV &xs = *reinterpret_cast<FV*>(x_);
     FV &ys = *reinterpret_cast<FV*>(y_);
 
-    Opm::Spline<double, numSamples> spFull(xs, ys, m1, m2);
-    Opm::Spline<double, numSamples> spNatural(xs, ys);
-    Opm::Spline<double, numSamples> spPeriodic(xs, ys, /*type=*/Opm::PeriodicSpline);
-    Opm::Spline<double, numSamples> spMonotonic(xs, ys, /*type=*/Opm::MonotonicSpline);
+    Opm::Spline<double> spFull(xs, ys, m1, m2);
+    Opm::Spline<double> spNatural(xs, ys);
+    Opm::Spline<double> spPeriodic(xs, ys, /*type=*/Opm::Spline<double>::Periodic);
+    Opm::Spline<double> spMonotonic(xs, ys, /*type=*/Opm::Spline<double>::Monotonic);
 
     spFull.printCSV(x_[0] - 1.00001,
                     x_[n] + 1.00001,
