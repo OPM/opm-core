@@ -37,6 +37,7 @@ gnuplot> plot "spline.csv" using 1:2 w l ti "Curve", \
 */
 #include "config.h"
 
+#include <array>
 #include <opm/core/utility/Spline.hpp>
 
 #define GCC_VERSION (__GNUC__ * 10000 \
