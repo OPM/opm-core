@@ -88,7 +88,7 @@ std::string className()
 
 /** \brief Provide the demangled class name of a given object as a string */
 template <class T>
-std::string className(const T &t)
+std::string className(const T &)
 {
     return ClassNameHelper_<T>::name();
 }
