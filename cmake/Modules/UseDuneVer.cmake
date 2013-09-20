@@ -56,6 +56,7 @@ function (find_dune_version suite module)
   # if we have a source tree, dune.module is available there
   set (_dune_mod "${_inc_path}/dune.module")
   if (NOT EXISTS "${_dune_mod}")
+	set (_last_dune_mod_src "${_dune_mod}")
 	set (_dune_mod "")
   endif ()
 
@@ -63,13 +64,19 @@ function (find_dune_version suite module)
 	# look for the build tree; if we found the library, then the
 	# dune.module file should be in a sub-directory  
 	get_filename_component (_immediate "${_lib_path}" NAME)
+	if ("${_immediate}" STREQUAL ".libs")
+	  # remove autotools internal path
+	  get_filename_component (_lib_path "${_lib_path}" PATH)
+	endif ()
+	get_filename_component (_immediate "${_lib_path}" NAME)
 	if ("${_immediate}" STREQUAL "${CMAKE_LIBRARY_ARCHITECTURE}")
 	  # remove multi-arch part of the library path to get parent
 	  get_filename_component (_lib_path "${_lib_path}" PATH)
 	endif ()
 	get_filename_component (_immediate "${_lib_path}" NAME)	
 	if (("${_immediate}" STREQUAL "${CMAKE_INSTALL_LIBDIR}")
-		OR ("${_immediate}" STREQUAL "lib"))
+		OR ("${_immediate}" STREQUAL "lib")
+		OR ("${_immediate}" STREQUAL "${LIBDIR_MULTIARCH_UNAWARE}"))
 	  # remove library part of the path; this also undo the suffix
 	  # we added if we used the library as a standin
 	  get_filename_component (_lib_path "${_lib_path}" PATH)
@@ -80,6 +87,7 @@ function (find_dune_version suite module)
 	set (_dune_mod "${_lib_path}/${LIBDIR_MULTIARCH_UNAWARE}${_multilib}/dunecontrol/${suite}-${module}/dune.module")
 	if (NOT EXISTS "${_dune_mod}")
 	  # use the name itself as a flag for whether it was found or not
+	  set (_last_dune_mod_bld "${_dune_mod}")
 	  set (_dune_mod "")
 	endif ()
   endif ()
@@ -87,8 +95,8 @@ function (find_dune_version suite module)
   # if it is not available, it may make havoc having empty defines in the source
   # code later, so we bail out early
   if (NOT _dune_mod)
-	if (${suite}-${module}_FIND_REQUIRED)
-	  message (FATAL_ERROR "Failed to locate dune.module for ${suite}-${module}")
+	if (${suite}-${module}_FOUND)
+	  message (FATAL_ERROR "Failed to locate dune.module for ${suite}-${module} (looking for either \"${_last_dune_mod_src}\" or \"${_last_dune_mod_bld}\")")
 	else ()
 	  return ()
 	endif ()
