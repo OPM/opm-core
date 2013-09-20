@@ -48,12 +48,10 @@
 #endif
 
 namespace Opm {
-
+/** \brief Provide the demangled class name of a given object as a string */
 template <class T>
-class ClassNameHelper_
-{ public:
-    static std::string name()
-    {
+std::string className()
+{
         std::string className = typeid( T ).name();
 #if HAVE_CXA_DEMANGLE
         int status;
@@ -65,32 +63,21 @@ class ClassNameHelper_
         }
 #endif // #ifdef __GNUC__
         return className;
-    }
-};
+}
 
 #if HAVE_QUAD
 // specialize for quad precision floating point values to avoid
 // needing a type_info structure
 template <>
-class ClassNameHelper_<__float128>
-{ public:
-    static std::string name()
-    { return "quad"; }
-};
+std::string className<__float128>()
+{ return "quad"; }
 #endif
-
-/** \brief Provide the demangled class name of a given object as a string */
-template <class T>
-std::string className()
-{
-    return ClassNameHelper_<T>::name();
-}
 
 /** \brief Provide the demangled class name of a given object as a string */
 template <class T>
 std::string className(const T &)
 {
-    return ClassNameHelper_<T>::name();
+    return className<T>();
 }
 } // namespace Opm
 
