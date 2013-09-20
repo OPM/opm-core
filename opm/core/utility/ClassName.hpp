@@ -31,8 +31,8 @@
  *   You should have received a copy of the GNU General Public License       *
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
  *****************************************************************************/
-#ifndef OPM_CLASSNAME_HH
-#define OPM_CLASSNAME_HH
+#ifndef OPM_CLASSNAME_HPP
+#define OPM_CLASSNAME_HPP
 
 /** \file
  * \brief A free function to provide the demangled class name
@@ -61,7 +61,7 @@ std::string className()
           className = demangled;
           std::free( demangled );
         }
-#endif // #ifdef __GNUC__
+#endif // HAVE_CXA_DEMANGLE
         return className;
 }
 
@@ -81,4 +81,4 @@ std::string className(const T &)
 }
 } // namespace Opm
 
-#endif  // OPM_CLASSNAME_HH
+#endif  // OPM_CLASSNAME_HPP
