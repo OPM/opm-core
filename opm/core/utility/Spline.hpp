@@ -993,7 +993,7 @@ protected:
 
         // reorder the sample points
         std::vector<Scalar> tmpX(n), tmpY(n);
-        for (int i = 0; i < idxVector.size(); ++ i) {
+        for (size_t i = 0; i < idxVector.size(); ++ i) {
             tmpX[i] = xPos_[idxVector[i]];
             tmpY[i] = yPos_[idxVector[i]];
         }
@@ -1267,12 +1267,12 @@ protected:
 
         // See: J. Stoer: "Numerische Mathematik 1", 9th edition,
         // Springer, 2005, p. 111
-        const int n = numSamples() - 1;
+        const size_t n = numSamples() - 1;
 
         assert(M.rows() == n);
 
         // second to next to last rows
-        for (int i = 2; i < n; ++i) {
+        for (size_t i = 2; i < n; ++i) {
             Scalar lambda_i = h_(i + 1) / (h_(i) + h_(i + 1));
             Scalar mu_i = 1 - lambda_i;
             Scalar d_i =
