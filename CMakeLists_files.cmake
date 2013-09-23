@@ -140,6 +140,7 @@ list (APPEND MAIN_SOURCE_FILES
 # find tests -name '*.cpp' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
 list (APPEND TEST_SOURCE_FILES
 	tests/test_spline.cpp
+	tests/test_propertysystem.cpp
 	tests/test_dgbasis.cpp
 	tests/test_cartgrid.cpp
 	tests/test_cubic.cpp
@@ -325,10 +326,12 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/reorder/reordersequence.h
 	opm/core/transport/reorder/tarjan.h
 	opm/core/utility/Average.hpp
+	opm/core/utility/ClassName.hpp
 	opm/core/utility/DataMap.hpp
 	opm/core/utility/ErrorMacros.hpp
 	opm/core/utility/Event.hpp
 	opm/core/utility/Event_impl.hpp
+	opm/core/utility/Exceptions.hpp
 	opm/core/utility/Factory.hpp
 	opm/core/utility/MonotCubicInterpolator.hpp
 	opm/core/utility/NonuniformTableLinear.hpp
@@ -359,6 +362,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/parameters/ParameterXML.hpp
 	opm/core/utility/parameters/tinyxml/tinystr.h
 	opm/core/utility/parameters/tinyxml/tinyxml.h
+	opm/core/utility/PropertySystem.hpp
 	opm/core/wells/InjectionSpecification.hpp
 	opm/core/wells/ProductionSpecification.hpp
 	opm/core/wells/WellCollection.hpp
