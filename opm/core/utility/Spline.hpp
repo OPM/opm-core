@@ -29,6 +29,7 @@
 
 #include <ostream>
 #include <vector>
+#include <tuple>
 
 namespace Opm
 {
