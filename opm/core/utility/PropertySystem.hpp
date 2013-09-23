@@ -346,7 +346,7 @@ namespace Properties {
               /*value=*/__VA_ARGS__)                            \
     {                                                           \
         typedef int type;                                       \
-        static constexpr int value = __VA_ARGS__;               \
+        static const int value = __VA_ARGS__;                   \
     }
 
 /*!
@@ -362,7 +362,7 @@ namespace Properties {
               /*value=*/__VA_ARGS__)                                \
     {                                                               \
         typedef bool type;                                          \
-        static constexpr bool value = __VA_ARGS__;                  \
+        static const bool value = __VA_ARGS__;                      \
     }
 
 /*!
@@ -757,20 +757,20 @@ struct propertyExplicitlyUnset
 template <class Tree, class PropertyTag>
 class propertyExplicitlyUnsetOnTree
 {
-    static constexpr bool explicitlyUnset = propertyExplicitlyUnset<Tree, PropertyTag>::value;
+    static const bool explicitlyUnset = propertyExplicitlyUnset<Tree, PropertyTag>::value;
 
     template <class ChildTuple>
     struct unsetOnAllChildren
-    { static constexpr bool value = true; };
+    { static const bool value = true; };
 
     template <class Child, class ... RemainingChildren>
     struct unsetOnAllChildren<std::tuple<Child, RemainingChildren...> >
-    { static constexpr bool value =
+    { static const bool value =
             propertyExplicitlyUnsetOnTree<Child, PropertyTag>::value
             && unsetOnAllChildren<std::tuple<RemainingChildren...> >::value; };
 
 public:
-    static constexpr bool value =
+    static const bool value =
         (explicitlyUnset || (!Tree::isLeaf && unsetOnAllChildren<typename Tree::ChildrenTuple>::value));
 };
 
@@ -854,7 +854,7 @@ public:
     typedef SelfT SelfType;
 
     typedef typename RevertedTuple<Children...>::type ChildrenTuple;
-    static constexpr bool isLeaf = std::is_same<ChildrenTuple, std::tuple<> >::value;
+    static const bool isLeaf = std::is_same<ChildrenTuple, std::tuple<> >::value;
 };
 
 namespace PTag {
