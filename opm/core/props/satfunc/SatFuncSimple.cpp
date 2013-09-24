@@ -50,9 +50,24 @@ namespace Opm
             if (krw.front() != 0.0 || krow.back() != 0.0) {
                 OPM_THROW(std::runtime_error, "Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
             }
-            buildUniformMonotoneTable(sw, krw,  samples, krw_);
-            buildUniformMonotoneTable(sw, krow, samples, krow_);
-            buildUniformMonotoneTable(sw, pcow, samples, pcow_);
+
+            // Extend the tables with constant values such that the
+            // derivatives at the endpoints are zero
+            int n = sw.size();
+            std::vector<double> sw_ex(n+2);
+            std::vector<double> krw_ex(n+2);
+            std::vector<double> krow_ex(n+2);
+            std::vector<double> pcow_ex(n+2);
+
+            SatFuncSimpleUniform::ExtendTable(sw,sw_ex,1);
+            SatFuncSimpleUniform::ExtendTable(krw,krw_ex,0);
+            SatFuncSimpleUniform::ExtendTable(krow,krow_ex,0);
+            SatFuncSimpleUniform::ExtendTable(pcow,pcow_ex,0);
+
+            buildUniformMonotoneTable(sw_ex, krw_ex,  samples, krw_);
+            buildUniformMonotoneTable(sw_ex, krow_ex, samples, krow_);
+            buildUniformMonotoneTable(sw_ex, pcow_ex, samples, pcow_);
+
             krocw_ = krow[0]; // At connate water -> ecl. SWOF
             swco = sw[0];
             smin_[phase_usage.phase_pos[Aqua]] = sw[0];
@@ -86,9 +101,23 @@ namespace Opm
             const std::vector<double>& krg = sgof_table[table_num][1];
             const std::vector<double>& krog = sgof_table[table_num][2];
             const std::vector<double>& pcog = sgof_table[table_num][3];
-            buildUniformMonotoneTable(sg, krg,  samples, krg_);
-            buildUniformMonotoneTable(sg, krog, samples, krog_);
-            buildUniformMonotoneTable(sg, pcog, samples, pcog_);
+
+            // Extend the tables with constant values such that the
+            // derivatives at the endpoints are zero
+            int n = sg.size();
+            std::vector<double> sg_ex(n+2);
+            std::vector<double> krg_ex(n+2);
+            std::vector<double> krog_ex(n+2);
+            std::vector<double> pcog_ex(n+2);
+
+            SatFuncSimpleUniform::ExtendTable(sg,sg_ex,1);
+            SatFuncSimpleUniform::ExtendTable(krg,krg_ex,0);
+            SatFuncSimpleUniform::ExtendTable(krog,krog_ex,0);
+            SatFuncSimpleUniform::ExtendTable(pcog,pcog_ex,0);
+
+            buildUniformMonotoneTable(sg_ex, krg_ex,  samples, krg_);
+            buildUniformMonotoneTable(sg_ex, krog_ex, samples, krog_);
+            buildUniformMonotoneTable(sg_ex, pcog_ex, samples, pcog_);
             smin_[phase_usage.phase_pos[Vapour]] = sg[0];
             if (std::fabs(sg.back() + swco - 1.0) > 1e-3) {
                 OPM_THROW(std::runtime_error, "Gas maximum saturation in SGOF table = " << sg.back() <<
@@ -101,6 +130,22 @@ namespace Opm
         smax_[phase_usage.phase_pos[Liquid]] = 1.0 - swco;
     }
 
+
+
+    void SatFuncSimpleUniform::ExtendTable(const std::vector<double>& xv,
+                                           std::vector<double>& xv_ex,
+                                           double pm) const
+    {
+        int n = xv.size();
+        xv_ex[0] = xv[0]-pm;
+        xv_ex[n+1] = xv[n-1]+pm;
+        for (int i=0; i<n; i++)
+        {
+            xv_ex[i+1] = xv[i];
+
+        }
+
+    }
 
     void SatFuncSimpleUniform::evalKr(const double* s, double* kr) const
     {
@@ -255,7 +300,20 @@ namespace Opm
 
 
 
+    void SatFuncSimpleNonuniform::ExtendTable(const std::vector<double>& xv,
+                                           std::vector<double>& xv_ex,
+                                           double pm) const
+    {
+        int n = xv.size();
+        xv_ex[0] = xv[0]-pm;
+        xv_ex[n+1] = xv[n-1]+pm;
+        for (int i=0; i<n; i++)
+        {
+            xv_ex[i+1] = xv[i];
 
+        }
+
+    }
 
 
     void SatFuncSimpleNonuniform::init(const EclipseGridParser& deck,
@@ -275,9 +333,23 @@ namespace Opm
             if (krw.front() != 0.0 || krow.back() != 0.0) {
                 OPM_THROW(std::runtime_error, "Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
             }
-            krw_ = NonuniformTableLinear<double>(sw, krw);
-            krow_ = NonuniformTableLinear<double>(sw, krow);
-            pcow_ = NonuniformTableLinear<double>(sw, pcow);
+
+            // Extend the tables with constant values such that the
+            // derivatives at the endpoints are zero
+            int n = sw.size();
+            std::vector<double> sw_ex(n+2);
+            std::vector<double> krw_ex(n+2);
+            std::vector<double> krow_ex(n+2);
+            std::vector<double> pcow_ex(n+2);
+
+            SatFuncSimpleNonuniform::ExtendTable(sw,sw_ex,1);
+            SatFuncSimpleNonuniform::ExtendTable(krw,krw_ex,0);
+            SatFuncSimpleNonuniform::ExtendTable(krow,krow_ex,0);
+            SatFuncSimpleNonuniform::ExtendTable(pcow,pcow_ex,0);
+
+            krw_ = NonuniformTableLinear<double>(sw_ex, krw_ex);
+            krow_ = NonuniformTableLinear<double>(sw_ex, krow_ex);
+            pcow_ = NonuniformTableLinear<double>(sw_ex, pcow_ex);
             krocw_ = krow[0]; // At connate water -> ecl. SWOF
             swco = sw[0];
             smin_[phase_usage.phase_pos[Aqua]] = sw[0];
@@ -312,9 +384,23 @@ namespace Opm
             const std::vector<double>& krg = sgof_table[table_num][1];
             const std::vector<double>& krog = sgof_table[table_num][2];
             const std::vector<double>& pcog = sgof_table[table_num][3];
-            krg_ = NonuniformTableLinear<double>(sg, krg);
-            krog_ = NonuniformTableLinear<double>(sg, krog);
-            pcog_ = NonuniformTableLinear<double>(sg, pcog);
+
+            // Extend the tables with constant values such that the
+            // derivatives at the endpoints are zero
+            int n = sg.size();
+            std::vector<double> sg_ex(n+2);
+            std::vector<double> krg_ex(n+2);
+            std::vector<double> krog_ex(n+2);
+            std::vector<double> pcog_ex(n+2);
+
+            SatFuncSimpleNonuniform::ExtendTable(sg,sg_ex,1);
+            SatFuncSimpleNonuniform::ExtendTable(krg,krg_ex,0);
+            SatFuncSimpleNonuniform::ExtendTable(krog,krog_ex,0);
+            SatFuncSimpleNonuniform::ExtendTable(pcog,pcog_ex,0);
+
+            krg_ = NonuniformTableLinear<double>(sg_ex, krg_ex);
+            krog_ = NonuniformTableLinear<double>(sg_ex, krog_ex);
+            pcog_ = NonuniformTableLinear<double>(sg_ex, pcog_ex);
             smin_[phase_usage.phase_pos[Vapour]] = sg[0];
             if (std::fabs(sg.back() + swco - 1.0) > 1e-3) {
                 OPM_THROW(std::runtime_error, "Gas maximum saturation in SGOF table = " << sg.back() <<
