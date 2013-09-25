@@ -118,6 +118,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/utility/WachspressCoord.cpp
 	opm/core/utility/miscUtilities.cpp
 	opm/core/utility/miscUtilitiesBlackoil.cpp
+	opm/core/utility/NullStream.cpp
 	opm/core/utility/parameters/Parameter.cpp
 	opm/core/utility/parameters/ParameterGroup.cpp
 	opm/core/utility/parameters/ParameterTools.cpp
@@ -335,6 +336,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/Factory.hpp
 	opm/core/utility/MonotCubicInterpolator.hpp
 	opm/core/utility/NonuniformTableLinear.hpp
+	opm/core/utility/NullStream.hpp
 	opm/core/utility/PolynomialUtils.hpp
 	opm/core/utility/RootFinders.hpp
 	opm/core/utility/SparseTable.hpp
