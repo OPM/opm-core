@@ -71,6 +71,8 @@ namespace Opm {
 	    // To avoid some user errors, we disallow taking averages of
 	    // integral values.
 	    static_assert(std::is_integral<T>::value == false, "");
+	    if (t1*t2 <= 0)
+	        return 0;
 	    return std::sqrt(t1*t2);
 	}
 
@@ -84,6 +86,8 @@ namespace Opm {
 	    // To avoid some user errors, we disallow taking averages of
 	    // integral values.
 	    static_assert(std::is_integral<T>::value == false, "");
+	    if (t1*t2 <= 0)
+	        return 0;
 	    return (2*t1*t2)/(t1 + t2);
 	}
 
