@@ -773,7 +773,7 @@ public:
             else {
                 y = eval(x);
                 dy_dx = evalDerivative(x);
-                mono = monotonic(std::max<Scalar>(x_(0), x), std::min<Scalar>(x_(n), x_p1));
+                mono = monotonic(x, x_p1, /*extrapolate=*/true);
             }
 
             os << x << " " << y << " " << dy_dx << " " << mono << "\n";
@@ -909,10 +909,8 @@ public:
      * In the corner case that the spline is constant within the given
      * interval, this method returns 3.
      */
-    int monotonic(Scalar x0, Scalar x1) const
+    int monotonic(Scalar x0, Scalar x1, bool extrapolate=false) const
     {
-        assert(applies(x0));
-        assert(applies(x1));
         assert(x0 != x1);
 
         // make sure that x0 is smaller than x1
@@ -921,8 +919,16 @@ public:
 
         assert(x0 < x1);
 
+        int r = 3;
+        if (x0 < xMin()) {
+            assert(extrapolate);
+            Scalar m = evalDerivative(xMin(), /*segmentIdx=*/0);
+            if (m != 0)
+                r = (m < 0)?-1:1;
+        };
+
         int i = segmentIdx_(x0);
-        if (x_(i + 1) < x1)
+        if (x_(i + 1) >= x1)
             // interval is fully contained within a single spline
             // segment
             return monotonic_(i, x0, x1);
@@ -931,10 +937,15 @@ public:
 
         // make sure that the segments which are completly in the
         // interval [x0, x1] all exhibit the same monotonicity.
-        int r = monotonic_(i, x0, x_(i + 1));
+        int nextR = monotonic_(i, x0, x_(i + 1));
+        if (nextR != 3) { // spline is constant for the segment
+            if (r != 3 && r != nextR)
+                return 0;
+            r = nextR;
+        }
         for (++i; i < iEnd - 1; ++i) {
-            int nextR = monotonic_(i, x_(i), x_(i + 1));
-            if (nextR == 3) // spline is constant
+            nextR = monotonic_(i, x_(i), x_(i + 1));
+            if (nextR == 3) // spline is constant for the segment
                 continue;
             if (r == 3)
                 r = nextR;
@@ -948,6 +959,17 @@ public:
             if (lastR != 3 && r != 3 && r != lastR)
                 return 0;
         }
+        else if (x1 > xMax()) {
+            assert(extrapolate);
+
+            Scalar m = evalDerivative(xMax(), /*segmentIdx=*/numSamples() - 2);
+
+            if (m != 0) {
+                int tmp = (m < 0)?-1:1;
+                if (tmp != r)
+                    return 0;
+            }
+        };
 
         return r;
     }
@@ -1556,13 +1578,8 @@ protected:
     // -1: spline is monotonously decreasing in the specified interval
     int monotonic_(int i, Scalar x0, Scalar x1) const
     {
-        // shift the interval so that it is consistent with the
-        // definitions by Stoer
-        x0 = x0 - x_(i);
-        x1 = x1 - x_(i);
-
-        Scalar a = a_(i);
-        Scalar b = b_(i);
+        Scalar a = 3*a_(i);
+        Scalar b = 2*b_(i);
         Scalar c = c_(i);
 
         if (std::abs(a) < 1e-20 && std::abs(b) < 1e-20 && std::abs(c) < 1e-20)
@@ -1570,9 +1587,9 @@ protected:
 
         Scalar disc = 4*b*b - 12*a*c;
         if (disc < 0) {
-            // discriminant is smaller than 0, i.e. the segment does
-            // not exhibit any extrema.
-            return (x0*(x0*3*a + 2*b) + c > 0) ? 1 : -1;
+            // discriminant of derivative is smaller than 0, i.e. the
+            // segment's derivative does not exhibit any extrema.
+            return (x0*(x0*a + b) + c > 0) ? 1 : -1;
         }
         disc = std::sqrt(disc);
         Scalar xE1 = (-2*b + disc)/(6*a);
@@ -1585,7 +1602,7 @@ protected:
                 // to determine whether we're monotonically increasing
                 // or decreasing
                 x0 = x1;
-            return (x0*(x0*3*a + 2*b) + c > 0) ? 1 : -1;
+            return (x0*(x0*a + b) + c > 0) ? 1 : -1;
         };
         if ((x0 < xE1 && xE1 < x1) ||
             (x0 < xE2 && xE2 < x1))
@@ -1596,7 +1613,7 @@ protected:
         // no extremum in range (x0, x1)
         x0 = (x0 + x1)/2; // pick point in the middle of the interval
                           // to avoid extrema on the boundaries
-        return (x0*(x0*3*a + 2*b) + c > 0) ? 1 : -1;
+        return (x0*(x0*a + b) + c > 0) ? 1 : -1;
     }
 
     /*!
