@@ -798,12 +798,12 @@ public:
         // handle extrapolation
         if (extrapolate) {
             if (x < xMin()) {
-                Scalar m = evalDerivative(xMin(), /*segmentIdx=*/0);
+                Scalar m = evalDerivative_(xMin(), /*segmentIdx=*/0);
                 Scalar y0 = y_(0);
                 return y0 + m*(x - xMin());
             }
             else if (x > xMax()) {
-                Scalar m = evalDerivative(xMax(), /*segmentIdx=*/numSamples()-2);
+                Scalar m = evalDerivative_(xMax(), /*segmentIdx=*/numSamples()-2);
                 Scalar y0 = y_(numSamples() - 1);
                 return y0 + m*(x - xMax());
             }
@@ -829,9 +829,9 @@ public:
         assert(extrapolate || applies(x));
         if (extrapolate) {
             if (x < xMin())
-                evalDerivative_(xMin(), 0);
+                evalDerivative_(xMin(), /*segmentIdx=*/0);
             else if (x > xMax())
-                evalDerivative_(xMax(), numSamples() - 2);
+                evalDerivative_(xMax(), /*segmentIdx=*/numSamples() - 2);
         }
 
         return evalDerivative_(x, segmentIdx_(x));
@@ -922,7 +922,7 @@ public:
         int r = 3;
         if (x0 < xMin()) {
             assert(extrapolate);
-            Scalar m = evalDerivative(xMin(), /*segmentIdx=*/0);
+            Scalar m = evalDerivative_(xMin(), /*segmentIdx=*/0);
             if (m != 0)
                 r = (m < 0)?-1:1;
         };
@@ -962,7 +962,7 @@ public:
         else if (x1 > xMax()) {
             assert(extrapolate);
 
-            Scalar m = evalDerivative(xMax(), /*segmentIdx=*/numSamples() - 2);
+            Scalar m = evalDerivative_(xMax(), /*segmentIdx=*/numSamples() - 2);
 
             if (m != 0) {
                 int tmp = (m < 0)?-1:1;
