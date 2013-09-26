@@ -829,9 +829,9 @@ public:
         assert(extrapolate || applies(x));
         if (extrapolate) {
             if (x < xMin())
-                evalDerivative_(xMin(), /*segmentIdx=*/0);
+                return evalDerivative_(xMin(), /*segmentIdx=*/0);
             else if (x > xMax())
-                evalDerivative_(xMax(), /*segmentIdx=*/numSamples() - 2);
+                return evalDerivative_(xMax(), /*segmentIdx=*/numSamples() - 2);
         }
 
         return evalDerivative_(x, segmentIdx_(x));
@@ -1703,8 +1703,7 @@ protected:
 
     // returns the coefficient in front of the x^1 term. In Stoer this
     // is beta.
-    Scalar c_(int i) const
-    { return evalDerivative_(/*x=*/0, i); }
+    Scalar c_(int i) const { return evalDerivative_(/*x=*/0, i); }
 
     // returns the coefficient in front of the x^0 term. In Stoer this
     // is alpha.
