@@ -205,8 +205,6 @@ namespace Opm {
             const int ndof  = DofPerCell;
             const int ndof2 = ndof * ndof;
 
-            typedef std::vector<int>::size_type sz_t;
-
             const double* J1 = &asm_buffer_[0];
             const double* J2 = J1 + ((1*nconn_ + 1) * ndof2);
 
