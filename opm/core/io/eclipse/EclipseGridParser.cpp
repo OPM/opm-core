@@ -1119,62 +1119,64 @@ void EclipseGridParser::saveEGRID( const std::string & filename, int num_cells ,
 // Data stored in 'integer_field_map_' and 'floating_field_map_'.
 void EclipseGridParser::getNumericErtFields(const string& filename)
 {
-#ifdef HAVE_ERT
+#ifndef HAVE_ERT
+    // No ERT support.
+    static_cast<void>(filename); // Suppress "unused variable" warning.
+    OPM_THROW(std::runtime_error,
+              "Cannot use IMPORT keyword without ERT library support. "
+              "Reconfigure opm-core with ERT support and recompile.");
+#else
     // Read file
-  ecl_file_type * ecl_file = ecl_file_open(filename.c_str() , 0);
-    if (ecl_file == NULL) {
+    std::shared_ptr<ecl_file_type> ecl_file(ecl_file_open(filename.c_str(), 0),
+                                            ecl_file_close);
+
+    if (!ecl_file) {
         OPM_THROW(std::runtime_error, "Could not open IMPORTed file " << filename);
     }
-    const int num_kw = ecl_file_get_size(ecl_file);
-    std::vector<double> double_vec;
-    std::vector<int> int_vec;
+
+    const int num_kw = ecl_file_get_size(ecl_file.get());
     for (int i=0; i<num_kw; ++i) {
-        ecl_kw_type * ecl_kw = ecl_file_iget_kw(ecl_file, i);
-        const char* keyword =  ecl_kw_get_header(ecl_kw);
-        FieldType field_type = classifyKeyword(keyword);
+        ecl_kw_type *     ecl_kw     = ecl_file_iget_kw(ecl_file.get(), i);
+        const std::string keyword    = ecl_kw_get_header(ecl_kw);
+        const FieldType   field_type = classifyKeyword(keyword);
+
         if (field_type == Unknown) {
             ignored_fields_.insert(keyword);
             cout << "*** Warning: keyword " << keyword << " is unknown." << endl;
             continue;
-        } else {
+        }
+
 #ifdef VERBOSE
-            cout << "Imported keyword found: " << keyword << endl;
+        std::cout << "Imported keyword found: " << keyword << std::endl;
 #endif
+
+        const int           data_size = ecl_kw_get_size(ecl_kw);
+        const ecl_type_enum ecl_type  = ecl_kw_get_type(ecl_kw);
+        if ((ecl_type == ECL_FLOAT_TYPE ) ||
+            (ecl_type == ECL_DOUBLE_TYPE))
+        {
+            std::vector<double>& v = floating_field_map_[keyword];
+            v.resize(data_size);
+
+            // Handles both ECL_FLOAT_TYPE and ECL_DOUBLE_TYPE; the
+            // former with a traditional copy-and-type-conversion loop
+            // and the latter with a std::memcpy()-type call.
+            ecl_kw_get_data_as_double(ecl_kw, &v[0]);
         }
-        ecl_type_enum ecl_type = ecl_kw_get_type(ecl_kw);
-        int data_size = ecl_kw_get_size(ecl_kw);
-        switch(ecl_type) {
-        case ECL_FLOAT_TYPE : {
-            double_vec.resize(data_size);
-            ecl_kw_get_data_as_double(ecl_kw, &double_vec[0]);
-            floating_field_map_[keyword] = double_vec;
-            break;
+        else if (ecl_type == ECL_INT_TYPE) {
+            std::vector<int>& v = integer_field_map_[keyword];
+            v.resize(data_size);
+
+            ecl_kw_get_memcpy_int_data(ecl_kw, &v[0]);
         }
-        case ECL_DOUBLE_TYPE : {
-            double_vec.resize(data_size);
-            ecl_kw_get_memcpy_double_data(ecl_kw, &double_vec[0]);
-            floating_field_map_[keyword] = double_vec;
-            break;
-        }
-        case ECL_INT_TYPE : {
-            int_vec.resize(data_size);
-            ecl_kw_get_memcpy_int_data(ecl_kw, &int_vec[0]);
-            integer_field_map_[keyword] = int_vec;
-            break;
-        }
-        default: {
-            std::cout << "Ignored non-numeric type in file: " << filename << "  Keyword="
-                      << keyword << "  Size=" << ecl_kw_get_size(ecl_kw)
-                      << "  Type=" << ecl_util_get_type_name(ecl_kw_get_type(ecl_kw))
+        else {
+            std::cout << "Ignored non-numeric type in file: " << filename
+                      << "  Keyword=" << keyword
+                      << "  Size="    << data_size
+                      << "  Type="    << ecl_util_get_type_name(ecl_type)
                       << std::endl;
-            break;
-        }
         }
     }
-    ecl_file_close(ecl_file);
-#else
-    static_cast<void>(filename); // Suppress "unused variable" warning.
-    OPM_THROW(std::runtime_error, "Cannot use IMPORT keyword without ERT library support. Reconfigure opm-core with ERT support and recompile.");
 #endif  // HAVE_ERT
 }
 
