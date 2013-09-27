@@ -36,20 +36,24 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <iostream>
-#include <fstream>
-#include <exception>
-#include <algorithm>
-#include <memory>
-#include <limits>
-#include <numeric>
-#include <cfloat>
+
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/io/eclipse/EclipseGridParserHelpers.hpp>
 #include <opm/core/io/eclipse/SpecialEclipseFields.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/grid/cpgpreprocess/preprocess.h>
+
+#include <algorithm>
+#include <cfloat>
+#include <exception>
+#include <fstream>
+#include <iostream>
+#include <limits>
+#include <memory>
+#include <numeric>
+#include <string>
+
 #include <boost/filesystem.hpp>
 
 #ifdef HAVE_ERT
