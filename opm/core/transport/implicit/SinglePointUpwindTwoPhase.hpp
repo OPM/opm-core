@@ -593,7 +593,6 @@ namespace Opm {
                         NewtonIterate&        it   ) {
             // Nothing to do at end of iteration in this model.
             (void) state;  (void) g;  (void) it;
-            typedef typename NewtonIterate::vector_type vector_t;
         }
 
         template <class Grid          ,

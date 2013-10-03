@@ -117,6 +117,22 @@ sudo yum-config-manager --add-repo \
     http://www.opm-project.org/packages/current/redhat/6/opm.repo
 sudo yum install libsuperlu3 ert.ecl-devel dune-istl-devel
 
+
+DEPENDENCIES FOR MACOS X
+------------------------
+
+You can build opm-core with Apple Xcode 4.6 or later, Ruby 1.9 or later
+and the Homebrew port system:
+
+# activate necessary repositories
+brew tap homebrew/science
+brew tap opm/opm
+
+# libraries necessary for OPM
+caffeinate brew install suite-sparse superlu ert.ecl
+caffeinate brew install --with-c++11 boost tinyxml dune-istl
+
+
 DOWNLOADING
 -----------
 
