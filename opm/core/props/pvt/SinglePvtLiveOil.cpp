@@ -70,91 +70,38 @@ namespace Opm
             }
         }
 
-
-        // Fill in additional entries in undersaturated tables by interpolating/extrapolating 1/Bo and mu_o ...
-        int iPrev = -1;
-        int iNext = 1;
-        while (undersat_oil_tables_[iNext][0].size() < 2) {
-                ++iNext;
-        }
-        assert(iNext < sz);
+        // Complete undersaturated tables by extrapolating from existing data
+        // as is done in Eclipse and Mrst
+        int iNext = -1;
         for (int i=0; i<sz; ++i) {
-                if (undersat_oil_tables_[i][0].size() > 1) {
-                        iPrev = i;
-                        continue;
+            // Skip records already containing undersaturated data
+            if (undersat_oil_tables_[i][0].size() > 1) {
+                continue;
+            }
+            // Look ahead for next record containing undersaturated data
+            if (iNext < i) {
+                iNext = i+1;
+                while (iNext<sz && undersat_oil_tables_[iNext][0].size() < 2) {
+                    ++iNext;
                 }
-
-                bool flagPrev = (iPrev >= 0);
-                bool flagNext = true;
-                if (iNext < i) {
-                        iPrev = iNext;
-                        flagPrev = true;
-                        iNext = i+1;
-                        while (undersat_oil_tables_[iNext][0].size() < 2) {
-                                ++iNext;
-                        }
-                }
-                double slopePrevBinv = 0.0;
-                double slopePrevVisc = 0.0;
-                double slopeNextBinv = 0.0;
-                double slopeNextVisc = 0.0;
-                while (flagPrev || flagNext) {
-                        double pressure0 = undersat_oil_tables_[i][0].back();
-                        double pressure = 1.0e47;
-                        if (flagPrev) {
-                                std::vector<double>::iterator itPrev = upper_bound(undersat_oil_tables_[iPrev][0].begin(),
-                                                                                   undersat_oil_tables_[iPrev][0].end(),pressure0+1.);
-                                if (itPrev == undersat_oil_tables_[iPrev][0].end()) {
-                                        --itPrev; // Extrapolation ...
-                                } else if (itPrev == undersat_oil_tables_[iPrev][0].begin()) {
-                                        ++itPrev;
-                                }
-                                if (itPrev == undersat_oil_tables_[iPrev][0].end()-1) {
-                                        flagPrev = false; // Last data set for "prev" ...
-                                }
-                                double dPPrev = *itPrev - *(itPrev-1);
-                                pressure = *itPrev;
-                                int index = int(itPrev - undersat_oil_tables_[iPrev][0].begin());
-                                slopePrevBinv = (undersat_oil_tables_[iPrev][1][index] - undersat_oil_tables_[iPrev][1][index-1])/dPPrev;
-                                slopePrevVisc = (undersat_oil_tables_[iPrev][2][index] - undersat_oil_tables_[iPrev][2][index-1])/dPPrev;
-                        }
-                        if (flagNext) {
-                                std::vector<double>::iterator itNext = upper_bound(undersat_oil_tables_[iNext][0].begin(),
-                                                                                   undersat_oil_tables_[iNext][0].end(),pressure0+1.);
-                                if (itNext == undersat_oil_tables_[iNext][0].end()) {
-                                        --itNext; // Extrapolation ...
-                                } else if (itNext == undersat_oil_tables_[iNext][0].begin()) {
-                                        ++itNext;
-                                }
-                                if (itNext == undersat_oil_tables_[iNext][0].end()-1) {
-                                        flagNext = false; // Last data set for "next" ...
-                                }
-                                double dPNext = *itNext - *(itNext-1);
-                                if (flagPrev) {
-                                        pressure = std::min(pressure,*itNext);
-                                } else {
-                                        pressure = *itNext;
-                                }
-                                int index = int(itNext - undersat_oil_tables_[iNext][0].begin());
-                                slopeNextBinv = (undersat_oil_tables_[iNext][1][index] - undersat_oil_tables_[iNext][1][index-1])/dPNext;
-                                slopeNextVisc = (undersat_oil_tables_[iNext][2][index] - undersat_oil_tables_[iNext][2][index-1])/dPNext;
-                        }
-                        double dP = pressure - pressure0;
-                        if (iPrev >= 0) {
-                                double w = (saturated_oil_table_[3][i] - saturated_oil_table_[3][iPrev]) /
-                                           (saturated_oil_table_[3][iNext] - saturated_oil_table_[3][iPrev]);
-                                undersat_oil_tables_[i][0].push_back(pressure0+dP);
-                                undersat_oil_tables_[i][1].push_back(undersat_oil_tables_[i][1].back() +
-                                                                     dP*(slopePrevBinv+w*(slopeNextBinv-slopePrevBinv)));
-                                undersat_oil_tables_[i][2].push_back(undersat_oil_tables_[i][2].back() +
-                                                                     dP*(slopePrevVisc+w*(slopeNextVisc-slopePrevVisc)));
-                        } else {
-                                undersat_oil_tables_[i][0].push_back(pressure0+dP);
-                                undersat_oil_tables_[i][1].push_back(undersat_oil_tables_[i][1].back()+dP*slopeNextBinv);
-                                undersat_oil_tables_[i][2].push_back(undersat_oil_tables_[i][2].back()+dP*slopeNextVisc);
-                        }
-                }
+                if (iNext == sz) OPM_THROW(std::runtime_error,"Unable to complete undersaturated table.");
+            }
+            // Add undersaturated data to current record while maintaining compressibility and viscosibility
+            for (int j=1; j<undersat_oil_tables_[iNext][0].size(); ++j) {
+                double diffPressure = undersat_oil_tables_[iNext][0][j]-undersat_oil_tables_[iNext][0][j-1];
+                double pressure = undersat_oil_tables_[i][0].back()+diffPressure;
+                undersat_oil_tables_[i][0].push_back(pressure);
+                double compr = (1.0/undersat_oil_tables_[iNext][1][j]-1.0/undersat_oil_tables_[iNext][1][j-1])
+                        / (0.5*(1.0/undersat_oil_tables_[iNext][1][j]+1.0/undersat_oil_tables_[iNext][1][j-1]));
+                double B = (1.0/undersat_oil_tables_[i][1].back())*(1.0+0.5*compr)/(1.0-0.5*compr);
+                undersat_oil_tables_[i][1].push_back(1.0/B);
+                double visc = (undersat_oil_tables_[iNext][2][j]-undersat_oil_tables_[iNext][2][j-1])
+                        / (0.5*(undersat_oil_tables_[iNext][2][j]+undersat_oil_tables_[iNext][2][j-1]));
+                double mu = (undersat_oil_tables_[i][2].back())*(1.0+0.5*visc)/(1.0-0.5*visc);
+                undersat_oil_tables_[i][2].push_back(mu);
+            }
         }
+
     }
 
     /// Destructor.

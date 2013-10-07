@@ -38,6 +38,9 @@ namespace Opm
         void evalKrDeriv(const double* s, double* kr, double* dkrds) const;
         void evalPc(const double* s, double* pc) const;
         void evalPcDeriv(const double* s, double* pc, double* dpcds) const;
+        void ExtendTable(const std::vector<double>& xv,
+                         std::vector<double>& xv_ex,
+                         double pm) const;
         double smin_[PhaseUsage::MaxNumPhases];
         double smax_[PhaseUsage::MaxNumPhases];
         double krwmax_; // Max water relperm
@@ -69,6 +72,9 @@ namespace Opm
         void evalKrDeriv(const double* s, double* kr, double* dkrds) const;
         void evalPc(const double* s, double* pc) const;
         void evalPcDeriv(const double* s, double* pc, double* dpcds) const;
+        void ExtendTable(const std::vector<double>& xv,
+                                               std::vector<double>& xv_ex,
+                                               double pm) const;
         double smin_[PhaseUsage::MaxNumPhases];
         double smax_[PhaseUsage::MaxNumPhases];
         double krwmax_; // Max water relperm
