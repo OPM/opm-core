@@ -317,7 +317,9 @@ namespace Opm
 
             outputField(out, new_ACTNUM_, "ACTNUM");
             outputField(out, new_PORO_, "PORO");
-            outputField(out, new_NTG_, "NTG");
+            if (has_NTG_) {
+                outputField(out, new_NTG_, "NTG");
+            }
             outputField(out, new_PERMX_, "PERMX");
             outputField(out, new_PERMY_, "PERMY");
             outputField(out, new_PERMZ_, "PERMZ");
