@@ -87,7 +87,8 @@ namespace Opm
                 if (iNext == sz) OPM_THROW(std::runtime_error,"Unable to complete undersaturated table.");
             }
             // Add undersaturated data to current record while maintaining compressibility and viscosibility
-            for (int j=1; j<undersat_oil_tables_[iNext][0].size(); ++j) {
+            typedef std::vector<std::vector<std::vector<double> > >::size_type sz_t;
+            for (sz_t j=1; j<undersat_oil_tables_[iNext][0].size(); ++j) {
                 double diffPressure = undersat_oil_tables_[iNext][0][j]-undersat_oil_tables_[iNext][0][j-1];
                 double pressure = undersat_oil_tables_[i][0].back()+diffPressure;
                 undersat_oil_tables_[i][0].push_back(pressure);
