@@ -105,7 +105,7 @@ namespace EclipseKeywords
           string("DEPTHZ"),   string("TOPS"),       string("MAPAXES"),
           string("SWCR"),     string("SWL"),        string("SWU"),
           string("SOWCR"),    string("KRW"),        string("KRWR"),
-          string("KRO"),      string("KRORW")
+          string("KRO"),      string("KRORW"),      string("NTG")
         };
     const int num_floating_fields = sizeof(floating_fields) / sizeof(floating_fields[0]);
 
@@ -135,7 +135,7 @@ namespace EclipseKeywords
 
     string ignore_with_data[] =
         { string("MAPUNITS"), string("GRIDUNIT"),
-          string("NTG"),      string("REGDIMS"),  string("WELLDIMS"),
+          string("REGDIMS"),  string("WELLDIMS"),
           string("NSTACK"),   string("SATNUM"),
           string("RPTRST"),   string("ROIP"),     string("RWIP"),
           string("RWSAT"),    string("RPR"),      string("WBHP"),
@@ -563,7 +563,7 @@ void EclipseGridParser::convertToSI()
                    key == "LAMEMOD"  || key == "SHEARMOD" || key == "POISSONMOD" ||
                    key == "PWAVEMOD" || key == "MULTPV"   || key == "PWAVEMOD" ||
                    key == "SGAS"     || key == "SWAT"     || key == "SOIL"     ||
-                                        key == "SWCR"     || key == "SWL"      ||
+                   key == "NTG"      || key == "SWCR"     || key == "SWL"      ||
                    key == "SWU"      || key == "SOWCR"    || key == "KRW"      ||
                    key == "KRWR"     || key == "KRORW"    || key == "KRO") {
             unit = 1.0;

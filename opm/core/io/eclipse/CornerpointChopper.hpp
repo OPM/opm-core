@@ -235,6 +235,7 @@ namespace Opm
 
             filterIntegerField("ACTNUM", new_ACTNUM_);
             filterDoubleField("PORO", new_PORO_);
+            filterDoubleField("NTG", new_NTG_);
             filterDoubleField("PERMX", new_PERMX_);
             filterDoubleField("PERMY", new_PERMY_);
             filterDoubleField("PERMZ", new_PERMZ_);
@@ -262,6 +263,7 @@ namespace Opm
             sp.setFloatingPointField("ZCORN", new_ZCORN_);
             if (!new_ACTNUM_.empty()) sp.setIntegerField("ACTNUM", new_ACTNUM_);
             if (!new_PORO_.empty()) sp.setFloatingPointField("PORO", new_PORO_);
+            if (!new_NTG_.empty()) sp.setFloatingPointField("NTG", new_NTG_);
             if (!new_PERMX_.empty()) sp.setFloatingPointField("PERMX", new_PERMX_);
             if (!new_PERMY_.empty()) sp.setFloatingPointField("PERMY", new_PERMY_);
             if (!new_PERMZ_.empty()) sp.setFloatingPointField("PERMZ", new_PERMZ_);
@@ -305,11 +307,13 @@ namespace Opm
 
             outputField(out, new_ACTNUM_, "ACTNUM");
             outputField(out, new_PORO_, "PORO");
+            if (hasNTG()) {outputField(out, new_NTG_, "NTG");}
             outputField(out, new_PERMX_, "PERMX");
             outputField(out, new_PERMY_, "PERMY");
             outputField(out, new_PERMZ_, "PERMZ");
             outputField(out, new_SATNUM_, "SATNUM");
         }
+        bool hasNTG() const {return !new_NTG_.empty(); }
 
     private:
         EclipseGridParser parser_;
@@ -321,6 +325,7 @@ namespace Opm
         std::vector<double> new_ZCORN_;
         std::vector<int> new_ACTNUM_;
         std::vector<double> new_PORO_;
+        std::vector<double> new_NTG_;
         std::vector<double> new_PERMX_;
         std::vector<double> new_PERMY_;
         std::vector<double> new_PERMZ_;
