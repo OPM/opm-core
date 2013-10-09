@@ -53,16 +53,6 @@ namespace Opm
 
             std::cout << "Parsed grdecl file with dimensions ("
                       << dims_[0] << ", " << dims_[1] << ", " << dims_[2] << ")" << std::endl;
-
-            // Set NTG=1 if this is missing in file
-            if (!parser_.hasField("NTG")) {
-                std::vector<double> NTG_dummy(dims_[0]*dims_[1]*dims_[2],1.0);
-                parser_.setFloatingPointField("NTG", NTG_dummy);
-                has_NTG_ = false;
-            }
-            else {
-                has_NTG_ = true;
-            }
         }
 
 
@@ -317,18 +307,13 @@ namespace Opm
 
             outputField(out, new_ACTNUM_, "ACTNUM");
             outputField(out, new_PORO_, "PORO");
-            if (has_NTG_) {
-                outputField(out, new_NTG_, "NTG");
-            }
+            if (hasNTG()) {outputField(out, new_NTG_, "NTG");}
             outputField(out, new_PERMX_, "PERMX");
             outputField(out, new_PERMY_, "PERMY");
             outputField(out, new_PERMZ_, "PERMZ");
             outputField(out, new_SATNUM_, "SATNUM");
         }
-
-        bool hasNTG() {
-            return has_NTG_;
-        }
+        bool hasNTG() const {return !new_NTG_.empty(); }
 
     private:
         EclipseGridParser parser_;
@@ -341,7 +326,6 @@ namespace Opm
         std::vector<int> new_ACTNUM_;
         std::vector<double> new_PORO_;
         std::vector<double> new_NTG_;
-        bool has_NTG_;
         std::vector<double> new_PERMX_;
         std::vector<double> new_PERMY_;
         std::vector<double> new_PERMZ_;
