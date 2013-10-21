@@ -1,7 +1,7 @@
 Module: opm-core
 Description: Open Porous Media Initiative Core Library
 # if you change this, make sure to also change opm/core/version.h
-Version: 1.0
-Label: 2013.03
+Version: 1.1
+Label: 2013.10
 Maintainer: atgeirr@sintef.no
 Depends: dune-common (>= 2.2) dune-istl (>= 2.2)
