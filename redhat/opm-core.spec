@@ -3,7 +3,7 @@
 #
 
 Name:           opm-core
-Version:        2013.03
+Version:        2013.10
 Release:        0
 Summary:        Open Porous Media - core library
 License:        GPL-3.0
