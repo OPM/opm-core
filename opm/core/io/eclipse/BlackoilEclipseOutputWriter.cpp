@@ -22,9 +22,11 @@
 #include "BlackoilEclipseOutputWriter.hpp"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/format.hpp>
 
 #include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
+#include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/DataMap.hpp>
@@ -34,6 +36,7 @@
 #include <ert/ecl/ecl_grid.h>
 #include <ert/ecl/ecl_kw_magic.h>
 #include <ert/ecl/ecl_kw.h>
+#include <ert/ecl/ecl_sum.h>
 #include <ert/ecl/ecl_util.h>
 #include <ert/ecl/ecl_init_file.h>
 #include <ert/ecl/ecl_file.h>
@@ -43,46 +46,12 @@
 namespace Opm {
 void BlackoilEclipseOutputWriter::writeInitFile(const SimulatorTimer &timer)
 {
+    tm tm = boost::posix_time::to_tm(timer.currentDateTime());
+    startTime_ = mktime(&tm);
+
 #if HAVE_ERT
-    int phases        = ECL_OIL_PHASE + ECL_WATER_PHASE;
-    bool endian_flip  = true;//ECL_ENDIAN_FLIP;
-    bool fmt_file = false;
-    ecl_file_enum file_type = ECL_EGRID_FILE;
-
-    ecl_grid_type* ecl_grid = newEclGrid_();
-    char* gridFileName = ecl_util_alloc_filename(outputDir_.c_str(), baseName_.c_str(), file_type, fmt_file, timer.currentStepNum());
-    fortio_type* fortio;
-    ecl_grid_fwrite_EGRID(ecl_grid, gridFileName);
-    free(gridFileName);
-
-    char* initFileName = ecl_util_alloc_filename(outputDir_.c_str(), baseName_.c_str(), /*file_type=*/ECL_INIT_FILE, fmt_file, timer.currentStepNum());
-    if (!ecl_util_fmt_file(initFileName, &fmt_file)) {
-        OPM_THROW(std::runtime_error,
-                  "Could not determine formatted/unformatted status of file:" << initFileName << " non-standard name?" << std::endl);
-    }
-    fortio = fortio_open_writer(initFileName, fmt_file, endian_flip);
-    {
-        ecl_kw_type* poro_kw = newEclKeyword_(PORO_KW, ECL_FLOAT_TYPE);
-        time_t start_date;
-
-        {
-            boost::posix_time::ptime start_date_(timer.currentDateTime());
-
-            tm td_tm = boost::posix_time::to_tm(start_date_);
-            start_date = mktime(&td_tm);
-        }
-
-        ecl_init_file_fwrite_header(fortio, ecl_grid, poro_kw, phases, start_date);
-        ecl_kw_free(poro_kw);
-    }
-
-    /* This collection of keywords is somewhat arbitrary and random. */
-    saveEclKeyword_(fortio, "PERMX", ECL_FLOAT_TYPE);
-    saveEclKeyword_(fortio, "PERMY", ECL_FLOAT_TYPE);
-    saveEclKeyword_(fortio, "PERMZ", ECL_FLOAT_TYPE);
-
-    fortio_fclose(fortio);
-    free(initFileName);
+    writeGridInitFile_(timer);
+    writeSummaryHeaderFile_(timer);
 #else
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");
@@ -100,53 +69,46 @@ void BlackoilEclipseOutputWriter::writeReservoirState(const BlackoilState& reser
                                              /*file_type=*/ECL_UNIFIED_RESTART_FILE,
                                              fmt_file,
                                              timer.currentStepNum());
-    std::cout << "writing: " << fileName << "\n";
     int phases = ECL_OIL_PHASE + ECL_GAS_PHASE + ECL_WATER_PHASE;
     double days = Opm::unit::convert::to(timer.currentTime(), Opm::unit::day);
-    time_t date = 0;
     int nx = grid_.cartdims[0];
     int ny = grid_.cartdims[1];
     int nz = grid_.cartdims[2];
     int nactive = grid_.number_of_cells;
     ecl_rst_file_type* rst_file;
 
-    {
-        using namespace boost::posix_time;
-        ptime t0(boost::gregorian::date(1970, 1, 1));
-        time_duration::sec_type seconds = (timer.currentDateTime() - t0).total_seconds();
-
-        date = time_t(seconds);
-    }
+    time_t curTime;
+    tm tm = boost::posix_time::to_tm(timer.currentDateTime());
+    curTime = mktime(&tm);
 
     if (timer.currentStepNum() > 0 && file_type == ECL_UNIFIED_RESTART_FILE)
         rst_file = ecl_rst_file_open_append(fileName);
     else
         rst_file = ecl_rst_file_open_write(fileName);
 
-    ecl_rst_file_fwrite_header(rst_file, timer.currentStepNum(), date, days, nx, ny, nz, nactive, phases);
+    ecl_rst_file_fwrite_header(rst_file, timer.currentStepNum(), curTime, days, nx, ny, nz, nactive, phases);
     ecl_rst_file_start_solution(rst_file);
 
     {
-        ecl_kw_type* pressure_kw = eclKeywordWrapper_("PRESSURE", reservoirState.pressure(),
-                                                      /*offset=*/0, /*stride=*/1);
+        ecl_kw_type* pressure_kw = newEclDoubleKeyword_("PRESSURE", reservoirState.pressure());
         ecl_rst_file_add_kw(rst_file, pressure_kw);
         ecl_kw_free(pressure_kw);
     }
 
     {
-        ecl_kw_type* swat_kw = eclKeywordWrapper_("SWAT", reservoirState.saturation(), /*offset=*/0, /*stride=*/3);
+        ecl_kw_type* swat_kw = newEclDoubleKeyword_("SWAT", reservoirState.saturation(), /*offset=*/0, /*stride=*/3);
         ecl_rst_file_add_kw(rst_file, swat_kw);
         ecl_kw_free(swat_kw);
     }
 
     {
-        ecl_kw_type* soil_kw = eclKeywordWrapper_("SOIL", reservoirState.saturation(), /*offset=*/1, /*stride=*/3);
+        ecl_kw_type* soil_kw = newEclDoubleKeyword_("SOIL", reservoirState.saturation(), /*offset=*/1, /*stride=*/3);
         ecl_rst_file_add_kw(rst_file, soil_kw);
         ecl_kw_free(soil_kw);
     }
 
     {
-        ecl_kw_type* sgas_kw = eclKeywordWrapper_("SGAS", reservoirState.saturation(), /*offset=*/2, /*stride=*/3);
+        ecl_kw_type* sgas_kw = newEclDoubleKeyword_("SGAS", reservoirState.saturation(), /*offset=*/2, /*stride=*/3);
         ecl_rst_file_add_kw(rst_file, sgas_kw);
         ecl_kw_free(sgas_kw);
     }
@@ -160,16 +122,197 @@ void BlackoilEclipseOutputWriter::writeReservoirState(const BlackoilState& reser
 #endif // HAVE_ERT
 }
 
-void BlackoilEclipseOutputWriter::writeWellState(const WellState& wellState)
+void BlackoilEclipseOutputWriter::writeWellState(const WellState& wellState, const SimulatorTimer& timer)
 {
-    for (int i = 0; i < wellState.perfPress().size(); ++i)
-        std::cout << "Perforation pressure " << i << ": " << wellState.perfPress()[i] << "\n";
-    for (int i = 0; i < wellState.perfRates().size(); ++i)
-        std::cout << "Well rate " << i << ": " << wellState.perfRates()[i] << "\n";
+#if HAVE_ERT
+    tm tm = boost::posix_time::to_tm(timer.currentDateTime());
+    time_t curTime = mktime(&tm);
+
+    // create a new timestep for the summary file (at least if the
+    // timer was advanced since the last call to writeWellState())
+    ecl_sum_tstep_type* tstep=
+        ecl_sum_add_tstep(sumWriter_,
+                          timer.currentStepNum() + 1,
+                          (curTime - startTime_)/(24*60*60));
+
+    int numWells = accumulatedProducedFluids_.size();
+    for (int wellIdx = 0; wellIdx < numWells; ++wellIdx) {
+        // set the value for the well oil production rate
+        double woprValue = wellState.wellRates()[wellIdx*3 + BlackoilPhases::Liquid];
+        woprValue *= - 1 * (24 * 60 * 60); // convert kg^3/s of injected fluid to kg^3/d of produced fluid
+        woprValue /= 700; // convert from kg/d to m^3/d. TODO: ignore dissolved gas, use real surface density!
+        woprValue = std::max(0.0, woprValue);
+
+        int woprIdx = smspec_node_get_params_index(woprSmspec_[wellIdx]);
+        ecl_sum_tstep_iset(tstep, woprIdx, woprValue);
+
+        double wwirValue = wellState.wellRates()[wellIdx*3 + BlackoilPhases::Aqua];
+        wwirValue *= 1 * (24 * 60 * 60);  // convert kg^3/s to kg^3/d
+        wwirValue /= 700; // convert from kg/d to m^3/d. TODO: use real surface density!
+        wwirValue = std::max(0.0, wwirValue);
+
+        int wwirIdx = smspec_node_get_params_index(wwirSmspec_[wellIdx]);
+        ecl_sum_tstep_iset(tstep, wwirIdx, wwirValue);
+
+        // accumulate injected produced fluids
+        for (int phaseIdx = 0; phaseIdx < /*numPhases=*/3; ++phaseIdx) {
+            // convert from m^3 of injected fluid to m^3 of produced fluid
+            double injectedMass = wellState.wellRates()[wellIdx*3 + phaseIdx];
+            injectedMass *= timer.currentStepLength();
+
+            // TODO: use real surface density!
+            double rho;
+            switch (phaseIdx) {
+            case BlackoilPhases::Liquid:
+                rho = 700;
+                break;
+            case BlackoilPhases::Aqua:
+                rho = 700;
+                break;
+            case BlackoilPhases::Vapour:
+                rho = 1;
+                break;
+            }
+            double injectedVolume = injectedMass/rho; // convert from kg/d to m^3/d. TODO: ignore dissolved gas
+
+            if (injectedMass < 0)
+                accumulatedProducedFluids_[wellIdx][phaseIdx] += -injectedVolume;
+            else
+                accumulatedInjectedFluids_[wellIdx][phaseIdx] += injectedVolume;
+
+            int woptIdx = smspec_node_get_params_index(woptSmspec_[wellIdx]);
+            ecl_sum_tstep_iset(tstep, woptIdx, accumulatedProducedFluids_[wellIdx][BlackoilPhases::Liquid]);
+
+            int wwitIdx = smspec_node_get_params_index(wwitSmspec_[wellIdx]);
+            ecl_sum_tstep_iset(tstep, wwitIdx, accumulatedInjectedFluids_[wellIdx][BlackoilPhases::Aqua]);
+        }
+    }
+
+    ecl_sum_fwrite(sumWriter_);
+#else
+    OPM_THROW(std::runtime_error,
+              "The ERT libraries are required to write ECLIPSE output files.");
+#endif // HAVE_ERT
 }
 
 #if HAVE_ERT
-ecl_grid_type* BlackoilEclipseOutputWriter::newEclGrid_() {
+void BlackoilEclipseOutputWriter::writeGridInitFile_(const SimulatorTimer &timer)
+{
+    int phases = ECL_OIL_PHASE + ECL_GAS_PHASE + ECL_WATER_PHASE;
+    bool endian_flip  = true;//ECL_ENDIAN_FLIP;
+    bool fmt_file = false;
+    ecl_file_enum file_type = ECL_EGRID_FILE;
+
+    ecl_grid_type* ecl_grid = newEclGrid_();
+    char* gridFileName = ecl_util_alloc_filename(outputDir_.c_str(), baseName_.c_str(), file_type, fmt_file, timer.currentStepNum());
+    fortio_type* fortio;
+    ecl_grid_fwrite_EGRID(ecl_grid, gridFileName);
+    free(gridFileName);
+
+    char* initFileName = ecl_util_alloc_filename(outputDir_.c_str(), baseName_.c_str(), /*file_type=*/ECL_INIT_FILE, fmt_file, timer.currentStepNum());
+    if (!ecl_util_fmt_file(initFileName, &fmt_file)) {
+        OPM_THROW(std::runtime_error,
+                  "Could not determine formatted/unformatted status of file:" << initFileName << " non-standard name?" << std::endl);
+    }
+    fortio = fortio_open_writer(initFileName, fmt_file, endian_flip);
+    {
+        time_t start_date;
+
+        {
+            boost::posix_time::ptime start_date_(timer.currentDateTime());
+
+            tm td_tm = boost::posix_time::to_tm(start_date_);
+            start_date = mktime(&td_tm);
+        }
+
+        ecl_kw_type* poro_kw = newEclDoubleKeyword_(PORO_KW, eclipseParser_.getFloatingPointValue("PORO"));
+        ecl_init_file_fwrite_header(fortio, ecl_grid, poro_kw, phases, start_date);
+        ecl_kw_free(poro_kw);
+    }
+
+    /* This collection of keywords is somewhat arbitrary and random. */
+    saveEclKeyword_(fortio, "PERMX", ECL_FLOAT_TYPE);
+    saveEclKeyword_(fortio, "PERMY", ECL_FLOAT_TYPE);
+    saveEclKeyword_(fortio, "PERMZ", ECL_FLOAT_TYPE);
+
+    fortio_fclose(fortio);
+    free(initFileName);
+}
+
+void BlackoilEclipseOutputWriter::writeSummaryHeaderFile_(const SimulatorTimer &timer)
+{
+    std::string caseName;
+    if (!outputDir_.empty())
+        caseName += outputDir_ + "/";
+    caseName += baseName_;
+
+    if (sumWriter_)
+        ecl_sum_free(sumWriter_);
+
+    // allocate the data structure for the writer
+    sumWriter_ =
+        ecl_sum_alloc_writer(caseName.c_str(),
+                             /*formattedOutput=*/true,
+                             /*unifiedOutput=*/true,
+                             /*joinString=*/":",
+                             startTime_,
+                             grid_.cartdims[0],grid_.cartdims[1],grid_.cartdims[2]);
+
+    // initialize the accumulated masses to zero
+    const auto &wellSpecs = eclipseParser_.getWELSPECS().welspecs;
+    int numWells = wellSpecs.size();
+    accumulatedProducedFluids_.resize(numWells);
+    accumulatedInjectedFluids_.resize(numWells);
+    for (int wellIdx = 0; wellIdx < numWells; ++wellIdx) {
+        for (int phaseIdx = 0; phaseIdx < /*numPhases=*/3; ++phaseIdx) {
+            accumulatedProducedFluids_[wellIdx][phaseIdx] = 0;
+            accumulatedInjectedFluids_[wellIdx][phaseIdx] = 0;
+        }
+    }
+
+    woprSmspec_.resize(numWells);
+    woptSmspec_.resize(numWells);
+    wwirSmspec_.resize(numWells);
+    wwitSmspec_.resize(numWells);
+    auto wellIt = wellSpecs.begin();
+    const auto &wellEndIt = wellSpecs.end();
+    for (int wellIdx = 0; wellIt != wellEndIt; ++wellIt, ++wellIdx) {
+        // add the variables which ought to be included in the summary
+        // file
+        woprSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
+                                  /*varName=*/"WOPR",
+                                  /*wellGroupName=*/wellIt->name_.c_str(),
+                                  /*num=*/0,
+                                  /*unit=*/"SM3/DAY",
+                                  /*defaultValue=*/0.0);
+
+        woptSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
+                                               /*varName=*/"WOPT",
+                                               /*wellGroupName=*/wellIt->name_.c_str(),
+                                               /*num=*/0,
+                                               /*unit=*/"SM3",
+                                               /*defaultValue=*/0.0);
+
+        wwirSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
+                                  /*varName=*/"WWIR",
+                                  /*wellGroupName=*/wellIt->name_.c_str(),
+                                  /*num=*/0,
+                                  /*unit=*/"SM3/DAY",
+                                  /*defaultValue=*/0.0);
+
+        wwitSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
+                                               /*varName=*/"WWIT",
+                                               /*wellGroupName=*/wellIt->name_.c_str(),
+                                               /*num=*/0,
+                                               /*unit=*/"SM3",
+                                               /*defaultValue=*/0.0);
+    }
+
+    ecl_sum_fwrite(sumWriter_);
+}
+
+ecl_grid_type* BlackoilEclipseOutputWriter::newEclGrid_()
+{
     if (eclipseParser_.hasField("DXV")) {
         // make sure that the DYV and DZV keywords are present if the
         // DXV keyword is used in the deck...
@@ -191,14 +334,14 @@ ecl_grid_type* BlackoilEclipseOutputWriter::newEclGrid_() {
     if (eclipseParser_.hasField("ZCORN")) {
         struct grdecl grdecl = eclipseParser_.get_grdecl();
 
-        ecl_kw_type * coord_kw   = newEclKeyword_(COORD_KW, ECL_FLOAT_TYPE);
-        ecl_kw_type * zcorn_kw   = newEclKeyword_(ZCORN_KW, ECL_FLOAT_TYPE);
-        ecl_kw_type * actnum_kw  = newEclKeyword_(ACTNUM_KW, ECL_INT_TYPE);
+        ecl_kw_type * coord_kw   = newEclDoubleKeyword_(COORD_KW, eclipseParser_.getFloatingPointValue("COORD"));
+        ecl_kw_type * zcorn_kw   = newEclDoubleKeyword_(ZCORN_KW, eclipseParser_.getFloatingPointValue("ZCORN"));
+        ecl_kw_type * actnum_kw  = newEclIntKeyword_(ACTNUM_KW, eclipseParser_.getIntegerValue("ACTNUM"));
         ecl_kw_type * mapaxes_kw = NULL;
 
         ecl_grid_type * grid ;
         if (grdecl.mapaxes != NULL)
-            mapaxes_kw = newEclKeyword_(MAPAXES_KW, ECL_FLOAT_TYPE);
+            mapaxes_kw = newEclDoubleKeyword_(MAPAXES_KW, eclipseParser_.getFloatingPointValue("MAPAXES"));
 
         grid = ecl_grid_alloc_GRDECL_kw(grdecl.dims[0], grdecl.dims[1], grdecl.dims[2], zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
 
@@ -214,51 +357,52 @@ ecl_grid_type* BlackoilEclipseOutputWriter::newEclGrid_() {
               "Can't create an ERT grid (no supported keywords found in deck)");
 }
 
-ecl_kw_type *BlackoilEclipseOutputWriter::newEclKeyword_(const std::string& keyword, ecl_type_enum ecl_type) const
+ecl_kw_type* BlackoilEclipseOutputWriter::newEclIntKeyword_(const std::string& kwName,
+                                                            const std::vector<int> &data,
+                                                            int offset,
+                                                            int stride)
 {
-    ecl_kw_type* ecl_kw = NULL;
+    assert(offset >= 0 && offset < data.size());
+    assert(stride > 0 && stride < data.size() - offset);
 
-    if (ecl_type == ECL_INT_TYPE) {
-        std::vector<int> data = eclipseParser_.getIntegerValue(keyword);
-        ecl_kw = ecl_kw_alloc(keyword.c_str(), data.size(), ecl_type);
-        ecl_kw_set_memcpy_data(ecl_kw, &data[0]);
-    } else {
-        std::vector<double> data = eclipseParser_.getFloatingPointValue(keyword);
-        if (ecl_type == ECL_DOUBLE_TYPE) {
-            ecl_kw = ecl_kw_alloc(keyword.c_str(), data.size(), ecl_type);
-            ecl_kw_set_memcpy_data(ecl_kw, &data[0]);
-        } else if (ecl_type == ECL_FLOAT_TYPE) {
-            ecl_kw = ecl_kw_alloc(keyword.c_str(), data.size(), ecl_type);
-            for (std::vector<double>::size_type i=0; i < data.size(); i++)
-                ecl_kw_iset_float(ecl_kw, i, data[i]);
-        }
-    }
-    return ecl_kw;
-}
-
-// TODO (?): unify with newEclKeyword_()
-ecl_kw_type* BlackoilEclipseOutputWriter::eclKeywordWrapper_(const std::string& kw_name,
-                                                             const std::vector<double> &data,
-                                                             int offset,
-                                                             int stride)
-{
-    if (stride <= 0)
-      OPM_THROW(std::runtime_error, "Vector strides must be positive. Got stride = " << stride);
-    if ((stride * std::vector<double>::size_type(grid_.number_of_cells)) != data.size())
-      OPM_THROW(std::runtime_error, "Internal mismatch grid_.number_of_cells: " << grid_.number_of_cells << " data size: " << data.size() / stride);
-
-    ecl_kw_type * ecl_kw = ecl_kw_alloc(kw_name.c_str(), grid_.number_of_cells, ECL_FLOAT_TYPE);
+    ecl_kw_type* eclKw =
+        ecl_kw_alloc(kwName.c_str(),
+                     grid_.number_of_cells, ECL_INT_TYPE);
     for (int i=0; i < grid_.number_of_cells; i++)
-        ecl_kw_iset_float(ecl_kw, i, data[i*stride + offset]);
-    return ecl_kw;
+        ecl_kw_iset_float(eclKw, i, data[i*stride + offset]);
+    return eclKw;
 }
 
-void BlackoilEclipseOutputWriter::saveEclKeyword_(fortio_type* fortio, const std::string& kw, ecl_type_enum ecl_type)
+ecl_kw_type* BlackoilEclipseOutputWriter::newEclDoubleKeyword_(const std::string& kwName,
+                                                               const std::vector<double> &data,
+                                                               int offset,
+                                                               int stride)
 {
-    ecl_kw_type * ecl_kw = newEclKeyword_(kw, ecl_type);
-    if (ecl_kw != NULL) {
-        ecl_kw_fwrite(ecl_kw, fortio);
-        ecl_kw_free(ecl_kw);
+    assert(offset >= 0 && offset < data.size());
+    assert(stride > 0 && stride < data.size() - offset);
+
+    ecl_kw_type* eclKw =
+        ecl_kw_alloc(kwName.c_str(),
+                     grid_.number_of_cells, ECL_FLOAT_TYPE);
+    for (int i=0; i < grid_.number_of_cells; i++)
+        ecl_kw_iset_float(eclKw, i, static_cast<float>(data[i*stride + offset]));
+    return eclKw;
+}
+
+
+void BlackoilEclipseOutputWriter::saveEclKeyword_(fortio_type* fortio, const std::string& kw, ecl_type_enum eclType)
+{
+    ecl_kw_type* eclKw;
+    if (eclType == ECL_INT_TYPE)
+        eclKw = newEclIntKeyword_(kw, eclipseParser_.getIntegerValue(kw));
+    else if (eclType == ECL_FLOAT_TYPE)
+        eclKw = newEclDoubleKeyword_(kw, eclipseParser_.getFloatingPointValue(kw));
+    else
+        OPM_THROW(std::logic_error,
+                  "Not implemented: ECL keywords of type " << ECL_FLOAT_TYPE);
+    if (eclKw != NULL) {
+        ecl_kw_fwrite(eclKw, fortio);
+        ecl_kw_free(eclKw);
     }
 }
 

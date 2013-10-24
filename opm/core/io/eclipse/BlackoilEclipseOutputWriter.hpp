@@ -26,14 +26,18 @@
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/simulator/WellState.hpp>
 
+#include <list>
+#include <string>
+
 #ifdef HAVE_ERT
 #include <ert/ecl/fortio.h>
+#include <ert/ecl/ecl_file.h>
 #include <ert/ecl/ecl_grid.h>
+#include <ert/ecl/ecl_init_file.h>
 #include <ert/ecl/ecl_kw_magic.h>
 #include <ert/ecl/ecl_kw.h>
+#include <ert/ecl/ecl_sum.h>
 #include <ert/ecl/ecl_util.h>
-#include <ert/ecl/ecl_init_file.h>
-#include <ert/ecl/ecl_file.h>
 #endif
 
 #include <string>
@@ -63,7 +67,21 @@ public:
     , grid_(grid)
     , outputDir_(outputDir)
     , baseName_(baseName)
-    {}
+    {
+#if HAVE_ERT
+        sumWriter_ = 0;
+#endif
+    }
+
+    ~BlackoilEclipseOutputWriter()
+    {
+#if HAVE_ERT
+        if (sumWriter_) {
+            // clean after ourselfs
+            ecl_sum_free(sumWriter_);
+        }
+#endif
+    }
 
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
@@ -85,7 +103,7 @@ public:
      *
      * \param[in] wellState The production/injection data for all wells
      */
-    void writeWellState(const WellState& wellState);
+    void writeWellState(const WellState& wellState, const SimulatorTimer& timer);
 
 private:
     const EclipseGridParser& eclipseParser_;
@@ -93,14 +111,35 @@ private:
     std::string outputDir_;
     std::string baseName_;
 
+    time_t startTime_;
+
 #if HAVE_ERT
+    void writeSummaryHeaderFile_(const SimulatorTimer &timer);
+    void writeGridInitFile_(const SimulatorTimer &timer);
+
     ecl_grid_type* newEclGrid_();
-    ecl_kw_type* eclKeywordWrapper_(const std::string& kw_name,
-                                    const std::vector<double> &data,
-                                    int offset,
-                                    int stride);
-    ecl_kw_type* newEclKeyword_(const std::string &keyword , ecl_type_enum ecl_type) const;
+    ecl_kw_type* newEclIntKeyword_(const std::string& kwName,
+                                   const std::vector<int> &data,
+                                   int offset = 0,
+                                   int stride = 1);
+
+    ecl_kw_type* newEclDoubleKeyword_(const std::string& kwName,
+                                      const std::vector<double> &data,
+                                      int offset = 0,
+                                      int stride = 1);
+
     void saveEclKeyword_(fortio_type* fortio, const std::string& keyword, ecl_type_enum ecl_type);
+
+    // keyword handles per well each
+    std::vector<smspec_node_type*> woprSmspec_;
+    std::vector<smspec_node_type*> woptSmspec_;
+    std::vector<smspec_node_type*> wwirSmspec_;
+    std::vector<smspec_node_type*> wwitSmspec_;
+
+    ecl_sum_type* sumWriter_;
+
+    std::vector<std::array<double, /*numPhases=*/3> > accumulatedProducedFluids_;
+    std::vector<std::array<double, /*numPhases=*/3> > accumulatedInjectedFluids_;
 #endif
 };
 } // namespace Opm
