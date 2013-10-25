@@ -28,6 +28,8 @@
 
 #include <list>
 #include <string>
+#include <array>
+#include <vector>
 
 #ifdef HAVE_ERT
 #include <ert/ecl/fortio.h>
