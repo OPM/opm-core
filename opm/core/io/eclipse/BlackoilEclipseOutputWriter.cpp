@@ -137,45 +137,47 @@ void BlackoilEclipseOutputWriter::writeWellState(const WellState& wellState, con
 
     int numWells = accumulatedProducedFluids_.size();
     for (int wellIdx = 0; wellIdx < numWells; ++wellIdx) {
-        // set the value for the well oil production rate
+        // set the value for the well oil production rate. For this,
+        // be aware that the rates in the well state are _surface_
+        // volume rates...
         double woprValue = wellState.wellRates()[wellIdx*3 + BlackoilPhases::Liquid];
-        woprValue *= - 1 * (24 * 60 * 60); // convert kg^3/s of injected fluid to kg^3/d of produced fluid
-        woprValue /= 700; // convert from kg/d to m^3/d. TODO: ignore dissolved gas, use real surface density!
+        woprValue *= - 1 * (24 * 60 * 60); // convert m^3/s of injected fluid to m^3/d of produced fluid
         woprValue = std::max(0.0, woprValue);
 
         int woprIdx = smspec_node_get_params_index(woprSmspec_[wellIdx]);
         ecl_sum_tstep_iset(tstep, woprIdx, woprValue);
 
+        // set the value for the well gas production rate
+        double wgprValue = wellState.wellRates()[wellIdx*3 + BlackoilPhases::Vapour];
+        wgprValue *= - 1 * (24 * 60 * 60); // convert m^3/s of injected fluid to m^3/d of produced fluid
+        wgprValue = std::max(0.0, wgprValue);
+
+        int wgprIdx = smspec_node_get_params_index(wgprSmspec_[wellIdx]);
+        ecl_sum_tstep_iset(tstep, wgprIdx, wgprValue);
+
+        // water injection rate
         double wwirValue = wellState.wellRates()[wellIdx*3 + BlackoilPhases::Aqua];
-        wwirValue *= 1 * (24 * 60 * 60);  // convert kg^3/s to kg^3/d
-        wwirValue /= 700; // convert from kg/d to m^3/d. TODO: use real surface density!
+        wwirValue *= 1 * (24 * 60 * 60);  // convert m^3/s to m^3/d
         wwirValue = std::max(0.0, wwirValue);
 
         int wwirIdx = smspec_node_get_params_index(wwirSmspec_[wellIdx]);
         ecl_sum_tstep_iset(tstep, wwirIdx, wwirValue);
 
+        // gas injection rate
+        double wgirValue = wellState.wellRates()[wellIdx*3 + BlackoilPhases::Vapour];
+        wgirValue *= - 1 * (24 * 60 * 60); // convert m^3/s of injected fluid to m^3/d of produced fluid
+        wgirValue = std::max(0.0, wgirValue);
+
+        int wgirIdx = smspec_node_get_params_index(wgirSmspec_[wellIdx]);
+        ecl_sum_tstep_iset(tstep, wgirIdx, wgirValue);
+
         // accumulate injected produced fluids
         for (int phaseIdx = 0; phaseIdx < /*numPhases=*/3; ++phaseIdx) {
-            // convert from m^3 of injected fluid to m^3 of produced fluid
-            double injectedMass = wellState.wellRates()[wellIdx*3 + phaseIdx];
-            injectedMass *= timer.currentStepLength();
+            // accumulate the produced/injected surface volumes
+            double injectedVolume = wellState.wellRates()[wellIdx*3 + phaseIdx];
+            injectedVolume *= timer.currentStepLength();
 
-            // TODO: use real surface density!
-            double rho;
-            switch (phaseIdx) {
-            case BlackoilPhases::Liquid:
-                rho = 700;
-                break;
-            case BlackoilPhases::Aqua:
-                rho = 700;
-                break;
-            case BlackoilPhases::Vapour:
-                rho = 1;
-                break;
-            }
-            double injectedVolume = injectedMass/rho; // convert from kg/d to m^3/d. TODO: ignore dissolved gas
-
-            if (injectedMass < 0)
+            if (injectedVolume < 0)
                 accumulatedProducedFluids_[wellIdx][phaseIdx] += -injectedVolume;
             else
                 accumulatedInjectedFluids_[wellIdx][phaseIdx] += injectedVolume;
@@ -183,8 +185,14 @@ void BlackoilEclipseOutputWriter::writeWellState(const WellState& wellState, con
             int woptIdx = smspec_node_get_params_index(woptSmspec_[wellIdx]);
             ecl_sum_tstep_iset(tstep, woptIdx, accumulatedProducedFluids_[wellIdx][BlackoilPhases::Liquid]);
 
+            int wgptIdx = smspec_node_get_params_index(wgptSmspec_[wellIdx]);
+            ecl_sum_tstep_iset(tstep, wgptIdx, accumulatedProducedFluids_[wellIdx][BlackoilPhases::Vapour]);
+
             int wwitIdx = smspec_node_get_params_index(wwitSmspec_[wellIdx]);
             ecl_sum_tstep_iset(tstep, wwitIdx, accumulatedInjectedFluids_[wellIdx][BlackoilPhases::Aqua]);
+
+            int wgitIdx = smspec_node_get_params_index(wgitSmspec_[wellIdx]);
+            ecl_sum_tstep_iset(tstep, wgitIdx, accumulatedProducedFluids_[wellIdx][BlackoilPhases::Vapour]);
         }
     }
 
@@ -252,7 +260,7 @@ void BlackoilEclipseOutputWriter::writeSummaryHeaderFile_(const SimulatorTimer &
     // allocate the data structure for the writer
     sumWriter_ =
         ecl_sum_alloc_writer(caseName.c_str(),
-                             /*formattedOutput=*/true,
+                             /*formattedOutput=*/false,
                              /*unifiedOutput=*/true,
                              /*joinString=*/":",
                              startTime_,
@@ -272,19 +280,23 @@ void BlackoilEclipseOutputWriter::writeSummaryHeaderFile_(const SimulatorTimer &
 
     woprSmspec_.resize(numWells);
     woptSmspec_.resize(numWells);
+    wgprSmspec_.resize(numWells);
+    wgptSmspec_.resize(numWells);
     wwirSmspec_.resize(numWells);
     wwitSmspec_.resize(numWells);
+    wgirSmspec_.resize(numWells);
+    wgitSmspec_.resize(numWells);
     auto wellIt = wellSpecs.begin();
     const auto &wellEndIt = wellSpecs.end();
     for (int wellIdx = 0; wellIt != wellEndIt; ++wellIt, ++wellIdx) {
         // add the variables which ought to be included in the summary
         // file
         woprSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
-                                  /*varName=*/"WOPR",
-                                  /*wellGroupName=*/wellIt->name_.c_str(),
-                                  /*num=*/0,
-                                  /*unit=*/"SM3/DAY",
-                                  /*defaultValue=*/0.0);
+                                               /*varName=*/"WOPR",
+                                               /*wellGroupName=*/wellIt->name_.c_str(),
+                                               /*num=*/0,
+                                               /*unit=*/"SM3/DAY",
+                                               /*defaultValue=*/0.0);
 
         woptSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
                                                /*varName=*/"WOPT",
@@ -293,15 +305,43 @@ void BlackoilEclipseOutputWriter::writeSummaryHeaderFile_(const SimulatorTimer &
                                                /*unit=*/"SM3",
                                                /*defaultValue=*/0.0);
 
+        wgprSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
+                                               /*varName=*/"WGPR",
+                                               /*wellGroupName=*/wellIt->name_.c_str(),
+                                               /*num=*/0,
+                                               /*unit=*/"SM3/DAY",
+                                               /*defaultValue=*/0.0);
+
+        wgptSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
+                                               /*varName=*/"WGPT",
+                                               /*wellGroupName=*/wellIt->name_.c_str(),
+                                               /*num=*/0,
+                                               /*unit=*/"SM3",
+                                               /*defaultValue=*/0.0);
+
         wwirSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
-                                  /*varName=*/"WWIR",
-                                  /*wellGroupName=*/wellIt->name_.c_str(),
-                                  /*num=*/0,
-                                  /*unit=*/"SM3/DAY",
-                                  /*defaultValue=*/0.0);
+                                               /*varName=*/"WWIR",
+                                               /*wellGroupName=*/wellIt->name_.c_str(),
+                                               /*num=*/0,
+                                               /*unit=*/"SM3/DAY",
+                                               /*defaultValue=*/0.0);
 
         wwitSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
                                                /*varName=*/"WWIT",
+                                               /*wellGroupName=*/wellIt->name_.c_str(),
+                                               /*num=*/0,
+                                               /*unit=*/"SM3",
+                                               /*defaultValue=*/0.0);
+
+        wgirSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
+                                               /*varName=*/"WGIR",
+                                               /*wellGroupName=*/wellIt->name_.c_str(),
+                                               /*num=*/0,
+                                               /*unit=*/"SM3/DAY",
+                                               /*defaultValue=*/0.0);
+
+        wgitSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
+                                               /*varName=*/"WGIT",
                                                /*wellGroupName=*/wellIt->name_.c_str(),
                                                /*num=*/0,
                                                /*unit=*/"SM3",

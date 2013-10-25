@@ -133,8 +133,12 @@ private:
     // keyword handles per well each
     std::vector<smspec_node_type*> woprSmspec_;
     std::vector<smspec_node_type*> woptSmspec_;
+    std::vector<smspec_node_type*> wgprSmspec_;
+    std::vector<smspec_node_type*> wgptSmspec_;
     std::vector<smspec_node_type*> wwirSmspec_;
     std::vector<smspec_node_type*> wwitSmspec_;
+    std::vector<smspec_node_type*> wgirSmspec_;
+    std::vector<smspec_node_type*> wgitSmspec_;
 
     ecl_sum_type* sumWriter_;
 
