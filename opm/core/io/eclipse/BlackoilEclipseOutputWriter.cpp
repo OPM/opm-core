@@ -90,7 +90,15 @@ void BlackoilEclipseOutputWriter::writeReservoirState(const BlackoilState& reser
     ecl_rst_file_start_solution(rst_file);
 
     {
-        ecl_kw_type* pressure_kw = newEclDoubleKeyword_("PRESSURE", reservoirState.pressure());
+        // convert the pressures from Pascals to bar because eclipse
+        // seems to write bars
+        std::vector<double> pressureBar(reservoirState.pressure());
+        auto it = pressureBar.begin();
+        const auto &endIt = pressureBar.end();
+        for (; it != endIt; ++it)
+            (*it) /= 1e5;
+
+        ecl_kw_type* pressure_kw = newEclDoubleKeyword_("PRESSURE", pressureBar);
         ecl_rst_file_add_kw(rst_file, pressure_kw);
         ecl_kw_free(pressure_kw);
     }
