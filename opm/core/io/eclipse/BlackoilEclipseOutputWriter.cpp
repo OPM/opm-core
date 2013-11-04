@@ -43,6 +43,86 @@
 #include <ert/ecl/ecl_rst_file.h>
 #endif
 
+#include <memory>     // unique_ptr
+#include <utility>    // move
+using namespace Opm;
+
+/// Smart pointer/handle class for ERT opaque types, such as ecl_kw_type*.
+///
+/// \tparam T Type of handle being wrapper
+template <typename T>
+struct EclipseHandle : private std::unique_ptr <T, void (*)(T*) throw()> {
+    // to save ourselves from some typing we introduce this alias
+    typedef std::unique_ptr <T, void (*)(T*) throw()> base;
+
+    /// Construct a new smart handle based on the returned value of
+    /// an allocation function and the corresponding destroyer function.
+    EclipseHandle (T* t, void (*destroy)(T*))
+        : base (t, destroy) { }
+
+    /// Convenience operator that lets us use this type as if
+    /// it was a handle directly.
+    operator T* () const { return base::get (); }
+};
+
+/**
+ * Eclipse "keyword" (i.e. named data) for a vector. (This class is
+ * different from EclKW in the constructors it provide).
+ */
+template <typename T>
+struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
+    EclipseKeyword (const std::string& name,    /// identification
+                    const std::vector<T>& data, /// array holding values
+                    const int num,              /// actual number to take
+                    const int offset,           /// distance to first
+                    const int stride)           /// distance between each
+
+        // allocate handle and put in smart pointer base class
+        : EclipseHandle (ecl_kw_alloc (name.c_str(), num, type ()),
+                         ecl_kw_free) {
+
+        // range cannot start outside of data set
+        assert(offset >= 0 && offset < data.size());
+
+        // don't jump out of the set when trying to
+        assert(stride > 0 && stride < data.size() - offset);
+
+        // fill it with values
+        for (int i = 0; i < num; ++i) {
+            // access from data store
+            const float value = data[i * stride + offset];
+
+            // write into memory represented by handle
+            ecl_kw_iset_float(*this, i, value);
+        }
+    }
+
+    /// Convenience constructor that takes the entire array
+    EclipseKeyword (const std::string& name,
+                    const std::vector<T>& data)
+        : EclipseKeyword (name, data, data.size(), 0, 1) { }
+
+    /// Convenience constructor that gets the set of data
+    /// from the samely named item in the parser
+    EclipseKeyword (const std::string& name,
+                    const EclipseGridParser& parser)
+        : EclipseKeyword (name, parser.getValue<T> (name)) { }
+
+    /// Constructor for optional fields
+    EclipseKeyword (const std::string& name)
+        : EclipseHandle (0, ecl_kw_free) {
+        static_cast<void> (name);
+    }
+
+private:
+    /// Map the C++ data type (given by T) to an Eclipse type enum
+    static ecl_type_enum type ();
+};
+
+// specializations for known keyword types
+template <> ecl_type_enum EclipseKeyword<int   >::type () { return ECL_INT_TYPE   ; }
+template <> ecl_type_enum EclipseKeyword<double>::type () { return ECL_FLOAT_TYPE; }
+
 namespace Opm {
 void BlackoilEclipseOutputWriter::writeInitFile(const SimulatorTimer &timer)
 {
@@ -98,27 +178,35 @@ void BlackoilEclipseOutputWriter::writeReservoirState(const BlackoilState& reser
         for (; it != endIt; ++it)
             (*it) /= 1e5;
 
-        ecl_kw_type* pressure_kw = newEclDoubleKeyword_("PRESSURE", pressureBar);
+        EclipseKeyword<double> pressure_kw ("PRESSURE", pressureBar);
         ecl_rst_file_add_kw(rst_file, pressure_kw);
-        ecl_kw_free(pressure_kw);
     }
 
     {
-        ecl_kw_type* swat_kw = newEclDoubleKeyword_("SWAT", reservoirState.saturation(), /*offset=*/0, /*stride=*/3);
+        EclipseKeyword<double> swat_kw ("SWAT",
+                                         reservoirState.saturation(),
+                                         grid_.number_of_cells,
+                                         BlackoilPhases::Aqua,
+                                         BlackoilPhases::MaxNumPhases);
         ecl_rst_file_add_kw(rst_file, swat_kw);
-        ecl_kw_free(swat_kw);
     }
 
     {
-        ecl_kw_type* soil_kw = newEclDoubleKeyword_("SOIL", reservoirState.saturation(), /*offset=*/1, /*stride=*/3);
+        EclipseKeyword<double> soil_kw ("SOIL",
+                                         reservoirState.saturation(),
+                                         grid_.number_of_cells,
+                                         BlackoilPhases::Liquid,
+                                         BlackoilPhases::MaxNumPhases);
         ecl_rst_file_add_kw(rst_file, soil_kw);
-        ecl_kw_free(soil_kw);
     }
 
     {
-        ecl_kw_type* sgas_kw = newEclDoubleKeyword_("SGAS", reservoirState.saturation(), /*offset=*/2, /*stride=*/3);
+        EclipseKeyword<double> sgas_kw ("SGAS",
+                                         reservoirState.saturation(),
+                                         grid_.number_of_cells,
+                                         BlackoilPhases::Vapour,
+                                         BlackoilPhases::MaxNumPhases);
         ecl_rst_file_add_kw(rst_file, sgas_kw);
-        ecl_kw_free(sgas_kw);
     }
 
     ecl_rst_file_end_solution(rst_file);
@@ -241,15 +329,17 @@ void BlackoilEclipseOutputWriter::writeGridInitFile_(const SimulatorTimer &timer
             start_date = mktime(&td_tm);
         }
 
-        ecl_kw_type* poro_kw = newEclDoubleKeyword_(PORO_KW, eclipseParser_.getFloatingPointValue("PORO"));
+        EclipseKeyword<double> poro_kw (PORO_KW, eclipseParser_);
         ecl_init_file_fwrite_header(fortio, ecl_grid, poro_kw, phases, start_date);
-        ecl_kw_free(poro_kw);
     }
 
     /* This collection of keywords is somewhat arbitrary and random. */
-    saveEclKeyword_(fortio, "PERMX", ECL_FLOAT_TYPE);
-    saveEclKeyword_(fortio, "PERMY", ECL_FLOAT_TYPE);
-    saveEclKeyword_(fortio, "PERMZ", ECL_FLOAT_TYPE);
+    EclipseKeyword<double> permx_kw ("PERMX", eclipseParser_);
+    EclipseKeyword<double> permy_kw ("PERMY", eclipseParser_);
+    EclipseKeyword<double> permz_kw ("PERMZ", eclipseParser_);
+    ecl_kw_fwrite(permx_kw, fortio);
+    ecl_kw_fwrite(permy_kw, fortio);
+    ecl_kw_fwrite(permz_kw, fortio);
 
     fortio_fclose(fortio);
     free(initFileName);
@@ -382,76 +472,21 @@ ecl_grid_type* BlackoilEclipseOutputWriter::newEclGrid_()
     if (eclipseParser_.hasField("ZCORN")) {
         struct grdecl grdecl = eclipseParser_.get_grdecl();
 
-        ecl_kw_type * coord_kw   = newEclDoubleKeyword_(COORD_KW, eclipseParser_.getFloatingPointValue("COORD"));
-        ecl_kw_type * zcorn_kw   = newEclDoubleKeyword_(ZCORN_KW, eclipseParser_.getFloatingPointValue("ZCORN"));
-        ecl_kw_type * actnum_kw  = newEclIntKeyword_(ACTNUM_KW, eclipseParser_.getIntegerValue("ACTNUM"));
-        ecl_kw_type * mapaxes_kw = NULL;
+        EclipseKeyword<double> coord_kw   (COORD_KW,  eclipseParser_);
+        EclipseKeyword<double> zcorn_kw   (ZCORN_KW,  eclipseParser_);
+        EclipseKeyword<double> actnum_kw  (ACTNUM_KW, eclipseParser_);
+        EclipseKeyword<double> mapaxes_kw (MAPAXES_KW);
 
         ecl_grid_type * grid ;
         if (grdecl.mapaxes != NULL)
-            mapaxes_kw = newEclDoubleKeyword_(MAPAXES_KW, eclipseParser_.getFloatingPointValue("MAPAXES"));
+            mapaxes_kw = std::move (EclipseKeyword<double> (MAPAXES_KW, eclipseParser_));
 
         grid = ecl_grid_alloc_GRDECL_kw(grdecl.dims[0], grdecl.dims[1], grdecl.dims[2], zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
-
-        ecl_kw_free(coord_kw);
-        ecl_kw_free(zcorn_kw);
-        ecl_kw_free(actnum_kw);
-        if (mapaxes_kw != NULL)
-            ecl_kw_free(mapaxes_kw);
 
         return grid;
     }
     OPM_THROW(std::runtime_error,
               "Can't create an ERT grid (no supported keywords found in deck)");
-}
-
-ecl_kw_type* BlackoilEclipseOutputWriter::newEclIntKeyword_(const std::string& kwName,
-                                                            const std::vector<int> &data,
-                                                            int offset,
-                                                            int stride)
-{
-    assert(offset >= 0 && offset < data.size());
-    assert(stride > 0 && stride < data.size() - offset);
-
-    ecl_kw_type* eclKw =
-        ecl_kw_alloc(kwName.c_str(),
-                     grid_.number_of_cells, ECL_INT_TYPE);
-    for (int i=0; i < grid_.number_of_cells; i++)
-        ecl_kw_iset_float(eclKw, i, data[i*stride + offset]);
-    return eclKw;
-}
-
-ecl_kw_type* BlackoilEclipseOutputWriter::newEclDoubleKeyword_(const std::string& kwName,
-                                                               const std::vector<double> &data,
-                                                               int offset,
-                                                               int stride)
-{
-    assert(offset >= 0 && offset < data.size());
-    assert(stride > 0 && stride < data.size() - offset);
-
-    ecl_kw_type* eclKw =
-        ecl_kw_alloc(kwName.c_str(),
-                     grid_.number_of_cells, ECL_FLOAT_TYPE);
-    for (int i=0; i < grid_.number_of_cells; i++)
-        ecl_kw_iset_float(eclKw, i, static_cast<float>(data[i*stride + offset]));
-    return eclKw;
-}
-
-
-void BlackoilEclipseOutputWriter::saveEclKeyword_(fortio_type* fortio, const std::string& kw, ecl_type_enum eclType)
-{
-    ecl_kw_type* eclKw;
-    if (eclType == ECL_INT_TYPE)
-        eclKw = newEclIntKeyword_(kw, eclipseParser_.getIntegerValue(kw));
-    else if (eclType == ECL_FLOAT_TYPE)
-        eclKw = newEclDoubleKeyword_(kw, eclipseParser_.getFloatingPointValue(kw));
-    else
-        OPM_THROW(std::logic_error,
-                  "Not implemented: ECL keywords of type " << ECL_FLOAT_TYPE);
-    if (eclKw != NULL) {
-        ecl_kw_fwrite(eclKw, fortio);
-        ecl_kw_free(eclKw);
-    }
 }
 
 #endif // HAVE_ERT

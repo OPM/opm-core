@@ -120,17 +120,6 @@ private:
     void writeGridInitFile_(const SimulatorTimer &timer);
 
     ecl_grid_type* newEclGrid_();
-    ecl_kw_type* newEclIntKeyword_(const std::string& kwName,
-                                   const std::vector<int> &data,
-                                   int offset = 0,
-                                   int stride = 1);
-
-    ecl_kw_type* newEclDoubleKeyword_(const std::string& kwName,
-                                      const std::vector<double> &data,
-                                      int offset = 0,
-                                      int stride = 1);
-
-    void saveEclKeyword_(fortio_type* fortio, const std::string& keyword, ecl_type_enum ecl_type);
 
     // keyword handles per well each
     std::vector<smspec_node_type*> woprSmspec_;
