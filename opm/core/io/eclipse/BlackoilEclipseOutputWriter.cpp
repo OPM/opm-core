@@ -33,6 +33,7 @@
 
 #ifdef HAVE_ERT
 #include <ert/ecl/fortio.h>
+#include <ert/ecl/ecl_endian_flip.h>
 #include <ert/ecl/ecl_grid.h>
 #include <ert/ecl/ecl_kw_magic.h>
 #include <ert/ecl/ecl_kw.h>
@@ -409,41 +410,71 @@ private:
                          ecl_grid_free) { }
 };
 
+/**
+ * Initialization file which contains static properties (such as
+ * porosity and permeability) for the simulation field.
+ */
+struct EclipseInit : public EclipseHandle <fortio_type> {
+    // contrary to the grid, the location of the file goes here because
+    // there is only one construction method but several write methods
+    // (but we need to do a bit of logic before we can call the actual
+    // constructor, so we'll have to do with a static wrapper)
+    static EclipseInit make (const std::string& outputDir,
+                              const std::string& baseName,
+                              const SimulatorTimer& timer) {
+        EclipseFileName initFileName (outputDir,
+                                      baseName,
+                                      ECL_INIT_FILE,
+                                      timer);
+        bool fmt_file;
+        if (!ecl_util_fmt_file(initFileName, &fmt_file)) {
+            OPM_THROW(std::runtime_error,
+                      "Could not determine formatted/unformatted status of file:" << initFileName << " non-standard name?" << std::endl);
+        }
+        return EclipseInit (initFileName, fmt_file);
+    }
+
+    void writeHeader (const EclipseGrid& grid,
+                       const SimulatorTimer& timer,
+                       const EclipseGridParser& parser,
+                       const int phases) {
+        EclipseKeyword<double> poro (PORO_KW, parser);
+        ecl_init_file_fwrite_header (*this,
+                                     grid,
+                                     poro,
+                                     phases,
+                                     current (timer));
+    }
+
+    template <typename T>
+    void writeKeyword (const std::string& keyword,
+                        const EclipseGridParser& parser) {
+        EclipseKeyword <T> kw (keyword, parser);
+        ecl_kw_fwrite (kw, *this);
+    }
+
+private:
+    EclipseInit (const EclipseFileName& fname, const bool formatted)
+        : EclipseHandle (fortio_open_writer (fname, formatted, ECL_ENDIAN_FLIP),
+                         fortio_fclose) { }
+};
+
 #if HAVE_ERT
 void BlackoilEclipseOutputWriter::writeGridInitFile_(const SimulatorTimer &timer)
 {
-    int phases = ECL_OIL_PHASE + ECL_GAS_PHASE + ECL_WATER_PHASE;
-    bool endian_flip  = true;//ECL_ENDIAN_FLIP;
-    bool fmt_file = false;
-
     EclipseGrid ecl_grid = EclipseGrid::make (eclipseParser_);
     ecl_grid.write (outputDir_, baseName_, timer);
-    fortio_type* fortio;
 
-    EclipseFileName initFileName (outputDir_,
-                                  baseName_,
-                                  ECL_INIT_FILE,
-                                  timer);
-    if (!ecl_util_fmt_file(initFileName, &fmt_file)) {
-        OPM_THROW(std::runtime_error,
-                  "Could not determine formatted/unformatted status of file:" << initFileName << " non-standard name?" << std::endl);
-    }
-    fortio = fortio_open_writer(initFileName, fmt_file, endian_flip);
-    {
-        time_t start_date = current (timer);
-        EclipseKeyword<double> poro_kw (PORO_KW, eclipseParser_);
-        ecl_init_file_fwrite_header(fortio, ecl_grid, poro_kw, phases, start_date);
-    }
+    EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, timer);
+    fortio.writeHeader (ecl_grid,
+                        timer,
+                        eclipseParser_,
+                        ECL_OIL_PHASE | ECL_GAS_PHASE | ECL_WATER_PHASE);
 
     /* This collection of keywords is somewhat arbitrary and random. */
-    EclipseKeyword<double> permx_kw ("PERMX", eclipseParser_);
-    EclipseKeyword<double> permy_kw ("PERMY", eclipseParser_);
-    EclipseKeyword<double> permz_kw ("PERMZ", eclipseParser_);
-    ecl_kw_fwrite(permx_kw, fortio);
-    ecl_kw_fwrite(permy_kw, fortio);
-    ecl_kw_fwrite(permz_kw, fortio);
-
-    fortio_fclose(fortio);
+    fortio.writeKeyword<double> ("PERMX", eclipseParser_);
+    fortio.writeKeyword<double> ("PERMY", eclipseParser_);
+    fortio.writeKeyword<double> ("PERMZ", eclipseParser_);
 }
 
 void BlackoilEclipseOutputWriter::writeSummaryHeaderFile_(const SimulatorTimer &timer)
