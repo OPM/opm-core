@@ -159,7 +159,8 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_param.cpp
 	tests/test_blackoilfluid.cpp
 	tests/test_shadow.cpp
-	tests/test_units.cpp
+	tests/test_units.cpp 
+        tests/test_blackoilstate.cpp    
 	)
 
 # originally generated with the command:
@@ -168,6 +169,8 @@ list (APPEND TEST_DATA_FILES
 	tests/extratestdata.xml
 	tests/testdata.xml
 	tests/testFluid.DATA
+        tests/testBlackoilState1.DATA
+        tests/testBlackoilState2.DATA
 	)
 
 # originally generated with the command:
