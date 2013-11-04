@@ -123,11 +123,18 @@ private:
 template <> ecl_type_enum EclipseKeyword<int   >::type () { return ECL_INT_TYPE   ; }
 template <> ecl_type_enum EclipseKeyword<double>::type () { return ECL_FLOAT_TYPE; }
 
+/**
+ * Extract the current time from a timer object into the C type used by ERT.
+ */
+time_t current (const SimulatorTimer& timer) {
+    tm t = boost::posix_time::to_tm (timer.currentDateTime());
+    return mktime(&t);
+}
+
 namespace Opm {
 void BlackoilEclipseOutputWriter::writeInitFile(const SimulatorTimer &timer)
 {
-    tm tm = boost::posix_time::to_tm(timer.currentDateTime());
-    startTime_ = mktime(&tm);
+    startTime_ = current (timer);
 
 #if HAVE_ERT
     writeGridInitFile_(timer);
@@ -179,9 +186,7 @@ void BlackoilEclipseOutputWriter::writeReservoirState(const BlackoilState& reser
     int nactive = grid_.number_of_cells;
     ecl_rst_file_type* rst_file;
 
-    time_t curTime;
-    tm tm = boost::posix_time::to_tm(timer.currentDateTime());
-    curTime = mktime(&tm);
+    time_t curTime = current (timer);
 
     if (timer.currentStepNum() > 0 && file_type == ECL_UNIFIED_RESTART_FILE)
         rst_file = ecl_rst_file_open_append(fileName);
@@ -242,8 +247,7 @@ void BlackoilEclipseOutputWriter::writeReservoirState(const BlackoilState& reser
 void BlackoilEclipseOutputWriter::writeWellState(const WellState& wellState, const SimulatorTimer& timer)
 {
 #if HAVE_ERT
-    tm tm = boost::posix_time::to_tm(timer.currentDateTime());
-    time_t curTime = mktime(&tm);
+    time_t curTime = current (timer);
 
     // create a new timestep for the summary file (at least if the
     // timer was advanced since the last call to writeWellState())
@@ -345,15 +349,7 @@ void BlackoilEclipseOutputWriter::writeGridInitFile_(const SimulatorTimer &timer
     }
     fortio = fortio_open_writer(initFileName, fmt_file, endian_flip);
     {
-        time_t start_date;
-
-        {
-            boost::posix_time::ptime start_date_(timer.currentDateTime());
-
-            tm td_tm = boost::posix_time::to_tm(start_date_);
-            start_date = mktime(&td_tm);
-        }
-
+        time_t start_date = current (timer);
         EclipseKeyword<double> poro_kw (PORO_KW, eclipseParser_);
         ecl_init_file_fwrite_header(fortio, ecl_grid, poro_kw, phases, start_date);
     }
