@@ -138,6 +138,12 @@ namespace Opm
     /// corresponding to the given floating-point keyword.
     const std::vector<double>& getFloatingPointValue(const std::string& keyword) const;
 
+    /// Returns a reference to a vector containing the values
+    /// corresponding to the given keyword of a type only known
+    /// indirectly (through a template)
+    template <typename T>
+    const std::vector<T>& getValue(const std::string& keyword) const;
+
     typedef std::shared_ptr<SpecialBase> SpecialFieldPtr;
 
     /// Returns a reference to a vector containing pointers to the values

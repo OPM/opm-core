@@ -1178,4 +1178,16 @@ void EclipseGridParser::getNumericErtFields(const string& filename)
 #endif  // HAVE_ERT
 }
 
+// specializations for those types that can be provided; attempts
+// to access other types than these will result in linker error
+template <> const std::vector<int>&
+EclipseGridParser::getValue<int> (const std::string& keyword) const {
+    return this->getIntegerValue(keyword);
+}
+
+template <> const std::vector<double>&
+EclipseGridParser::getValue<double> (const std::string& keyword) const {
+    return this->getFloatingPointValue(keyword);
+}
+
 } // namespace Opm
