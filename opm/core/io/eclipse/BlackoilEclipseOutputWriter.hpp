@@ -119,8 +119,6 @@ private:
     void writeSummaryHeaderFile_(const SimulatorTimer &timer);
     void writeGridInitFile_(const SimulatorTimer &timer);
 
-    ecl_grid_type* newEclGrid_();
-
     // keyword handles per well each
     std::vector<smspec_node_type*> woprSmspec_;
     std::vector<smspec_node_type*> woptSmspec_;

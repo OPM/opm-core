@@ -324,6 +324,78 @@ void BlackoilEclipseOutputWriter::writeWellState(const WellState& wellState, con
 #endif // HAVE_ERT
 }
 
+/**
+ * Representation of an Eclipse grid.
+ */
+struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
+    /// Create a grid based on the keywords available in input file
+    static EclipseGrid make (const EclipseGridParser& parser) {
+        if (parser.hasField("DXV")) {
+            // make sure that the DYV and DZV keywords are present if the
+            // DXV keyword is used in the deck...
+            assert(parser.hasField("DYV"));
+            assert(parser.hasField("DZV"));
+
+            const auto& dxv = parser.getFloatingPointValue("DXV");
+            const auto& dyv = parser.getFloatingPointValue("DYV");
+            const auto& dzv = parser.getFloatingPointValue("DZV");
+
+            return EclipseGrid (dxv, dyv, dzv);
+        }
+        else if (parser.hasField("ZCORN")) {
+            struct grdecl g = parser.get_grdecl ();
+
+            EclipseKeyword<double> coord_kw   (COORD_KW,  parser);
+            EclipseKeyword<double> zcorn_kw   (ZCORN_KW,  parser);
+            EclipseKeyword<double> actnum_kw  (ACTNUM_KW, parser);
+            EclipseKeyword<double> mapaxes_kw (MAPAXES_KW);
+
+            if (g.mapaxes) {
+                mapaxes_kw = std::move (EclipseKeyword<double> (MAPAXES_KW, parser));
+            }
+
+            return EclipseGrid (g.dims, zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
+        }
+        else {
+            OPM_THROW(std::runtime_error,
+                  "Can't create an ERT grid (no supported keywords found in deck)");
+        }
+    }
+
+private:
+    // each of these cases could have been their respective subclass,
+    // but there is not any polymorphism on each of these grid types
+    // once we have the handle
+
+    // setup smart pointer for Cartesian grid
+    EclipseGrid (const std::vector<double>& dxv,
+                 const std::vector<double>& dyv,
+                 const std::vector<double>& dzv)
+        : EclipseHandle (ecl_grid_alloc_dxv_dyv_dzv (dxv.size (),
+                                                     dyv.size (),
+                                                     dzv.size (),
+                                                     &dxv[0],
+                                                     &dyv[0],
+                                                     &dzv[0],
+                                                     NULL),
+                         ecl_grid_free) { }
+
+    // setup smart pointer for cornerpoint grid
+    EclipseGrid (const int dims[],
+                 const EclipseKeyword<double>& coord,
+                 const EclipseKeyword<double>& zcorn,
+                 const EclipseKeyword<double>& actnum,
+                 const EclipseKeyword<double>& mapaxes)
+        : EclipseHandle (ecl_grid_alloc_GRDECL_kw(dims[0],
+                                                  dims[1],
+                                                  dims[2],
+                                                  zcorn,
+                                                  coord,
+                                                  actnum,
+                                                  mapaxes),
+                         ecl_grid_free) { }
+};
+
 #if HAVE_ERT
 void BlackoilEclipseOutputWriter::writeGridInitFile_(const SimulatorTimer &timer)
 {
@@ -331,7 +403,7 @@ void BlackoilEclipseOutputWriter::writeGridInitFile_(const SimulatorTimer &timer
     bool endian_flip  = true;//ECL_ENDIAN_FLIP;
     bool fmt_file = false;
 
-    ecl_grid_type* ecl_grid = newEclGrid_();
+    ecl_grid_type* ecl_grid = EclipseGrid::make (eclipseParser_);
     EclipseFileName gridFileName (outputDir_,
                                   baseName_,
                                   ECL_EGRID_FILE,
@@ -467,46 +539,6 @@ void BlackoilEclipseOutputWriter::writeSummaryHeaderFile_(const SimulatorTimer &
     }
 
     ecl_sum_fwrite(sumWriter_);
-}
-
-ecl_grid_type* BlackoilEclipseOutputWriter::newEclGrid_()
-{
-    if (eclipseParser_.hasField("DXV")) {
-        // make sure that the DYV and DZV keywords are present if the
-        // DXV keyword is used in the deck...
-        assert(eclipseParser_.hasField("DYV"));
-        assert(eclipseParser_.hasField("DZV"));
-
-        const auto &dxv = eclipseParser_.getFloatingPointValue("DXV");
-        const auto &dyv = eclipseParser_.getFloatingPointValue("DYV");
-        const auto &dzv = eclipseParser_.getFloatingPointValue("DZV");
-
-        // creating a C array out of std::vector like this is pretty
-        // hacky and might even be unportable. having said that, it
-        // probably works with all currently known STL
-        // implementations...
-        return ecl_grid_alloc_dxv_dyv_dzv(dxv.size(), dyv.size(), dzv.size(),
-                                          &dxv[0], &dyv[0], &dzv[0],
-                                          /*actnum=*/NULL);
-    }
-    if (eclipseParser_.hasField("ZCORN")) {
-        struct grdecl grdecl = eclipseParser_.get_grdecl();
-
-        EclipseKeyword<double> coord_kw   (COORD_KW,  eclipseParser_);
-        EclipseKeyword<double> zcorn_kw   (ZCORN_KW,  eclipseParser_);
-        EclipseKeyword<double> actnum_kw  (ACTNUM_KW, eclipseParser_);
-        EclipseKeyword<double> mapaxes_kw (MAPAXES_KW);
-
-        ecl_grid_type * grid ;
-        if (grdecl.mapaxes != NULL)
-            mapaxes_kw = std::move (EclipseKeyword<double> (MAPAXES_KW, eclipseParser_));
-
-        grid = ecl_grid_alloc_GRDECL_kw(grdecl.dims[0], grdecl.dims[1], grdecl.dims[2], zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
-
-        return grid;
-    }
-    OPM_THROW(std::runtime_error,
-              "Can't create an ERT grid (no supported keywords found in deck)");
 }
 
 #endif // HAVE_ERT
