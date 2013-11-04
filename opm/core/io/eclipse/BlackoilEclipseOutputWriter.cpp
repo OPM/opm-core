@@ -138,17 +138,39 @@ void BlackoilEclipseOutputWriter::writeInitFile(const SimulatorTimer &timer)
 #endif // HAVE_ERT
 }
 
+/**
+ * Pointer to memory that holds the name to an Eclipse output file.
+ */
+struct EclipseFileName : public EclipseHandle <const char> {
+    EclipseFileName (const std::string& outputDir,
+                     const std::string& baseName,
+                     ecl_file_enum type,
+                     const SimulatorTimer& timer)
+
+        // filename formatting function returns a pointer to allocated
+        // memory that must be released with the free() function
+        : EclipseHandle (ecl_util_alloc_filename (outputDir.c_str(),
+                                                  baseName.c_str(),
+                                                  type,
+                                                  false, // formatted?
+                                                  timer.currentStepNum ()),
+                         EclipseFileName::freestr) { }
+private:
+    /// Facade which allows us to free a const char*
+    static void freestr (const char* ptr) {
+        ::free (const_cast<char*>(ptr));
+    }
+};
+
 void BlackoilEclipseOutputWriter::writeReservoirState(const BlackoilState& reservoirState, const SimulatorTimer& timer)
 {
 #if HAVE_ERT
     ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;  // Alternatively ECL_RESTART_FILE for multiple restart files.
-    bool fmt_file           = false;
 
-    char *fileName = ecl_util_alloc_filename(outputDir_.c_str(),
-                                             baseName_.c_str(),
-                                             /*file_type=*/ECL_UNIFIED_RESTART_FILE,
-                                             fmt_file,
-                                             timer.currentStepNum());
+    EclipseFileName fileName (outputDir_,
+                              baseName_,
+                              ECL_UNIFIED_RESTART_FILE,
+                              timer);
     int phases = ECL_OIL_PHASE + ECL_GAS_PHASE + ECL_WATER_PHASE;
     double days = Opm::unit::convert::to(timer.currentTime(), Opm::unit::day);
     int nx = grid_.cartdims[0];
@@ -211,7 +233,6 @@ void BlackoilEclipseOutputWriter::writeReservoirState(const BlackoilState& reser
 
     ecl_rst_file_end_solution(rst_file);
     ecl_rst_file_close(rst_file);
-    free(fileName);
 #else
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");
@@ -305,15 +326,19 @@ void BlackoilEclipseOutputWriter::writeGridInitFile_(const SimulatorTimer &timer
     int phases = ECL_OIL_PHASE + ECL_GAS_PHASE + ECL_WATER_PHASE;
     bool endian_flip  = true;//ECL_ENDIAN_FLIP;
     bool fmt_file = false;
-    ecl_file_enum file_type = ECL_EGRID_FILE;
 
     ecl_grid_type* ecl_grid = newEclGrid_();
-    char* gridFileName = ecl_util_alloc_filename(outputDir_.c_str(), baseName_.c_str(), file_type, fmt_file, timer.currentStepNum());
+    EclipseFileName gridFileName (outputDir_,
+                                  baseName_,
+                                  ECL_EGRID_FILE,
+                                  timer);
     fortio_type* fortio;
     ecl_grid_fwrite_EGRID(ecl_grid, gridFileName);
-    free(gridFileName);
 
-    char* initFileName = ecl_util_alloc_filename(outputDir_.c_str(), baseName_.c_str(), /*file_type=*/ECL_INIT_FILE, fmt_file, timer.currentStepNum());
+    EclipseFileName initFileName (outputDir_,
+                                  baseName_,
+                                  ECL_INIT_FILE,
+                                  timer);
     if (!ecl_util_fmt_file(initFileName, &fmt_file)) {
         OPM_THROW(std::runtime_error,
                   "Could not determine formatted/unformatted status of file:" << initFileName << " non-standard name?" << std::endl);
@@ -342,7 +367,6 @@ void BlackoilEclipseOutputWriter::writeGridInitFile_(const SimulatorTimer &timer
     ecl_kw_fwrite(permz_kw, fortio);
 
     fortio_fclose(fortio);
-    free(initFileName);
 }
 
 void BlackoilEclipseOutputWriter::writeSummaryHeaderFile_(const SimulatorTimer &timer)
