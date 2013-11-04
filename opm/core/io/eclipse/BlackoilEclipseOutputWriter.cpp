@@ -362,6 +362,19 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
         }
     }
 
+    /**
+     * Save the grid in an .EGRID file.
+     */
+    void write (const std::string& outputDir,
+                 const std::string& baseName,
+                 const SimulatorTimer& timer) {
+        ecl_grid_fwrite_EGRID (*this,
+                               EclipseFileName (outputDir,
+                                                baseName,
+                                                ECL_EGRID_FILE,
+                                                timer));
+    }
+
 private:
     // each of these cases could have been their respective subclass,
     // but there is not any polymorphism on each of these grid types
@@ -403,13 +416,9 @@ void BlackoilEclipseOutputWriter::writeGridInitFile_(const SimulatorTimer &timer
     bool endian_flip  = true;//ECL_ENDIAN_FLIP;
     bool fmt_file = false;
 
-    ecl_grid_type* ecl_grid = EclipseGrid::make (eclipseParser_);
-    EclipseFileName gridFileName (outputDir_,
-                                  baseName_,
-                                  ECL_EGRID_FILE,
-                                  timer);
+    EclipseGrid ecl_grid = EclipseGrid::make (eclipseParser_);
+    ecl_grid.write (outputDir_, baseName_, timer);
     fortio_type* fortio;
-    ecl_grid_fwrite_EGRID(ecl_grid, gridFileName);
 
     EclipseFileName initFileName (outputDir_,
                                   baseName_,
