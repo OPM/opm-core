@@ -170,75 +170,97 @@ private:
     }
 };
 
+struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
+    EclipseRestart (const std::string& outputDir,
+                    const std::string& baseName,
+                    const SimulatorTimer& timer)
+        // notice the poor man's polymorphism of the allocation function
+        : EclipseHandle ((timer.currentStepNum () > 0 ? ecl_rst_file_open_append
+                                                      : ecl_rst_file_open_write)(
+                             EclipseFileName (outputDir,
+                                              baseName,
+                                              ECL_UNIFIED_RESTART_FILE,
+                                              timer)),
+                         ecl_rst_file_close) { }
+
+    void writeHeader (const UnstructuredGrid& grid,
+                       const SimulatorTimer& timer,
+                       const int phases) {
+        ecl_rst_file_fwrite_header (*this,
+                                    timer.currentStepNum (),
+                                    current (timer),
+                                    Opm::unit::convert::to (timer.currentTime (),
+                                                            Opm::unit::day),
+                                    grid.cartdims[0],
+                                    grid.cartdims[1],
+                                    grid.cartdims[2],
+                                    grid.number_of_cells,
+                                    phases);
+    }
+};
+
+/**
+ * The EclipseSolution class wraps the actions that must be done to the
+ * restart file while writing solution variables; it is not a handle on
+ * its own.
+ */
+struct EclipseSolution : public EclipseHandle <ecl_rst_file_type> {
+    EclipseSolution (EclipseRestart& rst_file)
+        : EclipseHandle (start_solution (rst_file),
+                         ecl_rst_file_end_solution) { }
+
+    template <typename T>
+    void add (const EclipseKeyword<T>& kw) {
+        ecl_rst_file_add_kw (*this, kw);
+    }
+
+private:
+    /// Helper method to call function *and* return the handle
+    static ecl_rst_file_type* start_solution (EclipseRestart& rst_file) {
+        ecl_rst_file_start_solution (rst_file);
+        return rst_file;
+    }
+};
+
+static double pasToBar (double pressureInPascal) {
+    return Opm::unit::convert::to (pressureInPascal, Opm::unit::barsa);
+}
+
 void BlackoilEclipseOutputWriter::writeReservoirState(const BlackoilState& reservoirState, const SimulatorTimer& timer)
 {
 #if HAVE_ERT
-    ecl_file_enum file_type = ECL_UNIFIED_RESTART_FILE;  // Alternatively ECL_RESTART_FILE for multiple restart files.
+    EclipseRestart rst (outputDir_,
+                        baseName_,
+                        timer);
+    rst.writeHeader (grid_,
+                     timer,
+                     ECL_OIL_PHASE | ECL_GAS_PHASE | ECL_WATER_PHASE);
+    EclipseSolution sol (rst);
 
-    EclipseFileName fileName (outputDir_,
-                              baseName_,
-                              ECL_UNIFIED_RESTART_FILE,
-                              timer);
-    int phases = ECL_OIL_PHASE + ECL_GAS_PHASE + ECL_WATER_PHASE;
-    double days = Opm::unit::convert::to(timer.currentTime(), Opm::unit::day);
-    int nx = grid_.cartdims[0];
-    int ny = grid_.cartdims[1];
-    int nz = grid_.cartdims[2];
-    int nactive = grid_.number_of_cells;
-    ecl_rst_file_type* rst_file;
+    // convert the pressures from Pascals to bar because eclipse
+    // seems to write bars
+    const std::vector<double>& pas = reservoirState.pressure ();
+    std::vector<double> bar (pas.size (), 0.);
+    std::transform (pas.begin(), pas.end(), bar.begin(), pasToBar);
+    sol.add (EclipseKeyword<double> ("PRESSURE", bar));
 
-    time_t curTime = current (timer);
+    sol.add (EclipseKeyword<double> ("SWAT",
+                                      reservoirState.saturation(),
+                                      grid_.number_of_cells,
+                                      BlackoilPhases::Aqua,
+                                      BlackoilPhases::MaxNumPhases));
 
-    if (timer.currentStepNum() > 0 && file_type == ECL_UNIFIED_RESTART_FILE)
-        rst_file = ecl_rst_file_open_append(fileName);
-    else
-        rst_file = ecl_rst_file_open_write(fileName);
+    sol.add (EclipseKeyword<double> ("SOIL",
+                                      reservoirState.saturation(),
+                                      grid_.number_of_cells,
+                                      BlackoilPhases::Liquid,
+                                      BlackoilPhases::MaxNumPhases));
 
-    ecl_rst_file_fwrite_header(rst_file, timer.currentStepNum(), curTime, days, nx, ny, nz, nactive, phases);
-    ecl_rst_file_start_solution(rst_file);
-
-    {
-        // convert the pressures from Pascals to bar because eclipse
-        // seems to write bars
-        std::vector<double> pressureBar(reservoirState.pressure());
-        auto it = pressureBar.begin();
-        const auto &endIt = pressureBar.end();
-        for (; it != endIt; ++it)
-            (*it) /= 1e5;
-
-        EclipseKeyword<double> pressure_kw ("PRESSURE", pressureBar);
-        ecl_rst_file_add_kw(rst_file, pressure_kw);
-    }
-
-    {
-        EclipseKeyword<double> swat_kw ("SWAT",
-                                         reservoirState.saturation(),
-                                         grid_.number_of_cells,
-                                         BlackoilPhases::Aqua,
-                                         BlackoilPhases::MaxNumPhases);
-        ecl_rst_file_add_kw(rst_file, swat_kw);
-    }
-
-    {
-        EclipseKeyword<double> soil_kw ("SOIL",
-                                         reservoirState.saturation(),
-                                         grid_.number_of_cells,
-                                         BlackoilPhases::Liquid,
-                                         BlackoilPhases::MaxNumPhases);
-        ecl_rst_file_add_kw(rst_file, soil_kw);
-    }
-
-    {
-        EclipseKeyword<double> sgas_kw ("SGAS",
-                                         reservoirState.saturation(),
-                                         grid_.number_of_cells,
-                                         BlackoilPhases::Vapour,
-                                         BlackoilPhases::MaxNumPhases);
-        ecl_rst_file_add_kw(rst_file, sgas_kw);
-    }
-
-    ecl_rst_file_end_solution(rst_file);
-    ecl_rst_file_close(rst_file);
+    sol.add (EclipseKeyword<double> ("SGAS",
+                                      reservoirState.saturation(),
+                                      grid_.number_of_cells,
+                                      BlackoilPhases::Vapour,
+                                      BlackoilPhases::MaxNumPhases));
 #else
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");
