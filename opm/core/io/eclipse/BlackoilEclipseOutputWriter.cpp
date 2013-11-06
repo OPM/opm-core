@@ -30,8 +30,10 @@
 #include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/simulator/WellState.hpp>
-#include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/parameters/Parameter.hpp>
+#include <opm/core/utility/parameters/ParameterGroup.hpp>
+#include <opm/core/utility/Units.hpp>
 #include <opm/core/wells.h> // WellType
 
 #include <boost/algorithm/string/case_conv.hpp> // to_upper_copy
@@ -41,6 +43,7 @@
 #include <memory>     // unique_ptr
 #include <utility>    // move
 using namespace Opm;
+using namespace Opm::parameter;
 
 #ifdef HAVE_ERT
 #include <ert/ecl/fortio.h>
@@ -624,6 +627,28 @@ void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
 
     // flush after all variables are allocated
     ecl_sum_fwrite(*sum_);
+}
+
+BlackoilEclipseOutputWriter::BlackoilEclipseOutputWriter (
+        const ParameterGroup& params,
+        const EclipseGridParser& parser,
+        const UnstructuredGrid& grid)
+    : eclipseParser_ (parser)
+    , grid_ (grid) {
+
+    // get the base name from the name of the deck
+    boost::filesystem::path deck (params.get <std::string> ("deck_filename"));
+    if (boost::to_upper_copy (deck.extension ().string ()) == ".DATA") {
+        baseName_ = deck.stem ().string ();
+    }
+    else {
+        baseName_ = deck.filename ().string ();
+    }
+
+    // store in current directory if not explicitly set
+    if (params.has ("output_dir")) {
+        outputDir_ = params.get <std::string> ("output_dir");
+    }
 }
 
 static double pasToBar (double pressureInPascal) {

@@ -34,6 +34,8 @@ class EclipseGridParser;
 class SimulatorTimer;
 class WellState;
 
+namespace parameter { class ParameterGroup; }
+
 /*!
  * Internal class. Forward-declared here since it is part of the writer.
  */
@@ -55,16 +57,9 @@ public:
      * \brief Sets the common attributes required to write eclipse
      * binary files using ERT.
      */
-    BlackoilEclipseOutputWriter(const EclipseGridParser& eclipseParser,
-                                const UnstructuredGrid& grid,
-                                const std::string &outputDir,
-                                const std::string &baseName)
-    : eclipseParser_(eclipseParser)
-    , grid_(grid)
-    , outputDir_(outputDir)
-    , baseName_(baseName)
-    {
-    }
+    BlackoilEclipseOutputWriter(const parameter::ParameterGroup& params,
+                                const EclipseGridParser& eclipseParser,
+                                const UnstructuredGrid& grid);
 
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
