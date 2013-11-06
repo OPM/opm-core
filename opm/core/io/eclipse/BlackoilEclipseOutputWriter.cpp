@@ -290,8 +290,8 @@ private:
 
     // setup smart pointer for cornerpoint grid
     EclipseGrid (const int dims[],
-                 const EclipseKeyword<double>& coord,
                  const EclipseKeyword<double>& zcorn,
+                 const EclipseKeyword<double>& coord,
                  const EclipseKeyword<double>& actnum,
                  const EclipseKeyword<double>& mapaxes)
         : EclipseHandle (ecl_grid_alloc_GRDECL_kw(dims[0],
