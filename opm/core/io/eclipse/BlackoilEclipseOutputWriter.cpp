@@ -29,13 +29,11 @@
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/DataMap.hpp>
 #include <opm/core/wells.h> // WellType
 
 #include <boost/algorithm/string/case_conv.hpp> // to_upper_copy
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem.hpp> // path
-#include <boost/format.hpp>
 
 #include <memory>     // unique_ptr
 #include <utility>    // move
