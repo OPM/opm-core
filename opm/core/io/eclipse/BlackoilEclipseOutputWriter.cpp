@@ -1,6 +1,7 @@
  /*
-  Copyright 2013 Andreas Lauser
-  Copyright 2013 SINTEF ICT, Applied Mathematics.
+  Copyright (c) 2013 Andreas Lauser
+  Copyright (c) 2013 SINTEF ICT, Applied Mathematics.
+  Copyright (c) 2013 Uni Research AS
 
   This file is part of the Open Porous Media project (OPM).
 
