@@ -138,8 +138,6 @@ time_t current (const SimulatorTimer& timer) {
 namespace Opm {
 void BlackoilEclipseOutputWriter::writeInitFile(const SimulatorTimer &timer)
 {
-    startTime_ = current (timer);
-
 #if HAVE_ERT
     writeGridInitFile_(timer);
     writeSummaryHeaderFile_(timer);
@@ -464,6 +462,7 @@ private:
             : EclipseHandle (ecl_sum_add_tstep (
                                  sum,
                                  timer.currentStepNum () + 1,
+                                 // currentTime is always relative to start
                                  Opm::unit::convert::to (timer.currentTime (),
                                                          Opm::unit::day)),
                              ecl_sum_tstep_free)

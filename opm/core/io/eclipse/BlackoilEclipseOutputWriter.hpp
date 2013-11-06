@@ -111,7 +111,6 @@ private:
     std::string outputDir_;
     std::string baseName_;
 
-    time_t startTime_;
     std::unique_ptr <EclipseSummary> sum_;
 
 #if HAVE_ERT
