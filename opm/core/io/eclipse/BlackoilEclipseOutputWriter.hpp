@@ -43,8 +43,15 @@
 #endif
 
 #include <string>
+#include <memory>  // std::unique_ptr
 
 namespace Opm {
+
+/*!
+ * Internal class. Forward-declared here since it is part of the writer.
+ */
+struct EclipseSummary;
+
 /*!
  * \brief A class to write the reservoir state and the well state of a
  *        blackoil simulation to disk using the Eclipse binary format.
@@ -70,19 +77,10 @@ public:
     , outputDir_(outputDir)
     , baseName_(baseName)
     {
-#if HAVE_ERT
-        sumWriter_ = 0;
-#endif
     }
 
     ~BlackoilEclipseOutputWriter()
     {
-#if HAVE_ERT
-        if (sumWriter_) {
-            // clean after ourselfs
-            ecl_sum_free(sumWriter_);
-        }
-#endif
     }
 
     /*!
@@ -114,25 +112,11 @@ private:
     std::string baseName_;
 
     time_t startTime_;
+    std::unique_ptr <EclipseSummary> sum_;
 
 #if HAVE_ERT
     void writeSummaryHeaderFile_(const SimulatorTimer &timer);
     void writeGridInitFile_(const SimulatorTimer &timer);
-
-    // keyword handles per well each
-    std::vector<smspec_node_type*> woprSmspec_;
-    std::vector<smspec_node_type*> woptSmspec_;
-    std::vector<smspec_node_type*> wgprSmspec_;
-    std::vector<smspec_node_type*> wgptSmspec_;
-    std::vector<smspec_node_type*> wwirSmspec_;
-    std::vector<smspec_node_type*> wwitSmspec_;
-    std::vector<smspec_node_type*> wgirSmspec_;
-    std::vector<smspec_node_type*> wgitSmspec_;
-
-    ecl_sum_type* sumWriter_;
-
-    std::vector<std::array<double, /*numPhases=*/3> > accumulatedProducedFluids_;
-    std::vector<std::array<double, /*numPhases=*/3> > accumulatedInjectedFluids_;
 #endif
 };
 } // namespace Opm

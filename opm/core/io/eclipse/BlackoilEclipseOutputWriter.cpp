@@ -21,7 +21,9 @@
 
 #include "BlackoilEclipseOutputWriter.hpp"
 
+#include <boost/algorithm/string/case_conv.hpp> // to_upper_copy
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/filesystem.hpp> // path
 #include <boost/format.hpp>
 
 #include <opm/core/simulator/BlackoilState.hpp>
@@ -30,6 +32,7 @@
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/DataMap.hpp>
+#include <opm/core/wells.h> // WellType
 
 #ifdef HAVE_ERT
 #include <ert/ecl/fortio.h>
@@ -267,86 +270,6 @@ void BlackoilEclipseOutputWriter::writeReservoirState(const BlackoilState& reser
 #endif // HAVE_ERT
 }
 
-void BlackoilEclipseOutputWriter::writeWellState(const WellState& wellState, const SimulatorTimer& timer)
-{
-#if HAVE_ERT
-    time_t curTime = current (timer);
-
-    // create a new timestep for the summary file (at least if the
-    // timer was advanced since the last call to writeWellState())
-    ecl_sum_tstep_type* tstep=
-        ecl_sum_add_tstep(sumWriter_,
-                          timer.currentStepNum() + 1,
-                          (curTime - startTime_)/(24*60*60));
-
-    int numWells = accumulatedProducedFluids_.size();
-    for (int wellIdx = 0; wellIdx < numWells; ++wellIdx) {
-        // set the value for the well oil production rate. For this,
-        // be aware that the rates in the well state are _surface_
-        // volume rates...
-        double woprValue = wellState.wellRates()[wellIdx*3 + BlackoilPhases::Liquid];
-        woprValue *= - 1 * (24 * 60 * 60); // convert m^3/s of injected fluid to m^3/d of produced fluid
-        woprValue = std::max(0.0, woprValue);
-
-        int woprIdx = smspec_node_get_params_index(woprSmspec_[wellIdx]);
-        ecl_sum_tstep_iset(tstep, woprIdx, woprValue);
-
-        // set the value for the well gas production rate
-        double wgprValue = wellState.wellRates()[wellIdx*3 + BlackoilPhases::Vapour];
-        wgprValue *= - 1 * (24 * 60 * 60); // convert m^3/s of injected fluid to m^3/d of produced fluid
-        wgprValue = std::max(0.0, wgprValue);
-
-        int wgprIdx = smspec_node_get_params_index(wgprSmspec_[wellIdx]);
-        ecl_sum_tstep_iset(tstep, wgprIdx, wgprValue);
-
-        // water injection rate
-        double wwirValue = wellState.wellRates()[wellIdx*3 + BlackoilPhases::Aqua];
-        wwirValue *= 1 * (24 * 60 * 60);  // convert m^3/s to m^3/d
-        wwirValue = std::max(0.0, wwirValue);
-
-        int wwirIdx = smspec_node_get_params_index(wwirSmspec_[wellIdx]);
-        ecl_sum_tstep_iset(tstep, wwirIdx, wwirValue);
-
-        // gas injection rate
-        double wgirValue = wellState.wellRates()[wellIdx*3 + BlackoilPhases::Vapour];
-        wgirValue *= - 1 * (24 * 60 * 60); // convert m^3/s of injected fluid to m^3/d of produced fluid
-        wgirValue = std::max(0.0, wgirValue);
-
-        int wgirIdx = smspec_node_get_params_index(wgirSmspec_[wellIdx]);
-        ecl_sum_tstep_iset(tstep, wgirIdx, wgirValue);
-
-        // accumulate injected produced fluids
-        for (int phaseIdx = 0; phaseIdx < /*numPhases=*/3; ++phaseIdx) {
-            // accumulate the produced/injected surface volumes
-            double injectedVolume = wellState.wellRates()[wellIdx*3 + phaseIdx];
-            injectedVolume *= timer.currentStepLength();
-
-            if (injectedVolume < 0)
-                accumulatedProducedFluids_[wellIdx][phaseIdx] += -injectedVolume;
-            else
-                accumulatedInjectedFluids_[wellIdx][phaseIdx] += injectedVolume;
-
-            int woptIdx = smspec_node_get_params_index(woptSmspec_[wellIdx]);
-            ecl_sum_tstep_iset(tstep, woptIdx, accumulatedProducedFluids_[wellIdx][BlackoilPhases::Liquid]);
-
-            int wgptIdx = smspec_node_get_params_index(wgptSmspec_[wellIdx]);
-            ecl_sum_tstep_iset(tstep, wgptIdx, accumulatedProducedFluids_[wellIdx][BlackoilPhases::Vapour]);
-
-            int wwitIdx = smspec_node_get_params_index(wwitSmspec_[wellIdx]);
-            ecl_sum_tstep_iset(tstep, wwitIdx, accumulatedInjectedFluids_[wellIdx][BlackoilPhases::Aqua]);
-
-            int wgitIdx = smspec_node_get_params_index(wgitSmspec_[wellIdx]);
-            ecl_sum_tstep_iset(tstep, wgitIdx, accumulatedProducedFluids_[wellIdx][BlackoilPhases::Vapour]);
-        }
-    }
-
-    ecl_sum_fwrite(sumWriter_);
-#else
-    OPM_THROW(std::runtime_error,
-              "The ERT libraries are required to write ECLIPSE output files.");
-#endif // HAVE_ERT
-}
-
 /**
  * Representation of an Eclipse grid.
  */
@@ -499,108 +422,275 @@ void BlackoilEclipseOutputWriter::writeGridInitFile_(const SimulatorTimer &timer
     fortio.writeKeyword<double> ("PERMZ", eclipseParser_);
 }
 
+// forward decl. of mutually dependent type
+struct EclipseWellReport;
+
+struct EclipseSummary : public EclipseHandle <ecl_sum_type> {
+    EclipseSummary (const std::string& outputDir,
+                    const std::string& baseName,
+                    const SimulatorTimer& timer,
+                    const UnstructuredGrid& grid)
+        : EclipseHandle (ecl_sum_alloc_writer (caseName (outputDir,
+                                                         baseName).c_str (),
+                                               false, /* formatted   */
+                                               true,  /* unified     */
+                                               ":",    /* join string */
+                                               current (timer),
+                                               grid.cartdims[0],
+                                               grid.cartdims[1],
+                                               grid.cartdims[2]),
+                         ecl_sum_free) { }
+
+    typedef std::unique_ptr <EclipseWellReport> var_t;
+    typedef std::vector <var_t> vars_t;
+
+    EclipseSummary& add (var_t var) {
+        vars_.push_back (std::move (var));
+        return *this;
+    }
+
+    // no inline implementation of this since it depends on the
+    // EclipseWellReport type being completed first
+    void writeTimeStep (const SimulatorTimer& timer,
+                         const WellState& wellState);
+
+private:
+    vars_t vars_;
+
+    /// Make sure a new timestep is flushed to the summary section
+    struct EclipseTimeStep : public EclipseHandle <ecl_sum_tstep_type> {
+        EclipseTimeStep (const EclipseSummary& sum,
+                         const SimulatorTimer& timer)
+            : EclipseHandle (ecl_sum_add_tstep (
+                                 sum,
+                                 timer.currentStepNum () + 1,
+                                 Opm::unit::convert::to (timer.currentTime (),
+                                                         Opm::unit::day)),
+                             ecl_sum_tstep_free)
+            , sum_ (sum) { }
+
+        ~EclipseTimeStep () {
+            ecl_sum_fwrite (sum_);
+        }
+    private:
+        ecl_sum_type* sum_;
+    };
+
+    /// Helper function for getting the case name
+    std::string caseName (const std::string& outputDir,
+                          const std::string& baseName) {
+        boost::filesystem::path casePath (outputDir);
+        casePath /= boost::to_upper_copy (baseName);
+        return casePath.string ();
+    }
+};
+
+
+/**
+ * Summary variable that reports a characteristics of a well.
+ */
+struct EclipseWellReport : public EclipseHandle <smspec_node_type> {
+protected:
+    EclipseWellReport (const EclipseSummary& summary,    /* section to add to  */
+                       const EclipseGridParser& parser,  /* well names         */
+                       int whichWell,                    /* index of well line */
+                       BlackoilPhases::PhaseIndex phase, /* oil, water or gas  */
+                       WellType type,                    /* prod. or inj.      */
+                       char aggregation,                 /* rate or total      */
+                       std::string unit)
+        : EclipseHandle (ecl_sum_add_var (summary,
+                                          varName (phase,
+                                                   type,
+                                                   aggregation).c_str (),
+                                          wellName (parser, whichWell).c_str (),
+                                          /* num = */ 0,
+                                          unit.c_str(),
+                                          /* defaultValue = */ 0.),
+                         smspec_node_free)
+        // save these for when we update the value in a timestep
+        , index_ (whichWell * BlackoilPhases::MaxNumPhases + phase)
+
+        // injectors can be seen as negative producers
+        , sign_ (type == INJECTOR ? -1. : +1.) { }
+
+public:
+    /// Allows us to pass this type to ecl_sum_tstep_iset
+    operator int () {
+        return smspec_node_get_params_index (*this);
+    }
+
+    /// Update the monitor according to the new state of the well, and
+    /// get the reported value. Note: Only call this once for each timestep.
+    virtual double update (const SimulatorTimer& timer,
+                             const WellState& wellState) = 0;
+
+private:
+    /// index into a (flattened) wells*phases matrix
+    const int index_;
+
+    /// natural sign of the rate
+    const double sign_;
+
+    /// Get the name associated with this well
+    std::string wellName (const EclipseGridParser& parser,
+                          int whichWell) {
+        return parser.getWELSPECS().welspecs[whichWell].name_;
+    }
+
+    /// Compose the name of the summary variable, e.g. "WOPR" for
+    /// well oil production rate.
+    std::string varName (BlackoilPhases::PhaseIndex phase,
+                         WellType type,
+                         char aggregation) {
+        std::string name;
+        name += 'W'; // well
+        switch (phase) {
+            case BlackoilPhases::Aqua:   name += 'W'; break; /* water */
+            case BlackoilPhases::Vapour: name += 'G'; break; /* gas */
+            case BlackoilPhases::Liquid: name += 'O'; break; /* oil */
+            default:
+                OPM_THROW(std::runtime_error,
+                          "Unknown phase used in blackoil reporting");
+        }
+        switch (type) {
+            case WellType::INJECTOR: name += 'I'; break;
+            case WellType::PRODUCER: name += 'P'; break;
+            default:
+                OPM_THROW(std::runtime_error,
+                          "Unknown well type used in blackoil reporting");
+        }
+        name += aggregation; /* rate ('R') or total ('T') */
+        return name;
+    }
+protected:
+    double rate (const WellState& wellState) {
+        // convert m^3/s of injected fluid to m^3/d of produced fluid
+        const double convFactor = Opm::unit::convert::to (1., Opm::unit::day);
+        // TODO: Correct to flip sign to get positive values?
+        const double value = sign_ * wellState.wellRates () [index_] * convFactor;
+        return value;
+    }
+};
+
+/// Monitors the rate given by a well.
+struct EclipseWellRate : public EclipseWellReport {
+    EclipseWellRate (const EclipseSummary& summary,
+                     const EclipseGridParser& parser,
+                     int whichWell,
+                     BlackoilPhases::PhaseIndex phase,
+                     WellType type)
+        : EclipseWellReport (summary,
+                             parser,
+                             whichWell,
+                             phase,
+                             type,
+                             'R',
+                             "SM3/DAY" /* surf. cub. m. per day */ ) { }
+    virtual double update (const SimulatorTimer& timer,
+                             const WellState& wellState) {
+        // TODO: Why only positive rates?
+        return std::max (0., rate (wellState));
+    }
+};
+
+/// Monitors the total production in a well.
+struct EclipseWellTotal : public EclipseWellReport {
+    EclipseWellTotal (const EclipseSummary& summary,
+                      const EclipseGridParser& parser,
+                      int whichWell,
+                      BlackoilPhases::PhaseIndex phase,
+                      WellType type)
+        : EclipseWellReport (summary,
+                             parser,
+                             whichWell,
+                             phase,
+                             type,
+                             'T',
+                             "SM3" /* surface cubic meter */ )
+
+        // nothing produced when the reporting starts
+        , total_ (0.) { }
+
+    virtual double update (const SimulatorTimer& timer,
+                             const WellState& wellState) {
+        // TODO: Is the rate average for the timestep, or is in
+        // instantaneous (in which case trapezoidal or Simpson integration
+        // would probably be better)
+        const double intg = timer.currentStepLength () * rate (wellState);
+        // add this timesteps production to the total
+        total_ += intg;
+        // report the new production total
+        return total_;
+    }
+
+private:
+    /// Aggregated value of the course of the simulation
+    double total_;
+};
+
+inline void
+EclipseSummary::writeTimeStep (const SimulatorTimer& timer,
+                               const WellState& wellState) {
+    EclipseTimeStep tstep (*this, timer);
+    // write all the variables
+    for (vars_t::iterator v = vars_.begin(); v != vars_.end(); ++v) {
+        const double value = (*v)->update (timer, wellState);
+        ecl_sum_tstep_iset(tstep, *(*v).get (), value);
+    }
+}
+
+void BlackoilEclipseOutputWriter::writeWellState(const WellState& wellState, const SimulatorTimer& timer)
+{
+#if HAVE_ERT
+    sum_->writeTimeStep (timer, wellState);
+#else
+    OPM_THROW(std::runtime_error,
+              "The ERT libraries are required to write ECLIPSE output files.");
+#endif // HAVE_ERT
+}
+
+static WellType WELL_TYPES[] = { INJECTOR, PRODUCER };
+
 void BlackoilEclipseOutputWriter::writeSummaryHeaderFile_(const SimulatorTimer &timer)
 {
-    std::string caseName;
-    if (!outputDir_.empty())
-        caseName += outputDir_ + "/";
-    caseName += baseName_;
+    sum_ = std::move (std::unique_ptr <EclipseSummary> (
+                          new EclipseSummary (outputDir_,
+                                               baseName_,
+                                               timer,
+                                               grid_)));
 
-    if (sumWriter_)
-        ecl_sum_free(sumWriter_);
-
-    // allocate the data structure for the writer
-    sumWriter_ =
-        ecl_sum_alloc_writer(caseName.c_str(),
-                             /*formattedOutput=*/false,
-                             /*unifiedOutput=*/true,
-                             /*joinString=*/":",
-                             startTime_,
-                             grid_.cartdims[0],grid_.cartdims[1],grid_.cartdims[2]);
-
-    // initialize the accumulated masses to zero
-    const auto &wellSpecs = eclipseParser_.getWELSPECS().welspecs;
-    int numWells = wellSpecs.size();
-    accumulatedProducedFluids_.resize(numWells);
-    accumulatedInjectedFluids_.resize(numWells);
-    for (int wellIdx = 0; wellIdx < numWells; ++wellIdx) {
-        for (int phaseIdx = 0; phaseIdx < /*numPhases=*/3; ++phaseIdx) {
-            accumulatedProducedFluids_[wellIdx][phaseIdx] = 0;
-            accumulatedInjectedFluids_[wellIdx][phaseIdx] = 0;
+    // TODO: Only create report variables that are requested with keywords
+    // (e.g. "WOPR") in the input files, and only for those wells that are
+    // mentioned in those keywords
+    const int numWells = eclipseParser_.getWELSPECS().welspecs.size();
+    for (int whichWell = 0; whichWell != numWells; ++whichWell) {
+        for (BlackoilPhases::PhaseIndex phase = static_cast<BlackoilPhases::PhaseIndex>(0);
+             phase != BlackoilPhases::MaxNumPhases;
+             ++phase) {
+            for (int typeIndex = 0;
+                 typeIndex < sizeof (WELL_TYPES) / sizeof (WELL_TYPES[0]);
+                 ++typeIndex) {
+                const WellType type = WELL_TYPES[typeIndex];
+                // W{O,G,W}{I,P}R
+                sum_->add (std::unique_ptr <EclipseWellReport> (
+                              new EclipseWellRate (*sum_,
+                                                    eclipseParser_,
+                                                    whichWell,
+                                                    phase,
+                                                    type)));
+                // W{O,G,W}{I,P}T
+                sum_->add (std::unique_ptr <EclipseWellReport> (
+                              new EclipseWellTotal (*sum_,
+                                                     eclipseParser_,
+                                                     whichWell,
+                                                     phase,
+                                                     type)));
+            }
         }
     }
 
-    woprSmspec_.resize(numWells);
-    woptSmspec_.resize(numWells);
-    wgprSmspec_.resize(numWells);
-    wgptSmspec_.resize(numWells);
-    wwirSmspec_.resize(numWells);
-    wwitSmspec_.resize(numWells);
-    wgirSmspec_.resize(numWells);
-    wgitSmspec_.resize(numWells);
-    auto wellIt = wellSpecs.begin();
-    const auto &wellEndIt = wellSpecs.end();
-    for (int wellIdx = 0; wellIt != wellEndIt; ++wellIt, ++wellIdx) {
-        // add the variables which ought to be included in the summary
-        // file
-        woprSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
-                                               /*varName=*/"WOPR",
-                                               /*wellGroupName=*/wellIt->name_.c_str(),
-                                               /*num=*/0,
-                                               /*unit=*/"SM3/DAY",
-                                               /*defaultValue=*/0.0);
-
-        woptSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
-                                               /*varName=*/"WOPT",
-                                               /*wellGroupName=*/wellIt->name_.c_str(),
-                                               /*num=*/0,
-                                               /*unit=*/"SM3",
-                                               /*defaultValue=*/0.0);
-
-        wgprSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
-                                               /*varName=*/"WGPR",
-                                               /*wellGroupName=*/wellIt->name_.c_str(),
-                                               /*num=*/0,
-                                               /*unit=*/"SM3/DAY",
-                                               /*defaultValue=*/0.0);
-
-        wgptSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
-                                               /*varName=*/"WGPT",
-                                               /*wellGroupName=*/wellIt->name_.c_str(),
-                                               /*num=*/0,
-                                               /*unit=*/"SM3",
-                                               /*defaultValue=*/0.0);
-
-        wwirSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
-                                               /*varName=*/"WWIR",
-                                               /*wellGroupName=*/wellIt->name_.c_str(),
-                                               /*num=*/0,
-                                               /*unit=*/"SM3/DAY",
-                                               /*defaultValue=*/0.0);
-
-        wwitSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
-                                               /*varName=*/"WWIT",
-                                               /*wellGroupName=*/wellIt->name_.c_str(),
-                                               /*num=*/0,
-                                               /*unit=*/"SM3",
-                                               /*defaultValue=*/0.0);
-
-        wgirSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
-                                               /*varName=*/"WGIR",
-                                               /*wellGroupName=*/wellIt->name_.c_str(),
-                                               /*num=*/0,
-                                               /*unit=*/"SM3/DAY",
-                                               /*defaultValue=*/0.0);
-
-        wgitSmspec_[wellIdx] = ecl_sum_add_var(sumWriter_,
-                                               /*varName=*/"WGIT",
-                                               /*wellGroupName=*/wellIt->name_.c_str(),
-                                               /*num=*/0,
-                                               /*unit=*/"SM3",
-                                               /*defaultValue=*/0.0);
-    }
-
-    ecl_sum_fwrite(sumWriter_);
+    // flush after all variables are allocated
+    ecl_sum_fwrite(*sum_);
 }
 
 #endif // HAVE_ERT
