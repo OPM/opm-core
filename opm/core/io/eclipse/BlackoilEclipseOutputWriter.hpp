@@ -80,31 +80,21 @@ public:
     {
     }
 
-    ~BlackoilEclipseOutputWriter()
-    {
-    }
-
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
      */
-    void writeInitFile(const SimulatorTimer &timer);
+    void writeInit(const SimulatorTimer &timer);
 
     /*!
      * \brief Write a blackoil reservoir state to disk for later inspection with
      *        visualization tools like ResInsight
      *
      * \param[in] reservoirState The thermodynamic state of the reservoir
-     */
-    void writeReservoirState(const BlackoilState& reservoirState,
-                             const SimulatorTimer& timer);
-
-    /*!
-     * \brief Write a well state to disk for later inspection with
-     *        visualization tools
-     *
      * \param[in] wellState The production/injection data for all wells
      */
-    void writeWellState(const WellState& wellState, const SimulatorTimer& timer);
+    void writeTimeStep(const SimulatorTimer& timer,
+                       const BlackoilState& reservoirState,
+                       const WellState& wellState);
 
 private:
     const EclipseGridParser& eclipseParser_;
@@ -113,11 +103,6 @@ private:
     std::string baseName_;
 
     std::unique_ptr <EclipseSummary> sum_;
-
-#if HAVE_ERT
-    void writeSummaryHeaderFile_(const SimulatorTimer &timer);
-    void writeGridInitFile_(const SimulatorTimer &timer);
-#endif
 };
 } // namespace Opm
 

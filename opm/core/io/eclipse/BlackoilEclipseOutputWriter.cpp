@@ -137,16 +137,6 @@ time_t current (const SimulatorTimer& timer) {
 }
 
 namespace Opm {
-void BlackoilEclipseOutputWriter::writeInitFile(const SimulatorTimer &timer)
-{
-#if HAVE_ERT
-    writeGridInitFile_(timer);
-    writeSummaryHeaderFile_(timer);
-#else
-    OPM_THROW(std::runtime_error,
-              "The ERT libraries are required to write ECLIPSE output files.");
-#endif // HAVE_ERT
-}
 
 /**
  * Pointer to memory that holds the name to an Eclipse output file.
@@ -223,51 +213,6 @@ private:
         return rst_file;
     }
 };
-
-static double pasToBar (double pressureInPascal) {
-    return Opm::unit::convert::to (pressureInPascal, Opm::unit::barsa);
-}
-
-void BlackoilEclipseOutputWriter::writeReservoirState(const BlackoilState& reservoirState, const SimulatorTimer& timer)
-{
-#if HAVE_ERT
-    EclipseRestart rst (outputDir_,
-                        baseName_,
-                        timer);
-    rst.writeHeader (grid_,
-                     timer,
-                     ECL_OIL_PHASE | ECL_GAS_PHASE | ECL_WATER_PHASE);
-    EclipseSolution sol (rst);
-
-    // convert the pressures from Pascals to bar because eclipse
-    // seems to write bars
-    const std::vector<double>& pas = reservoirState.pressure ();
-    std::vector<double> bar (pas.size (), 0.);
-    std::transform (pas.begin(), pas.end(), bar.begin(), pasToBar);
-    sol.add (EclipseKeyword<double> ("PRESSURE", bar));
-
-    sol.add (EclipseKeyword<double> ("SWAT",
-                                      reservoirState.saturation(),
-                                      grid_.number_of_cells,
-                                      BlackoilPhases::Aqua,
-                                      BlackoilPhases::MaxNumPhases));
-
-    sol.add (EclipseKeyword<double> ("SOIL",
-                                      reservoirState.saturation(),
-                                      grid_.number_of_cells,
-                                      BlackoilPhases::Liquid,
-                                      BlackoilPhases::MaxNumPhases));
-
-    sol.add (EclipseKeyword<double> ("SGAS",
-                                      reservoirState.saturation(),
-                                      grid_.number_of_cells,
-                                      BlackoilPhases::Vapour,
-                                      BlackoilPhases::MaxNumPhases));
-#else
-    OPM_THROW(std::runtime_error,
-              "The ERT libraries are required to write ECLIPSE output files.");
-#endif // HAVE_ERT
-}
 
 /**
  * Representation of an Eclipse grid.
@@ -402,24 +347,6 @@ private:
         : EclipseHandle (fortio_open_writer (fname, formatted, ECL_ENDIAN_FLIP),
                          fortio_fclose) { }
 };
-
-#if HAVE_ERT
-void BlackoilEclipseOutputWriter::writeGridInitFile_(const SimulatorTimer &timer)
-{
-    EclipseGrid ecl_grid = EclipseGrid::make (eclipseParser_);
-    ecl_grid.write (outputDir_, baseName_, timer);
-
-    EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, timer);
-    fortio.writeHeader (ecl_grid,
-                        timer,
-                        eclipseParser_,
-                        ECL_OIL_PHASE | ECL_GAS_PHASE | ECL_WATER_PHASE);
-
-    /* This collection of keywords is somewhat arbitrary and random. */
-    fortio.writeKeyword<double> ("PERMX", eclipseParser_);
-    fortio.writeKeyword<double> ("PERMY", eclipseParser_);
-    fortio.writeKeyword<double> ("PERMZ", eclipseParser_);
-}
 
 // forward decl. of mutually dependent type
 struct EclipseWellReport;
@@ -639,20 +566,24 @@ EclipseSummary::writeTimeStep (const SimulatorTimer& timer,
     }
 }
 
-void BlackoilEclipseOutputWriter::writeWellState(const WellState& wellState, const SimulatorTimer& timer)
-{
-#if HAVE_ERT
-    sum_->writeTimeStep (timer, wellState);
-#else
-    OPM_THROW(std::runtime_error,
-              "The ERT libraries are required to write ECLIPSE output files.");
-#endif // HAVE_ERT
-}
-
 static WellType WELL_TYPES[] = { INJECTOR, PRODUCER };
 
-void BlackoilEclipseOutputWriter::writeSummaryHeaderFile_(const SimulatorTimer &timer)
-{
+void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
+    /* Grid files */
+    EclipseGrid ecl_grid = EclipseGrid::make (eclipseParser_);
+    ecl_grid.write (outputDir_, baseName_, timer);
+
+    EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, timer);
+    fortio.writeHeader (ecl_grid,
+                        timer,
+                        eclipseParser_,
+                        ECL_OIL_PHASE | ECL_GAS_PHASE | ECL_WATER_PHASE);
+
+    fortio.writeKeyword<double> ("PERMX", eclipseParser_);
+    fortio.writeKeyword<double> ("PERMY", eclipseParser_);
+    fortio.writeKeyword<double> ("PERMZ", eclipseParser_);
+
+    /* Summary files */
     sum_ = std::move (std::unique_ptr <EclipseSummary> (
                           new EclipseSummary (outputDir_,
                                                baseName_,
@@ -691,6 +622,65 @@ void BlackoilEclipseOutputWriter::writeSummaryHeaderFile_(const SimulatorTimer &
 
     // flush after all variables are allocated
     ecl_sum_fwrite(*sum_);
+}
+
+static double pasToBar (double pressureInPascal) {
+    return Opm::unit::convert::to (pressureInPascal, Opm::unit::barsa);
+}
+
+void BlackoilEclipseOutputWriter::writeTimeStep(
+        const SimulatorTimer& timer,
+        const BlackoilState& reservoirState,
+        const WellState& wellState) {
+    EclipseRestart rst (outputDir_,
+                        baseName_,
+                        timer);
+    rst.writeHeader (grid_,
+                     timer,
+                     ECL_OIL_PHASE | ECL_GAS_PHASE | ECL_WATER_PHASE);
+    EclipseSolution sol (rst);
+
+    // convert the pressures from Pascals to bar because eclipse
+    // seems to write bars
+    const std::vector<double>& pas = reservoirState.pressure ();
+    std::vector<double> bar (pas.size (), 0.);
+    std::transform (pas.begin(), pas.end(), bar.begin(), pasToBar);
+    sol.add (EclipseKeyword<double> ("PRESSURE", bar));
+
+    sol.add (EclipseKeyword<double> ("SWAT",
+                                      reservoirState.saturation(),
+                                      grid_.number_of_cells,
+                                      BlackoilPhases::Aqua,
+                                      BlackoilPhases::MaxNumPhases));
+
+    sol.add (EclipseKeyword<double> ("SOIL",
+                                      reservoirState.saturation(),
+                                      grid_.number_of_cells,
+                                      BlackoilPhases::Liquid,
+                                      BlackoilPhases::MaxNumPhases));
+
+    sol.add (EclipseKeyword<double> ("SGAS",
+                                      reservoirState.saturation(),
+                                      grid_.number_of_cells,
+                                      BlackoilPhases::Vapour,
+                                      BlackoilPhases::MaxNumPhases));
+
+    /* Summary variables (well reporting) */
+    sum_->writeTimeStep (timer, wellState);
+}
+
+#else
+void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
+    OPM_THROW(std::runtime_error,
+              "The ERT libraries are required to write ECLIPSE output files.");
+}
+
+void BlackoilEclipseOutputWriter::writeTimeStep(
+        const SimulatorTimer& timer,
+        const BlackoilState& reservoirState,
+        const WellState& wellState) {
+    OPM_THROW(std::runtime_error,
+              "The ERT libraries are required to write ECLIPSE output files.");
 }
 
 #endif // HAVE_ERT
