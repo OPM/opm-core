@@ -21,32 +21,18 @@
 #ifndef OPM_BLACKOIL_ECLIPSE_OUTPUT_WRITER_HPP
 #define OPM_BLACKOIL_ECLIPSE_OUTPUT_WRITER_HPP
 
-#include <opm/core/grid.h>
-#include <opm/core/io/eclipse/EclipseGridParser.hpp>
-#include <opm/core/simulator/BlackoilState.hpp>
-#include <opm/core/simulator/SimulatorTimer.hpp>
-#include <opm/core/simulator/WellState.hpp>
-
-#include <list>
-#include <string>
-#include <array>
-#include <vector>
-
-#ifdef HAVE_ERT
-#include <ert/ecl/fortio.h>
-#include <ert/ecl/ecl_file.h>
-#include <ert/ecl/ecl_grid.h>
-#include <ert/ecl/ecl_init_file.h>
-#include <ert/ecl/ecl_kw_magic.h>
-#include <ert/ecl/ecl_kw.h>
-#include <ert/ecl/ecl_sum.h>
-#include <ert/ecl/ecl_util.h>
-#endif
-
 #include <string>
 #include <memory>  // std::unique_ptr
 
+// forward declarations
+struct UnstructuredGrid;
+
 namespace Opm {
+
+class BlackoilState;
+class EclipseGridParser;
+class SimulatorTimer;
+class WellState;
 
 /*!
  * Internal class. Forward-declared here since it is part of the writer.

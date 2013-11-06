@@ -19,21 +19,27 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "config.h"
-
 #include "BlackoilEclipseOutputWriter.hpp"
+
+#include <opm/core/grid.h>
+#include <opm/core/io/eclipse/EclipseGridParser.hpp>
+#include <opm/core/props/BlackoilPhases.hpp>
+#include <opm/core/simulator/BlackoilState.hpp>
+#include <opm/core/simulator/SimulatorTimer.hpp>
+#include <opm/core/simulator/WellState.hpp>
+#include <opm/core/utility/Units.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/utility/DataMap.hpp>
+#include <opm/core/wells.h> // WellType
 
 #include <boost/algorithm/string/case_conv.hpp> // to_upper_copy
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem.hpp> // path
 #include <boost/format.hpp>
 
-#include <opm/core/simulator/BlackoilState.hpp>
-#include <opm/core/io/eclipse/EclipseGridParser.hpp>
-#include <opm/core/props/BlackoilPhases.hpp>
-#include <opm/core/utility/Units.hpp>
-#include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/DataMap.hpp>
-#include <opm/core/wells.h> // WellType
+#include <memory>     // unique_ptr
+#include <utility>    // move
+using namespace Opm;
 
 #ifdef HAVE_ERT
 #include <ert/ecl/fortio.h>
@@ -46,11 +52,6 @@
 #include <ert/ecl/ecl_init_file.h>
 #include <ert/ecl/ecl_file.h>
 #include <ert/ecl/ecl_rst_file.h>
-#endif
-
-#include <memory>     // unique_ptr
-#include <utility>    // move
-using namespace Opm;
 
 /// Smart pointer/handle class for ERT opaque types, such as ecl_kw_type*.
 ///
