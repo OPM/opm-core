@@ -86,8 +86,9 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
                     const int stride)           /// distance between each
 
         // allocate handle and put in smart pointer base class
-        : EclipseHandle (ecl_kw_alloc (name.c_str(), data.size (), type ()),
-                         ecl_kw_free) {
+        : EclipseHandle <ecl_kw_type> (
+              ecl_kw_alloc (name.c_str(), data.size (), type ()),
+              ecl_kw_free) {
 
         // number of elements we can possibly take from the vector
         const int num = data.size ();
@@ -121,7 +122,7 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
 
     /// Constructor for optional fields
     EclipseKeyword (const std::string& name)
-        : EclipseHandle (0, ecl_kw_free) {
+        : EclipseHandle <ecl_kw_type> (0, ecl_kw_free) {
         static_cast<void> (name);
     }
 
@@ -155,12 +156,13 @@ struct EclipseFileName : public EclipseHandle <const char> {
 
         // filename formatting function returns a pointer to allocated
         // memory that must be released with the free() function
-        : EclipseHandle (ecl_util_alloc_filename (outputDir.c_str(),
-                                                  baseName.c_str(),
-                                                  type,
-                                                  false, // formatted?
-                                                  timer.currentStepNum ()),
-                         EclipseFileName::freestr) { }
+        : EclipseHandle <const char> (
+              ecl_util_alloc_filename (outputDir.c_str(),
+                                       baseName.c_str(),
+                                       type,
+                                       false, // formatted?
+                                       timer.currentStepNum ()),
+              freestr) { }
 private:
     /// Facade which allows us to free a const char*
     static void freestr (const char* ptr) {
@@ -173,13 +175,14 @@ struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
                     const std::string& baseName,
                     const SimulatorTimer& timer)
         // notice the poor man's polymorphism of the allocation function
-        : EclipseHandle ((timer.currentStepNum () > 0 ? ecl_rst_file_open_append
-                                                      : ecl_rst_file_open_write)(
-                             EclipseFileName (outputDir,
-                                              baseName,
-                                              ECL_UNIFIED_RESTART_FILE,
-                                              timer)),
-                         ecl_rst_file_close) { }
+        : EclipseHandle <ecl_rst_file_type> (
+              (timer.currentStepNum () > 0 ? ecl_rst_file_open_append
+                                           : ecl_rst_file_open_write)(
+                  EclipseFileName (outputDir,
+                                   baseName,
+                                   ECL_UNIFIED_RESTART_FILE,
+                                   timer)),
+              ecl_rst_file_close) { }
 
     void writeHeader (const SimulatorTimer& timer,
                       const int phases,
@@ -206,8 +209,8 @@ struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
  */
 struct EclipseSolution : public EclipseHandle <ecl_rst_file_type> {
     EclipseSolution (EclipseRestart& rst_file)
-        : EclipseHandle (start_solution (rst_file),
-                         ecl_rst_file_end_solution) { }
+        : EclipseHandle <ecl_rst_file_type> (start_solution (rst_file),
+                                             ecl_rst_file_end_solution) { }
 
     template <typename T>
     void add (const EclipseKeyword<T>& kw) {
@@ -282,14 +285,15 @@ private:
     EclipseGrid (const std::vector<double>& dxv,
                  const std::vector<double>& dyv,
                  const std::vector<double>& dzv)
-        : EclipseHandle (ecl_grid_alloc_dxv_dyv_dzv (dxv.size (),
-                                                     dyv.size (),
-                                                     dzv.size (),
-                                                     &dxv[0],
-                                                     &dyv[0],
-                                                     &dzv[0],
-                                                     NULL),
-                         ecl_grid_free) { }
+        : EclipseHandle <ecl_grid_type> (
+              ecl_grid_alloc_dxv_dyv_dzv (dxv.size (),
+                                          dyv.size (),
+                                          dzv.size (),
+                                          &dxv[0],
+                                          &dyv[0],
+                                          &dzv[0],
+                                          NULL),
+              ecl_grid_free) { }
 
     // setup smart pointer for cornerpoint grid
     EclipseGrid (const int dims[],
@@ -297,14 +301,15 @@ private:
                  const EclipseKeyword<double>& coord,
                  const EclipseKeyword<double>& actnum,
                  const EclipseKeyword<double>& mapaxes)
-        : EclipseHandle (ecl_grid_alloc_GRDECL_kw(dims[0],
-                                                  dims[1],
-                                                  dims[2],
-                                                  zcorn,
-                                                  coord,
-                                                  actnum,
-                                                  mapaxes),
-                         ecl_grid_free) { }
+        : EclipseHandle <ecl_grid_type> (
+              ecl_grid_alloc_GRDECL_kw(dims[0],
+                                       dims[1],
+                                       dims[2],
+                                       zcorn,
+                                       coord,
+                                       actnum,
+                                       mapaxes),
+              ecl_grid_free) { }
 };
 
 /**
@@ -352,8 +357,9 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
 
 private:
     EclipseInit (const EclipseFileName& fname, const bool formatted)
-        : EclipseHandle (fortio_open_writer (fname, formatted, ECL_ENDIAN_FLIP),
-                         fortio_fclose) { }
+        : EclipseHandle <fortio_type> (
+              fortio_open_writer (fname, formatted, ECL_ENDIAN_FLIP),
+              fortio_fclose) { }
 };
 
 // forward decl. of mutually dependent type
@@ -364,8 +370,9 @@ struct EclipseSummary : public EclipseHandle <ecl_sum_type> {
                     const std::string& baseName,
                     const SimulatorTimer& timer,
                     const EclipseGridParser parser)
-        : EclipseHandle (alloc_writer (outputDir, baseName, timer, parser),
-                         ecl_sum_free) { }
+        : EclipseHandle <ecl_sum_type> (
+              alloc_writer (outputDir, baseName, timer, parser),
+              ecl_sum_free) { }
 
     typedef std::unique_ptr <EclipseWellReport> var_t;
     typedef std::vector <var_t> vars_t;
@@ -387,13 +394,13 @@ private:
     struct EclipseTimeStep : public EclipseHandle <ecl_sum_tstep_type> {
         EclipseTimeStep (const EclipseSummary& sum,
                          const SimulatorTimer& timer)
-            : EclipseHandle (ecl_sum_add_tstep (
-                                 sum,
-                                 timer.currentStepNum () + 1,
-                                 // currentTime is always relative to start
-                                 Opm::unit::convert::to (timer.currentTime (),
-                                                         Opm::unit::day)),
-                             ecl_sum_tstep_free)
+            : EclipseHandle <ecl_sum_tstep_type> (
+                  ecl_sum_add_tstep (sum,
+                                     timer.currentStepNum () + 1,
+                                     // currentTime is always relative to start
+                                     Opm::unit::convert::to (timer.currentTime (),
+                                                             Opm::unit::day)),
+                  ecl_sum_tstep_free)
             , sum_ (sum) { }
 
         ~EclipseTimeStep () {
@@ -437,15 +444,16 @@ protected:
                        WellType type,                    /* prod. or inj.      */
                        char aggregation,                 /* rate or total      */
                        std::string unit)
-        : EclipseHandle (ecl_sum_add_var (summary,
-                                          varName (phase,
-                                                   type,
-                                                   aggregation).c_str (),
-                                          wellName (parser, whichWell).c_str (),
-                                          /* num = */ 0,
-                                          unit.c_str(),
-                                          /* defaultValue = */ 0.),
-                         smspec_node_free)
+        : EclipseHandle <smspec_node_type> (
+              ecl_sum_add_var (summary,
+                               varName (phase,
+                                        type,
+                                        aggregation).c_str (),
+                               wellName (parser, whichWell).c_str (),
+                               /* num = */ 0,
+                               unit.c_str(),
+                               /* defaultValue = */ 0.),
+              smspec_node_free)
         // save these for when we update the value in a timestep
         , index_ (whichWell * BlackoilPhases::MaxNumPhases + phase)
 
