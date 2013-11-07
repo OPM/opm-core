@@ -21,6 +21,8 @@
 #ifndef OPM_BLACKOIL_ECLIPSE_OUTPUT_WRITER_HPP
 #define OPM_BLACKOIL_ECLIPSE_OUTPUT_WRITER_HPP
 
+#include <opm/core/io/BlackoilOutputWriter.hpp>
+
 #include <string>
 #include <memory>  // std::unique_ptr
 
@@ -48,7 +50,7 @@ namespace internal { struct EclipseSummary; }
  * 'write_output' parameter is set but ERT is not available, all
  * methods throw a std::runtime_error.
  */
-class BlackoilEclipseOutputWriter
+class BlackoilEclipseOutputWriter : public BlackoilOutputWriter
 {
 public:
     /*!
@@ -61,7 +63,7 @@ public:
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
      */
-    void writeInit(const SimulatorTimer &timer);
+    virtual void writeInit(const SimulatorTimer &timer);
 
     /*!
      * \brief Write a blackoil reservoir state to disk for later inspection with
@@ -70,9 +72,9 @@ public:
      * \param[in] reservoirState The thermodynamic state of the reservoir
      * \param[in] wellState The production/injection data for all wells
      */
-    void writeTimeStep(const SimulatorTimer& timer,
-                       const BlackoilState& reservoirState,
-                       const WellState& wellState);
+    virtual void writeTimeStep(const SimulatorTimer& timer,
+                               const BlackoilState& reservoirState,
+                               const WellState& wellState);
 
 private:
     const EclipseGridParser& eclipseParser_;

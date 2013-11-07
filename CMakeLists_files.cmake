@@ -37,6 +37,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/grid/cpgpreprocess/geometry.c
 	opm/core/grid/cpgpreprocess/preprocess.c
 	opm/core/grid/cpgpreprocess/uniquepoints.c
+	opm/core/io/BlackoilOutputWriter.cpp
 	opm/core/io/eclipse/BlackoilEclipseOutputWriter.cpp
 	opm/core/io/eclipse/EclipseGridInspector.cpp
 	opm/core/io/eclipse/EclipseGridParser.cpp
@@ -230,6 +231,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/grid/cpgpreprocess/grdecl.h
 	opm/core/grid/cpgpreprocess/preprocess.h
 	opm/core/grid/cpgpreprocess/uniquepoints.h
+	opm/core/io/BlackoilOutputWriter.hpp
 	opm/core/io/eclipse/BlackoilEclipseOutputWriter.hpp
 	opm/core/io/eclipse/CornerpointChopper.hpp
 	opm/core/io/eclipse/EclipseGridInspector.hpp
