@@ -37,7 +37,7 @@ namespace parameter { class ParameterGroup; }
 /*!
  * Internal class. Forward-declared here since it is part of the writer.
  */
-struct EclipseSummary;
+namespace internal { struct EclipseSummary; }
 
 /*!
  * \brief A class to write the reservoir state and the well state of a
@@ -79,7 +79,7 @@ private:
     std::string outputDir_;
     std::string baseName_;
 
-    std::unique_ptr <EclipseSummary> sum_;
+    std::unique_ptr <internal::EclipseSummary> sum_;
 };
 } // namespace Opm
 

@@ -41,6 +41,7 @@
 
 #include <memory>     // unique_ptr
 #include <utility>    // move
+
 using namespace Opm;
 using namespace Opm::parameter;
 
@@ -55,6 +56,12 @@ using namespace Opm::parameter;
 #include <ert/ecl/ecl_init_file.h>
 #include <ert/ecl/ecl_file.h>
 #include <ert/ecl/ecl_rst_file.h>
+
+// namespace start here since we don't want the ERT headers in it;
+// this means we must also do it in the #else section at the bottom
+namespace Opm {
+
+namespace internal {
 
 /// Smart pointer/handle class for ERT opaque types, such as ecl_kw_type*.
 ///
@@ -138,12 +145,10 @@ template <> ecl_type_enum EclipseKeyword<double>::type () { return ECL_FLOAT_TYP
 /**
  * Extract the current time from a timer object into the C type used by ERT.
  */
-time_t current (const SimulatorTimer& timer) {
+static time_t current (const SimulatorTimer& timer) {
     tm t = boost::posix_time::to_tm (timer.currentDateTime());
     return mktime(&t);
 }
-
-namespace Opm {
 
 /**
  * Pointer to memory that holds the name to an Eclipse output file.
@@ -586,7 +591,19 @@ EclipseSummary::writeTimeStep (const SimulatorTimer& timer,
     }
 }
 
+/// Supported well types. Enumeration doesn't let us get all the members,
+/// so we must have an explicit array.
 static WellType WELL_TYPES[] = { INJECTOR, PRODUCER };
+
+/// Helper method that can be used in std::transform (must curry the barsa
+/// argument)
+static double pasToBar (double pressureInPascal) {
+    return Opm::unit::convert::to (pressureInPascal, Opm::unit::barsa);
+}
+
+} // namespace Opm::internal
+
+using namespace Opm::internal;
 
 void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
     /* Grid files */
@@ -644,30 +661,6 @@ void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
     ecl_sum_fwrite(*sum_);
 }
 
-BlackoilEclipseOutputWriter::BlackoilEclipseOutputWriter (
-        const ParameterGroup& params,
-        const EclipseGridParser& parser)
-    : eclipseParser_ (parser) {
-
-    // get the base name from the name of the deck
-    boost::filesystem::path deck (params.get <std::string> ("deck_filename"));
-    if (boost::to_upper_copy (deck.extension ().string ()) == ".DATA") {
-        baseName_ = deck.stem ().string ();
-    }
-    else {
-        baseName_ = deck.filename ().string ();
-    }
-
-    // store in current directory if not explicitly set
-    if (params.has ("output_dir")) {
-        outputDir_ = params.get <std::string> ("output_dir");
-    }
-}
-
-static double pasToBar (double pressureInPascal) {
-    return Opm::unit::convert::to (pressureInPascal, Opm::unit::barsa);
-}
-
 void BlackoilEclipseOutputWriter::writeTimeStep(
         const SimulatorTimer& timer,
         const BlackoilState& reservoirState,
@@ -711,6 +704,8 @@ void BlackoilEclipseOutputWriter::writeTimeStep(
 }
 
 #else
+namespace Opm {
+
 void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");
@@ -725,5 +720,25 @@ void BlackoilEclipseOutputWriter::writeTimeStep(
 }
 
 #endif // HAVE_ERT
+
+BlackoilEclipseOutputWriter::BlackoilEclipseOutputWriter (
+        const ParameterGroup& params,
+        const EclipseGridParser& parser)
+    : eclipseParser_ (parser) {
+
+    // get the base name from the name of the deck
+    boost::filesystem::path deck (params.get <std::string> ("deck_filename"));
+    if (boost::to_upper_copy (deck.extension ().string ()) == ".DATA") {
+        baseName_ = deck.stem ().string ();
+    }
+    else {
+        baseName_ = deck.filename ().string ();
+    }
+
+    // store in current directory if not explicitly set
+    if (params.has ("output_dir")) {
+        outputDir_ = params.get <std::string> ("output_dir");
+    }
+}
 
 } // namespace Opm
