@@ -22,7 +22,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "BlackoilEclipseOutputWriter.hpp"
+#include "EclipseWriter.hpp"
 
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
@@ -658,7 +658,7 @@ static double pasToBar (double pressureInPascal) {
 
 using namespace Opm::internal;
 
-void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
+void EclipseWriter::writeInit(const SimulatorTimer &timer) {
     /* Grid files */
     EclipseGrid ecl_grid = EclipseGrid::make (eclipseParser_);
     ecl_grid.write (outputDir_, baseName_, timer);
@@ -716,7 +716,7 @@ void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
     ecl_sum_fwrite(*sum_);
 }
 
-void BlackoilEclipseOutputWriter::writeTimeStep(
+void EclipseWriter::writeTimeStep(
         const SimulatorTimer& timer,
         const BlackoilState& reservoirState,
         const WellState& wellState) {
@@ -761,12 +761,12 @@ void BlackoilEclipseOutputWriter::writeTimeStep(
 #else
 namespace Opm {
 
-void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
+void EclipseWriter::writeInit(const SimulatorTimer &timer) {
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");
 }
 
-void BlackoilEclipseOutputWriter::writeTimeStep(
+void EclipseWriter::writeTimeStep(
         const SimulatorTimer& timer,
         const BlackoilState& reservoirState,
         const WellState& wellState) {
@@ -776,7 +776,7 @@ void BlackoilEclipseOutputWriter::writeTimeStep(
 
 #endif // HAVE_ERT
 
-BlackoilEclipseOutputWriter::BlackoilEclipseOutputWriter (
+EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
         const EclipseGridParser& parser)
     : eclipseParser_ (parser) {

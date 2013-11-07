@@ -18,10 +18,10 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_BLACKOIL_ECLIPSE_OUTPUT_WRITER_HPP
-#define OPM_BLACKOIL_ECLIPSE_OUTPUT_WRITER_HPP
+#ifndef OPM_ECLIPSE_WRITER_HPP
+#define OPM_ECLIPSE_WRITER_HPP
 
-#include <opm/core/io/BlackoilOutputWriter.hpp>
+#include <opm/core/io/OutputWriter.hpp>
 
 #include <string>
 #include <memory>  // std::unique_ptr
@@ -50,15 +50,15 @@ namespace internal { struct EclipseSummary; }
  * 'write_output' parameter is set but ERT is not available, all
  * methods throw a std::runtime_error.
  */
-class BlackoilEclipseOutputWriter : public BlackoilOutputWriter
+class EclipseWriter : public OutputWriter
 {
 public:
     /*!
      * \brief Sets the common attributes required to write eclipse
      * binary files using ERT.
      */
-    BlackoilEclipseOutputWriter(const parameter::ParameterGroup& params,
-                                const EclipseGridParser& eclipseParser);
+    EclipseWriter(const parameter::ParameterGroup& params,
+                  const EclipseGridParser& eclipseParser);
 
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
@@ -86,4 +86,4 @@ private:
 } // namespace Opm
 
 
-#endif // OPM_BLACKOIL_ECLIPSE_OUTPUT_WRITER_HPP
+#endif // OPM_ECLIPSE_WRITER_HPP

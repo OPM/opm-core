@@ -1,6 +1,6 @@
-#include "BlackoilOutputWriter.hpp"
+#include "OutputWriter.hpp"
 
-#include <opm/core/io/eclipse/BlackoilEclipseOutputWriter.hpp>
+#include <opm/core/io/eclipse/EclipseWriter.hpp>
 #include <opm/core/utility/parameters/Parameter.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
@@ -15,14 +15,14 @@ using namespace Opm::parameter;
 namespace {
 
 /// Multiplexer over a list of output writers
-struct BlackoilMultiOutputWriter : public BlackoilOutputWriter {
+struct MultiWriter : public OutputWriter {
     /// Shorthand for a list of owned output writers
-    typedef vector <unique_ptr <BlackoilOutputWriter> > writers_t;
+    typedef vector <unique_ptr <OutputWriter> > writers_t;
     typedef writers_t::iterator it_t;
     typedef unique_ptr <writers_t> ptr_t;
 
     /// Adopt a list of writers
-    BlackoilMultiOutputWriter (ptr_t writers)
+    MultiWriter (ptr_t writers)
         : writers_ (std::move (writers)) { }
 
     /// Forward the call to all writers
@@ -45,9 +45,9 @@ private:
 };
 
 /// Psuedo-constructor, can appear in template
-template <typename Format> unique_ptr <BlackoilOutputWriter>
+template <typename Format> unique_ptr <OutputWriter>
 create (const ParameterGroup& params, const EclipseGridParser& parser) {
-    return unique_ptr <BlackoilOutputWriter> (new Format (params, parser));
+    return unique_ptr <OutputWriter> (new Format (params, parser));
 }
 
 /// Map between keyword in configuration and the corresponding
@@ -57,21 +57,21 @@ create (const ParameterGroup& params, const EclipseGridParser& parser) {
 /// If you want to add more possible writer formats, just add them
 /// to the list below!
 typedef map <const char*,
-              unique_ptr <BlackoilOutputWriter> (*)(const ParameterGroup&,
-                                                    const EclipseGridParser&)> map_t;
+              unique_ptr <OutputWriter> (*)(const ParameterGroup&,
+                                            const EclipseGridParser&)> map_t;
 map_t FORMATS = {
-    { "output_ecl", &create <BlackoilEclipseOutputWriter> },
+    { "output_ecl", &create <EclipseWriter> },
 };
 
 } // anonymous namespace
 
-unique_ptr <BlackoilOutputWriter>
-BlackoilOutputWriter::create (const ParameterGroup& params,
-                              const EclipseGridParser& parser) {
+unique_ptr <OutputWriter>
+OutputWriter::create (const ParameterGroup& params,
+                      const EclipseGridParser& parser) {
     // allocate a list which will be filled with writers. this list
     // is initially empty (no output).
-    BlackoilMultiOutputWriter::ptr_t list (
-                new BlackoilMultiOutputWriter::writers_t ());
+    MultiWriter::ptr_t list (
+                new MultiWriter::writers_t ());
 
     // loop through the map and see if we can find the key that is
     // specified there
@@ -88,6 +88,5 @@ BlackoilOutputWriter::create (const ParameterGroup& params,
     }
 
     // create a multiplexer from the list of formats we found
-    return unique_ptr <BlackoilOutputWriter> (
-                new BlackoilMultiOutputWriter (std::move (list)));
+    return unique_ptr <OutputWriter> (new MultiWriter (std::move (list)));
 }

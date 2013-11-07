@@ -17,8 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_BLACKOIL_OUTPUT_WRITER_HPP
-#define OPM_BLACKOIL_OUTPUT_WRITER_HPP
+#ifndef OPM_OUTPUT_WRITER_HPP
+#define OPM_OUTPUT_WRITER_HPP
 
 #include <memory>  // unique_ptr
 
@@ -43,8 +43,8 @@ class WellState;
  *  ParameterGroup params (argc, argv, false);
  *  EclipseGridParser parser (params.get <string> ("deck_filename");
  *
- *  std::unique_ptr <BlackoilOutputWriter> writer =
- *          BlackoilOutputWriter::create (params, parser);
+ *  std::unique_ptr <OutputWriter> writer =
+ *          OutputWriter::create (params, parser);
  *
  *  // before the first timestep
  *  writer->writeInit (timer);
@@ -54,7 +54,7 @@ class WellState;
  *
  * \endcode
  */
-class BlackoilOutputWriter {
+class OutputWriter {
 public:
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
@@ -85,11 +85,11 @@ public:
      *
      * @return       Pointer to a multiplexer to all applicable output formats.
      */
-    static std::unique_ptr <BlackoilOutputWriter>
+    static std::unique_ptr <OutputWriter>
     create (const parameter::ParameterGroup& params,
             const EclipseGridParser& parser);
 };
 
 } // namespace Opm
 
-#endif /* OPM_BLACKOIL_OUTPUT_WRITER_HPP */
+#endif /* OPM_OUTPUT_WRITER_HPP */

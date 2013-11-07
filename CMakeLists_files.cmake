@@ -37,11 +37,11 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/grid/cpgpreprocess/geometry.c
 	opm/core/grid/cpgpreprocess/preprocess.c
 	opm/core/grid/cpgpreprocess/uniquepoints.c
-	opm/core/io/BlackoilOutputWriter.cpp
-	opm/core/io/eclipse/BlackoilEclipseOutputWriter.cpp
 	opm/core/io/eclipse/EclipseGridInspector.cpp
 	opm/core/io/eclipse/EclipseGridParser.cpp
+	opm/core/io/eclipse/EclipseWriter.cpp
 	opm/core/io/eclipse/writeECLData.cpp
+	opm/core/io/OutputWriter.cpp
 	opm/core/io/vag/vag.cpp
 	opm/core/io/vtk/writeVtkData.cpp
 	opm/core/linalg/LinearSolverFactory.cpp
@@ -231,15 +231,15 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/grid/cpgpreprocess/grdecl.h
 	opm/core/grid/cpgpreprocess/preprocess.h
 	opm/core/grid/cpgpreprocess/uniquepoints.h
-	opm/core/io/BlackoilOutputWriter.hpp
-	opm/core/io/eclipse/BlackoilEclipseOutputWriter.hpp
 	opm/core/io/eclipse/CornerpointChopper.hpp
 	opm/core/io/eclipse/EclipseGridInspector.hpp
 	opm/core/io/eclipse/EclipseGridParser.hpp
 	opm/core/io/eclipse/EclipseGridParserHelpers.hpp
 	opm/core/io/eclipse/EclipseUnits.hpp
+	opm/core/io/eclipse/EclipseWriter.hpp
 	opm/core/io/eclipse/SpecialEclipseFields.hpp
 	opm/core/io/eclipse/writeECLData.hpp
+	opm/core/io/OutputWriter.hpp
 	opm/core/io/vag/vag.hpp
 	opm/core/io/vtk/writeVtkData.hpp
 	opm/core/linalg/LinearSolverFactory.hpp
