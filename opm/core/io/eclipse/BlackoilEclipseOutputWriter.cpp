@@ -24,7 +24,6 @@
 
 #include "BlackoilEclipseOutputWriter.hpp"
 
-#include <opm/core/grid.h>
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/simulator/BlackoilState.hpp>
@@ -83,19 +82,21 @@ template <typename T>
 struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
     EclipseKeyword (const std::string& name,    /// identification
                     const std::vector<T>& data, /// array holding values
-                    const int num,              /// actual number to take
                     const int offset,           /// distance to first
                     const int stride)           /// distance between each
 
         // allocate handle and put in smart pointer base class
-        : EclipseHandle (ecl_kw_alloc (name.c_str(), num, type ()),
+        : EclipseHandle (ecl_kw_alloc (name.c_str(), data.size (), type ()),
                          ecl_kw_free) {
 
+        // number of elements we can possibly take from the vector
+        const int num = data.size ();
+
         // range cannot start outside of data set
-        assert(offset >= 0 && offset < data.size());
+        assert(offset >= 0 && offset < num);
 
         // don't jump out of the set when trying to
-        assert(stride > 0 && stride < data.size() - offset);
+        assert(stride > 0 && stride < num - offset);
 
         // fill it with values
         for (int i = 0; i < num; ++i) {
@@ -110,7 +111,7 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
     /// Convenience constructor that takes the entire array
     EclipseKeyword (const std::string& name,
                     const std::vector<T>& data)
-        : EclipseKeyword (name, data, data.size(), 0, 1) { }
+        : EclipseKeyword (name, data, 0, 1) { }
 
     /// Convenience constructor that gets the set of data
     /// from the samely named item in the parser
@@ -180,18 +181,20 @@ struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
                                               timer)),
                          ecl_rst_file_close) { }
 
-    void writeHeader (const UnstructuredGrid& grid,
-                       const SimulatorTimer& timer,
-                       const int phases) {
+    void writeHeader (const SimulatorTimer& timer,
+                      const int phases,
+                      const EclipseGridParser parser,
+                      const int num_active_cells) {
+        const std::vector<int> dim = parser.getSPECGRID ().dimensions;
         ecl_rst_file_fwrite_header (*this,
                                     timer.currentStepNum (),
                                     current (timer),
                                     Opm::unit::convert::to (timer.currentTime (),
                                                             Opm::unit::day),
-                                    grid.cartdims[0],
-                                    grid.cartdims[1],
-                                    grid.cartdims[2],
-                                    grid.number_of_cells,
+                                    dim[0],
+                                    dim[1],
+                                    dim[2],
+                                    num_active_cells,
                                     phases);
     }
 };
@@ -360,16 +363,8 @@ struct EclipseSummary : public EclipseHandle <ecl_sum_type> {
     EclipseSummary (const std::string& outputDir,
                     const std::string& baseName,
                     const SimulatorTimer& timer,
-                    const UnstructuredGrid& grid)
-        : EclipseHandle (ecl_sum_alloc_writer (caseName (outputDir,
-                                                         baseName).c_str (),
-                                               false, /* formatted   */
-                                               true,  /* unified     */
-                                               ":",    /* join string */
-                                               current (timer),
-                                               grid.cartdims[0],
-                                               grid.cartdims[1],
-                                               grid.cartdims[2]),
+                    const EclipseGridParser parser)
+        : EclipseHandle (alloc_writer (outputDir, baseName, timer, parser),
                          ecl_sum_free) { }
 
     typedef std::unique_ptr <EclipseWellReport> var_t;
@@ -408,12 +403,24 @@ private:
         ecl_sum_type* sum_;
     };
 
-    /// Helper function for getting the case name
-    std::string caseName (const std::string& outputDir,
-                          const std::string& baseName) {
+    /// Helper routine that lets us use local variables to hold
+    /// intermediate results while filling out the allocations function's
+    /// argument list.
+    static ecl_sum_type* alloc_writer (const std::string& outputDir,
+                                        const std::string& baseName,
+                                        const SimulatorTimer& timer,
+                                        const EclipseGridParser& parser) {
         boost::filesystem::path casePath (outputDir);
         casePath /= boost::to_upper_copy (baseName);
-        return casePath.string ();
+        const std::vector<int>& dim = parser.getSPECGRID().dimensions;
+        return ecl_sum_alloc_writer (casePath.string ().c_str (),
+                                     false, /* formatted   */
+                                     true,  /* unified     */
+                                     ":",    /* join string */
+                                     current (timer),
+                                     dim[0],
+                                     dim[1],
+                                     dim[2]);
     }
 };
 
@@ -593,7 +600,7 @@ void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
                           new EclipseSummary (outputDir_,
                                                baseName_,
                                                timer,
-                                               grid_)));
+                                               eclipseParser_)));
 
     // TODO: Only create report variables that are requested with keywords
     // (e.g. "WOPR") in the input files, and only for those wells that are
@@ -631,10 +638,8 @@ void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
 
 BlackoilEclipseOutputWriter::BlackoilEclipseOutputWriter (
         const ParameterGroup& params,
-        const EclipseGridParser& parser,
-        const UnstructuredGrid& grid)
-    : eclipseParser_ (parser)
-    , grid_ (grid) {
+        const EclipseGridParser& parser)
+    : eclipseParser_ (parser) {
 
     // get the base name from the name of the deck
     boost::filesystem::path deck (params.get <std::string> ("deck_filename"));
@@ -659,36 +664,37 @@ void BlackoilEclipseOutputWriter::writeTimeStep(
         const SimulatorTimer& timer,
         const BlackoilState& reservoirState,
         const WellState& wellState) {
-    EclipseRestart rst (outputDir_,
-                        baseName_,
-                        timer);
-    rst.writeHeader (grid_,
-                     timer,
-                     ECL_OIL_PHASE | ECL_GAS_PHASE | ECL_WATER_PHASE);
-    EclipseSolution sol (rst);
-
     // convert the pressures from Pascals to bar because eclipse
     // seems to write bars
     const std::vector<double>& pas = reservoirState.pressure ();
     std::vector<double> bar (pas.size (), 0.);
     std::transform (pas.begin(), pas.end(), bar.begin(), pasToBar);
+
+    // start writing to files
+    EclipseRestart rst (outputDir_,
+                        baseName_,
+                        timer);
+    rst.writeHeader (timer,
+                     ECL_OIL_PHASE | ECL_GAS_PHASE | ECL_WATER_PHASE,
+                     eclipseParser_,
+                     pas.size ());
+    EclipseSolution sol (rst);
+
+    // write pressure and saturation fields (same as DataMap holds)
     sol.add (EclipseKeyword<double> ("PRESSURE", bar));
 
     sol.add (EclipseKeyword<double> ("SWAT",
                                       reservoirState.saturation(),
-                                      grid_.number_of_cells,
                                       BlackoilPhases::Aqua,
                                       BlackoilPhases::MaxNumPhases));
 
     sol.add (EclipseKeyword<double> ("SOIL",
                                       reservoirState.saturation(),
-                                      grid_.number_of_cells,
                                       BlackoilPhases::Liquid,
                                       BlackoilPhases::MaxNumPhases));
 
     sol.add (EclipseKeyword<double> ("SGAS",
                                       reservoirState.saturation(),
-                                      grid_.number_of_cells,
                                       BlackoilPhases::Vapour,
                                       BlackoilPhases::MaxNumPhases));
 

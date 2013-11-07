@@ -24,11 +24,9 @@
 #include <string>
 #include <memory>  // std::unique_ptr
 
-// forward declarations
-struct UnstructuredGrid;
-
 namespace Opm {
 
+// forward declarations
 class BlackoilState;
 class EclipseGridParser;
 class SimulatorTimer;
@@ -58,8 +56,7 @@ public:
      * binary files using ERT.
      */
     BlackoilEclipseOutputWriter(const parameter::ParameterGroup& params,
-                                const EclipseGridParser& eclipseParser,
-                                const UnstructuredGrid& grid);
+                                const EclipseGridParser& eclipseParser);
 
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
@@ -79,7 +76,6 @@ public:
 
 private:
     const EclipseGridParser& eclipseParser_;
-    const UnstructuredGrid& grid_;
     std::string outputDir_;
     std::string baseName_;
 
