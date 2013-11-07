@@ -163,19 +163,16 @@ private:
         assert(stride > 0 && stride < num - offset);
 
         // fill it with values
+        T* target = static_cast <T*> (ecl_kw_get_ptr (*this));
         for (int i = 0; i < num; ++i) {
-            // access from data store
-            const float value = data[i * stride + offset];
-
-            // write into memory represented by handle
-            ecl_kw_iset_float(*this, i, value);
+            target[i] = data[i * stride + offset];
         }
     }
 };
 
 // specializations for known keyword types
 template <> ecl_type_enum EclipseKeyword<int   >::type () { return ECL_INT_TYPE   ; }
-template <> ecl_type_enum EclipseKeyword<double>::type () { return ECL_FLOAT_TYPE; }
+template <> ecl_type_enum EclipseKeyword<double>::type () { return ECL_DOUBLE_TYPE; }
 
 /**
  * Extract the current time from a timer object into the C type used by ERT.
