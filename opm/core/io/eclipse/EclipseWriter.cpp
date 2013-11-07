@@ -807,12 +807,13 @@ EclipseWriter::EclipseWriter (
     , uses_ (phaseUsageFromDeck (parser)) {
 
     // get the base name from the name of the deck
-    boost::filesystem::path deck (params.get <std::string> ("deck_filename"));
-    if (boost::to_upper_copy (deck.extension ().string ()) == ".DATA") {
-        baseName_ = deck.stem ().string ();
+    using boost::filesystem::path;
+    path deck (params.get <std::string> ("deck_filename"));
+    if (boost::to_upper_copy (path (deck.extension ()).string ()) == ".DATA") {
+        baseName_ = path (deck.stem ()).string ();
     }
     else {
-        baseName_ = deck.filename ().string ();
+        baseName_ = path (deck.filename ()).string ();
     }
 
     // store in current directory if not explicitly set
