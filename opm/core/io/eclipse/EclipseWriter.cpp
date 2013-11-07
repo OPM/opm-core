@@ -26,6 +26,7 @@
 
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
+#include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/simulator/WellState.hpp>
@@ -208,6 +209,13 @@ private:
     }
 };
 
+/// Convert OPM phase usage to ERT bitmask
+static int phaseMask (const PhaseUsage uses) {
+    return (uses.phase_used [BlackoilPhases::Liquid] ? ECL_OIL_PHASE   : 0)
+         | (uses.phase_used [BlackoilPhases::Aqua]   ? ECL_WATER_PHASE : 0)
+         | (uses.phase_used [BlackoilPhases::Vapour] ? ECL_GAS_PHASE   : 0);
+}
+
 struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
     EclipseRestart (const std::string& outputDir,
                     const std::string& baseName,
@@ -223,7 +231,7 @@ struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
               ecl_rst_file_close) { }
 
     void writeHeader (const SimulatorTimer& timer,
-                      const int phases,
+                      const PhaseUsage uses,
                       const EclipseGridParser parser,
                       const int num_active_cells) {
         const std::vector<int> dim = parser.getSPECGRID ().dimensions;
@@ -236,7 +244,7 @@ struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
                                     dim[1],
                                     dim[2],
                                     num_active_cells,
-                                    phases);
+                                    phaseMask (uses));
     }
 };
 
@@ -388,12 +396,12 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
     void writeHeader (const EclipseGrid& grid,
                        const SimulatorTimer& timer,
                        const EclipseGridParser& parser,
-                       const int phases) {
+                       const PhaseUsage uses) {
         EclipseKeyword<double> poro (PORO_KW, parser);
         ecl_init_file_fwrite_header (*this,
                                      grid,
                                      poro,
-                                     phases,
+                                     phaseMask (uses),
                                      current (timer));
     }
 
@@ -499,6 +507,7 @@ protected:
     EclipseWellReport (const EclipseSummary& summary,    /* section to add to  */
                        const EclipseGridParser& parser,  /* well names         */
                        int whichWell,                    /* index of well line */
+                       PhaseUsage uses,                  /* phases present     */
                        BlackoilPhases::PhaseIndex phase, /* oil, water or gas  */
                        WellType type,                    /* prod. or inj.      */
                        char aggregation,                 /* rate or total      */
@@ -514,7 +523,7 @@ protected:
                                /* defaultValue = */ 0.),
               smspec_node_free)
         // save these for when we update the value in a timestep
-        , index_ (whichWell * BlackoilPhases::MaxNumPhases + phase)
+        , index_ (whichWell * uses.num_phases + uses.phase_pos [phase])
 
         // producers can be seen as negative injectors
         , sign_ (type == INJECTOR ? +1. : -1.) { }
@@ -582,11 +591,13 @@ struct EclipseWellRate : public EclipseWellReport {
     EclipseWellRate (const EclipseSummary& summary,
                      const EclipseGridParser& parser,
                      int whichWell,
+                     PhaseUsage uses,
                      BlackoilPhases::PhaseIndex phase,
                      WellType type)
         : EclipseWellReport (summary,
                              parser,
                              whichWell,
+                             uses,
                              phase,
                              type,
                              'R',
@@ -603,11 +614,13 @@ struct EclipseWellTotal : public EclipseWellReport {
     EclipseWellTotal (const EclipseSummary& summary,
                       const EclipseGridParser& parser,
                       int whichWell,
+                      PhaseUsage uses,
                       BlackoilPhases::PhaseIndex phase,
                       WellType type)
         : EclipseWellReport (summary,
                              parser,
                              whichWell,
+                             uses,
                              phase,
                              type,
                              'T',
@@ -654,6 +667,12 @@ static double pasToBar (double pressureInPascal) {
     return Opm::unit::convert::to (pressureInPascal, Opm::unit::barsa);
 }
 
+/// Names of the saturation property for each phase. The order of these
+/// names are critical; they must be the same as the BlackoilPhases enum
+static const char* SAT_NAMES[] = {
+    "SOIL", "SWAT", "SGAS"
+};
+
 } // namespace Opm::internal
 
 using namespace Opm::internal;
@@ -667,7 +686,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer) {
     fortio.writeHeader (ecl_grid,
                         timer,
                         eclipseParser_,
-                        ECL_OIL_PHASE | ECL_GAS_PHASE | ECL_WATER_PHASE);
+                        uses_);
 
     fortio.writeKeyword<double> ("PERMX", eclipseParser_);
     fortio.writeKeyword<double> ("PERMY", eclipseParser_);
@@ -689,6 +708,10 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer) {
           ++phaseCounter) {
         const BlackoilPhases::PhaseIndex phase =
                 static_cast <BlackoilPhases::PhaseIndex> (phaseCounter);
+        // don't bother with reporting for phases that aren't there
+        if (!uses_.phase_used [phaseCounter]) {
+            continue;
+        }
         for (size_t typeIndex = 0;
              typeIndex < sizeof (WELL_TYPES) / sizeof (WELL_TYPES[0]);
              ++typeIndex) {
@@ -699,6 +722,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer) {
                               new EclipseWellRate (*sum_,
                                                     eclipseParser_,
                                                     whichWell,
+                                                    uses_,
                                                     phase,
                                                     type)));
                 // W{O,G,W}{I,P}T
@@ -706,6 +730,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer) {
                               new EclipseWellTotal (*sum_,
                                                      eclipseParser_,
                                                      whichWell,
+                                                     uses_,
                                                      phase,
                                                      type)));
             }
@@ -731,7 +756,7 @@ void EclipseWriter::writeTimeStep(
                         baseName_,
                         timer);
     rst.writeHeader (timer,
-                     ECL_OIL_PHASE | ECL_GAS_PHASE | ECL_WATER_PHASE,
+                     uses_,
                      eclipseParser_,
                      pas.size ());
     EclipseSolution sol (rst);
@@ -739,20 +764,19 @@ void EclipseWriter::writeTimeStep(
     // write pressure and saturation fields (same as DataMap holds)
     sol.add (EclipseKeyword<double> ("PRESSURE", bar));
 
-    sol.add (EclipseKeyword<double> ("SWAT",
-                                      reservoirState.saturation(),
-                                      BlackoilPhases::Aqua,
-                                      BlackoilPhases::MaxNumPhases));
-
-    sol.add (EclipseKeyword<double> ("SOIL",
-                                      reservoirState.saturation(),
-                                      BlackoilPhases::Liquid,
-                                      BlackoilPhases::MaxNumPhases));
-
-    sol.add (EclipseKeyword<double> ("SGAS",
-                                      reservoirState.saturation(),
-                                      BlackoilPhases::Vapour,
-                                      BlackoilPhases::MaxNumPhases));
+    for (int phase = 0; phase != BlackoilPhases::MaxNumPhases; ++phase) {
+        // Eclipse never writes the oil saturation, so all post-processors
+        // must calculate this from the other saturations anyway
+        if (phase == BlackoilPhases::PhaseIndex::Liquid) {
+            continue;
+        }
+        if (uses_.phase_used [phase]) {
+            sol.add (EclipseKeyword<double> (SAT_NAMES [phase],
+                                              reservoirState.saturation(),
+                                              uses_.phase_pos [phase],
+                                              uses_.num_phases));
+        }
+    }
 
     /* Summary variables (well reporting) */
     sum_->writeTimeStep (timer, wellState);
@@ -779,7 +803,8 @@ void EclipseWriter::writeTimeStep(
 EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
         const EclipseGridParser& parser)
-    : eclipseParser_ (parser) {
+    : eclipseParser_ (parser)
+    , uses_ (phaseUsageFromDeck (parser)) {
 
     // get the base name from the name of the deck
     boost::filesystem::path deck (params.get <std::string> ("deck_filename"));

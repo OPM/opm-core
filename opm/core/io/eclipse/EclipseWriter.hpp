@@ -22,6 +22,7 @@
 #define OPM_ECLIPSE_WRITER_HPP
 
 #include <opm/core/io/OutputWriter.hpp>
+#include <opm/core/props/BlackoilPhases.hpp>
 
 #include <string>
 #include <memory>  // std::unique_ptr
@@ -80,6 +81,7 @@ private:
     const EclipseGridParser& eclipseParser_;
     std::string outputDir_;
     std::string baseName_;
+    PhaseUsage uses_;           // active phases in the input deck
 
     std::unique_ptr <internal::EclipseSummary> sum_;
 };
