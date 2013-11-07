@@ -50,6 +50,7 @@ void testCommon(const Spline &sp,
                 const double *y)
 {
     static double eps = 1e-10;
+    static double epsFD = 1e-7;
 
     int n = sp.numSamples();
     for (int i = 0; i < n; ++i) {
@@ -73,7 +74,49 @@ void testCommon(const Spline &sp,
 
         if (std::abs(d1 - d0) > 1000*eps || std::abs(d2 - d0) > 1000*eps)
             OPM_THROW(std::runtime_error,
-                       "Spline seems to exhibit a discontinuous derivative at sampling point " << i << "!");
+                      "Spline seems to exhibit a discontinuous derivative at sampling point " << i << "!");
+    }
+
+    // make sure the derivatives are consistent with the curve
+    int np = 3*n;
+    for (int i = 0; i < np; ++i) {
+        double x = sp.xMin() + (sp.xMax() - sp.xMin())*i/np;
+
+        // first derivative
+        double y1 = sp.eval(x+epsFD);
+        double y0 = sp.eval(x);
+
+        double mFD = (y1 - y0)/epsFD;
+        double m = sp.evalDerivative(x);
+
+        if (std::abs( mFD - m ) > 1000*epsFD)
+            OPM_THROW(std::runtime_error,
+                      "Derivative of spline seems to be inconsistent with cuve"
+                      " (" << mFD << " - " << m << " = " << mFD - m << ")!");
+
+        // second derivative
+        y1 = sp.evalDerivative(x+epsFD);
+        y0 = sp.evalDerivative(x);
+
+        mFD = (y1 - y0)/epsFD;
+        m = sp.evalSecondDerivative(x);
+
+        if (std::abs( mFD - m ) > 1000*epsFD)
+            OPM_THROW(std::runtime_error,
+                      "Second derivative of spline seems to be inconsistent with cuve"
+                      " (" << mFD << " - " << m << " = " << mFD - m << ")!");
+
+        // Third derivative
+        y1 = sp.evalSecondDerivative(x+epsFD);
+        y0 = sp.evalSecondDerivative(x);
+
+        mFD = (y1 - y0)/epsFD;
+        m = sp.evalThirdDerivative(x);
+
+        if (std::abs( mFD - m ) > 1000*epsFD)
+            OPM_THROW(std::runtime_error,
+                      "Third derivative of spline seems to be inconsistent with cuve"
+                      " (" << mFD << " - " << m << " = " << mFD - m << ")!");
     }
 }
 

@@ -859,6 +859,27 @@ public:
     }
 
     /*!
+     * \brief Evaluate the spline's third derivative at a given position.
+     *
+     * \param x The value on the abscissa where the spline's
+     *          derivative ought to be evaluated
+     *
+     * \param extrapolate If this parameter is set to true, the spline
+     *                    will be extended beyond its range by
+     *                    straight lines, if false calling extrapolate
+     *                    for \f$ x \not [x_{min}, x_{max}]\f$ will
+     *                    cause a failed assertation.
+     */
+    Scalar evalThirdDerivative(Scalar x, bool extrapolate=false) const
+    {
+        assert(extrapolate || applies(x));
+        if (extrapolate)
+            return 0.0;
+
+        return evalDerivative3_(x, segmentIdx_(x));
+    }
+
+    /*!
      * \brief Find the intersections of the spline with a cubic
      *        polynomial in the whole intervall, throws
      *        Opm::MathError exception if there is more or less than
@@ -1493,7 +1514,7 @@ protected:
         Scalar alpha = 1 / delta;
 
         return
-            alpha
+            alpha*alpha
             *(h00_prime2_(t) * y_(i)
               + h10_prime2_(t) * slope_(i)*delta
               + h01_prime2_(t) * y_(i + 1)
@@ -1505,15 +1526,16 @@ protected:
     Scalar evalDerivative3_(Scalar x, int i) const
     {
         // See http://en.wikipedia.org/wiki/Cubic_Hermite_spline
-        Scalar t = (x - x_(i))/h_(i + 1);
-        Scalar alpha = 1 / h_(i + 1);
+        Scalar delta = h_(i + 1);
+        Scalar t = (x - x_(i))/delta;
+        Scalar alpha = 1 / delta;
 
         return
-            alpha
+            alpha*alpha*alpha
             *(h00_prime3_(t)*y_(i)
-              + h10_prime3_(t)*slope_(i)
+              + h10_prime3_(t)*slope_(i)*delta
               + h01_prime3_(t)*y_(i + 1)
-              + h11_prime3_(t)*slope_(i + 1));
+              + h11_prime3_(t)*slope_(i + 1)*delta);
     }
 
     // hermite basis functions
@@ -1578,8 +1600,8 @@ protected:
     // -1: spline is monotonously decreasing in the specified interval
     int monotonic_(int i, Scalar x0, Scalar x1) const
     {
-        Scalar a = 3*a_(i);
-        Scalar b = 2*b_(i);
+        Scalar a = a_(i);
+        Scalar b = b_(i);
         Scalar c = c_(i);
 
         if (std::abs(a) < 1e-20 && std::abs(b) < 1e-20 && std::abs(c) < 1e-20)
@@ -1631,12 +1653,11 @@ protected:
                                            c_(segIdx) - c,
                                            d_(segIdx) - d);
         x0 = std::max(x_(segIdx), x0);
-        x1 = std::max(x_(segIdx+1), x1);
+        x1 = std::min(x_(segIdx+1), x1);
 
         // filter the intersections outside of the specified intervall
         int k = 0;
         for (int j = 0; j < n; ++j) {
-            sol[j] += x_(segIdx); // add the offset of the intervall. For details see Stoer
             if (x0 <= sol[j] && sol[j] <= x1) {
                 sol[k] = sol[j];
                 ++k;
@@ -1691,19 +1712,20 @@ protected:
     Scalar slope_(int i) const
     { return slopeVec_[i]; }
 
-    // returns the coefficient in front of the x^0 term. In Stoer this
+    // returns the coefficient in front of the x^3 term. In Stoer this
     // is delta.
     Scalar a_(int i) const
-    { return evalDerivative3_(/*x=*/0, i); }
+    { return evalDerivative3_(/*x=*/0, i)/6.0; }
 
     // returns the coefficient in front of the x^2 term In Stoer this
     // is gamma.
     Scalar b_(int i) const
-    { return evalDerivative2_(/*x=*/0, i); }
+    { return evalDerivative2_(/*x=*/0, i)/2.0; }
 
     // returns the coefficient in front of the x^1 term. In Stoer this
     // is beta.
-    Scalar c_(int i) const { return evalDerivative_(/*x=*/0, i); }
+    Scalar c_(int i) const
+    { return evalDerivative_(/*x=*/0, i); }
 
     // returns the coefficient in front of the x^0 term. In Stoer this
     // is alpha.
