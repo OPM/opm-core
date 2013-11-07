@@ -67,18 +67,34 @@ namespace internal {
 ///
 /// \tparam T Type of handle being wrapper
 template <typename T>
-struct EclipseHandle : private std::unique_ptr <T, void (*)(T*) throw()> {
-    // to save ourselves from some typing we introduce this alias
-    typedef std::unique_ptr <T, void (*)(T*) throw()> base;
+struct EclipseHandle {
+    /// Instead of inheriting std::unique_ptr and letting the compiler
+    /// provide a default implementation which calls the base class, we
+    /// define the move constructor and assignment operator ourselves
+    /// and call and aggregated pointer, because of bugs in GCC 4.4
+    EclipseHandle <T> (EclipseHandle <T>&& rhs)
+        : h_ (std::move (rhs.h_)) { }
+
+    EclipseHandle <T>& operator= (EclipseHandle <T>&& rhs) {
+        h_ = std::move (rhs.h_);
+        return *this;
+    }
+
+    /// Prevent GCC 4.4 from the urge of generating a copy constructor
+    EclipseHandle (const EclipseHandle&) = delete;
+    EclipseHandle <T>& operator= (const EclipseHandle <T>&) = delete;
 
     /// Construct a new smart handle based on the returned value of
     /// an allocation function and the corresponding destroyer function.
-    EclipseHandle (T* t, void (*destroy)(T*))
-        : base (t, destroy) { }
+    EclipseHandle <T> (T* t, void (*destroy)(T*))
+        : h_ (t, destroy) { }
 
     /// Convenience operator that lets us use this type as if
     /// it was a handle directly.
-    operator T* () const { return base::get (); }
+    operator T* () const { return h_.get (); }
+
+private:
+    std::unique_ptr <T, void (*)(T*) throw()> h_; // handle
 };
 
 /**
@@ -132,6 +148,17 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
         : EclipseHandle <ecl_kw_type> (0, ecl_kw_free) {
         static_cast<void> (name);
     }
+
+    // GCC 4.4 doesn't generate these constructors for us; provide the
+    // default implementation explicitly here instead
+    EclipseKeyword (EclipseKeyword&& rhs)
+        : EclipseHandle <ecl_kw_type> (std::move (rhs)) { }
+    EclipseKeyword& operator= (EclipseKeyword&& rhs) {
+        EclipseHandle <ecl_kw_type>::operator= (std::move(rhs));
+        return *this;
+    }
+    EclipseKeyword (const EclipseKeyword&) = delete;
+    EclipseKeyword& operator= (const EclipseKeyword&) = delete;
 
 private:
     /// Map the C++ data type (given by T) to an Eclipse type enum
@@ -281,6 +308,17 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
                                                 timer));
     }
 
+    // GCC 4.4 doesn't generate these constructors for us; provide the
+    // default implementation explicitly here instead
+    EclipseGrid (EclipseGrid&& rhs)
+        : EclipseHandle <ecl_grid_type> (std::move (rhs)) { }
+    EclipseGrid& operator= (EclipseGrid&& rhs) {
+        EclipseHandle <ecl_grid_type>::operator= (std::move(rhs));
+        return *this;
+    }
+    EclipseGrid (const EclipseGrid&) = delete;
+    EclipseGrid& operator= (const EclipseGrid&) = delete;
+
 private:
     // each of these cases could have been their respective subclass,
     // but there is not any polymorphism on each of these grid types
@@ -360,6 +398,16 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
         ecl_kw_fwrite (kw, *this);
     }
 
+    // GCC 4.4 doesn't generate these constructors for us; provide the
+    // default implementation explicitly here instead
+    EclipseInit (EclipseInit&& rhs)
+        : EclipseHandle <fortio_type> (std::move (rhs)) { }
+    EclipseInit& operator= (EclipseInit& rhs) {
+        EclipseHandle <fortio_type>::operator= (std::move(rhs));
+        return *this;
+    }
+    EclipseInit (const EclipseInit&) = delete;
+    EclipseInit& operator= (const EclipseInit&) = delete;
 private:
     EclipseInit (const EclipseFileName& fname, const bool formatted)
         : EclipseHandle <fortio_type> (
