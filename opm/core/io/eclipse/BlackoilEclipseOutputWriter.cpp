@@ -632,9 +632,11 @@ void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
     // mentioned in those keywords
     const int numWells = eclipseParser_.getWELSPECS().welspecs.size();
     for (int whichWell = 0; whichWell != numWells; ++whichWell) {
-        for (BlackoilPhases::PhaseIndex phase = static_cast<BlackoilPhases::PhaseIndex>(0);
-             phase != BlackoilPhases::MaxNumPhases;
-             ++phase) {
+        for (int phaseCounter = 0;
+             phaseCounter != BlackoilPhases::MaxNumPhases;
+             ++phaseCounter) {
+            const BlackoilPhases::PhaseIndex phase =
+                    static_cast <BlackoilPhases::PhaseIndex> (phaseCounter);
             for (int typeIndex = 0;
                  typeIndex < sizeof (WELL_TYPES) / sizeof (WELL_TYPES[0]);
                  ++typeIndex) {
