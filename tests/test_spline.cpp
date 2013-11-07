@@ -175,6 +175,54 @@ void testNatural(const Spline &sp,
                    << (d3 - d2)/eps << " ought to be 0");
 }
 
+template <class Spline>
+void testMonotonic(const Spline &sp,
+                   const double *x,
+                   const double *y)
+{
+    // test the common properties of splines
+    testCommon(sp, x, y);
+
+    int n = sp.numSamples();
+
+    for (int i = 0; i < n - 1; ++ i) {
+        // make sure that the spline is monotonic for each interval
+        // between sampling points
+        if (!sp.monotonic(x[i], x[i + 1]))
+            OPM_THROW(std::runtime_error,
+                      "Spline says it is not monotonic in interval "
+                      << i << " where it should be");
+
+        // test the intersection methods
+        double d = (y[i] + y[i+1])/2;
+        double interX = sp.intersectInterval(x[i], x[i+1],
+                                             /*a=*/0, /*b=*/0, /*c=*/0, d);
+        double interY = sp.eval(interX);
+        if (std::abs(interY - d) > 1e-5)
+            OPM_THROW(std::runtime_error,
+                      "Spline::intersectInterval() seems to be broken: "
+                      << sp.eval(interX) << " - " << d << " = " << sp.eval(interX) - d << "!");
+    }
+
+    // make sure the spline says to be monotonic on the (extrapolated)
+    // left and right sides
+    if (!sp.monotonic(x[0] - 1.0, (x[0] + x[1])/2, /*extrapolate=*/true))
+        OPM_THROW(std::runtime_error,
+                  "Spline says it is not monotonic on left side where it should be");
+    if (!sp.monotonic((x[n - 2]+ x[n - 1])/2, x[n-1] + 1.0, /*extrapolate=*/true))
+        OPM_THROW(std::runtime_error,
+                  "Spline says it is not monotonic on right side where it should be");
+
+    for (int i = 0; i < n - 2; ++ i) {
+        // make sure that the spline says that it is non-monotonic for
+        // if extrema are within the queried interval
+        if (sp.monotonic((x[i] + x[i + 1])/2, (x[i + 1] + x[i + 2])/2))
+            OPM_THROW(std::runtime_error,
+                      "Spline says it is monotonic in interval "
+                      << i << " where it should not be");
+    }
+}
+
 void testAll()
 {
     double x[] = { 0, 5, 7.5, 8.75, 9.375 };
@@ -261,6 +309,8 @@ void plot()
     Opm::Spline<double> spPeriodic(xs, ys, /*type=*/Opm::Spline<double>::Periodic);
     Opm::Spline<double> spMonotonic(xs, ys, /*type=*/Opm::Spline<double>::Monotonic);
 
+    testMonotonic(spMonotonic, x_, y_);
+
     spFull.printCSV(x_[0] - 1.00001,
                     x_[n] + 1.00001,
                     1000);
@@ -279,8 +329,6 @@ void plot()
                          x_[n] + 1.00001,
                          1000);
     std::cout << "\n";
-
-    std::cerr << "Spline is monotonic: " << spFull.monotonic(x_[0], x_[n]) << "\n";
 }
 
 int main(int argc, char** argv)

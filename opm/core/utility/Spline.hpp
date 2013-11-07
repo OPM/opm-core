@@ -881,18 +881,18 @@ public:
 
     /*!
      * \brief Find the intersections of the spline with a cubic
-     *        polynomial in the whole intervall, throws
+     *        polynomial in the whole interval, throws
      *        Opm::MathError exception if there is more or less than
      *        one solution.
      */
     Scalar intersect(Scalar a, Scalar b, Scalar c, Scalar d) const
     {
-        return intersectIntervall(xMin(), xMax(), a, b, c, d);
+        return intersectInterval(xMin(), xMax(), a, b, c, d);
     }
 
     /*!
      * \brief Find the intersections of the spline with a cubic
-     *        polynomial in a sub-intervall of the spline, throws
+     *        polynomial in a sub-interval of the spline, throws
      *        Opm::MathError exception if there is more or less than
      *        one solution.
      */
@@ -901,14 +901,17 @@ public:
     {
         assert(applies(x0) && applies(x1));
 
-        Scalar tmpSol[3];
+        Scalar tmpSol[3], sol;
         int nSol = 0;
         int iFirst = segmentIdx_(x0);
         int iLast = segmentIdx_(x1);
         for (int i = iFirst; i <= iLast; ++i)
         {
-            nSol += intersectSegment_(tmpSol, i, a, b, c, d, x0, x1);
+            int nCur = intersectSegment_(tmpSol, i, a, b, c, d, x0, x1);
+            if (nCur == 1)
+                sol = tmpSol[0];
 
+            nSol += nCur;
             if (nSol > 1) {
                 OPM_THROW(std::runtime_error,
                           "Spline has more than one intersection"); //<<a<<"x^3 + "<<b<"x^2 + "<<c<"x + "<<d);
@@ -919,7 +922,7 @@ public:
             OPM_THROW(std::runtime_error,
                       "Spline has no intersection"); //<<a<"x^3 + " <<b<"x^2 + "<<c<"x + "<<d<<"!");
 
-        return tmpSol[0];
+        return sol;
     }
 
     /*!
@@ -944,53 +947,50 @@ public:
         if (x0 < xMin()) {
             assert(extrapolate);
             Scalar m = evalDerivative_(xMin(), /*segmentIdx=*/0);
-            if (m != 0)
+            if (std::abs(m) < 1e-20)
                 r = (m < 0)?-1:1;
+            x0 = xMin();
         };
 
         int i = segmentIdx_(x0);
-        if (x_(i + 1) >= x1)
+        if (x_(i + 1) >= x1) {
             // interval is fully contained within a single spline
             // segment
-            return monotonic_(i, x0, x1);
+            monotonic_(i, x0, x1, r);
+            return r;
+        }
 
-        int iEnd = segmentIdx_(x1);
+        // the first segment overlaps with the specified interval
+        // partially
+        monotonic_(i, x0, x_(i+1), r);
+        ++ i;
 
         // make sure that the segments which are completly in the
         // interval [x0, x1] all exhibit the same monotonicity.
-        int nextR = monotonic_(i, x0, x_(i + 1));
-        if (nextR != 3) { // spline is constant for the segment
-            if (r != 3 && r != nextR)
-                return 0;
-            r = nextR;
-        }
-        for (++i; i < iEnd - 1; ++i) {
-            nextR = monotonic_(i, x_(i), x_(i + 1));
-            if (nextR == 3) // spline is constant for the segment
-                continue;
-            if (r == 3)
-                r = nextR;
-            if (r != nextR)
+        int iEnd = segmentIdx_(x1);
+        for (; i < iEnd - 1; ++i) {
+            monotonic_(i, x_(i), x_(i + 1), r);
+            if (!r)
                 return 0;
         }
 
-        // check for the last segment
-        if (x_(iEnd) < x1) {
-            int lastR = monotonic_(iEnd, x_(iEnd), x1);
-            if (lastR != 3 && r != 3 && r != lastR)
-                return 0;
-        }
-        else if (x1 > xMax()) {
+        // if the user asked for a part of the spline which is
+        // extrapolated, we need to check the slope at the spline's
+        // endpoint
+        if (x1 > xMax()) {
             assert(extrapolate);
 
             Scalar m = evalDerivative_(xMax(), /*segmentIdx=*/numSamples() - 2);
+            if (m < 0)
+                return (r < 0 || r==3)?-1:0;
+            else if (m > 0)
+                return (r > 0 || r==3)?1:0;
 
-            if (m != 0) {
-                int tmp = (m < 0)?-1:1;
-                if (tmp != r)
-                    return 0;
-            }
-        };
+            return r;
+        }
+
+        // check for the last segment
+        monotonic_(iEnd, x_(iEnd), x1, r);
 
         return r;
     }
@@ -1370,44 +1370,41 @@ protected:
     void makeMonotonicSpline_(Vector &slopes)
     {
         auto n = numSamples();
+
+        // calculate the slopes of the secant lines
         std::vector<Scalar> delta(n);
         for (int k = 0; k < n - 1; ++k) {
             delta[k] = (y_(k + 1) - y_(k))/(x_(k + 1) - x_(k));
         }
-        delta[n - 1] = delta[n - 2];
 
         // calculate the "raw" slopes at the sample points
-        for (int k = 0; k < n - 1; ++k)
-            slopes[k] = (delta[k] + delta[k + 1])/2;
+        for (int k = 1; k < n - 1; ++k)
+            slopes[k] = (delta[k - 1] + delta[k])/2;
+        slopes[0] = delta[0];
         slopes[n - 1] = delta[n - 2];
 
         // post-process the "raw" slopes at the sample points
         for (int k = 0; k < n - 1; ++k) {
-            if (std::abs(delta[k]) < 1e-20) {
+            if (std::abs(delta[k]) < 1e-50) {
                 // make the spline flat if the inputs are equal
                 slopes[k] = 0;
                 slopes[k + 1] = 0;
                 ++ k;
                 continue;
             }
+            else {
+                Scalar alpha = slopes[k] / delta[k];
+                Scalar beta = slopes[k + 1] / delta[k];
 
-            Scalar alpha = slopes[k] / delta[k];
-            Scalar beta = slopes[k + 1] / delta[k];
-
-            if (k > 0) {
-                // check if the inputs are not montonous. if yes, make
-                // x[k] a local extremum.
-                if (delta[k]*delta[k - 1] < 0) {
+                if (alpha < 0 || (k > 0 && slopes[k] / delta[k - 1] < 0)) {
                     slopes[k] = 0;
-                    continue;
                 }
-            }
-
-            // limit (alpha, beta) to a circle of radius 3
-            if (alpha*alpha + beta*beta > 3*3) {
-                Scalar tau = 3.0/std::sqrt(alpha*alpha + beta*beta);
-                slopes[k] = tau*alpha*delta[k];
-                slopes[k + 1] = tau*beta*delta[k];
+                // limit (alpha, beta) to a circle of radius 3
+                else if (alpha*alpha + beta*beta > 3*3) {
+                    Scalar tau = 3.0/std::sqrt(alpha*alpha + beta*beta);
+                    slopes[k] = tau*alpha*delta[k];
+                    slopes[k + 1] = tau*beta*delta[k];
+                }
             }
         }
     }
@@ -1598,24 +1595,32 @@ protected:
     // 1: spline is monotonously increasing in the specified interval
     // 0: spline is not monotonic (or constant) in the specified interval
     // -1: spline is monotonously decreasing in the specified interval
-    int monotonic_(int i, Scalar x0, Scalar x1) const
+    int monotonic_(int i, Scalar x0, Scalar x1, int &r) const
     {
-        Scalar a = a_(i);
-        Scalar b = b_(i);
+        // coefficients of derivative in monomial basis
+        Scalar a = 3*a_(i);
+        Scalar b = 2*b_(i);
         Scalar c = c_(i);
 
         if (std::abs(a) < 1e-20 && std::abs(b) < 1e-20 && std::abs(c) < 1e-20)
-            return 3; // constant in interval
+            return 3; // constant in interval, r stays unchanged!
 
-        Scalar disc = 4*b*b - 12*a*c;
+        Scalar disc = b*b - 4*a*c;
         if (disc < 0) {
             // discriminant of derivative is smaller than 0, i.e. the
             // segment's derivative does not exhibit any extrema.
-            return (x0*(x0*a + b) + c > 0) ? 1 : -1;
+            if (x0*(x0*a + b) + c > 0) {
+                r = (r==3 || r == 1)?1:0;
+                return 1;
+            }
+            else {
+                r = (r==3 || r == -1)?-1:0;
+                return -1;
+            }
         }
         disc = std::sqrt(disc);
-        Scalar xE1 = (-2*b + disc)/(6*a);
-        Scalar xE2 = (-2*b - disc)/(6*a);
+        Scalar xE1 = (-b + disc)/(2*a);
+        Scalar xE2 = (-b - disc)/(2*a);
 
         if (disc == 0) {
             // saddle point -> no extrema
@@ -1624,18 +1629,33 @@ protected:
                 // to determine whether we're monotonically increasing
                 // or decreasing
                 x0 = x1;
-            return (x0*(x0*a + b) + c > 0) ? 1 : -1;
+            if (x0*(x0*a + b) + c > 0) {
+                r = (r==3 || r == 1)?1:0;
+                return 1;
+            }
+            else {
+                r = (r==3 || r == -1)?-1:0;
+                return -1;
+            }
         };
         if ((x0 < xE1 && xE1 < x1) ||
             (x0 < xE2 && xE2 < x1))
         {
             // there is an extremum in the range (x0, x1)
+            r = 0;
             return 0;
         }
         // no extremum in range (x0, x1)
         x0 = (x0 + x1)/2; // pick point in the middle of the interval
                           // to avoid extrema on the boundaries
-        return (x0*(x0*a + b) + c > 0) ? 1 : -1;
+        if (x0*(x0*a + b) + c > 0) {
+            r = (r==3 || r == 1)?1:0;
+            return 1;
+        }
+        else {
+            r = (r==3 || r == -1)?-1:0;
+            return -1;
+        }
     }
 
     /*!
@@ -1655,7 +1675,7 @@ protected:
         x0 = std::max(x_(segIdx), x0);
         x1 = std::min(x_(segIdx+1), x1);
 
-        // filter the intersections outside of the specified intervall
+        // filter the intersections outside of the specified interval
         int k = 0;
         for (int j = 0; j < n; ++j) {
             if (x0 <= sol[j] && sol[j] <= x1) {
@@ -1736,7 +1756,6 @@ protected:
     Vector yPos_;
     Vector slopeVec_;
 };
-
 }
 
 #endif
