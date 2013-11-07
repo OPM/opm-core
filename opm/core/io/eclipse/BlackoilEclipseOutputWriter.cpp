@@ -516,8 +516,8 @@ protected:
         // save these for when we update the value in a timestep
         , index_ (whichWell * BlackoilPhases::MaxNumPhases + phase)
 
-        // injectors can be seen as negative producers
-        , sign_ (type == INJECTOR ? -1. : +1.) { }
+        // producers can be seen as negative injectors
+        , sign_ (type == INJECTOR ? +1. : -1.) { }
 
 public:
     /// Allows us to pass this type to ecl_sum_tstep_iset
@@ -572,7 +572,6 @@ protected:
     double rate (const WellState& wellState) {
         // convert m^3/s of injected fluid to m^3/d of produced fluid
         const double convFactor = Opm::unit::convert::to (1., Opm::unit::day);
-        // TODO: Correct to flip sign to get positive values?
         const double value = sign_ * wellState.wellRates () [index_] * convFactor;
         return value;
     }
