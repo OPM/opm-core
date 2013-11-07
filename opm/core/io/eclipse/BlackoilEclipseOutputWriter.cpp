@@ -288,7 +288,7 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
 
             EclipseKeyword<double> coord_kw   (COORD_KW,  parser);
             EclipseKeyword<double> zcorn_kw   (ZCORN_KW,  parser);
-            EclipseKeyword<double> actnum_kw  (ACTNUM_KW, parser);
+            EclipseKeyword<int>    actnum_kw  (ACTNUM_KW, parser);
             EclipseKeyword<double> mapaxes_kw (MAPAXES_KW);
 
             if (g.mapaxes) {
@@ -350,7 +350,7 @@ private:
     EclipseGrid (const int dims[],
                  const EclipseKeyword<double>& zcorn,
                  const EclipseKeyword<double>& coord,
-                 const EclipseKeyword<double>& actnum,
+                 const EclipseKeyword<int>&    actnum,
                  const EclipseKeyword<double>& mapaxes)
         : EclipseHandle <ecl_grid_type> (
               ecl_grid_alloc_GRDECL_kw(dims[0],
