@@ -685,16 +685,16 @@ void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
     // (e.g. "WOPR") in the input files, and only for those wells that are
     // mentioned in those keywords
     const int numWells = eclipseParser_.getWELSPECS().welspecs.size();
-    for (int whichWell = 0; whichWell != numWells; ++whichWell) {
-        for (int phaseCounter = 0;
-             phaseCounter != BlackoilPhases::MaxNumPhases;
-             ++phaseCounter) {
-            const BlackoilPhases::PhaseIndex phase =
-                    static_cast <BlackoilPhases::PhaseIndex> (phaseCounter);
-            for (size_t typeIndex = 0;
-                 typeIndex < sizeof (WELL_TYPES) / sizeof (WELL_TYPES[0]);
-                 ++typeIndex) {
-                const WellType type = WELL_TYPES[typeIndex];
+    for (int phaseCounter = 0;
+          phaseCounter != BlackoilPhases::MaxNumPhases;
+          ++phaseCounter) {
+        const BlackoilPhases::PhaseIndex phase =
+                static_cast <BlackoilPhases::PhaseIndex> (phaseCounter);
+        for (size_t typeIndex = 0;
+             typeIndex < sizeof (WELL_TYPES) / sizeof (WELL_TYPES[0]);
+             ++typeIndex) {
+            const WellType type = WELL_TYPES[typeIndex];
+            for (int whichWell = 0; whichWell != numWells; ++whichWell) {
                 // W{O,G,W}{I,P}R
                 sum_->add (std::unique_ptr <EclipseWellReport> (
                               new EclipseWellRate (*sum_,
