@@ -637,7 +637,7 @@ void BlackoilEclipseOutputWriter::writeInit(const SimulatorTimer &timer) {
              ++phaseCounter) {
             const BlackoilPhases::PhaseIndex phase =
                     static_cast <BlackoilPhases::PhaseIndex> (phaseCounter);
-            for (int typeIndex = 0;
+            for (size_t typeIndex = 0;
                  typeIndex < sizeof (WELL_TYPES) / sizeof (WELL_TYPES[0]);
                  ++typeIndex) {
                 const WellType type = WELL_TYPES[typeIndex];
