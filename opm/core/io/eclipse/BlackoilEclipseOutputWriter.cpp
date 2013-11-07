@@ -39,6 +39,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem.hpp> // path
 
+#include <ctime>      // mktime
 #include <memory>     // unique_ptr
 #include <utility>    // move
 
@@ -179,7 +180,7 @@ template <> ecl_type_enum EclipseKeyword<double>::type () { return ECL_DOUBLE_TY
  */
 static time_t current (const SimulatorTimer& timer) {
     tm t = boost::posix_time::to_tm (timer.currentDateTime());
-    return mktime(&t);
+    return std::mktime(&t);
 }
 
 /**
