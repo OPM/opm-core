@@ -105,43 +105,28 @@ template <typename T>
 struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
     EclipseKeyword (const std::string& name,    /// identification
                     const std::vector<T>& data, /// array holding values
-                    const int offset,           /// distance to first
-                    const int stride)           /// distance between each
+                    const int offset = 0,      /// distance to first
+                    const int stride = 1)      /// distance between each
 
         // allocate handle and put in smart pointer base class
         : EclipseHandle <ecl_kw_type> (
               ecl_kw_alloc (name.c_str(), data.size (), type ()),
               ecl_kw_free) {
-
-        // number of elements we can possibly take from the vector
-        const int num = data.size ();
-
-        // range cannot start outside of data set
-        assert(offset >= 0 && offset < num);
-
-        // don't jump out of the set when trying to
-        assert(stride > 0 && stride < num - offset);
-
-        // fill it with values
-        for (int i = 0; i < num; ++i) {
-            // access from data store
-            const float value = data[i * stride + offset];
-
-            // write into memory represented by handle
-            ecl_kw_iset_float(*this, i, value);
-        }
+        copyData (data, offset, stride);
     }
-
-    /// Convenience constructor that takes the entire array
-    EclipseKeyword (const std::string& name,
-                    const std::vector<T>& data)
-        : EclipseKeyword (name, data, 0, 1) { }
 
     /// Convenience constructor that gets the set of data
     /// from the samely named item in the parser
     EclipseKeyword (const std::string& name,
                     const EclipseGridParser& parser)
-        : EclipseKeyword (name, parser.getValue<T> (name)) { }
+        // allocate handle and put in smart pointer base class
+        : EclipseHandle <ecl_kw_type> (
+              ecl_kw_alloc (name.c_str(),
+                            parser.getValue <T> (name).size (),
+                            type ()),
+              ecl_kw_free) {
+        copyData (parser.getValue <T> (name), 0, 1);
+    }
 
     /// Constructor for optional fields
     EclipseKeyword (const std::string& name)
@@ -163,6 +148,29 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
 private:
     /// Map the C++ data type (given by T) to an Eclipse type enum
     static ecl_type_enum type ();
+
+    /// Helper function that is the meat of the constructor
+    void copyData (const std::vector <T>& data,
+                    const int offset,
+                    const int stride) {
+        // number of elements we can possibly take from the vector
+        const int num = data.size ();
+
+        // range cannot start outside of data set
+        assert(offset >= 0 && offset < num);
+
+        // don't jump out of the set when trying to
+        assert(stride > 0 && stride < num - offset);
+
+        // fill it with values
+        for (int i = 0; i < num; ++i) {
+            // access from data store
+            const float value = data[i * stride + offset];
+
+            // write into memory represented by handle
+            ecl_kw_iset_float(*this, i, value);
+        }
+    }
 };
 
 // specializations for known keyword types
