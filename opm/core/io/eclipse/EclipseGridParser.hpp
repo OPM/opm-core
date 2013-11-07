@@ -141,6 +141,9 @@ namespace Opm
     /// Returns a reference to a vector containing the values
     /// corresponding to the given keyword of a type only known
     /// indirectly (through a template)
+    ///
+    /// \tparam T Type of the keyword's value. Currently only int
+    ///           and double are supported.
     template <typename T>
     const std::vector<T>& getValue(const std::string& keyword) const;
 
