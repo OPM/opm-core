@@ -32,6 +32,20 @@ class SimulatorTimer;
 class WellState;
 
 /*!
+ * Custom deleter that does nothing. This is usable when an interface
+ * needs a shared_ptr, but you want to pass an object that has local
+ * storage (and you know that the shared_ptr client doesn't need it
+ * outside of the scope).
+ *
+ * \example
+ * \code{.cpp}
+ *  Foo obj;
+ *  auto ptr = std::shared_ptr <Foo> (&obj, no_delete);
+ * \endcode
+ */
+inline void no_delete (void const *) { }
+
+/*!
  * Interface for writing non-compositional (blackoil, two-phase) simulation
  * state to files.
  *
@@ -85,6 +99,8 @@ public:
      *               that is returned.
      *
      * @return       Pointer to a multiplexer to all applicable output formats.
+     *
+     * @see Opm::no_delete
      */
     static std::unique_ptr <OutputWriter>
     create (const parameter::ParameterGroup& params,
