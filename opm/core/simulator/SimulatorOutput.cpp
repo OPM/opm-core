@@ -24,6 +24,8 @@
 #include <opm/core/io/OutputWriter.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 
+#include <numeric> // partial_sum
+
 using namespace Opm;
 
 SimulatorOutputBase::SimulatorOutputBase (
