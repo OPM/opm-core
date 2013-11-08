@@ -17,24 +17,15 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_SHARED_OBJECT_HPP
-#define OPM_SHARED_OBJECT_HPP
+#ifndef OPM_SHARE_OBJ_HPP
+#define OPM_SHARE_OBJ_HPP
 
 #include <memory>  // shared_ptr
 
 namespace Opm {
 
-/**
- * @see Opm::share_obj
- */
-template <typename T>
-class SharedObject : public std::shared_ptr <T> {
-public:
-    SharedObject (T& obj) : std::shared_ptr <T> (&obj, no_delete) { }
-private:
-    /// Custom deleter that does nothing
-    static void no_delete (void const *) { }
-};
+/// Custom deleter that does nothing
+inline void no_delete (void const *) { }
 
 /*!
  * Share pointer of a local object.
@@ -50,9 +41,9 @@ private:
  * \endcode
  */
 template <typename T> std::shared_ptr <T> share_obj (T& t) {
-    return SharedObject <T> (t);
+    return std::shared_ptr <T> (&t, no_delete);
 }
 
 } // namespace Opm
 
-#endif /* OPM_SHARED_OBJECT_HPP */
+#endif /* OPM_SHARE_OBJ_HPP */
