@@ -669,9 +669,7 @@ static double pasToBar (double pressureInPascal) {
 
 /// Names of the saturation property for each phase. The order of these
 /// names are critical; they must be the same as the BlackoilPhases enum
-static const char* SAT_NAMES[] = {
-    "SOIL", "SWAT", "SGAS"
-};
+static const char* SAT_NAMES[] = { "SWAT", "SOIL", "SGAS" };
 
 } // namespace Opm::internal
 
