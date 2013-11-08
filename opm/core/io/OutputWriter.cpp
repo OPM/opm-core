@@ -22,8 +22,7 @@ struct MultiWriter : public OutputWriter {
     typedef unique_ptr <writers_t> ptr_t;
 
     /// Adopt a list of writers
-    MultiWriter (ptr_t writers)
-        : writers_ (std::move (writers)) { }
+    MultiWriter (ptr_t writers) : writers_ (std::move (writers)) { }
 
     /// Forward the call to all writers
     virtual void writeInit(const SimulatorTimer &timer) {
@@ -70,8 +69,7 @@ OutputWriter::create (const ParameterGroup& params,
                       const EclipseGridParser& parser) {
     // allocate a list which will be filled with writers. this list
     // is initially empty (no output).
-    MultiWriter::ptr_t list (
-                new MultiWriter::writers_t ());
+    MultiWriter::ptr_t list (new MultiWriter::writers_t ());
 
     // loop through the map and see if we can find the key that is
     // specified there
