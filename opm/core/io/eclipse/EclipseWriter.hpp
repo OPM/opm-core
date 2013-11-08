@@ -59,7 +59,7 @@ public:
      * binary files using ERT.
      */
     EclipseWriter(const parameter::ParameterGroup& params,
-                  const EclipseGridParser& eclipseParser);
+                  std::shared_ptr <EclipseGridParser> parser);
 
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
@@ -78,7 +78,7 @@ public:
                                const WellState& wellState);
 
 private:
-    const EclipseGridParser& eclipseParser_;
+    std::shared_ptr <EclipseGridParser> parser_;
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck

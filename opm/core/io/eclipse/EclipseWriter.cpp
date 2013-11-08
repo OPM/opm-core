@@ -677,30 +677,30 @@ using namespace Opm::internal;
 
 void EclipseWriter::writeInit(const SimulatorTimer &timer) {
     /* Grid files */
-    EclipseGrid ecl_grid = EclipseGrid::make (eclipseParser_);
+    EclipseGrid ecl_grid = EclipseGrid::make (*parser_);
     ecl_grid.write (outputDir_, baseName_, timer);
 
     EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, timer);
     fortio.writeHeader (ecl_grid,
                         timer,
-                        eclipseParser_,
+                        *parser_,
                         uses_);
 
-    fortio.writeKeyword<double> ("PERMX", eclipseParser_);
-    fortio.writeKeyword<double> ("PERMY", eclipseParser_);
-    fortio.writeKeyword<double> ("PERMZ", eclipseParser_);
+    fortio.writeKeyword<double> ("PERMX", *parser_);
+    fortio.writeKeyword<double> ("PERMY", *parser_);
+    fortio.writeKeyword<double> ("PERMZ", *parser_);
 
     /* Summary files */
     sum_ = std::move (std::unique_ptr <EclipseSummary> (
                           new EclipseSummary (outputDir_,
                                                baseName_,
                                                timer,
-                                               eclipseParser_)));
+                                               *parser_)));
 
     // TODO: Only create report variables that are requested with keywords
     // (e.g. "WOPR") in the input files, and only for those wells that are
     // mentioned in those keywords
-    const int numWells = eclipseParser_.getWELSPECS().welspecs.size();
+    const int numWells = parser_->getWELSPECS().welspecs.size();
     for (int phaseCounter = 0;
           phaseCounter != BlackoilPhases::MaxNumPhases;
           ++phaseCounter) {
@@ -718,7 +718,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer) {
                 // W{O,G,W}{I,P}R
                 sum_->add (std::unique_ptr <EclipseWellReport> (
                               new EclipseWellRate (*sum_,
-                                                    eclipseParser_,
+                                                    *parser_,
                                                     whichWell,
                                                     uses_,
                                                     phase,
@@ -726,7 +726,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer) {
                 // W{O,G,W}{I,P}T
                 sum_->add (std::unique_ptr <EclipseWellReport> (
                               new EclipseWellTotal (*sum_,
-                                                     eclipseParser_,
+                                                     *parser_,
                                                      whichWell,
                                                      uses_,
                                                      phase,
@@ -755,7 +755,7 @@ void EclipseWriter::writeTimeStep(
                         timer);
     rst.writeHeader (timer,
                      uses_,
-                     eclipseParser_,
+                     *parser_,
                      pas.size ());
     EclipseSolution sol (rst);
 
@@ -800,9 +800,9 @@ void EclipseWriter::writeTimeStep(
 
 EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
-        const EclipseGridParser& parser)
-    : eclipseParser_ (parser)
-    , uses_ (phaseUsageFromDeck (parser)) {
+        std::shared_ptr <EclipseGridParser> parser)
+    : parser_ (parser)
+    , uses_ (phaseUsageFromDeck (*parser)) {
 
     // get the base name from the name of the deck
     using boost::filesystem::path;

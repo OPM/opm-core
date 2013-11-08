@@ -45,7 +45,7 @@ private:
 
 /// Psuedo-constructor, can appear in template
 template <typename Format> unique_ptr <OutputWriter>
-create (const ParameterGroup& params, const EclipseGridParser& parser) {
+create (const ParameterGroup& params, std::shared_ptr <EclipseGridParser> parser) {
     return unique_ptr <OutputWriter> (new Format (params, parser));
 }
 
@@ -55,9 +55,9 @@ create (const ParameterGroup& params, const EclipseGridParser& parser) {
 ///
 /// If you want to add more possible writer formats, just add them
 /// to the list below!
-typedef map <const char*,
-              unique_ptr <OutputWriter> (*)(const ParameterGroup&,
-                                            const EclipseGridParser&)> map_t;
+typedef map <const char*, unique_ptr <OutputWriter> (*)(
+        const ParameterGroup&,
+        std::shared_ptr <EclipseGridParser>)> map_t;
 map_t FORMATS = {
     { "output_ecl", &create <EclipseWriter> },
 };
@@ -66,7 +66,7 @@ map_t FORMATS = {
 
 unique_ptr <OutputWriter>
 OutputWriter::create (const ParameterGroup& params,
-                      const EclipseGridParser& parser) {
+                      std::shared_ptr<EclipseGridParser> parser) {
     // allocate a list which will be filled with writers. this list
     // is initially empty (no output).
     MultiWriter::ptr_t list (new MultiWriter::writers_t ());

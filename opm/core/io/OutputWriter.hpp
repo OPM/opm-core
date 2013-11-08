@@ -41,7 +41,8 @@ class WellState;
  * \example
  * \code{.cpp}
  *  ParameterGroup params (argc, argv, false);
- *  EclipseGridParser parser (params.get <string> ("deck_filename");
+ *  auto parser = std::make_shared <EclipseGridParser> (
+ *                      params.get <string> ("deck_filename"));
  *
  *  std::unique_ptr <OutputWriter> writer =
  *          OutputWriter::create (params, parser);
@@ -87,7 +88,7 @@ public:
      */
     static std::unique_ptr <OutputWriter>
     create (const parameter::ParameterGroup& params,
-            const EclipseGridParser& parser);
+            std::shared_ptr <EclipseGridParser> parser);
 };
 
 } // namespace Opm
