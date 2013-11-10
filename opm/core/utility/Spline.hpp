@@ -29,6 +29,7 @@
 
 #include <ostream>
 #include <vector>
+#include <limits>
 #include <tuple>
 
 namespace Opm
@@ -901,7 +902,7 @@ public:
     {
         assert(applies(x0) && applies(x1));
 
-        Scalar tmpSol[3], sol;
+        Scalar tmpSol[3], sol = std::numeric_limits<Scalar>::quiet_NaN();
         int nSol = 0;
         int iFirst = segmentIdx_(x0);
         int iLast = segmentIdx_(x1);
