@@ -50,6 +50,7 @@ void testCommon(const Spline &sp,
                 const double *y)
 {
     static double eps = 1e-10;
+    static double epsFD = 1e-7;
 
     int n = sp.numSamples();
     for (int i = 0; i < n; ++i) {
@@ -73,7 +74,49 @@ void testCommon(const Spline &sp,
 
         if (std::abs(d1 - d0) > 1000*eps || std::abs(d2 - d0) > 1000*eps)
             OPM_THROW(std::runtime_error,
-                       "Spline seems to exhibit a discontinuous derivative at sampling point " << i << "!");
+                      "Spline seems to exhibit a discontinuous derivative at sampling point " << i << "!");
+    }
+
+    // make sure the derivatives are consistent with the curve
+    int np = 3*n;
+    for (int i = 0; i < np; ++i) {
+        double x = sp.xMin() + (sp.xMax() - sp.xMin())*i/np;
+
+        // first derivative
+        double y1 = sp.eval(x+epsFD);
+        double y0 = sp.eval(x);
+
+        double mFD = (y1 - y0)/epsFD;
+        double m = sp.evalDerivative(x);
+
+        if (std::abs( mFD - m ) > 1000*epsFD)
+            OPM_THROW(std::runtime_error,
+                      "Derivative of spline seems to be inconsistent with cuve"
+                      " (" << mFD << " - " << m << " = " << mFD - m << ")!");
+
+        // second derivative
+        y1 = sp.evalDerivative(x+epsFD);
+        y0 = sp.evalDerivative(x);
+
+        mFD = (y1 - y0)/epsFD;
+        m = sp.evalSecondDerivative(x);
+
+        if (std::abs( mFD - m ) > 1000*epsFD)
+            OPM_THROW(std::runtime_error,
+                      "Second derivative of spline seems to be inconsistent with cuve"
+                      " (" << mFD << " - " << m << " = " << mFD - m << ")!");
+
+        // Third derivative
+        y1 = sp.evalSecondDerivative(x+epsFD);
+        y0 = sp.evalSecondDerivative(x);
+
+        mFD = (y1 - y0)/epsFD;
+        m = sp.evalThirdDerivative(x);
+
+        if (std::abs( mFD - m ) > 1000*epsFD)
+            OPM_THROW(std::runtime_error,
+                      "Third derivative of spline seems to be inconsistent with cuve"
+                      " (" << mFD << " - " << m << " = " << mFD - m << ")!");
     }
 }
 
@@ -130,6 +173,54 @@ void testNatural(const Spline &sp,
         OPM_THROW(std::runtime_error,
                    "Invalid second derivative at end of interval: is "
                    << (d3 - d2)/eps << " ought to be 0");
+}
+
+template <class Spline>
+void testMonotonic(const Spline &sp,
+                   const double *x,
+                   const double *y)
+{
+    // test the common properties of splines
+    testCommon(sp, x, y);
+
+    int n = sp.numSamples();
+
+    for (int i = 0; i < n - 1; ++ i) {
+        // make sure that the spline is monotonic for each interval
+        // between sampling points
+        if (!sp.monotonic(x[i], x[i + 1]))
+            OPM_THROW(std::runtime_error,
+                      "Spline says it is not monotonic in interval "
+                      << i << " where it should be");
+
+        // test the intersection methods
+        double d = (y[i] + y[i+1])/2;
+        double interX = sp.intersectInterval(x[i], x[i+1],
+                                             /*a=*/0, /*b=*/0, /*c=*/0, d);
+        double interY = sp.eval(interX);
+        if (std::abs(interY - d) > 1e-5)
+            OPM_THROW(std::runtime_error,
+                      "Spline::intersectInterval() seems to be broken: "
+                      << sp.eval(interX) << " - " << d << " = " << sp.eval(interX) - d << "!");
+    }
+
+    // make sure the spline says to be monotonic on the (extrapolated)
+    // left and right sides
+    if (!sp.monotonic(x[0] - 1.0, (x[0] + x[1])/2, /*extrapolate=*/true))
+        OPM_THROW(std::runtime_error,
+                  "Spline says it is not monotonic on left side where it should be");
+    if (!sp.monotonic((x[n - 2]+ x[n - 1])/2, x[n-1] + 1.0, /*extrapolate=*/true))
+        OPM_THROW(std::runtime_error,
+                  "Spline says it is not monotonic on right side where it should be");
+
+    for (int i = 0; i < n - 2; ++ i) {
+        // make sure that the spline says that it is non-monotonic for
+        // if extrema are within the queried interval
+        if (sp.monotonic((x[i] + x[i + 1])/2, (x[i + 1] + x[i + 2])/2))
+            OPM_THROW(std::runtime_error,
+                      "Spline says it is monotonic in interval "
+                      << i << " where it should not be");
+    }
 }
 
 void testAll()
@@ -218,6 +309,8 @@ void plot()
     Opm::Spline<double> spPeriodic(xs, ys, /*type=*/Opm::Spline<double>::Periodic);
     Opm::Spline<double> spMonotonic(xs, ys, /*type=*/Opm::Spline<double>::Monotonic);
 
+    testMonotonic(spMonotonic, x_, y_);
+
     spFull.printCSV(x_[0] - 1.00001,
                     x_[n] + 1.00001,
                     1000);
@@ -236,8 +329,6 @@ void plot()
                          x_[n] + 1.00001,
                          1000);
     std::cout << "\n";
-
-    std::cerr << "Spline is monotonic: " << spFull.monotonic(x_[0], x_[n]) << "\n";
 }
 
 int main(int argc, char** argv)
