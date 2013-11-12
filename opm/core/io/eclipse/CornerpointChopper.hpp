@@ -358,6 +358,7 @@ namespace Opm
             for (int i = 0; i < num_extra_entries; ++i) {
                 os << "  " << field[num_full_rows*nel_per_row+i];
             }
+            if (num_extra_entries > 0) os << "\n";
             os << "/\n\n";
         }
 
