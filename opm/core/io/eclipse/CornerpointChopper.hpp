@@ -338,7 +338,8 @@ namespace Opm
         template <typename T>
         void outputField(std::ostream& os,
                          const std::vector<T>& field,
-                         const std::string& keyword)
+                         const std::string& keyword,
+                         const typename std::vector<T>::size_type nl = 20)
         {
             if (field.empty()) return;
 
@@ -346,7 +347,7 @@ namespace Opm
             int sz = field.size();
             //int num_new_zcorn = new_ZCORN_.size();
             //assert(sz%20 == 0);
-            const int nel_per_row = 20;
+            int nel_per_row = int(nl);
             int num_full_rows=sz/nel_per_row;
             int num_extra_entries=sz%nel_per_row;
             for (int i = 0; i < num_full_rows; ++i) {
