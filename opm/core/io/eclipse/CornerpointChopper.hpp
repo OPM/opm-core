@@ -341,31 +341,6 @@ namespace Opm
             os << "/\n\n";
         }
 
-//            os << keyword << '\n';
-//            int sz = field.size();
-//            T last = std::numeric_limits<T>::max();
-//            int repeats = 0;
-//            for (int i = 0; i < sz; ++i) {
-//                T val = field[i];
-//                if (val == last) {
-//                    ++repeats;
-//                } else {
-//                    if (repeats == 1) {
-//                        os << last << '\n';
-//                    } else if (repeats > 1) {
-//                        os << repeats << '*' << last << '\n';
-//                    }
-//                    last = val;
-//                    repeats = 1;
-//                }
-//            }
-//            if (repeats == 1) {
-//                os << last << '\n';
-//            } else if (repeats > 1) {
-//                os << repeats << '*' << last << '\n';
-//            }
-//            os << "/\n\n";
-//        }
 
 
         template <typename T>
