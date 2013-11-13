@@ -327,22 +327,17 @@ namespace Opm
             if (field.empty()) return;
 
             os << keyword << '\n';
-            int sz = field.size();
-            //int num_new_zcorn = new_ZCORN_.size();
-            //assert(sz%20 == 0);
-            int nel_per_row = int(nl);
-            int num_full_rows=sz/nel_per_row;
-            int num_extra_entries=sz%nel_per_row;
-            for (int i = 0; i < num_full_rows; ++i) {
-                for (int j = 0; j < nel_per_row; ++j) {
-                    os << "  " << field[nel_per_row*i + j];
-                }
+
+            typedef typename std::vector<T>::size_type sz_t;
+
+            const sz_t n = field.size();
+            for (sz_t i = 0; i < n; ++i) {
+                os << field[i]
+                   << (((i + 1) % nl == 0) ? '\n' : ' ');
+            }
+            if (n % nl != 0) {
                 os << '\n';
             }
-            for (int i = 0; i < num_extra_entries; ++i) {
-                os << "  " << field[num_full_rows*nel_per_row+i];
-            }
-            if (num_extra_entries > 0) os << "\n";
             os << "/\n\n";
         }
 
