@@ -285,26 +285,9 @@ namespace Opm
             }
             out << "SPECGRID\n" << new_dims_[0] << ' ' << new_dims_[1] << ' ' << new_dims_[2]
                 << " 1 F\n/\n\n";
-            out << "COORD\n";
-            int num_new_coord = new_COORD_.size();
-            for (int i = 0; i < num_new_coord/6; ++i) {
-                for (int j = 0; j < 6; ++j) {
-                    out << "  " << new_COORD_[6*i + j];
-                }
-                out << '\n';
-            }
-            out << "/\n\n";
-            out << "ZCORN\n";
-            int num_new_zcorn = new_ZCORN_.size();
-            assert(num_new_zcorn%8 == 0);
-            for (int i = 0; i < num_new_zcorn/8; ++i) {
-                for (int j = 0; j < 8; ++j) {
-                    out << "  " << new_ZCORN_[8*i + j];
-                }
-                out << '\n';
-            }
-            out << "/\n\n";
 
+            outputField(out, new_COORD_, "COORD", /* nl = */ 6);
+            outputField(out, new_ZCORN_, "ZCORN", /* nl = */ 8);
             outputField(out, new_ACTNUM_, "ACTNUM");
             outputField(out, new_PORO_, "PORO");
             if (hasNTG()) {outputField(out, new_NTG_, "NTG");}
