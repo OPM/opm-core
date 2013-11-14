@@ -373,15 +373,18 @@ namespace Opm
         if (phase_usage.num_phases == 3) {
             // Relative permeability model based on segregation of water
             // and gas, with oil present in both water and gas zones.
-            const double swco = smin_[phase_usage.phase_pos[Aqua]];
+            double swco = smin_[phase_usage.phase_pos[Aqua]];
             const double sw = std::max(s[Aqua], swco);
             const double sg = s[Vapour];
+            const double eps = 1e-5;
+            swco = std::min(swco,sw-eps);
+
             // xw and xg are the fractions occupied by water and gas zones.
-            const double eps = 1e-6;
-            const double xw = (sw - swco) / std::max(sg + sw - swco, eps);
+            const double ssg = sw - swco + sg;
+            const double xw = (sw - swco) / ssg;
             const double xg = 1 - xw;
             const double ssw = sg + sw;
-            const double ssg = sw - swco + sg;
+
             const double krw = krw_(ssw);
             const double krg = krg_(ssg);
             const double krow = krow_(ssw);
@@ -421,13 +424,17 @@ namespace Opm
         if (np == 3) {
             // Relative permeability model based on segregation of water
             // and gas, with oil present in both water and gas zones.
-            const double swco = smin_[phase_usage.phase_pos[Aqua]];
+
+            double swco = smin_[phase_usage.phase_pos[Aqua]];
             const double sw = std::max(s[Aqua], swco);
             const double sg = s[Vapour];
+            const double eps = 1e-5;
+            swco = std::min(swco,sw-eps);
+
             // xw and xg are the fractions occupied by water and gas zones.
-            const double eps = 1e-6;
             const double ssw = sg + sw;
-            const double ssg = std::max(sg + sw - swco, eps);
+            const double ssg = sg + sw - swco;
+
             const double krw = krw_(ssw);
             const double krg = krg_(ssg);
             const double krow = krow_(ssw);
