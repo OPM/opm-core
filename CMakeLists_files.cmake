@@ -162,6 +162,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_shadow.cpp
 	tests/test_units.cpp 
         tests/test_blackoilstate.cpp    
+        tests/test_parser.cpp    
 	)
 
 # originally generated with the command:
