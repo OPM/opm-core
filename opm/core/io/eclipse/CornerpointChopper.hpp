@@ -285,26 +285,9 @@ namespace Opm
             }
             out << "SPECGRID\n" << new_dims_[0] << ' ' << new_dims_[1] << ' ' << new_dims_[2]
                 << " 1 F\n/\n\n";
-            out << "COORD\n";
-            int num_new_coord = new_COORD_.size();
-            for (int i = 0; i < num_new_coord/6; ++i) {
-                for (int j = 0; j < 6; ++j) {
-                    out << "  " << new_COORD_[6*i + j];
-                }
-                out << '\n';
-            }
-            out << "/\n\n";
-            out << "ZCORN\n";
-            int num_new_zcorn = new_ZCORN_.size();
-            assert(num_new_zcorn%8 == 0);
-            for (int i = 0; i < num_new_zcorn/8; ++i) {
-                for (int j = 0; j < 8; ++j) {
-                    out << "  " << new_ZCORN_[8*i + j];
-                }
-                out << '\n';
-            }
-            out << "/\n\n";
 
+            outputField(out, new_COORD_, "COORD", /* nl = */ 6);
+            outputField(out, new_ZCORN_, "ZCORN", /* nl = */ 8);
             outputField(out, new_ACTNUM_, "ACTNUM");
             outputField(out, new_PORO_, "PORO");
             if (hasNTG()) {outputField(out, new_NTG_, "NTG");}
@@ -338,55 +321,26 @@ namespace Opm
         template <typename T>
         void outputField(std::ostream& os,
                          const std::vector<T>& field,
-                         const std::string& keyword)
+                         const std::string& keyword,
+                         const typename std::vector<T>::size_type nl = 20)
         {
             if (field.empty()) return;
 
             os << keyword << '\n';
-            int sz = field.size();
-            //int num_new_zcorn = new_ZCORN_.size();
-            //assert(sz%20 == 0);
-            const int nel_per_row = 20;
-            int num_full_rows=sz/nel_per_row;
-            int num_extra_entries=sz%nel_per_row;
-            for (int i = 0; i < num_full_rows; ++i) {
-                for (int j = 0; j < nel_per_row; ++j) {
-                    os << "  " << field[nel_per_row*i + j];
-                }
+
+            typedef typename std::vector<T>::size_type sz_t;
+
+            const sz_t n = field.size();
+            for (sz_t i = 0; i < n; ++i) {
+                os << field[i]
+                   << (((i + 1) % nl == 0) ? '\n' : ' ');
+            }
+            if (n % nl != 0) {
                 os << '\n';
             }
-            for (int i = 0; i < num_extra_entries; ++i) {
-                os << "  " << field[num_full_rows*nel_per_row+i];
-            }
-            if (num_extra_entries > 0) os << "\n";
             os << "/\n\n";
         }
 
-//            os << keyword << '\n';
-//            int sz = field.size();
-//            T last = std::numeric_limits<T>::max();
-//            int repeats = 0;
-//            for (int i = 0; i < sz; ++i) {
-//                T val = field[i];
-//                if (val == last) {
-//                    ++repeats;
-//                } else {
-//                    if (repeats == 1) {
-//                        os << last << '\n';
-//                    } else if (repeats > 1) {
-//                        os << repeats << '*' << last << '\n';
-//                    }
-//                    last = val;
-//                    repeats = 1;
-//                }
-//            }
-//            if (repeats == 1) {
-//                os << last << '\n';
-//            } else if (repeats > 1) {
-//                os << repeats << '*' << last << '\n';
-//            }
-//            os << "/\n\n";
-//        }
 
 
         template <typename T>
