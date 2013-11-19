@@ -60,6 +60,9 @@ SimulatorOutputBase::SimulatorOutputBase (
     writer_->writeInit (*timer);
 }
 
+// default destructor is OK, just need to be defined
+SimulatorOutputBase::~SimulatorOutputBase() { }
+
 SimulatorOutputBase::operator std::function <void ()> () {
     // return (a pointer to) the writeOutput() function as an object
     // which can be passed to the event available from the simulator

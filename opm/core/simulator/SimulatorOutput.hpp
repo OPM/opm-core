@@ -56,6 +56,12 @@ protected:
                          std::shared_ptr <WellState> wellState);
 
     /**
+     * We need a destructor in the compilation unit to avoid the
+     * OutputWriter being a complete type here.
+     */
+    virtual ~SimulatorOutputBase ();
+
+    /**
      * Conversion operator which allows the object to be directly passed
      * into an Event and used as a handler.
      *
