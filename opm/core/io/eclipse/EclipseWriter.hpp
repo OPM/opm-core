@@ -62,7 +62,7 @@ public:
      */
     EclipseWriter(const parameter::ParameterGroup& params,
                   std::shared_ptr <EclipseGridParser> parser,
-                  std::shared_ptr <UnstructuredGrid> grid);
+                  std::shared_ptr <const UnstructuredGrid> grid);
 
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
@@ -82,7 +82,7 @@ public:
 
 private:
     std::shared_ptr <EclipseGridParser> parser_;
-    std::shared_ptr <UnstructuredGrid> grid_;
+    std::shared_ptr <const UnstructuredGrid> grid_;
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck
