@@ -271,12 +271,48 @@ private:
     }
 };
 
+namespace {
+// enclosure of the current grid in a Cartesian space
+int cart_size (const UnstructuredGrid& grid) {
+    const int nx = grid.cartdims[0];
+    const int ny = grid.cartdims[1];
+    const int nz = grid.cartdims[2];
+    return nx * ny * nz;
+}
+
+void active_cells (const UnstructuredGrid& grid,
+                   std::vector <int>& actnum) {
+    // we must fill the Cartesian grid with flags
+    const int size = cart_size (grid);
+
+    // if we don't have a global_cells field, then assume that all
+    // grid cells is active
+    if (!grid.global_cell) {
+        if (grid.number_of_cells != size) {
+            OPM_THROW (std::runtime_error,
+                       "No ACTNUM map but grid size != Cartesian size");
+        }
+        actnum.assign (size, 1);
+    }
+    else {
+        // start out with entire map being inactive
+        actnum.assign (size, 0);
+
+        // activate those cells that are actually there
+        for (int i = 0; i < grid.number_of_cells; ++i) {
+            actnum[grid.global_cell[i]] = 1;
+        }
+    }
+} // active_cells
+} // empty namespace
+
 /**
  * Representation of an Eclipse grid.
  */
 struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
     /// Create a grid based on the keywords available in input file
-    static EclipseGrid make (const EclipseGridParser& parser) {
+    static EclipseGrid make (const EclipseGridParser& parser,
+                             const UnstructuredGrid& grid) {
         if (parser.hasField("DXV")) {
             // make sure that the DYV and DZV keywords are present if the
             // DXV keyword is used in the deck...
@@ -294,9 +330,13 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
 
             EclipseKeyword<double> coord_kw   (COORD_KW,  parser);
             EclipseKeyword<double> zcorn_kw   (ZCORN_KW,  parser);
-            EclipseKeyword<int>    actnum_kw  (ACTNUM_KW, parser);
-            EclipseKeyword<double> mapaxes_kw (MAPAXES_KW);
 
+            // get the actually active cells, after processing
+            std::vector <int> actnum;
+            active_cells (grid, actnum);
+            EclipseKeyword<int> actnum_kw (ACTNUM_KW, actnum);
+
+            EclipseKeyword<double> mapaxes_kw (MAPAXES_KW);
             if (g.mapaxes) {
                 mapaxes_kw = std::move (EclipseKeyword<double> (MAPAXES_KW, parser));
             }
@@ -677,7 +717,7 @@ using namespace Opm::internal;
 
 void EclipseWriter::writeInit(const SimulatorTimer &timer) {
     /* Grid files */
-    EclipseGrid ecl_grid = EclipseGrid::make (*parser_);
+    EclipseGrid ecl_grid = EclipseGrid::make (*parser_, *grid_);
     ecl_grid.write (outputDir_, baseName_, timer);
 
     EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, timer);
