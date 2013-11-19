@@ -803,6 +803,7 @@ EclipseWriter::EclipseWriter (
         std::shared_ptr <EclipseGridParser> parser,
         std::shared_ptr <UnstructuredGrid> grid)
     : parser_ (parser)
+    , grid_ (grid)
     , uses_ (phaseUsageFromDeck (*parser)) {
 
     // get the base name from the name of the deck
