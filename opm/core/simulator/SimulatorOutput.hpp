@@ -142,7 +142,7 @@ struct SimulatorOutput : public SimulatorOutputBase {
         , sim_ (sim) {
 
         // connect simulation with output writer
-        sim.timestep_completed ().add (*this);
+        sim->timestep_completed ().add (*this);
     }
 
 protected:
