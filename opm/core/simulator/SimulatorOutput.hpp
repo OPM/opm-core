@@ -64,7 +64,6 @@ protected:
     operator std::function <void ()> ();
 
     /// Just hold a reference to these objects that are owned elsewhere.
-    std::shared_ptr <EclipseGridParser> parser_;
     std::shared_ptr <SimulatorTimer> timer_;
     std::shared_ptr <BlackoilState> reservoirState_;
     std::shared_ptr <WellState> wellState_;

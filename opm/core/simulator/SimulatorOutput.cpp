@@ -38,8 +38,7 @@ SimulatorOutputBase::SimulatorOutputBase (
 
     // store all parameters passed into the object, making them curried
     // parameters to the writeOutput function.
-    : parser_         (parser   )
-    , timer_          (timer    )
+    : timer_          (timer    )
     , reservoirState_ (state    )
     , wellState_      (wellState)
 
