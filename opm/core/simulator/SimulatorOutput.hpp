@@ -20,6 +20,9 @@
 #ifndef OPM_SIMULATOR_OUTPUT_HPP
 #define OPM_SIMULATOR_OUTPUT_HPP
 
+// need complete def. of this since we use it in template
+#include <opm/core/utility/Event.hpp>
+
 #include <memory>  // unique_ptr, shared_ptr
 #include <vector>
 
