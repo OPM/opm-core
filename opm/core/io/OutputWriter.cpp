@@ -45,8 +45,10 @@ private:
 
 /// Psuedo-constructor, can appear in template
 template <typename Format> unique_ptr <OutputWriter>
-create (const ParameterGroup& params, std::shared_ptr <EclipseGridParser> parser) {
-    return unique_ptr <OutputWriter> (new Format (params, parser));
+create (const ParameterGroup& params,
+        std::shared_ptr <EclipseGridParser> parser,
+        std::shared_ptr <UnstructuredGrid> grid) {
+    return unique_ptr <OutputWriter> (new Format (params, parser, grid));
 }
 
 /// Map between keyword in configuration and the corresponding
@@ -57,7 +59,8 @@ create (const ParameterGroup& params, std::shared_ptr <EclipseGridParser> parser
 /// to the list below!
 typedef map <const char*, unique_ptr <OutputWriter> (*)(
         const ParameterGroup&,
-        std::shared_ptr <EclipseGridParser>)> map_t;
+        std::shared_ptr <EclipseGridParser>,
+        std::shared_ptr <UnstructuredGrid>)> map_t;
 map_t FORMATS = {
     { "output_ecl", &create <EclipseWriter> },
 };
@@ -66,7 +69,8 @@ map_t FORMATS = {
 
 unique_ptr <OutputWriter>
 OutputWriter::create (const ParameterGroup& params,
-                      std::shared_ptr<EclipseGridParser> parser) {
+                      std::shared_ptr <EclipseGridParser> parser,
+                      std::shared_ptr <UnstructuredGrid> grid) {
     // allocate a list which will be filled with writers. this list
     // is initially empty (no output).
     MultiWriter::ptr_t list (new MultiWriter::writers_t ());
@@ -81,7 +85,7 @@ OutputWriter::create (const ParameterGroup& params,
         // invoke the constructor for the type if we found the keyword
         // and put the pointer to this writer onto the list
         if (params.getDefault <bool> (name, false)) {
-            list->push_back (it->second (params, parser));
+            list->push_back (it->second (params, parser, grid));
         }
     }
 

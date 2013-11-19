@@ -23,6 +23,8 @@
 #include <memory>  // unique_ptr, shared_ptr
 #include <vector>
 
+struct UnstructuredGrid;
+
 namespace Opm {
 
 // forward definitions
@@ -48,6 +50,7 @@ protected:
      */
     SimulatorOutputBase (const parameter::ParameterGroup& p,
                          std::shared_ptr <EclipseGridParser> parser,
+                         std::shared_ptr <UnstructuredGrid> grid,
                          std::shared_ptr <SimulatorTimer> timer,
                          std::shared_ptr <BlackoilState> state,
                          std::shared_ptr <WellState> wellState);
@@ -99,6 +102,8 @@ private:
  *
  *  // input file
  *  auto deck = make_shared <EclipseGridParser> ( ... );
+ *  const GridManager manager (*parser);
+ *  auto grid = share_obj (*manager.c_grid ());
  *
  *  // timestep ends up here
  *  auto timer = make_shared <SimulatorTimer> ();
@@ -108,11 +113,11 @@ private:
  *  auto wellState = make_shared <WellState> ();
  *
  *  // set up simulation
- *  auto sim = make_shared <SimulatorIncompTwophase> (params, grid, ... );
+ *  auto sim = make_shared <SimulatorIncompTwophase> (params, *grid, ... );
  *
  *  // use this to dump state to disk
  *  auto output = make_shared <SimulatorOutput> (
- *          params, deck, timer, state, wellState, sim);
+ *          params, deck, grid, timer, state, wellState, sim);
  *
  *  // start simulation
  *  sim.run (timer, state, ... )
@@ -126,12 +131,13 @@ template <typename Simulator>
 struct SimulatorOutput : public SimulatorOutputBase {
 	SimulatorOutput (const parameter::ParameterGroup& params,
                      std::shared_ptr <EclipseGridParser> parser,
+                     std::shared_ptr <UnstructuredGrid> grid,
                      std::shared_ptr <SimulatorTimer> timer,
                      std::shared_ptr <BlackoilState> state,
                      std::shared_ptr <WellState> wellState,
                      std::shared_ptr <Simulator> sim)
         // send all other parameters to base class
-        : SimulatorOutputBase (params, parser, timer, state, wellState)
+        : SimulatorOutputBase (params, parser, grid, timer, state, wellState)
 
         // store reference to simulator in derived class
         , sim_ (sim) {

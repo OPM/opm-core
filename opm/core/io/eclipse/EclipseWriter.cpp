@@ -800,7 +800,8 @@ void EclipseWriter::writeTimeStep(
 
 EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
-        std::shared_ptr <EclipseGridParser> parser)
+        std::shared_ptr <EclipseGridParser> parser,
+        std::shared_ptr <UnstructuredGrid> grid)
     : parser_ (parser)
     , uses_ (phaseUsageFromDeck (*parser)) {
 

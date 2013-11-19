@@ -27,6 +27,8 @@
 #include <string>
 #include <memory>  // std::unique_ptr
 
+struct UnstructuredGrid;
+
 namespace Opm {
 
 // forward declarations
@@ -59,7 +61,8 @@ public:
      * binary files using ERT.
      */
     EclipseWriter(const parameter::ParameterGroup& params,
-                  std::shared_ptr <EclipseGridParser> parser);
+                  std::shared_ptr <EclipseGridParser> parser,
+                  std::shared_ptr <UnstructuredGrid> grid);
 
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk

@@ -20,7 +20,9 @@
 #ifndef OPM_OUTPUT_WRITER_HPP
 #define OPM_OUTPUT_WRITER_HPP
 
-#include <memory>  // unique_ptr
+#include <memory>  // unique_ptr, shared_ptr
+
+struct UnstructuredGrid;
 
 namespace Opm {
 
@@ -90,7 +92,8 @@ public:
      */
     static std::unique_ptr <OutputWriter>
     create (const parameter::ParameterGroup& params,
-            std::shared_ptr <EclipseGridParser> parser);
+            std::shared_ptr <EclipseGridParser> parser,
+            std::shared_ptr <UnstructuredGrid> grid);
 };
 
 } // namespace Opm
