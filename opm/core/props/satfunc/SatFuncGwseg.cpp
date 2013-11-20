@@ -385,12 +385,12 @@ namespace Opm
             const double xg = 1 - xw;
             const double ssw = sg + sw;
 
-            const double krw = krw_(ssw);
-            const double krg = krg_(ssg);
+            const double krw = krw_(sw);
+            const double krg = krg_(sg);
             const double krow = krow_(ssw);
             const double krog = krog_(ssg);
-            kr[Aqua]   = xw*krw;
-            kr[Vapour] = xg*krg;
+            kr[Aqua]   = krw;
+            kr[Vapour] = krg;
             kr[Liquid] = xw*krow + xg*krog;
             return;
         }
@@ -433,30 +433,29 @@ namespace Opm
 
             // xw and xg are the fractions occupied by water and gas zones.
             const double ssw = sg + sw;
-            const double ssg = sg + sw - swco;
+            // d = ssg = sw - swco + sg (using 'd' for consistency with mrst docs).
+            const double d = sg + sw - swco;
+            const double xw = (sw - swco) / d;
 
-            const double krw = krw_(ssw);
-            const double krg = krg_(ssg);
+            const double krw = krw_(sw);
+            const double krg = krg_(sg);
             const double krow = krow_(ssw);
-            const double krog = krog_(ssg);
-            const double xw = (sw - swco) / ssg;
+            const double krog = krog_(d);
+
             const double xg = 1 - xw;
-            kr[Aqua]   = xw*krw;
-            kr[Vapour] = xg*krg;
+            kr[Aqua]   = krw;
+            kr[Vapour] = krg;
             kr[Liquid] = xw*krow + xg*krog;
 
             // Derivatives.
-            const double dkrww = krw_.derivative(ssw);
-            const double dkrgg = krg_.derivative(ssg);
+            const double dkrww = krw_.derivative(sw);
+            const double dkrgg = krg_.derivative(sg);
             const double dkrow = krow_.derivative(ssw);
-            const double dkrog = krog_.derivative(ssg);
-            const double d = ssg; // = sw - swco + sg (using 'd' for consistency with mrst docs).
-            dkrds[Aqua   + Aqua*np]   =  (xg/d)*krw + xw*dkrww;
-            dkrds[Aqua   + Vapour*np] = -(xw/d)*krw + xw*dkrww;
+            const double dkrog = krog_.derivative(d);
+            dkrds[Aqua   + Aqua*np]   =  dkrww;
             dkrds[Liquid + Aqua*np]   =  (xg/d)*krow + xw*dkrow - (xg/d)*krog + xg*dkrog;
             dkrds[Liquid + Vapour*np] = -(xw/d)*krow + xw*dkrow + (xw/d)*krog + xg*dkrog;
-            dkrds[Vapour + Aqua*np]   = -(xg/d)*krg + xg*dkrgg;
-            dkrds[Vapour + Vapour*np] =  (xw/d)*krg + xg*dkrgg;
+            dkrds[Vapour + Vapour*np] =  dkrgg;
             return;
         }
         // We have a two-phase situation. We know that oil is active.
