@@ -117,6 +117,18 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
         copyData (&data[0], data.size (), offset, stride);
     }
 
+    /// Special initialization from double-precision array which
+    /// automatically invokes a version of the copy function which
+    /// downcasts. This is really only applicable to the T = float
+    /// template instance.
+    /// The data and name parameters are switched in this version
+    /// so that it doesn't conflict with the one above in the case
+    /// of T = double.
+    EclipseKeyword (const std::vector<double>& data,
+                    const std::string& name,
+                    const int offset = 0,
+                    const int stride = 1);
+
     /// Convenience constructor that gets the set of data
     /// from the samely named item in the parser
     EclipseKeyword (const std::string& name,
@@ -193,6 +205,21 @@ EclipseKeyword <float>::EclipseKeyword (
           ecl_kw_free) {
     const std::vector <double>& data = parser.getValue <double> (name);
     copyData (&data[0], data.size (), 0, 1);
+}
+
+/// Provide only the float version, since that is the one for which
+/// we need this conversion (we don't want it for int, for instance)
+template <>
+EclipseKeyword <float>::EclipseKeyword (
+        const std::vector<double>& data,
+        const std::string& name,
+        const int offset,
+        const int stride)
+    // allocate handle and put in smart pointer base class
+    : EclipseHandle <ecl_kw_type> (
+          ecl_kw_alloc (name.c_str(), data.size (), type ()),
+          ecl_kw_free) {
+    copyData (&data[0], data.size (), offset, stride);
 }
 
 /**
@@ -456,7 +483,7 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
                        const SimulatorTimer& timer,
                        const EclipseGridParser& parser,
                        const PhaseUsage uses) {
-        EclipseKeyword<double> poro (PORO_KW, parser);
+        EclipseKeyword<float> poro (PORO_KW, parser);
         ecl_init_file_fwrite_header (*this,
                                      grid,
                                      poro,
@@ -745,9 +772,9 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer) {
                         *parser_,
                         uses_);
 
-    fortio.writeKeyword<double> ("PERMX", *parser_);
-    fortio.writeKeyword<double> ("PERMY", *parser_);
-    fortio.writeKeyword<double> ("PERMZ", *parser_);
+    fortio.writeKeyword<float> ("PERMX", *parser_);
+    fortio.writeKeyword<float> ("PERMY", *parser_);
+    fortio.writeKeyword<float> ("PERMZ", *parser_);
 
     /* Summary files */
     sum_ = std::move (std::unique_ptr <EclipseSummary> (
@@ -819,7 +846,7 @@ void EclipseWriter::writeTimeStep(
     EclipseSolution sol (rst);
 
     // write pressure and saturation fields (same as DataMap holds)
-    sol.add (EclipseKeyword<double> ("PRESSURE", bar));
+    sol.add (EclipseKeyword<float> (bar, "PRESSURE"));
 
     for (int phase = 0; phase != BlackoilPhases::MaxNumPhases; ++phase) {
         // Eclipse never writes the oil saturation, so all post-processors
@@ -828,10 +855,10 @@ void EclipseWriter::writeTimeStep(
             continue;
         }
         if (uses_.phase_used [phase]) {
-            sol.add (EclipseKeyword<double> (SAT_NAMES [phase],
-                                              reservoirState.saturation(),
-                                              uses_.phase_pos [phase],
-                                              uses_.num_phases));
+            sol.add (EclipseKeyword<float> (reservoirState.saturation(),
+                                            SAT_NAMES [phase],
+                                            uses_.phase_pos [phase],
+                                            uses_.num_phases));
         }
     }
 
