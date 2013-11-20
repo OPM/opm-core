@@ -61,7 +61,7 @@ public:
      * binary files using ERT.
      */
     EclipseWriter(const parameter::ParameterGroup& params,
-                  std::shared_ptr <EclipseGridParser> parser,
+                  std::shared_ptr <const EclipseGridParser> parser,
                   std::shared_ptr <const UnstructuredGrid> grid);
 
     /*!
@@ -81,7 +81,7 @@ public:
                                const WellState& wellState);
 
 private:
-    std::shared_ptr <EclipseGridParser> parser_;
+    std::shared_ptr <const EclipseGridParser> parser_;
     std::shared_ptr <const UnstructuredGrid> grid_;
     std::string outputDir_;
     std::string baseName_;

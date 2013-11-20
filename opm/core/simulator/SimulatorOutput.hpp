@@ -53,11 +53,11 @@ protected:
      * need to pick them up from the object members.
      */
     SimulatorOutputBase (const parameter::ParameterGroup& p,
-                         std::shared_ptr <EclipseGridParser> parser,
+                         std::shared_ptr <const EclipseGridParser> parser,
                          std::shared_ptr <const UnstructuredGrid> grid,
-                         std::shared_ptr <SimulatorTimer> timer,
-                         std::shared_ptr <BlackoilState> state,
-                         std::shared_ptr <WellState> wellState);
+                         std::shared_ptr <const SimulatorTimer> timer,
+                         std::shared_ptr <const BlackoilState> state,
+                         std::shared_ptr <const WellState> wellState);
 
     /**
      * We need a destructor in the compilation unit to avoid the
@@ -74,9 +74,9 @@ protected:
     operator std::function <void ()> ();
 
     /// Just hold a reference to these objects that are owned elsewhere.
-    std::shared_ptr <SimulatorTimer> timer_;
-    std::shared_ptr <BlackoilState> reservoirState_;
-    std::shared_ptr <WellState> wellState_;
+    std::shared_ptr <const SimulatorTimer> timer_;
+    std::shared_ptr <const BlackoilState> reservoirState_;
+    std::shared_ptr <const WellState> wellState_;
 
     /// Created locally and destructed together with us
     std::unique_ptr <OutputWriter> writer_;
@@ -139,11 +139,11 @@ private:
 template <typename Simulator>
 struct SimulatorOutput : public SimulatorOutputBase {
 	SimulatorOutput (const parameter::ParameterGroup& params,
-                     std::shared_ptr <EclipseGridParser> parser,
+                     std::shared_ptr <const EclipseGridParser> parser,
                      std::shared_ptr <const UnstructuredGrid> grid,
-                     std::shared_ptr <SimulatorTimer> timer,
-                     std::shared_ptr <BlackoilState> state,
-                     std::shared_ptr <WellState> wellState,
+                     std::shared_ptr <const SimulatorTimer> timer,
+                     std::shared_ptr <const BlackoilState> state,
+                     std::shared_ptr <const WellState> wellState,
                      std::shared_ptr <Simulator> sim)
         // send all other parameters to base class
         : SimulatorOutputBase (params, parser, grid, timer, state, wellState)
@@ -161,11 +161,11 @@ struct SimulatorOutput : public SimulatorOutputBase {
      * the arguments passed exceeds the lifetime of this object.
      */
     SimulatorOutput (const parameter::ParameterGroup& params,
-                     EclipseGridParser& parser,
+                     const EclipseGridParser& parser,
                      const UnstructuredGrid& grid,
-                     SimulatorTimer& timer,
-                     BlackoilState& state,
-                     WellState& wellState,
+                     const SimulatorTimer& timer,
+                     const BlackoilState& state,
+                     const WellState& wellState,
                      Simulator& sim)
         // send all other parameters to base class
         : SimulatorOutputBase (params,

@@ -92,7 +92,7 @@ public:
      */
     static std::unique_ptr <OutputWriter>
     create (const parameter::ParameterGroup& params,
-            std::shared_ptr <EclipseGridParser> parser,
+            std::shared_ptr <const EclipseGridParser> parser,
             std::shared_ptr <const UnstructuredGrid> grid);
 };
 

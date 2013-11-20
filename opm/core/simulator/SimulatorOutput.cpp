@@ -30,11 +30,11 @@ using namespace Opm;
 
 SimulatorOutputBase::SimulatorOutputBase (
         const parameter::ParameterGroup& params,
-        std::shared_ptr <EclipseGridParser> parser,
+        std::shared_ptr <const EclipseGridParser> parser,
         std::shared_ptr <const UnstructuredGrid> grid,
-        std::shared_ptr <SimulatorTimer> timer,
-        std::shared_ptr <BlackoilState> state,
-        std::shared_ptr <WellState> wellState)
+        std::shared_ptr <const SimulatorTimer> timer,
+        std::shared_ptr <const BlackoilState> state,
+        std::shared_ptr <const WellState> wellState)
 
     // store all parameters passed into the object, making them curried
     // parameters to the writeOutput function.
