@@ -152,7 +152,8 @@ private:
     static ecl_type_enum type ();
 
     /// Helper function that is the meat of the constructor
-    void copyData (const std::vector <T>& data,
+    template <typename U>
+    void copyData (const std::vector <U>& data,
                     const int offset,
                     const int stride) {
         // number of elements we can possibly take from the vector
@@ -167,14 +168,32 @@ private:
         // fill it with values
         T* target = static_cast <T*> (ecl_kw_get_ptr (*this));
         for (int i = 0; i < num; ++i) {
-            target[i] = data[i * stride + offset];
+            target[i] = static_cast <T> (data[i * stride + offset]);
         }
     }
 };
 
 // specializations for known keyword types
 template <> ecl_type_enum EclipseKeyword<int   >::type () { return ECL_INT_TYPE   ; }
+template <> ecl_type_enum EclipseKeyword<float >::type () { return ECL_FLOAT_TYPE ; }
 template <> ecl_type_enum EclipseKeyword<double>::type () { return ECL_DOUBLE_TYPE; }
+
+/// keywords in ERT requires single-precision type, but OPM have them
+/// stored as double-precision. this template specialization instantiates
+/// a copy function that downcast the data to the required type.
+template <>
+EclipseKeyword <float>::EclipseKeyword (
+        const std::string& name,
+        const EclipseGridParser& parser)
+    // allocate handle and put in smart pointer base class
+    : EclipseHandle <ecl_kw_type> (
+          ecl_kw_alloc (name.c_str(),
+                        // we can safely use the *size* of the original
+                        parser.getValue <double> (name).size (),
+                        type ()),
+          ecl_kw_free) {
+    copyData (parser.getValue <double> (name), 0, 1);
+}
 
 /**
  * Extract the current time from a timer object into the C type used by ERT.
@@ -328,17 +347,17 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
         else if (parser.hasField("ZCORN")) {
             struct grdecl g = parser.get_grdecl ();
 
-            EclipseKeyword<double> coord_kw   (COORD_KW,  parser);
-            EclipseKeyword<double> zcorn_kw   (ZCORN_KW,  parser);
+            EclipseKeyword<float> coord_kw (COORD_KW,  parser);
+            EclipseKeyword<float> zcorn_kw (ZCORN_KW,  parser);
 
             // get the actually active cells, after processing
             std::vector <int> actnum;
             active_cells (grid, actnum);
             EclipseKeyword<int> actnum_kw (ACTNUM_KW, actnum);
 
-            EclipseKeyword<double> mapaxes_kw (MAPAXES_KW);
+            EclipseKeyword<float> mapaxes_kw (MAPAXES_KW);
             if (g.mapaxes) {
-                mapaxes_kw = std::move (EclipseKeyword<double> (MAPAXES_KW, parser));
+                mapaxes_kw = std::move (EclipseKeyword<float> (MAPAXES_KW, parser));
             }
 
             return EclipseGrid (g.dims, zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
@@ -394,10 +413,10 @@ private:
 
     // setup smart pointer for cornerpoint grid
     EclipseGrid (const int dims[],
-                 const EclipseKeyword<double>& zcorn,
-                 const EclipseKeyword<double>& coord,
+                 const EclipseKeyword<float>& zcorn,
+                 const EclipseKeyword<float>& coord,
                  const EclipseKeyword<int>&    actnum,
-                 const EclipseKeyword<double>& mapaxes)
+                 const EclipseKeyword<float>& mapaxes)
         : EclipseHandle <ecl_grid_type> (
               ecl_grid_alloc_GRDECL_kw(dims[0],
                                        dims[1],
