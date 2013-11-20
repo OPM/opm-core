@@ -114,7 +114,7 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
         : EclipseHandle <ecl_kw_type> (
               ecl_kw_alloc (name.c_str(), data.size (), type ()),
               ecl_kw_free) {
-        copyData (data, offset, stride);
+        copyData (&data[0], data.size (), offset, stride);
     }
 
     /// Convenience constructor that gets the set of data
@@ -127,7 +127,8 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
                             parser.getValue <T> (name).size (),
                             type ()),
               ecl_kw_free) {
-        copyData (parser.getValue <T> (name), 0, 1);
+        const std::vector <T>& data = parser.getValue <T> (name);
+        copyData (&data[0], data.size (), 0, 1);
     }
 
     /// Constructor for optional fields
@@ -153,12 +154,10 @@ private:
 
     /// Helper function that is the meat of the constructor
     template <typename U>
-    void copyData (const std::vector <U>& data,
-                    const int offset,
-                    const int stride) {
-        // number of elements we can possibly take from the vector
-        const int num = data.size ();
-
+    void copyData (const U* data,
+                   const int num,
+                   const int offset,
+                   const int stride) {
         // range cannot start outside of data set
         assert(offset >= 0 && offset < num);
 
@@ -192,7 +191,8 @@ EclipseKeyword <float>::EclipseKeyword (
                         parser.getValue <double> (name).size (),
                         type ()),
           ecl_kw_free) {
-    copyData (parser.getValue <double> (name), 0, 1);
+    const std::vector <double>& data = parser.getValue <double> (name);
+    copyData (&data[0], data.size (), 0, 1);
 }
 
 /**
