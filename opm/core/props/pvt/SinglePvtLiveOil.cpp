@@ -354,7 +354,7 @@ namespace Opm
                                                 press, section);
         // derivative with respect to frist component (pressure)
         if (deriv == 1) {
-            if (Rval < r ) {  // Saturated case
+            if (Rval <= r ) {  // Saturated case
                 return linearInterpolationDerivative(saturated_oil_table_[0],
                                                 saturated_oil_table_[item],
                                                 press);
@@ -377,7 +377,7 @@ namespace Opm
             }
             // derivative with respect to second component (r)
         } else if (deriv == 2)  {
-            if (Rval < r ) {  // Saturated case
+            if (Rval <= r ) {  // Saturated case
                 return 0;
             } else {  // Undersaturated case
                 int is = tableIndex(saturated_oil_table_[3], r);
@@ -398,7 +398,7 @@ namespace Opm
 
 
             }    else {
-            if (Rval < r ) {  // Saturated case
+            if (Rval <= r ) {  // Saturated case
                 return linearInterpolation(saturated_oil_table_[0],
                                                  saturated_oil_table_[item],
                                                  press);
