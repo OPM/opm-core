@@ -22,6 +22,7 @@
 
 // need complete def. of this since we use it in template
 #include <opm/core/utility/Event.hpp>
+#include <opm/core/utility/share_obj.hpp>
 
 #include <memory>  // unique_ptr, shared_ptr
 #include <vector>
@@ -154,6 +155,32 @@ struct SimulatorOutput : public SimulatorOutputBase {
         sim->timestep_completed ().add (*this);
     }
 
+    /**
+     * Compatibility constructor for clients written in C++03-style:
+     * The client provide an informal guarantee that the lifetime of
+     * the arguments passed exceeds the lifetime of this object.
+     */
+    SimulatorOutput (const parameter::ParameterGroup& params,
+                     EclipseGridParser& parser,
+                     const UnstructuredGrid& grid,
+                     SimulatorTimer& timer,
+                     BlackoilState& state,
+                     WellState& wellState,
+                     Simulator& sim)
+        // send all other parameters to base class
+        : SimulatorOutputBase (params,
+                               share_obj (parser),
+                               share_obj (grid),
+                               share_obj (timer),
+                               share_obj (state),
+                               share_obj (wellState))
+
+        // store reference to simulator in derived class
+        , sim_ (share_obj (sim)) {
+
+        // connect simulation with output writer
+        sim_->timestep_completed ().add (*this);
+    }
 protected:
     // forward this request to the simulator
     virtual void sync () { sim_->sync (); }
