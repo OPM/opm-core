@@ -231,6 +231,15 @@ static time_t current (const SimulatorTimer& timer) {
     return std::mktime(&t);
 }
 
+// what each simulator consider to be the first time step
+const int ECL_TSTEP_BASE = 1;
+const int OPM_TSTEP_BASE = 1;
+
+// convert OPM time step numbers to Eclipse
+static int stepNum (const SimulatorTimer& timer) {
+    return timer.currentStepNum () - OPM_TSTEP_BASE + ECL_TSTEP_BASE;
+}
+
 /**
  * Pointer to memory that holds the name to an Eclipse output file.
  */
@@ -247,7 +256,7 @@ struct EclipseFileName : public EclipseHandle <const char> {
                                        baseName.c_str(),
                                        type,
                                        false, // formatted?
-                                       timer.currentStepNum ()),
+                                       stepNum (timer)),
               freestr) { }
 private:
     /// Facade which allows us to free a const char*
@@ -269,8 +278,8 @@ struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
                     const SimulatorTimer& timer)
         // notice the poor man's polymorphism of the allocation function
         : EclipseHandle <ecl_rst_file_type> (
-              (timer.currentStepNum () > 0 ? ecl_rst_file_open_append
-                                           : ecl_rst_file_open_write)(
+              (stepNum (timer) > ECL_TSTEP_BASE ? ecl_rst_file_open_append
+                                                : ecl_rst_file_open_write)(
                   EclipseFileName (outputDir,
                                    baseName,
                                    ECL_UNIFIED_RESTART_FILE,
@@ -283,7 +292,7 @@ struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
                       const int num_active_cells) {
         const std::vector<int> dim = parser.getSPECGRID ().dimensions;
         ecl_rst_file_fwrite_header (*this,
-                                    timer.currentStepNum (),
+                                    stepNum (timer),
                                     current (timer),
                                     Opm::unit::convert::to (timer.currentTime (),
                                                             Opm::unit::day),
@@ -568,7 +577,7 @@ private:
     std::shared_ptr <EclipseTimeStep> makeTimeStep (const SimulatorTimer& timer) {
         auto tstep = std::make_shared <EclipseTimeStep> (
                     ecl_sum_add_tstep (*this,
-                                       timer.currentStepNum (),
+                                       stepNum (timer),
                                        // currentTime is always relative to start
                                        Opm::unit::convert::to (timer.currentTime (),
                                                                Opm::unit::day)),
