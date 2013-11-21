@@ -290,7 +290,21 @@ struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
                       const PhaseUsage uses,
                       const EclipseGridParser parser,
                       const int num_active_cells) {
-        const std::vector<int> dim = parser.getSPECGRID ().dimensions;
+        std::vector<int> dim(/*n=*/3);
+        if (parser.hasField("SPECGRID"))
+            dim = parser.getSPECGRID ().dimensions;
+        else if (parser.hasField("DXV")) {
+            assert(parser.hasField("DYV"));
+            assert(parser.hasField("DZV"));
+            dim[0] = parser.getFloatingPointValue("DXV").size();
+            dim[1] = parser.getFloatingPointValue("DYV").size();
+            dim[2] = parser.getFloatingPointValue("DZV").size();
+        }
+        else
+            OPM_THROW(std::runtime_error,
+                      "Only decks featureing either the SPECGRID or the D[XYZ]V keywords "
+                      "are currently supported");
+
         ecl_rst_file_fwrite_header (*this,
                                     stepNum (timer),
                                     current (timer),
@@ -595,7 +609,22 @@ private:
                                         const EclipseGridParser& parser) {
         boost::filesystem::path casePath (outputDir);
         casePath /= boost::to_upper_copy (baseName);
-        const std::vector<int>& dim = parser.getSPECGRID().dimensions;
+
+        std::vector<int> dim(/*n=*/3);
+        if (parser.hasField("SPECGRID"))
+            dim = parser.getSPECGRID ().dimensions;
+        else if (parser.hasField("DXV")) {
+            assert(parser.hasField("DYV"));
+            assert(parser.hasField("DZV"));
+            dim[0] = parser.getFloatingPointValue("DXV").size();
+            dim[1] = parser.getFloatingPointValue("DYV").size();
+            dim[2] = parser.getFloatingPointValue("DZV").size();
+        }
+        else
+            OPM_THROW(std::runtime_error,
+                      "Only decks featureing either the SPECGRID or the D[XYZ]V keywords "
+                      "are currently supported");
+
         return ecl_sum_alloc_writer (casePath.string ().c_str (),
                                      false, /* formatted   */
                                      true,  /* unified     */
