@@ -41,6 +41,7 @@
 #include <boost/filesystem.hpp> // path
 
 #include <ctime>      // mktime
+#include <forward_list>
 #include <memory>     // unique_ptr
 #include <utility>    // move
 
@@ -535,6 +536,13 @@ struct EclipseSummary : public EclipseHandle <ecl_sum_type> {
         return *this;
     }
 
+    // make sure the summary section is flushed before it goes away
+    // (this will happen before all the timesteps are individually
+    // destroyed, so their memory is still valid at this point)
+    ~EclipseSummary () {
+        ecl_sum_fwrite (*this);
+    }
+
     // no inline implementation of this since it depends on the
     // EclipseWellReport type being completed first
     void writeTimeStep (const SimulatorTimer& timer,
@@ -553,15 +561,23 @@ private:
                                      // currentTime is always relative to start
                                      Opm::unit::convert::to (timer.currentTime (),
                                                              Opm::unit::day)),
-                  ecl_sum_tstep_free)
-            , sum_ (sum) { }
-
-        ~EclipseTimeStep () {
-            ecl_sum_fwrite (sum_);
-        }
-    private:
-        ecl_sum_type* sum_;
+                  ecl_sum_tstep_free) { }
     };
+
+    // hold memory for each timestep alive until we can flush it;
+    // each time step is temporarily referenced in writeTimeStep,
+    // but this list keeps the reference alive until the entire
+    // summary goes out of scope.
+    std::forward_list <std::shared_ptr <EclipseTimeStep> > steps_;
+
+    /// Create a new time step and add it to this summary. Use this
+    /// method instead of creating your own timestep objects, as it
+    /// will make sure that the
+    std::shared_ptr <EclipseTimeStep> makeTimeStep (const SimulatorTimer& timer) {
+        auto tstep = std::make_shared <EclipseTimeStep> (*this, timer);
+        steps_.push_front (tstep);
+        return tstep;
+    }
 
     /// Helper routine that lets us use local variables to hold
     /// intermediate results while filling out the allocations function's
@@ -735,11 +751,11 @@ private:
 inline void
 EclipseSummary::writeTimeStep (const SimulatorTimer& timer,
                                const WellState& wellState) {
-    EclipseTimeStep tstep (*this, timer);
+    std::shared_ptr <EclipseTimeStep> tstep = makeTimeStep (timer);
     // write all the variables
     for (vars_t::iterator v = vars_.begin(); v != vars_.end(); ++v) {
         const double value = (*v)->update (timer, wellState);
-        ecl_sum_tstep_iset(tstep, *(*v).get (), value);
+        ecl_sum_tstep_iset(*tstep, *(*v).get (), value);
     }
 }
 
