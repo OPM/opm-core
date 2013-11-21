@@ -32,10 +32,10 @@ struct UnstructuredGrid;
 namespace Opm {
 
 // forward definitions
-class BlackoilState;
 class EclipseGridParser;
 class OutputWriter;
 namespace parameter { class ParameterGroup; }
+class SimulatorState;
 class SimulatorTimer;
 class WellState;
 
@@ -56,7 +56,7 @@ protected:
                          std::shared_ptr <const EclipseGridParser> parser,
                          std::shared_ptr <const UnstructuredGrid> grid,
                          std::shared_ptr <const SimulatorTimer> timer,
-                         std::shared_ptr <const BlackoilState> state,
+                         std::shared_ptr <const SimulatorState> state,
                          std::shared_ptr <const WellState> wellState);
 
     /**
@@ -75,7 +75,7 @@ protected:
 
     /// Just hold a reference to these objects that are owned elsewhere.
     std::shared_ptr <const SimulatorTimer> timer_;
-    std::shared_ptr <const BlackoilState> reservoirState_;
+    std::shared_ptr <const SimulatorState> reservoirState_;
     std::shared_ptr <const WellState> wellState_;
 
     /// Created locally and destructed together with us
@@ -142,7 +142,7 @@ struct SimulatorOutput : public SimulatorOutputBase {
                      std::shared_ptr <const EclipseGridParser> parser,
                      std::shared_ptr <const UnstructuredGrid> grid,
                      std::shared_ptr <const SimulatorTimer> timer,
-                     std::shared_ptr <const BlackoilState> state,
+                     std::shared_ptr <const SimulatorState> state,
                      std::shared_ptr <const WellState> wellState,
                      std::shared_ptr <Simulator> sim)
         // send all other parameters to base class
@@ -164,7 +164,7 @@ struct SimulatorOutput : public SimulatorOutputBase {
                      const EclipseGridParser& parser,
                      const UnstructuredGrid& grid,
                      const SimulatorTimer& timer,
-                     const BlackoilState& state,
+                     const SimulatorState& state,
                      const WellState& wellState,
                      Simulator& sim)
         // send all other parameters to base class

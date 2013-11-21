@@ -27,7 +27,7 @@
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
-#include <opm/core/simulator/BlackoilState.hpp>
+#include <opm/core/simulator/SimulatorState.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
@@ -896,7 +896,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer) {
 
 void EclipseWriter::writeTimeStep(
         const SimulatorTimer& timer,
-        const BlackoilState& reservoirState,
+        const SimulatorState& reservoirState,
         const WellState& wellState) {
     // convert the pressures from Pascals to bar because eclipse
     // seems to write bars
@@ -945,7 +945,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer) {
 
 void EclipseWriter::writeTimeStep(
         const SimulatorTimer& timer,
-        const BlackoilState& reservoirState,
+        const SimulatorState& reservoirState,
         const WellState& wellState) {
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");

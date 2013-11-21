@@ -32,8 +32,8 @@ struct UnstructuredGrid;
 namespace Opm {
 
 // forward declarations
-class BlackoilState;
 class EclipseGridParser;
+class SimulatorState;
 class SimulatorTimer;
 class WellState;
 
@@ -83,7 +83,7 @@ public:
      * \param[in] wellState The production/injection data for all wells
      */
     virtual void writeTimeStep(const SimulatorTimer& timer,
-                               const BlackoilState& reservoirState,
+                               const SimulatorState& reservoirState,
                                const WellState& wellState);
 
 private:
