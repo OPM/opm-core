@@ -549,7 +549,7 @@ private:
                          const SimulatorTimer& timer)
             : EclipseHandle <ecl_sum_tstep_type> (
                   ecl_sum_add_tstep (sum,
-                                     timer.currentStepNum () + 1,
+                                     timer.currentStepNum (),
                                      // currentTime is always relative to start
                                      Opm::unit::convert::to (timer.currentTime (),
                                                              Opm::unit::day)),
