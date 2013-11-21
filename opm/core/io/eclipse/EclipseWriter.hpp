@@ -64,6 +64,12 @@ public:
                   std::shared_ptr <const EclipseGridParser> parser,
                   std::shared_ptr <const UnstructuredGrid> grid);
 
+    /**
+     * We need a destructor in the compilation unit to avoid the
+     * EclipseSummary being a complete type here.
+     */
+    virtual ~EclipseWriter ();
+
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
      */

@@ -938,4 +938,7 @@ EclipseWriter::EclipseWriter (
     }
 }
 
+// default destructor is OK, just need to be defined
+EclipseWriter::~EclipseWriter() { }
+
 } // namespace Opm
