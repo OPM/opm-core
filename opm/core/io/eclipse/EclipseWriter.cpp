@@ -919,6 +919,10 @@ EclipseWriter::EclipseWriter (
         baseName_ = path (deck.filename ()).string ();
     }
 
+    // make uppercase of everything (or otherwise we'll get uppercase
+    // of some of the files (.SMSPEC, .UNSMRY) and not others
+    baseName_ = boost::to_upper_copy (baseName_);
+
     // store in current directory if not explicitly set
     if (params.has ("output_dir")) {
         outputDir_ = params.get <std::string> ("output_dir");
