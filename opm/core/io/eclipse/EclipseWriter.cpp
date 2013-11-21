@@ -551,18 +551,10 @@ struct EclipseSummary : public EclipseHandle <ecl_sum_type> {
 private:
     vars_t vars_;
 
-    /// Make sure a new timestep is flushed to the summary section
-    struct EclipseTimeStep : public EclipseHandle <ecl_sum_tstep_type> {
-        EclipseTimeStep (const EclipseSummary& sum,
-                         const SimulatorTimer& timer)
-            : EclipseHandle <ecl_sum_tstep_type> (
-                  ecl_sum_add_tstep (sum,
-                                     timer.currentStepNum (),
-                                     // currentTime is always relative to start
-                                     Opm::unit::convert::to (timer.currentTime (),
-                                                             Opm::unit::day)),
-                  ecl_sum_tstep_free) { }
-    };
+    // don't define a new type for timesteps (since they should all
+    // be created with makeTimeStep anyway), just use the basic handle
+    // type and a typedef.
+    typedef EclipseHandle <ecl_sum_tstep_type> EclipseTimeStep;
 
     // hold memory for each timestep alive until we can flush it;
     // each time step is temporarily referenced in writeTimeStep,
@@ -574,7 +566,13 @@ private:
     /// method instead of creating your own timestep objects, as it
     /// will make sure that the
     std::shared_ptr <EclipseTimeStep> makeTimeStep (const SimulatorTimer& timer) {
-        auto tstep = std::make_shared <EclipseTimeStep> (*this, timer);
+        auto tstep = std::make_shared <EclipseTimeStep> (
+                    ecl_sum_add_tstep (*this,
+                                       timer.currentStepNum (),
+                                       // currentTime is always relative to start
+                                       Opm::unit::convert::to (timer.currentTime (),
+                                                               Opm::unit::day)),
+                    ecl_sum_tstep_free);
         steps_.push_front (tstep);
         return tstep;
     }
@@ -600,6 +598,9 @@ private:
     }
 };
 
+// in order to get RTTI for this "class" (which is just a typedef), we must
+// ask the compiler to explicitly instantiate it.
+template struct EclipseHandle<ecl_sum_tstep_struct>;
 
 /**
  * Summary variable that reports a characteristics of a well.
