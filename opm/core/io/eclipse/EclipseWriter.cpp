@@ -936,6 +936,11 @@ EclipseWriter::EclipseWriter (
     if (params.has ("output_dir")) {
         outputDir_ = params.get <std::string> ("output_dir");
     }
+    else {
+        // this is needed to prevent file names like "/FOO.INIT" which
+        // lead to segfaults
+        outputDir_ = ".";
+    }
 }
 
 // default destructor is OK, just need to be defined
