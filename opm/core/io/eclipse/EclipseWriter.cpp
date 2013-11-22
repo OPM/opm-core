@@ -40,6 +40,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem.hpp> // path
 
+#include <cstdlib>    // div
 #include <ctime>      // mktime
 #include <forward_list>
 #include <memory>     // unique_ptr
@@ -135,9 +136,12 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
     EclipseKeyword (const std::string& name,
                     const EclipseGridParser& parser)
         // allocate handle and put in smart pointer base class
+        // notice dataSize is called both here *and* in copyData,
+        // but GCC 4.4 doesn't support delegating constructors, so
+        // we cannot avoid this without otherwise using a member
         : EclipseHandle <ecl_kw_type> (
               ecl_kw_alloc (name.c_str(),
-                            parser.getValue <T> (name).size (),
+                            dataSize (parser.getValue <T> (name)),
                             type ()),
               ecl_kw_free) {
         const std::vector <T>& data = parser.getValue <T> (name);
@@ -170,6 +174,21 @@ private:
     void copyData (std::vector <U> data,
                    const int offset,
                    const int stride) {
+        // number of elements to take
+        const int num = dataSize (data, offset, stride);
+
+        // fill it with values
+        T* target = static_cast <T*> (ecl_kw_get_ptr (*this));
+        for (int i = 0; i < num; ++i) {
+            target[i] = static_cast <T> (data[i * stride + offset]);
+        }
+    }
+
+    // Compute the number of outputs this dataset will give
+    template <typename U>
+    int dataSize (std::vector <U> data,
+                  const int offset,
+                  const int stride) {
         // number of elements we can possibly take from the vector
         const int num = data.size ();
 
@@ -179,11 +198,9 @@ private:
         // don't jump out of the set when trying to
         assert(stride > 0 && stride < num - offset);
 
-        // fill it with values
-        T* target = static_cast <T*> (ecl_kw_get_ptr (*this));
-        for (int i = 0; i < num; ++i) {
-            target[i] = static_cast <T> (data[i * stride + offset]);
-        }
+        // number of (strided) entries it will provide
+        const div_t d = div (data.size () - offset, stride);
+        return d.quot;
     }
 };
 
@@ -203,7 +220,7 @@ EclipseKeyword <float>::EclipseKeyword (
     : EclipseHandle <ecl_kw_type> (
           ecl_kw_alloc (name.c_str(),
                         // we can safely use the *size* of the original
-                        parser.getValue <double> (name).size (),
+                        dataSize (parser.getValue <double> (name), 0, 1),
                         type ()),
           ecl_kw_free) {
     const std::vector <double>& data = parser.getValue <double> (name);
@@ -220,7 +237,7 @@ EclipseKeyword <float>::EclipseKeyword (
         const int stride)
     // allocate handle and put in smart pointer base class
     : EclipseHandle <ecl_kw_type> (
-          ecl_kw_alloc (name.c_str(), data.size (), type ()),
+          ecl_kw_alloc (name.c_str(), dataSize (data, offset, stride), type ()),
           ecl_kw_free) {
     copyData (data, offset, stride);
 }
