@@ -115,7 +115,7 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
         : EclipseHandle <ecl_kw_type> (
               ecl_kw_alloc (name.c_str(), data.size (), type ()),
               ecl_kw_free) {
-        copyData (&data[0], data.size (), offset, stride);
+        copyData (data, offset, stride);
     }
 
     /// Special initialization from double-precision array which
@@ -141,7 +141,7 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
                             type ()),
               ecl_kw_free) {
         const std::vector <T>& data = parser.getValue <T> (name);
-        copyData (&data[0], data.size (), 0, 1);
+        copyData (data, 0, 1);
     }
 
     /// Constructor for optional fields
@@ -167,10 +167,12 @@ private:
 
     /// Helper function that is the meat of the constructor
     template <typename U>
-    void copyData (const U* data,
-                   const int num,
+    void copyData (std::vector <U> data,
                    const int offset,
                    const int stride) {
+        // number of elements we can possibly take from the vector
+        const int num = data.size ();
+
         // range cannot start outside of data set
         assert(offset >= 0 && offset < num);
 
@@ -205,7 +207,7 @@ EclipseKeyword <float>::EclipseKeyword (
                         type ()),
           ecl_kw_free) {
     const std::vector <double>& data = parser.getValue <double> (name);
-    copyData (&data[0], data.size (), 0, 1);
+    copyData (data, 0, 1);
 }
 
 /// Provide only the float version, since that is the one for which
@@ -220,7 +222,7 @@ EclipseKeyword <float>::EclipseKeyword (
     : EclipseHandle <ecl_kw_type> (
           ecl_kw_alloc (name.c_str(), data.size (), type ()),
           ecl_kw_free) {
-    copyData (&data[0], data.size (), offset, stride);
+    copyData (data, offset, stride);
 }
 
 /**
