@@ -199,7 +199,7 @@ private:
         assert(stride > 0 && stride < num - offset);
 
         // number of (strided) entries it will provide
-        const div_t d = div (data.size () - offset, stride);
+        const div_t d = std::div (data.size () - offset, stride);
         return d.quot;
     }
 };
