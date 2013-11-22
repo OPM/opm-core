@@ -171,7 +171,7 @@ private:
 
     /// Helper function that is the meat of the constructor
     template <typename U>
-    void copyData (std::vector <U> data,
+    void copyData (const std::vector <U>& data,
                    const int offset,
                    const int stride) {
         // number of elements to take
@@ -186,7 +186,7 @@ private:
 
     // Compute the number of outputs this dataset will give
     template <typename U>
-    int dataSize (std::vector <U> data,
+    int dataSize (const std::vector <U>& data,
                   const int offset,
                   const int stride) {
         // number of elements we can possibly take from the vector
