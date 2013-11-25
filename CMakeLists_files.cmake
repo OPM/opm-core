@@ -95,9 +95,11 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/satfunc/SatFuncStone2.cpp
 	opm/core/props/satfunc/SaturationPropsBasic.cpp
 	opm/core/props/satfunc/SaturationPropsFromDeck.cpp
+	opm/core/simulator/BlackoilState.cpp
 	opm/core/simulator/SimulatorCompressibleTwophase.cpp
 	opm/core/simulator/SimulatorIncompTwophase.cpp
 	opm/core/simulator/SimulatorReport.cpp
+	opm/core/simulator/SimulatorState.cpp
 	opm/core/simulator/SimulatorTimer.cpp
 	opm/core/tof/DGBasis.cpp
 	opm/core/tof/TofReorder.cpp
@@ -305,8 +307,10 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
 	opm/core/simulator/SimulatorReport.hpp
+	opm/core/simulator/SimulatorState.hpp
 	opm/core/simulator/SimulatorTimer.hpp
 	opm/core/simulator/TwophaseState.hpp
+	opm/core/simulator/TwophaseState_impl.hpp
 	opm/core/simulator/WellState.hpp
 	opm/core/simulator/initState.hpp
 	opm/core/simulator/initState_impl.hpp
