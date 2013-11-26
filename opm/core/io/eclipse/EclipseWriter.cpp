@@ -790,7 +790,7 @@ struct EclipseWellTotal : public EclipseWellReport {
         // TODO: Is the rate average for the timestep, or is in
         // instantaneous (in which case trapezoidal or Simpson integration
         // would probably be better)
-        const double intg = timer.currentStepLength () * rate (wellState);
+        const double intg = timer.stepLengthTaken () * rate (wellState);
         // add this timesteps production to the total
         total_ += intg;
         // report the new production total
