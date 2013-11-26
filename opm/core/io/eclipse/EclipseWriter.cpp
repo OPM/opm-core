@@ -560,10 +560,12 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
                                      current (timer));
     }
 
-    template <typename T>
     void writeKeyword (const std::string& keyword,
-                        const EclipseGridParser& parser) {
-        EclipseKeyword <T> kw (keyword, parser);
+                       const EclipseGridParser& parser,
+                       double (* const transf)(const double&)) {
+        EclipseKeyword <float> kw (parser.getValue <double> (keyword),
+                                   keyword,
+                                   transf);
         ecl_kw_fwrite (kw, *this);
     }
 
@@ -878,6 +880,12 @@ static double toBar (const double& pressure) {
     return Opm::unit::convert::to (pressure, Opm::unit::barsa);
 }
 
+/// Helper method that can be used in keyword transformation (must curry
+/// the milliDarcy argument)
+static double toMilliDarcy (const double& permeability) {
+    return Opm::unit::convert::to (permeability, Opm::prefix::milli * Opm::unit::darcy);
+}
+
 /// Names of the saturation property for each phase. The order of these
 /// names are critical; they must be the same as the BlackoilPhases enum
 static const char* SAT_NAMES[] = { "SWAT", "SOIL", "SGAS" };
@@ -900,9 +908,9 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
                         *parser_,
                         uses_);
 
-    fortio.writeKeyword<float> ("PERMX", *parser_);
-    fortio.writeKeyword<float> ("PERMY", *parser_);
-    fortio.writeKeyword<float> ("PERMZ", *parser_);
+    fortio.writeKeyword ("PERMX", *parser_, &toMilliDarcy);
+    fortio.writeKeyword ("PERMY", *parser_, &toMilliDarcy);
+    fortio.writeKeyword ("PERMZ", *parser_, &toMilliDarcy);
 
     /* Initial solution (pressure and saturation) */
     writeSolution (timeStep, timer, reservoirState, wellState);
