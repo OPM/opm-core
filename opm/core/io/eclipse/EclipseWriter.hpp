@@ -40,11 +40,6 @@ class WellState;
 namespace parameter { class ParameterGroup; }
 
 /*!
- * Internal class. Forward-declared here since it is part of the writer.
- */
-namespace internal { struct EclipseSummary; }
-
-/*!
  * \brief A class to write the reservoir state and the well state of a
  *        blackoil simulation to disk using the Eclipse binary format.
  *
@@ -92,8 +87,6 @@ private:
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck
-
-    std::unique_ptr <internal::EclipseSummary> sum_;
 };
 } // namespace Opm
 

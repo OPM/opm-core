@@ -61,11 +61,8 @@ using namespace Opm::parameter;
 #include <ert/ecl/ecl_file.h>
 #include <ert/ecl/ecl_rst_file.h>
 
-// namespace start here since we don't want the ERT headers in it;
-// this means we must also do it in the #else section at the bottom
-namespace Opm {
-
-namespace internal {
+// namespace start here since we don't want the ERT headers in it
+namespace {
 
 /// Smart pointer/handle class for ERT opaque types, such as ecl_kw_type*.
 ///
@@ -369,7 +366,6 @@ private:
     }
 };
 
-namespace {
 // enclosure of the current grid in a Cartesian space
 int cart_size (const UnstructuredGrid& grid) {
     const int nx = grid.cartdims[0];
@@ -402,7 +398,6 @@ void active_cells (const UnstructuredGrid& grid,
         }
     }
 } // active_cells
-} // empty namespace
 
 /**
  * Representation of an Eclipse grid.
@@ -593,6 +588,10 @@ struct EclipseSummary : public EclipseHandle <ecl_sum_type> {
     ~EclipseSummary () {
         ecl_sum_fwrite (*this);
     }
+
+    // add rate variables for each of the well in the input file
+    void addWells (const EclipseGridParser& parser,
+                   const PhaseUsage& uses);
 
     // no inline implementation of this since it depends on the
     // EclipseWellReport type being completed first
@@ -816,6 +815,48 @@ EclipseSummary::writeTimeStep (const SimulatorTimer& timer,
 /// so we must have an explicit array.
 static WellType WELL_TYPES[] = { INJECTOR, PRODUCER };
 
+inline void
+EclipseSummary::addWells (const EclipseGridParser& parser,
+                          const PhaseUsage& uses) {
+    // TODO: Only create report variables that are requested with keywords
+    // (e.g. "WOPR") in the input files, and only for those wells that are
+    // mentioned in those keywords
+    const int numWells = parser.getWELSPECS().welspecs.size();
+    for (int phaseCounter = 0;
+          phaseCounter != BlackoilPhases::MaxNumPhases;
+          ++phaseCounter) {
+        const BlackoilPhases::PhaseIndex phase =
+                static_cast <BlackoilPhases::PhaseIndex> (phaseCounter);
+        // don't bother with reporting for phases that aren't there
+        if (!uses.phase_used [phaseCounter]) {
+            continue;
+        }
+        for (size_t typeIndex = 0;
+             typeIndex < sizeof (WELL_TYPES) / sizeof (WELL_TYPES[0]);
+             ++typeIndex) {
+            const WellType type = WELL_TYPES[typeIndex];
+            for (int whichWell = 0; whichWell != numWells; ++whichWell) {
+                // W{O,G,W}{I,P}R
+                add (std::unique_ptr <EclipseWellReport> (
+                              new EclipseWellRate (*this,
+                                                   parser,
+                                                   whichWell,
+                                                   uses,
+                                                   phase,
+                                                   type)));
+                // W{O,G,W}{I,P}T
+                add (std::unique_ptr <EclipseWellReport> (
+                              new EclipseWellTotal (*this,
+                                                    parser,
+                                                    whichWell,
+                                                    uses,
+                                                    phase,
+                                                    type)));
+            }
+        }
+    }
+}
+
 /// Helper method that can be used in std::transform (must curry the barsa
 /// argument)
 static double pasToBar (double pressureInPascal) {
@@ -826,9 +867,9 @@ static double pasToBar (double pressureInPascal) {
 /// names are critical; they must be the same as the BlackoilPhases enum
 static const char* SAT_NAMES[] = { "SWAT", "SOIL", "SGAS" };
 
-} // namespace Opm::internal
+} // anonymous namespace
 
-using namespace Opm::internal;
+namespace Opm {
 
 void EclipseWriter::writeInit(const SimulatorTimer &timer) {
     /* Grid files */
@@ -844,54 +885,6 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer) {
     fortio.writeKeyword<float> ("PERMX", *parser_);
     fortio.writeKeyword<float> ("PERMY", *parser_);
     fortio.writeKeyword<float> ("PERMZ", *parser_);
-
-    /* Summary files */
-    sum_ = std::move (std::unique_ptr <EclipseSummary> (
-                          new EclipseSummary (outputDir_,
-                                               baseName_,
-                                               timer,
-                                               *parser_)));
-
-    // TODO: Only create report variables that are requested with keywords
-    // (e.g. "WOPR") in the input files, and only for those wells that are
-    // mentioned in those keywords
-    const int numWells = parser_->getWELSPECS().welspecs.size();
-    for (int phaseCounter = 0;
-          phaseCounter != BlackoilPhases::MaxNumPhases;
-          ++phaseCounter) {
-        const BlackoilPhases::PhaseIndex phase =
-                static_cast <BlackoilPhases::PhaseIndex> (phaseCounter);
-        // don't bother with reporting for phases that aren't there
-        if (!uses_.phase_used [phaseCounter]) {
-            continue;
-        }
-        for (size_t typeIndex = 0;
-             typeIndex < sizeof (WELL_TYPES) / sizeof (WELL_TYPES[0]);
-             ++typeIndex) {
-            const WellType type = WELL_TYPES[typeIndex];
-            for (int whichWell = 0; whichWell != numWells; ++whichWell) {
-                // W{O,G,W}{I,P}R
-                sum_->add (std::unique_ptr <EclipseWellReport> (
-                              new EclipseWellRate (*sum_,
-                                                    *parser_,
-                                                    whichWell,
-                                                    uses_,
-                                                    phase,
-                                                    type)));
-                // W{O,G,W}{I,P}T
-                sum_->add (std::unique_ptr <EclipseWellReport> (
-                              new EclipseWellTotal (*sum_,
-                                                     *parser_,
-                                                     whichWell,
-                                                     uses_,
-                                                     phase,
-                                                     type)));
-            }
-        }
-    }
-
-    // flush after all variables are allocated
-    ecl_sum_fwrite(*sum_);
 }
 
 void EclipseWriter::writeTimeStep(
@@ -932,7 +925,9 @@ void EclipseWriter::writeTimeStep(
     }
 
     /* Summary variables (well reporting) */
-    sum_->writeTimeStep (timer, wellState);
+    EclipseSummary sum (outputDir_, baseName_, timer, *parser_);
+    sum.addWells (*parser_, uses_);
+    sum.writeTimeStep (timer, wellState);
 }
 
 #else
