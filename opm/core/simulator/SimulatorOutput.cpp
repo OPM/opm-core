@@ -54,8 +54,8 @@ SimulatorOutputBase::SimulatorOutputBase (
     // current time. add an extra zero at the beginning so that the
     // initial state is also written
     const std::vector <double>& tstep = parser->getTSTEP ().tstep_;
-    times_.resize (tstep.size () + 1, 0.);
-    std::partial_sum (tstep.begin(), tstep.end(), times_.begin() + 1);
+    times_.resize (tstep.size (), 0.);
+    std::partial_sum (tstep.begin(), tstep.end(), times_.begin());
 
     // write the static initialization files, even before simulation starts
     writer_->writeInit (*timer, *state, *wellState);
