@@ -927,6 +927,11 @@ void EclipseWriter::writeTimeStep(
     }
 
     /* Summary variables (well reporting) */
+    // TODO: instead of writing the header (smspec) every time, it should
+    // only be written when there is a change in the well configuration
+    // (first timestep, in practice), and reused later. but how to do this
+    // without keeping the complete summary in memory (which will then
+    // accumulate all the timesteps)?
     EclipseSummary sum (outputDir_, baseName_, timer, *parser_);
     sum.addWells (*parser_, uses_);
     sum.writeTimeStep (timer, wellState);
