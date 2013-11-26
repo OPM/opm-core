@@ -4,9 +4,9 @@
 #include <opm/core/utility/parameters/Parameter.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
+#include <forward_list>
 #include <map>
 #include <memory> // unique_ptr
-#include <vector>
 
 using namespace std;
 using namespace Opm;
@@ -17,7 +17,7 @@ namespace {
 /// Multiplexer over a list of output writers
 struct MultiWriter : public OutputWriter {
     /// Shorthand for a list of owned output writers
-    typedef vector <unique_ptr <OutputWriter> > writers_t;
+    typedef forward_list <unique_ptr <OutputWriter> > writers_t;
     typedef writers_t::iterator it_t;
     typedef unique_ptr <writers_t> ptr_t;
 
@@ -85,7 +85,7 @@ OutputWriter::create (const ParameterGroup& params,
         // invoke the constructor for the type if we found the keyword
         // and put the pointer to this writer onto the list
         if (params.getDefault <bool> (name, false)) {
-            list->push_back (it->second (params, parser, grid));
+            list->push_front (it->second (params, parser, grid));
         }
     }
 
