@@ -258,11 +258,12 @@ static time_t current (const SimulatorTimer& timer) {
 
 // what each simulator consider to be the first time step
 const int ECL_TSTEP_BASE = 1;
-const int OPM_TSTEP_BASE = 1;
 
 // convert OPM time step numbers to Eclipse
 static int stepNum (const SimulatorTimer& timer) {
-    return timer.currentStepNum () - OPM_TSTEP_BASE + ECL_TSTEP_BASE;
+    return timer.currentStepNum ()
+         - SimulatorTimer::FIRST_STEP
+         + ECL_TSTEP_BASE;
 }
 
 /**
