@@ -87,6 +87,12 @@ private:
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck
+
+    /// Write solution field variables (pressure and saturation)
+    void writeSolution (const int timeStep,
+                        const SimulatorTimer& timer,
+                        const SimulatorState& reservoirState,
+                        const WellState& wellState);
 };
 } // namespace Opm
 

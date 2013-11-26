@@ -895,13 +895,10 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer) {
     fortio.writeKeyword<float> ("PERMZ", *parser_);
 }
 
-void EclipseWriter::writeTimeStep(
-        const SimulatorTimer& timer,
-        const SimulatorState& reservoirState,
-        const WellState& wellState) {
-    // eclipse timestep index
-    const int timeStep = stepNum (timer);
-
+void EclipseWriter::writeSolution (const int timeStep,
+                                   const SimulatorTimer& timer,
+                                   const SimulatorState& reservoirState,
+                                   const WellState& wellState) {
     // convert the pressures from Pascals to bar because eclipse
     // seems to write bars
     const std::vector<double>& pas = reservoirState.pressure ();
@@ -935,6 +932,14 @@ void EclipseWriter::writeTimeStep(
                                             uses_.num_phases));
         }
     }
+}
+
+void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
+                                  const SimulatorState& reservoirState,
+                                  const WellState& wellState) {
+    // eclipse timestep index
+    const int timeStep = stepNum (timer);
+    writeSolution (timeStep, timer, reservoirState, wellState);
 
     /* Summary variables (well reporting) */
     // TODO: instead of writing the header (smspec) every time, it should
