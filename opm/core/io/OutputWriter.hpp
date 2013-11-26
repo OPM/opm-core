@@ -59,6 +59,13 @@ class WellState;
  */
 class OutputWriter {
 public:
+    /// Allow derived classes to be used in the unique_ptr that is returned
+    /// from the create() method. (Every class that should be delete'd should
+    /// have a proper constructor, and if the base class isn't virtual then
+    /// the compiler won't call the right one when the unique_ptr goes out of
+    /// scope).
+    virtual ~OutputWriter () { }
+
     /*!
      * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
      */
