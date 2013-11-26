@@ -72,21 +72,31 @@ SimulatorOutputBase::operator std::function <void ()> () {
 
 void
 SimulatorOutputBase::writeOutput () {
-    // write output for all timesteps that have passed (usually only
-    // one, unless you have entered the same time twice, or the simulator
-    // doesn't honor the TSTEP settings)
-    for (;
-         next_ < times_.size () && times_[next_] <= timer_->currentTime ();
-         ++next_) {
+    const int this_time = timer_->currentTime ();
 
-        // make sure the simulator has spilled all necessary internal
-        // state. notice that this calls *our* sync, which is overridden
-        // in the template companion to call the simulator
-        sync ();
+    // if the simulator signals for timesteps that aren't reporting
+    // times, then ignore them
+    if (next_ < times_.size () && times_[next_] <= this_time) {
+        // uh-oh, the simulator has skipped reporting timesteps that
+        // occurred before this timestep (it doesn't honor the TSTEP setting)
+        while (next_ < times_.size () && times_[next_] < this_time) {
+            ++next_;
+        }
 
-        // relay the request to the handlers (setup in the constructor
-        // from parameters)
-        writer_->writeTimeStep (*timer_, *reservoirState_, *wellState_);
+        // report this timestep if it matches
+        if (next_ < times_.size () && times_[next_] == this_time) {
+            // make sure the simulator has spilled all necessary internal
+            // state. notice that this calls *our* sync, which is overridden
+            // in the template companion to call the simulator
+            sync ();
+
+            // relay the request to the handlers (setup in the constructor
+            // from parameters)
+            writer_->writeTimeStep (*timer_, *reservoirState_, *wellState_);
+
+            // advance to the next reporting time
+            ++next_;
+        }
     }
 }
 
