@@ -122,7 +122,7 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
         : EclipseHandle <ecl_kw_type> (
               ecl_kw_alloc (name.c_str(), data.size (), type ()),
               ecl_kw_free) {
-        copyData (data, offset, stride);
+        copyData (data, &no_conversion, offset, stride);
     }
 
     /// Special initialization from double-precision array which
@@ -134,6 +134,7 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
     /// of T = double.
     EclipseKeyword (const std::vector<double>& data,
                     const std::string& name,
+                    double (* const transf)(const double&),
                     const int offset = 0,
                     const int stride = 1);
 
@@ -151,7 +152,7 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
                             type ()),
               ecl_kw_free) {
         const std::vector <T>& data = parser.getValue <T> (name);
-        copyData (data, 0, 1);
+        copyData (data, &no_conversion, 0, 1);
     }
 
     /// Constructor for optional fields
@@ -171,6 +172,11 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
     EclipseKeyword (const EclipseKeyword&) = delete;
     EclipseKeyword& operator= (const EclipseKeyword&) = delete;
 
+    /// Helper function when we don't really want any transformation
+    /// (The C++ committee removed std::identity because it was "troublesome" (!?!)
+    template <typename U>
+    static U no_conversion (const U& u) { return u; }
+
 private:
     /// Map the C++ data type (given by T) to an Eclipse type enum
     static ecl_type_enum type ();
@@ -178,6 +184,7 @@ private:
     /// Helper function that is the meat of the constructor
     template <typename U>
     void copyData (const std::vector <U>& data,
+                   U (* const transf)(const U&),
                    const int offset,
                    const int stride) {
         // number of elements to take
@@ -186,7 +193,7 @@ private:
         // fill it with values
         T* target = static_cast <T*> (ecl_kw_get_ptr (*this));
         for (int i = 0; i < num; ++i) {
-            target[i] = static_cast <T> (data[i * stride + offset]);
+            target[i] = static_cast <T> (transf (data[i * stride + offset]));
         }
     }
 
@@ -230,7 +237,7 @@ EclipseKeyword <float>::EclipseKeyword (
                         type ()),
           ecl_kw_free) {
     const std::vector <double>& data = parser.getValue <double> (name);
-    copyData (data, 0, 1);
+    copyData (data, &no_conversion, 0, 1);
 }
 
 /// Provide only the float version, since that is the one for which
@@ -239,13 +246,14 @@ template <>
 EclipseKeyword <float>::EclipseKeyword (
         const std::vector<double>& data,
         const std::string& name,
+        double (* const transf)(const double&),
         const int offset,
         const int stride)
     // allocate handle and put in smart pointer base class
     : EclipseHandle <ecl_kw_type> (
           ecl_kw_alloc (name.c_str(), dataSize (data, offset, stride), type ()),
           ecl_kw_free) {
-    copyData (data, offset, stride);
+    copyData (data, &no_conversion, offset, stride);
 }
 
 /**
@@ -864,10 +872,10 @@ EclipseSummary::addWells (const EclipseGridParser& parser,
     }
 }
 
-/// Helper method that can be used in std::transform (must curry the barsa
-/// argument)
-static double pasToBar (double pressureInPascal) {
-    return Opm::unit::convert::to (pressureInPascal, Opm::unit::barsa);
+/// Helper method that can be used in keyword transformation (must curry
+/// the barsa argument)
+static double toBar (const double& pressure) {
+    return Opm::unit::convert::to (pressure, Opm::unit::barsa);
 }
 
 /// Names of the saturation property for each phase. The order of these
@@ -904,12 +912,6 @@ void EclipseWriter::writeSolution (const int timeStep,
                                    const SimulatorTimer& timer,
                                    const SimulatorState& reservoirState,
                                    const WellState& wellState) {
-    // convert the pressures from Pascals to bar because eclipse
-    // seems to write bars
-    const std::vector<double>& pas = reservoirState.pressure ();
-    std::vector<double> bar (pas.size (), 0.);
-    std::transform (pas.begin(), pas.end(), bar.begin(), pasToBar);
-
     // start writing to files
     EclipseRestart rst (outputDir_,
                         baseName_,
@@ -918,11 +920,15 @@ void EclipseWriter::writeSolution (const int timeStep,
                      timer,
                      uses_,
                      *parser_,
-                     pas.size ());
+                     reservoirState.pressure ().size ());
     EclipseSolution sol (rst);
 
     // write pressure and saturation fields (same as DataMap holds)
-    sol.add (EclipseKeyword<float> (bar, "PRESSURE"));
+    // convert the pressures from Pascals to bar because Eclipse
+    // seems to write bars
+    sol.add (EclipseKeyword<float> (reservoirState.pressure (),
+                                    "PRESSURE",
+                                    &toBar));
 
     for (int phase = 0; phase != BlackoilPhases::MaxNumPhases; ++phase) {
         // Eclipse never writes the oil saturation, so all post-processors
@@ -933,6 +939,7 @@ void EclipseWriter::writeSolution (const int timeStep,
         if (uses_.phase_used [phase]) {
             sol.add (EclipseKeyword<float> (reservoirState.saturation(),
                                             SAT_NAMES [phase],
+                                            &EclipseKeyword <float>::no_conversion,
                                             uses_.phase_pos [phase],
                                             uses_.num_phases));
         }
