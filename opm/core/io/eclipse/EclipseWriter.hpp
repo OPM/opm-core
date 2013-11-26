@@ -92,8 +92,7 @@ private:
     PhaseUsage uses_;           // active phases in the input deck
 
     /// Write solution field variables (pressure and saturation)
-    void writeSolution (const int timeStep,
-                        const SimulatorTimer& timer,
+    void writeSolution (const SimulatorTimer& timer,
                         const SimulatorState& reservoirState,
                         const WellState& wellState);
 };

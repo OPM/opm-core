@@ -69,6 +69,9 @@ public:
     /**
      * Write the static eclipse data (grid, PVT curves, etc) as well as the
      * initial state to disk.
+     *
+     * This routine should be called before the first timestep (i.e. when
+     * timer.currentStepNum () == 0)
      */
     virtual void writeInit(const SimulatorTimer &timer,
                            const SimulatorState& reservoirState,
@@ -80,6 +83,9 @@ public:
      *
      * \param[in] reservoirState The thermodynamic state of the reservoir
      * \param[in] wellState The production/injection data for all wells
+     *
+     * This routine should be called after the timestep has been advanced,
+     * i.e. timer.currentStepNum () > 0.
      */
     virtual void writeTimeStep(const SimulatorTimer& timer,
                                  const SimulatorState& reservoirState,
