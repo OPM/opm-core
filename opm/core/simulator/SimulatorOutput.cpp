@@ -51,10 +51,11 @@ SimulatorOutputBase::SimulatorOutputBase (
 
     // make a list of times to dump. since the original list are relative
     // timesteps, we make a list of accumulated such to compare with
-    // current time.
+    // current time. add an extra zero at the beginning so that the
+    // initial state is also written
     const std::vector <double>& tstep = parser->getTSTEP ().tstep_;
-    times_.resize (tstep.size (), 0.);
-    std::partial_sum (tstep.begin(), tstep.end(), times_.begin());
+    times_.resize (tstep.size () + 1, 0.);
+    std::partial_sum (tstep.begin(), tstep.end(), times_.begin() + 1);
 
     // write the static initialization files, even before simulation starts
     writer_->writeInit (*timer);
