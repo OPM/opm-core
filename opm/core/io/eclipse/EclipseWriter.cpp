@@ -90,12 +90,21 @@ struct EclipseHandle {
     EclipseHandle <T> (T* t, void (*destroy)(T*))
         : h_ (t, destroy) { }
 
+    /// Construct an object whose memory is freed as part of another
+    /// structure. This constructor is dangerous! Make sure that you
+    /// have the lifetime management correct before using it.
+    EclipseHandle <T> (T* t) : h_ (t, no_delete) { }
+
     /// Convenience operator that lets us use this type as if
     /// it was a handle directly.
     operator T* () const { return h_.get (); }
 
 private:
     std::unique_ptr <T, void (*)(T*) throw()> h_; // handle
+
+    // helper function to pass to the second pointer constructor, since
+    // the runtime library does not like this construct
+    static void no_delete (T*) { }
 };
 
 /**
@@ -606,25 +615,18 @@ private:
     // type and a typedef.
     typedef EclipseHandle <ecl_sum_tstep_type> EclipseTimeStep;
 
-    // hold memory for each timestep alive until we can flush it;
-    // each time step is temporarily referenced in writeTimeStep,
-    // but this list keeps the reference alive until the entire
-    // summary goes out of scope.
-    std::forward_list <std::shared_ptr <EclipseTimeStep> > steps_;
-
-    /// Create a new time step and add it to this summary. Use this
-    /// method instead of creating your own timestep objects, as it
-    /// will make sure that the
-    std::shared_ptr <EclipseTimeStep> makeTimeStep (const SimulatorTimer& timer) {
-        auto tstep = std::make_shared <EclipseTimeStep> (
+    /// Create a new time step and add it to this summary. The summary
+    /// will take care of memory management, the object returned is a
+    /// "view" into it. Make sure that that view does not outlive the
+    /// summary object! Notice that there is no deleter in the constructor.
+    std::unique_ptr <EclipseTimeStep> makeTimeStep (const SimulatorTimer& timer) {
+        EclipseTimeStep* tstep = new EclipseTimeStep (
                     ecl_sum_add_tstep (*this,
                                        stepNum (timer),
                                        // currentTime is always relative to start
                                        Opm::unit::convert::to (timer.currentTime (),
-                                                               Opm::unit::day)),
-                    ecl_sum_tstep_free);
-        steps_.push_front (tstep);
-        return tstep;
+                                                               Opm::unit::day)));
+        return std::unique_ptr <EclipseTimeStep> (tstep);
     }
 
     /// Helper routine that lets us use local variables to hold
@@ -674,8 +676,7 @@ protected:
                                wellName (parser, whichWell).c_str (),
                                /* num = */ 0,
                                unit.c_str(),
-                               /* defaultValue = */ 0.),
-              smspec_node_free)
+                               /* defaultValue = */ 0.))
         // save these for when we update the value in a timestep
         , index_ (whichWell * uses.num_phases + uses.phase_pos [phase])
 
@@ -803,7 +804,8 @@ private:
 inline void
 EclipseSummary::writeTimeStep (const SimulatorTimer& timer,
                                const WellState& wellState) {
-    std::shared_ptr <EclipseTimeStep> tstep = makeTimeStep (timer);
+    // internal view; do not move this code out of EclipseSummary!
+    std::unique_ptr <EclipseTimeStep> tstep = makeTimeStep (timer);
     // write all the variables
     for (vars_t::iterator v = vars_.begin(); v != vars_.end(); ++v) {
         const double value = (*v)->update (timer, wellState);
