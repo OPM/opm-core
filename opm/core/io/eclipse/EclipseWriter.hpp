@@ -65,10 +65,13 @@ public:
      */
     virtual ~EclipseWriter ();
 
-    /*!
-     * \brief Write the static eclipse data (grid, PVT curves, etc) to disk
+    /**
+     * Write the static eclipse data (grid, PVT curves, etc) as well as the
+     * initial state to disk.
      */
-    virtual void writeInit(const SimulatorTimer &timer);
+    virtual void writeInit(const SimulatorTimer &timer,
+                           const SimulatorState& reservoirState,
+                           const WellState& wellState);
 
     /*!
      * \brief Write a blackoil reservoir state to disk for later inspection with

@@ -878,7 +878,9 @@ static const char* SAT_NAMES[] = { "SWAT", "SOIL", "SGAS" };
 
 namespace Opm {
 
-void EclipseWriter::writeInit(const SimulatorTimer &timer) {
+void EclipseWriter::writeInit(const SimulatorTimer &timer,
+                              const SimulatorState& reservoirState,
+                              const WellState& wellState) {
     /* Grid files */
     const int timeStep = ECL_INIT_SOL;
     EclipseGrid ecl_grid = EclipseGrid::make (*parser_, *grid_);
@@ -955,15 +957,17 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
 #else
 namespace Opm {
 
-void EclipseWriter::writeInit(const SimulatorTimer &timer) {
+void EclipseWriter::writeInit(const SimulatorTimer&,
+                              const SimulatorState&,
+                              const WellState&) {
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");
 }
 
 void EclipseWriter::writeTimeStep(
-        const SimulatorTimer& timer,
-        const SimulatorState& reservoirState,
-        const WellState& wellState) {
+        const SimulatorTimer&,
+        const SimulatorState&,
+        const WellState&) {
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");
 }

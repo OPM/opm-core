@@ -58,7 +58,7 @@ SimulatorOutputBase::SimulatorOutputBase (
     std::partial_sum (tstep.begin(), tstep.end(), times_.begin() + 1);
 
     // write the static initialization files, even before simulation starts
-    writer_->writeInit (*timer);
+    writer_->writeInit (*timer, *state, *wellState);
 }
 
 // default destructor is OK, just need to be defined
