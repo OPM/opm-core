@@ -895,6 +895,9 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
     fortio.writeKeyword<float> ("PERMX", *parser_);
     fortio.writeKeyword<float> ("PERMY", *parser_);
     fortio.writeKeyword<float> ("PERMZ", *parser_);
+
+    /* Initial solution (pressure and saturation) */
+    writeSolution (timeStep, timer, reservoirState, wellState);
 }
 
 void EclipseWriter::writeSolution (const int timeStep,
