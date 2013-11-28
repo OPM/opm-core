@@ -48,9 +48,20 @@ namespace Opm
                         double* output_mu) const;
 
         /// Viscosity and its derivatives as a function of p and r.
+        /// The fluid is considered saturated if r >= rbub(p).
         virtual void mu(const int n,
                         const double* p,
                         const double* r,
+                        double* output_mu,
+                        double* output_dmudp,
+                        double* output_dmudr) const;
+
+        /// Viscosity as a function of p and r.
+        /// Whether the fluid is saturated or not is given explicitly by isSat.
+        virtual void mu(const int n,
+                        const double* p,
+                        const double* r,
+                        const bool* isSat,
                         double* output_mu,
                         double* output_dmudp,
                         double* output_dmudr) const;
@@ -69,9 +80,20 @@ namespace Opm
                           double* output_dBdp) const;
 
         /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
+        /// The fluid is considered saturated if r >= rbub(p).
         virtual void b(const int n,
                        const double* p,
                        const double* r,
+                       double* output_b,
+                       double* output_dbdp,
+                       double* output_dbdr) const;
+
+        /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
+        /// Whether the fluid is saturated or not is given explicitly by isSat.
+        virtual void b(const int n,
+                       const double* p,
+                       const double* r,
+                       const bool* isSat,
                        double* output_b,
                        double* output_dbdp,
                        double* output_dbdr) const;
@@ -109,6 +131,12 @@ namespace Opm
 
         double miscible_oil(const double press,
                             const double r,
+                            const int item,
+                            const int deriv = 0) const;
+
+        double miscible_oil(const double press,
+                            const double r,
+                            const bool isSat,
                             const int item,
                             const int deriv = 0) const;
 

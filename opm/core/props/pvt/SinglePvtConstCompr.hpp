@@ -108,6 +108,30 @@ namespace Opm
             std::fill(output_dmudr, output_dmudr + n, 0.0);
         }
 
+        virtual void mu(const int n,
+                        const double* p,
+                        const double* /*r*/,
+                        const bool* /*isSat*/,
+                        double* output_mu,
+                        double* output_dmudp,
+                        double* output_dmudr) const
+        {
+            if (visc_comp_) {
+                // #pragma omp parallel for
+                for (int i = 0; i < n; ++i) {
+                    // Computing a polynomial approximation to the exponential.
+                    double x = -visc_comp_*(p[i] - ref_press_);
+                    double d = (1.0 + x + 0.5*x*x);
+                    output_mu[i] = viscosity_/d;
+                    output_dmudp[i] = (viscosity_/(d*d))*(1+x) * visc_comp_;
+                }
+            } else {
+                std::fill(output_mu, output_mu + n, viscosity_);
+                std::fill(output_dmudp, output_dmudp + n, 0.0);
+            }
+            std::fill(output_dmudr, output_dmudr + n, 0.0);
+        }
+
         virtual void B(const int n,
                        const double* p,
                        const double* /*z*/,
@@ -148,6 +172,34 @@ namespace Opm
         virtual void b(const int n,
                                const double* p,
                                const double* /*r*/,
+                               double* output_b,
+                               double* output_dbdp,
+                               double* output_dbdr) const
+                {
+                    if (comp_) {
+        // #pragma omp parallel for
+                        for (int i = 0; i < n; ++i) {
+                            // Computing a polynomial approximation to the exponential.
+                            double x = comp_*(p[i] - ref_press_);
+                            double d = (1.0 + x + 0.5*x*x);
+
+                            // b = 1/B = d/ref_B_B;
+                            output_b[i] = d/ref_B_;
+                            output_dbdp[i] = (1 + x) * comp_/ref_B_;
+                        }
+                    } else {
+
+                        std::fill(output_b, output_b + n, 1/ref_B_);
+                        std::fill(output_dbdp, output_dbdp + n, 0.0);
+                    }
+                    std::fill(output_dbdr, output_dbdr + n, 0.0);
+
+                }
+
+        virtual void b(const int n,
+                               const double* p,
+                               const double* /*r*/,
+                               const bool* /*isSat*/,
                                double* output_b,
                                double* output_dbdp,
                                double* output_dbdr) const

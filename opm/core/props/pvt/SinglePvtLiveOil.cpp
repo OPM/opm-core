@@ -140,6 +140,24 @@ namespace Opm
                 }
     }
 
+    /// Viscosity and its derivatives as a function of p and r.
+    void SinglePvtLiveOil::mu(const int n,
+                               const double* p,
+                               const double* r,
+                               const bool* isSat,
+                               double* output_mu,
+                               double* output_dmudp,
+                               double* output_dmudr) const
+    {
+        // #pragma omp parallel for
+                for (int i = 0; i < n; ++i) {
+                    output_mu[i] = miscible_oil(p[i], r[i],isSat[i], 2, 0);
+                    output_dmudp[i] = miscible_oil(p[i], r[i],isSat[i], 2, 1);
+                    output_dmudr[i] = miscible_oil(p[i], r[i],isSat[i], 2, 2);
+
+                }
+    }
+
 
     /// Formation volume factor as a function of p and z.
     void SinglePvtLiveOil::B(const int n,
@@ -181,6 +199,24 @@ namespace Opm
                     output_b[i] = miscible_oil(p[i], r[i], 1, 0);
                     output_dbdp[i] = miscible_oil(p[i], r[i], 1, 1);
                     output_dbdr[i] = miscible_oil(p[i], r[i], 1, 2);
+
+                }
+    }
+
+    void SinglePvtLiveOil::b(const int n,
+                          const double* p,
+                          const double* r,
+                          const bool* isSat,
+                          double* output_b,
+                          double* output_dbdp,
+                          double* output_dbdr) const
+
+    {
+        // #pragma omp parallel for
+                for (int i = 0; i < n; ++i) {
+                    output_b[i] = miscible_oil(p[i], r[i], isSat[i],1, 0);
+                    output_dbdp[i] = miscible_oil(p[i], r[i], isSat[i], 1, 1);
+                    output_dbdr[i] = miscible_oil(p[i], r[i], isSat[i],1, 2);
 
                 }
     }
@@ -399,6 +435,83 @@ namespace Opm
 
             }    else {
             if (Rval <= r ) {  // Saturated case
+                return linearInterpolation(saturated_oil_table_[0],
+                                                 saturated_oil_table_[item],
+                                                 press);
+            } else {  // Undersaturated case
+                // Interpolate between table sections
+                int is = tableIndex(saturated_oil_table_[3], r);
+                double w = (r - saturated_oil_table_[3][is]) /
+                    (saturated_oil_table_[3][is+1] - saturated_oil_table_[3][is]);
+                assert(undersat_oil_tables_[is][0].size() >= 2);
+                assert(undersat_oil_tables_[is+1][0].size() >= 2);
+                double val1 =
+                    linearInterpolation(undersat_oil_tables_[is][0],
+                                              undersat_oil_tables_[is][item],
+                                              press);
+                double val2 =
+                    linearInterpolation(undersat_oil_tables_[is+1][0],
+                                              undersat_oil_tables_[is+1][item],
+                                              press);
+                double val = val1 + w*(val2 - val1);
+                return val;
+            }
+        }
+    }
+
+    double SinglePvtLiveOil::miscible_oil(const double press,
+                                          const double r,
+                                          const bool isSat,
+                                          const int item,
+                                          const int deriv) const
+    {
+        // derivative with respect to frist component (pressure)
+        if (deriv == 1) {
+            if (isSat) {  // Saturated case
+                return linearInterpolationDerivative(saturated_oil_table_[0],
+                                                saturated_oil_table_[item],
+                                                press);
+            } else {  // Undersaturated case
+                int is = tableIndex(saturated_oil_table_[3], r);
+                double w = (r - saturated_oil_table_[3][is]) /
+                    (saturated_oil_table_[3][is+1] - saturated_oil_table_[3][is]);
+                assert(undersat_oil_tables_[is][0].size() >= 2);
+                assert(undersat_oil_tables_[is+1][0].size() >= 2);
+                double val1 =
+                    linearInterpolationDerivative(undersat_oil_tables_[is][0],
+                                             undersat_oil_tables_[is][item],
+                                             press);
+                double val2 =
+                    linearInterpolationDerivative(undersat_oil_tables_[is+1][0],
+                                             undersat_oil_tables_[is+1][item],
+                                             press);
+                double val = val1 + w*(val2 - val1);
+                return val;
+            }
+            // derivative with respect to second component (r)
+        } else if (deriv == 2)  {
+            if (isSat) {  // Saturated case
+                return 0;
+            } else {  // Undersaturated case
+                int is = tableIndex(saturated_oil_table_[3], r);
+                assert(undersat_oil_tables_[is][0].size() >= 2);
+                assert(undersat_oil_tables_[is+1][0].size() >= 2);
+                double val1 =
+                    linearInterpolation(undersat_oil_tables_[is][0],
+                                              undersat_oil_tables_[is][item],
+                                              press);
+                double val2 =
+                    linearInterpolation(undersat_oil_tables_[is+1][0],
+                                              undersat_oil_tables_[is+1][item],
+                                              press);
+
+                double val = (val2 - val1)/(saturated_oil_table_[3][is+1]-saturated_oil_table_[3][is]);
+                return val;
+            }
+
+
+            }    else {
+            if (isSat) {  // Saturated case
                 return linearInterpolation(saturated_oil_table_[0],
                                                  saturated_oil_table_[item],
                                                  press);
