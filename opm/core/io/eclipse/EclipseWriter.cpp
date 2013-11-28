@@ -211,8 +211,14 @@ private:
         // don't jump out of the set when trying to
         assert(stride > 0 && stride < num - offset);
 
-        // number of (strided) entries it will provide
-        const div_t d = std::div (data.size () - offset, stride);
+        // number of (strided) entries it will provide. it is assumed that the
+        // data is organized into a number of records, each with equal number
+        // of items (the stride), and that the offset *always* can be used to
+        // index into such a record. if we wanted to support a partial record
+        // at the end, then we should add one if the offset is less-or-equal
+        // to the remainder.
+        const div_t d = std::div (data.size (), stride);
+        assert (d.rem == 0);
         return d.quot;
     }
 };
