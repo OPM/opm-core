@@ -256,7 +256,7 @@ EclipseKeyword <float>::EclipseKeyword (
     : EclipseHandle <ecl_kw_type> (
           ecl_kw_alloc (name.c_str(), dataSize (data, offset, stride), type ()),
           ecl_kw_free) {
-    copyData (data, &no_conversion, offset, stride);
+    copyData (data, transf, offset, stride);
 }
 
 /**
