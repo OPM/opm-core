@@ -213,7 +213,7 @@ private:
         // number of (strided) entries it will provide. the last item
         // in the array is num - 1. the last strided item we can pick
         // (from recs number of records) is (recs - 1) * stride + offset,
-        // which must be <= num - 1. we are interesting in the maximum
+        // which must be <= num - 1. we are interested in the maximum
         // case where it holds to equals. rearranging the above gives us:
         const int recs = (num - 1 - offset) / stride + 1;
         return recs;
