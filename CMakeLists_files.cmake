@@ -37,10 +37,11 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/grid/cpgpreprocess/geometry.c
 	opm/core/grid/cpgpreprocess/preprocess.c
 	opm/core/grid/cpgpreprocess/uniquepoints.c
-	opm/core/io/eclipse/BlackoilEclipseOutputWriter.cpp
 	opm/core/io/eclipse/EclipseGridInspector.cpp
 	opm/core/io/eclipse/EclipseGridParser.cpp
+	opm/core/io/eclipse/EclipseWriter.cpp
 	opm/core/io/eclipse/writeECLData.cpp
+	opm/core/io/OutputWriter.cpp
 	opm/core/io/vag/vag.cpp
 	opm/core/io/vtk/writeVtkData.cpp
 	opm/core/linalg/LinearSolverFactory.cpp
@@ -98,6 +99,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/simulator/BlackoilState.cpp
 	opm/core/simulator/SimulatorCompressibleTwophase.cpp
 	opm/core/simulator/SimulatorIncompTwophase.cpp
+	opm/core/simulator/SimulatorOutput.cpp
 	opm/core/simulator/SimulatorReport.cpp
 	opm/core/simulator/SimulatorState.cpp
 	opm/core/simulator/SimulatorTimer.cpp
@@ -230,14 +232,15 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/grid/cpgpreprocess/grdecl.h
 	opm/core/grid/cpgpreprocess/preprocess.h
 	opm/core/grid/cpgpreprocess/uniquepoints.h
-	opm/core/io/eclipse/BlackoilEclipseOutputWriter.hpp
 	opm/core/io/eclipse/CornerpointChopper.hpp
 	opm/core/io/eclipse/EclipseGridInspector.hpp
 	opm/core/io/eclipse/EclipseGridParser.hpp
 	opm/core/io/eclipse/EclipseGridParserHelpers.hpp
 	opm/core/io/eclipse/EclipseUnits.hpp
+	opm/core/io/eclipse/EclipseWriter.hpp
 	opm/core/io/eclipse/SpecialEclipseFields.hpp
 	opm/core/io/eclipse/writeECLData.hpp
+	opm/core/io/OutputWriter.hpp
 	opm/core/io/vag/vag.hpp
 	opm/core/io/vtk/writeVtkData.hpp
 	opm/core/linalg/LinearSolverFactory.hpp
@@ -305,6 +308,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/BlackoilState.hpp
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
+	opm/core/simulator/SimulatorOutput.hpp
 	opm/core/simulator/SimulatorReport.hpp
 	opm/core/simulator/SimulatorState.hpp
 	opm/core/simulator/SimulatorTimer.hpp
@@ -374,6 +378,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/parameters/tinyxml/tinystr.h
 	opm/core/utility/parameters/tinyxml/tinyxml.h
 	opm/core/utility/PropertySystem.hpp
+	opm/core/utility/share_obj.hpp
 	opm/core/wells/InjectionSpecification.hpp
 	opm/core/wells/ProductionSpecification.hpp
 	opm/core/wells/WellCollection.hpp
