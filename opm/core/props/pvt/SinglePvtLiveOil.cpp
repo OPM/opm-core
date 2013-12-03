@@ -144,16 +144,18 @@ namespace Opm
     void SinglePvtLiveOil::mu(const int n,
                                const double* p,
                                const double* r,
-                               const bool* isSat,
+                               const PhasePresence* cond,
                                double* output_mu,
                                double* output_dmudp,
                                double* output_dmudr) const
     {
         // #pragma omp parallel for
                 for (int i = 0; i < n; ++i) {
-                    output_mu[i] = miscible_oil(p[i], r[i],isSat[i], 2, 0);
-                    output_dmudp[i] = miscible_oil(p[i], r[i],isSat[i], 2, 1);
-                    output_dmudr[i] = miscible_oil(p[i], r[i],isSat[i], 2, 2);
+                    const PhasePresence& cnd = cond[i];
+
+                    output_mu[i] = miscible_oil(p[i], r[i], cnd, 2, 0);
+                    output_dmudp[i] = miscible_oil(p[i], r[i], cnd, 2, 1);
+                    output_dmudr[i] = miscible_oil(p[i], r[i], cnd, 2, 2);
 
                 }
     }
@@ -206,7 +208,7 @@ namespace Opm
     void SinglePvtLiveOil::b(const int n,
                           const double* p,
                           const double* r,
-                          const bool* isSat,
+                          const PhasePresence* cond,
                           double* output_b,
                           double* output_dbdp,
                           double* output_dbdr) const
@@ -214,9 +216,11 @@ namespace Opm
     {
         // #pragma omp parallel for
                 for (int i = 0; i < n; ++i) {
-                    output_b[i] = miscible_oil(p[i], r[i], isSat[i],1, 0);
-                    output_dbdp[i] = miscible_oil(p[i], r[i], isSat[i], 1, 1);
-                    output_dbdr[i] = miscible_oil(p[i], r[i], isSat[i],1, 2);
+                    const PhasePresence& cnd = cond[i];
+
+                    output_b[i] = miscible_oil(p[i], r[i], cnd, 1, 0);
+                    output_dbdp[i] = miscible_oil(p[i], r[i], cnd, 1, 1);
+                    output_dbdr[i] = miscible_oil(p[i], r[i], cnd, 1, 2);
 
                 }
     }
@@ -461,10 +465,12 @@ namespace Opm
 
     double SinglePvtLiveOil::miscible_oil(const double press,
                                           const double r,
-                                          const bool isSat,
+                                          const PhasePresence& cond,
                                           const int item,
                                           const int deriv) const
     {
+        const bool isSat = cond.hasFreeGas();
+
         // derivative with respect to frist component (pressure)
         if (deriv == 1) {
             if (isSat) {  // Saturated case

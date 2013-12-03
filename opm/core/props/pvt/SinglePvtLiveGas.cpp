@@ -113,7 +113,7 @@ namespace Opm
     void SinglePvtLiveGas::mu(const int n,
                                const double* p,
                                const double* r,
-                               const bool* isSat,
+                               const PhasePresence* cond,
                                double* output_mu,
                                double* output_dmudp,
                                double* output_dmudr) const
@@ -165,7 +165,7 @@ namespace Opm
     void SinglePvtLiveGas::b(const int n,
                           const double* p,
                           const double* r,
-                          const bool* isSat,
+                          const PhasePresence* cond,
                           double* output_b,
                           double* output_dbdp,
                           double* output_dbdr) const

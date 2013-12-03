@@ -65,11 +65,11 @@ namespace Opm
                               double* output_dmudr) const = 0;
 
         /// Viscosity as a function of p and r.
-        /// Whether the fluid is saturated or not is given explicitly by isSat.
+        /// State condition determined by 'cond'.
         virtual void mu(const int n,
                               const double* p,
                               const double* r,
-                              const bool* isSat,
+                              const PhasePresence* cond,
                               double* output_mu,
                               double* output_dmudp,
                               double* output_dmudr) const = 0;
@@ -97,11 +97,11 @@ namespace Opm
                           double* output_dpdr) const = 0;
 
         /// The inverse of the volume factor b = 1 / B as a function of p and r.
-        /// Whether the fluid is saturated or not is given explicitly by isSat.
+        /// State condition determined by 'cond'.
         virtual void b(const int n,
                           const double* p,
                           const double* r,
-                          const bool* isSat,
+                          const PhasePresence* cond,
                           double* output_b,
                           double* output_dbdp,
                           double* output_dpdr) const = 0;
