@@ -97,6 +97,7 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
 
     std::vector<double> p(n);
     std::vector<double> r(n);
+    bool isSat[n];
     std::vector<double> z(n * np);
 
     std::vector<double> mu(n);
@@ -122,6 +123,11 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
     r[1] = 200;
     r[2] = 200 + h_r;
 
+    isSat[0] = true;
+    isSat[1] = true;
+    isSat[2] = true;
+
+
     // undersaturated
     p[3] = p[0];
     p[4] = p[1];
@@ -131,6 +137,9 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
     r[4] = 50;
     r[5] = 50 +h_r;
 
+    isSat[3] = false;
+    isSat[4] = false;
+    isSat[5] = false;
 
     // Corresponing z factors, used to compare with the [p,z] interface
     for (int i = 0; i < n; ++i) {
@@ -141,7 +150,7 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
 
     // test mu
     for (int phase = 1; phase < 2; ++phase) {
-        props_[phase]->mu(n, &p[0], &r[0], &mu_new[0], &dmudp[0], &dmudr[0]);
+        props_[phase]->mu(n, &p[0], &r[0], &isSat[0], &mu_new[0], &dmudp[0], &dmudr[0]);
         props_[phase]->mu(n, &p[0], &z[0], &mu[0]);
         dmudp_diff = (mu_new[1]-mu_new[0])/h_p;
         dmudr_diff = (mu_new[2]-mu_new[0])/h_r;
@@ -175,7 +184,7 @@ BOOST_AUTO_TEST_CASE(test_blackoilfluid)
     double dbdr_diff_u;
 
     for (int phase = 1; phase < 2; ++phase) {
-        props_[phase]->b(n, &p[0], &r[0], &b[0], &dbdp[0], &dbdr[0]);
+        props_[phase]->b(n, &p[0], &r[0], &isSat[0], &b[0], &dbdp[0], &dbdr[0]);
         //props_[phase]->B(n, p, z, B);
         props_[phase]->dBdp(n, &p[0], &z[0], &B[0], &dBdp[0]);
         dbdp_diff = (b[1]-b[0])/h_p;
