@@ -96,6 +96,23 @@ namespace Opm
 
         }
 
+    void SinglePvtDead::mu(const int n,
+                               const double* p,
+                               const double* /*r*/,
+                               const PhasePresence* /*cond*/,
+                               double* output_mu,
+                               double* output_dmudp,
+                               double* output_dmudr) const
+        {
+    // #pragma omp parallel for
+            for (int i = 0; i < n; ++i) {
+                output_mu[i] = viscosity_(p[i]);
+                output_dmudp[i] = viscosity_.derivative(p[i]);
+            }
+            std::fill(output_dmudr, output_dmudr + n, 0.0);
+
+        }
+
     void SinglePvtDead::B(const int n,
                           const double* p,
                           const double* /*z*/,
@@ -125,6 +142,25 @@ namespace Opm
     void SinglePvtDead::b(const int n,
                               const double* p,
                               const double* /*r*/,
+                              double* output_b,
+                              double* output_dbdp,
+                              double* output_dbdr) const
+
+        {
+    // #pragma omp parallel for
+            for (int i = 0; i < n; ++i) {
+                output_b[i] = b_(p[i]);
+                output_dbdp[i] = b_.derivative(p[i]);
+
+            }
+            std::fill(output_dbdr, output_dbdr + n, 0.0);
+
+        }
+
+    void SinglePvtDead::b(const int n,
+                              const double* p,
+                              const double* /*r*/,
+                              const PhasePresence* /*cond*/,
                               double* output_b,
                               double* output_dbdp,
                               double* output_dbdr) const

@@ -109,6 +109,18 @@ namespace Opm
         OPM_THROW(std::runtime_error, "The new fluid interface not yet implemented");
     }
 
+    /// Viscosity and its derivatives as a function of p and r.
+    void SinglePvtLiveGas::mu(const int n,
+                               const double* p,
+                               const double* r,
+                               const PhasePresence* cond,
+                               double* output_mu,
+                               double* output_dmudp,
+                               double* output_dmudr) const
+    {
+        OPM_THROW(std::runtime_error, "The new fluid interface not yet implemented");
+    }
+
 
     /// Formation volume factor as a function of p and z.
     void SinglePvtLiveGas::B(const int n,
@@ -141,6 +153,19 @@ namespace Opm
     void SinglePvtLiveGas::b(const int n,
                           const double* p,
                           const double* r,
+                          double* output_b,
+                          double* output_dbdp,
+                          double* output_dbdr) const
+
+    {
+        OPM_THROW(std::runtime_error, "The new fluid interface not yet implemented");
+    }
+
+    /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
+    void SinglePvtLiveGas::b(const int n,
+                          const double* p,
+                          const double* r,
+                          const PhasePresence* cond,
                           double* output_b,
                           double* output_dbdp,
                           double* output_dbdr) const
