@@ -56,9 +56,20 @@ namespace Opm
                         double* output_mu) const = 0;
 
         /// Viscosity as a function of p and r.
+        /// The fluid is considered saturated if r >= rbub(p).
         virtual void mu(const int n,
                               const double* p,
                               const double* r,
+                              double* output_mu,
+                              double* output_dmudp,
+                              double* output_dmudr) const = 0;
+
+        /// Viscosity as a function of p and r.
+        /// State condition determined by 'cond'.
+        virtual void mu(const int n,
+                              const double* p,
+                              const double* r,
+                              const PhasePresence* cond,
                               double* output_mu,
                               double* output_dmudp,
                               double* output_dmudr) const = 0;
@@ -77,9 +88,20 @@ namespace Opm
                           double* output_dBdp) const = 0;
 
         /// The inverse of the volume factor b = 1 / B as a function of p and r.
+        /// The fluid is considered saturated if r >= rbub(p).
         virtual void b(const int n,
                           const double* p,
                           const double* r,
+                          double* output_b,
+                          double* output_dbdp,
+                          double* output_dpdr) const = 0;
+
+        /// The inverse of the volume factor b = 1 / B as a function of p and r.
+        /// State condition determined by 'cond'.
+        virtual void b(const int n,
+                          const double* p,
+                          const double* r,
+                          const PhasePresence* cond,
                           double* output_b,
                           double* output_dbdp,
                           double* output_dpdr) const = 0;
