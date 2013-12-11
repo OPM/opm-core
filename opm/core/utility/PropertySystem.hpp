@@ -790,61 +790,33 @@ struct propertyDefinedOnSelf
                                    PropertyTag> >::value;
 };
 
-
 // template class to revert the order or a std::tuple's
 // arguments. This is required to make the properties of children
 // defined on the right overwrite the properties of the previous
-// children. this is not a very nice solution, but it works...
-template <class ... Args>
-struct RevertedTuple;
+// children. See https://sydius.me/2011/07/reverse-tuple-in-c/
+template<typename... Args>
+class RevertedTuple
+{
+private:
+    template<uint N, typename... All>
+    struct RevertedTupleOuter
+    {
+        template<typename Head, typename... Tail>
+        struct RevertedTupleInner: RevertedTupleOuter<N-1, Head, All...>::template RevertedTupleInner<Tail...> { };
+    };
 
-template <>
-struct RevertedTuple<>
-{ typedef std::tuple<> type; };
+    template<typename... All>
+    struct RevertedTupleOuter<0, All...>
+    {
+        template<typename... Tail>
+        struct RevertedTupleInner {
+            typedef std::tuple<All...> type;
+        };
+    };
 
-template <class Arg1>
-struct RevertedTuple<Arg1>
-{ typedef std::tuple<Arg1> type; };
-
-template <class Arg1, class Arg2>
-struct RevertedTuple<Arg1, Arg2>
-{ typedef std::tuple<Arg2, Arg1> type; };
-
-template <class Arg1, class Arg2, class Arg3>
-struct RevertedTuple<Arg1, Arg2, Arg3>
-{ typedef std::tuple<Arg3, Arg2, Arg1> type; };
-
-template <class Arg1, class Arg2, class Arg3, class Arg4>
-struct RevertedTuple<Arg1, Arg2, Arg3, Arg4>
-{ typedef std::tuple<Arg4, Arg3,  Arg2, Arg1> type; };
-
-template <class Arg1, class Arg2, class Arg3, class Arg4, class Arg5>
-struct RevertedTuple<Arg1, Arg2, Arg3, Arg4, Arg5>
-{ typedef std::tuple<Arg5, Arg4,  Arg3,  Arg2, Arg1> type; };
-
-template <class Arg1, class Arg2, class Arg3, class Arg4, class Arg5, class Arg6>
-struct RevertedTuple<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6>
-{ typedef std::tuple<Arg6, Arg5,  Arg4,  Arg3,  Arg2, Arg1> type; };
-
-template <class Arg1, class Arg2, class Arg3, class Arg4, class Arg5, class Arg6, class Arg7>
-struct RevertedTuple<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7>
-{ typedef std::tuple<Arg7, Arg6,  Arg5,  Arg4,  Arg3,  Arg2, Arg1> type; };
-
-template <class Arg1, class Arg2, class Arg3, class Arg4, class Arg5, class Arg6, class Arg7, class Arg8>
-struct RevertedTuple<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8>
-{ typedef std::tuple<Arg8, Arg7,  Arg6,  Arg5,  Arg4,  Arg3,  Arg2, Arg1> type; };
-
-template <class Arg1, class Arg2, class Arg3, class Arg4, class Arg5, class Arg6, class Arg7, class Arg8, class Arg9>
-struct RevertedTuple<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9>
-{ typedef std::tuple<Arg9, Arg8,  Arg7,  Arg6,  Arg5,  Arg4,  Arg3,  Arg2, Arg1> type; };
-
-template <class Arg1, class Arg2, class Arg3, class Arg4, class Arg5, class Arg6, class Arg7, class Arg8, class Arg9, class Arg10>
-struct RevertedTuple<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10>
-{ typedef std::tuple<Arg10, Arg9, Arg8,  Arg7,  Arg6,  Arg5,  Arg4,  Arg3,  Arg2, Arg1> type; };
-
-template <class Arg1, class Arg2, class Arg3, class Arg4, class Arg5, class Arg6, class Arg7, class Arg8, class Arg9, class Arg10, class Arg11>
-struct RevertedTuple<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10, Arg11>
-{ typedef std::tuple<Arg11, Arg10, Arg9, Arg8,  Arg7,  Arg6,  Arg5,  Arg4,  Arg3,  Arg2, Arg1> type; };
+public:
+    typedef typename RevertedTupleOuter<sizeof...(Args)>::template RevertedTupleInner<Args...>::type type;
+};
 
 template <class SelfT,
           typename ... Children>
@@ -867,146 +839,109 @@ struct Splices
 };
 } // namespace PTag
 
-// retrieve a property which is not defined on a splice
-template <class TypeTag, class PropertyTag>
-struct GetDirectProperty_
-{
-    // set the ::type attribute to the type tag for which the
-    // requested property was defined. First check whether the
-    // property is directly defined for the type tag, and if not,
-    // check all splices, then check all children
-    template <class CurTree, bool definedOnSelf = propertyDefinedOnSelf<TypeTag, CurTree, PropertyTag>::value >
-    struct GetEffectiveTypeTag_;
-
-    // set the ::type attribute to the child type tag for which the
-    // requested property was defined. The first child is ignored.
-    template <class Dummy, class ChildrenTuple>
-    struct TraverseRemainingChildren_;
-
-    // if the first argument != void this is the value of the ::type member, ...
-    template <class EffTypeTag, class ... RemainingChildren>
-    struct StopAtFirstChildElseTraverseRemaining_
-    { typedef EffTypeTag type; };
-
-    // ... or else the type tag is defined by the remaining children
-    template <class ... RemainingChildren>
-    struct StopAtFirstChildElseTraverseRemaining_<void, RemainingChildren...>
-    { typedef typename TraverseRemainingChildren_</*dummy=*/void, std::tuple<RemainingChildren...> >::type type; };
-
-    // set the ::type attribute to the type tag to the child for which
-    // the requested property was defined, or ...
-    template <class Dummy, class CurChild, class ... RemainingChildren>
-    struct TraverseRemainingChildren_<Dummy, std::tuple<CurChild, RemainingChildren...> >
-    { typedef typename StopAtFirstChildElseTraverseRemaining_<typename GetEffectiveTypeTag_<CurChild>::type, RemainingChildren...>::type type; };
-
-    // ... if there there are no children which we did not check
-    // anymore, the ::type attribute is void (i.e. the property was
-    // not defined for a given subtree)
-    template <class Dummy>
-    struct TraverseRemainingChildren_<Dummy, std::tuple<> >
-    { typedef void type; };
-
-    template <class CurTree>
-    struct GetEffectiveTypeTag_<CurTree, /*definedOnSelf=*/true>
-    { typedef CurTree type; };
-
-    template <class CurTree>
-    struct GetEffectiveTypeTag_<CurTree, /*definedOnSelf=*/false>
-    { typedef typename TraverseRemainingChildren_<CurTree, typename CurTree::ChildrenTuple >::type type; };
-
-public:
-    typedef Property<TypeTag, typename GetEffectiveTypeTag_<TypeTag>::type, PropertyTag> p;
-};
-
 template <class TypeTag, class PropertyTag>
 struct GetProperty
 {
-    // set the ::type attribute to the type tag for which the
-    // requested property was defined. First check whether the
-    // property is directly defined for the type tag, and if not,
-    // check all splices, then check all children
-    template <class CurTree, bool definedOnSelf = propertyDefinedOnSelf<TypeTag, CurTree, PropertyTag>::value >
+    template <class CurTree,
+              bool directlyDefined =
+                  propertyDefinedOnSelf<TypeTag,
+                                        CurTree,
+                                        PropertyTag>::value>
     struct GetEffectiveTypeTag_;
 
-    // set the ::type attribute to the child type tag for which the
-    // requested property was defined. The first child is ignored.
-    template <class Dummy, class ChildrenTuple>
-    struct TraverseRemainingChildren_;
+    template <class ...Elements>
+    struct SearchTypeTagList_;
 
-    // set the ::type attribute to the type tag for which the
-    // requested property was defined. First check all splices of the
-    // type tag, then check all children. The first splice is ignored.
-    template <class CurTree, class SpliceTuple>
-    struct TraverseRemainingSplicesAndChildren_;
+    template <class EffectiveTypeTag, class ...Elements>
+    struct SearchTypeTagList_FirstThenRemaining_;
 
-    // if the first argument != void this is the value of the ::type member, ...
-    template <class EffTypeTag, class ... RemainingChildren>
-    struct StopAtFirstChildElseTraverseRemaining_
-    { typedef EffTypeTag type; };
+    template <class ...SpliceList>
+    struct SearchSpliceList_;
 
-    // ... or else the type tag is defined by the remaining children
-    template <class ... RemainingChildren>
-    struct StopAtFirstChildElseTraverseRemaining_<void, RemainingChildren...>
-    { typedef typename TraverseRemainingChildren_</*dummy=*/void, std::tuple<RemainingChildren...> >::type type; };
+    template <class EffectiveTypeTag, class ...Splices>
+    struct SearchSpliceList_FirstThenRemaining_;
 
-    // set the ::type attribute to the type tag to the child for which
-    // the requested property was defined, or ...
-    template <class Dummy, class CurChild, class ... RemainingChildren>
-    struct TraverseRemainingChildren_<Dummy, std::tuple<CurChild, RemainingChildren...> >
-    { typedef typename StopAtFirstChildElseTraverseRemaining_<typename GetEffectiveTypeTag_<CurChild>::type, RemainingChildren...>::type type; };
-
-    // ... if there there are no children which we did not check
-    // anymore, the ::type attribute is void (i.e. the property was
-    // not defined for a given subtree)
-    template <class Dummy>
-    struct TraverseRemainingChildren_<Dummy, std::tuple<> >
+    // find the first type tag in a tuple for which the property is
+    // defined
+    template <class TypeTagTuple>
+    struct SearchTypeTagTuple_
     { typedef void type; };
 
-    template <class CurTree, class FirstSpliceTypeTag, class EffTypeTag, class ... RemainingSplices>
-    struct StopAtSpliceIfPropDefinedElseTraverseRemaining_
-    { typedef EffTypeTag type; };
+    template <class ...TypeTagList>
+    struct SearchTypeTagTuple_<std::tuple<TypeTagList...> >
+    { typedef typename SearchTypeTagList_<TypeTagList...>::type type; };
 
-    template <class CurTree, class FirstSpliceTypeTag, class ... RemainingSplices>
-    struct StopAtSpliceIfPropDefinedElseTraverseRemaining_<CurTree, FirstSpliceTypeTag, /*EffTypeTag=*/void, RemainingSplices...>
-    { typedef typename TraverseRemainingSplicesAndChildren_<CurTree, std::tuple<RemainingSplices...> >::type type; };
+    template <class ...Elements>
+    struct SearchTypeTagList_
+    { typedef void type; };
 
-    // if the property was defined for the current splice, stop
-    // here. If not...
-    template <class CurTree, class FirstSpliceProperty, class ... RemainingSplices>
-    struct StopAtFirstSpliceElseTraverseRemaining_
-    { typedef typename StopAtSpliceIfPropDefinedElseTraverseRemaining_<CurTree,
-                                                                       typename FirstSpliceProperty::p::type,
-                                                                       typename GetEffectiveTypeTag_<typename FirstSpliceProperty::p::type>::type,
-                                                                       RemainingSplices...>::type type; };
+    template <class FirstElement, class ...RemainingElements>
+    struct SearchTypeTagList_<FirstElement, RemainingElements...>
+    {
+        typedef typename SearchTypeTagList_FirstThenRemaining_<
+            typename GetEffectiveTypeTag_<FirstElement>::type,
+            RemainingElements...>::type type;
+    };
 
-    // ... check the remaining splices.
-    template <class CurTree, class ... RemainingSplices>
-    struct StopAtFirstSpliceElseTraverseRemaining_<CurTree, /*FirstSpliceProperty=*/void, RemainingSplices...>
-    { typedef typename TraverseRemainingSplicesAndChildren_<CurTree, std::tuple<RemainingSplices...> >::type type; };
+    template <class EffectiveTypeTag, class ...Elements>
+    struct SearchTypeTagList_FirstThenRemaining_
+    { typedef EffectiveTypeTag type; };
 
-    // check whether the property is defined on the remaining splices
-    // of a list (i.e. discard its first member) ...
-    template <class CurTree, class CurSplice, class ... RemainingSplices>
-    struct TraverseRemainingSplicesAndChildren_<CurTree, std::tuple<CurSplice, RemainingSplices...> >
-    { typedef typename StopAtFirstSpliceElseTraverseRemaining_<CurTree, GetDirectProperty_<TypeTag, CurSplice>, RemainingSplices...>::type type; };
+    template <class ...RemainingElements>
+    struct SearchTypeTagList_FirstThenRemaining_<void, RemainingElements...>
+    { typedef typename SearchTypeTagList_<RemainingElements...>::type type; };
 
-    // ... or if there are no splices left to check, proceed with the
-    // children of the type tag.
+    // find the first type tag in a tuple of splices for which the
+    // property is defined
+    template <class SpliceTuple>
+    struct SearchSpliceTuple_
+    { typedef void type; };
+
+    template <class ...SpliceList>
+    struct SearchSpliceTuple_<std::tuple<SpliceList...> >
+    { typedef typename SearchSpliceList_<SpliceList...>::type type; };
+
+    template <class ...SpliceList>
+    struct SearchSpliceList_
+    { typedef void type; };
+
+    template <class FirstSplice, class ...RemainingSplices>
+    struct SearchSpliceList_<FirstSplice, RemainingSplices...>
+    {
+        typedef typename SearchSpliceList_FirstThenRemaining_<
+            typename GetEffectiveTypeTag_<typename GetProperty<TypeTag, FirstSplice>::p::type>::type,
+            RemainingSplices...>::type type;
+    };
+
+    template <class EffectiveTypeTag, class ...Splices>
+    struct SearchSpliceList_FirstThenRemaining_
+    { typedef EffectiveTypeTag type; };
+
+    template <class ...RemainingSplices>
+    struct SearchSpliceList_FirstThenRemaining_<void, RemainingSplices...>
+    { typedef typename SearchSpliceList_<RemainingSplices...>::type type; };
+
+    // find the splice or the child type tag for which the property is defined
+    template <class CurTree,
+              class SpliceTypeTag = typename SearchSpliceTuple_< typename PTag::Splices<CurTree>::tuple >::type >
+    struct SearchSplicesThenChildren_
+    { typedef SpliceTypeTag type; };
+
     template <class CurTree>
-    struct TraverseRemainingSplicesAndChildren_<CurTree, std::tuple<> >
-    { typedef typename TraverseRemainingChildren_</*dummy=*/void, typename CurTree::ChildrenTuple>::type type; };
+    struct SearchSplicesThenChildren_<CurTree, void>
+    { typedef typename SearchTypeTagTuple_<typename CurTree::ChildrenTuple>::type type; };
+
+    // find the type tag for which the property is defined
+    template <class CurTree, bool directlyDefined>
+    struct GetEffectiveTypeTag_
+    { typedef typename CurTree::SelfType type; };
 
     template <class CurTree>
-    struct GetEffectiveTypeTag_<CurTree, /*definedOnSelf=*/true>
-    { typedef CurTree type; };
-
-    template <class CurTree>
-    struct GetEffectiveTypeTag_<CurTree, /*definedOnSelf=*/false>
-    { typedef typename TraverseRemainingSplicesAndChildren_<CurTree, typename PTag::Splices<CurTree>::tuple >::type type; };
+    struct GetEffectiveTypeTag_<CurTree, /*directlyDefined = */false>
+    { typedef typename SearchSplicesThenChildren_<CurTree>::type type; };
 
 public:
     typedef Property<TypeTag, typename GetEffectiveTypeTag_<TypeTag>::type, PropertyTag> p;
-    typedef typename GetEffectiveTypeTag_<TypeTag>::type q;
 };
 
 #if !defined NO_PROPERTY_INTROSPECTION
