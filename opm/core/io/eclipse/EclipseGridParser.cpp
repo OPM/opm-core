@@ -101,7 +101,8 @@ namespace EclipseKeywords
           string("DEPTHZ"),   string("TOPS"),       string("MAPAXES"),
           string("SWCR"),     string("SWL"),        string("SWU"),
           string("SOWCR"),    string("KRW"),        string("KRWR"),
-          string("KRO"),      string("KRORW"),      string("NTG")
+          string("KRO"),      string("KRORW"),      string("NTG"),
+          string("RHO")
         };
     const int num_floating_fields = sizeof(floating_fields) / sizeof(floating_fields[0]);
 
@@ -561,7 +562,8 @@ void EclipseGridParser::convertToSI()
                    key == "SGAS"     || key == "SWAT"     || key == "SOIL"     ||
                    key == "NTG"      || key == "SWCR"     || key == "SWL"      ||
                    key == "SWU"      || key == "SOWCR"    || key == "KRW"      ||
-                   key == "KRWR"     || key == "KRORW"    || key == "KRO") {
+                   key == "KRWR"     || key == "KRORW"    || key == "KRO"      ||
+                   key == "RHO") /* nonstandard field with no unit logic. use with caution */ {
             unit = 1.0;
             do_convert = false; // Dimensionless keywords...
         } else if (key == "PRESSURE") {
