@@ -176,7 +176,8 @@ list (APPEND TEST_SOURCE_FILES
 list (APPEND TEST_DATA_FILES
 	tests/extratestdata.xml
 	tests/testdata.xml
-	tests/testFluid.DATA
+	tests/liveoil.DATA
+  tests/wetgas.DATA
   tests/testBlackoilState1.DATA
   tests/testBlackoilState2.DATA
   tests/wells_manager_data.data
