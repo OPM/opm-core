@@ -18,7 +18,7 @@
 */
 
 #ifndef OPM_FSH_HEADER_INCLUDED
-#define OPM_FHS_HEADER_INCLUDED
+#define OPM_FSH_HEADER_INCLUDED
 
 /**
  * \file
