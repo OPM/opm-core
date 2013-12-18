@@ -164,9 +164,11 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_param.cpp
 	tests/test_blackoilfluid.cpp
 	tests/test_shadow.cpp
-	tests/test_units.cpp 
-        tests/test_blackoilstate.cpp    
-	)
+        tests/test_units.cpp
+        tests/test_blackoilstate.cpp
+        tests/test_parser.cpp
+        tests/test_wellsmanager.cpp
+  )
 
 # originally generated with the command:
 # find tests -name '*.xml' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
@@ -174,8 +176,9 @@ list (APPEND TEST_DATA_FILES
 	tests/extratestdata.xml
 	tests/testdata.xml
 	tests/testFluid.DATA
-        tests/testBlackoilState1.DATA
-        tests/testBlackoilState2.DATA
+  tests/testBlackoilState1.DATA
+  tests/testBlackoilState2.DATA
+  tests/wells_manager_data.data
 	)
 
 # originally generated with the command:
