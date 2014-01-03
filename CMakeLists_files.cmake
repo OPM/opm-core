@@ -166,7 +166,6 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_shadow.cpp
         tests/test_units.cpp
         tests/test_blackoilstate.cpp
-        tests/test_parser.cpp
         tests/test_wellsmanager.cpp
   )
 
@@ -255,6 +254,8 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/linalg/sparse_sys.h
 	opm/core/version.h
 	opm/core/wells.h
+	opm/core/well_controls.h
+	opm/core/well_control_type.h
 	opm/core/pressure/CompressibleTpfa.hpp
 	opm/core/pressure/FlowBCManager.hpp
 	opm/core/pressure/IncompTpfa.hpp
