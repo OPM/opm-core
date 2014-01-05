@@ -140,6 +140,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/wells/WellsGroup.cpp
 	opm/core/wells/WellsManager.cpp
 	opm/core/wells/wells.c
+	opm/core/wells/well_controls.c
 	)
 
 # originally generated with the command:
