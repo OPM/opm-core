@@ -168,6 +168,7 @@ list (APPEND TEST_SOURCE_FILES
         tests/test_units.cpp
         tests/test_blackoilstate.cpp
         tests/test_wellsmanager.cpp
+        tests/test_wellcontrols.cpp
   )
 
 # originally generated with the command:
