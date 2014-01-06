@@ -257,7 +257,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/version.h
 	opm/core/wells.h
 	opm/core/well_controls.h
-	opm/core/well_control_type.h
 	opm/core/pressure/CompressibleTpfa.hpp
 	opm/core/pressure/FlowBCManager.hpp
 	opm/core/pressure/IncompTpfa.hpp
