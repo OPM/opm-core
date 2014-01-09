@@ -140,6 +140,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/wells/WellsGroup.cpp
 	opm/core/wells/WellsManager.cpp
 	opm/core/wells/wells.c
+	opm/core/wells/well_controls.c
 	)
 
 # originally generated with the command:
@@ -164,9 +165,11 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_param.cpp
 	tests/test_blackoilfluid.cpp
 	tests/test_shadow.cpp
-	tests/test_units.cpp 
-        tests/test_blackoilstate.cpp    
-	)
+        tests/test_units.cpp
+        tests/test_blackoilstate.cpp
+        tests/test_wellsmanager.cpp
+        tests/test_wellcontrols.cpp
+  )
 
 # originally generated with the command:
 # find tests -name '*.xml' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
@@ -174,8 +177,9 @@ list (APPEND TEST_DATA_FILES
 	tests/extratestdata.xml
 	tests/testdata.xml
 	tests/testFluid.DATA
-        tests/testBlackoilState1.DATA
-        tests/testBlackoilState2.DATA
+  tests/testBlackoilState1.DATA
+  tests/testBlackoilState2.DATA
+  tests/wells_manager_data.data
 	)
 
 # originally generated with the command:
@@ -252,6 +256,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/linalg/sparse_sys.h
 	opm/core/version.h
 	opm/core/wells.h
+	opm/core/well_controls.h
 	opm/core/pressure/CompressibleTpfa.hpp
 	opm/core/pressure/FlowBCManager.hpp
 	opm/core/pressure/IncompTpfa.hpp
