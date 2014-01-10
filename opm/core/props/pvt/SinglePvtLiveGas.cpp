@@ -461,12 +461,12 @@ namespace Opm
                 }
 
                 // Extrapolate from last table section
-                int ltp = saturated_gas_table_[0].size() - 1;
-                if (is+1 == ltp && press > saturated_gas_table_[0][ltp]) {
-                    return linearInterpolation(undersat_gas_tables_[ltp][0],
-                                                     undersat_gas_tables_[ltp][item],
-                                                     r);
-                }
+                //int ltp = saturated_gas_table_[0].size() - 1;
+                //if (is+1 == ltp && press > saturated_gas_table_[0][ltp]) {
+                //    return linearInterpolation(undersat_gas_tables_[ltp][0],
+                //                                    undersat_gas_tables_[ltp][item],
+                //                                    r);
+                //}
 
                 // Interpolate between table sections
                 double w = (press - saturated_gas_table_[0][is]) /
