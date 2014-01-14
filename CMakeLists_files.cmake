@@ -169,6 +169,7 @@ list (APPEND TEST_SOURCE_FILES
         tests/test_blackoilstate.cpp
         tests/test_wellsmanager.cpp
         tests/test_wellcontrols.cpp
+	tests/test_equil.cpp
   )
 
 # originally generated with the command:
@@ -322,6 +323,8 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/WellState.hpp
 	opm/core/simulator/initState.hpp
 	opm/core/simulator/initState_impl.hpp
+	opm/core/simulator/initStateEquil.hpp
+	opm/core/simulator/initStateEquil_impl.hpp
 	opm/core/tof/DGBasis.hpp
 	opm/core/tof/TofReorder.hpp
 	opm/core/tof/TofDiscGalReorder.hpp
