@@ -166,10 +166,10 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_blackoilfluid.cpp
 	tests/test_shadow.cpp
 	tests/test_units.cpp 
-        tests/test_blackoilstate.cpp    
-        tests/test_parser.cpp    
-        tests/test_wellsmanager.cpp
-        tests/test_wellcontrols.cpp
+  tests/test_blackoilstate.cpp    
+  tests/test_parser.cpp    
+  tests/test_wellsmanager.cpp
+  tests/test_wellcontrols.cpp
   )
 
 # originally generated with the command:
