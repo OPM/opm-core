@@ -224,14 +224,24 @@ namespace Opm
 
                 }
 
-        virtual void rbub(const int n,
+        virtual void rsSat(const int n,
                              const double* /*p*/,
-                             double* output_rbub,
-                             double* output_drbubdp) const
+                             double* output_rsSat,
+                             double* output_drsSatdp) const
 
               {
-                  std::fill(output_rbub, output_rbub + n, 0.0);
-                  std::fill(output_drbubdp, output_drbubdp + n, 0.0);
+                  std::fill(output_rsSat, output_rsSat + n, 0.0);
+                  std::fill(output_drsSatdp, output_drsSatdp + n, 0.0);
+              }
+
+        virtual void rvSat(const int n,
+                             const double* /*p*/,
+                             double* output_rvSat,
+                             double* output_drvSatdp) const
+
+              {
+                  std::fill(output_rvSat, output_rvSat + n, 0.0);
+                  std::fill(output_drvSatdp, output_drvSatdp + n, 0.0);
               }
 
         virtual void R(const int n,

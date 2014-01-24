@@ -225,19 +225,28 @@ namespace Opm
                 }
     }
 
-    void SinglePvtLiveOil::rbub(const int n,
+    void SinglePvtLiveOil::rsSat(const int n,
                              const double* p,
-                             double* output_rbub,
-                             double* output_drbubdp) const
+                             double* output_rsSat,
+                             double* output_drsSatdp) const
     {
 
         for (int i = 0; i < n; ++i) {
-            output_rbub[i] = linearInterpolation(saturated_oil_table_[0],
+            output_rsSat[i] = linearInterpolation(saturated_oil_table_[0],
                     saturated_oil_table_[3],p[i]);
-            output_drbubdp[i] = linearInterpolationDerivative(saturated_oil_table_[0],
+            output_drsSatdp[i] = linearInterpolationDerivative(saturated_oil_table_[0],
                     saturated_oil_table_[3],p[i]);
 
         }
+    }
+
+    void SinglePvtLiveOil::rvSat(const int n,
+                             const double* /*p*/,
+                             double* output_rvSat,
+                             double* output_drvSatdp) const
+    {
+        std::fill(output_rvSat, output_rvSat + n, 0.0);
+        std::fill(output_drvSatdp, output_drvSatdp + n, 0.0);
     }
 
     /// Solution factor as a function of p and z.
