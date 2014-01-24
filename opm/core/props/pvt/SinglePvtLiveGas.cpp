@@ -75,7 +75,7 @@ namespace Opm
             undersat_gas_tables_[i][2].resize(tsize);
             for (int j=0, k=0; j<tsize; ++j) {
                 undersat_gas_tables_[i][0][j] = pvtg[region_number][i][++k]; // Rv
-                undersat_gas_tables_[i][1][j] = 1.0/pvtg[region_number][i][++k]; // Bg
+                undersat_gas_tables_[i][1][j] = 1.0/pvtg[region_number][i][++k]; // 1/Bg
                 undersat_gas_tables_[i][2][j] = pvtg[region_number][i][++k]; // mu_g
             }
         }
