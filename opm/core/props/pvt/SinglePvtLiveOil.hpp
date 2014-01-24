@@ -20,8 +20,10 @@
 #ifndef OPM_SINGLEPVTLIVEOIL_HEADER_INCLUDED
 #define OPM_SINGLEPVTLIVEOIL_HEADER_INCLUDED
 
-
 #include <opm/core/props/pvt/SinglePvtInterface.hpp>
+
+#include <opm/parser/eclipse/Utility/PvtoTable.hpp>
+
 #include <vector>
 
 namespace Opm
@@ -39,6 +41,7 @@ namespace Opm
         typedef std::vector<std::vector<std::vector<double> > > table_t;
 
         SinglePvtLiveOil(const table_t& pvto);
+        SinglePvtLiveOil(const Opm::PvtoTable &pvtoTable);
         virtual ~SinglePvtLiveOil();
 
         /// Viscosity as a function of p and z.

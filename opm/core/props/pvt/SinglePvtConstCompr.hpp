@@ -20,9 +20,12 @@
 #ifndef OPM_SINGLEPVTCONSTCOMPR_HEADER_INCLUDED
 #define OPM_SINGLEPVTCONSTCOMPR_HEADER_INCLUDED
 
-
 #include <opm/core/props/pvt/SinglePvtInterface.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
+
+#include <opm/parser/eclipse/Utility/PvtwTable.hpp>
+#include <opm/parser/eclipse/Utility/PvdcoTable.hpp>
+
 #include <vector>
 #include <algorithm>
 
@@ -53,6 +56,32 @@ namespace Opm
             comp_      = pvtw[region_number][2];
             viscosity_ = pvtw[region_number][3];
             visc_comp_ = pvtw[region_number][4];
+        }
+
+        SinglePvtConstCompr(const Opm::PvtwTable &pvtwTable)
+        {
+            if (pvtwTable.numRows() != 1)
+                OPM_THROW(std::runtime_error,
+                          "The table specified by the PVTW keyword is required"
+                          "to exhibit exactly one row.");
+            ref_press_ = pvtwTable.getPressureColumn()[0];
+            ref_B_     = pvtwTable.getFormationFactorColumn()[0];
+            comp_      = pvtwTable.getCompressibilityColumn()[0];
+            viscosity_ = pvtwTable.getViscosityColumn()[0];
+            visc_comp_ = pvtwTable.getViscosibilityColumn()[0];
+        }
+
+        SinglePvtConstCompr(const Opm::PvdcoTable &pvdcoTable)
+        {
+            if (pvdcoTable.numRows() != 1)
+                OPM_THROW(std::runtime_error,
+                          "The table specified by the PVDCO keyword is required"
+                          "to exhibit exactly one row.");
+            ref_press_ = pvdcoTable.getPressureColumn()[0];
+            ref_B_     = pvdcoTable.getFormationFactorColumn()[0];
+            comp_      = pvdcoTable.getCompressibilityColumn()[0];
+            viscosity_ = pvdcoTable.getViscosityColumn()[0];
+            visc_comp_ = pvdcoTable.getViscosibilityColumn()[0];
         }
 
         SinglePvtConstCompr(double visc)
