@@ -798,7 +798,7 @@ template<typename... Args>
 class RevertedTuple
 {
 private:
-    template<uint N, typename... All>
+    template<unsigned int N, typename... All>
     struct RevertedTupleOuter
     {
         template<typename Head, typename... Tail>
