@@ -30,536 +30,194 @@
 namespace Opm
 {
 
-
-
-
-    void SatFuncSimpleUniform::init(const EclipseGridParser& deck,
-                             const int table_num,
-                             const PhaseUsage phase_usg,
-                             const int samples)
+ // SatFuncSimple.cpp can now be removed and the code below moved to SatFuncBase.cpp ...
+ 
+    template<>
+    void SatFuncBase<NonuniformTableLinear<double> >::initializeTableType(NonuniformTableLinear<double> & table,
+                                                                           const std::vector<double>& arg,
+                                                                           const std::vector<double>& value,
+                                                                           const int samples)
     {
-        phase_usage = phase_usg;
-        double swco = 0.0;
-        double swmax = 1.0;
-        if (phase_usage.phase_used[Aqua]) {
-            const SWOF::table_t& swof_table = deck.getSWOF().swof_;
-            const std::vector<double>& sw = swof_table[table_num][0];
-            const std::vector<double>& krw = swof_table[table_num][1];
-            const std::vector<double>& krow = swof_table[table_num][2];
-            const std::vector<double>& pcow = swof_table[table_num][3];
-            if (krw.front() != 0.0 || krow.back() != 0.0) {
-                OPM_THROW(std::runtime_error, "Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
-            }
-
-            // Extend the tables with constant values such that the
-            // derivatives at the endpoints are zero
-            int n = sw.size();
-            std::vector<double> sw_ex(n+2);
-            std::vector<double> krw_ex(n+2);
-            std::vector<double> krow_ex(n+2);
-            std::vector<double> pcow_ex(n+2);
-
-            SatFuncSimpleUniform::ExtendTable(sw,sw_ex,1);
-            SatFuncSimpleUniform::ExtendTable(krw,krw_ex,0);
-            SatFuncSimpleUniform::ExtendTable(krow,krow_ex,0);
-            SatFuncSimpleUniform::ExtendTable(pcow,pcow_ex,0);
-
-            buildUniformMonotoneTable(sw_ex, krw_ex,  samples, krw_);
-            buildUniformMonotoneTable(sw_ex, krow_ex, samples, krow_);
-            buildUniformMonotoneTable(sw_ex, pcow_ex, samples, pcow_);
-
-            krocw_ = krow[0]; // At connate water -> ecl. SWOF
-            swco = sw[0];
-            smin_[phase_usage.phase_pos[Aqua]] = sw[0];
-            swmax = sw.back();
-            smax_[phase_usage.phase_pos[Aqua]] = sw.back();
-
-            krwmax_ = krw.back();
-            kromax_ = krow.front();
-            swcr_ = swmax;
-            sowcr_ = 1.0 - swco;
-            krwr_ = krw.back();
-            krorw_ = krow.front();
-            for (std::vector<double>::size_type i=1; i<sw.size(); ++i) {
-                if (krw[i]> 0.0) {
-                   swcr_ = sw[i-1];
-                   krorw_ = krow[i-1];
-                   break;
-                }
-            }
-            for (std::vector<double>::size_type i=sw.size()-1; i>=1; --i) {
-                if (krow[i-1]> 0.0) {
-                   sowcr_ = 1.0 - sw[i];
-                   krwr_ = krw[i];
-                   break;
-                }
-            }
-        }
-        if (phase_usage.phase_used[Vapour]) {
-            const SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
-            const std::vector<double>& sg = sgof_table[table_num][0];
-            const std::vector<double>& krg = sgof_table[table_num][1];
-            const std::vector<double>& krog = sgof_table[table_num][2];
-            const std::vector<double>& pcog = sgof_table[table_num][3];
-
-            // Extend the tables with constant values such that the
-            // derivatives at the endpoints are zero
-            int n = sg.size();
-            std::vector<double> sg_ex(n+2);
-            std::vector<double> krg_ex(n+2);
-            std::vector<double> krog_ex(n+2);
-            std::vector<double> pcog_ex(n+2);
-
-            SatFuncSimpleUniform::ExtendTable(sg,sg_ex,1);
-            SatFuncSimpleUniform::ExtendTable(krg,krg_ex,0);
-            SatFuncSimpleUniform::ExtendTable(krog,krog_ex,0);
-            SatFuncSimpleUniform::ExtendTable(pcog,pcog_ex,0);
-
-            buildUniformMonotoneTable(sg_ex, krg_ex,  samples, krg_);
-            buildUniformMonotoneTable(sg_ex, krog_ex, samples, krog_);
-            buildUniformMonotoneTable(sg_ex, pcog_ex, samples, pcog_);
-            smin_[phase_usage.phase_pos[Vapour]] = sg[0];
-            if (std::fabs(sg.back() + swco - 1.0) > 1e-3) {
-                OPM_THROW(std::runtime_error, "Gas maximum saturation in SGOF table = " << sg.back() <<
-                      ", should equal (1.0 - connate water sat) = " << (1.0 - swco));
-            }
-            smax_[phase_usage.phase_pos[Vapour]] = sg.back();
-        }
-        // These only consider water min/max sats. Consider gas sats?
-        smin_[phase_usage.phase_pos[Liquid]] = 1.0 - swmax;
-        smax_[phase_usage.phase_pos[Liquid]] = 1.0 - swco;
+      table = NonuniformTableLinear<double>(arg, value);
     }
 
-
-
-    void SatFuncSimpleUniform::ExtendTable(const std::vector<double>& xv,
-                                           std::vector<double>& xv_ex,
-                                           double pm) const
+    template<>
+    void SatFuncBase<UniformTableLinear<double> >::initializeTableType(UniformTableLinear<double> & table,
+                                                                       const std::vector<double>& arg,
+                                                                       const std::vector<double>& value,
+                                                                       const int samples)
     {
-        int n = xv.size();
-        xv_ex[0] = xv[0]-pm;
-        xv_ex[n+1] = xv[n-1]+pm;
-        for (int i=0; i<n; i++)
-        {
-            xv_ex[i+1] = xv[i];
-
-        }
-
+      buildUniformMonotoneTable(arg, value,  samples, table);
     }
 
-    void SatFuncSimpleUniform::evalKr(const double* s, double* kr) const
+    double EPSTransforms::Transform::scaleSat(double s, double s_r, double s_cr, double s_max) const
     {
-        if (phase_usage.num_phases == 3) {
-            // A simplified relative permeability model.
-            double sw = s[Aqua];
-            double sg = s[Vapour];
-            double krw = krw_(sw);
-            double krg = krg_(sg);
-            double krow = krow_(sw + sg); // = 1 - so
-            // double krog = krog_(sg);      // = 1 - so - sw
-            // double krocw = krocw_;
-            kr[Aqua] = krw;
-            kr[Vapour] = krg;
-            kr[Liquid] = krow;
-            if (kr[Liquid] < 0.0) {
-                kr[Liquid] = 0.0;
+        if (doNotScale) {
+            return s;
+        } else if (!do_3pt) { // 2-pt
+            if (s <= scr) {
+                return s_cr;
+            } else {
+                return (s >= smax) ? s_max : s_cr + (s-scr)*slope1;
             }
-            return;
-        }
-        // We have a two-phase situation. We know that oil is active.
-        if (phase_usage.phase_used[Aqua]) {
-            int wpos = phase_usage.phase_pos[Aqua];
-            int opos = phase_usage.phase_pos[Liquid];
-            double sw = s[wpos];
-            double krw = krw_(sw);
-            double so = s[opos];
-            double krow = krow_(1.0-so);
-            kr[wpos] = krw;
-            kr[opos] = krow;
+        } else if (s <= sr) {
+            return (s <= scr) ? s_cr : s_cr+(s-scr)*slope1;
         } else {
-            assert(phase_usage.phase_used[Vapour]);
-            int gpos = phase_usage.phase_pos[Vapour];
-            int opos = phase_usage.phase_pos[Liquid];
-            double sg = s[gpos];
-            double krg = krg_(sg);
-            double krog = krog_(sg);
-            kr[gpos] = krg;
-            kr[opos] = krog;
+            return (s >= smax) ? s_max : s_r+(s-sr)*slope2;
         }
     }
 
-
-    void SatFuncSimpleUniform::evalKrDeriv(const double* s, double* kr, double* dkrds) const
+    double EPSTransforms::Transform::scaleSatInv(double ss, double s_r, double s_cr, double s_max) const
     {
-        const int np = phase_usage.num_phases;
-        std::fill(dkrds, dkrds + np*np, 0.0);
-
-        if (np == 3) {
-            // A simplified relative permeability model.
-            double sw = s[Aqua];
-            double sg = s[Vapour];
-            double krw = krw_(sw);
-            double dkrww = krw_.derivative(sw);
-            double krg = krg_(sg);
-            double dkrgg = krg_.derivative(sg);
-            double krow = krow_(sw + sg);
-            double dkrow = krow_.derivative(sw + sg);
-            // double krog = krog_(sg);
-            // double dkrog = krog_.derivative(sg);
-            // double krocw = krocw_;
-            kr[Aqua] = krw;
-            kr[Vapour] = krg;
-            kr[Liquid] = krow;
-            //krocw*((krow/krocw + krw)*(krog/krocw + krg) - krw - krg);
-            if (kr[Liquid] < 0.0) {
-                kr[Liquid] = 0.0;
+        if (doNotScale) {
+            return ss;
+        } else if (!do_3pt) { // 2-pt
+            if (ss <= s_cr) {
+                return scr;
+            } else {
+                return (ss >= s_max) ? smax : scr + (ss-s_cr)/slope1;
             }
-            dkrds[Aqua + Aqua*np] = dkrww;
-            dkrds[Vapour + Vapour*np] = dkrgg;
-            //dkrds[Liquid + Aqua*np] = dkrow;
-            dkrds[Liquid + Liquid*np] = -dkrow;
-                    //krocw*((dkrow/krocw + dkrww)*(krog/krocw + krg) - dkrww);
-            dkrds[Liquid + Vapour*np] = 0.0;
-                    //krocw*((krow/krocw + krw)*(dkrog/krocw + dkrgg) - dkrgg)
-                    //+ krocw*((dkrow/krocw + krw)*(krog/krocw + krg) - dkrgg);
-            return;
-        }
-        // We have a two-phase situation. We know that oil is active.
-        if (phase_usage.phase_used[Aqua]) {
-            int wpos = phase_usage.phase_pos[Aqua];
-            int opos = phase_usage.phase_pos[Liquid];
-            double sw = s[wpos];
-            double krw = krw_(sw);
-            double dkrww = krw_.derivative(sw);
-            double so = s[opos];
-            double krow = krow_(1.0-so);
-            double dkrow = krow_.derivative(1.0-so);
-            kr[wpos] = krw;
-            kr[opos] = krow;
-            dkrds[wpos + wpos*np] = dkrww;
-            dkrds[opos + wpos*np] = dkrow; // Row opos, column wpos, fortran order.
+        } else if (ss <= s_r) {
+            return (ss <= s_cr) ? scr : scr+(ss-s_cr)/slope1;
         } else {
-            assert(phase_usage.phase_used[Vapour]);
-            int gpos = phase_usage.phase_pos[Vapour];
-            int opos = phase_usage.phase_pos[Liquid];
-            double sg = s[gpos];
-            double krg = krg_(sg);
-            double dkrgg = krg_.derivative(sg);
-            double krog = krog_(sg);
-            double dkrog = krog_.derivative(sg);
-            kr[gpos] = krg;
-            kr[opos] = krog;
-            dkrds[gpos + gpos*np] = dkrgg;
-            dkrds[opos + gpos*np] = dkrog;
-        }
-
-    }
-
-
-    void SatFuncSimpleUniform::evalPc(const double* s, double* pc) const
-    {
-        pc[phase_usage.phase_pos[Liquid]] = 0.0;
-        if (phase_usage.phase_used[Aqua]) {
-            int pos = phase_usage.phase_pos[Aqua];
-            pc[pos] = pcow_(s[pos]);
-        }
-        if (phase_usage.phase_used[Vapour]) {
-            int pos = phase_usage.phase_pos[Vapour];
-            pc[pos] = pcog_(s[pos]);
+            return (ss >= s_max) ? smax : sr+(ss-s_r)/slope2;
         }
     }
 
-    void SatFuncSimpleUniform::evalPcDeriv(const double* s, double* pc, double* dpcds) const
+    double EPSTransforms::Transform::scaleSatDeriv(double s, double s_r, double s_cr, double s_max) const
     {
-        // The problem of determining three-phase capillary pressures
-        // is very hard experimentally, usually one extends two-phase
-        // data (as for relative permeability).
-        // In our approach the derivative matrix is quite sparse, only
-        // the diagonal elements corresponding to non-oil phases are
-        // (potentially) nonzero.
-        const int np = phase_usage.num_phases;
-        std::fill(dpcds, dpcds + np*np, 0.0);
-        pc[phase_usage.phase_pos[Liquid]] = 0.0;
-        if (phase_usage.phase_used[Aqua]) {
-            int pos = phase_usage.phase_pos[Aqua];
-            pc[pos] = pcow_(s[pos]);
-            dpcds[np*pos + pos] = pcow_.derivative(s[pos]);
-        }
-        if (phase_usage.phase_used[Vapour]) {
-            int pos = phase_usage.phase_pos[Vapour];
-            pc[pos] = pcog_(s[pos]);
-            dpcds[np*pos + pos] = pcog_.derivative(s[pos]);
-        }
-    }
-
-
-
-
-
-    // ====== Methods for SatFuncSimpleNonuniform ======
-
-
-
-    void SatFuncSimpleNonuniform::ExtendTable(const std::vector<double>& xv,
-                                           std::vector<double>& xv_ex,
-                                           double pm) const
-    {
-        int n = xv.size();
-        xv_ex[0] = xv[0]-pm;
-        xv_ex[n+1] = xv[n-1]+pm;
-        for (int i=0; i<n; i++)
-        {
-            xv_ex[i+1] = xv[i];
-
-        }
-
-    }
-
-
-    void SatFuncSimpleNonuniform::init(const EclipseGridParser& deck,
-                                       const int table_num,
-                                       const PhaseUsage phase_usg,
-                                       const int /*samples*/)
-    {
-        phase_usage = phase_usg;
-        double swco = 0.0;
-        double swmax = 1.0;
-        if (phase_usage.phase_used[Aqua]) {
-            const SWOF::table_t& swof_table = deck.getSWOF().swof_;
-            const std::vector<double>& sw = swof_table[table_num][0];
-            const std::vector<double>& krw = swof_table[table_num][1];
-            const std::vector<double>& krow = swof_table[table_num][2];
-            const std::vector<double>& pcow = swof_table[table_num][3];
-            if (krw.front() != 0.0 || krow.back() != 0.0) {
-                OPM_THROW(std::runtime_error, "Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
+        if (doNotScale) {
+            return 1.0;
+        } else if (!do_3pt) { // 2-pt
+            if (s <= scr) {
+                return 0.0;
+            } else {
+                return (s >= smax) ? 0.0 : slope1;
             }
-
-            // Extend the tables with constant values such that the
-            // derivatives at the endpoints are zero
-            int n = sw.size();
-            std::vector<double> sw_ex(n+2);
-            std::vector<double> krw_ex(n+2);
-            std::vector<double> krow_ex(n+2);
-            std::vector<double> pcow_ex(n+2);
-
-            SatFuncSimpleNonuniform::ExtendTable(sw,sw_ex,1);
-            SatFuncSimpleNonuniform::ExtendTable(krw,krw_ex,0);
-            SatFuncSimpleNonuniform::ExtendTable(krow,krow_ex,0);
-            SatFuncSimpleNonuniform::ExtendTable(pcow,pcow_ex,0);
-
-            krw_ = NonuniformTableLinear<double>(sw_ex, krw_ex);
-            krow_ = NonuniformTableLinear<double>(sw_ex, krow_ex);
-            pcow_ = NonuniformTableLinear<double>(sw_ex, pcow_ex);
-            krocw_ = krow[0]; // At connate water -> ecl. SWOF
-            swco = sw[0];
-            smin_[phase_usage.phase_pos[Aqua]] = sw[0];
-            swmax = sw.back();
-            smax_[phase_usage.phase_pos[Aqua]] = sw.back();
-
-            krwmax_ = krw.back();
-            kromax_ = krow.front();
-            swcr_ = swmax;
-            sowcr_ = 1.0 - swco;
-            krwr_ = krw.back();
-            krorw_ = krow.front();
-            for (std::vector<double>::size_type i=1; i<sw.size(); ++i) {
-                if (krw[i]> 0.0) {
-                   swcr_ = sw[i-1];
-                   krorw_ = krow[i-1];
-                   break;
-                }
-            }
-            for (std::vector<double>::size_type i=sw.size()-1; i>=1; --i) {
-                if (krow[i-1]> 0.0) {
-                   sowcr_ = 1.0 - sw[i];
-                   krwr_ = krw[i];
-                   break;
-                }
-            }
-
-        }
-        if (phase_usage.phase_used[Vapour]) {
-            const SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
-            const std::vector<double>& sg = sgof_table[table_num][0];
-            const std::vector<double>& krg = sgof_table[table_num][1];
-            const std::vector<double>& krog = sgof_table[table_num][2];
-            const std::vector<double>& pcog = sgof_table[table_num][3];
-
-            // Extend the tables with constant values such that the
-            // derivatives at the endpoints are zero
-            int n = sg.size();
-            std::vector<double> sg_ex(n+2);
-            std::vector<double> krg_ex(n+2);
-            std::vector<double> krog_ex(n+2);
-            std::vector<double> pcog_ex(n+2);
-
-            SatFuncSimpleNonuniform::ExtendTable(sg,sg_ex,1);
-            SatFuncSimpleNonuniform::ExtendTable(krg,krg_ex,0);
-            SatFuncSimpleNonuniform::ExtendTable(krog,krog_ex,0);
-            SatFuncSimpleNonuniform::ExtendTable(pcog,pcog_ex,0);
-
-            krg_ = NonuniformTableLinear<double>(sg_ex, krg_ex);
-            krog_ = NonuniformTableLinear<double>(sg_ex, krog_ex);
-            pcog_ = NonuniformTableLinear<double>(sg_ex, pcog_ex);
-            smin_[phase_usage.phase_pos[Vapour]] = sg[0];
-            if (std::fabs(sg.back() + swco - 1.0) > 1e-3) {
-                OPM_THROW(std::runtime_error, "Gas maximum saturation in SGOF table = " << sg.back() <<
-                      ", should equal (1.0 - connate water sat) = " << (1.0 - swco));
-            }
-            smax_[phase_usage.phase_pos[Vapour]] = sg.back();
-        }
-        // These only consider water min/max sats. Consider gas sats?
-        smin_[phase_usage.phase_pos[Liquid]] = 1.0 - swmax;
-        smax_[phase_usage.phase_pos[Liquid]] = 1.0 - swco;
-    }
-
-
-    void SatFuncSimpleNonuniform::evalKr(const double* s, double* kr) const
-    {
-        if (phase_usage.num_phases == 3) {
-            // A simplified relative permeability model.
-            double sw = s[Aqua];
-            double sg = s[Vapour];
-            double krw = krw_(sw);
-            double krg = krg_(sg);
-            double krow = krow_(sw + sg); // = 1 - so
-            // double krog = krog_(sg);      // = 1 - so - sw
-            // double krocw = krocw_;
-            kr[Aqua] = krw;
-            kr[Vapour] = krg;
-            kr[Liquid] = krow;
-            if (kr[Liquid] < 0.0) {
-                kr[Liquid] = 0.0;
-            }
-            return;
-        }
-        // We have a two-phase situation. We know that oil is active.
-        if (phase_usage.phase_used[Aqua]) {
-            int wpos = phase_usage.phase_pos[Aqua];
-            int opos = phase_usage.phase_pos[Liquid];
-            double sw = s[wpos];
-            double krw = krw_(sw);
-            double so = s[opos];
-            double krow = krow_(1.0-so);
-            kr[wpos] = krw;
-            kr[opos] = krow;
+        } else if (s <= sr) {
+            return (s <= scr) ? 0.0 : slope1;
         } else {
-            assert(phase_usage.phase_used[Vapour]);
-            int gpos = phase_usage.phase_pos[Vapour];
-            int opos = phase_usage.phase_pos[Liquid];
-            double sg = s[gpos];
-            double krg = krg_(sg);
-            double krog = krog_(sg);
-            kr[gpos] = krg;
-            kr[opos] = krog;
+            return (s >= smax) ? 0.0 : slope2;
         }
     }
 
 
-    void SatFuncSimpleNonuniform::evalKrDeriv(const double* s, double* kr, double* dkrds) const
+    double EPSTransforms::Transform::scaleSatPc(double s, double s_min, double s_max) const
     {
-        const int np = phase_usage.num_phases;
-        std::fill(dkrds, dkrds + np*np, 0.0);
-
-        if (np == 3) {
-            // A simplified relative permeability model.
-            double sw = s[Aqua];
-            double sg = s[Vapour];
-            double krw = krw_(sw);
-            double dkrww = krw_.derivative(sw);
-            double krg = krg_(sg);
-            double dkrgg = krg_.derivative(sg);
-            double krow = krow_(sw + sg);
-            double dkrow = krow_.derivative(sw + sg);
-            // double krog = krog_(sg);
-            // double dkrog = krog_.derivative(sg);
-            // double krocw = krocw_;
-            kr[Aqua] = krw;
-            kr[Vapour] = krg;
-            kr[Liquid] = krow;
-            //krocw*((krow/krocw + krw)*(krog/krocw + krg) - krw - krg);
-            if (kr[Liquid] < 0.0) {
-                kr[Liquid] = 0.0;
-            }
-            dkrds[Aqua + Aqua*np] = dkrww;
-            dkrds[Vapour + Vapour*np] = dkrgg;
-            //dkrds[Liquid + Aqua*np] = dkrow;
-            dkrds[Liquid + Liquid*np] = -dkrow;
-                    //krocw*((dkrow/krocw + dkrww)*(krog/krocw + krg) - dkrww);
-            dkrds[Liquid + Vapour*np] = 0.0;
-                    //krocw*((krow/krocw + krw)*(dkrog/krocw + dkrgg) - dkrgg)
-                    //+ krocw*((dkrow/krocw + krw)*(krog/krocw + krg) - dkrgg);
-            return;
-        }
-        // We have a two-phase situation. We know that oil is active.
-        if (phase_usage.phase_used[Aqua]) {
-            int wpos = phase_usage.phase_pos[Aqua];
-            int opos = phase_usage.phase_pos[Liquid];
-            double sw = s[wpos];
-            double krw = krw_(sw);
-            double dkrww = krw_.derivative(sw);
-            double so = s[opos];
-            double krow = krow_(1.0-so);
-            double dkrow = krow_.derivative(1.0-so);
-            kr[wpos] = krw;
-            kr[opos] = krow;
-            dkrds[wpos + wpos*np] = dkrww;
-            dkrds[opos + wpos*np] = dkrow; // Row opos, column wpos, fortran order.
+        if (doNotScale) {
+            return s;
+        } else if (s<=smin) {
+            return s_min;
+        } else if (s <= smax) {
+            return s_min + (s-smin)*(s_max-s_min)/(smax-smin);
         } else {
-            assert(phase_usage.phase_used[Vapour]);
-            int gpos = phase_usage.phase_pos[Vapour];
-            int opos = phase_usage.phase_pos[Liquid];
-            double sg = s[gpos];
-            double krg = krg_(sg);
-            double dkrgg = krg_.derivative(sg);
-            double krog = krog_(sg);
-            double dkrog = krog_.derivative(sg);
-            kr[gpos] = krg;
-            kr[opos] = krog;
-            dkrds[gpos + gpos*np] = dkrgg;
-            dkrds[opos + gpos*np] = dkrog;
+            return s_max;
         }
-
     }
-
-
-    void SatFuncSimpleNonuniform::evalPc(const double* s, double* pc) const
+    double EPSTransforms::Transform::scaleSatDerivPc(double s, double s_min, double s_max) const
     {
-        pc[phase_usage.phase_pos[Liquid]] = 0.0;
-        if (phase_usage.phase_used[Aqua]) {
-            int pos = phase_usage.phase_pos[Aqua];
-            pc[pos] = pcow_(s[pos]);
-        }
-        if (phase_usage.phase_used[Vapour]) {
-            int pos = phase_usage.phase_pos[Vapour];
-            pc[pos] = pcog_(s[pos]);
+        if (doNotScale) {
+            return 1.0;
+        } else if (s<smin) {
+            return 0.0;
+        } else if (s <= smax) {
+            return (s_max-s_min)/(smax-smin);
+        } else {
+            return 0.0;
         }
     }
 
-    void SatFuncSimpleNonuniform::evalPcDeriv(const double* s, double* pc, double* dpcds) const
+    double EPSTransforms::Transform::scaleKr(double s, double kr, double krsr_tab) const
     {
-        // The problem of determining three-phase capillary pressures
-        // is very hard experimentally, usually one extends two-phase
-        // data (as for relative permeability).
-        // In our approach the derivative matrix is quite sparse, only
-        // the diagonal elements corresponding to non-oil phases are
-        // (potentially) nonzero.
-        const int np = phase_usage.num_phases;
-        std::fill(dpcds, dpcds + np*np, 0.0);
-        pc[phase_usage.phase_pos[Liquid]] = 0.0;
-        if (phase_usage.phase_used[Aqua]) {
-            int pos = phase_usage.phase_pos[Aqua];
-            pc[pos] = pcow_(s[pos]);
-            dpcds[np*pos + pos] = pcow_.derivative(s[pos]);
-        }
-        if (phase_usage.phase_used[Vapour]) {
-            int pos = phase_usage.phase_pos[Vapour];
-            pc[pos] = pcog_(s[pos]);
-            dpcds[np*pos + pos] = pcog_.derivative(s[pos]);
+        if (doKrCrit) {
+            if (s <= scr) {
+                return 0.0;
+            } else if (s <= sr) {
+                return kr*krSlopeCrit;
+            } else if (s <= smax) {
+                if (doSatInterp)
+                    return krsr + (s-sr)*krSlopeMax; // Note: Scaling independent of kr-value ...
+                else
+                    return krsr + (kr-krsr_tab)*krSlopeMax;
+            } else {
+                return krmax;
+            }
+        } else if (doKrMax) {
+            if (s <= scr) {
+                return 0.0;
+            } else if (s <= smax) {
+                return kr*krSlopeMax;
+            } else {
+                return krmax;
+            }
+        } else {
+            return kr;
         }
     }
 
 
-
-
+    double EPSTransforms::Transform::scaleKrDeriv(double s, double krDeriv)  const
+    {
+        if (doKrCrit) {
+            if (s <= scr) {
+                return 0.0;
+            } else if (s <= sr) {
+                return krDeriv*krSlopeCrit;
+            } else if (s <= smax) {
+                if (doSatInterp)
+                    return krSlopeMax; // Note: Scaling independent of kr-value ...
+                else
+                    return krDeriv*krSlopeMax;
+            } else {
+                return 0.0;
+            }
+        } else if (doKrMax) {
+            if (s <= scr) {
+                return 0.0;
+            } else if (s <= smax) {
+                return krDeriv*krSlopeMax;
+            } else {
+                return 0.0;
+            }
+        } else {
+            if (s <= scr) {
+                return 0.0;
+            } else if (s <= smax) {
+                return krDeriv;
+            } else {
+                return 0.0;
+            }
+        }
+   }
+   
+   
+   void EPSTransforms::Transform::printMe(std::ostream & out)
+   {
+   
+       out << "doNotScale: " << doNotScale << std::endl;
+       out << "do_3pt: " << do_3pt << std::endl;
+       out << "smin: " << smin << std::endl;
+       out << "scr: " << scr << std::endl;
+       out << "sr: " << sr << std::endl;
+       out << "smax: " << smax << std::endl;
+       out << "slope1: " << slope1 << std::endl;
+       out << "slope2: " << slope2 << std::endl;
+       out << "doKrMax: " << doKrMax << std::endl;
+       out << "doKrCrit: " << doKrCrit << std::endl;
+       out << "doSatInterp: " << doSatInterp << std::endl;
+       out << "krsr: " << krsr << std::endl;
+       out << "krmax: " << krmax << std::endl;
+       out << "krSlopeMax: " << krSlopeMax << std::endl;
+       out << "krSlopeCrit: " << krSlopeCrit << std::endl;
+    }
+    
+   void SatHyst::printMe(std::ostream & out) 
+   {
+        out << "sg_hyst: " << sg_hyst << std::endl;
+        out << "sg_shift: " << sg_shift << std::endl;
+        out << "sow_hyst: " << sow_hyst << std::endl;
+        out << "sow_shift: " << sow_shift << std::endl;
+    };
+        
+   
 } // namespace Opm

@@ -97,13 +97,19 @@ namespace EclipseKeywords
           string("SHEARMOD"), string("POISSONMOD"), string("PWAVEMOD"),
           string("MULTPV"),   string("PRESSURE"),   string("SGAS"),
           string("SWAT"),     string("SOIL"),       string("RS"),
-          string("RV"),
           string("DXV"),      string("DYV"),        string("DZV"),
           string("DEPTHZ"),   string("TOPS"),       string("MAPAXES"),
-          string("SWCR"),     string("SWL"),        string("SWU"),
-          string("SOWCR"),    string("KRW"),        string("KRWR"),
-          string("KRO"),      string("KRORW"),      string("NTG"),
-          string("RHO")
+          string("SWL"),      string("SWCR"),       string("SWU"),
+          string("SGL"),      string("SGCR"),       string("SGU"),
+          string("SOWCR"),    string("SOGCR"),      string("KRW"),
+          string("KRWR"),     string("KRG"),        string("KRGR"),
+          string("KRO"),      string("KRORW"),      string("KRORG"),
+          string("ISWL"),     string("ISWCR"),      string("ISWU"),
+          string("ISGL"),     string("ISGCR"),      string("ISGU"),
+          string("ISOWCR"),   string("ISOGCR"),     string("IKRW"),
+          string("IKRWR"),    string("IKRG"),       string("IKRGR"),
+          string("IKRO"),     string("IKRORW"),     string("IKRORG"),
+          string("NTG"),      string("RHO")
         };
     const int num_floating_fields = sizeof(floating_fields) / sizeof(floating_fields[0]);
 
@@ -561,9 +567,17 @@ void EclipseGridParser::convertToSI()
                    key == "LAMEMOD"  || key == "SHEARMOD" || key == "POISSONMOD" ||
                    key == "PWAVEMOD" || key == "MULTPV"   || key == "PWAVEMOD" ||
                    key == "SGAS"     || key == "SWAT"     || key == "SOIL"     ||
-                   key == "NTG"      || key == "SWCR"     || key == "SWL"      ||
-                   key == "SWU"      || key == "SOWCR"    || key == "KRW"      ||
-                   key == "KRWR"     || key == "KRORW"    || key == "KRO"      ||
+                   key == "SWL"      || key == "SWCR"     || key == "SWU"      || 
+                   key == "SGL  "    || key == "SGCR"     || key == "SGU"      || 
+                   key == "SOWCR"    || key == "SOGCR"    || key == "KRW"      || 
+                   key == "KRWR"     || key == "KRG"      || key == "KRGR"     || 
+                   key == "KRO"      || key == "KRORW"    || key == "KRORG"    || 
+                   key == "ISWL"     || key == "ISWCR"    || key == "ISWU"     || 
+                   key == "ISGL  "   || key == "ISGCR"    || key == "ISGU"     || 
+                   key == "ISOWCR"   || key == "ISOGCR"   || key == "IKRW"     || 
+                   key == "IKRWR"    || key == "IKRG"     || key == "IKRGR"    || 
+                   key == "IKRO"     || key == "IKRORW"   || key == "IKRORG"   || 
+                   key == "NTG"      ||  
                    key == "RHO") /* nonstandard field with no unit logic. use with caution */ {
             unit = 1.0;
             do_convert = false; // Dimensionless keywords...
@@ -571,8 +585,6 @@ void EclipseGridParser::convertToSI()
             unit = units_.pressure;
         } else if (key == "RS") {
             unit = units_.gasvol_s / units_.liqvol_s;
-        } else if (key == "RV") {
-            unit = units_.liqvol_s / units_.gasvol_s;
         } else if (key == "MAPAXES") {
             OPM_MESSAGE("Not applying units to MAPAXES yet!");
             unit = 1.0;
