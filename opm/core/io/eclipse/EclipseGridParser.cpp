@@ -586,6 +586,8 @@ void EclipseGridParser::convertToSI()
             unit = units_.pressure;
         } else if (key == "RS") {
             unit = units_.gasvol_s / units_.liqvol_s;
+        } else if (key == "RV") {
+            unit = units_.liqvol_s / units_.gasvol_s;
         } else if (key == "MAPAXES") {
             OPM_MESSAGE("Not applying units to MAPAXES yet!");
             unit = 1.0;
