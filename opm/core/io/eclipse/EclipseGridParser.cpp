@@ -97,6 +97,7 @@ namespace EclipseKeywords
           string("SHEARMOD"), string("POISSONMOD"), string("PWAVEMOD"),
           string("MULTPV"),   string("PRESSURE"),   string("SGAS"),
           string("SWAT"),     string("SOIL"),       string("RS"),
+          string("RV"),
           string("DXV"),      string("DYV"),        string("DZV"),
           string("DEPTHZ"),   string("TOPS"),       string("MAPAXES"),
           string("SWL"),      string("SWCR"),       string("SWU"),
