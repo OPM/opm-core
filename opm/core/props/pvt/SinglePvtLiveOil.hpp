@@ -48,7 +48,7 @@ namespace Opm
                         double* output_mu) const;
 
         /// Viscosity and its derivatives as a function of p and r.
-        /// The fluid is considered saturated if r >= rbub(p).
+        /// The fluid is considered saturated if r >= rsSat(p).
         virtual void mu(const int n,
                         const double* p,
                         const double* r,
@@ -80,7 +80,7 @@ namespace Opm
                           double* output_dBdp) const;
 
         /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
-        /// The fluid is considered saturated if r >= rbub(p).
+        /// The fluid is considered saturated if r >= rsSat(p).
         virtual void b(const int n,
                        const double* p,
                        const double* r,
@@ -98,11 +98,17 @@ namespace Opm
                        double* output_dbdp,
                        double* output_dbdr) const;
 
-        /// Gas resolution and its derivatives at bublepoint as a function of p.
-        virtual void rbub(const int n,
+        /// Solution gas/oil ratio and its derivatives at saturated conditions as a function of p.
+        virtual void rsSat(const int n,
                           const double* p,
-                          double* output_rbub,
-                          double* output_drbubdp) const;
+                          double* output_rsSat,
+                          double* output_drsSatdp) const;
+
+        /// Vapor oil/gas ratio and its derivatives at saturated conditions as a function of p.
+        virtual void rvSat(const int n,
+                          const double* p,
+                          double* output_rvSat,
+                          double* output_drvSatdp) const;
 
         /// Solution factor as a function of p and z.
         virtual void R(const int n,

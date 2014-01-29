@@ -97,6 +97,7 @@ namespace EclipseKeywords
           string("SHEARMOD"), string("POISSONMOD"), string("PWAVEMOD"),
           string("MULTPV"),   string("PRESSURE"),   string("SGAS"),
           string("SWAT"),     string("SOIL"),       string("RS"),
+          string("RV"),
           string("DXV"),      string("DYV"),        string("DZV"),
           string("DEPTHZ"),   string("TOPS"),       string("MAPAXES"),
           string("SWCR"),     string("SWL"),        string("SWU"),
@@ -570,6 +571,8 @@ void EclipseGridParser::convertToSI()
             unit = units_.pressure;
         } else if (key == "RS") {
             unit = units_.gasvol_s / units_.liqvol_s;
+        } else if (key == "RV") {
+            unit = units_.liqvol_s / units_.gasvol_s;
         } else if (key == "MAPAXES") {
             OPM_MESSAGE("Not applying units to MAPAXES yet!");
             unit = 1.0;

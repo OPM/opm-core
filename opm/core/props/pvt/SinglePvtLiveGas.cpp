@@ -61,7 +61,7 @@ namespace Opm
 
         for (int i=0; i<sz; ++i) {
             saturated_gas_table_[0][i] = pvtg[region_number][i][0];  // p
-            saturated_gas_table_[1][i] = pvtg[region_number][i][2];  // Bg
+            saturated_gas_table_[1][i] = 1.0/pvtg[region_number][i][2];  // 1/Bg
             saturated_gas_table_[2][i] = pvtg[region_number][i][3];  // mu_g
             saturated_gas_table_[3][i] = pvtg[region_number][i][1]; // Rv
         }
@@ -75,7 +75,7 @@ namespace Opm
             undersat_gas_tables_[i][2].resize(tsize);
             for (int j=0, k=0; j<tsize; ++j) {
                 undersat_gas_tables_[i][0][j] = pvtg[region_number][i][++k]; // Rv
-                undersat_gas_tables_[i][1][j] = pvtg[region_number][i][++k]; // Bg
+                undersat_gas_tables_[i][1][j] = 1.0/pvtg[region_number][i][++k]; // 1/Bg
                 undersat_gas_tables_[i][2][j] = pvtg[region_number][i][++k]; // mu_g
             }
         }
@@ -118,7 +118,13 @@ namespace Opm
                                double* output_dmudp,
                                double* output_dmudr) const
     {
-        OPM_THROW(std::runtime_error, "The new fluid interface not yet implemented");
+        for (int i = 0; i < n; ++i) {
+            const PhasePresence& cnd = cond[i];
+            output_mu[i] = miscible_gas(p[i], r[i], cnd,2, 0);
+            output_dmudp[i] = miscible_gas(p[i], r[i], cnd, 2, 1);
+            output_dmudr[i] = miscible_gas(p[i], r[i], cnd, 2, 2);
+        }
+
     }
 
 
@@ -171,16 +177,39 @@ namespace Opm
                           double* output_dbdr) const
 
     {
-        OPM_THROW(std::runtime_error, "The new fluid interface not yet implemented");
+        // #pragma omp parallel for
+                for (int i = 0; i < n; ++i) {
+                    const PhasePresence& cnd = cond[i];
+
+                    output_b[i] = miscible_gas(p[i], r[i], cnd, 1, 0);
+                    output_dbdp[i] = miscible_gas(p[i], r[i], cnd, 1, 1);
+                    output_dbdr[i] = miscible_gas(p[i], r[i], cnd, 1, 2);
+
+                }
     }
 
     /// Gas resolution and its derivatives at bublepoint as a function of p.
-    void SinglePvtLiveGas::rbub(const int n,
+    void SinglePvtLiveGas::rvSat(const int n,
                              const double* p,
-                             double* output_rbub,
-                             double* output_drbubdp) const
+                             double* output_rvSat,
+                             double* output_drvSatdp) const
     {
-        OPM_THROW(std::runtime_error, "The new fluid interface not yet implemented");
+        for (int i = 0; i < n; ++i) {
+            output_rvSat[i] = linearInterpolation(saturated_gas_table_[0],
+                    saturated_gas_table_[3],p[i]);
+            output_drvSatdp[i] = linearInterpolationDerivative(saturated_gas_table_[0],
+                    saturated_gas_table_[3],p[i]);
+
+        }
+    }
+
+    void SinglePvtLiveGas::rsSat(const int n,
+                             const double* /*p*/,
+                             double* output_rsSat,
+                             double* output_drsSatdp) const
+    {
+        std::fill(output_rsSat, output_rsSat + n, 0.0);
+        std::fill(output_drsSatdp, output_drsSatdp + n, 0.0);
     }
 
     /// Solution factor as a function of p and z.
@@ -219,7 +248,7 @@ namespace Opm
             // To handle no-gas case.
             return 1.0;
         }
-        return miscible_gas(press, surfvol, 1, false);
+        return 1.0/miscible_gas(press, surfvol, 1, false);
     }
 
     void SinglePvtLiveGas::evalBDeriv(const double press, const double* surfvol,
@@ -231,8 +260,8 @@ namespace Opm
             dBdpval = 0.0;
             return;
         }
-        Bval = miscible_gas(press, surfvol, 1, false);
-        dBdpval =  miscible_gas(press, surfvol, 1, true);
+        Bval = evalB(press, surfvol);
+        dBdpval =  -Bval*Bval*miscible_gas(press, surfvol, 1, true);
     }
 
     double SinglePvtLiveGas::evalR(const double press, const double* surfvol) const
@@ -359,6 +388,111 @@ namespace Opm
             }
         }
     }
+
+    double SinglePvtLiveGas::miscible_gas(const double press,
+                                          const double r,
+                                          const PhasePresence& cond,
+                                          const int item,
+                                          const int deriv) const
+{
+    const bool isSat = cond.hasFreeOil();
+
+        // Derivative w.r.t p
+        if (deriv == 1) {
+            if (isSat) {  // Saturated case
+                return linearInterpolationDerivative(saturated_gas_table_[0],
+                                                saturated_gas_table_[item],
+                                                press);
+            } else {  // Undersaturated case
+                int is = tableIndex(saturated_gas_table_[0], press);
+                if (undersat_gas_tables_[is][0].size() < 2) {
+                    double val = (saturated_gas_table_[item][is+1]
+                                  - saturated_gas_table_[item][is]) /
+                        (saturated_gas_table_[0][is+1] -
+                         saturated_gas_table_[0][is]);
+                    return val;
+                }
+                double val1 =
+                    linearInterpolation(undersat_gas_tables_[is][0],
+                                              undersat_gas_tables_[is][item],
+                                              r);
+                double val2 =
+                    linearInterpolation(undersat_gas_tables_[is+1][0],
+                                              undersat_gas_tables_[is+1][item],
+                                              r);
+                double val = (val2 - val1)/
+                    (saturated_gas_table_[0][is+1] - saturated_gas_table_[0][is]);
+                return val;
+            }
+        } else if (deriv == 2){
+            if (isSat) {
+                return 0;
+            } else {
+                int is = tableIndex(saturated_gas_table_[0], press);
+                double w = (press - saturated_gas_table_[0][is]) /
+                    (saturated_gas_table_[0][is+1] - saturated_gas_table_[0][is]);
+                assert(undersat_gas_tables_[is][0].size() >= 2);
+                assert(undersat_gas_tables_[is+1][0].size() >= 2);
+                double val1 =
+                    linearInterpolationDerivative(undersat_gas_tables_[is][0],
+                                              undersat_gas_tables_[is][item],
+                                              r);
+                double val2 =
+                    linearInterpolationDerivative(undersat_gas_tables_[is+1][0],
+                                              undersat_gas_tables_[is+1][item],
+                                              r);
+
+                double val = val1 + w * (val2 - val1);
+                return val;
+
+            }
+        } else {
+            if (isSat) {  // Saturated case
+                return linearInterpolation(saturated_gas_table_[0],
+                                                 saturated_gas_table_[item],
+                                                 press);
+            } else {  // Undersaturated case
+                int is = tableIndex(saturated_gas_table_[0], press);
+                // Extrapolate from first table section
+                if (is == 0 && press < saturated_gas_table_[0][0]) {
+                    return linearInterpolation(undersat_gas_tables_[0][0],
+                                                     undersat_gas_tables_[0][item],
+                                                     r);
+                }
+
+                // Extrapolate from last table section
+                //int ltp = saturated_gas_table_[0].size() - 1;
+                //if (is+1 == ltp && press > saturated_gas_table_[0][ltp]) {
+                //    return linearInterpolation(undersat_gas_tables_[ltp][0],
+                //                                    undersat_gas_tables_[ltp][item],
+                //                                    r);
+                //}
+
+                // Interpolate between table sections
+                double w = (press - saturated_gas_table_[0][is]) /
+                    (saturated_gas_table_[0][is+1] -
+                     saturated_gas_table_[0][is]);
+                if (undersat_gas_tables_[is][0].size() < 2) {
+                    double val = saturated_gas_table_[item][is] +
+                        w*(saturated_gas_table_[item][is+1] -
+                           saturated_gas_table_[item][is]);
+                    return val;
+                }
+                double val1 =
+                    linearInterpolation(undersat_gas_tables_[is][0],
+                                              undersat_gas_tables_[is][item],
+                                              r);
+                double val2 =
+                    linearInterpolation(undersat_gas_tables_[is+1][0],
+                                              undersat_gas_tables_[is+1][item],
+                                              r);
+                double val = val1 + w*(val2 - val1);
+                return val;
+            }
+        }
+    }
+
+
 
 
 } // namespace Opm
