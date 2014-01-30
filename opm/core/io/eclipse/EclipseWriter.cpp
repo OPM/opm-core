@@ -575,6 +575,12 @@ private:
               fortio_fclose) { }
 };
 
+} // anonymous namespace
+
+// Note: the following parts were taken out of the anonymous
+// namespace, since EclipseSummary is now used as a pointer member in
+// EclipseWriter and forward declared in EclipseWriter.hpp.
+
 // forward decl. of mutually dependent type
 struct EclipseWellReport;
 
@@ -654,6 +660,7 @@ private:
                                      dim[2]);
     }
 };
+
 
 // in order to get RTTI for this "class" (which is just a typedef), we must
 // ask the compiler to explicitly instantiate it.
@@ -863,6 +870,8 @@ EclipseSummary::addWells (const EclipseGridParser& parser,
     }
 }
 
+namespace {
+
 /// Helper method that can be used in keyword transformation (must curry
 /// the barsa argument)
 static double toBar (const double& pressure) {
@@ -902,6 +911,11 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
 
     /* Initial solution (pressure and saturation) */
     writeSolution (timer, reservoirState, wellState);
+
+    /* Create summary object (could not do it at construction time,
+       since it requires knowledge of the start time). */
+    summary_.reset(new EclipseSummary(outputDir_, baseName_, timer, *parser_));
+    summary_->addWells (*parser_, uses_);
 }
 
 void EclipseWriter::writeSolution (const SimulatorTimer& timer,
@@ -952,9 +966,15 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     // (first timestep, in practice), and reused later. but how to do this
     // without keeping the complete summary in memory (which will then
     // accumulate all the timesteps)?
-    EclipseSummary sum (outputDir_, baseName_, timer, *parser_);
-    sum.addWells (*parser_, uses_);
-    sum.writeTimeStep (timer, wellState);
+    //
+    // Note: The answer to the question above is still not settled,
+    // but now we do keep the complete summary in memory, as a member
+    // variable in the EclipseWriter class, instead of creating a
+    // temporary EclipseSummary in this function every time it is
+    // called.  This has been changed so that the final summary file
+    // will contain data from the whole simulation, instead of just
+    // the last step.
+    summary_->writeTimeStep (timer, wellState);
 }
 
 #else
