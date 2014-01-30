@@ -677,7 +677,7 @@ protected:
                        PhaseUsage uses,                  /* phases present     */
                        BlackoilPhases::PhaseIndex phase, /* oil, water or gas  */
                        WellType type,                    /* prod. or inj.      */
-                       char aggregation,                 /* rate or total      */
+                       char aggregation,                 /* rate or total or BHP */
                        std::string unit)
         : EclipseHandle <smspec_node_type> (
               ecl_sum_add_var (summary,
@@ -725,22 +725,26 @@ private:
                          char aggregation) {
         std::string name;
         name += 'W'; // well
-        switch (phase) {
+        if (aggregation == 'B') {
+            name += "BHP";
+        } else {
+            switch (phase) {
             case BlackoilPhases::Aqua:   name += 'W'; break; /* water */
             case BlackoilPhases::Vapour: name += 'G'; break; /* gas */
             case BlackoilPhases::Liquid: name += 'O'; break; /* oil */
             default:
                 OPM_THROW(std::runtime_error,
                           "Unknown phase used in blackoil reporting");
-        }
-        switch (type) {
+            }
+            switch (type) {
             case WellType::INJECTOR: name += 'I'; break;
             case WellType::PRODUCER: name += 'P'; break;
             default:
                 OPM_THROW(std::runtime_error,
                           "Unknown well type used in blackoil reporting");
+            }
+            name += aggregation; /* rate ('R') or total ('T') */
         }
-        name += aggregation; /* rate ('R') or total ('T') */
         return name;
     }
 protected:
@@ -749,6 +753,13 @@ protected:
         const double convFactor = Opm::unit::convert::to (1., Opm::unit::day);
         const double value = sign_ * wellState.wellRates () [index_] * convFactor;
         return value;
+    }
+
+    double bhp (const WellState& wellstate) {
+        // Note that 'index_' is used here even though it is meant
+        // to give a (well,phase) pair.
+        const int num_phases = wellstate.wellRates().size() / wellstate.bhp().size();
+        return wellstate.bhp()[index_/num_phases];
     }
 };
 
@@ -812,6 +823,31 @@ private:
     double total_;
 };
 
+/// Monitors the bottom hole pressure in a well.
+struct EclipseWellBhp : public EclipseWellReport {
+    EclipseWellBhp   (const EclipseSummary& summary,
+                      const EclipseGridParser& parser,
+                      int whichWell,
+                      PhaseUsage uses,
+                      BlackoilPhases::PhaseIndex phase,
+                      WellType type)
+        : EclipseWellReport (summary,
+                             parser,
+                             whichWell,
+                             uses,
+                             phase,
+                             type,
+                             'B',
+                             "Pascal" /* surface cubic meter */ )
+    { }
+
+    virtual double update (const SimulatorTimer& timer,
+                           const WellState& wellState)
+    {
+        return bhp(wellState);
+    }
+};
+
 inline void
 EclipseSummary::writeTimeStep (const SimulatorTimer& timer,
                                const WellState& wellState) {
@@ -867,6 +903,26 @@ EclipseSummary::addWells (const EclipseGridParser& parser,
                                                     type)));
             }
         }
+    }
+
+    // Add BHP monitors
+    for (int whichWell = 0; whichWell != numWells; ++whichWell) {
+        // In the call below: uses, phase and the well type arguments
+        // are not used, except to set up an index that stores the
+        // well indirectly. For details see the implementation of the
+        // EclipseWellReport constructor, and the method
+        // EclipseWellReport::bhp().
+        BlackoilPhases::PhaseIndex phase = BlackoilPhases::Liquid;
+        if (!uses.phase_used[BlackoilPhases::Liquid]) {
+            phase = BlackoilPhases::Vapour;
+        }
+        add (std::unique_ptr <EclipseWellReport> (
+                        new EclipseWellBhp (*this,
+                                            parser,
+                                            whichWell,
+                                            uses,
+                                            phase,
+                                            WELL_TYPES[0])));
     }
 }
 
