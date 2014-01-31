@@ -838,7 +838,7 @@ struct EclipseWellBhp : public EclipseWellReport {
                              phase,
                              type,
                              'B',
-                             "Pascal" /* surface cubic meter */ )
+                             "Pascal")
     { }
 
     virtual double update (const SimulatorTimer& timer,
