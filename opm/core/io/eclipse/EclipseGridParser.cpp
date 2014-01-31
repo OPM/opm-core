@@ -569,12 +569,12 @@ void EclipseGridParser::convertToSI()
                    key == "PWAVEMOD" || key == "MULTPV"   || key == "PWAVEMOD" ||
                    key == "SGAS"     || key == "SWAT"     || key == "SOIL"     ||
                    key == "SWL"      || key == "SWCR"     || key == "SWU"      || 
-                   key == "SGL  "    || key == "SGCR"     || key == "SGU"      || 
+                   key == "SGL"      || key == "SGCR"     || key == "SGU"      || 
                    key == "SOWCR"    || key == "SOGCR"    || key == "KRW"      || 
                    key == "KRWR"     || key == "KRG"      || key == "KRGR"     || 
                    key == "KRO"      || key == "KRORW"    || key == "KRORG"    || 
                    key == "ISWL"     || key == "ISWCR"    || key == "ISWU"     || 
-                   key == "ISGL  "   || key == "ISGCR"    || key == "ISGU"     || 
+                   key == "ISGL"     || key == "ISGCR"    || key == "ISGU"     || 
                    key == "ISOWCR"   || key == "ISOGCR"   || key == "IKRW"     || 
                    key == "IKRWR"    || key == "IKRG"     || key == "IKRGR"    || 
                    key == "IKRO"     || key == "IKRORW"   || key == "IKRORG"   || 
