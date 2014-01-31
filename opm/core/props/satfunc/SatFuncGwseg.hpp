@@ -19,81 +19,602 @@
 #ifndef SATFUNCGWSEG_HPP
 #define SATFUNCGWSEG_HPP
 
-#include <opm/core/io/eclipse/EclipseGridParser.hpp>
-#include <opm/core/utility/UniformTableLinear.hpp>
-#include <opm/core/utility/NonuniformTableLinear.hpp>
-#include <opm/core/props/BlackoilPhases.hpp>
-#include <vector>
+#include <opm/core/props/satfunc/SatFuncBase.hpp>
 
 namespace Opm
 {
-    class SatFuncGwsegUniform : public BlackoilPhases
+    template<class TableType>
+    class SatFuncGwseg : public SatFuncBase<TableType>
     {
     public:
-        void init(const EclipseGridParser& deck,
-                  const int table_num,
-                  const PhaseUsage phase_usg,
-                  const int samples);
         void evalKr(const double* s, double* kr) const;
         void evalKrDeriv(const double* s, double* kr, double* dkrds) const;
         void evalPc(const double* s, double* pc) const;
         void evalPcDeriv(const double* s, double* pc, double* dpcds) const;
-        void ExtendTable(const std::vector<double>& xv,
-                         std::vector<double>& xv_ex,
-                         double pm) const;
-        double smin_[PhaseUsage::MaxNumPhases];
-        double smax_[PhaseUsage::MaxNumPhases];
-        double krwmax_; // Max water relperm
-        double kromax_; // Max oil relperm
-        double swcr_;   // Critical water saturation.
-        double krwr_;   // Water relperm at critical oil-in-water saturation.
-        double sowcr_;  // Critical oil-in-water saturation.
-        double krorw_;  // Oil relperm at critical water saturation.
+
+        void evalKr(const double* s, double* kr, const EPSTransforms* epst) const;
+        void evalKr(const double* s, double* kr, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const;
+        void evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst) const;
+        void evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const;
+        void evalPc(const double* s, double* pc, const EPSTransforms* epst) const;
+        void evalPcDeriv(const double* s, double* pc, double* dpcds, const EPSTransforms* epst) const;
+
     private:
-        PhaseUsage phase_usage; // A copy of the outer class' phase_usage_.
-        UniformTableLinear<double> krw_;
-        UniformTableLinear<double> krow_;
-        UniformTableLinear<double> pcow_;
-        UniformTableLinear<double> krg_;
-        UniformTableLinear<double> krog_;
-        UniformTableLinear<double> pcog_;
-        double krocw_; // = krow_(s_wc)
+
     };
+    
+    typedef SatFuncGwseg<UniformTableLinear<double> > SatFuncGwsegUniform;
+    typedef SatFuncGwseg<NonuniformTableLinear<double> > SatFuncGwsegNonuniform;
 
-
-    class SatFuncGwsegNonuniform : public BlackoilPhases
+    template<class TableType>
+    void SatFuncGwseg<TableType>::evalKr(const double* s, double* kr) const
     {
-    public:
-        void init(const EclipseGridParser& deck,
-                  const int table_num,
-                  const PhaseUsage phase_usg,
-                  const int samples);
-        void evalKr(const double* s, double* kr) const;
-        void evalKrDeriv(const double* s, double* kr, double* dkrds) const;
-        void evalPc(const double* s, double* pc) const;
-        void evalPcDeriv(const double* s, double* pc, double* dpcds) const;
-        void ExtendTable(const std::vector<double>& xv,
-                         std::vector<double>& xv_ex,
-                         double pm) const;
+        if (this->phase_usage.num_phases == 3) {
+            // Relative permeability model based on segregation of water
+            // and gas, with oil present in both water and gas zones.
+            double swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
+            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
+            const double sg = s[BlackoilPhases::Vapour];
+            const double eps = 1e-5;
+            swco = std::min(swco,sw-eps);
 
-        double smin_[PhaseUsage::MaxNumPhases];
-        double smax_[PhaseUsage::MaxNumPhases];
-        double krwmax_; // Max water relperm
-        double kromax_; // Max oil relperm
-        double swcr_;   // Critical water saturation.
-        double krwr_;   // Water relperm at critical oil-in-water saturation.
-        double sowcr_;  // Critical oil-in-water saturation.
-        double krorw_;  // Oil relperm at critical water saturation.
-    private:
-        PhaseUsage phase_usage; // A copy of the outer class' phase_usage_.
-        NonuniformTableLinear<double> krw_;
-        NonuniformTableLinear<double> krow_;
-        NonuniformTableLinear<double> pcow_;
-        NonuniformTableLinear<double> krg_;
-        NonuniformTableLinear<double> krog_;
-        NonuniformTableLinear<double> pcog_;
-        double krocw_; // = krow_(s_wc)
-    };
+            // xw and xg are the fractions occupied by water and gas zones.
+            const double ssg = sw - swco + sg;
+            const double xw = (sw - swco) / ssg;
+            const double xg = 1 - xw;
+            const double ssw = sg + sw;
+
+            const double krw = this->krw_(sw);
+            const double krg = this->krg_(sg);
+            const double krow = this->krow_(ssw);
+            const double krog = this->krog_(ssg);
+            kr[BlackoilPhases::Aqua]   = krw;
+            kr[BlackoilPhases::Vapour] = krg;
+            kr[BlackoilPhases::Liquid] = xw*krow + xg*krog;
+            return;
+        }
+        // We have a two-phase situation. We know that oil is active.
+        if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
+            int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sw = s[wpos];
+            double krw = this->krw_(sw);
+            double krow = this->krow_(sw);
+            kr[wpos] = krw;
+            kr[opos] = krow;
+        } else {
+            assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
+            int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sg = s[gpos];
+            double krg = this->krg_(sg);
+            double krog = this->krog_(sg);
+            kr[gpos] = krg;
+            kr[opos] = krog;
+        }
+    }
+
+
+    template<class TableType>
+    void SatFuncGwseg<TableType>::evalKr(const double* s, double* kr, const EPSTransforms* epst) const
+    {
+        if (this->phase_usage.num_phases == 3) {     
+            int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+
+            // Relative permeability model based on segregation of water
+            // and gas, with oil present in both water and gas zones.
+
+            // TODO  Also consider connate gas ...
+            double _swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
+            double swco = epst->wat.smin;
+            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
+            const double sg = s[BlackoilPhases::Vapour];
+            const double eps = 1e-6;
+            swco = std::min(swco,sw-eps);
+            const double ssw = sg + sw;
+            const double ssg = std::max(sg + sw - swco, eps);
+            const double d = ssg; // = sw - swco + sg (using 'd' for consistency with mrst docs).
+
+            double ssow = 1.0-ssw;
+            double ssog = 1.0-ssg-swco;
+            double _sw = epst->wat.scaleSat(sw, 1.0-this->sowcr_-this->smin_[gpos], this->swcr_, this->smax_[wpos]);
+            double _sg = epst->gas.scaleSat(sg, 1.0-this->sogcr_-this->smin_[wpos], this->sgcr_, this->smax_[gpos]);
+            double _ssow = epst->watoil.scaleSat(ssow, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+            double _ssog = epst->gasoil.scaleSat(ssog, 1.0-this->sgcr_-this->smin_[wpos], this->sogcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+
+            const double krw = epst->wat.scaleKr(sw, this->krw_(_sw), this->krwr_);
+            const double krg = epst->gas.scaleKr(sg, this->krg_(_sg), this->krgr_);
+            const double krow = epst->watoil.scaleKr(ssow, this->krow_(1.0-_ssow), this->krorw_);
+            const double krog = epst->gasoil.scaleKr(ssog, this->krog_(1.0-_ssog-_swco), this->krorg_);
+
+            // xw and xg are the fractions occupied by water and gas zones.
+            const double xw = (sw - swco) / d;
+            const double xg = 1 - xw;
+            kr[BlackoilPhases::Aqua]   = krw;
+            kr[BlackoilPhases::Vapour] = krg;
+            kr[BlackoilPhases::Liquid] = xw*krow + xg*krog;           
+            return;
+        }
+        OPM_THROW(std::runtime_error, "SatFuncGwseg   --  need to be implemented ...");
+        // We have a two-phase situation. We know that oil is active.
+        if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
+            int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sw = s[wpos];
+            double krw = this->krw_(sw);
+            double krow = this->krow_(sw);
+            kr[wpos] = krw;
+            kr[opos] = krow;
+        } else {
+            assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
+            int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sg = s[gpos];
+            double krg = this->krg_(sg);
+            double krog = this->krog_(sg);
+            kr[gpos] = krg;
+            kr[opos] = krog;
+        }
+    }
+
+    template<class TableType>
+    void SatFuncGwseg<TableType>::evalKr(const double* s, double* kr, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const
+    {
+        if (this->phase_usage.num_phases == 3) {
+            int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+
+            // Relative permeability model based on segregation of water
+            // and gas, with oil present in both water and gas zones.
+
+            // TODO  Consider connate gas ...
+            double _swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
+            double swco = epst->wat.smin;
+            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
+            const double sg = s[BlackoilPhases::Vapour];
+            const double eps = 1e-6;
+            swco = std::min(swco,sw-eps);
+            const double ssw = sg + sw;
+            const double ssg = std::max(sg + sw - swco, eps);
+            const double d = ssg; // = sw - swco + sg (using 'd' for consistency with mrst docs).
+
+            double ssow = 1.0-ssw;
+            double ssog = 1.0-ssg-swco;
+            
+            // The code below corresponds to EHYSTR * 0 * * KR/ 
+            //   - wettability properties water>oil>gas.
+            //   - Carlsen hysteresis model for non-wetting (scanning=shifted_imb).  No hysteresis for wetting phase.
+            // The imb-curve currently only differs from drainage curves via endpoint scaling ...
+            
+            // Water - use drainage curve only
+            double _sw = epst->wat.scaleSat(sw, 1.0-this->sowcr_-this->smin_[gpos], this->swcr_, this->smax_[wpos]);
+            double krw = epst->wat.scaleKr(sw, this->krw_(_sw), this->krwr_);
+            
+            // Gas
+            double krg;
+            if (sg >= sat_hyst->sg_hyst) { // Drainage
+                double _sg = epst->gas.scaleSat(sg, 1.0-this->sogcr_-this->smin_[wpos], this->sgcr_, this->smax_[gpos]);
+                krg = epst->gas.scaleKr(sg, this->krg_(_sg), this->krgr_);
+            } else { // Imbibition
+                double sg_shifted = sg + sat_hyst->sg_shift;
+                double _sg =  epst_hyst->gas.scaleSat(sg_shifted, 1.0-this->sogcr_-this->smin_[wpos], this->sgcr_, this->smax_[gpos]);
+                krg = epst_hyst->gas.scaleKr(sg_shifted, this->krg_(_sg), this->krgr_);
+            }       
+
+            // Oil in water
+            double krow;
+            if (ssow >= sat_hyst->sow_hyst) { // Drainage
+                double _ssow = epst->watoil.scaleSat(ssow, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+                krow = epst->watoil.scaleKr(ssow, this->krow_(1.0-_ssow), this->krorw_);
+            } else { // Imbibition
+                double ssow_shifted = ssow + sat_hyst->sow_shift;
+                double _ssow = epst_hyst->watoil.scaleSat(ssow_shifted, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+                krow = epst_hyst->watoil.scaleKr(ssow_shifted, this->krow_(1.0-_ssow), this->krorw_);
+            }
+            
+            // Oil in gas and connate water - use drainage curve only 
+            double _ssog = epst->gasoil.scaleSat(ssog, 1.0-this->sgcr_-this->smin_[wpos], this->sogcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+            double krog = epst->gasoil.scaleKr(ssog, this->krog_(1.0-_ssog-_swco), this->krorg_);
+
+            // xw and xg are the fractions occupied by water and gas zones.
+            const double xw = (sw - swco) / d;
+            const double xg = 1 - xw;
+            
+            // relperms
+            kr[BlackoilPhases::Aqua]   = krw;
+            kr[BlackoilPhases::Vapour] = krg;
+            kr[BlackoilPhases::Liquid] = xw*krow + xg*krog;
+
+            return;       
+        }
+        OPM_THROW(std::runtime_error, "SatFuncGwseg   --  need to be implemented ...");
+        // We have a two-phase situation. We know that oil is active.
+        if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
+            int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sw = s[wpos];
+            double krw = this->krw_(sw);
+            double krow = this->krow_(sw);
+            kr[wpos] = krw;
+            kr[opos] = krow;
+        } else {
+            assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
+            int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sg = s[gpos];
+            double krg = this->krg_(sg);
+            double krog = this->krog_(sg);
+            kr[gpos] = krg;
+            kr[opos] = krog;
+        }
+    }
+
+    template<class TableType>
+    void SatFuncGwseg<TableType>::evalKrDeriv(const double* s, double* kr, double* dkrds) const
+    {
+        const int np = this->phase_usage.num_phases;
+        std::fill(dkrds, dkrds + np*np, 0.0);
+
+        if (np == 3) {
+            // Relative permeability model based on segregation of water
+            // and gas, with oil present in both water and gas zones.
+
+            double swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
+            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
+            const double sg = s[BlackoilPhases::Vapour];
+            const double eps = 1e-5;
+            swco = std::min(swco,sw-eps);
+
+            // xw and xg are the fractions occupied by water and gas zones.
+            const double ssw = sg + sw;
+            // d = ssg = sw - swco + sg (using 'd' for consistency with mrst docs).
+            const double d = sg + sw - swco;
+            const double xw = (sw - swco) / d;
+
+            const double krw = this->krw_(sw);
+            const double krg = this->krg_(sg);
+            const double krow = this->krow_(ssw);
+            const double krog = this->krog_(d);
+
+            const double xg = 1 - xw;
+            kr[BlackoilPhases::Aqua]   = krw;
+            kr[BlackoilPhases::Vapour] = krg;
+            kr[BlackoilPhases::Liquid] = xw*krow + xg*krog;
+
+            // Derivatives.
+            const double dkrww = this->krw_.derivative(sw);
+            const double dkrgg = this->krg_.derivative(sg);
+            const double dkrow = this->krow_.derivative(ssw);
+            const double dkrog = this->krog_.derivative(d);
+            dkrds[BlackoilPhases::Aqua   + BlackoilPhases::Aqua*np]   =  dkrww;
+            dkrds[BlackoilPhases::Liquid + BlackoilPhases::Aqua*np]   =  (xg/d)*krow + xw*dkrow - (xg/d)*krog + xg*dkrog;
+            dkrds[BlackoilPhases::Liquid + BlackoilPhases::Vapour*np] = -(xw/d)*krow + xw*dkrow + (xw/d)*krog + xg*dkrog;
+            dkrds[BlackoilPhases::Vapour + BlackoilPhases::Vapour*np] =  dkrgg;
+            return;
+        }
+        // We have a two-phase situation. We know that oil is active.
+        if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
+            int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sw = s[wpos];
+            double krw = this->krw_(sw);
+            double dkrww = this->krw_.derivative(sw);
+            double krow = this->krow_(sw);
+            double dkrow = this->krow_.derivative(sw);
+            kr[wpos] = krw;
+            kr[opos] = krow;
+            dkrds[wpos + wpos*np] = dkrww;
+            dkrds[opos + wpos*np] = dkrow; // Row opos, column wpos, fortran order.
+        } else {
+            assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
+            int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sg = s[gpos];
+            double krg = this->krg_(sg);
+            double dkrgg = this->krg_.derivative(sg);
+            double krog = this->krog_(sg);
+            double dkrog = this->krog_.derivative(sg);
+            kr[gpos] = krg;
+            kr[opos] = krog;
+            dkrds[gpos + gpos*np] = dkrgg;
+            dkrds[opos + gpos*np] = dkrog;
+        }
+
+    }
+
+    template<class TableType>
+    void SatFuncGwseg<TableType>::evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst) const
+    {
+        const int np = this->phase_usage.num_phases;
+        std::fill(dkrds, dkrds + np*np, 0.0);
+
+        if (np == 3) {
+            int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+
+            // Relative permeability model based on segregation of water
+            // and gas, with oil present in both water and gas zones.
+
+            // TODO  Also consider connate gas ...
+            double _swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
+            double swco = epst->wat.smin;
+            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
+            const double sg = s[BlackoilPhases::Vapour];
+            const double eps = 1e-6;
+            swco = std::min(swco,sw-eps);
+            const double ssw = sg + sw;
+            const double ssg = std::max(sg + sw - swco, eps);
+            const double d = ssg; // = sw - swco + sg (using 'd' for consistency with mrst docs).
+
+            double ssow = 1.0-ssw;
+            double ssog = 1.0-ssg-swco;
+            double _sw = epst->wat.scaleSat(sw, 1.0-this->sowcr_-this->smin_[gpos], this->swcr_, this->smax_[wpos]);
+            double _dsdsw = epst->wat.scaleSatDeriv(sw, 1.0-this->sowcr_-this->smin_[gpos], this->swcr_, this->smax_[wpos]);
+            double _sg = epst->gas.scaleSat(sg, 1.0-this->sogcr_-this->smin_[wpos], this->sgcr_, this->smax_[gpos]);
+            double _dsdsg = epst->gas.scaleSatDeriv(sg, 1.0-this->sogcr_-this->smin_[wpos], this->sgcr_, this->smax_[gpos]);
+            double _ssow = epst->watoil.scaleSat(ssow, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+            double _dsdssow = epst->watoil.scaleSatDeriv(ssow, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+            double _ssog = epst->gasoil.scaleSat(ssog, 1.0-this->sgcr_-this->smin_[wpos], this->sogcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+            double _dsdssog = epst->gasoil.scaleSatDeriv(ssog, 1.0-this->sgcr_-this->smin_[wpos], this->sogcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+
+            const double krw = epst->wat.scaleKr(sw, this->krw_(_sw), this->krwr_);
+            const double krg = epst->gas.scaleKr(sg, this->krg_(_sg), this->krgr_);
+            const double krow = epst->watoil.scaleKr(ssow, this->krow_(1.0-_ssow), this->krorw_);
+            const double krog = epst->gasoil.scaleKr(ssog, this->krog_(1.0-_ssog-_swco), this->krorg_);
+
+            // xw and xg are the fractions occupied by water and gas zones.
+            const double xw = (sw - swco) / d;
+            const double xg = 1 - xw;
+            kr[BlackoilPhases::Aqua]   = krw;
+            kr[BlackoilPhases::Vapour] = krg;
+            kr[BlackoilPhases::Liquid] = xw*krow + xg*krog;
+
+            // Derivatives.
+            double dkrww = _dsdsw*epst->wat.scaleKrDeriv(sw, this->krw_.derivative(_sw));
+            double dkrgg = _dsdsg*epst->gas.scaleKrDeriv(sg, this->krg_.derivative(_sg));
+            double dkrow = _dsdssow*epst->watoil.scaleKrDeriv(ssow, this->krow_.derivative(1.0-_ssow));
+            double dkrog = _dsdssog*epst->gasoil.scaleKrDeriv(ssog, this->krog_.derivative(1.0-_ssog-_swco));
+            dkrds[BlackoilPhases::Aqua   + BlackoilPhases::Aqua*np]   =  dkrww;
+            dkrds[BlackoilPhases::Liquid + BlackoilPhases::Aqua*np]   =  (xg/d)*krow + xw*dkrow - (xg/d)*krog + xg*dkrog;
+            dkrds[BlackoilPhases::Liquid + BlackoilPhases::Vapour*np] = -(xw/d)*krow + xw*dkrow + (xw/d)*krog + xg*dkrog;
+            dkrds[BlackoilPhases::Vapour + BlackoilPhases::Vapour*np] =  dkrgg;
+            return;
+        }
+        OPM_THROW(std::runtime_error, "SatFuncGwseg   --  need to be implemented ...");
+        // We have a two-phase situation. We know that oil is active.
+        if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
+            int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sw = s[wpos];
+            double krw = this->krw_(sw);
+            double dkrww = this->krw_.derivative(sw);
+            double krow = this->krow_(sw);
+            double dkrow = this->krow_.derivative(sw);
+            kr[wpos] = krw;
+            kr[opos] = krow;
+            dkrds[wpos + wpos*np] = dkrww;
+            dkrds[opos + wpos*np] = dkrow; // Row opos, column wpos, fortran order.
+        } else {
+            assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
+            int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sg = s[gpos];
+            double krg = this->krg_(sg);
+            double dkrgg = this->krg_.derivative(sg);
+            double krog = this->krog_(sg);
+            double dkrog = this->krog_.derivative(sg);
+            kr[gpos] = krg;
+            kr[opos] = krog;
+            dkrds[gpos + gpos*np] = dkrgg;
+            dkrds[opos + gpos*np] = dkrog;
+        }
+    }
+    
+    template<class TableType>
+    void SatFuncGwseg<TableType>::evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const
+    {
+        const int np = this->phase_usage.num_phases;
+        std::fill(dkrds, dkrds + np*np, 0.0);
+
+        if (np == 3) {
+            int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+
+            // Relative permeability model based on segregation of water
+            // and gas, with oil present in both water and gas zones.
+
+            // TODO  Also consider connate gas ...
+            double _swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
+            double swco = epst->wat.smin;
+            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
+            const double sg = s[BlackoilPhases::Vapour];
+            const double eps = 1e-6;
+            swco = std::min(swco,sw-eps);
+            const double ssw = sg + sw;
+            const double ssg = std::max(sg + sw - swco, eps);
+            const double d = ssg; // = sw - swco + sg (using 'd' for consistency with mrst docs).
+
+            double ssow = 1.0-ssw;
+            double ssog = 1.0-ssg-swco;
+            
+            // The code below corresponds to EHYSTR * 0 * * KR/ 
+            //   - wettability properties water>oil>gas.
+            //   - Carlsen hysteresis model for non-wetting (scanning=shifted_imb).  No hysteresis for wetting phase.
+            // The imb-curve currently only differs from drainage curves via endpoint scaling ...
+            
+            // Water - use drainage curve only
+            double _sw = epst->wat.scaleSat(sw, 1.0-this->sowcr_-this->smin_[gpos], this->swcr_, this->smax_[wpos]);
+            double _dsdsw = epst->wat.scaleSatDeriv(sw, 1.0-this->sowcr_-this->smin_[gpos], this->swcr_, this->smax_[wpos]);
+            double krw = epst->wat.scaleKr(sw, this->krw_(_sw), this->krwr_);
+            double dkrww = _dsdsw*epst->wat.scaleKrDeriv(sw, this->krw_.derivative(_sw));
+            
+            // Gas
+            double krg, dkrgg;
+            if (sg >= sat_hyst->sg_hyst) { // Drainage
+                double _sg = epst->gas.scaleSat(sg, 1.0-this->sogcr_-this->smin_[wpos], this->sgcr_, this->smax_[gpos]);
+                double _dsdsg = epst->gas.scaleSatDeriv(sg, 1.0-this->sogcr_-this->smin_[wpos], this->sgcr_, this->smax_[gpos]);
+                krg = epst->gas.scaleKr(sg, this->krg_(_sg), this->krgr_);
+                dkrgg = _dsdsg*epst->gas.scaleKrDeriv(sg, this->krg_.derivative(_sg));
+            } else { // Imbibition
+                double sg_shifted = sg + sat_hyst->sg_shift;
+                double _sg =  epst_hyst->gas.scaleSat(sg_shifted, 1.0-this->sogcr_-this->smin_[wpos], this->sgcr_, this->smax_[gpos]);
+                double _dsdsg = epst_hyst->gas.scaleSatDeriv(sg_shifted, 1.0-this->sogcr_-this->smin_[wpos], this->sgcr_, this->smax_[gpos]);
+                krg = epst_hyst->gas.scaleKr(sg_shifted, this->krg_(_sg), this->krgr_);
+                dkrgg = _dsdsg*epst_hyst->gas.scaleKrDeriv(sg_shifted, this->krg_.derivative(_sg));
+            }       
+
+            // Oil in water
+            double krow, dkrow;
+            if (ssow >= sat_hyst->sow_hyst) { // Drainage
+                double _ssow = epst->watoil.scaleSat(ssow, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+                double _dsdssow = epst->watoil.scaleSatDeriv(ssow, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+                krow = epst->watoil.scaleKr(ssow, this->krow_(1.0-_ssow), this->krorw_);
+                dkrow = _dsdssow*epst->watoil.scaleKrDeriv(ssow, this->krow_.derivative(1.0-_ssow));
+            } else { // Imbibition
+                double ssow_shifted = ssow + sat_hyst->sow_shift;
+                double _ssow = epst_hyst->watoil.scaleSat(ssow_shifted, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+                double _dsdssow = epst_hyst->watoil.scaleSatDeriv(ssow_shifted, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+                krow = epst_hyst->watoil.scaleKr(ssow_shifted, this->krow_(1.0-_ssow), this->krorw_);
+                dkrow = _dsdssow*epst_hyst->watoil.scaleKrDeriv(ssow_shifted, this->krow_.derivative(1.0-_ssow));
+            }
+            
+            // Oil in gas and connate water - use drainage curve only 
+            double _ssog = epst->gasoil.scaleSat(ssog, 1.0-this->sgcr_-this->smin_[wpos], this->sogcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+            double _dsdssog = epst->gasoil.scaleSatDeriv(ssog, 1.0-this->sgcr_-this->smin_[wpos], this->sogcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
+            double krog = epst->gasoil.scaleKr(ssog, this->krog_(1.0-_ssog-_swco), this->krorg_);
+            double dkrog = _dsdssog*epst->gasoil.scaleKrDeriv(ssog, this->krog_.derivative(1.0-_ssog-_swco));
+
+            // xw and xg are the fractions occupied by water and gas zones.
+            const double xw = (sw - swco) / d;
+            const double xg = 1 - xw;
+            
+            // relperms
+            kr[BlackoilPhases::Aqua]   = krw;
+            kr[BlackoilPhases::Vapour] = krg;
+            kr[BlackoilPhases::Liquid] = xw*krow + xg*krog;
+
+            // Derivatives.      
+            dkrds[BlackoilPhases::Aqua   + BlackoilPhases::Aqua*np]   =  dkrww;
+            dkrds[BlackoilPhases::Liquid + BlackoilPhases::Aqua*np]   =  (xg/d)*krow + xw*dkrow - (xg/d)*krog + xg*dkrog;
+            dkrds[BlackoilPhases::Liquid + BlackoilPhases::Vapour*np] = -(xw/d)*krow + xw*dkrow + (xw/d)*krog + xg*dkrog;
+            dkrds[BlackoilPhases::Vapour + BlackoilPhases::Vapour*np] =  dkrgg;
+            return;
+        }
+        OPM_THROW(std::runtime_error, "SatFuncGwseg   --  need to be implemented ...");
+        // We have a two-phase situation. We know that oil is active.
+        if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
+            int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sw = s[wpos];
+            double krw = this->krw_(sw);
+            double dkrww = this->krw_.derivative(sw);
+            double krow = this->krow_(sw);
+            double dkrow = this->krow_.derivative(sw);
+            kr[wpos] = krw;
+            kr[opos] = krow;
+            dkrds[wpos + wpos*np] = dkrww;
+            dkrds[opos + wpos*np] = dkrow; // Row opos, column wpos, fortran order.
+        } else {
+            assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
+            int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+            int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
+            double sg = s[gpos];
+            double krg = this->krg_(sg);
+            double dkrgg = this->krg_.derivative(sg);
+            double krog = this->krog_(sg);
+            double dkrog = this->krog_.derivative(sg);
+            kr[gpos] = krg;
+            kr[opos] = krog;
+            dkrds[gpos + gpos*np] = dkrgg;
+            dkrds[opos + gpos*np] = dkrog;
+        }
+    }
+
+    template<class TableType>
+    void SatFuncGwseg<TableType>::evalPc(const double* s, double* pc) const
+    {
+        pc[this->phase_usage.phase_pos[BlackoilPhases::Liquid]] = 0.0;
+        if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
+            int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            pc[pos] = this->pcow_(s[pos]);
+        }
+        if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
+            int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+            pc[pos] = this->pcog_(s[pos]);
+        }
+    }
+    
+    
+    template<class TableType>
+    void SatFuncGwseg<TableType>::evalPc(const double* s, double* pc, const EPSTransforms* epst) const
+    {
+        pc[this->phase_usage.phase_pos[BlackoilPhases::Liquid]] = 0.0;
+        if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
+            int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            double _sw = epst->wat.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            pc[pos] = this->pcow_(_sw);
+        }
+        if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
+            int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+            double _sg = epst->gas.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            pc[pos] = this->pcog_(_sg);
+        }
+    }
+
+    template<class TableType>
+    void SatFuncGwseg<TableType>::evalPcDeriv(const double* s, double* pc, double* dpcds) const
+    {
+        // The problem of determining three-phase capillary pressures
+        // is very hard experimentally, usually one extends two-phase
+        // data (as for relative permeability).
+        // In our approach the derivative matrix is quite sparse, only
+        // the diagonal elements corresponding to non-oil phases are
+        // (potentially) nonzero.
+        const int np = this->phase_usage.num_phases;
+        std::fill(dpcds, dpcds + np*np, 0.0);
+        pc[this->phase_usage.phase_pos[BlackoilPhases::Liquid]] = 0.0;
+        if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
+            int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            pc[pos] = this->pcow_(s[pos]);
+            dpcds[np*pos + pos] = this->pcow_.derivative(s[pos]);
+        }
+        if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
+            int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+            pc[pos] = this->pcog_(s[pos]);
+            dpcds[np*pos + pos] = this->pcog_.derivative(s[pos]);
+        }
+    }
+
+
+    template<class TableType>
+    void SatFuncGwseg<TableType>::evalPcDeriv(const double* s, double* pc, double* dpcds, const EPSTransforms* epst) const
+    {
+        // The problem of determining three-phase capillary pressures
+        // is very hard experimentally, usually one extends two-phase
+        // data (as for relative permeability).
+        // In our approach the derivative matrix is quite sparse, only
+        // the diagonal elements corresponding to non-oil phases are
+        // (potentially) nonzero.
+        const int np = this->phase_usage.num_phases;
+        std::fill(dpcds, dpcds + np*np, 0.0);
+        pc[this->phase_usage.phase_pos[BlackoilPhases::Liquid]] = 0.0;
+        if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
+            int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
+            double _sw = epst->wat.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            pc[pos] = this->pcow_(s[pos]);
+            double _dsdsw = epst->wat.scaleSatDerivPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            dpcds[np*pos + pos] = _dsdsw*this->pcow_.derivative(_sw);
+        }
+        if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
+            int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
+            double _sg = epst->gas.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            pc[pos] = this->pcog_(_sg);
+            double _dsdsg = epst->gas.scaleSatDerivPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            dpcds[np*pos + pos] = _dsdsg*this->pcog_.derivative(_sg);
+        }
+    }
+
 
 } // namespace Opm
 #endif // SATFUNCGWSEG_HPP
