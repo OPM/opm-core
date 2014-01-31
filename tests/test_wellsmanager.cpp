@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(New_Constructor_Works) {
 
         check_controls_epoch0( wellsManager.c_wells()->ctrls );
 
-        BOOST_CHECK(wells_equal(wellsManager.c_wells(), oldWellsManager.c_wells()));
+        BOOST_CHECK(wells_equal(wellsManager.c_wells(), oldWellsManager.c_wells() , false));
     }
 
     Deck.setCurrentEpoch(1);
@@ -234,7 +234,7 @@ BOOST_AUTO_TEST_CASE(New_Constructor_Works) {
 
         check_controls_epoch1( wellsManager.c_wells()->ctrls );
 
-        BOOST_CHECK(wells_equal( wellsManager.c_wells(), oldWellsManager.c_wells()));
+        BOOST_CHECK(wells_equal( wellsManager.c_wells(), oldWellsManager.c_wells(),false));
     }
 }
 
@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_CASE(New_Constructor_Works_ExpandedData) {
         Opm::WellsManager wellsManager(eclipseState, 0, Deck, *gridManager.c_grid(), NULL);
         Opm::WellsManager oldWellsManager(Deck, *gridManager.c_grid(), NULL);
 
-        BOOST_CHECK(wells_equal(wellsManager.c_wells(), oldWellsManager.c_wells()));
+        BOOST_CHECK(wells_equal(wellsManager.c_wells(), oldWellsManager.c_wells(),false));
     }
 
     Deck.setCurrentEpoch(1);
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(New_Constructor_Works_ExpandedData) {
         Opm::WellsManager wellsManager(eclipseState, 1,Deck, *gridManager.c_grid(), NULL);
         Opm::WellsManager oldWellsManager(Deck, *gridManager.c_grid(), NULL);
 
-        BOOST_CHECK(wells_equal( wellsManager.c_wells(), oldWellsManager.c_wells()));
+        BOOST_CHECK(wells_equal( wellsManager.c_wells(), oldWellsManager.c_wells(), true));
     }
 }
 
@@ -276,8 +276,8 @@ BOOST_AUTO_TEST_CASE(WellsEqual) {
     Deck.setCurrentEpoch(1);
     Opm::WellsManager wellsManager1(Deck, *gridManager.c_grid(), NULL);
 
-    BOOST_CHECK(  wells_equal( wellsManager0.c_wells() , wellsManager0.c_wells()) );
-    BOOST_CHECK( !wells_equal( wellsManager0.c_wells() , wellsManager1.c_wells()) );
+    BOOST_CHECK(  wells_equal( wellsManager0.c_wells() , wellsManager0.c_wells(),false) );
+    BOOST_CHECK( !wells_equal( wellsManager0.c_wells() , wellsManager1.c_wells(),false) );
 }
 
 
@@ -291,15 +291,15 @@ BOOST_AUTO_TEST_CASE(ControlsEqual) {
     Deck.setCurrentEpoch(1);
     Opm::WellsManager wellsManager1(Deck, *gridManager.c_grid(), NULL);
 
-    BOOST_CHECK(  well_controls_equal( wellsManager0.c_wells()->ctrls[0] , wellsManager0.c_wells()->ctrls[0]));
-    BOOST_CHECK(  well_controls_equal( wellsManager0.c_wells()->ctrls[1] , wellsManager0.c_wells()->ctrls[1]));
-    BOOST_CHECK(  well_controls_equal( wellsManager1.c_wells()->ctrls[0] , wellsManager1.c_wells()->ctrls[0]));
-    BOOST_CHECK(  well_controls_equal( wellsManager1.c_wells()->ctrls[1] , wellsManager1.c_wells()->ctrls[1]));
+    BOOST_CHECK(  well_controls_equal( wellsManager0.c_wells()->ctrls[0] , wellsManager0.c_wells()->ctrls[0] , false));
+    BOOST_CHECK(  well_controls_equal( wellsManager0.c_wells()->ctrls[1] , wellsManager0.c_wells()->ctrls[1] , false));
+    BOOST_CHECK(  well_controls_equal( wellsManager1.c_wells()->ctrls[0] , wellsManager1.c_wells()->ctrls[0] , false));
+    BOOST_CHECK(  well_controls_equal( wellsManager1.c_wells()->ctrls[1] , wellsManager1.c_wells()->ctrls[1] , false));
 
-    BOOST_CHECK(  !well_controls_equal( wellsManager0.c_wells()->ctrls[0] , wellsManager0.c_wells()->ctrls[1]));
-    BOOST_CHECK(  !well_controls_equal( wellsManager0.c_wells()->ctrls[1] , wellsManager0.c_wells()->ctrls[0]));
-    BOOST_CHECK(  !well_controls_equal( wellsManager1.c_wells()->ctrls[0] , wellsManager0.c_wells()->ctrls[0]));
-    BOOST_CHECK(  !well_controls_equal( wellsManager1.c_wells()->ctrls[1] , wellsManager0.c_wells()->ctrls[1]));
+    BOOST_CHECK(  !well_controls_equal( wellsManager0.c_wells()->ctrls[0] , wellsManager0.c_wells()->ctrls[1] , false));
+    BOOST_CHECK(  !well_controls_equal( wellsManager0.c_wells()->ctrls[1] , wellsManager0.c_wells()->ctrls[0] , false));
+    BOOST_CHECK(  !well_controls_equal( wellsManager1.c_wells()->ctrls[0] , wellsManager0.c_wells()->ctrls[0] , false));
+    BOOST_CHECK(  !well_controls_equal( wellsManager1.c_wells()->ctrls[1] , wellsManager0.c_wells()->ctrls[1] , false));
 }
 
 
