@@ -47,22 +47,7 @@
 namespace
 {
 
-    struct WellData
-    {
-        WellType type;
-        // WellControlType control;
-        // double target;
-        double reference_bhp_depth;
-        // Opm::InjectionSpecification::InjectorType injected_phase;
-        int welspecsline;
-    };
 
-
-    struct PerfData
-    {
-        int cell;
-        double well_index;
-    };
 
     namespace ProductionControl
     {
@@ -301,23 +286,8 @@ namespace Opm
             return;
         }
 
-        // global_cell is a map from compressed cells to Cartesian grid cells.
-        // We must make the inverse lookup.
-        const int* global_cell = grid.global_cell;
-        const int* cpgdim = grid.cartdims;
         std::map<int,int> cartesian_to_compressed;
-
-        if (global_cell) {
-            for (int i = 0; i < grid.number_of_cells; ++i) {
-                cartesian_to_compressed.insert(std::make_pair(global_cell[i], i));
-            }
-        }
-        else {
-            for (int i = 0; i < grid.number_of_cells; ++i) {
-                cartesian_to_compressed.insert(std::make_pair(i, i));
-            }
-        }
-
+        setupCompressedToCartesian(grid, cartesian_to_compressed);
 
         // Obtain phase usage data.
         PhaseUsage pu = phaseUsageFromDeck(eclipseState);
@@ -326,387 +296,21 @@ namespace Opm
         // then used to initialize the Wells struct.
         std::vector<std::string> well_names;
         std::vector<WellData> well_data;
-        std::vector<std::vector<PerfData> > wellperf_data;
+
 
         // For easy lookup:
         std::map<std::string, int> well_names_to_index;
-        typedef std::map<std::string, int>::const_iterator WNameIt;
 
-
-
-        // Main "well-loop" to populate the data structures (well_names, well_data, ...)
         ScheduleConstPtr schedule = eclipseState->getSchedule();
         std::vector<WellConstPtr> wells = schedule->getWells(timeStep);
+
         well_names.reserve(wells.size());
         well_data.reserve(wells.size());
-        wellperf_data.resize(wells.size());
-
-        int well_index = 0;
-        for (auto wellIter= wells.begin(); wellIter != wells.end(); ++wellIter) {
-            WellConstPtr well = (*wellIter);
-            {   // WELSPECS handling
-                well_names_to_index[well->name()] = well_index;
-                well_names.push_back(well->name());
-                {
-                    WellData wd;
-                    // If negative (defaulted), set refdepth to a marker
-                    // value, will be changed after getting perforation
-                    // data to the centroid of the cell of the top well
-                    // perforation.
-                    wd.reference_bhp_depth = (well->getRefDepth() < 0.0) ? -1e100 : well->getRefDepth();
-                    wd.welspecsline = -1;
-                    if (well->isInjector( timeStep ))
-                        wd.type = INJECTOR;
-                    else
-                        wd.type = PRODUCER;
-                    well_data.push_back(wd);
-                }
-            }
-
-            {   // COMPDAT handling
-                CompletionSetConstPtr completionSet = well->getCompletions(timeStep);
-                for (size_t c=0; c<completionSet->size(); c++) {
-                    CompletionConstPtr completion = completionSet->get(c);
-                    int i = completion->getI();
-                    int j = completion->getJ();
-                    int k = completion->getK();
-                    int cart_grid_indx = i + cpgdim[0]*(j + cpgdim[1]*k);
-                    std::map<int, int>::const_iterator cgit = cartesian_to_compressed.find(cart_grid_indx);
-                    if (cgit == cartesian_to_compressed.end()) {
-                        OPM_THROW(std::runtime_error, "Cell with i,j,k indices " << i << ' ' << j << ' '
-                                  << k << " not found in grid (well = " << well->name() << ')');
-                    }
-                    int cell = cgit->second;
-                    PerfData pd;
-                    pd.cell = cell;
-                    if (completion->getCF() > 0.0) {
-                        pd.well_index = completion->getCF();
-                    } else {
-                        double radius = 0.5*completion->getDiameter();
-                        if (radius <= 0.0) {
-                            radius = 0.5*unit::feet;
-                            OPM_MESSAGE("**** Warning: Well bore internal radius set to " << radius);
-                        }
-                        std::array<double, 3> cubical = getCubeDim(grid, cell);
-                        const double* cell_perm = &permeability[grid.dimensions*grid.dimensions*cell];
-                        pd.well_index = computeWellIndex(radius, cubical, cell_perm, completion->getDiameter());
-                    }
-                    wellperf_data[well_index].push_back(pd);
-                }
-            }
-            well_index++;
-        }
-
-        // Set up reference depths that were defaulted. Count perfs.
-
-        const int num_wells = well_data.size();
-
-        int num_perfs = 0;
-        assert(grid.dimensions == 3);
-        for (int w = 0; w < num_wells; ++w) {
-            num_perfs += wellperf_data[w].size();
-            if (well_data[w].reference_bhp_depth < 0.0) {
-                // It was defaulted. Set reference depth to minimum perforation depth.
-                double min_depth = 1e100;
-                int num_wperfs = wellperf_data[w].size();
-                for (int perf = 0; perf < num_wperfs; ++perf) {
-                    double depth = grid.cell_centroids[3*wellperf_data[w][perf].cell + 2];
-                    min_depth = std::min(min_depth, depth);
-                }
-                well_data[w].reference_bhp_depth = min_depth;
-            }
-        }
-
-        // Create the well data structures.
-        w_ = create_wells(pu.num_phases, num_wells, num_perfs);
-        if (!w_) {
-            OPM_THROW(std::runtime_error, "Failed creating Wells struct.");
-        }
 
 
-        // Add wells.
-        for (int w = 0; w < num_wells; ++w) {
-            const int w_num_perf = wellperf_data[w].size();
-            std::vector<int> perf_cells(w_num_perf);
-            std::vector<double> perf_prodind(w_num_perf);
-            for (int perf = 0; perf < w_num_perf; ++perf) {
-                perf_cells[perf] = wellperf_data[w][perf].cell;
-                perf_prodind[perf] = wellperf_data[w][perf].well_index;
-            }
-            const double* comp_frac = NULL;
-            // We initialize all wells with a null component fraction,
-            // and must (for injection wells) overwrite it later.
-            int ok = add_well(well_data[w].type, well_data[w].reference_bhp_depth, w_num_perf,
-                              comp_frac, &perf_cells[0], &perf_prodind[0], well_names[w].c_str(), w_);
-            if (!ok) {
-                OPM_THROW(std::runtime_error, "Failed adding well " << well_names[w] << " to Wells data structure.");
-            }
-        }
-        
-        
-        well_index = 0;
-        for (auto wellIter= wells.begin(); wellIter != wells.end(); ++wellIter) {
-            WellConstPtr well = (*wellIter);
-            
-            if (well->isInjector(timeStep)) {
-                clear_well_controls(well_index, w_);
-                int ok = 1;
-                int control_pos[5] = { -1, -1, -1, -1, -1 };
+        createWellsFromSpecs(wells, timeStep, grid, well_names, well_data, well_names_to_index, pu, cartesian_to_compressed, permeability);
 
-                if (well->hasInjectionControl(timeStep , WellInjector::RATE)) {
-                    control_pos[InjectionControl::RATE] = well_controls_get_num(w_->ctrls[well_index]);
-                    double distr[3] = { 0.0, 0.0, 0.0 };
-                    WellInjector::TypeEnum injectorType = well->getInjectorType(timeStep);
-                    
-                    if (injectorType == WellInjector::TypeEnum::WATER) {
-                        distr[pu.phase_pos[BlackoilPhases::Aqua]] = 1.0;
-                    } else if (injectorType == WellInjector::TypeEnum::OIL) {
-                        distr[pu.phase_pos[BlackoilPhases::Liquid]] = 1.0;
-                    } else if (injectorType == WellInjector::TypeEnum::GAS) {
-                        distr[pu.phase_pos[BlackoilPhases::Vapour]] = 1.0;
-                    } 
-
-                    ok = append_well_controls(SURFACE_RATE, 
-                                              well->getSurfaceInjectionRate( timeStep ) ,  
-                                              distr, 
-                                              well_index, 
-                                              w_);
-                }
-
-                if (ok && well->hasInjectionControl(timeStep , WellInjector::RESV)) {
-                    control_pos[InjectionControl::RESV] = well_controls_get_num(w_->ctrls[well_index]);
-                    double distr[3] = { 0.0, 0.0, 0.0 };
-                    WellInjector::TypeEnum injectorType = well->getInjectorType(timeStep);
-                    
-                    if (injectorType == WellInjector::TypeEnum::WATER) {
-                        distr[pu.phase_pos[BlackoilPhases::Aqua]] = 1.0;
-                    } else if (injectorType == WellInjector::TypeEnum::OIL) {
-                        distr[pu.phase_pos[BlackoilPhases::Liquid]] = 1.0;
-                    } else if (injectorType == WellInjector::TypeEnum::GAS) {
-                        distr[pu.phase_pos[BlackoilPhases::Vapour]] = 1.0;
-                    } 
-                    
-                    ok = append_well_controls(RESERVOIR_RATE, 
-                                              well->getReservoirInjectionRate( timeStep ),
-                                              distr, 
-                                              well_index, 
-                                              w_);
-                }
-
-                if (ok && well->hasInjectionControl(timeStep , WellInjector::BHP)) {
-                    control_pos[InjectionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
-                    ok = append_well_controls(BHP, 
-                                              well->getBHPLimit(timeStep),
-                                              NULL, 
-                                              well_index, 
-                                              w_);
-                }
-              
-                if (ok && well->hasInjectionControl(timeStep , WellInjector::THP)) {
-                    OPM_THROW(std::runtime_error, "We cannot handle THP limit for well " << well_names[well_index]);
-                }
-
-
-                if (!ok) {
-                    OPM_THROW(std::runtime_error, "Failure occured appending controls for well " << well_names[well_index]);
-                }
-
-                
-                {
-                    InjectionControl::Mode mode = InjectionControl::mode( well->getInjectorControlMode(timeStep) );
-                    int cpos = control_pos[mode];
-                    if (cpos == -1 && mode != InjectionControl::GRUP) {
-                        OPM_THROW(std::runtime_error, "Control not specified in well " << well_names[well_index]);
-                    }
-                    
-                    // We need to check if the well is shut or not
-                    if (well->getStatus( timeStep ) == WellCommon::SHUT) {
-                        cpos = ~cpos;
-                    }
-                    set_current_control(well_index, cpos, w_);
-                }
-
-                
-                // Set well component fraction.
-                double cf[3] = { 0.0, 0.0, 0.0 };
-                if (well->getInjectorType(timeStep) == WellInjector::WATER) {
-                    if (!pu.phase_used[BlackoilPhases::Aqua]) {
-                        OPM_THROW(std::runtime_error, "Water phase not used, yet found water-injecting well.");
-                    }
-                    cf[pu.phase_pos[BlackoilPhases::Aqua]] = 1.0;
-                } else if (well->getInjectorType(timeStep) == WellInjector::OIL) {
-                    if (!pu.phase_used[BlackoilPhases::Liquid]) {
-                        OPM_THROW(std::runtime_error, "Oil phase not used, yet found oil-injecting well.");
-                    }
-                    cf[pu.phase_pos[BlackoilPhases::Liquid]] = 1.0;
-                } else if (well->getInjectorType(timeStep) == WellInjector::GAS) {
-                    if (!pu.phase_used[BlackoilPhases::Vapour]) {
-                        OPM_THROW(std::runtime_error, "Gas phase not used, yet found gas-injecting well.");
-                    }
-                    cf[pu.phase_pos[BlackoilPhases::Vapour]] = 1.0;
-                }
-                std::copy(cf, cf + pu.num_phases, w_->comp_frac + well_index*pu.num_phases);
-                
-            }
-
-            if (well->isProducer(timeStep)) {
-                // Add all controls that are present in well.
-                // First we must clear existing controls, in case the
-                // current WCONPROD line is modifying earlier controls.
-                clear_well_controls(well_index, w_);
-                int control_pos[9] = { -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-                int ok = 1;
-                if (ok && well->hasProductionControl(timeStep , WellProducer::ORAT)) {
-                    if (!pu.phase_used[BlackoilPhases::Liquid]) {
-                        OPM_THROW(std::runtime_error, "Oil phase not active and ORAT control specified.");
-                    }
-
-                    control_pos[ProductionControl::ORAT] = well_controls_get_num(w_->ctrls[well_index]);
-                    double distr[3] = { 0.0, 0.0, 0.0 };
-                    distr[pu.phase_pos[BlackoilPhases::Liquid]] = 1.0;
-                    ok = append_well_controls(SURFACE_RATE, 
-                                              -well->getOilRate( timeStep ),
-                                              distr, 
-                                               well_index, 
-                                              w_);
-                }
-                
-                if (ok && well->hasProductionControl(timeStep , WellProducer::WRAT)) {
-                    if (!pu.phase_used[BlackoilPhases::Aqua]) {
-                        OPM_THROW(std::runtime_error, "Water phase not active and WRAT control specified.");
-                    }
-                    control_pos[ProductionControl::WRAT] = well_controls_get_num(w_->ctrls[well_index]);
-                    double distr[3] = { 0.0, 0.0, 0.0 };
-                    distr[pu.phase_pos[BlackoilPhases::Aqua]] = 1.0;
-                    ok = append_well_controls(SURFACE_RATE, 
-                                              -well->getWaterRate(timeStep),
-                                              distr, 
-                                              well_index, 
-                                              w_);
-                }
-
-                if (ok && well->hasProductionControl(timeStep , WellProducer::GRAT)) {
-                    if (!pu.phase_used[BlackoilPhases::Vapour]) {
-                        OPM_THROW(std::runtime_error, "Gas phase not active and GRAT control specified.");
-                    }
-                    control_pos[ProductionControl::GRAT] = well_controls_get_num(w_->ctrls[well_index]);
-                    double distr[3] = { 0.0, 0.0, 0.0 };
-                    distr[pu.phase_pos[BlackoilPhases::Vapour]] = 1.0;
-                    ok = append_well_controls(SURFACE_RATE, 
-                                              -well->getGasRate( timeStep ),
-                                              distr, 
-                                              well_index, 
-                                              w_);
-                }
-
-                if (ok && well->hasProductionControl(timeStep , WellProducer::LRAT)) {
-                    if (!pu.phase_used[BlackoilPhases::Aqua]) {
-                        OPM_THROW(std::runtime_error, "Water phase not active and LRAT control specified.");
-                    }
-                    if (!pu.phase_used[BlackoilPhases::Liquid]) {
-                        OPM_THROW(std::runtime_error, "Oil phase not active and LRAT control specified.");
-                    }
-                    control_pos[ProductionControl::LRAT] = well_controls_get_num(w_->ctrls[well_index]);
-                    double distr[3] = { 0.0, 0.0, 0.0 };
-                    distr[pu.phase_pos[BlackoilPhases::Aqua]] = 1.0;
-                    distr[pu.phase_pos[BlackoilPhases::Liquid]] = 1.0;
-                    ok = append_well_controls(SURFACE_RATE, 
-                                              -well->getLiquidRate(timeStep),
-                                              distr, 
-                                              well_index, 
-                                              w_);
-                }
-                
-                if (ok && well->hasProductionControl(timeStep , WellProducer::RESV)) {
-                    control_pos[ProductionControl::RESV] = well_controls_get_num(w_->ctrls[well_index]);
-                    double distr[3] = { 1.0, 1.0, 1.0 };
-                    ok = append_well_controls(RESERVOIR_RATE, 
-                                              -well->getResVRate(timeStep),
-                                              distr, 
-                                              well_index, 
-                                              w_);
-                }
-
-                if (ok && well->hasProductionControl(timeStep , WellProducer::BHP)) {
-                    control_pos[ProductionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
-                    ok = append_well_controls(BHP, 
-                                              well->getBHPLimit( timeStep ) , 
-                                              NULL, 
-                                              well_index, 
-                                              w_);
-                }
-                
-                if (ok && well->hasProductionControl(timeStep , WellProducer::THP)) {
-                    OPM_THROW(std::runtime_error, "We cannot handle THP limit for well " << well_names[well_index]);
-                }
-
-                if (!ok) {
-                    OPM_THROW(std::runtime_error, "Failure occured appending controls for well " << well_names[well_index]);
-                }
-
-                ProductionControl::Mode mode = ProductionControl::mode(well->getProducerControlMode(timeStep));
-                int cpos = control_pos[mode];
-                if (cpos == -1 && mode != ProductionControl::GRUP) {
-                    OPM_THROW(std::runtime_error, "Control mode type " << mode << " not present in well " << well_names[well_index]);
-                }
-                // If it's shut, we complement the cpos
-                if (well->getStatus(timeStep) == WellCommon::SHUT) {
-                    cpos = ~cpos; // So we can easily retrieve the cpos later
-                }
-                set_current_control(well_index, cpos, w_);
-            }
-            well_index++;
-        }
-        
-
-        // Get WELTARG data
-        if (deck.hasField("WELTARG")) {
-            OPM_THROW(std::runtime_error, "We currently do not handle WELTARG.");
-            /*
-            const WELTARG& weltargs = deck.getWELTARG();
-            const int num_weltargs  = weltargs.weltarg.size();
-            for (int kw = 0; kw < num_weltargs; ++kw) {
-                std::string name = weltargs.weltarg[kw].well_;
-                std::string::size_type len = name.find('*');
-                if (len != std::string::npos) {
-                    name = name.substr(0, len);
-                }
-                bool well_found = false;
-                for (int wix = 0; wix < num_wells; ++wix) {
-                    if (well_names[wix].compare(0,len, name) == 0) { //equal
-                        well_found = true;
-                        well_data[wix].target = weltargs.weltarg[kw].new_value_;
-                        break;
-                    }
-                }
-                if (!well_found) {
-                    OPM_THROW(std::runtime_error, "Undefined well name: " << weltargs.weltarg[kw].well_
-                          << " in WELTARG");
-                }
-            }
-            */
-        }
-
-        // Debug output.
-#define EXTRA_OUTPUT
-#ifdef EXTRA_OUTPUT
-        /*
-        std::cout << "\t WELL DATA" << std::endl;
-        for(int i = 0; i< num_wells; ++i) {
-            std::cout << i << ": " << well_data[i].type << "  "
-                      << well_data[i].control << "  " << well_data[i].target
-                      << std::endl;
-        }
-
-        std::cout << "\n\t PERF DATA" << std::endl;
-        for(int i=0; i< int(wellperf_data.size()); ++i) {
-            for(int j=0; j< int(wellperf_data[i].size()); ++j) {
-                std::cout << i << ": " << wellperf_data[i][j].cell << "  "
-                          << wellperf_data[i][j].well_index << std::endl;
-            }
-        }
-        */
-#endif
+        setupWellControls(wells, timeStep, well_names, pu);
 
         if (deck.hasField("WELOPEN")) {
             const WELOPEN& welopen = deck.getWELOPEN();
@@ -785,6 +389,27 @@ namespace Opm
         }
         well_collection_.setWellsPointer(w_);
         well_collection_.applyGroupControls();
+
+        // Debug output.
+#define EXTRA_OUTPUT
+#ifdef EXTRA_OUTPUT
+        /*
+        std::cout << "\t WELL DATA" << std::endl;
+        for(int i = 0; i< num_wells; ++i) {
+            std::cout << i << ": " << well_data[i].type << "  "
+                      << well_data[i].control << "  " << well_data[i].target
+                      << std::endl;
+        }
+
+        std::cout << "\n\t PERF DATA" << std::endl;
+        for(int i=0; i< int(wellperf_data.size()); ++i) {
+            for(int j=0; j< int(wellperf_data[i].size()); ++j) {
+                std::cout << i << ": " << wellperf_data[i][j].cell << "  "
+                          << wellperf_data[i][j].well_index << std::endl;
+            }
+        }
+        */
+#endif
     }
 
 
@@ -1433,4 +1058,357 @@ namespace Opm
         well_collection_.applyExplicitReinjectionControls(well_reservoirrates_phase, well_surfacerates_phase);
     }
 
+    void WellsManager::setupCompressedToCartesian(const UnstructuredGrid& grid, std::map<int,int>& cartesian_to_compressed ) {
+        // global_cell is a map from compressed cells to Cartesian grid cells.
+        // We must make the inverse lookup.
+        const int* global_cell = grid.global_cell;
+
+        if (global_cell) {
+            for (int i = 0; i < grid.number_of_cells; ++i) {
+                cartesian_to_compressed.insert(std::make_pair(global_cell[i], i));
+            }
+        }
+        else {
+            for (int i = 0; i < grid.number_of_cells; ++i) {
+                cartesian_to_compressed.insert(std::make_pair(i, i));
+            }
+        }
+
+    }
+
+    void WellsManager::createWellsFromSpecs(std::vector<WellConstPtr>& wells, size_t timeStep,
+                                            const UnstructuredGrid& grid,
+                                            std::vector<std::string>& well_names,
+                                            std::vector<WellData>& well_data,
+                                            std::map<std::string, int>& well_names_to_index,
+                                            const PhaseUsage& phaseUsage,
+                                            std::map<int,int> cartesian_to_compressed,
+                                            const double* permeability)
+    {
+        std::vector<std::vector<PerfData> > wellperf_data;
+        wellperf_data.resize(wells.size());
+
+        int well_index = 0;
+        for (auto wellIter= wells.begin(); wellIter != wells.end(); ++wellIter) {
+            WellConstPtr well = (*wellIter);
+            {   // WELSPECS handling
+                well_names_to_index[well->name()] = well_index;
+                well_names.push_back(well->name());
+                {
+                    WellData wd;
+                    // If negative (defaulted), set refdepth to a marker
+                    // value, will be changed after getting perforation
+                    // data to the centroid of the cell of the top well
+                    // perforation.
+                    wd.reference_bhp_depth = (well->getRefDepth() < 0.0) ? -1e100 : well->getRefDepth();
+                    wd.welspecsline = -1;
+                    if (well->isInjector( timeStep ))
+                        wd.type = INJECTOR;
+                    else
+                        wd.type = PRODUCER;
+                    well_data.push_back(wd);
+                }
+            }
+
+            {   // COMPDAT handling
+                CompletionSetConstPtr completionSet = well->getCompletions(timeStep);
+                for (size_t c=0; c<completionSet->size(); c++) {
+                    CompletionConstPtr completion = completionSet->get(c);
+                    int i = completion->getI();
+                    int j = completion->getJ();
+                    int k = completion->getK();
+
+                    const int* cpgdim = grid.cartdims;
+                    int cart_grid_indx = i + cpgdim[0]*(j + cpgdim[1]*k);
+                    std::map<int, int>::const_iterator cgit = cartesian_to_compressed.find(cart_grid_indx);
+                    if (cgit == cartesian_to_compressed.end()) {
+                        OPM_THROW(std::runtime_error, "Cell with i,j,k indices " << i << ' ' << j << ' '
+                                  << k << " not found in grid (well = " << well->name() << ')');
+                    }
+                    int cell = cgit->second;
+                    PerfData pd;
+                    pd.cell = cell;
+                    if (completion->getCF() > 0.0) {
+                        pd.well_index = completion->getCF();
+                    } else {
+                        double radius = 0.5*completion->getDiameter();
+                        if (radius <= 0.0) {
+                            radius = 0.5*unit::feet;
+                            OPM_MESSAGE("**** Warning: Well bore internal radius set to " << radius);
+                        }
+                        std::array<double, 3> cubical = getCubeDim(grid, cell);
+                        const double* cell_perm = &permeability[grid.dimensions*grid.dimensions*cell];
+                        pd.well_index = computeWellIndex(radius, cubical, cell_perm, completion->getDiameter());
+                    }
+                    wellperf_data[well_index].push_back(pd);
+                }
+            }
+            well_index++;
+        }
+
+        // Set up reference depths that were defaulted. Count perfs.
+
+        const int num_wells = well_data.size();
+
+        int num_perfs = 0;
+        assert(grid.dimensions == 3);
+        for (int w = 0; w < num_wells; ++w) {
+            num_perfs += wellperf_data[w].size();
+            if (well_data[w].reference_bhp_depth < 0.0) {
+                // It was defaulted. Set reference depth to minimum perforation depth.
+                double min_depth = 1e100;
+                int num_wperfs = wellperf_data[w].size();
+                for (int perf = 0; perf < num_wperfs; ++perf) {
+                    double depth = grid.cell_centroids[3*wellperf_data[w][perf].cell + 2];
+                    min_depth = std::min(min_depth, depth);
+                }
+                well_data[w].reference_bhp_depth = min_depth;
+            }
+        }
+
+        // Create the well data structures.
+        w_ = create_wells(phaseUsage.num_phases, num_wells, num_perfs);
+        if (!w_) {
+            OPM_THROW(std::runtime_error, "Failed creating Wells struct.");
+        }
+
+
+        // Add wells.
+        for (int w = 0; w < num_wells; ++w) {
+            const int w_num_perf = wellperf_data[w].size();
+            std::vector<int> perf_cells(w_num_perf);
+            std::vector<double> perf_prodind(w_num_perf);
+            for (int perf = 0; perf < w_num_perf; ++perf) {
+                perf_cells[perf] = wellperf_data[w][perf].cell;
+                perf_prodind[perf] = wellperf_data[w][perf].well_index;
+            }
+            const double* comp_frac = NULL;
+            // We initialize all wells with a null component fraction,
+            // and must (for injection wells) overwrite it later.
+            int ok = add_well(well_data[w].type, well_data[w].reference_bhp_depth, w_num_perf,
+                              comp_frac, &perf_cells[0], &perf_prodind[0], well_names[w].c_str(), w_);
+            if (!ok) {
+                OPM_THROW(std::runtime_error, "Failed adding well " << well_names[w] << " to Wells data structure.");
+            }
+        }
+
+    }
+
+    void WellsManager::setupWellControls(std::vector<WellConstPtr>& wells, size_t timeStep,
+                                         std::vector<std::string>& well_names, const PhaseUsage& phaseUsage) {
+        int well_index = 0;
+        for (auto wellIter= wells.begin(); wellIter != wells.end(); ++wellIter) {
+            WellConstPtr well = (*wellIter);
+
+            if (well->isInjector(timeStep)) {
+                clear_well_controls(well_index, w_);
+                int ok = 1;
+                int control_pos[5] = { -1, -1, -1, -1, -1 };
+
+                if (well->hasInjectionControl(timeStep , WellInjector::RATE)) {
+                    control_pos[InjectionControl::RATE] = well_controls_get_num(w_->ctrls[well_index]);
+                    double distr[3] = { 0.0, 0.0, 0.0 };
+                    WellInjector::TypeEnum injectorType = well->getInjectorType(timeStep);
+
+                    if (injectorType == WellInjector::TypeEnum::WATER) {
+                        distr[phaseUsage.phase_pos[BlackoilPhases::Aqua]] = 1.0;
+                    } else if (injectorType == WellInjector::TypeEnum::OIL) {
+                        distr[phaseUsage.phase_pos[BlackoilPhases::Liquid]] = 1.0;
+                    } else if (injectorType == WellInjector::TypeEnum::GAS) {
+                        distr[phaseUsage.phase_pos[BlackoilPhases::Vapour]] = 1.0;
+                    }
+
+                    ok = append_well_controls(SURFACE_RATE,
+                                              well->getSurfaceInjectionRate( timeStep ) ,
+                                              distr,
+                                              well_index,
+                                              w_);
+                }
+
+                if (ok && well->hasInjectionControl(timeStep , WellInjector::RESV)) {
+                    control_pos[InjectionControl::RESV] = well_controls_get_num(w_->ctrls[well_index]);
+                    double distr[3] = { 0.0, 0.0, 0.0 };
+                    WellInjector::TypeEnum injectorType = well->getInjectorType(timeStep);
+
+                    if (injectorType == WellInjector::TypeEnum::WATER) {
+                        distr[phaseUsage.phase_pos[BlackoilPhases::Aqua]] = 1.0;
+                    } else if (injectorType == WellInjector::TypeEnum::OIL) {
+                        distr[phaseUsage.phase_pos[BlackoilPhases::Liquid]] = 1.0;
+                    } else if (injectorType == WellInjector::TypeEnum::GAS) {
+                        distr[phaseUsage.phase_pos[BlackoilPhases::Vapour]] = 1.0;
+                    }
+
+                    ok = append_well_controls(RESERVOIR_RATE,
+                                              well->getReservoirInjectionRate( timeStep ),
+                                              distr,
+                                              well_index,
+                                              w_);
+                }
+
+                if (ok && well->hasInjectionControl(timeStep , WellInjector::BHP)) {
+                    control_pos[InjectionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
+                    ok = append_well_controls(BHP,
+                                              well->getBHPLimit(timeStep),
+                                              NULL,
+                                              well_index,
+                                              w_);
+                }
+
+                if (ok && well->hasInjectionControl(timeStep , WellInjector::THP)) {
+                    OPM_THROW(std::runtime_error, "We cannot handle THP limit for well " << well_names[well_index]);
+                }
+
+
+                if (!ok) {
+                    OPM_THROW(std::runtime_error, "Failure occured appending controls for well " << well_names[well_index]);
+                }
+
+
+                {
+                    InjectionControl::Mode mode = InjectionControl::mode( well->getInjectorControlMode(timeStep) );
+                    int cpos = control_pos[mode];
+                    if (cpos == -1 && mode != InjectionControl::GRUP) {
+                        OPM_THROW(std::runtime_error, "Control not specified in well " << well_names[well_index]);
+                    }
+
+                    // We need to check if the well is shut or not
+                    if (well->getStatus( timeStep ) == WellCommon::SHUT) {
+                        cpos = ~cpos;
+                    }
+                    set_current_control(well_index, cpos, w_);
+                }
+
+
+                // Set well component fraction.
+                double cf[3] = { 0.0, 0.0, 0.0 };
+                if (well->getInjectorType(timeStep) == WellInjector::WATER) {
+                    if (!phaseUsage.phase_used[BlackoilPhases::Aqua]) {
+                        OPM_THROW(std::runtime_error, "Water phase not used, yet found water-injecting well.");
+                    }
+                    cf[phaseUsage.phase_pos[BlackoilPhases::Aqua]] = 1.0;
+                } else if (well->getInjectorType(timeStep) == WellInjector::OIL) {
+                    if (!phaseUsage.phase_used[BlackoilPhases::Liquid]) {
+                        OPM_THROW(std::runtime_error, "Oil phase not used, yet found oil-injecting well.");
+                    }
+                    cf[phaseUsage.phase_pos[BlackoilPhases::Liquid]] = 1.0;
+                } else if (well->getInjectorType(timeStep) == WellInjector::GAS) {
+                    if (!phaseUsage.phase_used[BlackoilPhases::Vapour]) {
+                        OPM_THROW(std::runtime_error, "Gas phase not used, yet found gas-injecting well.");
+                    }
+                    cf[phaseUsage.phase_pos[BlackoilPhases::Vapour]] = 1.0;
+                }
+                std::copy(cf, cf + phaseUsage.num_phases, w_->comp_frac + well_index*phaseUsage.num_phases);
+
+            }
+
+            if (well->isProducer(timeStep)) {
+                // Add all controls that are present in well.
+                // First we must clear existing controls, in case the
+                // current WCONPROD line is modifying earlier controls.
+                clear_well_controls(well_index, w_);
+                int control_pos[9] = { -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+                int ok = 1;
+                if (ok && well->hasProductionControl(timeStep , WellProducer::ORAT)) {
+                    if (!phaseUsage.phase_used[BlackoilPhases::Liquid]) {
+                        OPM_THROW(std::runtime_error, "Oil phase not active and ORAT control specified.");
+                    }
+
+                    control_pos[ProductionControl::ORAT] = well_controls_get_num(w_->ctrls[well_index]);
+                    double distr[3] = { 0.0, 0.0, 0.0 };
+                    distr[phaseUsage.phase_pos[BlackoilPhases::Liquid]] = 1.0;
+                    ok = append_well_controls(SURFACE_RATE,
+                                              -well->getOilRate( timeStep ),
+                                              distr,
+                                               well_index,
+                                              w_);
+                }
+
+                if (ok && well->hasProductionControl(timeStep , WellProducer::WRAT)) {
+                    if (!phaseUsage.phase_used[BlackoilPhases::Aqua]) {
+                        OPM_THROW(std::runtime_error, "Water phase not active and WRAT control specified.");
+                    }
+                    control_pos[ProductionControl::WRAT] = well_controls_get_num(w_->ctrls[well_index]);
+                    double distr[3] = { 0.0, 0.0, 0.0 };
+                    distr[phaseUsage.phase_pos[BlackoilPhases::Aqua]] = 1.0;
+                    ok = append_well_controls(SURFACE_RATE,
+                                              -well->getWaterRate(timeStep),
+                                              distr,
+                                              well_index,
+                                              w_);
+                }
+
+                if (ok && well->hasProductionControl(timeStep , WellProducer::GRAT)) {
+                    if (!phaseUsage.phase_used[BlackoilPhases::Vapour]) {
+                        OPM_THROW(std::runtime_error, "Gas phase not active and GRAT control specified.");
+                    }
+                    control_pos[ProductionControl::GRAT] = well_controls_get_num(w_->ctrls[well_index]);
+                    double distr[3] = { 0.0, 0.0, 0.0 };
+                    distr[phaseUsage.phase_pos[BlackoilPhases::Vapour]] = 1.0;
+                    ok = append_well_controls(SURFACE_RATE,
+                                              -well->getGasRate( timeStep ),
+                                              distr,
+                                              well_index,
+                                              w_);
+                }
+
+                if (ok && well->hasProductionControl(timeStep , WellProducer::LRAT)) {
+                    if (!phaseUsage.phase_used[BlackoilPhases::Aqua]) {
+                        OPM_THROW(std::runtime_error, "Water phase not active and LRAT control specified.");
+                    }
+                    if (!phaseUsage.phase_used[BlackoilPhases::Liquid]) {
+                        OPM_THROW(std::runtime_error, "Oil phase not active and LRAT control specified.");
+                    }
+                    control_pos[ProductionControl::LRAT] = well_controls_get_num(w_->ctrls[well_index]);
+                    double distr[3] = { 0.0, 0.0, 0.0 };
+                    distr[phaseUsage.phase_pos[BlackoilPhases::Aqua]] = 1.0;
+                    distr[phaseUsage.phase_pos[BlackoilPhases::Liquid]] = 1.0;
+                    ok = append_well_controls(SURFACE_RATE,
+                                              -well->getLiquidRate(timeStep),
+                                              distr,
+                                              well_index,
+                                              w_);
+                }
+
+                if (ok && well->hasProductionControl(timeStep , WellProducer::RESV)) {
+                    control_pos[ProductionControl::RESV] = well_controls_get_num(w_->ctrls[well_index]);
+                    double distr[3] = { 1.0, 1.0, 1.0 };
+                    ok = append_well_controls(RESERVOIR_RATE,
+                                              -well->getResVRate(timeStep),
+                                              distr,
+                                              well_index,
+                                              w_);
+                }
+
+                if (ok && well->hasProductionControl(timeStep , WellProducer::BHP)) {
+                    control_pos[ProductionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
+                    ok = append_well_controls(BHP,
+                                              well->getBHPLimit( timeStep ) ,
+                                              NULL,
+                                              well_index,
+                                              w_);
+                }
+
+                if (ok && well->hasProductionControl(timeStep , WellProducer::THP)) {
+                    OPM_THROW(std::runtime_error, "We cannot handle THP limit for well " << well_names[well_index]);
+                }
+
+                if (!ok) {
+                    OPM_THROW(std::runtime_error, "Failure occured appending controls for well " << well_names[well_index]);
+                }
+
+                ProductionControl::Mode mode = ProductionControl::mode(well->getProducerControlMode(timeStep));
+                int cpos = control_pos[mode];
+                if (cpos == -1 && mode != ProductionControl::GRUP) {
+                    OPM_THROW(std::runtime_error, "Control mode type " << mode << " not present in well " << well_names[well_index]);
+                }
+                // If it's shut, we complement the cpos
+                if (well->getStatus(timeStep) == WellCommon::SHUT) {
+                    cpos = ~cpos; // So we can easily retrieve the cpos later
+                }
+                set_current_control(well_index, cpos, w_);
+            }
+            well_index++;
+        }
+
+    }
 } // namespace Opm
