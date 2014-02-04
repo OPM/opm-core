@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(CreateParser)
     Opm::ParserPtr parser(new Opm::Parser() );
     Opm::DeckConstPtr deck = parser->parseFile( filename1 );
 
-    BOOST_CHECK_EQUAL( 5U , deck->size() );
+    BOOST_CHECK_EQUAL( 6U , deck->size() );
     Opm::DeckItemConstPtr actnum = deck->getKeyword("ACTNUM")->getRecord(0)->getItem(0);
     const std::vector<int>& actnum_data = actnum->getIntData();
 

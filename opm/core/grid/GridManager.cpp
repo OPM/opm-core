@@ -216,6 +216,10 @@ namespace Opm
             }
             top_depths_vec.resize(x.size()*y.size(), tops[0]);
             top_depths = &top_depths_vec[0];
+        } else {
+            OPM_THROW(std::runtime_error,
+                      "Could not find either TOPS or DEPTHZ keyword, "
+                      "one of them is required for initialization with DXV/DYV/DZV.");
         }
 
         // Construct grid.
