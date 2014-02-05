@@ -810,6 +810,11 @@ struct EclipseWellTotal : public EclipseWellReport {
 
     virtual double update (const SimulatorTimer& timer,
                              const WellState& wellState) {
+        if (timer.currentStepNum() == 0) {
+            // We are at the initial state.
+            // No step has been taken yet.
+            return 0.0;
+        }
         // TODO: Is the rate average for the timestep, or is in
         // instantaneous (in which case trapezoidal or Simpson integration
         // would probably be better)
