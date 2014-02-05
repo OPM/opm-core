@@ -179,7 +179,7 @@ namespace Opm
         // Extract data from deck.
         // Collect in input struct for preprocessing.
         struct grdecl grdecl;
-        createGrDecl(newParserDeck, grdecl);
+        createGrdecl(newParserDeck, grdecl);
 
         // Process grid.
         ug_ = create_grid_cornerpoint(&grdecl, 0.0);
@@ -188,7 +188,7 @@ namespace Opm
         }
     }
 
-    void GridManager::createGrDecl(Opm::DeckConstPtr newParserDeck, struct grdecl &grdecl)
+    void GridManager::createGrdecl(Opm::DeckConstPtr newParserDeck, struct grdecl &grdecl)
     {
         // Extract data from deck.
         const std::vector<double>& zcorn = newParserDeck->getKeyword("ZCORN")->getSIDoubleData();

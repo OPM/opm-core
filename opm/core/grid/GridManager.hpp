@@ -77,7 +77,7 @@ namespace Opm
         /// to make it clear that we are returning a C-compatible struct.
         const UnstructuredGrid* c_grid() const;
 
-        static void createGrDecl(Opm::DeckConstPtr newParserDeck, struct grdecl &grdecl);
+        static void createGrdecl(Opm::DeckConstPtr newParserDeck, struct grdecl &grdecl);
 
     private:
         // Disable copying and assignment.
