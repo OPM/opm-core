@@ -575,6 +575,12 @@ private:
               fortio_fclose) { }
 };
 
+
+// in order to get RTTI for this "class" (which is just a typedef), we must
+// ask the compiler to explicitly instantiate it.
+template struct EclipseHandle<ecl_sum_tstep_struct>;
+
+
 } // anonymous namespace
 
 // Note: the following parts were taken out of the anonymous
@@ -661,10 +667,6 @@ private:
     }
 };
 
-
-// in order to get RTTI for this "class" (which is just a typedef), we must
-// ask the compiler to explicitly instantiate it.
-template struct EclipseHandle<ecl_sum_tstep_struct>;
 
 /**
  * Summary variable that reports a characteristics of a well.
@@ -779,7 +781,7 @@ struct EclipseWellRate : public EclipseWellReport {
                              type,
                              'R',
                              "SM3/DAY" /* surf. cub. m. per day */ ) { }
-    virtual double update (const SimulatorTimer& timer,
+    virtual double update (const SimulatorTimer& /*timer*/,
                              const WellState& wellState) {
         // TODO: Why only positive rates?
         return std::max (0., rate (wellState));
@@ -808,6 +810,11 @@ struct EclipseWellTotal : public EclipseWellReport {
 
     virtual double update (const SimulatorTimer& timer,
                              const WellState& wellState) {
+        if (timer.currentStepNum() == 0) {
+            // We are at the initial state.
+            // No step has been taken yet.
+            return 0.0;
+        }
         // TODO: Is the rate average for the timestep, or is in
         // instantaneous (in which case trapezoidal or Simpson integration
         // would probably be better)
@@ -841,7 +848,7 @@ struct EclipseWellBhp : public EclipseWellReport {
                              "Pascal")
     { }
 
-    virtual double update (const SimulatorTimer& timer,
+    virtual double update (const SimulatorTimer& /*timer*/,
                            const WellState& wellState)
     {
         return bhp(wellState);
@@ -976,7 +983,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
 
 void EclipseWriter::writeSolution (const SimulatorTimer& timer,
                                    const SimulatorState& reservoirState,
-                                   const WellState& wellState) {
+                                   const WellState& /*wellState*/) {
     // start writing to files
     EclipseRestart rst (outputDir_,
                         baseName_,
