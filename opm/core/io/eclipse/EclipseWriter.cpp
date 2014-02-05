@@ -575,6 +575,12 @@ private:
               fortio_fclose) { }
 };
 
+
+// in order to get RTTI for this "class" (which is just a typedef), we must
+// ask the compiler to explicitly instantiate it.
+template struct EclipseHandle<ecl_sum_tstep_struct>;
+
+
 } // anonymous namespace
 
 // Note: the following parts were taken out of the anonymous
@@ -661,10 +667,6 @@ private:
     }
 };
 
-
-// in order to get RTTI for this "class" (which is just a typedef), we must
-// ask the compiler to explicitly instantiate it.
-template struct EclipseHandle<ecl_sum_tstep_struct>;
 
 /**
  * Summary variable that reports a characteristics of a well.
