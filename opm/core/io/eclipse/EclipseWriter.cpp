@@ -781,7 +781,7 @@ struct EclipseWellRate : public EclipseWellReport {
                              type,
                              'R',
                              "SM3/DAY" /* surf. cub. m. per day */ ) { }
-    virtual double update (const SimulatorTimer& timer,
+    virtual double update (const SimulatorTimer& /*timer*/,
                              const WellState& wellState) {
         // TODO: Why only positive rates?
         return std::max (0., rate (wellState));
@@ -843,7 +843,7 @@ struct EclipseWellBhp : public EclipseWellReport {
                              "Pascal")
     { }
 
-    virtual double update (const SimulatorTimer& timer,
+    virtual double update (const SimulatorTimer& /*timer*/,
                            const WellState& wellState)
     {
         return bhp(wellState);
@@ -978,7 +978,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
 
 void EclipseWriter::writeSolution (const SimulatorTimer& timer,
                                    const SimulatorState& reservoirState,
-                                   const WellState& wellState) {
+                                   const WellState& /*wellState*/) {
     // start writing to files
     EclipseRestart rst (outputDir_,
                         baseName_,
