@@ -945,6 +945,7 @@ public:
 
         int r = 3;
         if (x0 < xMin()) {
+            static_cast<void>(extrapolate);
             assert(extrapolate);
             Scalar m = evalDerivative_(xMin(), /*segmentIdx=*/0);
             if (std::abs(m) < 1e-20)
@@ -1575,16 +1576,16 @@ protected:
     { return 2*3*t - 2; }
 
     // third derivative of the hermite basis functions
-    Scalar h00_prime3_(Scalar t) const
+    Scalar h00_prime3_(Scalar /*t*/) const
     { return 2*3*2; }
 
-    Scalar h10_prime3_(Scalar t) const
+    Scalar h10_prime3_(Scalar /*t*/) const
     { return 2*3; }
 
-    Scalar h01_prime3_(Scalar t) const
+    Scalar h01_prime3_(Scalar /*t*/) const
     { return -2*3*2; }
 
-    Scalar h11_prime3_(Scalar t) const
+    Scalar h11_prime3_(Scalar /*t*/) const
     { return 2*3; }
 
     // returns the monotonicality of an interval of a spline segment
