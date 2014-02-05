@@ -34,7 +34,6 @@
 #include <opm/core/utility/linearInterpolation.hpp>
 
 #include <algorithm>
-#include <iostream>
 
 namespace Opm
 {
