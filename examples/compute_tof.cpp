@@ -68,7 +68,6 @@ namespace
     }
 
     void buildTracerheadsFromWells(const Wells* wells,
-                                   const Opm::WellState& well_state,
                                    Opm::SparseTable<int>& tracerheads)
     {
         if (wells == 0) {
@@ -257,7 +256,7 @@ try
     std::vector<double> tracer;
     Opm::SparseTable<int> tracerheads;
     if (compute_tracer) {
-        buildTracerheadsFromWells(wells->c_wells(), well_state, tracerheads);
+        buildTracerheadsFromWells(wells->c_wells(), tracerheads);
     }
     if (use_dg) {
         if (compute_tracer) {
