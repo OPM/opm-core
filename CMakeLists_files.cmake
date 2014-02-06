@@ -183,6 +183,7 @@ list (APPEND TEST_DATA_FILES
   tests/testBlackoilState2.DATA
   tests/wells_manager_data.data
   tests/wells_manager_data_expanded.data
+  tests/wells_manager_data_wellSTOP.data
 	)
 
 # originally generated with the command:
