@@ -80,14 +80,14 @@ void testCommon(const Spline &sp,
     // make sure the derivatives are consistent with the curve
     int np = 3*n;
     for (int i = 0; i < np; ++i) {
-        double x = sp.xMin() + (sp.xMax() - sp.xMin())*i/np;
+        double xval = sp.xMin() + (sp.xMax() - sp.xMin())*i/np;
 
         // first derivative
-        double y1 = sp.eval(x+epsFD);
-        double y0 = sp.eval(x);
+        double y1 = sp.eval(xval+epsFD);
+        double y0 = sp.eval(xval);
 
         double mFD = (y1 - y0)/epsFD;
-        double m = sp.evalDerivative(x);
+        double m = sp.evalDerivative(xval);
 
         if (std::abs( mFD - m ) > 1000*epsFD)
             OPM_THROW(std::runtime_error,
@@ -95,11 +95,11 @@ void testCommon(const Spline &sp,
                       " (" << mFD << " - " << m << " = " << mFD - m << ")!");
 
         // second derivative
-        y1 = sp.evalDerivative(x+epsFD);
-        y0 = sp.evalDerivative(x);
+        y1 = sp.evalDerivative(xval+epsFD);
+        y0 = sp.evalDerivative(xval);
 
         mFD = (y1 - y0)/epsFD;
-        m = sp.evalSecondDerivative(x);
+        m = sp.evalSecondDerivative(xval);
 
         if (std::abs( mFD - m ) > 1000*epsFD)
             OPM_THROW(std::runtime_error,
@@ -107,11 +107,11 @@ void testCommon(const Spline &sp,
                       " (" << mFD << " - " << m << " = " << mFD - m << ")!");
 
         // Third derivative
-        y1 = sp.evalSecondDerivative(x+epsFD);
-        y0 = sp.evalSecondDerivative(x);
+        y1 = sp.evalSecondDerivative(xval+epsFD);
+        y0 = sp.evalSecondDerivative(xval);
 
         mFD = (y1 - y0)/epsFD;
-        m = sp.evalThirdDerivative(x);
+        m = sp.evalThirdDerivative(xval);
 
         if (std::abs( mFD - m ) > 1000*epsFD)
             OPM_THROW(std::runtime_error,
@@ -331,7 +331,7 @@ void plot()
     std::cout << "\n";
 }
 
-int main(int argc, char** argv)
+int main()
 {
     try {
         testAll();

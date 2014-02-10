@@ -31,23 +31,23 @@ namespace Opm
         void evalKrDeriv(const double* s, double* kr, double* dkrds) const;
         void evalPc(const double* s, double* pc) const;
         void evalPcDeriv(const double* s, double* pc, double* dpcds) const;
-        
-        void evalKr(const double* s, double* kr, const EPSTransforms* epst) const 
+
+        void evalKr(const double* /*s*/, double* /*kr*/, const EPSTransforms* /*epst*/) const
         {OPM_THROW(std::runtime_error, "SatFuncSimple   --  need to be implemented ...");}
-        void evalKr(const double* s, double* kr, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const 
+        void evalKr(const double* /*s*/, double* /*kr*/, const EPSTransforms* /*epst*/, const EPSTransforms* /*epst_hyst*/, const SatHyst* /*sat_hyst*/) const
         {OPM_THROW(std::runtime_error, "SatFuncSimple   --  need to be implemented ...");}
         void evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst) const;
-        void evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const 
+        void evalKrDeriv(const double* /*s*/, double* /*kr*/, double* /*dkrds*/, const EPSTransforms* /*epst*/, const EPSTransforms* /*epst_hyst*/, const SatHyst* /*sat_hyst*/) const
         {OPM_THROW(std::runtime_error, "SatFuncSimple   --  need to be implemented ...");}
-        void evalPc(const double* s, double* pc, const EPSTransforms* epst) const 
+        void evalPc(const double* /*s*/, double* /*pc*/, const EPSTransforms* /*epst*/) const
         {OPM_THROW(std::runtime_error, "SatFuncSimple   --  need to be implemented ...");}
-        void evalPcDeriv(const double* s, double* pc, double* dpcds, const EPSTransforms* epst) const 
+        void evalPcDeriv(const double* /*s*/, double* /*pc*/, double* /*dpcds*/, const EPSTransforms* /*epst*/) const
         {OPM_THROW(std::runtime_error, "SatFuncSimple   --  need to be implemented ...");}
 
     private:
 
     };
-    
+
     typedef SatFuncSimple<UniformTableLinear<double> > SatFuncSimpleUniform;
     typedef SatFuncSimple<NonuniformTableLinear<double> > SatFuncSimpleNonuniform;
 
@@ -185,7 +185,7 @@ namespace Opm
             double dkrww = _dsdsw*epst->wat.scaleKrDeriv(s[wpos], this->krw_.derivative(_sw));
             double krg = epst->gas.scaleKr(s[gpos], this->krg_(_sg), this->krgr_);
             double dkrgg = _dsdsg*epst->gas.scaleKrDeriv(s[gpos], this->krg_.derivative(_sg));
-            // TODO Check the arguments to the krow- and krog-tables below...  
+            // TODO Check the arguments to the krow- and krog-tables below...
             double krow = epst->watoil.scaleKr(1.0-s[wpos]-s[gpos], this->krow_(1.0-_sow-this->smin_[gpos]), this->krorw_);   // ????
             double dkrow = _dsdsow*epst->watoil.scaleKrDeriv(1.0-s[wpos]-s[gpos], this->krow_.derivative(1.0-_sow-this->smin_[gpos])); // ????
             //double krog = epst->gasoil.scaleKr(this->krog_(1.0-_sog-this->smin_[wpos]), 1.0-s[wpos]-s[gpos], this->krorg_);   // ????
