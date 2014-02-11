@@ -22,6 +22,11 @@
 #include <opm/core/utility/buildUniformMonotoneTable.hpp>
 #include <opm/core/utility/NonuniformTableLinear.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
+
+#include <opm/parser/eclipse/Deck/Deck.hpp>
+#include <opm/parser/eclipse/Utility/SwofTable.hpp>
+#include <opm/parser/eclipse/Utility/SgofTable.hpp>
+
 #include <vector>
 
 namespace Opm
@@ -75,6 +80,10 @@ namespace Opm
     {
     public:
         void init(const EclipseGridParser& deck,
+                  const int table_num,
+                  const PhaseUsage phase_usg,
+                  const int samples);
+        void init(Opm::DeckConstPtr newParserDeck,
                   const int table_num,
                   const PhaseUsage phase_usg,
                   const int samples);
@@ -185,6 +194,138 @@ namespace Opm
             const std::vector<double>& krg = sgof_table[table_num][1];
             const std::vector<double>& krog = sgof_table[table_num][2];
             const std::vector<double>& pcog = sgof_table[table_num][3];
+
+            // Extend the tables with constant values such that the
+            // derivatives at the endpoints are zero
+            int n = sg.size();
+            std::vector<double> sg_ex(n+2);
+            std::vector<double> krg_ex(n+2);
+            std::vector<double> krog_ex(n+2);
+            std::vector<double> pcog_ex(n+2);
+
+            extendTable(sg,sg_ex,1);
+            extendTable(krg,krg_ex,0);
+            extendTable(krog,krog_ex,0);
+            extendTable(pcog,pcog_ex,0);
+
+            initializeTableType(krg_,sg_ex, krg_ex, samples);
+            initializeTableType(krog_,sg_ex, krog_ex, samples);
+            initializeTableType(pcog_,sg_ex, pcog_ex, samples);
+
+            smin_[phase_usage.phase_pos[Vapour]] = sg[0];
+            if (std::fabs(sg.back() + swco - 1.0) > 1e-3) {
+                OPM_THROW(std::runtime_error, "Gas maximum saturation in SGOF table = " << sg.back() <<
+                      ", should equal (1.0 - connate water sat) = " << (1.0 - swco));
+            }
+            smax_[phase_usage.phase_pos[Vapour]] = sg.back();
+            smin_[phase_usage.phase_pos[Vapour]] = sg.front();
+            krgmax_ = krg.back();
+
+            sgcr_ = sg.front();
+            sogcr_ = 1.0 - sg.back();
+            krgr_ = krg.back();
+            krorg_ = krg.front();
+            for (std::vector<double>::size_type i=1; i<sg.size(); ++i) {
+                if (krg[i]> 0.0) {
+                   sgcr_ = sg[i-1];
+                   krorg_ = krog[i-1];
+                   break;
+                }
+            }
+            for (std::vector<double>::size_type i=sg.size()-1; i>=1; --i) {
+                if (krog[i-1]> 0.0) {
+                   sogcr_ = 1.0 - sg[i];
+                   krgr_ = krg[i];
+                   break;
+                }
+            }
+
+        }
+
+        if (phase_usage.phase_used[Vapour] && phase_usage.phase_used[Aqua]) {
+            sowcr_ -= smin_[phase_usage.phase_pos[Vapour]];
+            sogcr_ -= smin_[phase_usage.phase_pos[Aqua]];
+            smin_[phase_usage.phase_pos[Liquid]] = 0.0;
+            smax_[phase_usage.phase_pos[Liquid]] = 1.0 - smin_[phase_usage.phase_pos[Aqua]]
+                                                       - smin_[phase_usage.phase_pos[Vapour]];  // First entry in SGOF-table supposed to be zero anyway ...
+        } else if (phase_usage.phase_used[Aqua]) {
+            smin_[phase_usage.phase_pos[Liquid]] = 1.0 - smax_[phase_usage.phase_pos[Aqua]];
+            smax_[phase_usage.phase_pos[Liquid]] = 1.0 - smin_[phase_usage.phase_pos[Aqua]];
+        } else if (phase_usage.phase_used[Vapour]) {
+            smin_[phase_usage.phase_pos[Liquid]] = 1.0 - smax_[phase_usage.phase_pos[Vapour]];
+            smax_[phase_usage.phase_pos[Liquid]] = 1.0 - smin_[phase_usage.phase_pos[Vapour]];
+        }
+    }
+
+    template <class TableType>
+    void SatFuncBase<TableType>::init(Opm::DeckConstPtr newParserDeck,
+                                      const int table_num,
+                                      const PhaseUsage phase_usg,
+                                      const int samples)
+    {
+        phase_usage = phase_usg;
+        double swco = 0.0;
+        double swmax = 1.0;
+        if (phase_usage.phase_used[Aqua]) {
+            Opm::SwofTable swof(newParserDeck->getKeyword("SWOF"), table_num);
+            const std::vector<double>& sw = swof.getSwColumn();
+            const std::vector<double>& krw = swof.getKrwColumn();
+            const std::vector<double>& krow = swof.getKrowColumn();
+            const std::vector<double>& pcow = swof.getPcowColumn();
+            if (krw.front() != 0.0 || krow.back() != 0.0) {
+                OPM_THROW(std::runtime_error, "Error SWOF data - non-zero krw(swco) and/or krow(1-sor)");
+            }
+
+            // Extend the tables with constant values such that the
+            // derivatives at the endpoints are zero
+            int n = sw.size();
+            std::vector<double> sw_ex(n+2);
+            std::vector<double> krw_ex(n+2);
+            std::vector<double> krow_ex(n+2);
+            std::vector<double> pcow_ex(n+2);
+
+            extendTable(sw,sw_ex,1);
+            extendTable(krw,krw_ex,0);
+            extendTable(krow,krow_ex,0);
+            extendTable(pcow,pcow_ex,0);
+
+            initializeTableType(krw_,sw_ex, krw_ex, samples);
+            initializeTableType(krow_,sw_ex, krow_ex, samples);
+            initializeTableType(pcow_,sw_ex, pcow_ex, samples);
+
+            krocw_ = krow[0]; // At connate water -> ecl. SWOF
+            swco = sw[0];
+            smin_[phase_usage.phase_pos[Aqua]] = sw[0];
+            swmax = sw.back();
+            smax_[phase_usage.phase_pos[Aqua]] = sw.back();
+
+            krwmax_ = krw.back();
+            kromax_ = krow.front();
+            swcr_ = swmax;
+            sowcr_ = 1.0 - swco;
+            krwr_ = krw.back();
+            krorw_ = krow.front();
+            for (std::vector<double>::size_type i=1; i<sw.size(); ++i) {
+                if (krw[i]> 0.0) {
+                   swcr_ = sw[i-1];
+                   krorw_ = krow[i-1];
+                   break;
+                }
+            }
+            for (std::vector<double>::size_type i=sw.size()-1; i>=1; --i) {
+                if (krow[i-1]> 0.0) {
+                   sowcr_ = 1.0 - sw[i];
+                   krwr_ = krw[i];
+                   break;
+                }
+            }
+        }
+        if (phase_usage.phase_used[Vapour]) {
+            Opm::SgofTable sgof(newParserDeck->getKeyword("SGOF"), table_num);
+            const std::vector<double>& sg = sgof.getSgColumn();
+            const std::vector<double>& krg = sgof.getKrgColumn();
+            const std::vector<double>& krog = sgof.getKrogColumn();
+            const std::vector<double>& pcog = sgof.getPcogColumn();
 
             // Extend the tables with constant values such that the
             // derivatives at the endpoints are zero
