@@ -20,9 +20,12 @@
 #ifndef OPM_SINGLEPVTDEADSPLINE_HEADER_INCLUDED
 #define OPM_SINGLEPVTDEADSPLINE_HEADER_INCLUDED
 
-
 #include <opm/core/props/pvt/SinglePvtInterface.hpp>
 #include <opm/core/utility/UniformTableLinear.hpp>
+
+#include <opm/parser/eclipse/Utility/PvdoTable.hpp>
+#include <opm/parser/eclipse/Utility/PvdgTable.hpp>
+
 #include <vector>
 
 namespace Opm
@@ -41,6 +44,8 @@ namespace Opm
         typedef std::vector<std::vector<std::vector<double> > > table_t;
 
         SinglePvtDeadSpline(const table_t& pvd_table, const int samples);
+        SinglePvtDeadSpline(const Opm::PvdoTable &pvdoTable, int samples);
+        SinglePvtDeadSpline(const Opm::PvdgTable &pvdgTable, int samples);
         virtual ~SinglePvtDeadSpline();
 
         /// Viscosity as a function of p and z.
