@@ -171,6 +171,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_wellsmanager.cpp
 	tests/test_wellcontrols.cpp
 	tests/test_wellsgroup.cpp
+	tests/test_wellcollection.cpp
   )
 
 # originally generated with the command:
