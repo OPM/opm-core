@@ -29,6 +29,7 @@
 # originally generated with the command:
 # find opm -name '*.c*' -printf '\t%p\n' | sort
 list (APPEND MAIN_SOURCE_FILES
+  opm/core/grid/GridHelpers.cpp
 	opm/core/grid/GridManager.cpp
 	opm/core/grid/grid.c
 	opm/core/grid/cart_grid.c
@@ -231,6 +232,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/grid/CellQuadrature.hpp
 	opm/core/grid/ColumnExtract.hpp
 	opm/core/grid/FaceQuadrature.hpp
+	opm/core/grid/GridHelpers.hpp
 	opm/core/grid/GridManager.hpp
 	opm/core/grid/cart_grid.h
 	opm/core/grid/cornerpoint_grid.h
@@ -287,6 +289,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/BlackoilPhases.hpp
 	opm/core/props/BlackoilPropertiesBasic.hpp
 	opm/core/props/BlackoilPropertiesFromDeck.hpp
+	opm/core/props/BlackoilPropertiesFromDeck_impl.hpp
 	opm/core/props/BlackoilPropertiesInterface.hpp
 	opm/core/props/IncompPropertiesBasic.hpp
 	opm/core/props/IncompPropertiesFromDeck.hpp
@@ -374,6 +377,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/have_boost_redef.hpp
 	opm/core/utility/linearInterpolation.hpp
 	opm/core/utility/miscUtilities.hpp
+	opm/core/utility/miscUtilities_impl.hpp
 	opm/core/utility/miscUtilitiesBlackoil.hpp
 	opm/core/utility/parameters/Parameter.hpp
 	opm/core/utility/parameters/ParameterGroup.hpp
