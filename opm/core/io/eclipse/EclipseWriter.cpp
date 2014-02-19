@@ -575,6 +575,18 @@ private:
               fortio_fclose) { }
 };
 
+
+// in order to get RTTI for this "class" (which is just a typedef), we must
+// ask the compiler to explicitly instantiate it.
+template struct EclipseHandle<ecl_sum_tstep_struct>;
+
+
+} // anonymous namespace
+
+// Note: the following parts were taken out of the anonymous
+// namespace, since EclipseSummary is now used as a pointer member in
+// EclipseWriter and forward declared in EclipseWriter.hpp.
+
 // forward decl. of mutually dependent type
 struct EclipseWellReport;
 
@@ -655,9 +667,6 @@ private:
     }
 };
 
-// in order to get RTTI for this "class" (which is just a typedef), we must
-// ask the compiler to explicitly instantiate it.
-template struct EclipseHandle<ecl_sum_tstep_struct>;
 
 /**
  * Summary variable that reports a characteristics of a well.
@@ -670,7 +679,7 @@ protected:
                        PhaseUsage uses,                  /* phases present     */
                        BlackoilPhases::PhaseIndex phase, /* oil, water or gas  */
                        WellType type,                    /* prod. or inj.      */
-                       char aggregation,                 /* rate or total      */
+                       char aggregation,                 /* rate or total or BHP */
                        std::string unit)
         : EclipseHandle <smspec_node_type> (
               ecl_sum_add_var (summary,
@@ -718,22 +727,26 @@ private:
                          char aggregation) {
         std::string name;
         name += 'W'; // well
-        switch (phase) {
+        if (aggregation == 'B') {
+            name += "BHP";
+        } else {
+            switch (phase) {
             case BlackoilPhases::Aqua:   name += 'W'; break; /* water */
             case BlackoilPhases::Vapour: name += 'G'; break; /* gas */
             case BlackoilPhases::Liquid: name += 'O'; break; /* oil */
             default:
                 OPM_THROW(std::runtime_error,
                           "Unknown phase used in blackoil reporting");
-        }
-        switch (type) {
+            }
+            switch (type) {
             case WellType::INJECTOR: name += 'I'; break;
             case WellType::PRODUCER: name += 'P'; break;
             default:
                 OPM_THROW(std::runtime_error,
                           "Unknown well type used in blackoil reporting");
+            }
+            name += aggregation; /* rate ('R') or total ('T') */
         }
-        name += aggregation; /* rate ('R') or total ('T') */
         return name;
     }
 protected:
@@ -742,6 +755,13 @@ protected:
         const double convFactor = Opm::unit::convert::to (1., Opm::unit::day);
         const double value = sign_ * wellState.wellRates () [index_] * convFactor;
         return value;
+    }
+
+    double bhp (const WellState& wellstate) {
+        // Note that 'index_' is used here even though it is meant
+        // to give a (well,phase) pair.
+        const int num_phases = wellstate.wellRates().size() / wellstate.bhp().size();
+        return wellstate.bhp()[index_/num_phases];
     }
 };
 
@@ -761,7 +781,7 @@ struct EclipseWellRate : public EclipseWellReport {
                              type,
                              'R',
                              "SM3/DAY" /* surf. cub. m. per day */ ) { }
-    virtual double update (const SimulatorTimer& timer,
+    virtual double update (const SimulatorTimer& /*timer*/,
                              const WellState& wellState) {
         // TODO: Why only positive rates?
         return std::max (0., rate (wellState));
@@ -790,6 +810,11 @@ struct EclipseWellTotal : public EclipseWellReport {
 
     virtual double update (const SimulatorTimer& timer,
                              const WellState& wellState) {
+        if (timer.currentStepNum() == 0) {
+            // We are at the initial state.
+            // No step has been taken yet.
+            return 0.0;
+        }
         // TODO: Is the rate average for the timestep, or is in
         // instantaneous (in which case trapezoidal or Simpson integration
         // would probably be better)
@@ -803,6 +828,31 @@ struct EclipseWellTotal : public EclipseWellReport {
 private:
     /// Aggregated value of the course of the simulation
     double total_;
+};
+
+/// Monitors the bottom hole pressure in a well.
+struct EclipseWellBhp : public EclipseWellReport {
+    EclipseWellBhp   (const EclipseSummary& summary,
+                      const EclipseGridParser& parser,
+                      int whichWell,
+                      PhaseUsage uses,
+                      BlackoilPhases::PhaseIndex phase,
+                      WellType type)
+        : EclipseWellReport (summary,
+                             parser,
+                             whichWell,
+                             uses,
+                             phase,
+                             type,
+                             'B',
+                             "Pascal")
+    { }
+
+    virtual double update (const SimulatorTimer& /*timer*/,
+                           const WellState& wellState)
+    {
+        return bhp(wellState);
+    }
 };
 
 inline void
@@ -861,7 +911,29 @@ EclipseSummary::addWells (const EclipseGridParser& parser,
             }
         }
     }
+
+    // Add BHP monitors
+    for (int whichWell = 0; whichWell != numWells; ++whichWell) {
+        // In the call below: uses, phase and the well type arguments
+        // are not used, except to set up an index that stores the
+        // well indirectly. For details see the implementation of the
+        // EclipseWellReport constructor, and the method
+        // EclipseWellReport::bhp().
+        BlackoilPhases::PhaseIndex phase = BlackoilPhases::Liquid;
+        if (!uses.phase_used[BlackoilPhases::Liquid]) {
+            phase = BlackoilPhases::Vapour;
+        }
+        add (std::unique_ptr <EclipseWellReport> (
+                        new EclipseWellBhp (*this,
+                                            parser,
+                                            whichWell,
+                                            uses,
+                                            phase,
+                                            WELL_TYPES[0])));
+    }
 }
+
+namespace {
 
 /// Helper method that can be used in keyword transformation (must curry
 /// the barsa argument)
@@ -902,11 +974,16 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
 
     /* Initial solution (pressure and saturation) */
     writeSolution (timer, reservoirState, wellState);
+
+    /* Create summary object (could not do it at construction time,
+       since it requires knowledge of the start time). */
+    summary_.reset(new EclipseSummary(outputDir_, baseName_, timer, *parser_));
+    summary_->addWells (*parser_, uses_);
 }
 
 void EclipseWriter::writeSolution (const SimulatorTimer& timer,
                                    const SimulatorState& reservoirState,
-                                   const WellState& wellState) {
+                                   const WellState& /*wellState*/) {
     // start writing to files
     EclipseRestart rst (outputDir_,
                         baseName_,
@@ -952,9 +1029,15 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     // (first timestep, in practice), and reused later. but how to do this
     // without keeping the complete summary in memory (which will then
     // accumulate all the timesteps)?
-    EclipseSummary sum (outputDir_, baseName_, timer, *parser_);
-    sum.addWells (*parser_, uses_);
-    sum.writeTimeStep (timer, wellState);
+    //
+    // Note: The answer to the question above is still not settled,
+    // but now we do keep the complete summary in memory, as a member
+    // variable in the EclipseWriter class, instead of creating a
+    // temporary EclipseSummary in this function every time it is
+    // called.  This has been changed so that the final summary file
+    // will contain data from the whole simulation, instead of just
+    // the last step.
+    summary_->writeTimeStep (timer, wellState);
 }
 
 #else

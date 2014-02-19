@@ -28,6 +28,7 @@
 #include <memory>  // std::unique_ptr
 
 struct UnstructuredGrid;
+struct EclipseSummary;
 
 namespace Opm {
 
@@ -90,6 +91,7 @@ private:
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck
+    std::shared_ptr <EclipseSummary> summary_;
 
     /// Write solution field variables (pressure and saturation)
     void writeSolution (const SimulatorTimer& timer,

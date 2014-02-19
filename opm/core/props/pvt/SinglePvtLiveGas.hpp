@@ -21,6 +21,9 @@
 #define OPM_SINGLEPVTLIVEGAS_HEADER_INCLUDED
 
 #include <opm/core/props/pvt/SinglePvtInterface.hpp>
+
+#include <opm/parser/eclipse/Utility/PvtgTable.hpp>
+
 #include <vector>
 
 namespace Opm
@@ -38,6 +41,7 @@ namespace Opm
         typedef std::vector<std::vector<std::vector<double> > > table_t;
 
         SinglePvtLiveGas(const table_t& pvto);
+        SinglePvtLiveGas(const Opm::PvtgTable& pvtgTable);
         virtual ~SinglePvtLiveGas();
 
         /// Viscosity as a function of p and z.

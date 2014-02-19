@@ -166,11 +166,13 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_param.cpp
 	tests/test_blackoilfluid.cpp
 	tests/test_shadow.cpp
-	tests/test_units.cpp 
-  tests/test_blackoilstate.cpp    
-  tests/test_parser.cpp    
-  tests/test_wellsmanager.cpp
-  tests/test_wellcontrols.cpp
+	tests/test_units.cpp
+	tests/test_blackoilstate.cpp
+	tests/test_parser.cpp
+	tests/test_wellsmanager.cpp
+	tests/test_wellcontrols.cpp
+	tests/test_wellsgroup.cpp
+	tests/test_wellcollection.cpp
   )
 
 # originally generated with the command:
@@ -179,11 +181,13 @@ list (APPEND TEST_DATA_FILES
 	tests/extratestdata.xml
 	tests/testdata.xml
 	tests/liveoil.DATA
-  tests/wetgas.DATA
-  tests/testBlackoilState1.DATA
-  tests/testBlackoilState2.DATA
-  tests/wells_manager_data.data
-  tests/wells_manager_data_expanded.data
+	tests/wetgas.DATA
+	tests/testBlackoilState1.DATA
+	tests/testBlackoilState2.DATA
+	tests/wells_manager_data.data
+	tests/wells_manager_data_expanded.data
+	tests/wells_manager_data_wellSTOP.data
+	tests/wells_group.data
 	)
 
 # originally generated with the command:
@@ -309,6 +313,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/rock/RockBasic.hpp
 	opm/core/props/rock/RockCompressibility.hpp
 	opm/core/props/rock/RockFromDeck.hpp
+	opm/core/props/satfunc/SatFuncBase.hpp
 	opm/core/props/satfunc/SatFuncGwseg.hpp
 	opm/core/props/satfunc/SatFuncSimple.hpp
 	opm/core/props/satfunc/SatFuncStone2.hpp

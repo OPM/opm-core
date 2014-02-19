@@ -2313,8 +2313,8 @@ struct ENPTVD : public SpecialBase {
     }
 
     virtual void read(std::istream & is) {
-        table_.resize(5);
-        std::vector<std::vector<double> > sub_table(5);
+        table_.resize(9);
+        std::vector<std::vector<double> > sub_table(9);
         while (!is.eof()) {
             if(is.peek() == int('/')) {
                 if (sub_table[0].empty() && !(table_[0].empty())) {
@@ -2332,19 +2332,14 @@ struct ENPTVD : public SpecialBase {
             if (data[0] == -1.0) {
                 OPM_THROW(std::runtime_error, "Error reading ENPTVD data - depth can not be defaulted.");
             }
-            if ((data[4] != -1.0) || (data[5] != -1.0) || (data[6] != -1.0) || (data[8] != -1.0)) {
-                OPM_THROW(std::runtime_error, "Error reading ENPTVD data - non-default values in column 5-7,9 not supported.");
+            for(std::vector<std::vector<double> >::size_type i=0; i<sub_table.size(); ++i) {
+                sub_table[i].push_back(data[i]); // [0-8]: depth swl swcr swu sgl sgcr sgu sowcr sogcr
             }
-            sub_table[0].push_back(data[0]); //depth
-            sub_table[1].push_back(data[1]); //swl
-            sub_table[2].push_back(data[2]); //swcr
-            sub_table[3].push_back(data[3]); //swu
-            sub_table[4].push_back(data[7]); //sowcr
             is >> ignoreWhitespace;
             if(is.peek() == int('/')) {
                 is >> ignoreLine;
                 if (sub_table[0].size() >= 2) {
-                    insertDefaultValues(sub_table, 5, -1.0, false);
+                    insertDefaultValues(sub_table, 9, -1.0, false);
                     std::vector<std::vector<double> >::iterator it_sub = sub_table.begin();
                     for(std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {
                         table_[i].push_back(*it_sub);
@@ -2369,9 +2364,9 @@ struct ENPTVD : public SpecialBase {
 
     virtual void write(std::ostream & os) const {
         os << name() << '\n';
-        std::cout << "-----depth-------swl------swcr-------swu-----sowcr" << std::endl;
+        std::cout << "-----depth-------swl------swcr-------swu-------sgl------sgcr-------sgu-----sowcr-----sogcr" << std::endl;
         for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
-            std::cout << "--------------------------------------------------" << std::endl;
+            std::cout << "------------------------------------------------------------------------------------------" << std::endl;
             for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) {
                 for (std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {
                     std::cout << std::setw(10) << table_[i][j][k];
@@ -2400,8 +2395,8 @@ struct ENKRVD : public SpecialBase {
     }
 
     virtual void read(std::istream & is) {
-        table_.resize(5);
-        std::vector<std::vector<double> > sub_table(5);
+        table_.resize(8);
+        std::vector<std::vector<double> > sub_table(8);
         while (!is.eof()) {
             if(is.peek() == int('/')) {
                 if (sub_table[0].empty() && !(table_[0].empty())) {
@@ -2419,19 +2414,15 @@ struct ENKRVD : public SpecialBase {
             if (data[0] == -1.0) {
                 OPM_THROW(std::runtime_error, "Error reading ENKRVD data - depth can not be defaulted.");
             }
-            if ((data[2] != -1.0) || (data[5] != -1.0) || (data[6] != -1.0)) {
-               OPM_THROW(std::runtime_error, "Error reading ENKRVD data - non-default values in column 3,6-7 not supported.");
+            
+            for(std::vector<std::vector<double> >::size_type i=0; i<sub_table.size(); ++i) {
+                sub_table[i].push_back(data[i]); // [0-7]: depth krw krg kro krwr krgr krorw krorg
             }
-            sub_table[0].push_back(data[0]); //depth
-            sub_table[1].push_back(data[1]); //krw
-            sub_table[2].push_back(data[3]); //kro
-            sub_table[3].push_back(data[4]); //krw(sowcr)
-            sub_table[4].push_back(data[7]); //kro(swcr)
             is >> ignoreWhitespace;
             if(is.peek() == int('/')) {
                 is >> ignoreLine;
                 if (sub_table[0].size() >= 2) {
-                    insertDefaultValues(sub_table, 5, -1.0, false);
+                    insertDefaultValues(sub_table, 8, -1.0, false);
                     std::vector<std::vector<double> >::iterator it_sub = sub_table.begin();
                     for(std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {
                         table_[i].push_back(*it_sub);
@@ -2457,9 +2448,9 @@ struct ENKRVD : public SpecialBase {
 
     virtual void write(std::ostream & os) const {
         os << name() << '\n';
-        std::cout << "-----depth-------krw------krow------krwr-----krorw" << std::endl;
+        std::cout << "-----depth-------krw-------krg-------kro------krwr------krgr-----krorw-----krorg" << std::endl;
         for (std::vector<std::vector<double> >::size_type j=0; j<table_[0].size(); ++j) {
-            std::cout << "--------------------------------------------------" << std::endl;
+            std::cout << "--------------------------------------------------------------------------------" << std::endl;
             for (std::vector<double>::size_type k=0; k<table_[0][j].size(); ++k) {
                 for (std::vector<std::vector<std::vector<double> > >::size_type i=0; i<table_.size(); ++i) {
                     std::cout << std::setw(10) << table_[i][j][k];
