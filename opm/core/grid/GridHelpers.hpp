@@ -215,7 +215,7 @@ double getCoordinate(T* cc, int i)
 template<class T>
 double getCoordinate(T t, int i)
 {
-    return t->center()[i];
+    return (*t)[i];
 }
 
 } // end namespace UGGridHelpers
