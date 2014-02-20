@@ -198,8 +198,8 @@ T increment(const T& t, int i, int)
 }
 
 /// \brief Get the i-th corrdinate of a centroid.
-/// \brief cc The array.
-/// \brief i The index of the coordinate.
+/// \param cc The array with the coordinates.
+/// \param i The index of the coordinate.
 /// \tparam T The type of the coordinate of the centroid.
 template<class T>
 double getCoordinate(T* cc, int i)
@@ -208,10 +208,10 @@ double getCoordinate(T* cc, int i)
 }
 
 /// \brief Get the i-th corrdinate of an array.
-/// \brief cc The array.
+/// \param t The iterator over the centroids
 /// \brief i The index of the coordinate.
-/// \tparam T The type representing the centroid.
-/// Has to provide a method center that returns an array with the coordinates.
+/// \tparam T The type of the iterator representing the centroid.
+/// Its value_type has to provide an operator[] to access the coordinates.
 template<class T>
 double getCoordinate(T t, int i)
 {
