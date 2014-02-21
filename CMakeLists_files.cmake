@@ -183,6 +183,7 @@ list (APPEND TEST_DATA_FILES
   tests/testBlackoilState2.DATA
   tests/wells_manager_data.data
 	tests/capillary.DATA
+	tests/capillary_overlap.DATA
 	tests/deadfluids.DATA
 	)
 
