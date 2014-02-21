@@ -100,6 +100,9 @@ int numFaces(const UnstructuredGrid& grid);
 /// \brief Get the dimensions of a grid
 int dimensions(const UnstructuredGrid& grid);
 
+/// \brief Get the number of faces, where each face counts as many times as there are adjacent faces
+int numCellFaces(const UnstructuredGrid& grid);
+
 /// \brief Get the cartesion dimension of the underlying structured grid.
 const int* cartDims(const UnstructuredGrid& grid);
 

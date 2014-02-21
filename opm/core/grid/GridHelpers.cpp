@@ -17,6 +17,11 @@ int dimensions(const UnstructuredGrid& grid)
 {
     return grid.dimensions;
 }
+int numCellFaces(const UnstructuredGrid& grid)
+{
+    return grid.cell_facepos[grid.number_of_cells];
+}
+
 const int* globalCell(const UnstructuredGrid& grid)
 {
     return grid.global_cell;
