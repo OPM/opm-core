@@ -318,6 +318,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/satfunc/SaturationPropsFromDeck_impl.hpp
 	opm/core/props/satfunc/SaturationPropsInterface.hpp
 	opm/core/simulator/BlackoilState.hpp
+	opm/core/simulator/EquilibrationHelpers.hpp
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
 	opm/core/simulator/SimulatorOutput.hpp
