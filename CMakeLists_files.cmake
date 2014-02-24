@@ -170,6 +170,7 @@ list (APPEND TEST_SOURCE_FILES
         tests/test_wellsmanager.cpp
         tests/test_wellcontrols.cpp
 	tests/test_equil.cpp
+	tests/test_regionmapping.cpp
   )
 
 # originally generated with the command:
@@ -364,6 +365,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/NonuniformTableLinear.hpp
 	opm/core/utility/NullStream.hpp
 	opm/core/utility/PolynomialUtils.hpp
+	opm/core/utility/RegionMapping.hpp
 	opm/core/utility/RootFinders.hpp
 	opm/core/utility/SparseTable.hpp
 	opm/core/utility/SparseVector.hpp
