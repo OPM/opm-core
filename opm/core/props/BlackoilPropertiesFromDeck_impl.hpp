@@ -1,5 +1,62 @@
 namespace Opm
 {
+
+
+    template<class T>
+    BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(const EclipseGridParser& deck,
+                                                           int number_of_cells,
+                                                           const int* global_cell,
+                                                           const int* cart_dims,
+                                                           T begin_cell_centroids,
+                                                           int dimension,
+                                                           bool init_rock)
+    {
+        init(deck, number_of_cells, global_cell, cart_dims, begin_cell_centroids, dimension,
+             init_rock);
+    }
+
+
+    template<class T>
+    BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(const EclipseGridParser& deck,
+                                                           int number_of_cells,
+                                                           const int* global_cell,
+                                                           const int* cart_dims,
+                                                           T begin_cell_centroids,
+                                                           int dimension,
+                                                           const parameter::ParameterGroup& param,
+                                                           bool init_rock)
+    {
+        init(deck, number_of_cells, global_cell, cart_dims, begin_cell_centroids, dimension,
+             param, init_rock);
+    }
+
+    template<class T>
+    BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(Opm::DeckConstPtr  newParserDeck,
+                                                           int number_of_cells,
+                                                           const int* global_cell,
+                                                           const int* cart_dims,
+                                                           T begin_cell_centroids,
+                                                           int dimension,
+                                                           bool init_rock)
+    {
+        init(newParserDeck, number_of_cells, global_cell, cart_dims, begin_cell_centroids, dimension,
+             init_rock);
+    }
+
+    template<class T>
+    BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(Opm::DeckConstPtr  newParserDeck,
+                                                           int number_of_cells,
+                                                           const int* global_cell,
+                                                           const int* cart_dims,
+                                                           T begin_cell_centroids,
+                                                           int dimension,
+                                                           const parameter::ParameterGroup& param,
+                                                           bool init_rock)
+    {
+        init(newParserDeck, number_of_cells, global_cell, cart_dims, begin_cell_centroids, dimension,
+             param, init_rock);
+    }
+
     template<class T>
     void BlackoilPropertiesFromDeck::init(const EclipseGridParser& deck,
                                           int number_of_cells,
