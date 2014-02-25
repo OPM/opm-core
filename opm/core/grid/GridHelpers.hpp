@@ -112,11 +112,29 @@ const int* cartDims(const UnstructuredGrid& grid);
 /// in the underlying structured grid.
 const int* globalCell(const UnstructuredGrid& grid);
 
+/// \brief Traits of the cell centroids of a grid.
+///
+/// This class exports two types: IteratorType, the type of the iterator
+/// over the cell centroids, and the ValueTpe, the type of the cell centroid.
+/// \tpatam G The type of the grid.
+template<class G>
+struct CellCentroidTraits
+{
+};
+
+template<>
+struct CellCentroidTraits<UnstructuredGrid>
+{
+    typedef const double* IteratorType;
+    typedef const double* ValueType;
+};
+
 /// \brief Get an iterator over the cell centroids positioned at the first cell.
 ///
 /// The return type needs to be usable with the functions increment, and
 /// getCoordinate.
-const double* beginCellCentroids(const UnstructuredGrid& grid);
+CellCentroidTraits<UnstructuredGrid>::IteratorType
+beginCellCentroids(const UnstructuredGrid& grid);
 
 /// \brief Get a coordinate of a specific cell centroid.
 /// \brief grid The grid.
@@ -125,14 +143,33 @@ const double* beginCellCentroids(const UnstructuredGrid& grid);
 double cellCentroidCoordinate(const UnstructuredGrid& grid, int cell_index,
                                  int coordinate);
 
+/// \brief Traits of the face centroids of a grid.
+///
+/// This class exports two types: IteratorType, the type of the iterator
+/// over the face centroids, and the ValueTpe, the type of the face centroid.
+/// \tpatam G The type of the grid.
+template<class G>
+struct FaceCentroidTraits
+{
+};
+
+template<>
+struct FaceCentroidTraits<UnstructuredGrid>
+{
+    typedef const double* IteratorType;
+    typedef const double* ValueType;
+};
+
 /// \brief Get an iterator over the face centroids positioned at the first cell.
-const double* beginFaceCentroids(const UnstructuredGrid& grid);
+FaceCentroidTraits<UnstructuredGrid>::IteratorType
+beginFaceCentroids(const UnstructuredGrid& grid);
 
 /// \brief Get a coordinate of a specific face centroid.
-/// \brief grid The grid.
-/// \brief face_index The index of the specific face.
-/// \breif coordinate The coordinate index.
-const double* faceCentroid(const UnstructuredGrid& grid, int face_index);
+/// \param grid The grid.
+/// \param face_index The index of the specific face.
+/// \param coordinate The coordinate index.
+FaceCentroidTraits<UnstructuredGrid>::ValueType
+faceCentroid(const UnstructuredGrid& grid, int face_index);
 
 /// \brief Get the normal of a face.
 /// \param grid The grid that the face is part of.
