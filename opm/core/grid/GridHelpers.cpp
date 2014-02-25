@@ -53,6 +53,11 @@ const double* faceCentroid(const UnstructuredGrid& grid, int face_index)
     return grid.face_centroids+face_index*grid.dimensions;
 }
 
+const double* faceNormal(const UnstructuredGrid& grid, int face_index)
+{
+    return grid.face_normals+face_index*grid.dimensions;
+}
+
 SparseTableView cell2Faces(const UnstructuredGrid& grid)
 {
     return SparseTableView(grid.cell_faces, grid.cell_facepos, numCells(grid));
