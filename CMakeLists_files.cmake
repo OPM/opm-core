@@ -75,6 +75,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/pressure/tpfa/compr_quant_general.c
 	opm/core/pressure/tpfa/compr_source.c
 	opm/core/pressure/tpfa/ifs_tpfa.c
+	opm/core/pressure/tpfa/TransTpfa.cpp
 	opm/core/pressure/tpfa/trans_tpfa.c
 	opm/core/pressure/legacy_well.c
 	opm/core/props/BlackoilPropertiesBasic.cpp
@@ -289,6 +290,8 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/pressure/tpfa/compr_quant_general.h
 	opm/core/pressure/tpfa/compr_source.h
 	opm/core/pressure/tpfa/ifs_tpfa.h
+	opm/core/pressure/tpfa/TransTpfa.hpp
+	opm/core/pressure/tpfa/TransTpfa_impl.hpp
 	opm/core/pressure/tpfa/trans_tpfa.h
 	opm/core/props/BlackoilPhases.hpp
 	opm/core/props/BlackoilPropertiesBasic.hpp
