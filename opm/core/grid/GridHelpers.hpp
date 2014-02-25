@@ -210,6 +210,10 @@ private:
     const int* face_cells_;
 };
 
+/// \brief Traits of the face to attached cell mappping of a grid.
+///
+/// Exports the type Type, the type of the mapping
+/// \tparam T The type of the grid
 template<class T>
 struct FaceCellTraits
 {};
