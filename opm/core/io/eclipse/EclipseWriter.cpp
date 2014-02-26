@@ -1086,7 +1086,7 @@ EclipseWriter::EclipseWriter (
     : parser_ (parser)
     , number_of_cells_(number_of_cells)
     , dimensions_(dimensions)
-    , cart_dims_(cart_dims_)
+    , cart_dims_(cart_dims)
     , global_cell_(global_cell)
     , uses_ (phaseUsageFromDeck (*parser)) {
     
