@@ -39,7 +39,6 @@ tpfa_htrans_compute(const Grid* G, const double *perm, double *htrans)
 
     for (int c =0, i = 0; c < numCells(*G); c++) {
         K  = perm + (c * d * d);
-        cc = increment(cc, 1, d);
         
         typedef typename Cell2FacesTraits<Grid>::Type::row_type FaceRow;
         FaceRow faces = c2f[c];
@@ -67,6 +66,8 @@ tpfa_htrans_compute(const Grid* G, const double *perm, double *htrans)
             htrans[i] /= denom;
             htrans[i]  = fabs(htrans[i]);
         }
+        // Move to next cell centroid.
+        cc = increment(cc, 1, d);
     }
 }
 
