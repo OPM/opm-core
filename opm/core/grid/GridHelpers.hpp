@@ -176,6 +176,10 @@ faceCentroid(const UnstructuredGrid& grid, int face_index);
 /// \param face_index The index of the face in the grid.
 const double* faceNormal(const UnstructuredGrid& grid, int face_index);
 
+/// \brief Get the area of a face
+/// \param grid The grid that the face is part of.
+/// \param face_index The index of the face in the grid.
+double faceArea(const UnstructuredGrid& grid, int face_index);
 
 /// \brief Maps the grid type to the associated type of the cell to faces mapping.
 ///

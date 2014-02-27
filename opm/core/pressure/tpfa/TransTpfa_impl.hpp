@@ -8,6 +8,48 @@
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
 #include <opm/core/grid/GridHelpers.hpp>
 
+namespace Dune
+{
+class CpGrid;
+}
+
+namespace Opm
+{
+namespace UgGridHelpers
+{
+int dimensions(const Dune::CpGrid&);
+
+double faceArea(const Dune::CpGrid&, int);
+}
+}
+
+namespace
+{
+const double* multiplyFaceNormalWithArea(const Dune::CpGrid& grid, int face_index, const double* in)
+{
+    int d=Opm::UgGridHelpers::dimensions(grid);
+    double* out=new double[d];
+    double area=Opm::UgGridHelpers::faceArea(grid, face_index);
+    
+    for(int i=0;i<d;++i)
+        out[i]=in[i]*area;
+    return out;
+}
+
+inline const double* multiplyFaceNormalWithArea(const UnstructuredGrid& grid, int face_index, const double* in)
+{
+    return in;
+}
+
+inline void maybeFreeFaceNormal(const Dune::CpGrid&, const double* array)
+{
+    delete[] array;
+}
+
+inline void maybeFreeFaceNormal(const UnstructuredGrid&, const double*)
+{}
+}
+
 /* ---------------------------------------------------------------------- */
 /* htrans <- sum(C(:,i) .* K(cellNo,:) .* N(:,j), 2) ./ sum(C.*C, 2) */
 /* ---------------------------------------------------------------------- */
@@ -47,12 +89,12 @@ tpfa_htrans_compute(const Grid* G, const double *perm, double *htrans)
             f!=end; ++f, ++i)
         {
             s = 2.0*(face_cells(*f, 0) == c) - 1.0;
-
             n = faceNormal(*G, *f);
+            const double* nn=multiplyFaceNormalWithArea(*G, *f, n);
             const double* fc = &(faceCentroid(*G, *f)[0]);
-
             dgemv_("No Transpose", &nrows, &ncols,
-                   &a1, K, &ldA, n, &incx, &a2, &Kn[0], &incy);
+                   &a1, K, &ldA, nn, &incx, &a2, &Kn[0], &incy);
+            maybeFreeFaceNormal(*G, nn);
             
             htrans[i] = denom = 0.0;
             for (j = 0; j < d; j++) {
