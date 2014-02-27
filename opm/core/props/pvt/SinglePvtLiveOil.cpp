@@ -21,8 +21,8 @@
 #include <opm/core/props/pvt/SinglePvtLiveOil.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/linearInterpolation.hpp>
-#include <algorithm>
 
+#include <algorithm>
 
 namespace Opm
 {
@@ -30,7 +30,6 @@ namespace Opm
     using Opm::linearInterpolation;
     using Opm::linearInterpolationDerivative;
     using Opm::tableIndex;
-
 
     //------------------------------------------------------------------------
     // Member functions
@@ -102,7 +101,73 @@ namespace Opm
                 undersat_oil_tables_[i][2].push_back(mu);
             }
         }
+    }
 
+    SinglePvtLiveOil::SinglePvtLiveOil(const Opm::PvtoTable &pvtoTable)
+    {
+        const auto saturatedPvto = pvtoTable.getOuterTable();
+
+        // OIL, PVTO
+        saturated_oil_table_.resize(4);
+        const int sz =  saturatedPvto->numRows();
+        for (int k=0; k<4; ++k) {
+            saturated_oil_table_[k].resize(sz);
+        }
+        for (int i=0; i<sz; ++i) {
+            saturated_oil_table_[0][i] = saturatedPvto->getPressureColumn()[i]; // p
+            saturated_oil_table_[1][i] = 1.0/saturatedPvto->getOilFormationFactorColumn()[i]; // 1/Bo
+            saturated_oil_table_[2][i] = saturatedPvto->getOilViscosityColumn()[i]; // mu_o
+            saturated_oil_table_[3][i] = saturatedPvto->getGasSolubilityColumn()[i]; // Rs
+        }
+
+        undersat_oil_tables_.resize(sz);
+        for (int i=0; i<sz; ++i) {
+            const auto undersaturatedPvto = pvtoTable.getInnerTable(i);
+
+            undersat_oil_tables_[i].resize(3);
+            int tsize = undersaturatedPvto->numRows();
+            undersat_oil_tables_[i][0].resize(tsize);
+            undersat_oil_tables_[i][1].resize(tsize);
+            undersat_oil_tables_[i][2].resize(tsize);
+            for (int j=0; j<tsize; ++j) {
+                undersat_oil_tables_[i][0][j] = undersaturatedPvto->getPressureColumn()[j];  // p
+                undersat_oil_tables_[i][1][j] = 1.0/undersaturatedPvto->getOilFormationFactorColumn()[j];  // 1/Bo
+                undersat_oil_tables_[i][2][j] = undersaturatedPvto->getOilViscosityColumn()[j];  // mu_o
+            }
+        }
+
+        // Complete undersaturated tables by extrapolating from existing data
+        // as is done in Eclipse and Mrst
+        int iNext = -1;
+        for (int i=0; i<sz; ++i) {
+            // Skip records already containing undersaturated data
+            if (undersat_oil_tables_[i][0].size() > 1) {
+                continue;
+            }
+            // Look ahead for next record containing undersaturated data
+            if (iNext < i) {
+                iNext = i+1;
+                while (iNext<sz && undersat_oil_tables_[iNext][0].size() < 2) {
+                    ++iNext;
+                }
+                if (iNext == sz) OPM_THROW(std::runtime_error,"Unable to complete undersaturated table.");
+            }
+            // Add undersaturated data to current record while maintaining compressibility and viscosibility
+            typedef std::vector<std::vector<std::vector<double> > >::size_type sz_t;
+            for (sz_t j=1; j<undersat_oil_tables_[iNext][0].size(); ++j) {
+                double diffPressure = undersat_oil_tables_[iNext][0][j]-undersat_oil_tables_[iNext][0][j-1];
+                double pressure = undersat_oil_tables_[i][0].back()+diffPressure;
+                undersat_oil_tables_[i][0].push_back(pressure);
+                double compr = (1.0/undersat_oil_tables_[iNext][1][j]-1.0/undersat_oil_tables_[iNext][1][j-1])
+                        / (0.5*(1.0/undersat_oil_tables_[iNext][1][j]+1.0/undersat_oil_tables_[iNext][1][j-1]));
+                double B = (1.0/undersat_oil_tables_[i][1].back())*(1.0+0.5*compr)/(1.0-0.5*compr);
+                undersat_oil_tables_[i][1].push_back(1.0/B);
+                double visc = (undersat_oil_tables_[iNext][2][j]-undersat_oil_tables_[iNext][2][j-1])
+                        / (0.5*(undersat_oil_tables_[iNext][2][j]+undersat_oil_tables_[iNext][2][j-1]));
+                double mu = (undersat_oil_tables_[i][2].back())*(1.0+0.5*visc)/(1.0-0.5*visc);
+                undersat_oil_tables_[i][2].push_back(mu);
+            }
+        }
     }
 
     /// Destructor.

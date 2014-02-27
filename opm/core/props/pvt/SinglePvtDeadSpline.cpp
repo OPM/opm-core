@@ -20,6 +20,9 @@
 #include "config.h"
 #include <opm/core/props/pvt/SinglePvtDeadSpline.hpp>
 #include <opm/core/utility/buildUniformMonotoneTable.hpp>
+
+#include <opm/parser/eclipse/Utility/SimpleTable.hpp>
+
 #include <algorithm>
 
 // Extra includes for debug dumping of tables.
@@ -29,7 +32,6 @@
 
 namespace Opm
 {
-
     //------------------------------------------------------------------------
     // Member functions
     //-------------------------------------------------------------------------
@@ -54,13 +56,42 @@ namespace Opm
         }
         buildUniformMonotoneTable(press, B_inv, samples, b_);
         buildUniformMonotoneTable(press, visc, samples, viscosity_);
+    }
 
-        // Dumping the created tables.
-//         static int count = 0;
-//         std::ofstream os((std::string("dump-") + boost::lexical_cast<std::string>(count++)).c_str());
-//         os.precision(15);
-//         os << "1/B\n\n" << one_over_B_
-//            << "\n\nvisc\n\n" << viscosity_ << std::endl;
+    SinglePvtDeadSpline::SinglePvtDeadSpline(const Opm::PvdoTable &pvdoTable, int samples)
+    {
+        int numRows = pvdoTable.numRows();
+
+        // Copy data
+        const std::vector<double> &press = pvdoTable.getPressureColumn();
+        const std::vector<double> &B = pvdoTable.getFormationFactorColumn();
+        const std::vector<double> &visc = pvdoTable.getViscosityColumn();
+
+        std::vector<double> B_inv(numRows);
+        for (int i = 0; i < numRows; ++i) {
+            B_inv[i] = 1.0 / B[i];
+        }
+
+        buildUniformMonotoneTable(press, B_inv, samples, b_);
+        buildUniformMonotoneTable(press, visc, samples, viscosity_);
+    }
+
+    SinglePvtDeadSpline::SinglePvtDeadSpline(const Opm::PvdgTable &pvdgTable, int samples)
+    {
+        int numRows = pvdgTable.numRows();
+
+        // Copy data
+        const std::vector<double> &press = pvdgTable.getPressureColumn();
+        const std::vector<double> &B = pvdgTable.getFormationFactorColumn();
+        const std::vector<double> &visc = pvdgTable.getViscosityColumn();
+
+        std::vector<double> B_inv(numRows);
+        for (int i = 0; i < numRows; ++i) {
+            B_inv[i] = 1.0 / B[i];
+        }
+
+        buildUniformMonotoneTable(press, B_inv, samples, b_);
+        buildUniformMonotoneTable(press, visc, samples, viscosity_);
     }
 
     // Destructor

@@ -4,4 +4,4 @@ Description: Open Porous Media Initiative Core Library
 Version: 1.1
 Label: 2013.10
 Maintainer: atgeirr@sintef.no
-Depends: dune-common (>= 2.2) dune-istl (>= 2.2)
+Depends: dune-common (>= 2.2) dune-istl (>= 2.2) opm-parser
