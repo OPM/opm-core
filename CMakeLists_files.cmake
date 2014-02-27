@@ -186,6 +186,7 @@ list (APPEND TEST_DATA_FILES
 	tests/capillary.DATA
 	tests/capillary_overlap.DATA
 	tests/deadfluids.DATA
+	tests/equil_liveoil.DATA
 	)
 
 # originally generated with the command:
