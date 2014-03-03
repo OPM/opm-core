@@ -86,6 +86,30 @@ namespace Opm
 //            << "\n\nvisc\n\n" << viscosity_ << std::endl;
     }
 
+    /// Constructor
+    SinglePvtDead::SinglePvtDead(const Opm::PvdgTable& pvdgTable)
+    {
+        // Copy data
+        const std::vector<double>& press = pvdgTable.getPressureColumn();
+        const std::vector<double>& b = pvdgTable.getFormationFactorColumn();
+        const std::vector<double>& visc = pvdgTable.getViscosityColumn();
+
+        const int sz = b.size();
+        std::vector<double> bInv(sz);
+        for (int i = 0; i < sz; ++i) {
+            bInv[i] = 1.0 / b[i];
+        }
+        b_ = NonuniformTableLinear<double>(press, bInv);
+        viscosity_ = NonuniformTableLinear<double>(press, visc);
+
+        // Dumping the created tables.
+//         static int count = 0;
+//         std::ofstream os((std::string("dump-") + boost::lexical_cast<std::string>(count++)).c_str());
+//         os.precision(15);
+//         os << "1/B\n\n" << one_over_B_
+//            << "\n\nvisc\n\n" << viscosity_ << std::endl;
+    }
+
     // Destructor
     SinglePvtDead::~SinglePvtDead()
     {

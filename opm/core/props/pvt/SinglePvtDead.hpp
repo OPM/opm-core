@@ -25,6 +25,7 @@
 #include <opm/core/utility/NonuniformTableLinear.hpp>
 
 #include <opm/parser/eclipse/Utility/PvdoTable.hpp>
+#include <opm/parser/eclipse/Utility/PvdgTable.hpp>
 
 #include <vector>
 
@@ -43,7 +44,8 @@ namespace Opm
     public:
         typedef std::vector<std::vector<std::vector<double> > > table_t;
         SinglePvtDead(const table_t& pvd_table);
-        SinglePvtDead(const Opm::PvdoTable &pvdoTable);
+        SinglePvtDead(const Opm::PvdoTable& pvdoTable);
+        SinglePvtDead(const Opm::PvdgTable& pvdgTable);
         virtual ~SinglePvtDead();
 
         /// Viscosity as a function of p and z.
