@@ -31,17 +31,17 @@ namespace Opm
         void evalKrDeriv(const double* s, double* kr, double* dkrds) const;
         void evalPc(const double* s, double* pc) const;
         void evalPcDeriv(const double* s, double* pc, double* dpcds) const;
-        
-        void evalKr(const double* s, double* kr, const EPSTransforms* epst) const 
+
+        void evalKr(const double* /* s */, double* /* kr */, const EPSTransforms* /* epst */) const
         {OPM_THROW(std::runtime_error, "SatFuncSimple   --  need to be implemented ...");}
-        void evalKr(const double* s, double* kr, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const 
+        void evalKr(const double* /* s */, double* /* kr */, const EPSTransforms* /* epst */, const EPSTransforms* /* epst_hyst */, const SatHyst* /* sat_hyst */) const
         {OPM_THROW(std::runtime_error, "SatFuncSimple   --  need to be implemented ...");}
-        void evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst) const;
-        void evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const 
+        void evalKrDeriv(const double* /* s */, double* /* kr */, double* /* dkrds */, const EPSTransforms* /* epst */) const;
+        void evalKrDeriv(const double* /* s */, double* /* kr */, double* /* dkrds */, const EPSTransforms* /* epst */, const EPSTransforms* /* epst_hyst */, const SatHyst* /* sat_hyst */) const 
         {OPM_THROW(std::runtime_error, "SatFuncSimple   --  need to be implemented ...");}
-        void evalPc(const double* s, double* pc, const EPSTransforms* epst) const 
+        void evalPc(const double* /* s */, double* /* pc */, const EPSTransforms* /* epst */) const
         {OPM_THROW(std::runtime_error, "SatFuncSimple   --  need to be implemented ...");}
-        void evalPcDeriv(const double* s, double* pc, double* dpcds, const EPSTransforms* epst) const 
+        void evalPcDeriv(const double* /* s */, double* /* pc */, double* /* dpcds */, const EPSTransforms* /* epst */) const
         {OPM_THROW(std::runtime_error, "SatFuncSimple   --  need to be implemented ...");}
 
     private:

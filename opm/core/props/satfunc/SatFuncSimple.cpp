@@ -34,9 +34,9 @@ namespace Opm
  
     template<>
     void SatFuncBase<NonuniformTableLinear<double> >::initializeTableType(NonuniformTableLinear<double> & table,
-                                                                           const std::vector<double>& arg,
-                                                                           const std::vector<double>& value,
-                                                                           const int samples)
+                                                                          const std::vector<double>& arg,
+                                                                          const std::vector<double>& value,
+                                                                          const int /* samples */)
     {
       table = NonuniformTableLinear<double>(arg, value);
     }
@@ -84,7 +84,7 @@ namespace Opm
         }
     }
 
-    double EPSTransforms::Transform::scaleSatDeriv(double s, double s_r, double s_cr, double s_max) const
+    double EPSTransforms::Transform::scaleSatDeriv(double s, double /* s_r */, double /* s_cr */, double /* s_max */) const
     {
         if (doNotScale) {
             return 1.0;
