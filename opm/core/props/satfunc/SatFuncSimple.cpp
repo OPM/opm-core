@@ -217,7 +217,7 @@ namespace Opm
         out << "sg_shift: " << sg_shift << std::endl;
         out << "sow_hyst: " << sow_hyst << std::endl;
         out << "sow_shift: " << sow_shift << std::endl;
-    };
+    }
         
    
 } // namespace Opm
