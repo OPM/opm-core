@@ -61,6 +61,30 @@ using namespace Opm::parameter;
 // namespace start here since we don't want the ERT headers in it
 namespace {
 
+namespace {
+/// Helper function when we don't really want any transformation
+/// (The C++ committee removed std::identity because it was "troublesome" (!?!)
+static double noConversion (const double& u) { return u; }
+
+
+/// Helper method that can be used in keyword transformation (must carry
+/// the barsa argument)
+static double toBar (const double& pressure) {
+    return Opm::unit::convert::to (pressure, Opm::unit::barsa);
+}
+
+/// Helper method that can be used in keyword transformation (must carry
+/// the milliDarcy argument)
+static double toMilliDarcy (const double& permeability) {
+    return Opm::unit::convert::to (permeability, Opm::prefix::milli * Opm::unit::darcy);
+}
+
+/// Names of the saturation property for each phase. The order of these
+/// names are critical; they must be the same as the BlackoilPhases enum
+static const char* SAT_NAMES[] = { "SWAT", "SOIL", "SGAS" };
+
+} // anonymous namespace
+
 /// Smart pointer/handle class for ERT opaque types, such as ecl_kw_type*.
 ///
 /// \tparam T Type of handle being wrapper
@@ -104,53 +128,131 @@ private:
     static void no_delete (T*) { }
 };
 
+
+// throw away the data for all non-active cells in an array
+void restrictToActiveCells_(std::vector<double> &data, const std::vector<int> &actnumData)
+{
+    assert(actnumData.size() == data.size());
+
+    size_t curActiveIdx = 0;
+    for (size_t curIdx = 0; curIdx < data.size(); ++curIdx) {
+        if (!actnumData[curIdx])
+            continue; // ignore non-active cells
+
+        assert(curActiveIdx <= curIdx);
+        data[curActiveIdx] = data[curIdx];
+        ++ curActiveIdx;
+    }
+
+    data.resize(curActiveIdx);
+}
+
+// throw away the data for all non-active cells in an array. (this is
+// the variant of the function which takes an UnstructuredGrid object.)
+void restrictToActiveCells_(std::vector<double> &data, const UnstructuredGrid &grid)
+{
+    if (!grid.global_cell)
+        // if there is no active -> global mapping, all cells
+        // are considered active
+        return;
+
+    // activate those cells that are actually there
+    for (int i = 0; i < grid.number_of_cells; ++i) {
+        // make sure that global cell indices are always at least as
+        // large as the active one and that the global cell indices
+        // are in increasing order. the latter might become
+        // problematic if cells are extensively re-ordered, but that
+        // does not seem to be the case so far
+        assert(grid.global_cell[i] >= i);
+        assert(i == 0 || grid.global_cell[i - 1] < grid.global_cell[i]);
+
+        data[i] = data[grid.global_cell[i]];
+    }
+    data.resize(grid.number_of_cells);
+}
+
+// convert the units of an array
+template <class TransferFunction>
+void convertUnit_(std::vector<double> &data, TransferFunction &transferFn)
+{
+    for (size_t curIdx = 0; curIdx < data.size(); ++curIdx) {
+        data[curIdx] = transferFn(data[curIdx]);
+    }
+}
+
+// extract a sub-array of a larger one which represents multiple
+// striped ones
+void extractFromStripedData_(std::vector<double> &data,
+                             int offset,
+                             int stride)
+{
+    size_t tmpIdx = 0;
+    for (size_t curIdx = offset; curIdx < data.size(); curIdx += stride) {
+        assert(tmpIdx <= curIdx);
+        data[tmpIdx] = data[curIdx];
+        ++tmpIdx;
+    }
+    // shirk the result
+    data.resize(tmpIdx);
+}
+
+// enclosure of the current grid in a Cartesian space
+int getCartesianSize_(const UnstructuredGrid& grid) {
+    const int nx = grid.cartdims[0];
+    const int ny = grid.cartdims[1];
+    const int nz = grid.cartdims[2];
+    return nx * ny * nz;
+}
+
+void getActiveCells_(const UnstructuredGrid& grid,
+                     std::vector <int>& actnum)
+{
+    // we must fill the Cartesian grid with flags
+    const int size = getCartesianSize_(grid);
+
+    // if we don't have a global_cells field, then assume that all
+    // grid cells is active
+    if (!grid.global_cell) {
+        if (grid.number_of_cells != size) {
+            OPM_THROW (std::runtime_error,
+                       "No ACTNUM map but grid size != Cartesian size");
+        }
+        actnum.assign (size, 1);
+    }
+    else {
+        // start out with entire map being inactive
+        actnum.assign (size, 0);
+
+        // activate those cells that are actually there
+        for (int i = 0; i < grid.number_of_cells; ++i) {
+            actnum[grid.global_cell[i]] = 1;
+        }
+    }
+}
+
 /**
  * Eclipse "keyword" (i.e. named data) for a vector. (This class is
  * different from EclKW in the constructors it provide).
  */
 template <typename T>
 struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
-    EclipseKeyword (const std::string& name,    /// identification
-                    const std::vector<T>& data, /// array holding values
-                    const int offset = 0,      /// distance to first
-                    const int stride = 1)      /// distance between each
-
-        // allocate handle and put in smart pointer base class
-        : EclipseHandle <ecl_kw_type> (
-              ecl_kw_alloc (name.c_str(), data.size (), type ()),
-              ecl_kw_free) {
-        copyData (data, &no_conversion, offset, stride);
-    }
-
-    /// Special initialization from double-precision array which
-    /// automatically invokes a version of the copy function which
-    /// downcasts. This is really only applicable to the T = float
-    /// template instance.
-    /// The data and name parameters are switched in this version
-    /// so that it doesn't conflict with the one above in the case
-    /// of T = double.
-    EclipseKeyword (const std::vector<double>& data,
-                    const std::string& name,
-                    double (* const transf)(const double&),
-                    const int offset = 0,
-                    const int stride = 1);
-
-    /// Convenience constructor that gets the set of data
-    /// from the samely named item in the parser
+    /// Special initialization from double-precision array.
     EclipseKeyword (const std::string& name,
-                    const EclipseGridParser& parser)
-        // allocate handle and put in smart pointer base class
-        // notice dataSize is called both here *and* in copyData,
-        // but GCC 4.4 doesn't support delegating constructors, so
-        // we cannot avoid this without otherwise using a member
-        : EclipseHandle <ecl_kw_type> (
-              ecl_kw_alloc (name.c_str(),
-                            dataSize (parser.getValue <T> (name)),
-                            type ()),
-              ecl_kw_free) {
-        const std::vector <T>& data = parser.getValue <T> (name);
-        copyData (data, &no_conversion, 0, 1);
-    }
+                    const std::vector<double>& data)
+        : EclipseHandle<ecl_kw_type>(ecl_kw_alloc(name.c_str(),
+                                                  data.size(),
+                                                  type()),
+                                     ecl_kw_free)
+    { copyData (data, &noConversion, /*offset=*/0, /*stride=*/1); }
+
+    /// Initialization from integer array.
+    EclipseKeyword (const std::string& name,
+                    const std::vector<int>& data)
+        : EclipseHandle<ecl_kw_type>(ecl_kw_alloc(name.c_str(),
+                                                  data.size(),
+                                                  type()),
+                                     ecl_kw_free)
+    { copyData (data, &noConversion, /*offset=*/0, /*stride=*/1); }
 
     /// Constructor for optional fields
     EclipseKeyword (const std::string& name)
@@ -158,21 +260,23 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
         static_cast<void> (name);
     }
 
+    // constructor to keep compatibility with the old eclipse parser
+    EclipseKeyword (const std::string& name,
+                    const EclipseGridParser& parser);
+
     // GCC 4.4 doesn't generate these constructors for us; provide the
     // default implementation explicitly here instead
     EclipseKeyword (EclipseKeyword&& rhs)
-        : EclipseHandle <ecl_kw_type> (std::move (rhs)) { }
-    EclipseKeyword& operator= (EclipseKeyword&& rhs) {
+        : EclipseHandle <ecl_kw_type> (std::move (rhs))
+    { }
+
+    EclipseKeyword& operator= (EclipseKeyword&& rhs)
+    {
         EclipseHandle <ecl_kw_type>::operator= (std::move(rhs));
         return *this;
     }
     EclipseKeyword (const EclipseKeyword&) = delete;
     EclipseKeyword& operator= (const EclipseKeyword&) = delete;
-
-    /// Helper function when we don't really want any transformation
-    /// (The C++ committee removed std::identity because it was "troublesome" (!?!)
-    template <typename U>
-    static U no_conversion (const U& u) { return u; }
 
 private:
     /// Map the C++ data type (given by T) to an Eclipse type enum
@@ -181,7 +285,7 @@ private:
     /// Helper function that is the meat of the constructor
     template <typename U>
     void copyData (const std::vector <U>& data,
-                   U (* const transf)(const U&),
+                   double (* const transf)(const double&),
                    const int offset,
                    const int stride) {
         // number of elements to take
@@ -238,23 +342,7 @@ EclipseKeyword <float>::EclipseKeyword (
                         type ()),
           ecl_kw_free) {
     const std::vector <double>& data = parser.getValue <double> (name);
-    copyData (data, &no_conversion, 0, 1);
-}
-
-/// Provide only the float version, since that is the one for which
-/// we need this conversion (we don't want it for int, for instance)
-template <>
-EclipseKeyword <float>::EclipseKeyword (
-        const std::vector<double>& data,
-        const std::string& name,
-        double (* const transf)(const double&),
-        const int offset,
-        const int stride)
-    // allocate handle and put in smart pointer base class
-    : EclipseHandle <ecl_kw_type> (
-          ecl_kw_alloc (name.c_str(), dataSize (data, offset, stride), type ()),
-          ecl_kw_free) {
-    copyData (data, transf, offset, stride);
+    copyData (data, &noConversion, 0, 1);
 }
 
 /**
@@ -369,39 +457,6 @@ private:
     }
 };
 
-// enclosure of the current grid in a Cartesian space
-int cart_size (const UnstructuredGrid& grid) {
-    const int nx = grid.cartdims[0];
-    const int ny = grid.cartdims[1];
-    const int nz = grid.cartdims[2];
-    return nx * ny * nz;
-}
-
-void active_cells (const UnstructuredGrid& grid,
-                   std::vector <int>& actnum) {
-    // we must fill the Cartesian grid with flags
-    const int size = cart_size (grid);
-
-    // if we don't have a global_cells field, then assume that all
-    // grid cells is active
-    if (!grid.global_cell) {
-        if (grid.number_of_cells != size) {
-            OPM_THROW (std::runtime_error,
-                       "No ACTNUM map but grid size != Cartesian size");
-        }
-        actnum.assign (size, 1);
-    }
-    else {
-        // start out with entire map being inactive
-        actnum.assign (size, 0);
-
-        // activate those cells that are actually there
-        for (int i = 0; i < grid.number_of_cells; ++i) {
-            actnum[grid.global_cell[i]] = 1;
-        }
-    }
-} // active_cells
-
 /**
  * Representation of an Eclipse grid.
  */
@@ -424,17 +479,21 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
         else if (parser.hasField("ZCORN")) {
             struct grdecl g = parser.get_grdecl ();
 
-            EclipseKeyword<float> coord_kw (COORD_KW,  parser);
-            EclipseKeyword<float> zcorn_kw (ZCORN_KW,  parser);
+            auto coordData = parser.getFloatingPointValue(COORD_KW);
+            auto zcornData = parser.getFloatingPointValue(ZCORN_KW);
+
+            EclipseKeyword<float> coord_kw (COORD_KW, coordData);
+            EclipseKeyword<float> zcorn_kw (ZCORN_KW, zcornData);
 
             // get the actually active cells, after processing
             std::vector <int> actnum;
-            active_cells (grid, actnum);
+            getActiveCells_(grid, actnum);
             EclipseKeyword<int> actnum_kw (ACTNUM_KW, actnum);
 
             EclipseKeyword<float> mapaxes_kw (MAPAXES_KW);
             if (g.mapaxes) {
-                mapaxes_kw = std::move (EclipseKeyword<float> (MAPAXES_KW, parser));
+                auto mapaxesData = parser.getFloatingPointValue(MAPAXES_KW);
+                mapaxes_kw = std::move (EclipseKeyword<float> (MAPAXES_KW, mapaxesData));
             }
 
             return EclipseGrid (g.dims, zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
@@ -541,13 +600,19 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
                                      timer.currentPosixTime());
     }
 
-    void writeKeyword (const std::string& keyword,
+    void writeKeyword (const std::string& keywordName,
                        const EclipseGridParser& parser,
                        double (* const transf)(const double&)) {
-        EclipseKeyword <float> kw (parser.getValue <double> (keyword),
-                                   keyword,
-                                   transf);
+        auto data = parser.getValue <double> (keywordName);
+        convertUnit_(data, transf);
+        EclipseKeyword <float> kw (keywordName, data);
         ecl_kw_fwrite (kw, *this);
+    }
+
+    void writeKeyword (const std::string& keywordName, const std::vector<double> &data)
+    {
+        EclipseKeyword <float> kw (keywordName, data);
+        ecl_kw_fwrite(kw, *this);
     }
 
     // GCC 4.4 doesn't generate these constructors for us; provide the
@@ -926,26 +991,6 @@ EclipseSummary::addWells (const EclipseGridParser& parser,
     }
 }
 
-namespace {
-
-/// Helper method that can be used in keyword transformation (must curry
-/// the barsa argument)
-static double toBar (const double& pressure) {
-    return Opm::unit::convert::to (pressure, Opm::unit::barsa);
-}
-
-/// Helper method that can be used in keyword transformation (must curry
-/// the milliDarcy argument)
-static double toMilliDarcy (const double& permeability) {
-    return Opm::unit::convert::to (permeability, Opm::prefix::milli * Opm::unit::darcy);
-}
-
-/// Names of the saturation property for each phase. The order of these
-/// names are critical; they must be the same as the BlackoilPhases enum
-static const char* SAT_NAMES[] = { "SWAT", "SOIL", "SGAS" };
-
-} // anonymous namespace
-
 namespace Opm {
 
 void EclipseWriter::writeInit(const SimulatorTimer &timer,
@@ -981,6 +1026,22 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
     summary_->addWells (*parser_, uses_);
 }
 
+void EclipseWriter::activeToGlobalCellData_(std::vector<double> &globalCellsBuf,
+                                            const std::vector<double> &activeCellsBuf,
+                                            const std::vector<double> &inactiveCellsBuf) const
+{
+    globalCellsBuf = inactiveCellsBuf;
+
+    // overwrite the values of active cells
+    for (int activeCellIdx = 0;
+         activeCellIdx < grid_->number_of_cells;
+         ++activeCellIdx)
+    {
+        int globalCellIdx = grid_->global_cell[activeCellIdx];
+        globalCellsBuf[globalCellIdx] = activeCellsBuf[activeCellIdx];
+    }
+}
+
 void EclipseWriter::writeSolution_(const SimulatorTimer& timer,
                                    const SimulatorState& reservoirState)
 {
@@ -999,7 +1060,9 @@ void EclipseWriter::writeSolution_(const SimulatorTimer& timer,
     // write pressure and saturation fields (same as DataMap holds)
     // convert the pressures from Pascals to bar because Eclipse
     // seems to write bars
-    sol.add(EclipseKeyword<float>(reservoirState.pressure(), "PRESSURE", &toBar));
+    auto data = reservoirState.pressure();
+    convertUnit_(data, toBar);
+    sol.add(EclipseKeyword<float>("PRESSURE", data));
 
     for (int phase = 0; phase != BlackoilPhases::MaxNumPhases; ++phase) {
         // Eclipse never writes the oil saturation, so all post-processors
@@ -1008,13 +1071,14 @@ void EclipseWriter::writeSolution_(const SimulatorTimer& timer,
             continue;
         }
         if (uses_.phase_used [phase]) {
-            sol.add (EclipseKeyword<float> (reservoirState.saturation(),
-                                            SAT_NAMES [phase],
-                                            &EclipseKeyword <float>::no_conversion,
-                                            uses_.phase_pos [phase],
-                                            uses_.num_phases));
+            auto tmp = reservoirState.saturation();
+            extractFromStripedData_(tmp,
+                                    /*offset=*/uses_.phase_pos[phase],
+                                    /*stride=*/uses_.num_phases);
+            sol.add (EclipseKeyword<float>(SAT_NAMES[phase], tmp));
         }
     }
+
 
     ++outputTimeStepIdx_;
 }
@@ -1053,7 +1117,6 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     // the last step.
     summary_->writeTimeStep(timer, wellState);
 }
-} // namespace Opm
 
 #else
 namespace Opm {
@@ -1087,11 +1150,7 @@ void EclipseWriter::writeTimeStep(
               "The ERT libraries are required to write ECLIPSE output files.");
 }
 
-} // namespace Opm
-
 #endif // HAVE_ERT
-
-namespace Opm {
 
 EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
