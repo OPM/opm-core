@@ -378,22 +378,24 @@ private:
 };
 
 // enclosure of the current grid in a Cartesian space
-int cart_size (const UnstructuredGrid& grid) {
-    const int nx = grid.cartdims[0];
-    const int ny = grid.cartdims[1];
-    const int nz = grid.cartdims[2];
+int cart_size (const int* cartdims) {
+    const int nx = cartdims[0];
+    const int ny = cartdims[1];
+    const int nz = cartdims[2];
     return nx * ny * nz;
 }
 
-void active_cells (const UnstructuredGrid& grid,
+void active_cells (int number_of_cells,
+                   const int* cartdims,
+                   const int* global_cell,
                    std::vector <int>& actnum) {
     // we must fill the Cartesian grid with flags
-    const int size = cart_size (grid);
+    const int size = cart_size (cartdims);
 
     // if we don't have a global_cells field, then assume that all
     // grid cells is active
-    if (!grid.global_cell) {
-        if (grid.number_of_cells != size) {
+    if (!global_cell) {
+        if (number_of_cells != size) {
             OPM_THROW (std::runtime_error,
                        "No ACTNUM map but grid size != Cartesian size");
         }
@@ -404,8 +406,8 @@ void active_cells (const UnstructuredGrid& grid,
         actnum.assign (size, 0);
 
         // activate those cells that are actually there
-        for (int i = 0; i < grid.number_of_cells; ++i) {
-            actnum[grid.global_cell[i]] = 1;
+        for (int i = 0; i < number_of_cells; ++i) {
+            actnum[global_cell[i]] = 1;
         }
     }
 } // active_cells
@@ -416,7 +418,9 @@ void active_cells (const UnstructuredGrid& grid,
 struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
     /// Create a grid based on the keywords available in input file
     static EclipseGrid make (const EclipseGridParser& parser,
-                             const UnstructuredGrid& grid) {
+                             int number_of_cells,
+                             const int* cart_dims,
+                             const int* global_cell) {
         if (parser.hasField("DXV")) {
             // make sure that the DYV and DZV keywords are present if the
             // DXV keyword is used in the deck...
@@ -437,7 +441,7 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
 
             // get the actually active cells, after processing
             std::vector <int> actnum;
-            active_cells (grid, actnum);
+            active_cells (number_of_cells, cart_dims, global_cell, actnum);
             EclipseKeyword<int> actnum_kw (ACTNUM_KW, actnum);
 
             EclipseKeyword<float> mapaxes_kw (MAPAXES_KW);
@@ -959,7 +963,8 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
                               const SimulatorState& reservoirState,
                               const WellState& wellState) {
     /* Grid files */
-    EclipseGrid ecl_grid = EclipseGrid::make (*parser_, *grid_);
+    EclipseGrid ecl_grid = EclipseGrid::make (*parser_, number_of_cells_,
+                                              cart_dims_, global_cell_);
     ecl_grid.write (outputDir_, baseName_, timer);
 
     EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, timer);
@@ -1059,15 +1064,37 @@ void EclipseWriter::writeTimeStep(
 }
 
 #endif // HAVE_ERT
-
 EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
         std::shared_ptr <const EclipseGridParser> parser,
         std::shared_ptr <const UnstructuredGrid> grid)
     : parser_ (parser)
-    , grid_ (grid)
+    , number_of_cells_(grid->number_of_cells)
+    , dimensions_(grid->dimensions)
+    , cart_dims_(grid->cartdims)
+    , global_cell_(grid->global_cell)
     , uses_ (phaseUsageFromDeck (*parser)) {
+    
+    init(params);
+}
 
+EclipseWriter::EclipseWriter (
+        const ParameterGroup& params,
+        std::shared_ptr <const EclipseGridParser> parser,
+        int number_of_cells, const int* global_cell, const int* cart_dims,
+        int dimensions)
+    : parser_ (parser)
+    , number_of_cells_(number_of_cells)
+    , dimensions_(dimensions)
+    , cart_dims_(cart_dims)
+    , global_cell_(global_cell)
+    , uses_ (phaseUsageFromDeck (*parser)) {
+    
+    init(params);
+}
+
+void EclipseWriter::init(const ParameterGroup& params)
+{
     // get the base name from the name of the deck
     using boost::filesystem::path;
     path deck (params.get <std::string> ("deck_filename"));

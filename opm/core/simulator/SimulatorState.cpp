@@ -41,12 +41,17 @@ SimulatorState::vectorApproxEqual(const std::vector<double>& v1,
 void
 SimulatorState::init(const UnstructuredGrid& g, int num_phases)
 {
+    init(g.number_of_cells, g.number_of_faces, num_phases);
+}
+void
+SimulatorState::init(int number_of_cells, int number_of_faces, int num_phases)
+{
     num_phases_ = num_phases;
-    press_.resize(g.number_of_cells, 0.0);
-    fpress_.resize(g.number_of_faces, 0.0);
-    flux_.resize(g.number_of_faces, 0.0);
-    sat_.resize(num_phases_ * g.number_of_cells, 0.0);
-    for (int cell = 0; cell < g.number_of_cells; ++cell) {
+    press_.resize(number_of_cells, 0.0);
+    fpress_.resize(number_of_faces, 0.0);
+    flux_.resize(number_of_faces, 0.0);
+    sat_.resize(num_phases_ * number_of_cells, 0.0);
+    for (int cell = 0; cell < number_of_cells; ++cell) {
         // Defaulting the second saturation to 1.0.
         // This will usually be oil in a water-oil case,
         // gas in an oil-gas case.

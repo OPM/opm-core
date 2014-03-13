@@ -60,6 +60,11 @@ public:
                   std::shared_ptr <const EclipseGridParser> parser,
                   std::shared_ptr <const UnstructuredGrid> grid);
 
+    EclipseWriter (const parameter::ParameterGroup& params,
+                   std::shared_ptr <const EclipseGridParser> parser,
+                   int number_of_cells, const int* global_cell, const int* cart_dims,
+                   int dimension);
+
     /**
      * We need a destructor in the compilation unit to avoid the
      * EclipseSummary being a complete type here.
@@ -87,7 +92,10 @@ public:
 
 private:
     std::shared_ptr <const EclipseGridParser> parser_;
-    std::shared_ptr <const UnstructuredGrid> grid_;
+    int number_of_cells_;
+    int dimensions_;
+    const int* cart_dims_;
+    const int* global_cell_;
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck
@@ -97,6 +105,8 @@ private:
     void writeSolution (const SimulatorTimer& timer,
                         const SimulatorState& reservoirState,
                         const WellState& wellState);
+
+    void init(const parameter::ParameterGroup& params);
 };
 } // namespace Opm
 
