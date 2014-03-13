@@ -24,6 +24,8 @@
 #include <opm/core/io/OutputWriter.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 
+#include <opm/parser/eclipse/Deck/Deck.hpp>
+
 #include <string>
 #include <vector>
 #include <memory>  // std::unique_ptr
@@ -61,6 +63,14 @@ public:
                   std::shared_ptr <const EclipseGridParser> parser,
                   std::shared_ptr <const UnstructuredGrid> grid);
 
+    /*!
+     * \brief Sets the common attributes required to write eclipse
+     *        binary files using ERT.
+     */
+    EclipseWriter(const parameter::ParameterGroup& params,
+                  Opm::DeckConstPtr newParserDeck,
+                  std::shared_ptr <const UnstructuredGrid> grid);
+
     /**
      * We need a destructor in the compilation unit to avoid the
      * EclipseSummary being a complete type here.
@@ -88,6 +98,7 @@ public:
 
 private:
     std::shared_ptr <const EclipseGridParser> parser_;
+    Opm::DeckConstPtr newParserDeck_;
     std::shared_ptr <const UnstructuredGrid> grid_;
     bool enableOutput_;
     int outputInterval_;
