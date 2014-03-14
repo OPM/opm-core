@@ -88,15 +88,17 @@ public:
 private:
     std::shared_ptr <const EclipseGridParser> parser_;
     std::shared_ptr <const UnstructuredGrid> grid_;
+    bool enableOutput_;
+    int outputInterval_;
+    int outputTimeStepIdx_;
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck
     std::shared_ptr <EclipseSummary> summary_;
 
     /// Write solution field variables (pressure and saturation)
-    void writeSolution (const SimulatorTimer& timer,
-                        const SimulatorState& reservoirState,
-                        const WellState& wellState);
+    void writeSolution_(const SimulatorTimer& timer,
+                        const SimulatorState& reservoirState);
 };
 } // namespace Opm
 

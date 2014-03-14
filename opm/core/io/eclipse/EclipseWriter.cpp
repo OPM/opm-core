@@ -1,5 +1,5 @@
- /*
-  Copyright (c) 2013 Andreas Lauser
+/*
+  Copyright (c) 2013-2014 Andreas Lauser
   Copyright (c) 2013 SINTEF ICT, Applied Mathematics.
   Copyright (c) 2013 Uni Research AS
 
@@ -18,9 +18,7 @@
   You should have received a copy of the GNU General Public License
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
  */
-#if HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
 
 #include "EclipseWriter.hpp"
 
@@ -260,21 +258,13 @@ EclipseKeyword <float>::EclipseKeyword (
 }
 
 /**
- * Extract the current time from a timer object into the C type used by ERT.
- */
-static time_t current (const SimulatorTimer& timer) {
-    tm t = boost::posix_time::to_tm (timer.currentDateTime());
-    return std::mktime(&t);
-}
-
-/**
  * Pointer to memory that holds the name to an Eclipse output file.
  */
 struct EclipseFileName : public EclipseHandle <const char> {
     EclipseFileName (const std::string& outputDir,
                      const std::string& baseName,
                      ecl_file_enum type,
-                     const SimulatorTimer& timer)
+                     int outputStepIdx)
 
         // filename formatting function returns a pointer to allocated
         // memory that must be released with the free() function
@@ -283,7 +273,7 @@ struct EclipseFileName : public EclipseHandle <const char> {
                                        baseName.c_str(),
                                        type,
                                        false, // formatted?
-                                       timer.currentStepNum ()),
+                                       outputStepIdx),
               freestr) { }
 private:
     /// Facade which allows us to free a const char*
@@ -325,7 +315,8 @@ static int phaseMask (const PhaseUsage uses) {
 struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
     EclipseRestart (const std::string& outputDir,
                     const std::string& baseName,
-                    const SimulatorTimer& timer)
+                    const SimulatorTimer& timer,
+                    int outputStepIdx)
         // notice the poor man's polymorphism of the allocation function
         : EclipseHandle <ecl_rst_file_type> (
               (timer.currentStepNum () > 0 ? ecl_rst_file_open_append
@@ -333,18 +324,19 @@ struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
                   EclipseFileName (outputDir,
                                    baseName,
                                    ECL_UNIFIED_RESTART_FILE,
-                                   timer)),
+                                   outputStepIdx)),
               ecl_rst_file_close) { }
 
     void writeHeader (const SimulatorTimer& timer,
+                      int outputStepIdx,
                       const PhaseUsage uses,
                       const EclipseGridParser parser,
                       const int num_active_cells) {
         const std::vector <int> dim = parserDim (parser);
         ecl_rst_file_fwrite_header (*this,
-                                    timer.currentStepNum (),
-                                    current (timer),
-                                    Opm::unit::convert::to (timer.currentTime (),
+                                    outputStepIdx,
+                                    timer.currentPosixTime(),
+                                    Opm::unit::convert::to (timer.simulationTimeElapsed (),
                                                             Opm::unit::day),
                                     dim[0],
                                     dim[1],
@@ -458,12 +450,12 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
      */
     void write (const std::string& outputDir,
                 const std::string& baseName,
-                const SimulatorTimer& timer) {
+                int outputStepIdx) {
         ecl_grid_fwrite_EGRID (*this,
                                EclipseFileName (outputDir,
                                                 baseName,
                                                 ECL_EGRID_FILE,
-                                                timer));
+                                                outputStepIdx));
     }
 
     // GCC 4.4 doesn't generate these constructors for us; provide the
@@ -500,7 +492,7 @@ private:
     EclipseGrid (const int dims[],
                  const EclipseKeyword<float>& zcorn,
                  const EclipseKeyword<float>& coord,
-                 const EclipseKeyword<int>&    actnum,
+                 const EclipseKeyword<int>& actnum,
                  const EclipseKeyword<float>& mapaxes)
         : EclipseHandle <ecl_grid_type> (
               ecl_grid_alloc_GRDECL_kw(dims[0],
@@ -524,11 +516,11 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
     // constructor, so we'll have to do with a static wrapper)
     static EclipseInit make (const std::string& outputDir,
                              const std::string& baseName,
-                             const SimulatorTimer& timer) {
+                             int outputStepIdx) {
         EclipseFileName initFileName (outputDir,
                                       baseName,
                                       ECL_INIT_FILE,
-                                      timer);
+                                      outputStepIdx);
         bool fmt_file;
         if (!ecl_util_fmt_file(initFileName, &fmt_file)) {
             OPM_THROW(std::runtime_error,
@@ -538,15 +530,15 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
     }
 
     void writeHeader (const EclipseGrid& grid,
-                       const SimulatorTimer& timer,
-                       const EclipseGridParser& parser,
-                       const PhaseUsage uses) {
+                      const SimulatorTimer& timer,
+                      const EclipseGridParser& parser,
+                      const PhaseUsage uses) {
         EclipseKeyword<float> poro (PORO_KW, parser);
         ecl_init_file_fwrite_header (*this,
                                      grid,
                                      poro,
                                      phaseMask (uses),
-                                     current (timer));
+                                     timer.currentPosixTime());
     }
 
     void writeKeyword (const std::string& keyword,
@@ -639,8 +631,7 @@ private:
         EclipseTimeStep* tstep = new EclipseTimeStep (
                     ecl_sum_add_tstep (*this,
                                        timer.currentStepNum (),
-                                       // currentTime is always relative to start
-                                       Opm::unit::convert::to (timer.currentTime (),
+                                       Opm::unit::convert::to (timer.simulationTimeElapsed (),
                                                                Opm::unit::day)));
         return std::unique_ptr <EclipseTimeStep> (tstep);
     }
@@ -660,7 +651,7 @@ private:
                                      false, /* formatted   */
                                      true,  /* unified     */
                                      ":",    /* join string */
-                                     current (timer),
+                                     timer.simulationTimeElapsed (),
                                      dim[0],
                                      dim[1],
                                      dim[2]);
@@ -857,7 +848,8 @@ struct EclipseWellBhp : public EclipseWellReport {
 
 inline void
 EclipseSummary::writeTimeStep (const SimulatorTimer& timer,
-                               const WellState& wellState) {
+                               const WellState& wellState)
+{
     // internal view; do not move this code out of EclipseSummary!
     std::unique_ptr <EclipseTimeStep> tstep = makeTimeStep (timer);
     // write all the variables
@@ -873,7 +865,8 @@ static WellType WELL_TYPES[] = { INJECTOR, PRODUCER };
 
 inline void
 EclipseSummary::addWells (const EclipseGridParser& parser,
-                          const PhaseUsage& uses) {
+                          const PhaseUsage& uses)
+{
     // TODO: Only create report variables that are requested with keywords
     // (e.g. "WOPR") in the input files, and only for those wells that are
     // mentioned in those keywords
@@ -957,12 +950,19 @@ namespace Opm {
 
 void EclipseWriter::writeInit(const SimulatorTimer &timer,
                               const SimulatorState& reservoirState,
-                              const WellState& wellState) {
+                              const WellState& wellState)
+{
+    // if we don't want to write anything, this method becomes a
+    // no-op...
+    if (!enableOutput_) {
+        return;
+    }
+
     /* Grid files */
     EclipseGrid ecl_grid = EclipseGrid::make (*parser_, *grid_);
-    ecl_grid.write (outputDir_, baseName_, timer);
+    ecl_grid.write (outputDir_, baseName_, /*stepIdx=*/0);
 
-    EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, timer);
+    EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, /*stepIdx=*/0);
     fortio.writeHeader (ecl_grid,
                         timer,
                         *parser_,
@@ -973,7 +973,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
     fortio.writeKeyword ("PERMZ", *parser_, &toMilliDarcy);
 
     /* Initial solution (pressure and saturation) */
-    writeSolution (timer, reservoirState, wellState);
+    writeSolution_(timer, reservoirState);
 
     /* Create summary object (could not do it at construction time,
        since it requires knowledge of the start time). */
@@ -981,14 +981,16 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
     summary_->addWells (*parser_, uses_);
 }
 
-void EclipseWriter::writeSolution (const SimulatorTimer& timer,
-                                   const SimulatorState& reservoirState,
-                                   const WellState& /*wellState*/) {
+void EclipseWriter::writeSolution_(const SimulatorTimer& timer,
+                                   const SimulatorState& reservoirState)
+{
     // start writing to files
     EclipseRestart rst (outputDir_,
                         baseName_,
-                        timer);
+                        timer,
+                        outputTimeStepIdx_);
     rst.writeHeader (timer,
+                     outputTimeStepIdx_,
                      uses_,
                      *parser_,
                      reservoirState.pressure ().size ());
@@ -997,9 +999,7 @@ void EclipseWriter::writeSolution (const SimulatorTimer& timer,
     // write pressure and saturation fields (same as DataMap holds)
     // convert the pressures from Pascals to bar because Eclipse
     // seems to write bars
-    sol.add (EclipseKeyword<float> (reservoirState.pressure (),
-                                    "PRESSURE",
-                                    &toBar));
+    sol.add(EclipseKeyword<float>(reservoirState.pressure(), "PRESSURE", &toBar));
 
     for (int phase = 0; phase != BlackoilPhases::MaxNumPhases; ++phase) {
         // Eclipse never writes the oil saturation, so all post-processors
@@ -1015,13 +1015,27 @@ void EclipseWriter::writeSolution (const SimulatorTimer& timer,
                                             uses_.num_phases));
         }
     }
+
+    ++outputTimeStepIdx_;
 }
 
 void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
                                   const SimulatorState& reservoirState,
-                                  const WellState& wellState) {
+                                  const WellState& wellState)
+{
+    // if we don't want to write anything, this method becomes a
+    // no-op...
+    if (!enableOutput_) {
+        return;
+    }
+
+    // respected the output_interval parameter
+    if (timer.currentStepNum() % outputInterval_ != 0) {
+        return;
+    }
+
     /* Field variables (pressure, saturation) */
-    writeSolution (timer, reservoirState, wellState);
+    writeSolution_(timer, reservoirState);
 
     /* Summary variables (well reporting) */
     // TODO: instead of writing the header (smspec) every time, it should
@@ -1037,15 +1051,23 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     // called.  This has been changed so that the final summary file
     // will contain data from the whole simulation, instead of just
     // the last step.
-    summary_->writeTimeStep (timer, wellState);
+    summary_->writeTimeStep(timer, wellState);
 }
+} // namespace Opm
 
 #else
 namespace Opm {
 
 void EclipseWriter::writeInit(const SimulatorTimer&,
                               const SimulatorState&,
-                              const WellState&) {
+                              const WellState&)
+ {
+    // if we don't want to write anything, this method becomes a
+    // no-op...
+     if (!enableOutput_) {
+        return;
+     }
+
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");
 }
@@ -1053,12 +1075,23 @@ void EclipseWriter::writeInit(const SimulatorTimer&,
 void EclipseWriter::writeTimeStep(
         const SimulatorTimer&,
         const SimulatorState&,
-        const WellState&) {
+        const WellState&)
+{
+    // if we don't want to write anything, this method becomes a
+    // no-op...
+    if (!enableOutput_) {
+        return;
+    }
+
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");
 }
 
+} // namespace Opm
+
 #endif // HAVE_ERT
+
+namespace Opm {
 
 EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
@@ -1066,7 +1099,11 @@ EclipseWriter::EclipseWriter (
         std::shared_ptr <const UnstructuredGrid> grid)
     : parser_ (parser)
     , grid_ (grid)
-    , uses_ (phaseUsageFromDeck (*parser)) {
+    , uses_ (phaseUsageFromDeck (*parser))
+{
+    // set the index of the first time step written to 0...
+    outputTimeStepIdx_ = 0;
+
 
     // get the base name from the name of the deck
     using boost::filesystem::path;
@@ -1082,14 +1119,31 @@ EclipseWriter::EclipseWriter (
     // of some of the files (.SMSPEC, .UNSMRY) and not others
     baseName_ = boost::to_upper_copy (baseName_);
 
+    // retrieve the value of the "output" parameter
+    enableOutput_ = params.getDefault<bool>("output", /*defaultValue=*/true);
+
+    // retrieve the interval at which something should get written to
+    // disk (once every N timesteps)
+    outputInterval_ = params.getDefault<int>("output_interval", /*defaultValue=*/1);
+
     // store in current directory if not explicitly set
-    if (params.has ("output_dir")) {
-        outputDir_ = params.get <std::string> ("output_dir");
-    }
-    else {
-        // this is needed to prevent file names like "/FOO.INIT" which
-        // lead to segfaults
-        outputDir_ = ".";
+    outputDir_ = params.getDefault<std::string>("output_dir", ".");
+
+    // set the index of the first time step written to 0...
+    outputTimeStepIdx_ = 0;
+
+    if (enableOutput_) {
+        // make sure that the output directory exists, if not try to create it
+        if (!boost::filesystem::exists(outputDir_)) {
+            std::cout << "Trying to create directory \"" << outputDir_ << "\" for the simulation output\n";
+            boost::filesystem::create_directories(outputDir_);
+        }
+
+        if (!boost::filesystem::is_directory(outputDir_)) {
+            OPM_THROW(std::runtime_error,
+                      "The path specified as output directory '" << outputDir_
+                      << "' is not a directory");
+        }
     }
 }
 
