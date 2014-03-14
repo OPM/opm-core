@@ -126,6 +126,7 @@ namespace EclipseKeywords
           string("EQUIL"),    string("PVCDO"),    string("TSTEP"),
           string("PLYVISC"),  string("PLYROCK"),  string("PLYADS"),
           string("PLYMAX"),   string("TLMIXPAR"), string("WPOLYMER"),
+          string("PLYSHEAR"),
           string("GRUPTREE"), string("GCONINJE"), string("GCONPROD"),
           string("WGRUPCON"), string("ENDSCALE"),  string("SCALECRS"),
           string("ENPTVD"),   string("ENKRVD"),
