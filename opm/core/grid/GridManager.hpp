@@ -44,10 +44,10 @@ namespace Opm
     {
     public:
         /// Construct a 3d corner-point grid or tensor grid from a deck.
-        GridManager(const Opm::EclipseGridParser& deck);
+        explicit GridManager(const Opm::EclipseGridParser& deck);
 
         /// Construct a 3d corner-point grid or tensor grid from a deck.
-        GridManager(Opm::DeckConstPtr newParserDeck);
+        explicit GridManager(Opm::DeckConstPtr newParserDeck);
 
         /// Construct a 2d cartesian grid with cells of unit size.
         GridManager(int nx, int ny);
@@ -65,7 +65,7 @@ namespace Opm
         /// Construct a grid from an input file.
         /// The file format used is currently undocumented,
         /// and is therefore only suited for internal use.
-        GridManager(const std::string& input_filename);
+        explicit GridManager(const std::string& input_filename);
 
         /// Destructor.
         ~GridManager();
