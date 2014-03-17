@@ -72,7 +72,7 @@ SimulatorOutputBase::operator std::function <void ()> () {
 
 void
 SimulatorOutputBase::writeOutput () {
-    const int this_time = timer_->currentTime ();
+    const int this_time = timer_->simulationTimeElapsed ();
 
     // if the simulator signals for timesteps that aren't reporting
     // times, then ignore them
