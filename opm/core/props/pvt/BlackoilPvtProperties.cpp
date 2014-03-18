@@ -125,16 +125,17 @@ namespace Opm
         // Surface densities. Accounting for different orders in eclipse and our code.
         if (newParserDeck->hasKeyword("DENSITY")) {
             Opm::DeckKeywordConstPtr densityKeyword = newParserDeck->getKeyword("DENSITY");
-            const std::vector<double>& d = densityKeyword->getRecord(region_number_)->getItem(0)->getSIDoubleData();
-            enum { ECL_oil = 0, ECL_water = 1, ECL_gas = 2 };
+            if (phase_usage_.phase_used[Liquid]) {
+                densities_[phase_usage_.phase_pos[Liquid]]
+                    = densityKeyword->getRecord(region_number_)->getItem("OIL")->getSIDouble(0);
+            }
             if (phase_usage_.phase_used[Aqua]) {
-                densities_[phase_usage_.phase_pos[Aqua]]   = d[ECL_water];
+                densities_[phase_usage_.phase_pos[Aqua]]
+                    = densityKeyword->getRecord(region_number_)->getItem("WATER")->getSIDouble(0);
             }
             if (phase_usage_.phase_used[Vapour]) {
-                densities_[phase_usage_.phase_pos[Vapour]] = d[ECL_gas];
-            }
-            if (phase_usage_.phase_used[Liquid]) {
-                densities_[phase_usage_.phase_pos[Liquid]] = d[ECL_oil];
+                densities_[phase_usage_.phase_pos[Vapour]]
+                    = densityKeyword->getRecord(region_number_)->getItem("GAS")->getSIDouble(0);
             }
         } else {
             OPM_THROW(std::runtime_error, "Input is missing DENSITY\n");
