@@ -162,6 +162,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_wachspresscoord.cpp
 	tests/test_column_extract.cpp
 	tests/test_geom2d.cpp
+	tests/test_linearsolver.cpp
 	tests/test_param.cpp
 	tests/test_blackoilfluid.cpp
 	tests/test_shadow.cpp
