@@ -3,9 +3,6 @@
 
 # defines that must be present in config.h for our headers
 set (opm-core_CONFIG_VAR
-  DUNE_ISTL_VERSION_MAJOR
-  DUNE_ISTL_VERSION_MINOR
-  DUNE_ISTL_VERSION_REVISION
 	HAVE_ERT
 	HAVE_SUITESPARSE_UMFPACK_H
 	)
