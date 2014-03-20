@@ -1405,7 +1405,6 @@ void EclipseWriter::writeSolution_(const SimulatorTimer& timer,
         // thinkable, but this is also not in the most performance
         // critical code path!
         std::vector<double> tmp = reservoirState.pressure();
-        restrictToActiveCells_(tmp, *grid_);
         convertUnit_(tmp, toBar);
 
         sol.add(EclipseKeyword<float>("PRESSURE", tmp));
