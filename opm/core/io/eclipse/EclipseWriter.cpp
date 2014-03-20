@@ -1538,7 +1538,7 @@ EclipseWriter::EclipseWriter (
         std::shared_ptr <const EclipseGridParser> parser,
         std::shared_ptr <const UnstructuredGrid> grid)
     : parser_ (parser)
-    , newParserDeck_(0)
+    , newParserDeck_()
     , grid_ (grid)
     , uses_ (phaseUsageFromDeck (*parser))
 {
@@ -1592,7 +1592,7 @@ EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
         Opm::DeckConstPtr newParserDeck,
         std::shared_ptr <const UnstructuredGrid> grid)
-    : parser_ (0)
+    : parser_ ()
     , newParserDeck_(newParserDeck)
     , grid_ (grid)
     , uses_ (phaseUsageFromDeck (newParserDeck))
