@@ -74,6 +74,12 @@ macro (sources_hook)
 			)
 	endif (NOT SuiteSparse_FOUND)
 
+	if (NOT MPI_FOUND OR NOT DUNE_ISTL_FOUND)
+		list (REMOVE_ITEM TEST_SOURCE_FILES
+			tests/test_parallel_linearsolver.cpp
+			)
+	endif (NOT MPI_FOUND OR NOT DUNE_ISTL_FOUND)
+
 	# we are not supposed to include the TinyXML test prog. regardless
 	list (REMOVE_ITEM opm-core_SOURCES
 		${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/utility/parameters/tinyxml/xmltest.cpp
@@ -118,3 +124,6 @@ endmacro (install_hook)
 
 # all setup common to the OPM library modules is done here
 include (OpmLibMain)
+
+
+message("MPI_FOUND=${MPI_FOUND} DUNE_ISTL_FOUND=${DUNE_ISTL_FOUND}")
