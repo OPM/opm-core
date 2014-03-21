@@ -1535,7 +1535,7 @@ void EclipseWriter::writeTimeStep(
 
 EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
-        std::shared_ptr <const EclipseGridParser> parser,
+        std::shared_ptr <EclipseGridParser> parser,
         std::shared_ptr <const UnstructuredGrid> grid)
     : parser_ (parser)
     , newParserDeck_()
