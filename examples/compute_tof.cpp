@@ -47,6 +47,9 @@
 #include <opm/core/tof/TofReorder.hpp>
 #include <opm/core/tof/TofDiscGalReorder.hpp>
 
+#include <opm/parser/eclipse/Parser/Parser.hpp>
+#include <opm/parser/eclipse/EclipseState/Schedule/Schedule.hpp>
+
 #include <memory>
 #include <boost/filesystem.hpp>
 
@@ -111,13 +114,16 @@ try
     double gravity[3] = { 0.0 };
     if (use_deck) {
         std::string deck_filename = param.get<std::string>("deck_filename");
+        Opm::ParserPtr parser(new Opm::Parser());
+        Opm::EclipseStateConstPtr eclipseState(new Opm::EclipseState(parser->parseFile(deck_filename)));
+
         deck.reset(new EclipseGridParser(deck_filename));
         // Grid init
         grid.reset(new GridManager(*deck));
         // Rock and fluid init
         props.reset(new IncompPropertiesFromDeck(*deck, *grid->c_grid()));
         // Wells init.
-        wells.reset(new Opm::WellsManager(*deck, *grid->c_grid(), props->permeability()));
+        wells.reset(new Opm::WellsManager(eclipseState , 0 , *grid->c_grid(), props->permeability()));
         // Gravity.
         gravity[2] = deck->hasField("NOGRAV") ? 0.0 : unit::gravity;
         // Init state variables (saturation and pressure).
