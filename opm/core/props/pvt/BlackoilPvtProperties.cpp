@@ -32,6 +32,9 @@
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/linearInterpolation.hpp>
 
+#include <opm/parser/eclipse/Utility/PvtwTable.hpp>
+#include <opm/parser/eclipse/Utility/PvdcoTable.hpp>
+#include <opm/parser/eclipse/Deck/Deck.hpp>
 
 namespace Opm
 {
@@ -39,7 +42,6 @@ namespace Opm
     BlackoilPvtProperties::BlackoilPvtProperties()
     {
     }
-
 
     void BlackoilPvtProperties::init(const EclipseGridParser& deck, const int samples)
     {
@@ -102,6 +104,90 @@ namespace Opm
                 }
             } else if (deck.hasField("PVTG")) {
                 props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(deck.getPVTG().pvtg_));
+            } else {
+                OPM_THROW(std::runtime_error, "Input is missing PVDG or PVTG\n");
+            }
+        }
+
+        // Must inform pvt property objects of phase structure.
+        for (int i = 0; i < phase_usage_.num_phases; ++i) {
+            props_[i]->setPhaseConfiguration(phase_usage_.num_phases, phase_usage_.phase_pos);
+        }
+    }
+
+    void BlackoilPvtProperties::init(Opm::DeckConstPtr newParserDeck, int samples)
+    {
+        // If we need multiple regions, this class and the SinglePvt* classes must change.
+        region_number_ = 0;
+
+        phase_usage_ = phaseUsageFromDeck(newParserDeck);
+
+        // Surface densities. Accounting for different orders in eclipse and our code.
+        if (newParserDeck->hasKeyword("DENSITY")) {
+            Opm::DeckKeywordConstPtr densityKeyword = newParserDeck->getKeyword("DENSITY");
+            if (phase_usage_.phase_used[Liquid]) {
+                densities_[phase_usage_.phase_pos[Liquid]]
+                    = densityKeyword->getRecord(region_number_)->getItem("OIL")->getSIDouble(0);
+            }
+            if (phase_usage_.phase_used[Aqua]) {
+                densities_[phase_usage_.phase_pos[Aqua]]
+                    = densityKeyword->getRecord(region_number_)->getItem("WATER")->getSIDouble(0);
+            }
+            if (phase_usage_.phase_used[Vapour]) {
+                densities_[phase_usage_.phase_pos[Vapour]]
+                    = densityKeyword->getRecord(region_number_)->getItem("GAS")->getSIDouble(0);
+            }
+        } else {
+            OPM_THROW(std::runtime_error, "Input is missing DENSITY\n");
+        }
+
+        // Set the properties.
+        props_.resize(phase_usage_.num_phases);
+        // Water PVT
+        if (phase_usage_.phase_used[Aqua]) {
+            if (newParserDeck->hasKeyword("PVTW")) {
+                Opm::PvtwTable pvtwTable(newParserDeck->getKeyword("PVTW"));
+
+                props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(pvtwTable));
+            } else {
+                // Eclipse 100 default.
+                props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(0.5*Opm::prefix::centi*Opm::unit::Poise));
+            }
+        }
+        // Oil PVT
+        if (phase_usage_.phase_used[Liquid]) {
+            if (newParserDeck->hasKeyword("PVDO")) {
+                Opm::PvdoTable pvdoTable(newParserDeck->getKeyword("PVDO"), region_number_);
+                if (samples > 0) {
+                    props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDeadSpline(pvdoTable, samples));
+                } else {
+                    props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDead(pvdoTable));
+                }
+            } else if (newParserDeck->hasKeyword("PVTO")) {
+                Opm::PvtoTable pvtoTable(newParserDeck->getKeyword("PVTO"), /*tableIdx=*/0);
+
+                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtLiveOil(pvtoTable));
+            } else if (newParserDeck->hasKeyword("PVCDO")) {
+                Opm::PvdcoTable pvcdoTable(newParserDeck->getKeyword("PVCDO"));
+
+                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtConstCompr(pvcdoTable));
+            } else {
+                OPM_THROW(std::runtime_error, "Input is missing PVDO or PVTO\n");
+            }
+        }
+        // Gas PVT
+        if (phase_usage_.phase_used[Vapour]) {
+            if (newParserDeck->hasKeyword("PVDG")) {
+                Opm::PvdgTable pvdgTable(newParserDeck->getKeyword("PVDG"), region_number_);
+                if (samples > 0) {
+                    props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDeadSpline(pvdgTable, samples));
+                } else {
+                    props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDead(pvdgTable));
+                }
+            } else if (newParserDeck->hasKeyword("PVTG")) {
+                Opm::PvtgTable pvtgTable(newParserDeck->getKeyword("PVTG"), /*tableIdx=*/0);
+
+                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(pvtgTable));
             } else {
                 OPM_THROW(std::runtime_error, "Input is missing PVDG or PVTG\n");
             }

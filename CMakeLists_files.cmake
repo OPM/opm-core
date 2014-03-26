@@ -162,15 +162,19 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_wachspresscoord.cpp
 	tests/test_column_extract.cpp
 	tests/test_geom2d.cpp
+	tests/test_linearsolver.cpp
 	tests/test_param.cpp
 	tests/test_blackoilfluid.cpp
 	tests/test_shadow.cpp
-        tests/test_units.cpp
-        tests/test_blackoilstate.cpp
-        tests/test_wellsmanager.cpp
-        tests/test_wellcontrols.cpp
 	tests/test_equil.cpp
 	tests/test_regionmapping.cpp
+	tests/test_units.cpp
+	tests/test_blackoilstate.cpp
+	tests/test_parser.cpp
+	tests/test_wellsmanager.cpp
+	tests/test_wellcontrols.cpp
+	tests/test_wellsgroup.cpp
+	tests/test_wellcollection.cpp
   )
 
 # originally generated with the command:
@@ -179,14 +183,17 @@ list (APPEND TEST_DATA_FILES
 	tests/extratestdata.xml
 	tests/testdata.xml
 	tests/liveoil.DATA
-  tests/wetgas.DATA
-  tests/testBlackoilState1.DATA
-  tests/testBlackoilState2.DATA
-  tests/wells_manager_data.data
 	tests/capillary.DATA
 	tests/capillary_overlap.DATA
 	tests/deadfluids.DATA
 	tests/equil_liveoil.DATA
+	tests/wetgas.DATA
+	tests/testBlackoilState1.DATA
+	tests/testBlackoilState2.DATA
+	tests/wells_manager_data.data
+	tests/wells_manager_data_expanded.data
+	tests/wells_manager_data_wellSTOP.data
+	tests/wells_group.data
 	)
 
 # originally generated with the command:

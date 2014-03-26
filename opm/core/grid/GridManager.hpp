@@ -20,10 +20,12 @@
 #ifndef OPM_GRIDMANAGER_HEADER_INCLUDED
 #define OPM_GRIDMANAGER_HEADER_INCLUDED
 
+#include <opm/parser/eclipse/Deck/Deck.hpp>
+
 #include <string>
 
 struct UnstructuredGrid;
-
+struct grdecl;
 
 namespace Opm
 {
@@ -42,7 +44,10 @@ namespace Opm
     {
     public:
         /// Construct a 3d corner-point grid or tensor grid from a deck.
-        GridManager(const Opm::EclipseGridParser& deck);
+        explicit GridManager(const Opm::EclipseGridParser& deck);
+
+        /// Construct a 3d corner-point grid or tensor grid from a deck.
+        explicit GridManager(Opm::DeckConstPtr newParserDeck);
 
         /// Construct a 2d cartesian grid with cells of unit size.
         GridManager(int nx, int ny);
@@ -60,7 +65,7 @@ namespace Opm
         /// Construct a grid from an input file.
         /// The file format used is currently undocumented,
         /// and is therefore only suited for internal use.
-        GridManager(const std::string& input_filename);
+        explicit GridManager(const std::string& input_filename);
 
         /// Destructor.
         ~GridManager();
@@ -72,6 +77,8 @@ namespace Opm
         /// to make it clear that we are returning a C-compatible struct.
         const UnstructuredGrid* c_grid() const;
 
+        static void createGrdecl(Opm::DeckConstPtr newParserDeck, struct grdecl &grdecl);
+
     private:
         // Disable copying and assignment.
         GridManager(const GridManager& other);
@@ -79,8 +86,10 @@ namespace Opm
 
         // Construct corner-point grid from deck.
         void initFromDeckCornerpoint(const Opm::EclipseGridParser& deck);
+        void initFromDeckCornerpoint(Opm::DeckConstPtr newParserDeck);
         // Construct tensor grid from deck.
         void initFromDeckTensorgrid(const Opm::EclipseGridParser& deck);
+        void initFromDeckTensorgrid(Opm::DeckConstPtr newParserDeck);
 
         // The managed UnstructuredGrid.
         UnstructuredGrid* ug_;

@@ -20,6 +20,8 @@
 #ifndef OPM_SIMULATORTIMER_HEADER_INCLUDED
 #define OPM_SIMULATORTIMER_HEADER_INCLUDED
 
+#include <opm/parser/eclipse/EclipseState/Schedule/TimeMap.hpp>
+
 #include <iosfwd>
 #include <vector>
 #include <boost/date_time/gregorian/gregorian.hpp>
@@ -47,8 +49,19 @@ namespace Opm
         /// Note that DATES are folded into TSTEP by the parser.
         void init(const EclipseGridParser& deck);
 
+        /// Use the SimulatorTimer as a shim around opm-parser's Opm::TimeMap
+        void init(TimeMapConstPtr timeMap,
+                  size_t beginReportStepIdx = 0,
+                  size_t endReportStepIdx = std::numeric_limits<size_t>::max());
+
         /// Total number of steps.
         int numSteps() const;
+
+        /// Index of the first report step considered
+        size_t beginReportStepIndex() const;
+
+        /// Index of the next-after-last report step to be considered
+        size_t endReportStepIndex() const;
 
         /// Current step number. This is the number of timesteps that
         /// has been completed from the start of the run. The time
@@ -73,8 +86,13 @@ namespace Opm
         /// it is an error to call stepLengthTaken().
         double stepLengthTaken () const;
 
-        /// Current time.
-        double currentTime() const;
+        /// Time elapsed since the start of the POSIX epoch (Jan 1st,
+        /// 1970) until the current time step begins [s].
+        time_t currentPosixTime() const;
+
+        /// Time elapsed since the start of the simulation until the
+        /// beginning of the current time step [s].
+        double simulationTimeElapsed() const;
 
         /// Return the current time as a posix time object.
         boost::posix_time::ptime currentDateTime() const;
@@ -99,7 +117,10 @@ namespace Opm
         bool done() const;
 
     private:
+        Opm::TimeMapConstPtr timeMap_;
         std::vector<double> timesteps_;
+        size_t beginReportStepIdx_;
+        size_t endReportStepIdx_;
         int current_step_;
         double current_time_;
         double total_time_;

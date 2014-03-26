@@ -32,14 +32,15 @@
 #include <opm/core/props/pvt/SinglePvtLiveGas.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/linearInterpolation.hpp>
-#include <algorithm>
 
+#include <algorithm>
 
 namespace Opm
 {
 
     using Opm::linearInterpolation;
     using Opm::linearInterpolationDerivative;
+
 
     //------------------------------------------------------------------------
     // Member functions
@@ -78,6 +79,27 @@ namespace Opm
                 undersat_gas_tables_[i][1][j] = 1.0/pvtg[region_number][i][++k]; // 1/Bg
                 undersat_gas_tables_[i][2][j] = pvtg[region_number][i][++k]; // mu_g
             }
+        }
+    }
+
+    SinglePvtLiveGas::SinglePvtLiveGas(const Opm::PvtgTable& pvtgTable)
+    {
+        // GAS, PVTG
+        saturated_gas_table_.resize(4);
+        saturated_gas_table_[0] = pvtgTable.getOuterTable()->getPressureColumn();
+        saturated_gas_table_[1] = pvtgTable.getOuterTable()->getGasFormationFactorColumn();
+        saturated_gas_table_[2] = pvtgTable.getOuterTable()->getGasViscosityColumn();
+        saturated_gas_table_[3] = pvtgTable.getOuterTable()->getOilSolubilityColumn();
+
+        int sz = pvtgTable.getOuterTable()->numRows();
+        undersat_gas_tables_.resize(sz);
+        for (int i=0; i<sz; ++i) {
+            const auto &undersatTable = *pvtgTable.getInnerTable(i);
+
+            undersat_gas_tables_[i].resize(3);
+            undersat_gas_tables_[i][0] = undersatTable.getOilSolubilityColumn();
+            undersat_gas_tables_[i][1] = undersatTable.getGasFormationFactorColumn();
+            undersat_gas_tables_[i][2] = pvtgTable.getOuterTable()->getGasViscosityColumn();
         }
     }
 

@@ -14,8 +14,8 @@ set (opm-core_DEPS
 	# compile with C++0x/11 support if available
 	"CXX11Features REQUIRED"
 	# various runtime library enhancements
-	"Boost 1.39.0
-		COMPONENTS date_time filesystem system unit_test_framework REQUIRED"
+	"Boost 1.44.0
+		COMPONENTS date_time filesystem system iostreams unit_test_framework REQUIRED"
 	# matrix library
 	"BLAS REQUIRED"
 	"LAPACK REQUIRED"
@@ -30,4 +30,6 @@ set (opm-core_DEPS
 	# DUNE dependency
 	"dune-common"
 	"dune-istl"
+	# Parser library for ECL-type simulation models
+	"opm-parser REQUIRED"
 	)

@@ -48,7 +48,7 @@ private:
 /// Psuedo-constructor, can appear in template
 template <typename Format> unique_ptr <OutputWriter>
 create (const ParameterGroup& params,
-        std::shared_ptr <const EclipseGridParser> parser,
+        std::shared_ptr <EclipseGridParser> parser,
         std::shared_ptr <const UnstructuredGrid> grid) {
     return unique_ptr <OutputWriter> (new Format (params, parser, grid));
 }
@@ -61,7 +61,7 @@ create (const ParameterGroup& params,
 /// to the list below!
 typedef map <const char*, unique_ptr <OutputWriter> (*)(
         const ParameterGroup&,
-        std::shared_ptr <const EclipseGridParser>,
+        std::shared_ptr <EclipseGridParser>,
         std::shared_ptr <const UnstructuredGrid>)> map_t;
 map_t FORMATS = {
     { "output_ecl", &create <EclipseWriter> },
@@ -71,7 +71,7 @@ map_t FORMATS = {
 
 unique_ptr <OutputWriter>
 OutputWriter::create (const ParameterGroup& params,
-                      std::shared_ptr <const EclipseGridParser> parser,
+                      std::shared_ptr <EclipseGridParser> parser,
                       std::shared_ptr <const UnstructuredGrid> grid) {
     // allocate a list which will be filled with writers. this list
     // is initially empty (no output).

@@ -20,11 +20,12 @@
 #ifndef OPM_BLACKOILPVTPROPERTIES_HEADER_INCLUDED
 #define OPM_BLACKOILPVTPROPERTIES_HEADER_INCLUDED
 
-
-
 #include <opm/core/props/pvt/SinglePvtInterface.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
+
+#include <opm/parser/eclipse/Deck/Deck.hpp>
+
 #include <string>
 #include <memory>
 
@@ -54,6 +55,11 @@ namespace Opm
         ///                 Otherwise, interpolate linearly in the original
         ///                 data without fitting a spline.
         void init(const EclipseGridParser& deck, const int samples);
+
+
+        /// Initialize from deck.
+        /// \param deck     An input deck from the opm-parser module.
+        void init(Opm::DeckConstPtr deck, int samples);
 
         /// \return   Object describing the active phases.
         PhaseUsage phaseUsage() const;

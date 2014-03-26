@@ -30,7 +30,7 @@ using namespace Opm;
 
 SimulatorOutputBase::SimulatorOutputBase (
         const parameter::ParameterGroup& params,
-        std::shared_ptr <const EclipseGridParser> parser,
+        std::shared_ptr <EclipseGridParser> parser,
         std::shared_ptr <const UnstructuredGrid> grid,
         std::shared_ptr <const SimulatorTimer> timer,
         std::shared_ptr <const SimulatorState> state,
@@ -72,7 +72,7 @@ SimulatorOutputBase::operator std::function <void ()> () {
 
 void
 SimulatorOutputBase::writeOutput () {
-    const int this_time = timer_->currentTime ();
+    const int this_time = timer_->simulationTimeElapsed ();
 
     // if the simulator signals for timesteps that aren't reporting
     // times, then ignore them
