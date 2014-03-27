@@ -1,5 +1,5 @@
- /*
-  Copyright (c) 2013 Andreas Lauser
+/*
+  Copyright (c) 2013-2014 Andreas Lauser
   Copyright (c) 2013 SINTEF ICT, Applied Mathematics.
   Copyright (c) 2013 Uni Research AS
 
@@ -18,14 +18,13 @@
   You should have received a copy of the GNU General Public License
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
  */
-#if HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
 
 #include "EclipseWriter.hpp"
 
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
+#include <opm/core/grid/GridManager.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/simulator/SimulatorState.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
@@ -35,6 +34,10 @@
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/wells.h> // WellType
+
+#include <opm/parser/eclipse/Deck/DeckKeyword.hpp>
+#include <opm/parser/eclipse/Utility/SpecgridWrapper.hpp>
+#include <opm/parser/eclipse/Utility/WelspecsWrapper.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp> // to_upper_copy
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -62,6 +65,30 @@ using namespace Opm::parameter;
 
 // namespace start here since we don't want the ERT headers in it
 namespace {
+
+namespace {
+/// Helper function when we don't really want any transformation
+/// (The C++ committee removed std::identity because it was "troublesome" (!?!)
+static double noConversion (const double& u) { return u; }
+
+
+/// Helper method that can be used in keyword transformation (must carry
+/// the barsa argument)
+static double toBar (const double& pressure) {
+    return Opm::unit::convert::to (pressure, Opm::unit::barsa);
+}
+
+/// Helper method that can be used in keyword transformation (must carry
+/// the milliDarcy argument)
+static double toMilliDarcy (const double& permeability) {
+    return Opm::unit::convert::to (permeability, Opm::prefix::milli * Opm::unit::darcy);
+}
+
+/// Names of the saturation property for each phase. The order of these
+/// names are critical; they must be the same as the BlackoilPhases enum
+static const char* SAT_NAMES[] = { "SWAT", "SOIL", "SGAS" };
+
+} // anonymous namespace
 
 /// Smart pointer/handle class for ERT opaque types, such as ecl_kw_type*.
 ///
@@ -106,53 +133,165 @@ private:
     static void no_delete (T*) { }
 };
 
+// retrieve all data fields in SI units of a deck keyword
+std::vector<double> getAllSiDoubles_(Opm::DeckKeywordConstPtr keywordPtr)
+{
+    std::vector<double> retBuff;
+    for (unsigned i = 0; i < keywordPtr->size(); ++i) {
+        Opm::DeckRecordConstPtr recordPtr(keywordPtr->getRecord(i));
+        for (unsigned j = 0; j < recordPtr->size(); ++j) {
+            Opm::DeckItemConstPtr itemPtr(recordPtr->getItem(j));
+            for (unsigned k = 0; k < itemPtr->size(); ++k) {
+                retBuff.push_back(itemPtr->getSIDouble(k));
+            }
+        }
+    }
+    return retBuff;
+}
+
+// retrieve all integer data fields of a deck keyword
+std::vector<int> getAllIntegers_(Opm::DeckKeywordConstPtr keywordPtr)
+{
+    std::vector<int> retBuff;
+    for (unsigned i = 0; i < keywordPtr->size(); ++i) {
+        Opm::DeckRecordConstPtr recordPtr(keywordPtr->getRecord(i));
+        for (unsigned j = 0; j < recordPtr->size(); ++j) {
+            Opm::DeckItemConstPtr itemPtr(recordPtr->getItem(j));
+            for (unsigned k = 0; k < itemPtr->size(); ++k) {
+                retBuff.push_back(itemPtr->getInt(k));
+            }
+        }
+    }
+    return retBuff;
+}
+
+// throw away the data for all non-active cells in an array
+void restrictToActiveCells_(std::vector<double> &data, const std::vector<int> &actnumData)
+{
+    assert(actnumData.size() == data.size());
+
+    size_t curActiveIdx = 0;
+    for (size_t curIdx = 0; curIdx < data.size(); ++curIdx) {
+        if (!actnumData[curIdx])
+            continue; // ignore non-active cells
+
+        assert(curActiveIdx <= curIdx);
+        data[curActiveIdx] = data[curIdx];
+        ++ curActiveIdx;
+    }
+
+    data.resize(curActiveIdx);
+}
+
+// throw away the data for all non-active cells in an array. (this is
+// the variant of the function which takes an UnstructuredGrid object.)
+void restrictToActiveCells_(std::vector<double> &data, int number_of_cells,
+                            const int* global_cell)
+{
+    if (!global_cell)
+        // if there is no active -> global mapping, all cells
+        // are considered active
+        return;
+
+    // activate those cells that are actually there
+    for (int i = 0; i < number_of_cells; ++i) {
+        // make sure that global cell indices are always at least as
+        // large as the active one and that the global cell indices
+        // are in increasing order. the latter might become
+        // problematic if cells are extensively re-ordered, but that
+        // does not seem to be the case so far
+        assert(global_cell[i] >= i);
+        assert(i == 0 || global_cell[i - 1] < global_cell[i]);
+
+        data[i] = data[global_cell[i]];
+    }
+    data.resize(number_of_cells);
+}
+
+// convert the units of an array
+template <class TransferFunction>
+void convertUnit_(std::vector<double> &data, TransferFunction &transferFn)
+{
+    for (size_t curIdx = 0; curIdx < data.size(); ++curIdx) {
+        data[curIdx] = transferFn(data[curIdx]);
+    }
+}
+
+// extract a sub-array of a larger one which represents multiple
+// striped ones
+void extractFromStripedData_(std::vector<double> &data,
+                             int offset,
+                             int stride)
+{
+    size_t tmpIdx = 0;
+    for (size_t curIdx = offset; curIdx < data.size(); curIdx += stride) {
+        assert(tmpIdx <= curIdx);
+        data[tmpIdx] = data[curIdx];
+        ++tmpIdx;
+    }
+    // shirk the result
+    data.resize(tmpIdx);
+}
+
+// enclosure of the current grid in a Cartesian space
+int getCartesianSize_(const int* cartdims) {
+    const int nx = cartdims[0];
+    const int ny = cartdims[1];
+    const int nz = cartdims[2];
+    return nx * ny * nz;
+}
+
+void getActiveCells_(int number_of_cells,
+                     const int* cartdims,
+                     const int* global_cell,
+                     std::vector <int>& actnum)
+{
+    // we must fill the Cartesian grid with flags
+    const int size = getCartesianSize_(cartdims);
+
+    // if we don't have a global_cells field, then assume that all
+    // grid cells is active
+    if (!global_cell) {
+        if (number_of_cells != size) {
+            OPM_THROW (std::runtime_error,
+                       "No ACTNUM map but grid size != Cartesian size");
+        }
+        actnum.assign (size, 1);
+    }
+    else {
+        // start out with entire map being inactive
+        actnum.assign (size, 0);
+
+        // activate those cells that are actually there
+        for (int i = 0; i < number_of_cells; ++i) {
+            actnum[global_cell[i]] = 1;
+        }
+    }
+}
+
 /**
  * Eclipse "keyword" (i.e. named data) for a vector. (This class is
  * different from EclKW in the constructors it provide).
  */
 template <typename T>
 struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
-    EclipseKeyword (const std::string& name,    /// identification
-                    const std::vector<T>& data, /// array holding values
-                    const int offset = 0,      /// distance to first
-                    const int stride = 1)      /// distance between each
-
-        // allocate handle and put in smart pointer base class
-        : EclipseHandle <ecl_kw_type> (
-              ecl_kw_alloc (name.c_str(), data.size (), type ()),
-              ecl_kw_free) {
-        copyData (data, &no_conversion, offset, stride);
-    }
-
-    /// Special initialization from double-precision array which
-    /// automatically invokes a version of the copy function which
-    /// downcasts. This is really only applicable to the T = float
-    /// template instance.
-    /// The data and name parameters are switched in this version
-    /// so that it doesn't conflict with the one above in the case
-    /// of T = double.
-    EclipseKeyword (const std::vector<double>& data,
-                    const std::string& name,
-                    double (* const transf)(const double&),
-                    const int offset = 0,
-                    const int stride = 1);
-
-    /// Convenience constructor that gets the set of data
-    /// from the samely named item in the parser
+    /// Special initialization from double-precision array.
     EclipseKeyword (const std::string& name,
-                    const EclipseGridParser& parser)
-        // allocate handle and put in smart pointer base class
-        // notice dataSize is called both here *and* in copyData,
-        // but GCC 4.4 doesn't support delegating constructors, so
-        // we cannot avoid this without otherwise using a member
-        : EclipseHandle <ecl_kw_type> (
-              ecl_kw_alloc (name.c_str(),
-                            dataSize (parser.getValue <T> (name)),
-                            type ()),
-              ecl_kw_free) {
-        const std::vector <T>& data = parser.getValue <T> (name);
-        copyData (data, &no_conversion, 0, 1);
-    }
+                    const std::vector<double>& data)
+        : EclipseHandle<ecl_kw_type>(ecl_kw_alloc(name.c_str(),
+                                                  data.size(),
+                                                  type()),
+                                     ecl_kw_free)
+    { copyData (data, &noConversion, /*offset=*/0, /*stride=*/1); }
+
+    /// Initialization from integer array.
+    EclipseKeyword (const std::string& name,
+                    const std::vector<int>& data)
+        : EclipseHandle<ecl_kw_type>(ecl_kw_alloc(name.c_str(),
+                                                  data.size(),
+                                                  type()),
+                                     ecl_kw_free)
+    { copyData (data, &noConversion, /*offset=*/0, /*stride=*/1); }
 
     /// Constructor for optional fields
     EclipseKeyword (const std::string& name)
@@ -160,21 +299,23 @@ struct EclipseKeyword : public EclipseHandle <ecl_kw_type> {
         static_cast<void> (name);
     }
 
+    // constructor to keep compatibility with the old eclipse parser
+    EclipseKeyword (const std::string& name,
+                    const EclipseGridParser& parser);
+
     // GCC 4.4 doesn't generate these constructors for us; provide the
     // default implementation explicitly here instead
     EclipseKeyword (EclipseKeyword&& rhs)
-        : EclipseHandle <ecl_kw_type> (std::move (rhs)) { }
-    EclipseKeyword& operator= (EclipseKeyword&& rhs) {
+        : EclipseHandle <ecl_kw_type> (std::move (rhs))
+    { }
+
+    EclipseKeyword& operator= (EclipseKeyword&& rhs)
+    {
         EclipseHandle <ecl_kw_type>::operator= (std::move(rhs));
         return *this;
     }
     EclipseKeyword (const EclipseKeyword&) = delete;
     EclipseKeyword& operator= (const EclipseKeyword&) = delete;
-
-    /// Helper function when we don't really want any transformation
-    /// (The C++ committee removed std::identity because it was "troublesome" (!?!)
-    template <typename U>
-    static U no_conversion (const U& u) { return u; }
 
 private:
     /// Map the C++ data type (given by T) to an Eclipse type enum
@@ -183,7 +324,7 @@ private:
     /// Helper function that is the meat of the constructor
     template <typename U>
     void copyData (const std::vector <U>& data,
-                   U (* const transf)(const U&),
+                   double (* const transf)(const double&),
                    const int offset,
                    const int stride) {
         // number of elements to take
@@ -218,6 +359,32 @@ private:
         const int recs = (num - 1 - offset) / stride + 1;
         return recs;
     }
+
+    int dataSize (Opm::DeckKeywordConstPtr keyword,
+                  const int offset = 0,
+                  const int stride = 1)
+    {
+        int numFlatItems = 0;
+        Opm::DeckRecordConstPtr record = keyword->getRecord(0);
+        for (unsigned itemIdx = 0; itemIdx < record->size(); ++itemIdx) {
+            numFlatItems += record->getItem(itemIdx)->size();
+        }
+
+        // range cannot start outside of data set
+        assert(offset >= 0 && offset < numFlatItems);
+
+        // don't jump out of the set when trying to
+        assert(stride > 0 && stride < numFlatItems - offset);
+
+        // number of (strided) entries it will provide. the last item
+        // in the array is num - 1. the last strided item we can pick
+        // (from recs number of records) is (recs - 1) * stride + offset,
+        // which must be <= num - 1. we are interested in the maximum
+        // case where it holds to equals. rearranging the above gives us:
+        const int recs = (numFlatItems - 1 - offset) / stride + 1;
+        return recs;
+    }
+
 };
 
 // specializations for known keyword types
@@ -240,31 +407,7 @@ EclipseKeyword <float>::EclipseKeyword (
                         type ()),
           ecl_kw_free) {
     const std::vector <double>& data = parser.getValue <double> (name);
-    copyData (data, &no_conversion, 0, 1);
-}
-
-/// Provide only the float version, since that is the one for which
-/// we need this conversion (we don't want it for int, for instance)
-template <>
-EclipseKeyword <float>::EclipseKeyword (
-        const std::vector<double>& data,
-        const std::string& name,
-        double (* const transf)(const double&),
-        const int offset,
-        const int stride)
-    // allocate handle and put in smart pointer base class
-    : EclipseHandle <ecl_kw_type> (
-          ecl_kw_alloc (name.c_str(), dataSize (data, offset, stride), type ()),
-          ecl_kw_free) {
-    copyData (data, transf, offset, stride);
-}
-
-/**
- * Extract the current time from a timer object into the C type used by ERT.
- */
-static time_t current (const SimulatorTimer& timer) {
-    tm t = boost::posix_time::to_tm (timer.currentDateTime());
-    return std::mktime(&t);
+    copyData (data, &noConversion, 0, 1);
 }
 
 /**
@@ -274,7 +417,7 @@ struct EclipseFileName : public EclipseHandle <const char> {
     EclipseFileName (const std::string& outputDir,
                      const std::string& baseName,
                      ecl_file_enum type,
-                     const SimulatorTimer& timer)
+                     int outputStepIdx)
 
         // filename formatting function returns a pointer to allocated
         // memory that must be released with the free() function
@@ -283,7 +426,7 @@ struct EclipseFileName : public EclipseHandle <const char> {
                                        baseName.c_str(),
                                        type,
                                        false, // formatted?
-                                       timer.currentStepNum ()),
+                                       outputStepIdx),
               freestr) { }
 private:
     /// Facade which allows us to free a const char*
@@ -315,6 +458,30 @@ std::vector <int> parserDim (const EclipseGridParser& parser) {
     return dim;
 }
 
+/// Get dimensions of the grid from the parse of the input file
+std::vector <int> parserDim (Opm::DeckConstPtr newParserDeck) {
+    std::vector<int> dim(/* n = */ 3);
+    // dimensions explicitly given
+    if (newParserDeck->hasKeyword("SPECGRID")) {
+        SpecgridWrapper specgrid(newParserDeck->getKeyword("SPECGRID"));
+        dim = specgrid.numBlocksVector();
+    }
+    // dimensions implicitly given by number of deltas
+    else if (newParserDeck->hasKeyword("DXV")) {
+        assert(newParserDeck->hasKeyword("DYV"));
+        assert(newParserDeck->hasKeyword("DZV"));
+        dim[0] = newParserDeck->getKeyword("DXV")->getRawDoubleData().size();
+        dim[1] = newParserDeck->getKeyword("DYV")->getRawDoubleData().size();
+        dim[2] = newParserDeck->getKeyword("DZV")->getRawDoubleData().size();
+    }
+    else {
+        OPM_THROW(std::runtime_error,
+                  "Only decks featureing either the SPECGRID or the D[XYZ]V keywords "
+                  "are currently supported");
+    }
+    return dim;
+}
+
 /// Convert OPM phase usage to ERT bitmask
 static int phaseMask (const PhaseUsage uses) {
     return (uses.phase_used [BlackoilPhases::Liquid] ? ECL_OIL_PHASE   : 0)
@@ -325,7 +492,8 @@ static int phaseMask (const PhaseUsage uses) {
 struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
     EclipseRestart (const std::string& outputDir,
                     const std::string& baseName,
-                    const SimulatorTimer& timer)
+                    const SimulatorTimer& timer,
+                    int outputStepIdx)
         // notice the poor man's polymorphism of the allocation function
         : EclipseHandle <ecl_rst_file_type> (
               (timer.currentStepNum () > 0 ? ecl_rst_file_open_append
@@ -333,18 +501,37 @@ struct EclipseRestart : public EclipseHandle <ecl_rst_file_type> {
                   EclipseFileName (outputDir,
                                    baseName,
                                    ECL_UNIFIED_RESTART_FILE,
-                                   timer)),
+                                   outputStepIdx)),
               ecl_rst_file_close) { }
 
     void writeHeader (const SimulatorTimer& timer,
+                      int outputStepIdx,
                       const PhaseUsage uses,
                       const EclipseGridParser parser,
                       const int num_active_cells) {
         const std::vector <int> dim = parserDim (parser);
         ecl_rst_file_fwrite_header (*this,
-                                    timer.currentStepNum (),
-                                    current (timer),
-                                    Opm::unit::convert::to (timer.currentTime (),
+                                    outputStepIdx,
+                                    timer.currentPosixTime(),
+                                    Opm::unit::convert::to (timer.simulationTimeElapsed (),
+                                                            Opm::unit::day),
+                                    dim[0],
+                                    dim[1],
+                                    dim[2],
+                                    num_active_cells,
+                                    phaseMask (uses));
+    }
+
+    void writeHeader (const SimulatorTimer& timer,
+                      int outputStepIdx,
+                      const PhaseUsage uses,
+                      Opm::DeckConstPtr newParserDeck,
+                      const int num_active_cells) {
+        const std::vector <int> dim = parserDim (newParserDeck);
+        ecl_rst_file_fwrite_header (*this,
+                                    outputStepIdx,
+                                    timer.currentPosixTime(),
+                                    Opm::unit::convert::to (timer.simulationTimeElapsed (),
                                                             Opm::unit::day),
                                     dim[0],
                                     dim[1],
@@ -377,41 +564,6 @@ private:
     }
 };
 
-// enclosure of the current grid in a Cartesian space
-int cart_size (const int* cartdims) {
-    const int nx = cartdims[0];
-    const int ny = cartdims[1];
-    const int nz = cartdims[2];
-    return nx * ny * nz;
-}
-
-void active_cells (int number_of_cells,
-                   const int* cartdims,
-                   const int* global_cell,
-                   std::vector <int>& actnum) {
-    // we must fill the Cartesian grid with flags
-    const int size = cart_size (cartdims);
-
-    // if we don't have a global_cells field, then assume that all
-    // grid cells is active
-    if (!global_cell) {
-        if (number_of_cells != size) {
-            OPM_THROW (std::runtime_error,
-                       "No ACTNUM map but grid size != Cartesian size");
-        }
-        actnum.assign (size, 1);
-    }
-    else {
-        // start out with entire map being inactive
-        actnum.assign (size, 0);
-
-        // activate those cells that are actually there
-        for (int i = 0; i < number_of_cells; ++i) {
-            actnum[global_cell[i]] = 1;
-        }
-    }
-} // active_cells
-
 /**
  * Representation of an Eclipse grid.
  */
@@ -436,20 +588,70 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
         else if (parser.hasField("ZCORN")) {
             struct grdecl g = parser.get_grdecl ();
 
-            EclipseKeyword<float> coord_kw (COORD_KW,  parser);
-            EclipseKeyword<float> zcorn_kw (ZCORN_KW,  parser);
+            auto coordData = parser.getFloatingPointValue(COORD_KW);
+            auto zcornData = parser.getFloatingPointValue(ZCORN_KW);
+
+            EclipseKeyword<float> coord_kw (COORD_KW, coordData);
+            EclipseKeyword<float> zcorn_kw (ZCORN_KW, zcornData);
 
             // get the actually active cells, after processing
             std::vector <int> actnum;
-            active_cells (number_of_cells, cart_dims, global_cell, actnum);
+            getActiveCells_(number_of_cells, cart_dims, global_cell, actnum);
             EclipseKeyword<int> actnum_kw (ACTNUM_KW, actnum);
 
             EclipseKeyword<float> mapaxes_kw (MAPAXES_KW);
             if (g.mapaxes) {
-                mapaxes_kw = std::move (EclipseKeyword<float> (MAPAXES_KW, parser));
+                auto mapaxesData = parser.getFloatingPointValue(MAPAXES_KW);
+                mapaxes_kw = std::move (EclipseKeyword<float> (MAPAXES_KW, mapaxesData));
             }
 
-            return EclipseGrid (g.dims, zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
+            return EclipseGrid (cart_dims, zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
+        }
+        else {
+            OPM_THROW(std::runtime_error,
+                  "Can't create an ERT grid (no supported keywords found in deck)");
+        }
+    }
+
+    /// Create a grid based on the keywords available in input file
+    static EclipseGrid make (Opm::DeckConstPtr newParserDeck,
+                             int number_of_cells,
+                             const int* cart_dims,
+                             const int* global_cell)
+    {
+        if (newParserDeck->hasKeyword("DXV")) {
+            // make sure that the DYV and DZV keywords are present if the
+            // DXV keyword is used in the deck...
+            assert(newParserDeck->hasKeyword("DYV"));
+            assert(newParserDeck->hasKeyword("DZV"));
+
+            const auto& dxv = newParserDeck->getKeyword("DXV")->getSIDoubleData();
+            const auto& dyv = newParserDeck->getKeyword("DYV")->getSIDoubleData();
+            const auto& dzv = newParserDeck->getKeyword("DZV")->getSIDoubleData();
+
+            return EclipseGrid (dxv, dyv, dzv);
+        }
+        else if (newParserDeck->hasKeyword("ZCORN")) {
+            struct grdecl g;
+            GridManager::createGrdecl(newParserDeck, g);
+
+            auto coordData = getAllSiDoubles_(newParserDeck->getKeyword(COORD_KW));
+            auto zcornData = getAllSiDoubles_(newParserDeck->getKeyword(ZCORN_KW));
+            EclipseKeyword<float> coord_kw (COORD_KW, coordData);
+            EclipseKeyword<float> zcorn_kw (ZCORN_KW, zcornData);
+
+            // get the actually active cells, after processing
+            std::vector <int> actnum;
+            getActiveCells_(number_of_cells, cart_dims, global_cell, actnum);
+            EclipseKeyword<int> actnum_kw (ACTNUM_KW, actnum);
+
+            EclipseKeyword<float> mapaxes_kw (MAPAXES_KW);
+            if (g.mapaxes) {
+                auto mapaxesData = getAllSiDoubles_(newParserDeck->getKeyword(MAPAXES_KW));
+                mapaxes_kw = std::move (EclipseKeyword<float> (MAPAXES_KW, mapaxesData));
+            }
+
+            return EclipseGrid (cart_dims, zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
         }
         else {
             OPM_THROW(std::runtime_error,
@@ -462,12 +664,12 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
      */
     void write (const std::string& outputDir,
                 const std::string& baseName,
-                const SimulatorTimer& timer) {
+                int outputStepIdx) {
         ecl_grid_fwrite_EGRID (*this,
                                EclipseFileName (outputDir,
                                                 baseName,
                                                 ECL_EGRID_FILE,
-                                                timer));
+                                                outputStepIdx));
     }
 
     // GCC 4.4 doesn't generate these constructors for us; provide the
@@ -504,7 +706,7 @@ private:
     EclipseGrid (const int dims[],
                  const EclipseKeyword<float>& zcorn,
                  const EclipseKeyword<float>& coord,
-                 const EclipseKeyword<int>&    actnum,
+                 const EclipseKeyword<int>& actnum,
                  const EclipseKeyword<float>& mapaxes)
         : EclipseHandle <ecl_grid_type> (
               ecl_grid_alloc_GRDECL_kw(dims[0],
@@ -528,11 +730,11 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
     // constructor, so we'll have to do with a static wrapper)
     static EclipseInit make (const std::string& outputDir,
                              const std::string& baseName,
-                             const SimulatorTimer& timer) {
+                             int outputStepIdx) {
         EclipseFileName initFileName (outputDir,
                                       baseName,
                                       ECL_INIT_FILE,
-                                      timer);
+                                      outputStepIdx);
         bool fmt_file;
         if (!ecl_util_fmt_file(initFileName, &fmt_file)) {
             OPM_THROW(std::runtime_error,
@@ -542,24 +744,51 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
     }
 
     void writeHeader (const EclipseGrid& grid,
-                       const SimulatorTimer& timer,
-                       const EclipseGridParser& parser,
-                       const PhaseUsage uses) {
+                      const SimulatorTimer& timer,
+                      const EclipseGridParser& parser,
+                      const PhaseUsage uses) {
         EclipseKeyword<float> poro (PORO_KW, parser);
         ecl_init_file_fwrite_header (*this,
                                      grid,
                                      poro,
                                      phaseMask (uses),
-                                     current (timer));
+                                     timer.currentPosixTime());
     }
 
-    void writeKeyword (const std::string& keyword,
+    void writeHeader (int number_of_cells,
+                      const int* cart_dims,
+                      const int* global_cell,
+                      const SimulatorTimer& timer,
+                      Opm::DeckConstPtr newParserDeck,
+                      const PhaseUsage uses)
+    {
+        auto dataField = getAllSiDoubles_(newParserDeck->getKeyword(PORO_KW));
+        restrictToActiveCells_(dataField, number_of_cells, global_cell);
+
+        EclipseGrid eclGrid = EclipseGrid::make (newParserDeck, number_of_cells,
+                                                 cart_dims, global_cell);
+
+        EclipseKeyword<float> poro (PORO_KW, dataField);
+        ecl_init_file_fwrite_header (*this,
+                                     eclGrid,
+                                     poro,
+                                     phaseMask (uses),
+                                     timer.currentPosixTime ());
+    }
+
+    void writeKeyword (const std::string& keywordName,
                        const EclipseGridParser& parser,
                        double (* const transf)(const double&)) {
-        EclipseKeyword <float> kw (parser.getValue <double> (keyword),
-                                   keyword,
-                                   transf);
+        auto data = parser.getValue <double> (keywordName);
+        convertUnit_(data, transf);
+        EclipseKeyword <float> kw (keywordName, data);
         ecl_kw_fwrite (kw, *this);
+    }
+
+    void writeKeyword (const std::string& keywordName, const std::vector<double> &data)
+    {
+        EclipseKeyword <float> kw (keywordName, data);
+        ecl_kw_fwrite(kw, *this);
     }
 
     // GCC 4.4 doesn't generate these constructors for us; provide the
@@ -603,6 +832,14 @@ struct EclipseSummary : public EclipseHandle <ecl_sum_type> {
               alloc_writer (outputDir, baseName, timer, parser),
               ecl_sum_free) { }
 
+    EclipseSummary (const std::string& outputDir,
+                    const std::string& baseName,
+                    const SimulatorTimer& timer,
+                    Opm::DeckConstPtr newParserDeck)
+        : EclipseHandle <ecl_sum_type> (
+              alloc_writer (outputDir, baseName, timer, newParserDeck),
+              ecl_sum_free) { }
+
     typedef std::unique_ptr <EclipseWellReport> var_t;
     typedef std::vector <var_t> vars_t;
 
@@ -620,6 +857,10 @@ struct EclipseSummary : public EclipseHandle <ecl_sum_type> {
 
     // add rate variables for each of the well in the input file
     void addWells (const EclipseGridParser& parser,
+                   const PhaseUsage& uses);
+
+    // add rate variables for each of the well in the input file
+    void addWells (Opm::DeckConstPtr newParserDeck,
                    const PhaseUsage& uses);
 
     // no inline implementation of this since it depends on the
@@ -643,8 +884,7 @@ private:
         EclipseTimeStep* tstep = new EclipseTimeStep (
                     ecl_sum_add_tstep (*this,
                                        timer.currentStepNum (),
-                                       // currentTime is always relative to start
-                                       Opm::unit::convert::to (timer.currentTime (),
+                                       Opm::unit::convert::to (timer.simulationTimeElapsed (),
                                                                Opm::unit::day)));
         return std::unique_ptr <EclipseTimeStep> (tstep);
     }
@@ -664,7 +904,28 @@ private:
                                      false, /* formatted   */
                                      true,  /* unified     */
                                      ":",    /* join string */
-                                     current (timer),
+                                     timer.simulationTimeElapsed (),
+                                     dim[0],
+                                     dim[1],
+                                     dim[2]);
+    }
+
+    /// Helper routine that lets us use local variables to hold
+    /// intermediate results while filling out the allocations function's
+    /// argument list.
+    static ecl_sum_type* alloc_writer (const std::string& outputDir,
+                                       const std::string& baseName,
+                                       const SimulatorTimer& timer,
+                                       Opm::DeckConstPtr newParserDeck) {
+        boost::filesystem::path casePath (outputDir);
+        casePath /= boost::to_upper_copy (baseName);
+
+        const std::vector <int> dim = parserDim (newParserDeck);
+        return ecl_sum_alloc_writer (casePath.string ().c_str (),
+                                     false, /* formatted   */
+                                     true,  /* unified     */
+                                     ":",    /* join string */
+                                     timer.simulationTimeElapsed (),
                                      dim[0],
                                      dim[1],
                                      dim[2]);
@@ -700,6 +961,29 @@ protected:
         // producers can be seen as negative injectors
         , sign_ (type == INJECTOR ? +1. : -1.) { }
 
+    EclipseWellReport (const EclipseSummary& summary,    /* section to add to  */
+                       Opm::DeckConstPtr newParserDeck,  /* well names         */
+                       int whichWell,                    /* index of well line */
+                       PhaseUsage uses,                  /* phases present     */
+                       BlackoilPhases::PhaseIndex phase, /* oil, water or gas  */
+                       WellType type,                    /* prod. or inj.      */
+                       char aggregation,                 /* rate or total      */
+                       std::string unit)
+        : EclipseHandle <smspec_node_type> (
+              ecl_sum_add_var (summary,
+                               varName (phase,
+                                        type,
+                                        aggregation).c_str (),
+                               wellName (newParserDeck, whichWell).c_str (),
+                               /* num = */ 0,
+                               unit.c_str(),
+                               /* defaultValue = */ 0.))
+        // save these for when we update the value in a timestep
+        , index_ (whichWell * uses.num_phases + uses.phase_pos [phase])
+
+        // producers can be seen as negative injectors
+        , sign_ (type == INJECTOR ? +1. : -1.) { }
+
 public:
     /// Allows us to pass this type to ecl_sum_tstep_iset
     operator int () {
@@ -722,6 +1006,14 @@ private:
     std::string wellName (const EclipseGridParser& parser,
                           int whichWell) {
         return parser.getWELSPECS().welspecs[whichWell].name_;
+    }
+
+    /// Get the name associated with this well
+    std::string wellName (Opm::DeckConstPtr newParserDeck,
+                          int whichWell)
+    {
+        Opm::WelspecsWrapper welspecs(newParserDeck->getKeyword("WELSPECS"));
+        return welspecs.wellName(whichWell);
     }
 
     /// Compose the name of the summary variable, e.g. "WOPR" for
@@ -785,6 +1077,22 @@ struct EclipseWellRate : public EclipseWellReport {
                              type,
                              'R',
                              "SM3/DAY" /* surf. cub. m. per day */ ) { }
+
+    EclipseWellRate (const EclipseSummary& summary,
+                     Opm::DeckConstPtr newParserDeck,
+                     int whichWell,
+                     PhaseUsage uses,
+                     BlackoilPhases::PhaseIndex phase,
+                     WellType type)
+        : EclipseWellReport (summary,
+                             newParserDeck,
+                             whichWell,
+                             uses,
+                             phase,
+                             type,
+                             'R',
+                             "SM3/DAY" /* surf. cub. m. per day */ ) { }
+
     virtual double update (const SimulatorTimer& /*timer*/,
                              const WellState& wellState) {
         // TODO: Why only positive rates?
@@ -802,6 +1110,24 @@ struct EclipseWellTotal : public EclipseWellReport {
                       WellType type)
         : EclipseWellReport (summary,
                              parser,
+                             whichWell,
+                             uses,
+                             phase,
+                             type,
+                             'T',
+                             "SM3" /* surface cubic meter */ )
+
+        // nothing produced when the reporting starts
+        , total_ (0.) { }
+
+    EclipseWellTotal (const EclipseSummary& summary,
+                      Opm::DeckConstPtr newParserDeck,
+                      int whichWell,
+                      PhaseUsage uses,
+                      BlackoilPhases::PhaseIndex phase,
+                      WellType type)
+        : EclipseWellReport (summary,
+                             newParserDeck,
                              whichWell,
                              uses,
                              phase,
@@ -861,7 +1187,8 @@ struct EclipseWellBhp : public EclipseWellReport {
 
 inline void
 EclipseSummary::writeTimeStep (const SimulatorTimer& timer,
-                               const WellState& wellState) {
+                               const WellState& wellState)
+{
     // internal view; do not move this code out of EclipseSummary!
     std::unique_ptr <EclipseTimeStep> tstep = makeTimeStep (timer);
     // write all the variables
@@ -877,7 +1204,8 @@ static WellType WELL_TYPES[] = { INJECTOR, PRODUCER };
 
 inline void
 EclipseSummary::addWells (const EclipseGridParser& parser,
-                          const PhaseUsage& uses) {
+                          const PhaseUsage& uses)
+{
     // TODO: Only create report variables that are requested with keywords
     // (e.g. "WOPR") in the input files, and only for those wells that are
     // mentioned in those keywords
@@ -937,96 +1265,235 @@ EclipseSummary::addWells (const EclipseGridParser& parser,
     }
 }
 
-namespace {
-
-/// Helper method that can be used in keyword transformation (must curry
-/// the barsa argument)
-static double toBar (const double& pressure) {
-    return Opm::unit::convert::to (pressure, Opm::unit::barsa);
+inline void
+EclipseSummary::addWells (Opm::DeckConstPtr newParserDeck,
+                          const PhaseUsage& uses) {
+    // TODO: Only create report variables that are requested with keywords
+    // (e.g. "WOPR") in the input files, and only for those wells that are
+    // mentioned in those keywords
+    Opm::DeckKeywordConstPtr welspecsKeyword = newParserDeck->getKeyword("WELSPECS");
+    const int numWells = welspecsKeyword->size();
+    for (int phaseCounter = 0;
+          phaseCounter != BlackoilPhases::MaxNumPhases;
+          ++phaseCounter) {
+        const BlackoilPhases::PhaseIndex phase =
+                static_cast <BlackoilPhases::PhaseIndex> (phaseCounter);
+        // don't bother with reporting for phases that aren't there
+        if (!uses.phase_used [phaseCounter]) {
+            continue;
+        }
+        for (size_t typeIndex = 0;
+             typeIndex < sizeof (WELL_TYPES) / sizeof (WELL_TYPES[0]);
+             ++typeIndex) {
+            const WellType type = WELL_TYPES[typeIndex];
+            for (int whichWell = 0; whichWell != numWells; ++whichWell) {
+                // W{O,G,W}{I,P}R
+                add (std::unique_ptr <EclipseWellReport> (
+                              new EclipseWellRate (*this,
+                                                   newParserDeck,
+                                                   whichWell,
+                                                   uses,
+                                                   phase,
+                                                   type)));
+                // W{O,G,W}{I,P}T
+                add (std::unique_ptr <EclipseWellReport> (
+                              new EclipseWellTotal (*this,
+                                                    newParserDeck,
+                                                    whichWell,
+                                                    uses,
+                                                    phase,
+                                                    type)));
+            }
+        }
+    }
 }
-
-/// Helper method that can be used in keyword transformation (must curry
-/// the milliDarcy argument)
-static double toMilliDarcy (const double& permeability) {
-    return Opm::unit::convert::to (permeability, Opm::prefix::milli * Opm::unit::darcy);
-}
-
-/// Names of the saturation property for each phase. The order of these
-/// names are critical; they must be the same as the BlackoilPhases enum
-static const char* SAT_NAMES[] = { "SWAT", "SOIL", "SGAS" };
-
-} // anonymous namespace
 
 namespace Opm {
 
 void EclipseWriter::writeInit(const SimulatorTimer &timer,
                               const SimulatorState& reservoirState,
-                              const WellState& wellState) {
-    /* Grid files */
-    EclipseGrid ecl_grid = EclipseGrid::make (*parser_, number_of_cells_,
-                                              cart_dims_, global_cell_);
-    ecl_grid.write (outputDir_, baseName_, timer);
+                              const WellState& wellState)
+{
+    // if we don't want to write anything, this method becomes a
+    // no-op...
+    if (!enableOutput_) {
+        return;
+    }
+    if (newParserDeck_) {
+        /* Grid files */
+        EclipseGrid eclGrid = EclipseGrid::make (newParserDeck_, number_of_cells_,
+                                                  cart_dims_, global_cell_);
+        eclGrid.write (outputDir_, baseName_, /*stepIdx=*/0);
 
-    EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, timer);
-    fortio.writeHeader (ecl_grid,
-                        timer,
-                        *parser_,
-                        uses_);
+        EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, /*stepIdx=*/0);
+        fortio.writeHeader (number_of_cells_,
+                            cart_dims_,
+                            global_cell_,
+                            timer,
+                            newParserDeck_,
+                            uses_);
 
-    fortio.writeKeyword ("PERMX", *parser_, &toMilliDarcy);
-    fortio.writeKeyword ("PERMY", *parser_, &toMilliDarcy);
-    fortio.writeKeyword ("PERMZ", *parser_, &toMilliDarcy);
+        if (newParserDeck_->hasKeyword("PERM")) {
+            auto data = getAllSiDoubles_(newParserDeck_->getKeyword("PERM"));
+            convertUnit_(data, toMilliDarcy);
+            fortio.writeKeyword ("PERM", data);
+        }
 
-    /* Initial solution (pressure and saturation) */
-    writeSolution (timer, reservoirState, wellState);
+        if (newParserDeck_->hasKeyword("PERMX")) {
+            auto data = getAllSiDoubles_(newParserDeck_->getKeyword("PERMX"));
+            convertUnit_(data, toMilliDarcy);
+            fortio.writeKeyword ("PERMX", data);
+        }
+        if (newParserDeck_->hasKeyword("PERMY")) {
+            auto data = getAllSiDoubles_(newParserDeck_->getKeyword("PERMY"));
+            convertUnit_(data, toMilliDarcy);
+            fortio.writeKeyword ("PERMY", data);
+        }
+        if (newParserDeck_->hasKeyword("PERMZ")) {
+            auto data = getAllSiDoubles_(newParserDeck_->getKeyword("PERMZ"));
+            convertUnit_(data, toMilliDarcy);
+            fortio.writeKeyword ("PERMZ", data);
+        }
 
-    /* Create summary object (could not do it at construction time,
-       since it requires knowledge of the start time). */
-    summary_.reset(new EclipseSummary(outputDir_, baseName_, timer, *parser_));
-    summary_->addWells (*parser_, uses_);
+        /* Initial solution (pressure and saturation) */
+        writeSolution_(timer, reservoirState);
+
+        /* Create summary object (could not do it at construction time,
+           since it requires knowledge of the start time). */
+        summary_.reset(new EclipseSummary(outputDir_, baseName_, timer, newParserDeck_));
+        summary_->addWells (newParserDeck_, uses_);
+    }
+    else {
+        /* Grid files */
+        EclipseGrid ecl_grid = EclipseGrid::make (*parser_, number_of_cells_,
+                                                  cart_dims_, global_cell_);
+        ecl_grid.write (outputDir_, baseName_, /*stepIdx=*/0);
+
+        EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, /*stepIdx=*/0);
+        fortio.writeHeader (ecl_grid,
+                            timer,
+                            *parser_,
+                            uses_);
+
+        fortio.writeKeyword ("PERMX", *parser_, &toMilliDarcy);
+        fortio.writeKeyword ("PERMY", *parser_, &toMilliDarcy);
+        fortio.writeKeyword ("PERMZ", *parser_, &toMilliDarcy);
+
+        /* Initial solution (pressure and saturation) */
+        writeSolution_(timer, reservoirState);
+
+        /* Create summary object (could not do it at construction time,
+           since it requires knowledge of the start time). */
+        summary_.reset(new EclipseSummary(outputDir_, baseName_, timer, *parser_));
+        summary_->addWells (*parser_, uses_);
+    }
 }
 
-void EclipseWriter::writeSolution (const SimulatorTimer& timer,
-                                   const SimulatorState& reservoirState,
-                                   const WellState& /*wellState*/) {
-    // start writing to files
-    EclipseRestart rst (outputDir_,
-                        baseName_,
-                        timer);
-    rst.writeHeader (timer,
-                     uses_,
-                     *parser_,
-                     reservoirState.pressure ().size ());
-    EclipseSolution sol (rst);
+void EclipseWriter::activeToGlobalCellData_(std::vector<double> &globalCellsBuf,
+                                              const std::vector<double> &activeCellsBuf,
+                                              const std::vector<double> &inactiveCellsBuf) const
+{
+    globalCellsBuf = inactiveCellsBuf;
 
-    // write pressure and saturation fields (same as DataMap holds)
-    // convert the pressures from Pascals to bar because Eclipse
-    // seems to write bars
-    sol.add (EclipseKeyword<float> (reservoirState.pressure (),
-                                    "PRESSURE",
-                                    &toBar));
+    // overwrite the values of active cells
+    for (int activeCellIdx = 0;
+         activeCellIdx < number_of_cells_;
+         ++activeCellIdx)
+    {
+        int globalCellIdx = global_cell_[activeCellIdx];
+        globalCellsBuf[globalCellIdx] = activeCellsBuf[activeCellIdx];
+    }
+}
 
-    for (int phase = 0; phase != BlackoilPhases::MaxNumPhases; ++phase) {
-        // Eclipse never writes the oil saturation, so all post-processors
-        // must calculate this from the other saturations anyway
-        if (phase == BlackoilPhases::PhaseIndex::Liquid) {
-            continue;
-        }
-        if (uses_.phase_used [phase]) {
-            sol.add (EclipseKeyword<float> (reservoirState.saturation(),
-                                            SAT_NAMES [phase],
-                                            &EclipseKeyword <float>::no_conversion,
-                                            uses_.phase_pos [phase],
-                                            uses_.num_phases));
+void EclipseWriter::writeSolution_(const SimulatorTimer& timer,
+                                   const SimulatorState& reservoirState)
+{
+    if (newParserDeck_) {
+        // start writing to files
+        EclipseRestart rst(outputDir_, baseName_, timer, outputTimeStepIdx_);
+        rst.writeHeader (timer, outputTimeStepIdx_, uses_, newParserDeck_, reservoirState.pressure().size ());
+        EclipseSolution sol (rst);
+
+        // write out the pressure of the reference phase (whatever
+        // phase that is...). this is not the most performant solution
+        // thinkable, but this is also not in the most performance
+        // critical code path!
+        std::vector<double> tmp = reservoirState.pressure();
+        convertUnit_(tmp, toBar);
+
+        sol.add(EclipseKeyword<float>("PRESSURE", tmp));
+
+        for (int phase = 0; phase != BlackoilPhases::MaxNumPhases; ++phase) {
+            // Eclipse never writes the oil saturation, so all post-processors
+            // must calculate this from the other saturations anyway
+            if (phase == BlackoilPhases::PhaseIndex::Liquid) {
+                continue;
+            }
+            if (uses_.phase_used [phase]) {
+                tmp = reservoirState.saturation();
+                extractFromStripedData_(tmp,
+                                        /*offset=*/uses_.phase_pos[phase],
+                                        /*stride=*/uses_.num_phases);
+                sol.add(EclipseKeyword<float>(SAT_NAMES[phase], tmp));
+            }
         }
     }
+    else {
+        // start writing to files
+        EclipseRestart rst (outputDir_,
+                            baseName_,
+                            timer,
+                            outputTimeStepIdx_);
+        rst.writeHeader (timer,
+                         outputTimeStepIdx_,
+                         uses_,
+                         *parser_,
+                         reservoirState.pressure ().size ());
+        EclipseSolution sol (rst);
+
+        // write pressure and saturation fields (same as DataMap holds)
+        // convert the pressures from Pascals to bar because Eclipse
+        // seems to write bars
+        auto data = reservoirState.pressure();
+        convertUnit_(data, toBar);
+        sol.add(EclipseKeyword<float>("PRESSURE", data));
+
+        for (int phase = 0; phase != BlackoilPhases::MaxNumPhases; ++phase) {
+            // Eclipse never writes the oil saturation, so all post-processors
+            // must calculate this from the other saturations anyway
+            if (phase == BlackoilPhases::PhaseIndex::Liquid) {
+                continue;
+            }
+            if (uses_.phase_used [phase]) {
+                auto tmp = reservoirState.saturation();
+                extractFromStripedData_(tmp,
+                                        /*offset=*/uses_.phase_pos[phase],
+                                        /*stride=*/uses_.num_phases);
+                sol.add (EclipseKeyword<float>(SAT_NAMES[phase], tmp));
+            }
+        }
+    }
+
+    ++outputTimeStepIdx_;
 }
 
 void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
                                   const SimulatorState& reservoirState,
-                                  const WellState& wellState) {
+                                  const WellState& wellState)
+{
+    // if we don't want to write anything, this method becomes a
+    // no-op...
+    if (!enableOutput_) {
+        return;
+    }
+
+    // respected the output_interval parameter
+    if (timer.currentStepNum() % outputInterval_ != 0) {
+        return;
+    }
+
     /* Field variables (pressure, saturation) */
-    writeSolution (timer, reservoirState, wellState);
+    writeSolution_(timer, reservoirState);
 
     /* Summary variables (well reporting) */
     // TODO: instead of writing the header (smspec) every time, it should
@@ -1042,7 +1509,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     // called.  This has been changed so that the final summary file
     // will contain data from the whole simulation, instead of just
     // the last step.
-    summary_->writeTimeStep (timer, wellState);
+    summary_->writeTimeStep(timer, wellState);
 }
 
 #else
@@ -1050,7 +1517,14 @@ namespace Opm {
 
 void EclipseWriter::writeInit(const SimulatorTimer&,
                               const SimulatorState&,
-                              const WellState&) {
+                              const WellState&)
+ {
+    // if we don't want to write anything, this method becomes a
+    // no-op...
+     if (!enableOutput_) {
+        return;
+     }
+
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");
 }
@@ -1058,23 +1532,32 @@ void EclipseWriter::writeInit(const SimulatorTimer&,
 void EclipseWriter::writeTimeStep(
         const SimulatorTimer&,
         const SimulatorState&,
-        const WellState&) {
+        const WellState&)
+{
+    // if we don't want to write anything, this method becomes a
+    // no-op...
+    if (!enableOutput_) {
+        return;
+    }
+
     OPM_THROW(std::runtime_error,
               "The ERT libraries are required to write ECLIPSE output files.");
 }
 
 #endif // HAVE_ERT
+
 EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
-        std::shared_ptr <const EclipseGridParser> parser,
+        std::shared_ptr <EclipseGridParser> parser,
         std::shared_ptr <const UnstructuredGrid> grid)
     : parser_ (parser)
+    , newParserDeck_()
     , number_of_cells_(grid->number_of_cells)
     , dimensions_(grid->dimensions)
     , cart_dims_(grid->cartdims)
     , global_cell_(grid->global_cell)
-    , uses_ (phaseUsageFromDeck (*parser)) {
-    
+    , uses_ (phaseUsageFromDeck (*parser))
+{
     init(params);
 }
 
@@ -1095,6 +1578,10 @@ EclipseWriter::EclipseWriter (
 
 void EclipseWriter::init(const ParameterGroup& params)
 {
+    // set the index of the first time step written to 0...
+    outputTimeStepIdx_ = 0;
+
+
     // get the base name from the name of the deck
     using boost::filesystem::path;
     path deck (params.get <std::string> ("deck_filename"));
@@ -1109,14 +1596,85 @@ void EclipseWriter::init(const ParameterGroup& params)
     // of some of the files (.SMSPEC, .UNSMRY) and not others
     baseName_ = boost::to_upper_copy (baseName_);
 
+    // retrieve the value of the "output" parameter
+    enableOutput_ = params.getDefault<bool>("output", /*defaultValue=*/true);
+
+    // retrieve the interval at which something should get written to
+    // disk (once every N timesteps)
+    outputInterval_ = params.getDefault<int>("output_interval", /*defaultValue=*/1);
+
     // store in current directory if not explicitly set
-    if (params.has ("output_dir")) {
-        outputDir_ = params.get <std::string> ("output_dir");
+    outputDir_ = params.getDefault<std::string>("output_dir", ".");
+
+    // set the index of the first time step written to 0...
+    outputTimeStepIdx_ = 0;
+
+    if (enableOutput_) {
+        // make sure that the output directory exists, if not try to create it
+        if (!boost::filesystem::exists(outputDir_)) {
+            std::cout << "Trying to create directory \"" << outputDir_ << "\" for the simulation output\n";
+            boost::filesystem::create_directories(outputDir_);
+        }
+
+        if (!boost::filesystem::is_directory(outputDir_)) {
+            OPM_THROW(std::runtime_error,
+                      "The path specified as output directory '" << outputDir_
+                      << "' is not a directory");
+        }
+    }
+}
+
+EclipseWriter::EclipseWriter (
+        const ParameterGroup& params,
+        Opm::DeckConstPtr newParserDeck,
+        std::shared_ptr <const UnstructuredGrid> grid)
+    : parser_ ()
+    , newParserDeck_(newParserDeck)
+    , number_of_cells_(grid->number_of_cells)
+    , dimensions_(grid->dimensions)
+    , cart_dims_(grid->cartdims)
+    , global_cell_(grid->global_cell)
+    , uses_ (phaseUsageFromDeck (newParserDeck))
+{
+    // get the base name from the name of the deck
+    using boost::filesystem::path;
+    path deck (params.get <std::string> ("deck_filename"));
+    if (boost::to_upper_copy (path (deck.extension ()).string ()) == ".DATA") {
+        baseName_ = path (deck.stem ()).string ();
     }
     else {
-        // this is needed to prevent file names like "/FOO.INIT" which
-        // lead to segfaults
-        outputDir_ = ".";
+        baseName_ = path (deck.filename ()).string ();
+    }
+
+    // make uppercase of everything (or otherwise we'll get uppercase
+    // of some of the files (.SMSPEC, .UNSMRY) and not others
+    baseName_ = boost::to_upper_copy (baseName_);
+
+    // retrieve the value of the "output" parameter
+    enableOutput_ = params.getDefault<bool>("output", /*defaultValue=*/true);
+
+    // retrieve the interval at which something should get written to
+    // disk (once every N timesteps)
+    outputInterval_ = params.getDefault<int>("output_interval", /*defaultValue=*/1);
+
+    // store in current directory if not explicitly set
+    outputDir_ = params.getDefault<std::string>("output_dir", ".");
+
+    // set the index of the first time step written to 0...
+    outputTimeStepIdx_ = 0;
+
+    if (enableOutput_) {
+        // make sure that the output directory exists, if not try to create it
+        if (!boost::filesystem::exists(outputDir_)) {
+            std::cout << "Trying to create directory \"" << outputDir_ << "\" for the simulation output\n";
+            boost::filesystem::create_directories(outputDir_);
+        }
+
+        if (!boost::filesystem::is_directory(outputDir_)) {
+            OPM_THROW(std::runtime_error,
+                      "The path specified as output directory '" << outputDir_
+                      << "' is not a directory");
+        }
     }
 }
 

@@ -2094,6 +2094,42 @@ struct PLYMAX : public SpecialBase
 };
 
 
+struct PLYSHEAR : public SpecialBase
+{
+    std::vector<double> water_velocity_;
+    std::vector<double> vrf_;
+
+    virtual std::string name() const {return std::string("PLYSHEAR");}
+
+    virtual void read(std::istream& is)
+    {
+        // Note. This function assumes that NTSFUN = 1, and reads only one table.
+        std::vector<double> plyshear;
+        readVectorData(is, plyshear);
+        for (int i=0; i<(int)plyshear.size(); i+=2) {
+            water_velocity_.push_back(plyshear[i]);
+            vrf_.push_back(plyshear[i+1]);
+        }
+    }
+
+    virtual void write(std::ostream& os) const
+    {
+        os << name() << '\n';
+        for (int i=0; i<(int)water_velocity_.size(); ++i) {
+            os << water_velocity_[i] << " " << vrf_[i] << '\n';
+        }
+        os << '\n';
+    }
+
+    virtual void convertToSI(const EclipseUnits& units)
+    {
+        for (int i=0; i<(int)water_velocity_.size(); ++i) {
+            water_velocity_[i] *= units.length / units.time;
+        }
+    }
+};
+
+
 struct TLMIXPAR : public SpecialBase
 {
     std::vector<double> tlmixpar_;

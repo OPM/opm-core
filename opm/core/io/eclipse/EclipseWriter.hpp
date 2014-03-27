@@ -24,7 +24,10 @@
 #include <opm/core/io/OutputWriter.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 
+#include <opm/parser/eclipse/Deck/Deck.hpp>
+
 #include <string>
+#include <vector>
 #include <memory>  // std::unique_ptr
 
 struct UnstructuredGrid;
@@ -57,7 +60,7 @@ public:
      * binary files using ERT.
      */
     EclipseWriter(const parameter::ParameterGroup& params,
-                  std::shared_ptr <const EclipseGridParser> parser,
+                  std::shared_ptr <EclipseGridParser> parser,
                   std::shared_ptr <const UnstructuredGrid> grid);
 
     EclipseWriter (const parameter::ParameterGroup& params,
@@ -65,6 +68,25 @@ public:
                    int number_of_cells, const int* global_cell, const int* cart_dims,
                    int dimension);
 
+    /*!
+     * \brief Sets the common attributes required to write eclipse
+     *        binary files using ERT.
+     */
+    EclipseWriter(const parameter::ParameterGroup& params,
+                  Opm::DeckConstPtr newParserDeck,
+                  std::shared_ptr <const UnstructuredGrid> grid);
+
+    /*!
+     * \brief Sets the common attributes required to write eclipse
+     *        binary files using ERT.
+     */
+    EclipseWriter(const parameter::ParameterGroup& params,
+                  Opm::DeckConstPtr newParserDeck,
+                  int number_of_cells, const int* global_cell, const int* cart_dims,
+                  int dimension);
+
+
+                 
     /**
      * We need a destructor in the compilation unit to avoid the
      * EclipseSummary being a complete type here.
@@ -92,19 +114,26 @@ public:
 
 private:
     std::shared_ptr <const EclipseGridParser> parser_;
+    Opm::DeckConstPtr newParserDeck_;
     int number_of_cells_;
     int dimensions_;
     const int* cart_dims_;
     const int* global_cell_;
+    bool enableOutput_;
+    int outputInterval_;
+    int outputTimeStepIdx_;
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck
     std::shared_ptr <EclipseSummary> summary_;
 
+    void activeToGlobalCellData_(std::vector<double> &globalCellsBuf,
+                                 const std::vector<double> &activeCellsBuf,
+                                 const std::vector<double> &inactiveCellsBuf) const;
+
     /// Write solution field variables (pressure and saturation)
-    void writeSolution (const SimulatorTimer& timer,
-                        const SimulatorState& reservoirState,
-                        const WellState& wellState);
+    void writeSolution_(const SimulatorTimer& timer,
+                        const SimulatorState& reservoirState);
 
     void init(const parameter::ParameterGroup& params);
 };
