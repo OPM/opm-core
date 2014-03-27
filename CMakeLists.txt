@@ -47,9 +47,6 @@ include (CMakeLists_files.cmake)
 macro (config_hook)
 #	opm_need_version_of ("dune-common")
   opm_need_version_of ("dune-istl")
-	list (APPEND ${project}_CONFIG_IMPL_VARS
-		HAVE_DUNE_ISTL
-		)
 endmacro (config_hook)
 
 macro (prereqs_hook)
@@ -126,4 +123,3 @@ endmacro (install_hook)
 include (OpmLibMain)
 
 
-message("MPI_FOUND=${MPI_FOUND} DUNE_ISTL_FOUND=${DUNE_ISTL_FOUND}")
