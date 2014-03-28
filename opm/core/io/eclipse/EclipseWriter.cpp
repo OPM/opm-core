@@ -1187,7 +1187,6 @@ struct EclipseWellBhp : public EclipseWellReport {
     virtual double update (const SimulatorTimer& /*timer*/,
                            const WellState& wellState)
     {
-        std::cout << "bhp(wellState) = " << bhp(wellState) << std::endl;
         return bhp(wellState);
     }
 };
