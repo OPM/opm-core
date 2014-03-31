@@ -36,7 +36,6 @@ struct EclipseSummary;
 namespace Opm {
 
 // forward declarations
-class EclipseGridParser;
 class SimulatorState;
 class SimulatorTimer;
 class WellState;
@@ -55,14 +54,6 @@ namespace parameter { class ParameterGroup; }
 class EclipseWriter : public OutputWriter
 {
 public:
-    /*!
-     * \brief Sets the common attributes required to write eclipse
-     * binary files using ERT.
-     */
-    EclipseWriter(const parameter::ParameterGroup& params,
-                  std::shared_ptr <EclipseGridParser> parser,
-                  std::shared_ptr <const UnstructuredGrid> grid);
-
     /*!
      * \brief Sets the common attributes required to write eclipse
      *        binary files using ERT.
@@ -97,7 +88,6 @@ public:
                                const WellState& wellState);
 
 private:
-    std::shared_ptr <const EclipseGridParser> parser_;
     Opm::DeckConstPtr newParserDeck_;
     std::shared_ptr <const UnstructuredGrid> grid_;
     bool enableOutput_;
