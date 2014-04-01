@@ -37,6 +37,7 @@ class OutputWriter;
 namespace parameter { class ParameterGroup; }
 class SimulatorState;
 class SimulatorTimer;
+class TimeMap;
 class WellState;
 
 /**
@@ -54,6 +55,7 @@ protected:
      */
     SimulatorOutputBase (const parameter::ParameterGroup& p,
                          std::shared_ptr <const Deck> parser,
+                         std::shared_ptr <const TimeMap> timeMap,
                          std::shared_ptr <const UnstructuredGrid> grid,
                          std::shared_ptr <const SimulatorTimer> timer,
                          std::shared_ptr <const SimulatorState> state,
@@ -75,6 +77,7 @@ protected:
 
     /// Just hold a reference to these objects that are owned elsewhere.
     std::shared_ptr <const SimulatorTimer> timer_;
+    std::shared_ptr <const TimeMap> timeMap_;
     std::shared_ptr <const SimulatorState> reservoirState_;
     std::shared_ptr <const WellState> wellState_;
 
@@ -122,11 +125,12 @@ private:
  *  auto wellState = make_shared <WellState> ();
  *
  *  // set up simulation
+ *  auto timeMap = make_shared <const TimeMap> (deck);
  *  auto sim = make_shared <SimulatorIncompTwophase> (params, *grid, ... );
  *
  *  // use this to dump state to disk
  *  auto output = make_shared <SimulatorOutput> (
- *          params, deck, grid, timer, state, wellState, sim);
+ *          params, deck, timeMap, grid, timer, state, wellState, sim);
  *
  *  // start simulation
  *  sim.run (timer, state, ... )
@@ -140,13 +144,15 @@ template <typename Simulator>
 struct SimulatorOutput : public SimulatorOutputBase {
 	SimulatorOutput (const parameter::ParameterGroup& params,
                      std::shared_ptr <const Deck> parser,
+                     std::shared_ptr <const TimeMap> timeMap,
                      std::shared_ptr <const UnstructuredGrid> grid,
                      std::shared_ptr <const SimulatorTimer> timer,
                      std::shared_ptr <const SimulatorState> state,
                      std::shared_ptr <const WellState> wellState,
                      std::shared_ptr <Simulator> sim)
         // send all other parameters to base class
-        : SimulatorOutputBase (params, parser, grid, timer, state, wellState)
+        : SimulatorOutputBase (params, parser, timeMap,
+                               grid, timer, state, wellState)
 
         // store reference to simulator in derived class
         , sim_ (sim) {
@@ -162,6 +168,7 @@ struct SimulatorOutput : public SimulatorOutputBase {
      */
     SimulatorOutput (const parameter::ParameterGroup& params,
                      const Deck& parser,
+                     const TimeMap& timeMap,
                      const UnstructuredGrid& grid,
                      const SimulatorTimer& timer,
                      const SimulatorState& state,
@@ -170,6 +177,7 @@ struct SimulatorOutput : public SimulatorOutputBase {
         // send all other parameters to base class
         : SimulatorOutputBase (params,
                                share_obj (parser),
+                               share_obj (timeMap),
                                share_obj (grid),
                                share_obj (timer),
                                share_obj (state),

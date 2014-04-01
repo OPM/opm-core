@@ -32,6 +32,7 @@ using namespace Opm;
 SimulatorOutputBase::SimulatorOutputBase (
         const parameter::ParameterGroup& params,
         std::shared_ptr <const Deck> parser,
+        std::shared_ptr <const TimeMap> timeMap,
         std::shared_ptr <const UnstructuredGrid> grid,
         std::shared_ptr <const SimulatorTimer> timer,
         std::shared_ptr <const SimulatorState> state,
@@ -40,6 +41,7 @@ SimulatorOutputBase::SimulatorOutputBase (
     // store all parameters passed into the object, making them curried
     // parameters to the writeOutput function.
     : timer_          (timer    )
+    , timeMap_        (timeMap  )
     , reservoirState_ (state    )
     , wellState_      (wellState)
 
@@ -49,19 +51,6 @@ SimulatorOutputBase::SimulatorOutputBase (
 
     // always start from the first timestep
     , next_ (0) {
-
-    // make a list of times to dump. since the original list are relative
-    // timesteps, we make a list of accumulated such to compare with
-    // current time. add an extra zero at the beginning so that the
-    // initial state is also written
-	TimeMap tmap(parser);
-    times_.resize (tmap.size () + 1, 0.);
-    double sum = 0.;
-    times_[0] = sum;
-	for (size_t step = 0; step < tmap.numTimesteps(); ++step) {
-		sum += tmap.getTimePassedUntil (step);
-		times_[step + 1] = sum;
-	}
 
     // write the static initialization files, even before simulation starts
     writer_->writeInit (*timer, *state, *wellState);
@@ -82,15 +71,18 @@ SimulatorOutputBase::writeOutput () {
 
     // if the simulator signals for timesteps that aren't reporting
     // times, then ignore them
-    if (next_ < times_.size () && times_[next_] <= this_time) {
+    if (next_ < timeMap_->size ()
+        && timeMap_->getTimePassedUntil (next_) <= this_time) {
         // uh-oh, the simulator has skipped reporting timesteps that
         // occurred before this timestep (it doesn't honor the TSTEP setting)
-        while (next_ < times_.size () && times_[next_] < this_time) {
+        while (next_ < timeMap_->size ()
+               && timeMap_->getTimePassedUntil (next_) < this_time) {
             ++next_;
         }
 
         // report this timestep if it matches
-        if (next_ < times_.size () && times_[next_] == this_time) {
+        if (next_ < timeMap_->size ()
+            && timeMap_->getTimePassedUntil (next_) == this_time) {
             // make sure the simulator has spilled all necessary internal
             // state. notice that this calls *our* sync, which is overridden
             // in the template companion to call the simulator
