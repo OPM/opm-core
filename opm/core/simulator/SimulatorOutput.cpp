@@ -20,7 +20,8 @@
 #include "SimulatorOutput.hpp"
 
 // we need complete definitions for these types
-#include <opm/core/io/eclipse/EclipseGridParser.hpp>
+#include <opm/parser/eclipse/Deck/Deck.hpp>
+#include <opm/parser/eclipse/EclipseState/Schedule/TimeMap.hpp>
 #include <opm/core/io/OutputWriter.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 
@@ -30,7 +31,7 @@ using namespace Opm;
 
 SimulatorOutputBase::SimulatorOutputBase (
         const parameter::ParameterGroup& params,
-        std::shared_ptr <EclipseGridParser> parser,
+        std::shared_ptr <const Deck> parser,
         std::shared_ptr <const UnstructuredGrid> grid,
         std::shared_ptr <const SimulatorTimer> timer,
         std::shared_ptr <const SimulatorState> state,
@@ -53,9 +54,14 @@ SimulatorOutputBase::SimulatorOutputBase (
     // timesteps, we make a list of accumulated such to compare with
     // current time. add an extra zero at the beginning so that the
     // initial state is also written
-    const std::vector <double>& tstep = parser->getTSTEP ().tstep_;
-    times_.resize (tstep.size (), 0.);
-    std::partial_sum (tstep.begin(), tstep.end(), times_.begin());
+	TimeMap tmap(parser);
+    times_.resize (tmap.size () + 1, 0.);
+    double sum = 0.;
+    times_[0] = sum;
+	for (size_t step = 0; step < tmap.numTimesteps(); ++step) {
+		sum += tmap.getTimePassedUntil (step);
+		times_[step + 1] = sum;
+	}
 
     // write the static initialization files, even before simulation starts
     writer_->writeInit (*timer, *state, *wellState);
