@@ -1035,9 +1035,7 @@ EclipseSummary::addWells (Opm::DeckConstPtr newParserDeck,
 
 namespace Opm {
 
-void EclipseWriter::writeInit(const SimulatorTimer &timer,
-                              const SimulatorState& reservoirState,
-                              const WellState& wellState)
+void EclipseWriter::writeInit(const SimulatorTimer &timer)
 {
     // if we don't want to write anything, this method becomes a
     // no-op...
@@ -1075,9 +1073,6 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
         convertUnit_(data, toMilliDarcy);
         fortio.writeKeyword ("PERMZ", data);
     }
-
-    /* Initial solution (pressure and saturation) */
-    writeSolution_(timer, reservoirState);
 
     /* Create summary object (could not do it at construction time,
        since it requires knowledge of the start time). */
@@ -1169,14 +1164,14 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     // will contain data from the whole simulation, instead of just
     // the last step.
     summary_->writeTimeStep(timer, wellState);
+
+    ++outputTimeStepIdx_;
 }
 
 #else
 namespace Opm {
 
-void EclipseWriter::writeInit(const SimulatorTimer&,
-                              const SimulatorState&,
-                              const WellState&)
+void EclipseWriter::writeInit(const SimulatorTimer&)
  {
     // if we don't want to write anything, this method becomes a
     // no-op...

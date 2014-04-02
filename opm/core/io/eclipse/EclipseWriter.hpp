@@ -69,16 +69,20 @@ public:
     virtual ~EclipseWriter ();
 
     /**
-     * Write the static eclipse data (grid, PVT curves, etc) as well as the
-     * initial state to disk.
+     * Write the static eclipse data (grid, PVT curves, etc) to disk.
      */
-    virtual void writeInit(const SimulatorTimer &timer,
-                           const SimulatorState& reservoirState,
-                           const WellState& wellState);
+    virtual void writeInit(const SimulatorTimer &timer);
 
     /*!
-     * \brief Write a blackoil reservoir state to disk for later inspection with
-     *        visualization tools like ResInsight
+     * \brief Write a reservoir state and summary information to disk.
+     *
+     *
+     * The reservoir state can be inspected with visualization tools like
+     * ResInsight.
+     *
+     * The summary information can then be visualized using tools from
+     * ERT or ECLIPSE. Note that calling this method is only
+     * meaningful after the first time step has been completed.
      *
      * \param[in] reservoirState The thermodynamic state of the reservoir
      * \param[in] wellState The production/injection data for all wells

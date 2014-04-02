@@ -25,11 +25,9 @@ struct MultiWriter : public OutputWriter {
     MultiWriter (ptr_t writers) : writers_ (std::move (writers)) { }
 
     /// Forward the call to all writers
-    virtual void writeInit(const SimulatorTimer &timer,
-                           const SimulatorState& reservoirState,
-                           const WellState& wellState) {
+    virtual void writeInit(const SimulatorTimer &timer) {
         for (it_t it = writers_->begin (); it != writers_->end (); ++it) {
-            (*it)->writeInit (timer, reservoirState, wellState);
+            (*it)->writeInit (timer);
         }
     }
 
