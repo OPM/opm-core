@@ -1080,22 +1080,6 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
     summary_->addWells (newParserDeck_, uses_);
 }
 
-void EclipseWriter::activeToGlobalCellData_(std::vector<double> &globalCellsBuf,
-                                              const std::vector<double> &activeCellsBuf,
-                                              const std::vector<double> &inactiveCellsBuf) const
-{
-    globalCellsBuf = inactiveCellsBuf;
-
-    // overwrite the values of active cells
-    for (int activeCellIdx = 0;
-         activeCellIdx < grid_->number_of_cells;
-         ++activeCellIdx)
-    {
-        int globalCellIdx = grid_->global_cell[activeCellIdx];
-        globalCellsBuf[globalCellIdx] = activeCellsBuf[activeCellIdx];
-    }
-}
-
 void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
                                   const SimulatorState& reservoirState,
                                   const WellState& wellState)

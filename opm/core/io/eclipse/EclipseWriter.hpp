@@ -101,10 +101,6 @@ private:
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck
     std::shared_ptr <EclipseSummary> summary_;
-
-    void activeToGlobalCellData_(std::vector<double> &globalCellsBuf,
-                                 const std::vector<double> &activeCellsBuf,
-                                 const std::vector<double> &inactiveCellsBuf) const;
 };
 } // namespace Opm
 
