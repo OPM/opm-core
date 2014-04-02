@@ -1096,9 +1096,21 @@ void EclipseWriter::activeToGlobalCellData_(std::vector<double> &globalCellsBuf,
     }
 }
 
-void EclipseWriter::writeSolution_(const SimulatorTimer& timer,
-                                   const SimulatorState& reservoirState)
+void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
+                                  const SimulatorState& reservoirState,
+                                  const WellState& wellState)
 {
+    // if we don't want to write anything, this method becomes a
+    // no-op...
+    if (!enableOutput_) {
+        return;
+    }
+
+    // respected the output_interval parameter
+    if (outputTimeStepIdx_ % outputInterval_ != 0) {
+        return;
+    }
+
     // start writing to files
     EclipseRestart rst(outputDir_, baseName_, timer, outputTimeStepIdx_);
     rst.writeHeader (timer, outputTimeStepIdx_, uses_, newParserDeck_, reservoirState.pressure().size ());
@@ -1127,27 +1139,6 @@ void EclipseWriter::writeSolution_(const SimulatorTimer& timer,
             sol.add(EclipseKeyword<float>(SAT_NAMES[phase], tmp));
         }
     }
-
-    ++outputTimeStepIdx_;
-}
-
-void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
-                                  const SimulatorState& reservoirState,
-                                  const WellState& wellState)
-{
-    // if we don't want to write anything, this method becomes a
-    // no-op...
-    if (!enableOutput_) {
-        return;
-    }
-
-    // respected the output_interval parameter
-    if (timer.currentStepNum() % outputInterval_ != 0) {
-        return;
-    }
-
-    /* Field variables (pressure, saturation) */
-    writeSolution_(timer, reservoirState);
 
     /* Summary variables (well reporting) */
     // TODO: instead of writing the header (smspec) every time, it should

@@ -105,10 +105,6 @@ private:
     void activeToGlobalCellData_(std::vector<double> &globalCellsBuf,
                                  const std::vector<double> &activeCellsBuf,
                                  const std::vector<double> &inactiveCellsBuf) const;
-
-    /// Write solution field variables (pressure and saturation)
-    void writeSolution_(const SimulatorTimer& timer,
-                        const SimulatorState& reservoirState);
 };
 } // namespace Opm
 
