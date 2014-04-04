@@ -187,7 +187,9 @@ list (APPEND TEST_DATA_FILES
 	tests/capillary.DATA
 	tests/capillary_overlap.DATA
 	tests/deadfluids.DATA
+	tests/equil_livegas.DATA
 	tests/equil_liveoil.DATA
+	tests/equil_rsvd_and_rvvd.DATA
 	tests/wetgas.DATA
 	tests/testBlackoilState1.DATA
 	tests/testBlackoilState2.DATA
