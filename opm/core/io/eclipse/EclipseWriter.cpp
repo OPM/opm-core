@@ -963,6 +963,9 @@ EclipseSummary::writeTimeStep (const SimulatorTimer& timer,
         const double value = (*v)->update (timer, wellState);
         ecl_sum_tstep_iset(*tstep, *(*v).get (), value);
     }
+
+    // write the summary file to disk
+    ecl_sum_fwrite(*this);
 }
 
 /// Supported well types. Enumeration doesn't let us get all the members,
