@@ -1168,6 +1168,22 @@ struct EclipseWellBhp : public EclipseWellReport {
                              "Pascal")
     { }
 
+    EclipseWellBhp   (const EclipseSummary& summary,
+                      Opm::DeckConstPtr newParserDeck,
+                      int whichWell,
+                      PhaseUsage uses,
+                      BlackoilPhases::PhaseIndex phase,
+                      WellType type)
+        : EclipseWellReport (summary,
+                             newParserDeck,
+                             whichWell,
+                             uses,
+                             phase,
+                             type,
+                             'B',
+                             "Pascal")
+    { }
+
     virtual double update (const SimulatorTimer& /*timer*/,
                            const WellState& wellState)
     {
@@ -1296,6 +1312,27 @@ EclipseSummary::addWells (Opm::DeckConstPtr newParserDeck,
             }
         }
     }
+
+    // Add BHP monitors
+    for (int whichWell = 0; whichWell != numWells; ++whichWell) {
+        // In the call below: uses, phase and the well type arguments
+        // are not used, except to set up an index that stores the
+        // well indirectly. For details see the implementation of the
+        // EclipseWellReport constructor, and the method
+        // EclipseWellReport::bhp().
+        BlackoilPhases::PhaseIndex phase = BlackoilPhases::Liquid;
+        if (!uses.phase_used[BlackoilPhases::Liquid]) {
+            phase = BlackoilPhases::Vapour;
+        }
+        add (std::unique_ptr <EclipseWellReport> (
+                        new EclipseWellBhp (*this,
+                                            newParserDeck,
+                                            whichWell,
+                                            uses,
+                                            phase,
+                                            WELL_TYPES[0])));
+    }
+
 }
 
 namespace Opm {
@@ -1405,7 +1442,6 @@ void EclipseWriter::writeSolution_(const SimulatorTimer& timer,
         // thinkable, but this is also not in the most performance
         // critical code path!
         std::vector<double> tmp = reservoirState.pressure();
-        restrictToActiveCells_(tmp, *grid_);
         convertUnit_(tmp, toBar);
 
         sol.add(EclipseKeyword<float>("PRESSURE", tmp));
@@ -1535,7 +1571,7 @@ void EclipseWriter::writeTimeStep(
 
 EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
-        std::shared_ptr <const EclipseGridParser> parser,
+        std::shared_ptr <EclipseGridParser> parser,
         std::shared_ptr <const UnstructuredGrid> grid)
     : parser_ (parser)
     , newParserDeck_()

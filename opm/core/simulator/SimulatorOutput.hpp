@@ -53,7 +53,7 @@ protected:
      * need to pick them up from the object members.
      */
     SimulatorOutputBase (const parameter::ParameterGroup& p,
-                         std::shared_ptr <const EclipseGridParser> parser,
+                         std::shared_ptr <EclipseGridParser> parser,
                          std::shared_ptr <const UnstructuredGrid> grid,
                          std::shared_ptr <const SimulatorTimer> timer,
                          std::shared_ptr <const SimulatorState> state,
@@ -139,7 +139,7 @@ private:
 template <typename Simulator>
 struct SimulatorOutput : public SimulatorOutputBase {
 	SimulatorOutput (const parameter::ParameterGroup& params,
-                     std::shared_ptr <const EclipseGridParser> parser,
+                     std::shared_ptr <EclipseGridParser> parser,
                      std::shared_ptr <const UnstructuredGrid> grid,
                      std::shared_ptr <const SimulatorTimer> timer,
                      std::shared_ptr <const SimulatorState> state,
@@ -161,7 +161,7 @@ struct SimulatorOutput : public SimulatorOutputBase {
      * the arguments passed exceeds the lifetime of this object.
      */
     SimulatorOutput (const parameter::ParameterGroup& params,
-                     const EclipseGridParser& parser,
+                     EclipseGridParser& parser,
                      const UnstructuredGrid& grid,
                      const SimulatorTimer& timer,
                      const SimulatorState& state,
