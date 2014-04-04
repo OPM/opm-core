@@ -99,7 +99,7 @@ namespace Opm
             undersat_gas_tables_[i].resize(3);
             undersat_gas_tables_[i][0] = undersatTable.getOilSolubilityColumn();
             undersat_gas_tables_[i][1] = undersatTable.getGasFormationFactorColumn();
-            undersat_gas_tables_[i][2] = pvtgTable.getOuterTable()->getGasViscosityColumn();
+            undersat_gas_tables_[i][2] = undersatTable.getGasViscosityColumn();
         }
     }
 
