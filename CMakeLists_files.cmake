@@ -175,6 +175,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_wellcontrols.cpp
 	tests/test_wellsgroup.cpp
 	tests/test_wellcollection.cpp
+	tests/test_timer.cpp
   )
 
 # originally generated with the command:
@@ -190,6 +191,7 @@ list (APPEND TEST_DATA_FILES
 	tests/wells_manager_data_expanded.data
 	tests/wells_manager_data_wellSTOP.data
 	tests/wells_group.data
+	tests/TESTTIMER.DATA
 	)
 
 # originally generated with the command:
