@@ -53,7 +53,7 @@ SimulatorOutputBase::SimulatorOutputBase (
     , next_ (0) {
 
     // write the static initialization files, even before simulation starts
-    writer_->writeInit (*timer, *state, *wellState);
+    writer_->writeInit (*timer);
 }
 
 // default destructor is OK, just need to be defined

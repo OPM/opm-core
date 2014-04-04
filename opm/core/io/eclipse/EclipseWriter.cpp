@@ -1035,9 +1035,7 @@ EclipseSummary::addWells (Opm::DeckConstPtr newParserDeck,
 
 namespace Opm {
 
-void EclipseWriter::writeInit(const SimulatorTimer &timer,
-                              const SimulatorState& reservoirState,
-                              const WellState& wellState)
+void EclipseWriter::writeInit(const SimulatorTimer &timer)
 {
     // if we don't want to write anything, this method becomes a
     // no-op...
@@ -1076,34 +1074,27 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer,
         fortio.writeKeyword ("PERMZ", data);
     }
 
-    /* Initial solution (pressure and saturation) */
-    writeSolution_(timer, reservoirState);
-
     /* Create summary object (could not do it at construction time,
        since it requires knowledge of the start time). */
     summary_.reset(new EclipseSummary(outputDir_, baseName_, timer, newParserDeck_));
     summary_->addWells (newParserDeck_, uses_);
 }
 
-void EclipseWriter::activeToGlobalCellData_(std::vector<double> &globalCellsBuf,
-                                              const std::vector<double> &activeCellsBuf,
-                                              const std::vector<double> &inactiveCellsBuf) const
+void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
+                                  const SimulatorState& reservoirState,
+                                  const WellState& wellState)
 {
-    globalCellsBuf = inactiveCellsBuf;
-
-    // overwrite the values of active cells
-    for (int activeCellIdx = 0;
-         activeCellIdx < grid_->number_of_cells;
-         ++activeCellIdx)
-    {
-        int globalCellIdx = grid_->global_cell[activeCellIdx];
-        globalCellsBuf[globalCellIdx] = activeCellsBuf[activeCellIdx];
+    // if we don't want to write anything, this method becomes a
+    // no-op...
+    if (!enableOutput_) {
+        return;
     }
-}
 
-void EclipseWriter::writeSolution_(const SimulatorTimer& timer,
-                                   const SimulatorState& reservoirState)
-{
+    // respected the output_interval parameter
+    if (outputTimeStepIdx_ % outputInterval_ != 0) {
+        return;
+    }
+
     // start writing to files
     EclipseRestart rst(outputDir_, baseName_, timer, outputTimeStepIdx_);
     rst.writeHeader (timer, outputTimeStepIdx_, uses_, newParserDeck_, reservoirState.pressure().size ());
@@ -1133,27 +1124,6 @@ void EclipseWriter::writeSolution_(const SimulatorTimer& timer,
         }
     }
 
-    ++outputTimeStepIdx_;
-}
-
-void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
-                                  const SimulatorState& reservoirState,
-                                  const WellState& wellState)
-{
-    // if we don't want to write anything, this method becomes a
-    // no-op...
-    if (!enableOutput_) {
-        return;
-    }
-
-    // respected the output_interval parameter
-    if (timer.currentStepNum() % outputInterval_ != 0) {
-        return;
-    }
-
-    /* Field variables (pressure, saturation) */
-    writeSolution_(timer, reservoirState);
-
     /* Summary variables (well reporting) */
     // TODO: instead of writing the header (smspec) every time, it should
     // only be written when there is a change in the well configuration
@@ -1169,14 +1139,14 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     // will contain data from the whole simulation, instead of just
     // the last step.
     summary_->writeTimeStep(timer, wellState);
+
+    ++outputTimeStepIdx_;
 }
 
 #else
 namespace Opm {
 
-void EclipseWriter::writeInit(const SimulatorTimer&,
-                              const SimulatorState&,
-                              const WellState&)
+void EclipseWriter::writeInit(const SimulatorTimer&)
  {
     // if we don't want to write anything, this method becomes a
     // no-op...
