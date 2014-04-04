@@ -27,7 +27,7 @@ struct UnstructuredGrid;
 namespace Opm {
 
 // forward declaration
-class EclipseGridParser;
+class Deck;
 namespace parameter { class ParameterGroup; }
 class SimulatorState;
 class SimulatorTimer;
@@ -43,7 +43,7 @@ class WellState;
  * \example
  * \code{.cpp}
  *  ParameterGroup params (argc, argv, false);
- *  auto parser = std::make_shared <EclipseGridParser> (
+ *  auto parser = std::make_shared <const Deck> (
  *                      params.get <string> ("deck_filename"));
  *
  *  std::unique_ptr <OutputWriter> writer =
@@ -108,7 +108,7 @@ public:
      */
     static std::unique_ptr <OutputWriter>
     create (const parameter::ParameterGroup& params,
-            std::shared_ptr <EclipseGridParser> parser,
+            std::shared_ptr <const Deck> parser,
             std::shared_ptr <const UnstructuredGrid> grid);
 };
 
