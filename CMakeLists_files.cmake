@@ -166,6 +166,8 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_param.cpp
 	tests/test_blackoilfluid.cpp
 	tests/test_shadow.cpp
+	tests/test_equil.cpp
+	tests/test_regionmapping.cpp
 	tests/test_units.cpp
 	tests/test_blackoilstate.cpp
 	tests/test_parser.cpp
@@ -182,6 +184,10 @@ list (APPEND TEST_DATA_FILES
 	tests/extratestdata.xml
 	tests/testdata.xml
 	tests/liveoil.DATA
+	tests/capillary.DATA
+	tests/capillary_overlap.DATA
+	tests/deadfluids.DATA
+	tests/equil_liveoil.DATA
 	tests/wetgas.DATA
 	tests/testBlackoilState1.DATA
 	tests/testBlackoilState2.DATA
@@ -195,6 +201,7 @@ list (APPEND TEST_DATA_FILES
 # originally generated with the command:
 # find tutorials examples -name '*.c*' -printf '\t%p\n' | sort
 list (APPEND EXAMPLE_SOURCE_FILES
+	examples/compute_initial_state.cpp
 	examples/compute_tof.cpp
 	examples/compute_tof_from_files.cpp
 	examples/import_rewrite.cpp
@@ -322,6 +329,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/satfunc/SaturationPropsFromDeck_impl.hpp
 	opm/core/props/satfunc/SaturationPropsInterface.hpp
 	opm/core/simulator/BlackoilState.hpp
+	opm/core/simulator/EquilibrationHelpers.hpp
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
 	opm/core/simulator/SimulatorOutput.hpp
@@ -333,6 +341,8 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/WellState.hpp
 	opm/core/simulator/initState.hpp
 	opm/core/simulator/initState_impl.hpp
+	opm/core/simulator/initStateEquil.hpp
+	opm/core/simulator/initStateEquil_impl.hpp
 	opm/core/tof/DGBasis.hpp
 	opm/core/tof/TofReorder.hpp
 	opm/core/tof/TofDiscGalReorder.hpp
@@ -367,6 +377,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/NonuniformTableLinear.hpp
 	opm/core/utility/NullStream.hpp
 	opm/core/utility/PolynomialUtils.hpp
+	opm/core/utility/RegionMapping.hpp
 	opm/core/utility/RootFinders.hpp
 	opm/core/utility/SparseTable.hpp
 	opm/core/utility/SparseVector.hpp
