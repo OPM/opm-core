@@ -36,7 +36,7 @@ const double* multiplyFaceNormalWithArea(const Dune::CpGrid& grid, int face_inde
     return out;
 }
 
-inline const double* multiplyFaceNormalWithArea(const UnstructuredGrid& grid, int face_index, const double* in)
+inline const double* multiplyFaceNormalWithArea(const UnstructuredGrid&, int, const double* in)
 {
     return in;
 }
