@@ -71,11 +71,11 @@ macro (sources_hook)
 			)
 	endif (NOT SuiteSparse_FOUND)
 
-	if (NOT MPI_FOUND OR NOT DUNE_ISTL_FOUND)
+	if ((NOT MPI_FOUND) OR (NOT DUNE_ISTL_FOUND))
 		list (REMOVE_ITEM tests_SOURCES
 			${PROJECT_SOURCE_DIR}/tests/test_parallel_linearsolver.cpp
 			)
-	endif (NOT MPI_FOUND OR NOT DUNE_ISTL_FOUND)
+	endif ((NOT MPI_FOUND) OR (NOT DUNE_ISTL_FOUND))
 
 	# we are not supposed to include the TinyXML test prog. regardless
 	list (REMOVE_ITEM opm-core_SOURCES
