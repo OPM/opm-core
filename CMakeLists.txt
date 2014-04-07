@@ -72,8 +72,8 @@ macro (sources_hook)
 	endif (NOT SuiteSparse_FOUND)
 
 	if (NOT MPI_FOUND OR NOT DUNE_ISTL_FOUND)
-		list (REMOVE_ITEM TEST_SOURCE_FILES
-			tests/test_parallel_linearsolver.cpp
+		list (REMOVE_ITEM tests_SOURCES
+			${PROJECT_SOURCE_DIR}/tests/test_parallel_linearsolver.cpp
 			)
 	endif (NOT MPI_FOUND OR NOT DUNE_ISTL_FOUND)
 
