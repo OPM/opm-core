@@ -34,6 +34,7 @@
 #include <opm/core/utility/linearInterpolation.hpp>
 
 #include <algorithm>
+#include <iostream>
 
 namespace Opm
 {
@@ -99,7 +100,15 @@ namespace Opm
             undersat_gas_tables_[i].resize(3);
             undersat_gas_tables_[i][0] = undersatTable.getOilSolubilityColumn();
             undersat_gas_tables_[i][1] = undersatTable.getGasFormationFactorColumn();
-            undersat_gas_tables_[i][2] = pvtgTable.getOuterTable()->getGasViscosityColumn();
+            undersat_gas_tables_[i][2] = undersatTable.getGasViscosityColumn();
+        }
+        
+        // Bg -> 1/Bg      
+        for (int i=0; i<sz; ++i) {
+            saturated_gas_table_[1][i] = 1.0/saturated_gas_table_[1][i];
+            for (int j=0; j<undersat_gas_tables_[i][1].size(); ++j) {
+                undersat_gas_tables_[i][1][j] = 1.0/undersat_gas_tables_[i][1][j];
+            }
         }
     }
 

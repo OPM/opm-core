@@ -36,7 +36,6 @@ struct EclipseSummary;
 namespace Opm {
 
 // forward declarations
-class EclipseGridParser;
 class SimulatorState;
 class SimulatorTimer;
 class WellState;
@@ -55,19 +54,6 @@ namespace parameter { class ParameterGroup; }
 class EclipseWriter : public OutputWriter
 {
 public:
-    /*!
-     * \brief Sets the common attributes required to write eclipse
-     * binary files using ERT.
-     */
-    EclipseWriter(const parameter::ParameterGroup& params,
-                  std::shared_ptr <EclipseGridParser> parser,
-                  std::shared_ptr <const UnstructuredGrid> grid);
-
-    EclipseWriter (const parameter::ParameterGroup& params,
-                   std::shared_ptr <const EclipseGridParser> parser,
-                   int number_of_cells, const int* global_cell, const int* cart_dims,
-                   int dimension);
-
     /*!
      * \brief Sets the common attributes required to write eclipse
      *        binary files using ERT.
@@ -94,16 +80,20 @@ public:
     virtual ~EclipseWriter ();
 
     /**
-     * Write the static eclipse data (grid, PVT curves, etc) as well as the
-     * initial state to disk.
+     * Write the static eclipse data (grid, PVT curves, etc) to disk.
      */
-    virtual void writeInit(const SimulatorTimer &timer,
-                           const SimulatorState& reservoirState,
-                           const WellState& wellState);
+    virtual void writeInit(const SimulatorTimer &timer);
 
     /*!
-     * \brief Write a blackoil reservoir state to disk for later inspection with
-     *        visualization tools like ResInsight
+     * \brief Write a reservoir state and summary information to disk.
+     *
+     *
+     * The reservoir state can be inspected with visualization tools like
+     * ResInsight.
+     *
+     * The summary information can then be visualized using tools from
+     * ERT or ECLIPSE. Note that calling this method is only
+     * meaningful after the first time step has been completed.
      *
      * \param[in] reservoirState The thermodynamic state of the reservoir
      * \param[in] wellState The production/injection data for all wells
@@ -113,7 +103,6 @@ public:
                                const WellState& wellState);
 
 private:
-    std::shared_ptr <const EclipseGridParser> parser_;
     Opm::DeckConstPtr newParserDeck_;
     int number_of_cells_;
     int dimensions_;
@@ -126,14 +115,6 @@ private:
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck
     std::shared_ptr <EclipseSummary> summary_;
-
-    void activeToGlobalCellData_(std::vector<double> &globalCellsBuf,
-                                 const std::vector<double> &activeCellsBuf,
-                                 const std::vector<double> &inactiveCellsBuf) const;
-
-    /// Write solution field variables (pressure and saturation)
-    void writeSolution_(const SimulatorTimer& timer,
-                        const SimulatorState& reservoirState);
 
     void init(const parameter::ParameterGroup& params);
 };

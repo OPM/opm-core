@@ -20,7 +20,8 @@
 #include "SimulatorOutput.hpp"
 
 // we need complete definitions for these types
-#include <opm/core/io/eclipse/EclipseGridParser.hpp>
+#include <opm/parser/eclipse/Deck/Deck.hpp>
+#include <opm/parser/eclipse/EclipseState/Schedule/TimeMap.hpp>
 #include <opm/core/io/OutputWriter.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 
@@ -30,7 +31,8 @@ using namespace Opm;
 
 SimulatorOutputBase::SimulatorOutputBase (
         const parameter::ParameterGroup& params,
-        std::shared_ptr <EclipseGridParser> parser,
+        std::shared_ptr <const Deck> parser,
+        std::shared_ptr <const TimeMap> timeMap,
         std::shared_ptr <const UnstructuredGrid> grid,
         std::shared_ptr <const SimulatorTimer> timer,
         std::shared_ptr <const SimulatorState> state,
@@ -39,6 +41,7 @@ SimulatorOutputBase::SimulatorOutputBase (
     // store all parameters passed into the object, making them curried
     // parameters to the writeOutput function.
     : timer_          (timer    )
+    , timeMap_        (timeMap  )
     , reservoirState_ (state    )
     , wellState_      (wellState)
 
@@ -49,16 +52,8 @@ SimulatorOutputBase::SimulatorOutputBase (
     // always start from the first timestep
     , next_ (0) {
 
-    // make a list of times to dump. since the original list are relative
-    // timesteps, we make a list of accumulated such to compare with
-    // current time. add an extra zero at the beginning so that the
-    // initial state is also written
-    const std::vector <double>& tstep = parser->getTSTEP ().tstep_;
-    times_.resize (tstep.size (), 0.);
-    std::partial_sum (tstep.begin(), tstep.end(), times_.begin());
-
     // write the static initialization files, even before simulation starts
-    writer_->writeInit (*timer, *state, *wellState);
+    writer_->writeInit (*timer);
 }
 
 // default destructor is OK, just need to be defined
@@ -76,15 +71,18 @@ SimulatorOutputBase::writeOutput () {
 
     // if the simulator signals for timesteps that aren't reporting
     // times, then ignore them
-    if (next_ < times_.size () && times_[next_] <= this_time) {
+    if (next_ < timeMap_->size ()
+        && timeMap_->getTimePassedUntil (next_) <= this_time) {
         // uh-oh, the simulator has skipped reporting timesteps that
         // occurred before this timestep (it doesn't honor the TSTEP setting)
-        while (next_ < times_.size () && times_[next_] < this_time) {
+        while (next_ < timeMap_->size ()
+               && timeMap_->getTimePassedUntil (next_) < this_time) {
             ++next_;
         }
 
         // report this timestep if it matches
-        if (next_ < times_.size () && times_[next_] == this_time) {
+        if (next_ < timeMap_->size ()
+            && timeMap_->getTimePassedUntil (next_) == this_time) {
             // make sure the simulator has spilled all necessary internal
             // state. notice that this calls *our* sync, which is overridden
             // in the template companion to call the simulator

@@ -27,7 +27,7 @@ struct UnstructuredGrid;
 namespace Opm {
 
 // forward declaration
-class EclipseGridParser;
+class Deck;
 namespace parameter { class ParameterGroup; }
 class SimulatorState;
 class SimulatorTimer;
@@ -43,7 +43,7 @@ class WellState;
  * \example
  * \code{.cpp}
  *  ParameterGroup params (argc, argv, false);
- *  auto parser = std::make_shared <EclipseGridParser> (
+ *  auto parser = std::make_shared <const Deck> (
  *                      params.get <string> ("deck_filename"));
  *
  *  std::unique_ptr <OutputWriter> writer =
@@ -67,15 +67,12 @@ public:
     virtual ~OutputWriter () { }
 
     /**
-     * Write the static eclipse data (grid, PVT curves, etc) as well as the
-     * initial state to disk.
+     * Write the static data (grid, PVT curves, etc) to disk.
      *
      * This routine should be called before the first timestep (i.e. when
      * timer.currentStepNum () == 0)
      */
-    virtual void writeInit(const SimulatorTimer &timer,
-                           const SimulatorState& reservoirState,
-                           const WellState& wellState) = 0;
+    virtual void writeInit(const SimulatorTimer &timer) = 0;
 
     /*!
      * \brief Write a blackoil reservoir state to disk for later inspection with
@@ -88,8 +85,8 @@ public:
      * i.e. timer.currentStepNum () > 0.
      */
     virtual void writeTimeStep(const SimulatorTimer& timer,
-                                 const SimulatorState& reservoirState,
-                                 const WellState& wellState) = 0;
+                               const SimulatorState& reservoirState,
+                               const WellState& wellState) = 0;
 
     /*!
      * Create a suitable set of output formats based on configuration.
@@ -108,7 +105,7 @@ public:
      */
     static std::unique_ptr <OutputWriter>
     create (const parameter::ParameterGroup& params,
-            std::shared_ptr <EclipseGridParser> parser,
+            std::shared_ptr <const Deck> parser,
             std::shared_ptr <const UnstructuredGrid> grid);
 };
 
