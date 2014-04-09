@@ -21,6 +21,7 @@ double faceArea(const Dune::CpGrid&, int);
 
 namespace
 {
+#ifdef HAVE_DUNE_CORNERPOINT
 const double* multiplyFaceNormalWithArea(const Dune::CpGrid& grid, int face_index, const double* in)
 {
     int d=Opm::UgGridHelpers::dimensions(grid);
@@ -32,14 +33,15 @@ const double* multiplyFaceNormalWithArea(const Dune::CpGrid& grid, int face_inde
     return out;
 }
 
-inline const double* multiplyFaceNormalWithArea(const UnstructuredGrid&, int, const double* in)
-{
-    return in;
-}
-
 inline void maybeFreeFaceNormal(const Dune::CpGrid&, const double* array)
 {
     delete[] array;
+}
+#endif  // HAVE_DUNE_CORNERPOINT
+
+inline const double* multiplyFaceNormalWithArea(const UnstructuredGrid&, int, const double* in)
+{
+    return in;
 }
 
 inline void maybeFreeFaceNormal(const UnstructuredGrid&, const double*)
