@@ -1,11 +1,8 @@
-#include <assert.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <opm/core/linalg/blas_lapack.h>
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
 #include <opm/core/grid/GridHelpers.hpp>
+
+#include <cmath>
 
 namespace Dune
 {
@@ -105,7 +102,7 @@ tpfa_htrans_compute(const Grid* G, const double *perm, double *htrans)
 
             assert (denom > 0);
             htrans[i] /= denom;
-            htrans[i]  = fabs(htrans[i]);
+            htrans[i]  = std::abs(htrans[i]);
         }
         // Move to next cell centroid.
         cc = increment(cc, 1, d);
