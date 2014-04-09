@@ -104,6 +104,7 @@ public:
 
 private:
     Opm::DeckConstPtr newParserDeck_;
+    std::shared_ptr <const UnstructuredGrid> grid_;
     int number_of_cells_;
     int dimensions_;
     const int* cart_dims_;

@@ -1208,6 +1208,7 @@ EclipseWriter::EclipseWriter (
         Opm::DeckConstPtr newParserDeck,
         std::shared_ptr<const UnstructuredGrid> grid)
     : newParserDeck_ (newParserDeck)
+    , grid_(grid)
     , number_of_cells_(grid->number_of_cells)
     , dimensions_(grid->dimensions)
     , cart_dims_(grid->cartdims)
