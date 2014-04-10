@@ -38,9 +38,6 @@ namespace Opm
     class SinglePvtLiveGas : public SinglePvtInterface
     {
     public:
-        typedef std::vector<std::vector<std::vector<double> > > table_t;
-
-        SinglePvtLiveGas(const table_t& pvto);
         SinglePvtLiveGas(const Opm::PvtgTable& pvtgTable);
         virtual ~SinglePvtLiveGas();
 

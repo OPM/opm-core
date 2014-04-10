@@ -46,43 +46,6 @@ namespace Opm
     //------------------------------------------------------------------------
     // Member functions
     //-------------------------------------------------------------------------
-
-    /// Constructor
-    SinglePvtLiveGas::SinglePvtLiveGas(const table_t& pvtg)
-    {
-        // GAS, PVTG
-        const int region_number = 0;
-        if (pvtg.size() != 1) {
-            OPM_THROW(std::runtime_error, "More than one PVD-region");
-        }
-        saturated_gas_table_.resize(4);
-        const int sz = pvtg[region_number].size();
-        for (int k=0; k<4; ++k) {
-            saturated_gas_table_[k].resize(sz);
-        }
-
-        for (int i=0; i<sz; ++i) {
-            saturated_gas_table_[0][i] = pvtg[region_number][i][0];  // p
-            saturated_gas_table_[1][i] = 1.0/pvtg[region_number][i][2];  // 1/Bg
-            saturated_gas_table_[2][i] = pvtg[region_number][i][3];  // mu_g
-            saturated_gas_table_[3][i] = pvtg[region_number][i][1]; // Rv
-        }
-
-        undersat_gas_tables_.resize(sz);
-        for (int i=0; i<sz; ++i) {
-            undersat_gas_tables_[i].resize(3);
-            int tsize = (pvtg[region_number][i].size() - 1)/3;
-            undersat_gas_tables_[i][0].resize(tsize);
-            undersat_gas_tables_[i][1].resize(tsize);
-            undersat_gas_tables_[i][2].resize(tsize);
-            for (int j=0, k=0; j<tsize; ++j) {
-                undersat_gas_tables_[i][0][j] = pvtg[region_number][i][++k]; // Rv
-                undersat_gas_tables_[i][1][j] = 1.0/pvtg[region_number][i][++k]; // 1/Bg
-                undersat_gas_tables_[i][2][j] = pvtg[region_number][i][++k]; // mu_g
-            }
-        }
-    }
-
     SinglePvtLiveGas::SinglePvtLiveGas(const Opm::PvtgTable& pvtgTable)
     {
         // GAS, PVTG
