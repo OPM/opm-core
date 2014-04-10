@@ -253,7 +253,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/grid/cornerpoint_grid.h
 	opm/core/grid/cpgpreprocess/facetopology.h
 	opm/core/grid/cpgpreprocess/geometry.h
-	opm/core/grid/cpgpreprocess/grdecl.h
 	opm/core/grid/cpgpreprocess/preprocess.h
 	opm/core/grid/cpgpreprocess/uniquepoints.h
 	opm/core/io/eclipse/CornerpointChopper.hpp
