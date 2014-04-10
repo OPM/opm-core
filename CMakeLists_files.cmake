@@ -223,15 +223,10 @@ list (APPEND EXAMPLE_SOURCE_FILES
 # originally generated with the command:
 # find attic -name '*.c*' -printf '\t%p\n' | sort
 list (APPEND ATTIC_FILES
-	attic/bo_resprop_test.cpp
-	attic/pvt_test.cpp
-	attic/relperm_test.cpp
 	attic/test_cfs_tpfa.c
-	attic/test_ert.cpp
 	attic/test_jacsys.cpp
 	attic/test_lapack.cpp
 	attic/test_read_grid.c
-	attic/test_readpolymer.cpp
 	attic/test_read_vag.cpp
 	attic/test_writeVtkData.cpp
 	)
