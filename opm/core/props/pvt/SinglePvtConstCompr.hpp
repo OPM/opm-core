@@ -24,7 +24,7 @@
 #include <opm/core/utility/ErrorMacros.hpp>
 
 #include <opm/parser/eclipse/Utility/PvtwTable.hpp>
-#include <opm/parser/eclipse/Utility/PvdcoTable.hpp>
+#include <opm/parser/eclipse/Utility/PvcdoTable.hpp>
 
 #include <vector>
 #include <algorithm>
@@ -71,7 +71,7 @@ namespace Opm
             visc_comp_ = pvtwTable.getViscosibilityColumn()[0];
         }
 
-        SinglePvtConstCompr(const Opm::PvdcoTable &pvdcoTable)
+        SinglePvtConstCompr(const Opm::PvcdoTable &pvdcoTable)
         {
             if (pvdcoTable.numRows() != 1)
                 OPM_THROW(std::runtime_error,
