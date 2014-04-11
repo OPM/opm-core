@@ -221,7 +221,8 @@ EclipseGridParser::EclipseGridParser(const string& filename, bool convert_to_SI)
     // Store directory of filename
     boost::filesystem::path p(filename);
     directory_ = p.parent_path().string();
-    ifstream is(filename.c_str());
+    deckFileName_ = p.string();
+    ifstream is(deckFileName_.c_str());
     if (!is) {
         cerr << "Unable to open file " << filename << endl;
         throw exception();
