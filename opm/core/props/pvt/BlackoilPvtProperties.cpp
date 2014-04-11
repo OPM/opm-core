@@ -33,7 +33,7 @@
 #include <opm/core/utility/linearInterpolation.hpp>
 
 #include <opm/parser/eclipse/Utility/PvtwTable.hpp>
-#include <opm/parser/eclipse/Utility/PvdcoTable.hpp>
+#include <opm/parser/eclipse/Utility/PvcdoTable.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 
 namespace Opm
@@ -168,7 +168,7 @@ namespace Opm
 
                 props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtLiveOil(pvtoTable));
             } else if (newParserDeck->hasKeyword("PVCDO")) {
-                Opm::PvdcoTable pvcdoTable(newParserDeck->getKeyword("PVCDO"));
+                Opm::PvcdoTable pvcdoTable(newParserDeck->getKeyword("PVCDO"));
 
                 props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtConstCompr(pvcdoTable));
             } else {
