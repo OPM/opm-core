@@ -1,12 +1,8 @@
-#include "config.h"
-#include <assert.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <opm/core/linalg/blas_lapack.h>
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
 #include <opm/core/grid/GridHelpers.hpp>
+
+#include <cmath>
 
 namespace Dune
 {
@@ -25,6 +21,7 @@ double faceArea(const Dune::CpGrid&, int);
 
 namespace
 {
+#ifdef HAVE_DUNE_CORNERPOINT
 const double* multiplyFaceNormalWithArea(const Dune::CpGrid& grid, int face_index, const double* in)
 {
     int d=Opm::UgGridHelpers::dimensions(grid);
@@ -36,14 +33,15 @@ const double* multiplyFaceNormalWithArea(const Dune::CpGrid& grid, int face_inde
     return out;
 }
 
-inline const double* multiplyFaceNormalWithArea(const UnstructuredGrid&, int, const double* in)
-{
-    return in;
-}
-
 inline void maybeFreeFaceNormal(const Dune::CpGrid&, const double* array)
 {
     delete[] array;
+}
+#endif  // HAVE_DUNE_CORNERPOINT
+
+inline const double* multiplyFaceNormalWithArea(const UnstructuredGrid&, int, const double* in)
+{
+    return in;
 }
 
 inline void maybeFreeFaceNormal(const UnstructuredGrid&, const double*)
@@ -106,7 +104,7 @@ tpfa_htrans_compute(const Grid* G, const double *perm, double *htrans)
 
             assert (denom > 0);
             htrans[i] /= denom;
-            htrans[i]  = fabs(htrans[i]);
+            htrans[i]  = std::abs(htrans[i]);
         }
         // Move to next cell centroid.
         cc = increment(cc, 1, d);
