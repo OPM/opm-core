@@ -7,6 +7,11 @@
 #include <opm/core/linalg/blas_lapack.h>
 #include <opm/core/pressure/tpfa/trans_tpfa.h>
 
+
+#ifdef __cplusplus
+#include "TransTpfa.hpp"
+#endif
+
 /* ---------------------------------------------------------------------- */
 /* htrans <- sum(C(:,i) .* K(cellNo,:) .* N(:,j), 2) ./ sum(C.*C, 2) */
 /* ---------------------------------------------------------------------- */
@@ -14,6 +19,10 @@ void
 tpfa_htrans_compute(struct UnstructuredGrid *G, const double *perm, double *htrans)
 /* ---------------------------------------------------------------------- */
 {
+    #ifdef __cplusplus
+    return tpfa_htrans_compute<UnstructuredGrid>(G, totmob, htrans, trans);
+    #endif
+    
     int    c, d, f, i, j;
     double s, dist, denom;
 
@@ -65,6 +74,10 @@ void
 tpfa_trans_compute(struct UnstructuredGrid *G, const double *htrans, double *trans)
 /* ---------------------------------------------------------------------- */
 {
+    #ifdef __cplusplus
+    return tpfa_trans_compute<UnstructuredGrid>(G, totmob, htrans, trans);
+    #endif
+    
     int c, i, f;
 
     for (f = 0; f < G->number_of_faces; f++) {
@@ -93,6 +106,10 @@ tpfa_eff_trans_compute(struct UnstructuredGrid       *G,
                        double       *trans)
 /* ---------------------------------------------------------------------- */
 {
+    #ifdef __cplusplus
+    return tpfa_eff_trans_compute<UnstructuredGrid>(G, totmob, htrans, trans);
+    #endif
+    
     int c, i, f;
 
     for (f = 0; f < G->number_of_faces; f++) {

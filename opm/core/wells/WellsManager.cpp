@@ -26,13 +26,11 @@
 #include <opm/core/wells.h>
 #include <opm/core/well_controls.h>
 #include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/utility/Units.hpp>
 #include <opm/core/wells/WellCollection.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 
 #include <opm/parser/eclipse/EclipseState/Schedule/ScheduleEnums.hpp>
 
-#include <array>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -44,17 +42,13 @@
 
 
 // Helper structs and functions for the implementation.
-namespace
+namespace WellsManagerDetail
 {
 
 
 
     namespace ProductionControl
     {
-        enum Mode { ORAT, WRAT, GRAT,
-                    LRAT, CRAT, RESV,
-                    BHP , THP , GRUP };
-
         namespace Details {
             std::map<std::string, Mode>
             init_mode_map() {
@@ -122,8 +116,6 @@ namespace
 
     namespace InjectionControl
     {
-        enum Mode { RATE, RESV, BHP,
-                    THP, GRUP };
 
         namespace Details {
             std::map<std::string, Mode>
@@ -176,28 +168,6 @@ namespace
         }
 
     } // namespace InjectionControl
-
-
-    std::array<double, 3> getCubeDim(const UnstructuredGrid& grid, int cell)
-    {
-        using namespace std;
-        std::array<double, 3> cube;
-        int num_local_faces = grid.cell_facepos[cell + 1] - grid.cell_facepos[cell];
-        vector<double> x(num_local_faces);
-        vector<double> y(num_local_faces);
-        vector<double> z(num_local_faces);
-        for (int lf=0; lf<num_local_faces; ++ lf) {
-            int face = grid.cell_faces[grid.cell_facepos[cell] + lf];
-            const double* centroid = &grid.face_centroids[grid.dimensions*face];
-            x[lf] = centroid[0];
-            y[lf] = centroid[1];
-            z[lf] = centroid[2];
-        }
-        cube[0] = *max_element(x.begin(), x.end()) - *min_element(x.begin(), x.end());
-        cube[1] = *max_element(y.begin(), y.end()) - *min_element(y.begin(), y.end());
-        cube[2] = *max_element(z.begin(), z.end()) - *min_element(z.begin(), z.end());
-        return cube;
-    }
 
     // Use the Peaceman well model to compute well indices.
     // radius is the radius of the well.
@@ -261,7 +231,6 @@ namespace Opm
     {
     }
 
-
     /// Construct from existing wells object.
     WellsManager::WellsManager(struct Wells* W)
         : w_(clone_wells(W))
@@ -275,82 +244,13 @@ namespace Opm
                                const double* permeability)
         : w_(0)
     {
-        if (grid.dimensions != 3) {
-            OPM_THROW(std::runtime_error, "We cannot initialize wells from a deck unless the corresponding grid is 3-dimensional.");
-        }
+        init(eclipseState, timeStep, UgGridHelpers::numCells(grid),
+             UgGridHelpers::globalCell(grid), UgGridHelpers::cartDims(grid), 
+             UgGridHelpers::dimensions(grid), UgGridHelpers::beginCellCentroids(grid),
+             UgGridHelpers::cell2Faces(grid), UgGridHelpers::beginFaceCentroids(grid),
+             permeability);
 
-        if (eclipseState->getSchedule()->numWells() == 0) {
-            OPM_MESSAGE("No wells specified in Schedule section, initializing no wells");
-            return;
-        }
-
-        std::map<int,int> cartesian_to_compressed;
-        setupCompressedToCartesian(grid, cartesian_to_compressed);
-
-        // Obtain phase usage data.
-        PhaseUsage pu = phaseUsageFromDeck(eclipseState);
-
-        // These data structures will be filled in this constructor,
-        // then used to initialize the Wells struct.
-        std::vector<std::string> well_names;
-        std::vector<WellData> well_data;
-
-
-        // For easy lookup:
-        std::map<std::string, int> well_names_to_index;
-
-        ScheduleConstPtr schedule = eclipseState->getSchedule();
-        std::vector<WellConstPtr> wells = schedule->getWells(timeStep);
-
-        well_names.reserve(wells.size());
-        well_data.reserve(wells.size());
-
-        createWellsFromSpecs(wells, timeStep, grid, well_names, well_data, well_names_to_index, pu, cartesian_to_compressed, permeability);
-        setupWellControls(wells, timeStep, well_names, pu);
-
-        {
-            GroupTreeNodeConstPtr fieldNode = eclipseState->getSchedule()->getGroupTree(timeStep)->getNode("FIELD");
-            GroupConstPtr fieldGroup = eclipseState->getSchedule()->getGroup(fieldNode->name());
-            well_collection_.addField(fieldGroup, timeStep, pu);
-            addChildGroups(fieldNode, eclipseState->getSchedule(), timeStep, pu);
-        }
-
-        for (auto wellIter = wells.begin(); wellIter != wells.end(); ++wellIter ) {
-            well_collection_.addWell((*wellIter), timeStep, pu);
-        }
-
-        well_collection_.setWellsPointer(w_);
-        well_collection_.applyGroupControls();
-
-
-        setupGuideRates(wells, timeStep, well_data, well_names_to_index);
-
-        // Debug output.
-#define EXTRA_OUTPUT
-#ifdef EXTRA_OUTPUT
-        /*
-        std::cout << "\t WELL DATA" << std::endl;
-        for(int i = 0; i< num_wells; ++i) {
-            std::cout << i << ": " << well_data[i].type << "  "
-                      << well_data[i].control << "  " << well_data[i].target
-                      << std::endl;
-        }
-
-        std::cout << "\n\t PERF DATA" << std::endl;
-        for(int i=0; i< int(wellperf_data.size()); ++i) {
-            for(int j=0; j< int(wellperf_data[i].size()); ++j) {
-                std::cout << i << ": " << wellperf_data[i][j].cell << "  "
-                          << wellperf_data[i][j].well_index << std::endl;
-            }
-        }
-        */
-#endif
     }
-
-
-
-
-
 
     /// Destructor.
     WellsManager::~WellsManager()
@@ -405,141 +305,25 @@ namespace Opm
         well_collection_.applyExplicitReinjectionControls(well_reservoirrates_phase, well_surfacerates_phase);
     }
 
-    void WellsManager::setupCompressedToCartesian(const UnstructuredGrid& grid, std::map<int,int>& cartesian_to_compressed ) {
+    void WellsManager::setupCompressedToCartesian(const int* global_cell, int number_of_cells,
+                                                  std::map<int,int>& cartesian_to_compressed ) {
         // global_cell is a map from compressed cells to Cartesian grid cells.
         // We must make the inverse lookup.
-        const int* global_cell = grid.global_cell;
 
         if (global_cell) {
-            for (int i = 0; i < grid.number_of_cells; ++i) {
+            for (int i = 0; i < number_of_cells; ++i) {
                 cartesian_to_compressed.insert(std::make_pair(global_cell[i], i));
             }
         }
         else {
-            for (int i = 0; i < grid.number_of_cells; ++i) {
+            for (int i = 0; i < number_of_cells; ++i) {
                 cartesian_to_compressed.insert(std::make_pair(i, i));
             }
         }
 
     }
 
-    void WellsManager::createWellsFromSpecs(std::vector<WellConstPtr>& wells, size_t timeStep,
-                                            const UnstructuredGrid& grid,
-                                            std::vector<std::string>& well_names,
-                                            std::vector<WellData>& well_data,
-                                            std::map<std::string, int>& well_names_to_index,
-                                            const PhaseUsage& phaseUsage,
-                                            std::map<int,int> cartesian_to_compressed,
-                                            const double* permeability)
-    {
-        std::vector<std::vector<PerfData> > wellperf_data;
-        wellperf_data.resize(wells.size());
 
-        int well_index = 0;
-        for (auto wellIter= wells.begin(); wellIter != wells.end(); ++wellIter) {
-            WellConstPtr well = (*wellIter);
-            {   // WELSPECS handling
-                well_names_to_index[well->name()] = well_index;
-                well_names.push_back(well->name());
-                {
-                    WellData wd;
-                    // If negative (defaulted), set refdepth to a marker
-                    // value, will be changed after getting perforation
-                    // data to the centroid of the cell of the top well
-                    // perforation.
-                    wd.reference_bhp_depth = (well->getRefDepth() < 0.0) ? -1e100 : well->getRefDepth();
-                    wd.welspecsline = -1;
-                    if (well->isInjector( timeStep ))
-                        wd.type = INJECTOR;
-                    else
-                        wd.type = PRODUCER;
-                    well_data.push_back(wd);
-                }
-            }
-
-            {   // COMPDAT handling
-                CompletionSetConstPtr completionSet = well->getCompletions(timeStep);
-                for (size_t c=0; c<completionSet->size(); c++) {
-                    CompletionConstPtr completion = completionSet->get(c);
-                    int i = completion->getI();
-                    int j = completion->getJ();
-                    int k = completion->getK();
-
-                    const int* cpgdim = grid.cartdims;
-                    int cart_grid_indx = i + cpgdim[0]*(j + cpgdim[1]*k);
-                    std::map<int, int>::const_iterator cgit = cartesian_to_compressed.find(cart_grid_indx);
-                    if (cgit == cartesian_to_compressed.end()) {
-                        OPM_THROW(std::runtime_error, "Cell with i,j,k indices " << i << ' ' << j << ' '
-                                  << k << " not found in grid (well = " << well->name() << ')');
-                    }
-                    int cell = cgit->second;
-                    PerfData pd;
-                    pd.cell = cell;
-                    if (completion->getCF() > 0.0) {
-                        pd.well_index = completion->getCF();
-                    } else {
-                        double radius = 0.5*completion->getDiameter();
-                        if (radius <= 0.0) {
-                            radius = 0.5*unit::feet;
-                            OPM_MESSAGE("**** Warning: Well bore internal radius set to " << radius);
-                        }
-                        std::array<double, 3> cubical = getCubeDim(grid, cell);
-                        const double* cell_perm = &permeability[grid.dimensions*grid.dimensions*cell];
-                        pd.well_index = computeWellIndex(radius, cubical, cell_perm, completion->getSkinFactor());
-                    }
-                    wellperf_data[well_index].push_back(pd);
-                }
-            }
-            well_index++;
-        }
-
-        // Set up reference depths that were defaulted. Count perfs.
-
-        const int num_wells = well_data.size();
-
-        int num_perfs = 0;
-        assert(grid.dimensions == 3);
-        for (int w = 0; w < num_wells; ++w) {
-            num_perfs += wellperf_data[w].size();
-            if (well_data[w].reference_bhp_depth < 0.0) {
-                // It was defaulted. Set reference depth to minimum perforation depth.
-                double min_depth = 1e100;
-                int num_wperfs = wellperf_data[w].size();
-                for (int perf = 0; perf < num_wperfs; ++perf) {
-                    double depth = grid.cell_centroids[3*wellperf_data[w][perf].cell + 2];
-                    min_depth = std::min(min_depth, depth);
-                }
-                well_data[w].reference_bhp_depth = min_depth;
-            }
-        }
-
-        // Create the well data structures.
-        w_ = create_wells(phaseUsage.num_phases, num_wells, num_perfs);
-        if (!w_) {
-            OPM_THROW(std::runtime_error, "Failed creating Wells struct.");
-        }
-
-
-        // Add wells.
-        for (int w = 0; w < num_wells; ++w) {
-            const int w_num_perf = wellperf_data[w].size();
-            std::vector<int> perf_cells(w_num_perf);
-            std::vector<double> perf_prodind(w_num_perf);
-            for (int perf = 0; perf < w_num_perf; ++perf) {
-                perf_cells[perf] = wellperf_data[w][perf].cell;
-                perf_prodind[perf] = wellperf_data[w][perf].well_index;
-            }
-            const double* comp_frac = NULL;
-            // We initialize all wells with a null component fraction,
-            // and must (for injection wells) overwrite it later.
-            int ok = add_well(well_data[w].type, well_data[w].reference_bhp_depth, w_num_perf,
-                              comp_frac, &perf_cells[0], &perf_prodind[0], well_names[w].c_str(), w_);
-            if (!ok) {
-                OPM_THROW(std::runtime_error, "Failed adding well " << well_names[w] << " to Wells data structure.");
-            }
-        }
-
-    }
 
     void WellsManager::setupWellControls(std::vector<WellConstPtr>& wells, size_t timeStep,
                                          std::vector<std::string>& well_names, const PhaseUsage& phaseUsage) {
@@ -558,7 +342,7 @@ namespace Opm
                                 
                 clear_well_controls(well_index, w_);
                 if (injectionProperties.hasInjectionControl(WellInjector::RATE)) {
-                    control_pos[InjectionControl::RATE] = well_controls_get_num(w_->ctrls[well_index]);
+                    control_pos[WellsManagerDetail::InjectionControl::RATE] = well_controls_get_num(w_->ctrls[well_index]);
                     double distr[3] = { 0.0, 0.0, 0.0 };
                     WellInjector::TypeEnum injectorType = injectionProperties.injectorType;
 
@@ -578,7 +362,7 @@ namespace Opm
                 }
 
                 if (ok && injectionProperties.hasInjectionControl(WellInjector::RESV)) {
-                    control_pos[InjectionControl::RESV] = well_controls_get_num(w_->ctrls[well_index]);
+                    control_pos[WellsManagerDetail::InjectionControl::RESV] = well_controls_get_num(w_->ctrls[well_index]);
                     double distr[3] = { 0.0, 0.0, 0.0 };
                     WellInjector::TypeEnum injectorType = injectionProperties.injectorType;
 
@@ -598,7 +382,8 @@ namespace Opm
                 }
 
                 if (ok && injectionProperties.hasInjectionControl(WellInjector::BHP)) {
-                    control_pos[InjectionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
+                    control_pos[WellsManagerDetail::InjectionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
+                    control_pos[WellsManagerDetail::InjectionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
                     ok = append_well_controls(BHP,
                                               injectionProperties.BHPLimit, 
                                               NULL,
@@ -617,9 +402,9 @@ namespace Opm
 
 
                 {
-                    InjectionControl::Mode mode = InjectionControl::mode( injectionProperties.controlMode );
+                    WellsManagerDetail::InjectionControl::Mode mode = WellsManagerDetail::InjectionControl::mode( injectionProperties.controlMode );
                     int cpos = control_pos[mode];
-                    if (cpos == -1 && mode != InjectionControl::GRUP) {
+                    if (cpos == -1 && mode != WellsManagerDetail::InjectionControl::GRUP) {
                         OPM_THROW(std::runtime_error, "Control not specified in well " << well_names[well_index]);
                     }
 
@@ -670,7 +455,7 @@ namespace Opm
                         OPM_THROW(std::runtime_error, "Oil phase not active and ORAT control specified.");
                     }
 
-                    control_pos[ProductionControl::ORAT] = well_controls_get_num(w_->ctrls[well_index]);
+                    control_pos[WellsManagerDetail::ProductionControl::ORAT] = well_controls_get_num(w_->ctrls[well_index]);
                     double distr[3] = { 0.0, 0.0, 0.0 };
                     distr[phaseUsage.phase_pos[BlackoilPhases::Liquid]] = 1.0;
                     ok = append_well_controls(SURFACE_RATE,
@@ -684,7 +469,7 @@ namespace Opm
                     if (!phaseUsage.phase_used[BlackoilPhases::Aqua]) {
                         OPM_THROW(std::runtime_error, "Water phase not active and WRAT control specified.");
                     }
-                    control_pos[ProductionControl::WRAT] = well_controls_get_num(w_->ctrls[well_index]);
+                    control_pos[WellsManagerDetail::ProductionControl::WRAT] = well_controls_get_num(w_->ctrls[well_index]);
                     double distr[3] = { 0.0, 0.0, 0.0 };
                     distr[phaseUsage.phase_pos[BlackoilPhases::Aqua]] = 1.0;
                     ok = append_well_controls(SURFACE_RATE,
@@ -698,7 +483,7 @@ namespace Opm
                     if (!phaseUsage.phase_used[BlackoilPhases::Vapour]) {
                         OPM_THROW(std::runtime_error, "Gas phase not active and GRAT control specified.");
                     }
-                    control_pos[ProductionControl::GRAT] = well_controls_get_num(w_->ctrls[well_index]);
+                    control_pos[WellsManagerDetail::ProductionControl::GRAT] = well_controls_get_num(w_->ctrls[well_index]);
                     double distr[3] = { 0.0, 0.0, 0.0 };
                     distr[phaseUsage.phase_pos[BlackoilPhases::Vapour]] = 1.0;
                     ok = append_well_controls(SURFACE_RATE,
@@ -715,7 +500,7 @@ namespace Opm
                     if (!phaseUsage.phase_used[BlackoilPhases::Liquid]) {
                         OPM_THROW(std::runtime_error, "Oil phase not active and LRAT control specified.");
                     }
-                    control_pos[ProductionControl::LRAT] = well_controls_get_num(w_->ctrls[well_index]);
+                    control_pos[WellsManagerDetail::ProductionControl::LRAT] = well_controls_get_num(w_->ctrls[well_index]);
                     double distr[3] = { 0.0, 0.0, 0.0 };
                     distr[phaseUsage.phase_pos[BlackoilPhases::Aqua]] = 1.0;
                     distr[phaseUsage.phase_pos[BlackoilPhases::Liquid]] = 1.0;
@@ -727,7 +512,7 @@ namespace Opm
                 }
 
                 if (ok && productionProperties.hasProductionControl(WellProducer::RESV)) {
-                    control_pos[ProductionControl::RESV] = well_controls_get_num(w_->ctrls[well_index]);
+                    control_pos[WellsManagerDetail::ProductionControl::RESV] = well_controls_get_num(w_->ctrls[well_index]);
                     double distr[3] = { 1.0, 1.0, 1.0 };
                     ok = append_well_controls(RESERVOIR_RATE,
                                               -productionProperties.ResVRate , 
@@ -737,7 +522,7 @@ namespace Opm
                 }
 
                 if (ok && productionProperties.hasProductionControl(WellProducer::BHP)) {
-                    control_pos[ProductionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
+                    control_pos[WellsManagerDetail::ProductionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
                     ok = append_well_controls(BHP,
                                               productionProperties.BHPLimit , 
                                               NULL,
@@ -753,11 +538,15 @@ namespace Opm
                     OPM_THROW(std::runtime_error, "Failure occured appending controls for well " << well_names[well_index]);
                 }
 
-                ProductionControl::Mode mode = ProductionControl::mode(productionProperties.controlMode);
+                WellsManagerDetail::ProductionControl::Mode mode = WellsManagerDetail::ProductionControl::mode(productionProperties.controlMode);
                 int cpos = control_pos[mode];
+                if (cpos == -1 && mode != WellsManagerDetail::ProductionControl::GRUP) {
+                    OPM_THROW(std::runtime_error, "Control mode type " << mode << " not present in well " << well_names[well_index]);
+                }
+                // If it's shut, we complement the cpos
                 if (well->getStatus(timeStep) == WellCommon::SHUT) {
                     well_controls_shut_well( w_->ctrls[well_index] );
-                } else if (cpos == -1 && mode != ProductionControl::GRUP) {
+                } else if (cpos == -1 && mode != WellsManagerDetail::ProductionControl::GRUP) {
                     OPM_THROW(std::runtime_error, "Control mode type " << mode << " not present in well " << well_names[well_index]);
                 }
                 set_current_control(well_index, cpos, w_);

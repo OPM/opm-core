@@ -72,11 +72,22 @@ namespace Opm
         /// The permeability argument may be zero if the input contain
         /// well productivity indices, otherwise it must be given in
         /// order to approximate these by the Peaceman formula.
+        template<class CC, class F2C, class FC>
+        WellsManager(const Opm::EclipseStateConstPtr eclipseState,
+                     const size_t timeStep,
+                     int num_cells,
+                     const int* global_cell,
+                     const int* cart_dims,
+                     int dimensions,
+                     CC begin_cell_centroids,
+                     const F2C& f2c,
+                     FC begin_face_centroids,
+                     const double* permeability);
+
         WellsManager(const Opm::EclipseStateConstPtr eclipseState,
                      const size_t timeStep,
                      const UnstructuredGrid& grid,
                      const double* permeability);
-
         /// Destructor.
         ~WellsManager();
 
@@ -129,15 +140,30 @@ namespace Opm
 
 
     private:
+        template<class CC, class C2F, class FC>
+        void init(const Opm::EclipseStateConstPtr eclipseState,
+                  const size_t timeStep,
+                  int num_cells,
+                  const int* global_cell,
+                  const int* cart_dims,
+                  int dimensions,
+                  CC begin_cell_centroids,
+                  const C2F& cell_to_faces,
+                  FC begin_face_centroids,
+                  const double* permeability);
         // Disable copying and assignment.
         WellsManager(const WellsManager& other);
         WellsManager& operator=(const WellsManager& other);
-        static void setupCompressedToCartesian(const UnstructuredGrid& grid, std::map<int,int>& cartesian_to_compressed );
+        static void setupCompressedToCartesian(const int* global_cell, int number_of_cells, std::map<int,int>& cartesian_to_compressed );
         void setupWellControls(std::vector<WellConstPtr>& wells, size_t timeStep,
                                std::vector<std::string>& well_names, const PhaseUsage& phaseUsage);
-
+        template<class C2F, class CC, class FC>
         void createWellsFromSpecs( std::vector<WellConstPtr>& wells, size_t timeStep,
-                                   const UnstructuredGrid& grid,
+                                   const C2F& cell_to_faces, 
+                                   const int* cart_dims,
+                                   FC begin_face_centroids, 
+                                   CC begin_cell_centroids,
+                                   int dimensions,
                                    std::vector<std::string>& well_names,
                                    std::vector<WellData>& well_data,
                                    std::map<std::string, int> & well_names_to_index,
@@ -156,5 +182,5 @@ namespace Opm
 
 } // namespace Opm
 
-
+#include "WellsManager_impl.hpp"
 #endif // OPM_WELLSMANAGER_HEADER_INCLUDED

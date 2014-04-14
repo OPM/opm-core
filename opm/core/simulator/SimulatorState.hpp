@@ -17,6 +17,8 @@ namespace Opm
 
         virtual void init(const UnstructuredGrid& g, int num_phases);
 
+        virtual void init(int number_of_cells, int number_of_phases, int num_phases);
+        
         enum ExtremalSat { MinSat, MaxSat };
 
     protected:

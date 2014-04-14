@@ -184,26 +184,27 @@ void restrictToActiveCells_(std::vector<double> &data, const std::vector<int> &a
 
 // throw away the data for all non-active cells in an array. (this is
 // the variant of the function which takes an UnstructuredGrid object.)
-void restrictToActiveCells_(std::vector<double> &data, const UnstructuredGrid &grid)
+void restrictToActiveCells_(std::vector<double> &data, int number_of_cells,
+                            const int* global_cell)
 {
-    if (!grid.global_cell)
+    if (!global_cell)
         // if there is no active -> global mapping, all cells
         // are considered active
         return;
 
     // activate those cells that are actually there
-    for (int i = 0; i < grid.number_of_cells; ++i) {
+    for (int i = 0; i < number_of_cells; ++i) {
         // make sure that global cell indices are always at least as
         // large as the active one and that the global cell indices
         // are in increasing order. the latter might become
         // problematic if cells are extensively re-ordered, but that
         // does not seem to be the case so far
-        assert(grid.global_cell[i] >= i);
-        assert(i == 0 || grid.global_cell[i - 1] < grid.global_cell[i]);
+        assert(global_cell[i] >= i);
+        assert(i == 0 || global_cell[i - 1] < global_cell[i]);
 
-        data[i] = data[grid.global_cell[i]];
+        data[i] = data[global_cell[i]];
     }
-    data.resize(grid.number_of_cells);
+    data.resize(number_of_cells);
 }
 
 // convert the units of an array
@@ -232,23 +233,25 @@ void extractFromStripedData_(std::vector<double> &data,
 }
 
 // enclosure of the current grid in a Cartesian space
-int getCartesianSize_(const UnstructuredGrid& grid) {
-    const int nx = grid.cartdims[0];
-    const int ny = grid.cartdims[1];
-    const int nz = grid.cartdims[2];
+int getCartesianSize_(const int* cartdims) {
+    const int nx = cartdims[0];
+    const int ny = cartdims[1];
+    const int nz = cartdims[2];
     return nx * ny * nz;
 }
 
-void getActiveCells_(const UnstructuredGrid& grid,
+void getActiveCells_(int number_of_cells,
+                     const int* cartdims,
+                     const int* global_cell,
                      std::vector <int>& actnum)
 {
     // we must fill the Cartesian grid with flags
-    const int size = getCartesianSize_(grid);
+    const int size = getCartesianSize_(cartdims);
 
     // if we don't have a global_cells field, then assume that all
     // grid cells is active
-    if (!grid.global_cell) {
-        if (grid.number_of_cells != size) {
+    if (!global_cell) {
+        if (number_of_cells != size) {
             OPM_THROW (std::runtime_error,
                        "No ACTNUM map but grid size != Cartesian size");
         }
@@ -259,8 +262,8 @@ void getActiveCells_(const UnstructuredGrid& grid,
         actnum.assign (size, 0);
 
         // activate those cells that are actually there
-        for (int i = 0; i < grid.number_of_cells; ++i) {
-            actnum[grid.global_cell[i]] = 1;
+        for (int i = 0; i < number_of_cells; ++i) {
+            actnum[global_cell[i]] = 1;
         }
     }
 }
@@ -503,7 +506,9 @@ private:
 struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
     /// Create a grid based on the keywords available in input file
     static EclipseGrid make (Opm::DeckConstPtr newParserDeck,
-                             const UnstructuredGrid& grid)
+                             int number_of_cells,
+                             const int* cart_dims,
+                             const int* global_cell)
     {
         if (newParserDeck->hasKeyword("DXV")) {
             // make sure that the DYV and DZV keywords are present if the
@@ -528,7 +533,7 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
 
             // get the actually active cells, after processing
             std::vector <int> actnum;
-            getActiveCells_(grid, actnum);
+            getActiveCells_(number_of_cells, cart_dims, global_cell, actnum);
             EclipseKeyword<int> actnum_kw (ACTNUM_KW, actnum);
 
             EclipseKeyword<float> mapaxes_kw (MAPAXES_KW);
@@ -537,7 +542,7 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
                 mapaxes_kw = std::move (EclipseKeyword<float> (MAPAXES_KW, mapaxesData));
             }
 
-            return EclipseGrid (g.dims, zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
+            return EclipseGrid (cart_dims, zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
         }
         else {
             OPM_THROW(std::runtime_error,
@@ -629,15 +634,18 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
         return EclipseInit (initFileName, fmt_file);
     }
 
-    void writeHeader (const UnstructuredGrid& grid,
+    void writeHeader (int number_of_cells,
+                      const int* cart_dims,
+                      const int* global_cell,
                       const SimulatorTimer& timer,
                       Opm::DeckConstPtr newParserDeck,
                       const PhaseUsage uses)
     {
         auto dataField = getAllSiDoubles_(newParserDeck->getKeyword(PORO_KW));
-        restrictToActiveCells_(dataField, grid);
+        restrictToActiveCells_(dataField, number_of_cells, global_cell);
 
-        EclipseGrid eclGrid = EclipseGrid::make (newParserDeck, grid);
+        EclipseGrid eclGrid = EclipseGrid::make (newParserDeck, number_of_cells,
+                                                 cart_dims, global_cell);
 
         EclipseKeyword<float> poro (PORO_KW, dataField);
         ecl_init_file_fwrite_header (*this,
@@ -1046,11 +1054,14 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
         return;
     }
     /* Grid files */
-    EclipseGrid eclGrid = EclipseGrid::make (newParserDeck_, *grid_);
+    EclipseGrid eclGrid = EclipseGrid::make (newParserDeck_, number_of_cells_,
+                                             cart_dims_, global_cell_);
     eclGrid.write (outputDir_, baseName_, /*stepIdx=*/0);
 
     EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, /*stepIdx=*/0);
-    fortio.writeHeader (*grid_,
+    fortio.writeHeader (number_of_cells_,
+                        cart_dims_,
+                        global_cell_,
                         timer,
                         newParserDeck_,
                         uses_);
@@ -1178,12 +1189,34 @@ void EclipseWriter::writeTimeStep(
 
 #endif // HAVE_ERT
 
-EclipseWriter::EclipseWriter(const ParameterGroup& params,
-                             Opm::DeckConstPtr newParserDeck,
-                             std::shared_ptr<const UnstructuredGrid> grid)
-    : newParserDeck_(newParserDeck)
+EclipseWriter::EclipseWriter (
+        const ParameterGroup& params,
+        Opm::DeckConstPtr newParserDeck,
+        int number_of_cells, const int* global_cell, const int* cart_dims,
+        int dimensions)
+    : newParserDeck_ (newParserDeck)
+    , number_of_cells_(number_of_cells)
+    , dimensions_(dimensions)
+    , cart_dims_(cart_dims)
+    , global_cell_(global_cell)
+    , uses_ (phaseUsageFromDeck (newParserDeck_)) {
+    init(params);
+}
+
+EclipseWriter::EclipseWriter (
+        const ParameterGroup& params,
+        Opm::DeckConstPtr newParserDeck,
+        std::shared_ptr<const UnstructuredGrid> grid)
+    : newParserDeck_ (newParserDeck)
     , grid_(grid)
-    , uses_(phaseUsageFromDeck(newParserDeck))
+    , number_of_cells_(grid->number_of_cells)
+    , dimensions_(grid->dimensions)
+    , cart_dims_(grid->cartdims)
+    , global_cell_(grid->global_cell)
+    , uses_ (phaseUsageFromDeck (newParserDeck_)) {
+    init(params);
+}
+void EclipseWriter::init(const ParameterGroup& params)
 {
     // get the base name from the name of the deck
     using boost::filesystem::path;
