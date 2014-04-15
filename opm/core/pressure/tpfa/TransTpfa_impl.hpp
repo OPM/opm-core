@@ -22,7 +22,7 @@ double faceArea(const Dune::CpGrid&, int);
 namespace
 {
 #ifdef HAVE_DUNE_CORNERPOINT
-const double* multiplyFaceNormalWithArea(const Dune::CpGrid& grid, int face_index, const double* in)
+inline const double* multiplyFaceNormalWithArea(const Dune::CpGrid& grid, int face_index, const double* in)
 {
     int d=Opm::UgGridHelpers::dimensions(grid);
     double* out=new double[d];
