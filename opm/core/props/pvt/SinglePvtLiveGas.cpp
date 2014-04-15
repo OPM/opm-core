@@ -106,7 +106,7 @@ namespace Opm
         // Bg -> 1/Bg      
         for (int i=0; i<sz; ++i) {
             saturated_gas_table_[1][i] = 1.0/saturated_gas_table_[1][i];
-            for (int j=0; j<undersat_gas_tables_[i][1].size(); ++j) {
+            for (size_t j=0; j<undersat_gas_tables_[i][1].size(); ++j) {
                 undersat_gas_tables_[i][1][j] = 1.0/undersat_gas_tables_[i][1][j];
             }
         }
