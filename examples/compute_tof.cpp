@@ -104,7 +104,7 @@ try
 
     // If we have a "deck_filename", grid and props will be read from that.
     bool use_deck = param.has("deck_filename");
-    std::unique_ptr<EclipseGridParser> deck;
+    Opm::DeckConstPtr newParserDeck;
     std::unique_ptr<GridManager> grid;
     std::unique_ptr<IncompPropertiesInterface> props;
     std::unique_ptr<Opm::WellsManager> wells;
@@ -115,22 +115,22 @@ try
     if (use_deck) {
         std::string deck_filename = param.get<std::string>("deck_filename");
         Opm::ParserPtr parser(new Opm::Parser());
-        Opm::EclipseStateConstPtr eclipseState(new Opm::EclipseState(parser->parseFile(deck_filename)));
+        newParserDeck = parser->parseFile(deck_filename);
+        Opm::EclipseStateConstPtr eclipseState(new Opm::EclipseState(newParserDeck));
 
-        deck.reset(new EclipseGridParser(deck_filename));
         // Grid init
-        grid.reset(new GridManager(*deck));
+        grid.reset(new GridManager(newParserDeck));
         // Rock and fluid init
-        props.reset(new IncompPropertiesFromDeck(*deck, *grid->c_grid()));
+        props.reset(new IncompPropertiesFromDeck(newParserDeck, *grid->c_grid()));
         // Wells init.
         wells.reset(new Opm::WellsManager(eclipseState , 0 , *grid->c_grid(), props->permeability()));
         // Gravity.
-        gravity[2] = deck->hasField("NOGRAV") ? 0.0 : unit::gravity;
+        gravity[2] = newParserDeck->hasKeyword("NOGRAV") ? 0.0 : unit::gravity;
         // Init state variables (saturation and pressure).
         if (param.has("init_saturation")) {
             initStateBasic(*grid->c_grid(), *props, param, gravity[2], state);
         } else {
-            initStateFromDeck(*grid->c_grid(), *props, *deck, gravity[2], state);
+            initStateFromDeck(*grid->c_grid(), *props, newParserDeck, gravity[2], state);
         }
     } else {
         // Grid init.
