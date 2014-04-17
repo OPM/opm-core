@@ -51,16 +51,6 @@
 
 namespace Opm
 {
-
-EclipseGridInspector::EclipseGridInspector(const EclipseGridParser& oldParser)
-{
-    Opm::ParserConstPtr parser(new Opm::Parser());
-    newParserDeck_ = parser->parseFile(oldParser.deckFileName());
-
-    init_();
-}
-
-
 EclipseGridInspector::EclipseGridInspector(Opm::DeckConstPtr newParserDeck)
     : newParserDeck_(newParserDeck)
 {

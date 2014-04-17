@@ -24,6 +24,8 @@
 
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/grid/GridManager.hpp>
+#include <opm/core/grid.h>
+#include <opm/core/grid/cpgpreprocess/preprocess.h>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/simulator/SimulatorState.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>

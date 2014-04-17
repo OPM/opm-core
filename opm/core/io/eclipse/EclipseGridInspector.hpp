@@ -38,8 +38,6 @@
 #include <vector>
 #include <array>
 
-#include <opm/core/io/eclipse/EclipseGridParser.hpp>
-#include <opm/core/io/eclipse/SpecialEclipseFields.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 
 namespace Opm
@@ -48,9 +46,8 @@ namespace Opm
 /**
    @brief A class for inspecting the contents of an eclipse file.
 
-   Given an EclipseGridParser that has successfully read en Eclipse
-   .grdecl-file, this class may be used to answer certain queries about
-   its contents.
+   Given an Eclipse deck, this class may be used to answer certain
+   queries about its contents.
 
    @author Atgeirr F. Rasmussen <atgeirr@sintef.no>
    @date 2008/06/02 09:46:08
@@ -58,10 +55,6 @@ namespace Opm
 class EclipseGridInspector
 {
 public:
-    /// Constructor taking a parser as argument.
-    /// The parser must already have read an Eclipse file.
-    EclipseGridInspector(const EclipseGridParser& parser);
-
     /// Constructor taking a parser as argument.
     /// The parser must already have read an Eclipse file.
     EclipseGridInspector(Opm::DeckConstPtr newParserDeck);

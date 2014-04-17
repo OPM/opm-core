@@ -30,9 +30,6 @@ struct grdecl;
 
 namespace Opm
 {
-
-    class EclipseGridParser;
-
     /// This class manages an Opm::UnstructuredGrid in the sense that it
     /// encapsulates creation and destruction of the grid.
     /// The following grid types can be constructed:
@@ -44,9 +41,6 @@ namespace Opm
     class GridManager
     {
     public:
-        /// Construct a 3d corner-point grid or tensor grid from a deck.
-        explicit GridManager(const Opm::EclipseGridParser& deck);
-
         /// Construct a 3d corner-point grid or tensor grid from a deck.
         explicit GridManager(Opm::DeckConstPtr newParserDeck);
 
@@ -74,8 +68,6 @@ namespace Opm
         /// Destructor.
         ~GridManager();
 
-        void saveEGRID(const std::string& filename , const Opm::EclipseGridParser& deck);
-
         /// Access the managed UnstructuredGrid.
         /// The method is named similarly to c_str() in std::string,
         /// to make it clear that we are returning a C-compatible struct.
@@ -89,10 +81,8 @@ namespace Opm
         GridManager& operator=(const GridManager& other);
 
         // Construct corner-point grid from deck.
-        void initFromDeckCornerpoint(const Opm::EclipseGridParser& deck);
         void initFromDeckCornerpoint(Opm::DeckConstPtr newParserDeck);
         // Construct tensor grid from deck.
-        void initFromDeckTensorgrid(const Opm::EclipseGridParser& deck);
         void initFromDeckTensorgrid(Opm::DeckConstPtr newParserDeck);
 
         // The managed UnstructuredGrid.

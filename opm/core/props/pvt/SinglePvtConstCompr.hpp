@@ -43,21 +43,6 @@ namespace Opm
     class SinglePvtConstCompr : public SinglePvtInterface
     {
     public:
-        typedef std::vector<std::vector<double> > table_t;
-
-        SinglePvtConstCompr(const table_t& pvtw)
-        {
-            const int region_number = 0;
-            if (pvtw.size() != 1) {
-                OPM_THROW(std::runtime_error, "More than one PVD-region");
-            }
-            ref_press_ = pvtw[region_number][0];
-            ref_B_     = pvtw[region_number][1];
-            comp_      = pvtw[region_number][2];
-            viscosity_ = pvtw[region_number][3];
-            visc_comp_ = pvtw[region_number][4];
-        }
-
         SinglePvtConstCompr(const Opm::PvtwTable &pvtwTable)
         {
             if (pvtwTable.numRows() != 1)
@@ -71,17 +56,17 @@ namespace Opm
             visc_comp_ = pvtwTable.getViscosibilityColumn()[0];
         }
 
-        SinglePvtConstCompr(const Opm::PvcdoTable &pvdcoTable)
+        SinglePvtConstCompr(const Opm::PvcdoTable &pvcdoTable)
         {
-            if (pvdcoTable.numRows() != 1)
+            if (pvcdoTable.numRows() != 1)
                 OPM_THROW(std::runtime_error,
-                          "The table specified by the PVDCO keyword is required"
+                          "The table specified by the PVCDO keyword is required"
                           "to exhibit exactly one row.");
-            ref_press_ = pvdcoTable.getPressureColumn()[0];
-            ref_B_     = pvdcoTable.getFormationFactorColumn()[0];
-            comp_      = pvdcoTable.getCompressibilityColumn()[0];
-            viscosity_ = pvdcoTable.getViscosityColumn()[0];
-            visc_comp_ = pvdcoTable.getViscosibilityColumn()[0];
+            ref_press_ = pvcdoTable.getPressureColumn()[0];
+            ref_B_     = pvcdoTable.getFormationFactorColumn()[0];
+            comp_      = pvcdoTable.getCompressibilityColumn()[0];
+            viscosity_ = pvcdoTable.getViscosityColumn()[0];
+            visc_comp_ = pvcdoTable.getViscosibilityColumn()[0];
         }
 
         SinglePvtConstCompr(double visc)
