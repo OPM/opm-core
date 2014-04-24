@@ -17,29 +17,40 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_SINGLEPVTLIVEGAS_HEADER_INCLUDED
-#define OPM_SINGLEPVTLIVEGAS_HEADER_INCLUDED
+#ifndef OPM_PVTDEADSPLINE_HEADER_INCLUDED
+#define OPM_PVTDEADSPLINE_HEADER_INCLUDED
 
-#include <opm/core/props/pvt/SinglePvtInterface.hpp>
+#include <opm/core/props/pvt/PvtInterface.hpp>
+#include <opm/core/utility/UniformTableLinear.hpp>
 
-#include <opm/parser/eclipse/Utility/PvtgTable.hpp>
+#include <opm/parser/eclipse/Utility/PvdoTable.hpp>
+#include <opm/parser/eclipse/Utility/PvdgTable.hpp>
 
 #include <vector>
 
 namespace Opm
 {
-    /// Class for miscible wet gas (with vaporized oil in vapour phase).
+
+    /// Class for immiscible dead oil and dry gas.
     /// The PVT properties can either be given as a function of pressure (p) and surface volume (z)
     /// or pressure (p) and gas resolution factor (r).
     /// For all the virtual methods, the following apply: p, r and z
     /// are expected to be of size n, size n and n*num_phases, respectively.
     /// Output arrays shall be of size n, and must be valid before
     /// calling the method.
-    class SinglePvtLiveGas : public SinglePvtInterface
+    class PvtDeadSpline : public PvtInterface
     {
     public:
-        SinglePvtLiveGas(const Opm::PvtgTable& pvtgTable);
-        virtual ~SinglePvtLiveGas();
+        PvtDeadSpline();
+
+        void initFromOil(Opm::DeckKeywordConstPtr pvdoKeyword,
+                         const std::vector<int> &pvtTableIdx,
+                         int numSamples);
+        void initFromGas(Opm::DeckKeywordConstPtr pvdgKeyword,
+                         const std::vector<int> &pvtTableIdx,
+                         int numSamples);
+
+        virtual ~PvtDeadSpline();
 
         /// Viscosity as a function of p and z.
         virtual void mu(const int n,
@@ -98,8 +109,6 @@ namespace Opm
                        double* output_dbdp,
                        double* output_dbdr) const;
 
-
-
         /// Solution gas/oil ratio and its derivatives at saturated conditions as a function of p.
         virtual void rsSat(const int n,
                           const double* p,
@@ -124,30 +133,14 @@ namespace Opm
                           const double* z,
                           double* output_R,
                           double* output_dRdp) const;
-
-    protected:
-        double evalB(double press, const double* surfvol) const;
-        void evalBDeriv(double press, const double* surfvol, double& B, double& dBdp) const;
-        double evalR(double press, const double* surfvol) const;
-        void evalRDeriv(double press, const double* surfvol, double& R, double& dRdp) const;
-
-        // item:  1=>B  2=>mu;
-        double miscible_gas(const double press,
-                            const double* surfvol,
-                            const int item,
-                            const bool deriv = false) const;
-        double miscible_gas(const double press,
-                            const double r,
-                            const PhasePresence& cond,
-                            const int item,
-                            const int deriv = 0) const;
-        // PVT properties of wet gas (with vaporised oil)
-        std::vector<std::vector<double> > saturated_gas_table_;
-        std::vector<std::vector<std::vector<double> > > undersat_gas_tables_;
-
+    private:
+        // PVT properties of dry gas or dead oil
+        std::vector<int> pvtTableIdx_;
+        std::vector<UniformTableLinear<double> > b_;
+        std::vector<UniformTableLinear<double> > viscosity_;
     };
 
 }
 
-#endif // OPM_SINGLEPVTLIVEGAS_HEADER_INCLUDED
+#endif // OPM_PVTDEADSPLINE_HEADER_INCLUDED
 

@@ -17,11 +17,11 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_SINGLEPVTDEAD_HEADER_INCLUDED
-#define OPM_SINGLEPVTDEAD_HEADER_INCLUDED
+#ifndef OPM_PVTDEAD_HEADER_INCLUDED
+#define OPM_PVTDEAD_HEADER_INCLUDED
 
 
-#include <opm/core/props/pvt/SinglePvtInterface.hpp>
+#include <opm/core/props/pvt/PvtInterface.hpp>
 #include <opm/core/utility/NonuniformTableLinear.hpp>
 
 #include <opm/parser/eclipse/Utility/PvdoTable.hpp>
@@ -39,12 +39,16 @@ namespace Opm
     /// are expected to be of size n, size n and n*num_phases, respectively.
     /// Output arrays shall be of size n, and must be valid before
     /// calling the method.
-    class SinglePvtDead : public SinglePvtInterface
+    class PvtDead : public PvtInterface
     {
     public:
-        SinglePvtDead(const Opm::PvdoTable& pvdoTable);
-        SinglePvtDead(const Opm::PvdgTable& pvdgTable);
-        virtual ~SinglePvtDead();
+        PvtDead() {};
+
+        void initFromOil(Opm::DeckKeywordConstPtr pvdoKeyword,
+                         const std::vector<int> &pvtTableIdx);
+        void initFromGas(Opm::DeckKeywordConstPtr pvdgKeyword,
+                         const std::vector<int> &pvtTableIdx);
+        virtual ~PvtDead();
 
         /// Viscosity as a function of p and z.
         virtual void mu(const int n,
@@ -130,11 +134,11 @@ namespace Opm
                           double* output_dRdp) const;
     private:
         // PVT properties of dry gas or dead oil
-        NonuniformTableLinear<double> b_;
-        NonuniformTableLinear<double> viscosity_;
+        std::vector<int> pvtTableIdx_;
+        std::vector<NonuniformTableLinear<double> > b_;
+        std::vector<NonuniformTableLinear<double> > viscosity_;
     };
-
 }
 
 
-#endif // OPM_SINGLEPVTDEAD_HEADER_INCLUDED
+#endif // OPM_PVTDEAD_HEADER_INCLUDED

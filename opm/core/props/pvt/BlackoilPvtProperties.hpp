@@ -20,10 +20,11 @@
 #ifndef OPM_BLACKOILPVTPROPERTIES_HEADER_INCLUDED
 #define OPM_BLACKOILPVTPROPERTIES_HEADER_INCLUDED
 
-#include <opm/core/props/pvt/SinglePvtInterface.hpp>
+#include <opm/core/props/pvt/PvtInterface.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 
 #include <opm/parser/eclipse/Deck/Deck.hpp>
+#include <opm/parser/eclipse/Utility/PvtoTable.hpp>
 
 #include <string>
 #include <memory>
@@ -37,9 +38,9 @@ namespace Opm
     /// Output arrays shall be of size n*num_phases, and must be valid
     /// before calling the method.
     /// NOTE: The difference between this interface and the one defined
-    /// by SinglePvtInterface is that this collects all phases' properties,
+    /// by PvtInterface is that this collects all phases' properties,
     /// and therefore the output arrays are of size n*num_phases as opposed
-    /// to size n in SinglePvtInterface.
+    /// to size n in PvtInterface.
     class BlackoilPvtProperties : public BlackoilPhases
     {
     public:
@@ -47,8 +48,17 @@ namespace Opm
         BlackoilPvtProperties();
 
         /// Initialize from deck.
+        ///
+        /// This method needs the mapping for compressed to cartesian
+        /// cell indices because the methods which do the actual work
+        /// are specified for compressed cells, but the eclipse input
+        /// data is specified on cartesian cell indices...
+        ///
         /// \param deck     An input deck from the opm-parser module.
-        void init(Opm::DeckConstPtr deck, int samples);
+        void init(Opm::DeckConstPtr deck,
+                  int samples,
+                  int numCompressedCells,
+                  const int *compressedToCartesianCellIdx);
 
         /// \return   Object describing the active phases.
         PhaseUsage phaseUsage() const;
@@ -68,7 +78,7 @@ namespace Opm
 
         /// Densities of stock components at surface conditions.
         /// \return  Array of size numPhases().
-        const double* surfaceDensities() const;
+        const double* surfaceDensities(int regionIdx = 0) const;
 
         /// Viscosity as a function of p and z.
         void mu(const int n,
@@ -109,11 +119,19 @@ namespace Opm
 
         PhaseUsage phase_usage_;
 
-        int region_number_;
+        // The PVT properties. One object per active fluid phase.
+        std::vector<std::shared_ptr<PvtInterface> > props_;
 
-        std::vector<std::shared_ptr<SinglePvtInterface> > props_;
+        // The index of the PVT table which ought to be used for each
+        // cell. Eclipse does not seem to allow specifying fluid-phase
+        // specific table indices, so for the sake of simplicity, we
+        // don't do this either. (if it turns out that Eclipes does in
+        // fact support it or if it by some miracle gains this feature
+        // in the future, this attribute needs to become a vector of
+        // vectors of ints.)
+        std::vector<int> pvtTableIdx_;
 
-        double densities_[MaxNumPhases];
+        std::vector<std::array<double, MaxNumPhases> > densities_;
         mutable std::vector<double> data1_;
         mutable std::vector<double> data2_;
     };

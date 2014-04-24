@@ -23,8 +23,14 @@ namespace Opm
                                                            const parameter::ParameterGroup& param,
                                                            bool init_rock)
     {
-        init(deck, number_of_cells, global_cell, cart_dims, begin_cell_centroids, dimension,
-             param, init_rock);
+        init(deck,
+             number_of_cells,
+             global_cell,
+             cart_dims,
+             begin_cell_centroids,
+             dimension,
+             param,
+             init_rock);
     }
 
     template<class CentroidIterator>
@@ -39,7 +45,7 @@ namespace Opm
         if (init_rock){
            rock_.init(deck, number_of_cells, global_cell, cart_dims);
         }
-        pvt_.init(deck, /*numSamples=*/0);
+        pvt_.init(deck, /*numSamples=*/0, number_of_cells, global_cell);
         SaturationPropsFromDeck<SatFuncSimpleNonuniform>* ptr
             = new SaturationPropsFromDeck<SatFuncSimpleNonuniform>();
         satprops_.reset(ptr);
@@ -68,7 +74,7 @@ namespace Opm
         }
 
         const int pvt_samples = param.getDefault("pvt_tab_size", 200);
-        pvt_.init(deck, pvt_samples);
+        pvt_.init(deck, pvt_samples, number_of_cells, global_cell);
 
         // Unfortunate lack of pointer smartness here...
         const int sat_samples = param.getDefault("sat_tab_size", 200);

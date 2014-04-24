@@ -1,15 +1,17 @@
 #include <config.h>
 
 #include <opm/core/grid/GridManager.hpp>
-#include <opm/core/props/pvt/SinglePvtConstCompr.hpp>
-#include <opm/core/props/pvt/SinglePvtDead.hpp>
-#include <opm/core/props/pvt/SinglePvtDeadSpline.hpp>
-#include <opm/core/props/pvt/SinglePvtLiveOil.hpp>
-#include <opm/core/props/pvt/SinglePvtLiveGas.hpp>
+#include <opm/core/props/pvt/PvtConstCompr.hpp>
+#include <opm/core/props/pvt/PvtDead.hpp>
+#include <opm/core/props/pvt/PvtDeadSpline.hpp>
+#include <opm/core/props/pvt/PvtLiveOil.hpp>
+#include <opm/core/props/pvt/PvtLiveGas.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
+#include <opm/core/props/pvt/BlackoilPvtProperties.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/grid.h>
 
 #include <opm/parser/eclipse/Utility/PvtoTable.hpp>
 #include <opm/parser/eclipse/Utility/PvtgTable.hpp>
@@ -36,63 +38,78 @@ using namespace Opm;
 using namespace std;
 
 
-std::vector<std::shared_ptr<SinglePvtInterface> > getProps(Opm::DeckConstPtr deck,PhaseUsage phase_usage_){
-
+std::vector<std::shared_ptr<PvtInterface> > getProps(Opm::DeckConstPtr deck, PhaseUsage phase_usage_){
+    Opm::GridManager grid(deck);
+    const UnstructuredGrid* cgrid = grid.c_grid();
 
     enum PhaseIndex { Aqua = 0, Liquid = 1, Vapour = 2 };
     int samples = 0;
 
+    // first, calculate the PVT table index for each compressed
+    // cell. This array is required to construct the PVT classes
+    // below.
+    std::vector<int> pvtTableIdx;
+    Opm::extractPvtTableIndex(pvtTableIdx,
+                              deck,
+                              cgrid->number_of_cells,
+                              cgrid->global_cell);
 
-    std::vector<std::shared_ptr<SinglePvtInterface> > props_;
+    std::vector<std::shared_ptr<PvtInterface> > props_;
     // Set the properties.
     props_.resize(phase_usage_.num_phases);
 
     // Water PVT
     if (phase_usage_.phase_used[Aqua]) {
         if (deck->hasKeyword("PVTW")) {
-            Opm::PvtwTable pvtwTable(deck->getKeyword("PVTW"));
-            props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(pvtwTable));
+            std::shared_ptr<PvtConstCompr> pvtw(new PvtConstCompr);
+            pvtw->initFromWater(deck->getKeyword("PVTW"), pvtTableIdx);
+
+            props_[phase_usage_.phase_pos[Aqua]] = pvtw;
         } else {
             // Eclipse 100 default.
-            props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(0.5*Opm::prefix::centi*Opm::unit::Poise));
+            props_[phase_usage_.phase_pos[Aqua]].reset(new PvtConstCompr(0.5*Opm::prefix::centi*Opm::unit::Poise));
         }
     }
 
     // Oil PVT
     if (phase_usage_.phase_used[Liquid]) {
         if (deck->hasKeyword("PVDO")) {
-            Opm::PvdoTable pvdoTable(deck->getKeyword("PVDO"));
+            Opm::DeckKeywordConstPtr pvdoKeyword(deck->getKeyword("PVDO"));
             if (samples > 0) {
-                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDeadSpline(pvdoTable, samples));
+                std::shared_ptr<PvtDeadSpline> splinePvt(new PvtDeadSpline);
+                splinePvt->initFromOil(pvdoKeyword, pvtTableIdx, samples);
+                props_[phase_usage_.phase_pos[Liquid]] = splinePvt;
             } else {
-                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDead(pvdoTable));
+                std::shared_ptr<PvtDead> deadPvt(new PvtDead);
+                deadPvt->initFromOil(pvdoKeyword, pvtTableIdx);
+                props_[phase_usage_.phase_pos[Liquid]] = deadPvt;
             }
         } else if (deck->hasKeyword("PVTO")) {
-            Opm::PvtoTable pvtoTable(deck->getKeyword("PVTO"), /*tableIdx=*/0);
-
-            props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtLiveOil(pvtoTable));
+            props_[phase_usage_.phase_pos[Liquid]].reset(new PvtLiveOil(deck->getKeyword("PVTO"), pvtTableIdx));
         } else if (deck->hasKeyword("PVCDO")) {
-            Opm::PvcdoTable pvcdoTable(deck->getKeyword("PVCDO"), /*tableIdx=*/0);
+            std::shared_ptr<PvtConstCompr> pvcdo(new PvtConstCompr);
+            pvcdo->initFromOil(deck->getKeyword("PVCDO"), pvtTableIdx);
 
-            props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtConstCompr(pvcdoTable));
+            props_[phase_usage_.phase_pos[Liquid]] = pvcdo;
         } else {
-            OPM_THROW(std::runtime_error, "Input is missing PVDO or PVTO\n");
+            OPM_THROW(std::runtime_error, "Input is missing PVDO, PVCDO or PVTO\n");
         }
     }
     // Gas PVT
     if (phase_usage_.phase_used[Vapour]) {
         if (deck->hasKeyword("PVDG")) {
-            Opm::PvdgTable pvdgTable(deck->getKeyword("PVDG"));
-
+            Opm::DeckKeywordConstPtr pvdgKeyword(deck->getKeyword("PVDG"));
             if (samples > 0) {
-                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDeadSpline(pvdgTable, samples));
+                std::shared_ptr<PvtDeadSpline> splinePvt(new PvtDeadSpline);
+                splinePvt->initFromGas(pvdgKeyword, pvtTableIdx, samples);
+                props_[phase_usage_.phase_pos[Vapour]] = splinePvt;
             } else {
-                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDead(pvdgTable));
+                std::shared_ptr<PvtDead> deadPvt(new PvtDead);
+                deadPvt->initFromGas(pvdgKeyword, pvtTableIdx);
+                props_[phase_usage_.phase_pos[Vapour]] = deadPvt;
             }
         } else if (deck->hasKeyword("PVTG")) {
-            Opm::PvtgTable pvtgTable(deck->getKeyword("PVTG"), /*tableIdx=*/0);
-
-            props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(pvtgTable));
+            props_[phase_usage_.phase_pos[Vapour]].reset(new PvtLiveGas(deck->getKeyword("PVTG"), pvtTableIdx));
         } else {
             OPM_THROW(std::runtime_error, "Input is missing PVDG or PVTG\n");
         }
@@ -102,7 +119,7 @@ std::vector<std::shared_ptr<SinglePvtInterface> > getProps(Opm::DeckConstPtr dec
 }
 
 void testmu(const double reltol, int n, int np, std::vector<double> p, std::vector<double> r,std::vector<double> z,
-            std::vector<std::shared_ptr<SinglePvtInterface> > props_, std::vector<Opm::PhasePresence> condition)
+            std::vector<std::shared_ptr<PvtInterface> > props_, std::vector<Opm::PhasePresence> condition)
 {
     std::vector<double> mu(n);
     std::vector<double> dmudp(n);
@@ -138,7 +155,7 @@ void testmu(const double reltol, int n, int np, std::vector<double> p, std::vect
 }
 
 void testb(const double reltol, int n, int np, std::vector<double> p, std::vector<double> r,std::vector<double> z,
-            std::vector<std::shared_ptr<SinglePvtInterface> > props_, std::vector<Opm::PhasePresence> condition)
+            std::vector<std::shared_ptr<PvtInterface> > props_, std::vector<Opm::PhasePresence> condition)
 {
     // test b
     std::vector<double> b(n);
@@ -180,7 +197,7 @@ void testb(const double reltol, int n, int np, std::vector<double> p, std::vecto
     }
 }
 
-void testrsSat(double reltol, int n, int np, std::vector<double> p, std::vector<std::shared_ptr<SinglePvtInterface> > props_){
+void testrsSat(double reltol, int n, int np, std::vector<double> p, std::vector<std::shared_ptr<PvtInterface> > props_){
     // test bublepoint pressure
     std::vector<double> rs(n);
     std::vector<double> drsdp(n);
@@ -202,7 +219,7 @@ void testrsSat(double reltol, int n, int np, std::vector<double> p, std::vector<
     }
 }
 
-void testrvSat(double reltol, int n, int np, std::vector<double> p, std::vector<std::shared_ptr<SinglePvtInterface> > props_){
+void testrvSat(double reltol, int n, int np, std::vector<double> p, std::vector<std::shared_ptr<PvtInterface> > props_){
     // test rv saturated
     std::vector<double> rv(n);
     std::vector<double> drvdp(n);
@@ -234,9 +251,11 @@ BOOST_AUTO_TEST_CASE(test_liveoil)
     Opm::ParserPtr parser(new Opm::Parser());
     Opm::DeckConstPtr deck(parser->parseFile(filename));
 
+    
+
     // setup pvt interface
     PhaseUsage phase_usage_ = phaseUsageFromDeck(deck);
-    std::vector<std::shared_ptr<SinglePvtInterface> > props_ = getProps(deck,phase_usage_);
+    std::vector<std::shared_ptr<PvtInterface> > props_ = getProps(deck,phase_usage_);
 
 
     // setup a test case. We will check 6 [p,r] pairs and compare them to both the [p,z] interface and a finite difference
@@ -311,7 +330,7 @@ BOOST_AUTO_TEST_CASE(test_wetgas)
 
     // setup pvt interface
     PhaseUsage phase_usage_ = phaseUsageFromDeck(deck);
-    std::vector<std::shared_ptr<SinglePvtInterface> > props_ = getProps(deck,phase_usage_);
+    std::vector<std::shared_ptr<PvtInterface> > props_ = getProps(deck,phase_usage_);
 
 
     // setup a test case. We will check 6 [p,r] pairs and compare them to both the [p,z] interface and a finite difference

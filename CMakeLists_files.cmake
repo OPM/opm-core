@@ -84,11 +84,11 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/pvt/BlackoilPvtProperties.cpp
 	opm/core/props/pvt/PvtPropertiesBasic.cpp
 	opm/core/props/pvt/PvtPropertiesIncompFromDeck.cpp
-	opm/core/props/pvt/SinglePvtDead.cpp
-	opm/core/props/pvt/SinglePvtDeadSpline.cpp
-	opm/core/props/pvt/SinglePvtInterface.cpp
-	opm/core/props/pvt/SinglePvtLiveGas.cpp
-	opm/core/props/pvt/SinglePvtLiveOil.cpp
+	opm/core/props/pvt/PvtDead.cpp
+	opm/core/props/pvt/PvtDeadSpline.cpp
+	opm/core/props/pvt/PvtInterface.cpp
+	opm/core/props/pvt/PvtLiveGas.cpp
+	opm/core/props/pvt/PvtLiveOil.cpp
 	opm/core/props/rock/RockBasic.cpp
 	opm/core/props/rock/RockCompressibility.cpp
 	opm/core/props/rock/RockFromDeck.cpp
@@ -311,12 +311,12 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/pvt/BlackoilPvtProperties.hpp
 	opm/core/props/pvt/PvtPropertiesBasic.hpp
 	opm/core/props/pvt/PvtPropertiesIncompFromDeck.hpp
-	opm/core/props/pvt/SinglePvtConstCompr.hpp
-	opm/core/props/pvt/SinglePvtDead.hpp
-	opm/core/props/pvt/SinglePvtDeadSpline.hpp
-	opm/core/props/pvt/SinglePvtInterface.hpp
-	opm/core/props/pvt/SinglePvtLiveGas.hpp
-	opm/core/props/pvt/SinglePvtLiveOil.hpp
+	opm/core/props/pvt/PvtConstCompr.hpp
+	opm/core/props/pvt/PvtDead.hpp
+	opm/core/props/pvt/PvtDeadSpline.hpp
+	opm/core/props/pvt/PvtInterface.hpp
+	opm/core/props/pvt/PvtLiveGas.hpp
+	opm/core/props/pvt/PvtLiveOil.hpp
 	opm/core/props/rock/RockBasic.hpp
 	opm/core/props/rock/RockCompressibility.hpp
 	opm/core/props/rock/RockFromDeck.hpp

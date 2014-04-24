@@ -17,22 +17,22 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_SINGLEPVTINTERFACE_HEADER_INCLUDED
-#define OPM_SINGLEPVTINTERFACE_HEADER_INCLUDED
-
+#ifndef OPM_PVTINTERFACE_HEADER_INCLUDED
+#define OPM_PVTINTERFACE_HEADER_INCLUDED
 
 #include <opm/core/props/BlackoilPhases.hpp>
+#include <opm/parser/eclipse/Deck/Deck.hpp>
 
 
 namespace Opm
 {
 
-    class SinglePvtInterface : public BlackoilPhases
+    class PvtInterface : public BlackoilPhases
     {
     public:
-        SinglePvtInterface();
+        PvtInterface();
 
-        virtual ~SinglePvtInterface();
+        virtual ~PvtInterface();
 
         /// \param[in]  num_phases   The number of active phases.
         /// \param[in]  phase_pos    Array of BlackpoilPhases::MaxNumPhases
@@ -138,7 +138,22 @@ namespace Opm
         int phase_pos_[MaxNumPhases];
     };
 
+    /*!
+     * \brief Helper function to create an array containing the (C-Style)
+     *        PVT table index for each compressed cell.
+     *
+     * The main point of this function is to avoid code duplication
+     * because the Eclipse deck only contains Fortran-style PVT table
+     * indices which start at 1 instead of 0 and -- more relevantly -- it
+     * uses logically cartesian cell indices to specify the table index of
+     * a cell.
+     */
+    void extractPvtTableIndex(std::vector<int> &pvtTableIdx,
+                              Opm::DeckConstPtr deck,
+                              size_t numCompressed,
+                              const int *compressedToCartesianIdx);
+
 } // namespace Opm
 
-#endif // OPM_SINGLEPVTINTERFACE_HEADER_INCLUDED
+#endif // OPM_PVTINTERFACE_HEADER_INCLUDED
 

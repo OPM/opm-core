@@ -21,11 +21,11 @@
 
 #include "config.h"
 #include <opm/core/props/pvt/BlackoilPvtProperties.hpp>
-#include <opm/core/props/pvt/SinglePvtDead.hpp>
-#include <opm/core/props/pvt/SinglePvtDeadSpline.hpp>
-#include <opm/core/props/pvt/SinglePvtLiveOil.hpp>
-#include <opm/core/props/pvt/SinglePvtLiveGas.hpp>
-#include <opm/core/props/pvt/SinglePvtConstCompr.hpp>
+#include <opm/core/props/pvt/PvtDead.hpp>
+#include <opm/core/props/pvt/PvtDeadSpline.hpp>
+#include <opm/core/props/pvt/PvtLiveOil.hpp>
+#include <opm/core/props/pvt/PvtLiveGas.hpp>
+#include <opm/core/props/pvt/PvtConstCompr.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
@@ -42,93 +42,107 @@ namespace Opm
     {
     }
 
-    void BlackoilPvtProperties::init(Opm::DeckConstPtr deck, int samples)
+    void BlackoilPvtProperties::init(Opm::DeckConstPtr deck,
+                                     int numSamples,
+                                     int numCompressedCells,
+                                     const int *compressedToCartesianCellIdx)
     {
-        // If we need multiple regions, this class and the SinglePvt* classes must change.
-        region_number_ = 0;
-
         phase_usage_ = phaseUsageFromDeck(deck);
 
         // Surface densities. Accounting for different orders in eclipse and our code.
-        if (deck->hasKeyword("DENSITY")) {
-            Opm::DeckKeywordConstPtr densityKeyword = deck->getKeyword("DENSITY");
+        Opm::DeckKeywordConstPtr densityKeyword = deck->getKeyword("DENSITY");
+        int numRegions = densityKeyword->size();
+
+        densities_.resize(numRegions);
+        for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
             if (phase_usage_.phase_used[Liquid]) {
-                densities_[phase_usage_.phase_pos[Liquid]]
-                    = densityKeyword->getRecord(region_number_)->getItem("OIL")->getSIDouble(0);
+                densities_[regionIdx][phase_usage_.phase_pos[Liquid]]
+                    = densityKeyword->getRecord(regionIdx)->getItem("OIL")->getSIDouble(0);
             }
             if (phase_usage_.phase_used[Aqua]) {
-                densities_[phase_usage_.phase_pos[Aqua]]
-                    = densityKeyword->getRecord(region_number_)->getItem("WATER")->getSIDouble(0);
+                densities_[regionIdx][phase_usage_.phase_pos[Aqua]]
+                    = densityKeyword->getRecord(regionIdx)->getItem("WATER")->getSIDouble(0);
             }
             if (phase_usage_.phase_used[Vapour]) {
-                densities_[phase_usage_.phase_pos[Vapour]]
-                    = densityKeyword->getRecord(region_number_)->getItem("GAS")->getSIDouble(0);
+                densities_[regionIdx][phase_usage_.phase_pos[Vapour]]
+                    = densityKeyword->getRecord(regionIdx)->getItem("GAS")->getSIDouble(0);
             }
-        } else {
-            OPM_THROW(std::runtime_error, "Input is missing DENSITY\n");
         }
 
-        // Set the properties.
+        // first, calculate the PVT table index for each compressed
+        // cell. This array is required to construct the PVT classes
+        // below.
+        Opm::extractPvtTableIndex(pvtTableIdx_,
+                                  deck,
+                                  numCompressedCells,
+                                  compressedToCartesianCellIdx);
+
+        // Resize the property objects container
         props_.resize(phase_usage_.num_phases);
+
         // Water PVT
         if (phase_usage_.phase_used[Aqua]) {
-            if (deck->hasKeyword("PVTW")) {
-                Opm::PvtwTable pvtwTable(deck->getKeyword("PVTW"));
+            // if water is used, we require the presence of the "PVTW"
+            // keyword for now...
+            std::shared_ptr<PvtConstCompr> pvtw(new PvtConstCompr);
+            pvtw->initFromWater(deck->getKeyword("PVTW"), pvtTableIdx_);
 
-                props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(pvtwTable));
-            } else {
-                // Eclipse 100 default.
-                props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(0.5*Opm::prefix::centi*Opm::unit::Poise));
-            }
+            props_[phase_usage_.phase_pos[Aqua]] = pvtw;
         }
         // Oil PVT
         if (phase_usage_.phase_used[Liquid]) {
+            // for oil, we support the "PVDO", "PVTO" and "PVCDO"
+            // keywords...
             if (deck->hasKeyword("PVDO")) {
-                Opm::PvdoTable pvdoTable(deck->getKeyword("PVDO"), region_number_);
-                if (samples > 0) {
-                    props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDeadSpline(pvdoTable, samples));
+                Opm::DeckKeywordConstPtr pvdoKeyword = deck->getKeyword("PVDO");
+                if (numSamples > 0) {
+                    auto splinePvt = std::shared_ptr<PvtDeadSpline>(new PvtDeadSpline);
+                    splinePvt->initFromOil(pvdoKeyword, pvtTableIdx_, numSamples);
+                    props_[phase_usage_.phase_pos[Liquid]] = splinePvt;
                 } else {
-                    props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDead(pvdoTable));
+                    auto deadPvt = std::shared_ptr<PvtDead>(new PvtDead);
+                    deadPvt->initFromOil(pvdoKeyword, pvtTableIdx_);
+                    props_[phase_usage_.phase_pos[Liquid]] = deadPvt;
                 }
             } else if (deck->hasKeyword("PVTO")) {
-                Opm::PvtoTable pvtoTable(deck->getKeyword("PVTO"), /*tableIdx=*/0);
-
-                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtLiveOil(pvtoTable));
+                props_[phase_usage_.phase_pos[Liquid]].reset(new PvtLiveOil(deck->getKeyword("PVTO"), pvtTableIdx_));
             } else if (deck->hasKeyword("PVCDO")) {
-                Opm::PvcdoTable pvcdoTable(deck->getKeyword("PVCDO"));
+                std::shared_ptr<PvtConstCompr> pvcdo(new PvtConstCompr);
+                pvcdo->initFromOil(deck->getKeyword("PVCDO"), pvtTableIdx_);
 
-                props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtConstCompr(pvcdoTable));
+                props_[phase_usage_.phase_pos[Liquid]] = pvcdo;
             } else {
-                OPM_THROW(std::runtime_error, "Input is missing PVDO or PVTO\n");
+                OPM_THROW(std::runtime_error, "Input is missing PVDO, PVCDO or PVTO\n");
             }
         }
         // Gas PVT
         if (phase_usage_.phase_used[Vapour]) {
+            // gas can be specified using the "PVDG" or "PVTG" keywords...
             if (deck->hasKeyword("PVDG")) {
-                Opm::PvdgTable pvdgTable(deck->getKeyword("PVDG"), region_number_);
-                if (samples > 0) {
-                    props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDeadSpline(pvdgTable, samples));
+                Opm::DeckKeywordConstPtr pvdgKeyword = deck->getKeyword("PVDG");
+
+                if (numSamples > 0) {
+                    std::shared_ptr<PvtDeadSpline> splinePvt(new PvtDeadSpline);
+                    splinePvt->initFromGas(pvdgKeyword, pvtTableIdx_, numSamples);
+
+                    props_[phase_usage_.phase_pos[Vapour]] = splinePvt;
                 } else {
-                    props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDead(pvdgTable));
+                    std::shared_ptr<PvtDead> deadPvt(new PvtDead);
+                    deadPvt->initFromGas(pvdgKeyword, pvtTableIdx_);
+
+                    props_[phase_usage_.phase_pos[Vapour]] = deadPvt;
                 }
             } else if (deck->hasKeyword("PVTG")) {
-                Opm::PvtgTable pvtgTable(deck->getKeyword("PVTG"), /*tableIdx=*/0);
-
-                props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(pvtgTable));
+                props_[phase_usage_.phase_pos[Vapour]].reset(new PvtLiveGas(deck->getKeyword("PVTG"), pvtTableIdx_));
             } else {
                 OPM_THROW(std::runtime_error, "Input is missing PVDG or PVTG\n");
             }
         }
-
-        // Must inform pvt property objects of phase structure.
-        for (int i = 0; i < phase_usage_.num_phases; ++i) {
-            props_[i]->setPhaseConfiguration(phase_usage_.num_phases, phase_usage_.phase_pos);
-        }
     }
 
-    const double* BlackoilPvtProperties::surfaceDensities() const
+    const double* BlackoilPvtProperties::surfaceDensities(int regionIdx) const
     {
-        return densities_;
+        return &densities_[regionIdx][0];
     }
 
 
@@ -234,5 +248,4 @@ namespace Opm
             }
         }
     }
-
 } // namespace Opm

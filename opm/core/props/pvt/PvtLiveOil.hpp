@@ -17,11 +17,12 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_SINGLEPVTLIVEOIL_HEADER_INCLUDED
-#define OPM_SINGLEPVTLIVEOIL_HEADER_INCLUDED
+#ifndef OPM_PVTLIVEOIL_HEADER_INCLUDED
+#define OPM_PVTLIVEOIL_HEADER_INCLUDED
 
-#include <opm/core/props/pvt/SinglePvtInterface.hpp>
+#include <opm/core/props/pvt/PvtInterface.hpp>
 
+#include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/Utility/PvtoTable.hpp>
 
 #include <vector>
@@ -35,11 +36,11 @@ namespace Opm
     /// are expected to be of size n, size n and n*num_phases, respectively.
     /// Output arrays shall be of size n, and must be valid before
     /// calling the method.
-    class SinglePvtLiveOil : public SinglePvtInterface
+    class PvtLiveOil : public PvtInterface
     {
     public:
-        SinglePvtLiveOil(const Opm::PvtoTable &pvtoTable);
-        virtual ~SinglePvtLiveOil();
+        PvtLiveOil(Opm::DeckKeywordConstPtr pvtoKeyword, const std::vector<int> &pvtTableIdx);
+        virtual ~PvtLiveOil();
 
         /// Viscosity as a function of p and z.
         virtual void mu(const int n,
@@ -124,34 +125,38 @@ namespace Opm
                           double* output_dRdp) const;
 
     private:
-        double evalB(double press, const double* surfvol) const;
-        void evalBDeriv(double press, const double* surfvol, double& B, double& dBdp) const;
-        double evalR(double press, const double* surfvol) const;
-        void evalRDeriv(double press, const double* surfvol, double& R, double& dRdp) const;
+        double evalB(size_t pvtTableIdx, double press, const double* surfvol) const;
+        void evalBDeriv(size_t pvtTableIdx, double press, const double* surfvol, double& B, double& dBdp) const;
+        double evalR(size_t pvtTableIdx, double press, const double* surfvol) const;
+        void evalRDeriv(size_t pvtTableIdx, double press, const double* surfvol, double& R, double& dRdp) const;
 
         // item:  1=>1/B  2=>mu;
         double miscible_oil(const double press,
                             const double* surfvol,
+                            const int pvtTableIdx,
                             const int item,
                             const bool deriv = false) const;
 
         double miscible_oil(const double press,
                             const double r,
+                            const int pvtTableIdx,
                             const int item,
                             const int deriv = 0) const;
 
         double miscible_oil(const double press,
                             const double r,
                             const PhasePresence& cond,
+                            const int pvtTableIdx,
                             const int item,
                             const int deriv = 0) const;
 
         // PVT properties of live oil (with dissolved gas)
-        std::vector<std::vector<double> > saturated_oil_table_;
-        std::vector<std::vector<std::vector<double> > > undersat_oil_tables_;
+        std::vector<int> pvtTableIdx_;
+        std::vector<std::vector<std::vector<double> > > saturated_oil_table_;
+        std::vector<std::vector<std::vector<std::vector<double> > > > undersat_oil_tables_;
     };
 
 }
 
-#endif // OPM_SINGLEPVTLIVEOIL_HEADER_INCLUDED
+#endif // OPM_PVTLIVEOIL_HEADER_INCLUDED
 
