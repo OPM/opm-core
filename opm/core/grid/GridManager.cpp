@@ -18,6 +18,7 @@
 */
 
 #include "config.h"
+
 #include <opm/core/grid/GridManager.hpp>
 #include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/grid.h>
@@ -55,6 +56,34 @@ namespace Opm
         }
     }
 
+    GridManager::GridManager(Opm::EclipseGridConstPtr eclipseGrid) {
+        struct grdecl g;
+        std::vector<int> actnum;
+        std::vector<double> coord;
+        std::vector<double> zcorn;
+        std::vector<double> mapaxes;
+        
+        g.dims[0] = eclipseGrid->getNX();
+        g.dims[1] = eclipseGrid->getNY();
+        g.dims[2] = eclipseGrid->getNZ();
+
+        eclipseGrid->exportMAPAXES( mapaxes );
+        eclipseGrid->exportCOORD( coord );
+        eclipseGrid->exportZCORN( zcorn );
+        eclipseGrid->exportACTNUM( actnum );   
+
+        g.coord = coord.data();
+        g.zcorn = zcorn.data();
+        g.actnum = actnum.data();
+        g.mapaxes = mapaxes.data();
+
+        ug_ = create_grid_cornerpoint(&g , 0.0);
+        if (!ug_) {
+            OPM_THROW(std::runtime_error, "Failed to construct grid.");
+        }
+    }
+
+
     /// Construct a 3d corner-point grid from a deck.
     GridManager::GridManager(Opm::DeckConstPtr newParserDeck)
     {
@@ -76,7 +105,7 @@ namespace Opm
             initFromDeckTensorgrid(newParserDeck);
         } else {
             OPM_THROW(std::runtime_error, "Could not initialize grid from deck. "
-                  "Need either ZCORN + COORD or DXV + DYV + DZV keywords.");
+                      "Need either ZCORN + COORD or DXV + DYV + DZV keywords.");
         }
     }
 

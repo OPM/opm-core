@@ -152,6 +152,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_propertysystem.cpp
 	tests/test_dgbasis.cpp
 	tests/test_cartgrid.cpp
+        tests/test_ug.cpp
 	tests/test_cubic.cpp
 	tests/test_event.cpp
 	tests/test_nonuniformtablelinear.cpp
@@ -201,6 +202,7 @@ list (APPEND TEST_DATA_FILES
 	tests/wells_manager_data_wellSTOP.data
 	tests/wells_group.data
 	tests/TESTTIMER.DATA
+        tests/CORNERPOINT_ACTNUM.DATA
 	)
 
 # originally generated with the command:

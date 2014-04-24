@@ -21,6 +21,7 @@
 #define OPM_GRIDMANAGER_HEADER_INCLUDED
 
 #include <opm/parser/eclipse/Deck/Deck.hpp>
+#include <opm/parser/eclipse/EclipseState/Grid/EclipseGrid.hpp>
 
 #include <string>
 
@@ -48,6 +49,9 @@ namespace Opm
 
         /// Construct a 3d corner-point grid or tensor grid from a deck.
         explicit GridManager(Opm::DeckConstPtr newParserDeck);
+
+        /// Construct a grid from an EclipseState::EclipseGrid instance
+        explicit GridManager(Opm::EclipseGridConstPtr eclipseGrid);
 
         /// Construct a 2d cartesian grid with cells of unit size.
         GridManager(int nx, int ny);

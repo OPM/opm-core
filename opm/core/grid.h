@@ -21,6 +21,7 @@
 #define OPM_GRID_HEADER_INCLUDED
 
 #include <stddef.h>
+#include <stdbool.h>
 
 /**
  * \file
@@ -298,6 +299,11 @@ allocate_grid(size_t ndims     ,
  */
 struct UnstructuredGrid *
 read_grid(const char *fname);
+
+
+
+bool 
+grid_equal(const struct UnstructuredGrid * grid1 , const struct UnstructuredGrid * grid2);
 
 #ifdef __cplusplus
 }

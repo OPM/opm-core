@@ -503,9 +503,9 @@ private:
 /**
  * Representation of an Eclipse grid.
  */
-struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
+struct EclipseWriterGrid : public EclipseHandle <ecl_grid_type> {
     /// Create a grid based on the keywords available in input file
-    static EclipseGrid make (Opm::DeckConstPtr newParserDeck,
+    static EclipseWriterGrid make (Opm::DeckConstPtr newParserDeck,
                              int number_of_cells,
                              const int* cart_dims,
                              const int* global_cell)
@@ -520,7 +520,7 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
             const auto& dyv = newParserDeck->getKeyword("DYV")->getSIDoubleData();
             const auto& dzv = newParserDeck->getKeyword("DZV")->getSIDoubleData();
 
-            return EclipseGrid (dxv, dyv, dzv);
+            return EclipseWriterGrid (dxv, dyv, dzv);
         }
         else if (newParserDeck->hasKeyword("ZCORN")) {
             struct grdecl g;
@@ -542,7 +542,7 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
                 mapaxes_kw = std::move (EclipseKeyword<float> (MAPAXES_KW, mapaxesData));
             }
 
-            return EclipseGrid (cart_dims, zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
+            return EclipseWriterGrid (cart_dims, zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
         }
         else {
             OPM_THROW(std::runtime_error,
@@ -565,14 +565,14 @@ struct EclipseGrid : public EclipseHandle <ecl_grid_type> {
 
     // GCC 4.4 doesn't generate these constructors for us; provide the
     // default implementation explicitly here instead
-    EclipseGrid (EclipseGrid&& rhs)
+    EclipseWriterGrid (EclipseWriterGrid&& rhs)
         : EclipseHandle <ecl_grid_type> (std::move (rhs)) { }
-    EclipseGrid& operator= (EclipseGrid&& rhs) {
+    EclipseWriterGrid& operator= (EclipseWriterGrid&& rhs) {
         EclipseHandle <ecl_grid_type>::operator= (std::move(rhs));
         return *this;
     }
-    EclipseGrid (const EclipseGrid&) = delete;
-    EclipseGrid& operator= (const EclipseGrid&) = delete;
+    EclipseWriterGrid (const EclipseWriterGrid&) = delete;
+    EclipseWriterGrid& operator= (const EclipseWriterGrid&) = delete;
 
 private:
     // each of these cases could have been their respective subclass,
@@ -580,7 +580,7 @@ private:
     // once we have the handle
 
     // setup smart pointer for Cartesian grid
-    EclipseGrid (const std::vector<double>& dxv,
+    EclipseWriterGrid (const std::vector<double>& dxv,
                  const std::vector<double>& dyv,
                  const std::vector<double>& dzv)
         : EclipseHandle <ecl_grid_type> (
@@ -594,7 +594,7 @@ private:
               ecl_grid_free) { }
 
     // setup smart pointer for cornerpoint grid
-    EclipseGrid (const int dims[],
+    EclipseWriterGrid (const int dims[],
                  const EclipseKeyword<float>& zcorn,
                  const EclipseKeyword<float>& coord,
                  const EclipseKeyword<int>& actnum,
@@ -644,7 +644,7 @@ struct EclipseInit : public EclipseHandle <fortio_type> {
         auto dataField = getAllSiDoubles_(newParserDeck->getKeyword(PORO_KW));
         restrictToActiveCells_(dataField, number_of_cells, global_cell);
 
-        EclipseGrid eclGrid = EclipseGrid::make (newParserDeck, number_of_cells,
+        EclipseWriterGrid eclGrid = EclipseWriterGrid::make (newParserDeck, number_of_cells,
                                                  cart_dims, global_cell);
 
         EclipseKeyword<float> poro (PORO_KW, dataField);
@@ -1054,8 +1054,8 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
         return;
     }
     /* Grid files */
-    EclipseGrid eclGrid = EclipseGrid::make (newParserDeck_, number_of_cells_,
-                                             cart_dims_, global_cell_);
+    EclipseWriterGrid eclGrid = EclipseWriterGrid::make (newParserDeck_, number_of_cells_,
+                                                         cart_dims_, global_cell_);
     eclGrid.write (outputDir_, baseName_, /*stepIdx=*/0);
 
     EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, /*stepIdx=*/0);
