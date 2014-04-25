@@ -211,7 +211,6 @@ list (APPEND EXAMPLE_SOURCE_FILES
 	examples/compute_initial_state.cpp
 	examples/compute_tof.cpp
 	examples/compute_tof_from_files.cpp
-	examples/import_rewrite.cpp
 	examples/sim_2p_comp_reorder.cpp
 	examples/sim_2p_incomp.cpp
 	examples/wells_example.cpp

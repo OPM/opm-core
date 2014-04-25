@@ -98,6 +98,11 @@ namespace Opm
     static FieldType classifyKeyword(const std::string& keyword);
     static bool readKeyword(std::istream& is, std::string& keyword);
 
+    // temporary measure to get the file name passed to the
+    // constuctor above
+    const std::string &deckFileName() const
+    { return deckFileName_; };
+
 
     /// Read the given stream, overwriting any previous data.  Unless
     /// the second argument 'convert_to_SI' is false, all fields will
@@ -259,7 +264,7 @@ private:
     void readImpl(std::istream& is);
     void getNumericErtFields(const std::string& filename);
 
-
+    std::string deckFileName_;
     std::string directory_;
     std::map<std::string, std::vector<int> > integer_field_map_;
     std::map<std::string, std::vector<double> > floating_field_map_;
