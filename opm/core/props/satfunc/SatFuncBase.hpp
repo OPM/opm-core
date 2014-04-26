@@ -78,7 +78,7 @@ namespace Opm
     class SatFuncBase : public BlackoilPhases
     {
     public:
-        void init(Opm::DeckConstPtr newParserDeck,
+        void init(Opm::DeckConstPtr deck,
                   const int table_num,
                   const PhaseUsage phase_usg,
                   const int samples);
@@ -121,7 +121,7 @@ namespace Opm
     };
 
     template <class TableType>
-    void SatFuncBase<TableType>::init(Opm::DeckConstPtr newParserDeck,
+    void SatFuncBase<TableType>::init(Opm::DeckConstPtr deck,
                                       const int table_num,
                                       const PhaseUsage phase_usg,
                                       const int samples)
@@ -130,7 +130,7 @@ namespace Opm
         double swco = 0.0;
         double swmax = 1.0;
         if (phase_usage.phase_used[Aqua]) {
-            Opm::SwofTable swof(newParserDeck->getKeyword("SWOF"), table_num);
+            Opm::SwofTable swof(deck->getKeyword("SWOF"), table_num);
             const std::vector<double>& sw = swof.getSwColumn();
             const std::vector<double>& krw = swof.getKrwColumn();
             const std::vector<double>& krow = swof.getKrowColumn();
@@ -184,7 +184,7 @@ namespace Opm
             }
         }
         if (phase_usage.phase_used[Vapour]) {
-            Opm::SgofTable sgof(newParserDeck->getKeyword("SGOF"), table_num);
+            Opm::SgofTable sgof(deck->getKeyword("SGOF"), table_num);
             const std::vector<double>& sg = sgof.getSgColumn();
             const std::vector<double>& krg = sgof.getKrgColumn();
             const std::vector<double>& krog = sgof.getKrogColumn();

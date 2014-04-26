@@ -42,16 +42,16 @@ namespace Opm
     {
     }
 
-    void BlackoilPvtProperties::init(Opm::DeckConstPtr newParserDeck, int samples)
+    void BlackoilPvtProperties::init(Opm::DeckConstPtr deck, int samples)
     {
         // If we need multiple regions, this class and the SinglePvt* classes must change.
         region_number_ = 0;
 
-        phase_usage_ = phaseUsageFromDeck(newParserDeck);
+        phase_usage_ = phaseUsageFromDeck(deck);
 
         // Surface densities. Accounting for different orders in eclipse and our code.
-        if (newParserDeck->hasKeyword("DENSITY")) {
-            Opm::DeckKeywordConstPtr densityKeyword = newParserDeck->getKeyword("DENSITY");
+        if (deck->hasKeyword("DENSITY")) {
+            Opm::DeckKeywordConstPtr densityKeyword = deck->getKeyword("DENSITY");
             if (phase_usage_.phase_used[Liquid]) {
                 densities_[phase_usage_.phase_pos[Liquid]]
                     = densityKeyword->getRecord(region_number_)->getItem("OIL")->getSIDouble(0);
@@ -72,8 +72,8 @@ namespace Opm
         props_.resize(phase_usage_.num_phases);
         // Water PVT
         if (phase_usage_.phase_used[Aqua]) {
-            if (newParserDeck->hasKeyword("PVTW")) {
-                Opm::PvtwTable pvtwTable(newParserDeck->getKeyword("PVTW"));
+            if (deck->hasKeyword("PVTW")) {
+                Opm::PvtwTable pvtwTable(deck->getKeyword("PVTW"));
 
                 props_[phase_usage_.phase_pos[Aqua]].reset(new SinglePvtConstCompr(pvtwTable));
             } else {
@@ -83,19 +83,19 @@ namespace Opm
         }
         // Oil PVT
         if (phase_usage_.phase_used[Liquid]) {
-            if (newParserDeck->hasKeyword("PVDO")) {
-                Opm::PvdoTable pvdoTable(newParserDeck->getKeyword("PVDO"), region_number_);
+            if (deck->hasKeyword("PVDO")) {
+                Opm::PvdoTable pvdoTable(deck->getKeyword("PVDO"), region_number_);
                 if (samples > 0) {
                     props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDeadSpline(pvdoTable, samples));
                 } else {
                     props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtDead(pvdoTable));
                 }
-            } else if (newParserDeck->hasKeyword("PVTO")) {
-                Opm::PvtoTable pvtoTable(newParserDeck->getKeyword("PVTO"), /*tableIdx=*/0);
+            } else if (deck->hasKeyword("PVTO")) {
+                Opm::PvtoTable pvtoTable(deck->getKeyword("PVTO"), /*tableIdx=*/0);
 
                 props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtLiveOil(pvtoTable));
-            } else if (newParserDeck->hasKeyword("PVCDO")) {
-                Opm::PvcdoTable pvcdoTable(newParserDeck->getKeyword("PVCDO"));
+            } else if (deck->hasKeyword("PVCDO")) {
+                Opm::PvcdoTable pvcdoTable(deck->getKeyword("PVCDO"));
 
                 props_[phase_usage_.phase_pos[Liquid]].reset(new SinglePvtConstCompr(pvcdoTable));
             } else {
@@ -104,15 +104,15 @@ namespace Opm
         }
         // Gas PVT
         if (phase_usage_.phase_used[Vapour]) {
-            if (newParserDeck->hasKeyword("PVDG")) {
-                Opm::PvdgTable pvdgTable(newParserDeck->getKeyword("PVDG"), region_number_);
+            if (deck->hasKeyword("PVDG")) {
+                Opm::PvdgTable pvdgTable(deck->getKeyword("PVDG"), region_number_);
                 if (samples > 0) {
                     props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDeadSpline(pvdgTable, samples));
                 } else {
                     props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtDead(pvdgTable));
                 }
-            } else if (newParserDeck->hasKeyword("PVTG")) {
-                Opm::PvtgTable pvtgTable(newParserDeck->getKeyword("PVTG"), /*tableIdx=*/0);
+            } else if (deck->hasKeyword("PVTG")) {
+                Opm::PvtgTable pvtgTable(deck->getKeyword("PVTG"), /*tableIdx=*/0);
 
                 props_[phase_usage_.phase_pos[Vapour]].reset(new SinglePvtLiveGas(pvtgTable));
             } else {

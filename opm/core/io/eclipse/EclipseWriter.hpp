@@ -59,7 +59,7 @@ public:
      *        binary files using ERT.
      */
     EclipseWriter(const parameter::ParameterGroup& params,
-                  Opm::DeckConstPtr newParserDeck,
+                  Opm::DeckConstPtr deck,
                   std::shared_ptr <const UnstructuredGrid> grid);
 
     /*!
@@ -67,7 +67,7 @@ public:
      *        binary files using ERT.
      */
     EclipseWriter(const parameter::ParameterGroup& params,
-                  Opm::DeckConstPtr newParserDeck,
+                  Opm::DeckConstPtr deck,
                   int number_of_cells, const int* global_cell, const int* cart_dims,
                   int dimension);
 
@@ -103,7 +103,7 @@ public:
                                const WellState& wellState);
 
 private:
-    Opm::DeckConstPtr newParserDeck_;
+    Opm::DeckConstPtr deck_;
     std::shared_ptr <const UnstructuredGrid> grid_;
     int number_of_cells_;
     int dimensions_;
