@@ -21,7 +21,7 @@
 #include <opm/core/props/pvt/SinglePvtDeadSpline.hpp>
 #include <opm/core/utility/buildUniformMonotoneTable.hpp>
 
-#include <opm/parser/eclipse/Utility/SimpleTable.hpp>
+#include <opm/parser/eclipse/Utility/SingleRecordTable.hpp>
 
 #include <algorithm>
 
