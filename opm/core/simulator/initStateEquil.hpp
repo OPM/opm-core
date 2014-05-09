@@ -311,11 +311,15 @@ namespace Opm
                      const UnstructuredGrid&  G   )
             {
                 std::vector<int> eqlnum;
-                if (newParserDeck->hasKeyword("EQLNUM")) {        
-                    const std::vector<int>& e = newParserDeck->getKeyword("EQLNUM")->getIntData();
-                    eqlnum.reserve(e.size());
-                    std::transform(e.begin(), e.end(), std::back_inserter(eqlnum),
-                                   std::bind2nd(std::minus<int>(), 1));
+                if (newParserDeck->hasKeyword("EQLNUM")) {
+                    eqlnum.resize(G.number_of_cells);                   
+                    const std::vector<int>& e = 
+                        newParserDeck->getKeyword("EQLNUM")->getIntData();                    
+                    const int* gc = G.global_cell;
+                    for (int cell = 0; cell < G.number_of_cells; ++cell) {
+                        const int deck_pos = (gc == NULL) ? cell : gc[cell];
+                        eqlnum[cell] = e[deck_pos] - 1;
+                    }
                 }
                 else {
                     // No explicit equilibration region.
