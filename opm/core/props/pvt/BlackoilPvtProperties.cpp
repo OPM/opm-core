@@ -43,9 +43,7 @@ namespace Opm
     }
 
     void BlackoilPvtProperties::init(Opm::DeckConstPtr deck,
-                                     int numSamples,
-                                     int numCompressedCells,
-                                     const int *compressedToCartesianCellIdx)
+                                     int numSamples)
     {
         phase_usage_ = phaseUsageFromDeck(deck);
 
@@ -69,14 +67,6 @@ namespace Opm
             }
         }
 
-        // first, calculate the PVT table index for each compressed
-        // cell. This array is required to construct the PVT classes
-        // below.
-        Opm::extractPvtTableIndex(pvtTableIdx_,
-                                  deck,
-                                  numCompressedCells,
-                                  compressedToCartesianCellIdx);
-
         // Resize the property objects container
         props_.resize(phase_usage_.num_phases);
 
@@ -85,7 +75,7 @@ namespace Opm
             // if water is used, we require the presence of the "PVTW"
             // keyword for now...
             std::shared_ptr<PvtConstCompr> pvtw(new PvtConstCompr);
-            pvtw->initFromWater(deck->getKeyword("PVTW"), pvtTableIdx_);
+            pvtw->initFromWater(deck->getKeyword("PVTW"));
 
             props_[phase_usage_.phase_pos[Aqua]] = pvtw;
         }
@@ -97,18 +87,18 @@ namespace Opm
                 Opm::DeckKeywordConstPtr pvdoKeyword = deck->getKeyword("PVDO");
                 if (numSamples > 0) {
                     auto splinePvt = std::shared_ptr<PvtDeadSpline>(new PvtDeadSpline);
-                    splinePvt->initFromOil(pvdoKeyword, pvtTableIdx_, numSamples);
+                    splinePvt->initFromOil(pvdoKeyword, numSamples);
                     props_[phase_usage_.phase_pos[Liquid]] = splinePvt;
                 } else {
                     auto deadPvt = std::shared_ptr<PvtDead>(new PvtDead);
-                    deadPvt->initFromOil(pvdoKeyword, pvtTableIdx_);
+                    deadPvt->initFromOil(pvdoKeyword);
                     props_[phase_usage_.phase_pos[Liquid]] = deadPvt;
                 }
             } else if (deck->hasKeyword("PVTO")) {
-                props_[phase_usage_.phase_pos[Liquid]].reset(new PvtLiveOil(deck->getKeyword("PVTO"), pvtTableIdx_));
+                props_[phase_usage_.phase_pos[Liquid]].reset(new PvtLiveOil(deck->getKeyword("PVTO")));
             } else if (deck->hasKeyword("PVCDO")) {
                 std::shared_ptr<PvtConstCompr> pvcdo(new PvtConstCompr);
-                pvcdo->initFromOil(deck->getKeyword("PVCDO"), pvtTableIdx_);
+                pvcdo->initFromOil(deck->getKeyword("PVCDO"));
 
                 props_[phase_usage_.phase_pos[Liquid]] = pvcdo;
             } else {
@@ -123,17 +113,17 @@ namespace Opm
 
                 if (numSamples > 0) {
                     std::shared_ptr<PvtDeadSpline> splinePvt(new PvtDeadSpline);
-                    splinePvt->initFromGas(pvdgKeyword, pvtTableIdx_, numSamples);
+                    splinePvt->initFromGas(pvdgKeyword, numSamples);
 
                     props_[phase_usage_.phase_pos[Vapour]] = splinePvt;
                 } else {
                     std::shared_ptr<PvtDead> deadPvt(new PvtDead);
-                    deadPvt->initFromGas(pvdgKeyword, pvtTableIdx_);
+                    deadPvt->initFromGas(pvdgKeyword);
 
                     props_[phase_usage_.phase_pos[Vapour]] = deadPvt;
                 }
             } else if (deck->hasKeyword("PVTG")) {
-                props_[phase_usage_.phase_pos[Vapour]].reset(new PvtLiveGas(deck->getKeyword("PVTG"), pvtTableIdx_));
+                props_[phase_usage_.phase_pos[Vapour]].reset(new PvtLiveGas(deck->getKeyword("PVTG")));
             } else {
                 OPM_THROW(std::runtime_error, "Input is missing PVDG or PVTG\n");
             }
@@ -168,13 +158,14 @@ namespace Opm
 
 
     void BlackoilPvtProperties::mu(const int n,
+                                   const int* pvtTableIdx,
                                    const double* p,
                                    const double* z,
                                    double* output_mu) const
     {
         data1_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
-            props_[phase]->mu(n, p, z, &data1_[0]);
+            props_[phase]->mu(n, pvtTableIdx, p, z, &data1_[0]);
 // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_mu[phase_usage_.num_phases*i + phase] = data1_[i];
@@ -183,13 +174,14 @@ namespace Opm
     }
 
     void BlackoilPvtProperties::B(const int n,
+                                  const int* pvtTableIdx,
                                   const double* p,
                                   const double* z,
                                   double* output_B) const
     {
         data1_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
-            props_[phase]->B(n, p, z, &data1_[0]);
+            props_[phase]->B(n, pvtTableIdx, p, z, &data1_[0]);
 // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_B[phase_usage_.num_phases*i + phase] = data1_[i];
@@ -198,6 +190,7 @@ namespace Opm
     }
 
     void BlackoilPvtProperties::dBdp(const int n,
+                                     const int* pvtTableIdx,
                                      const double* p,
                                      const double* z,
                                      double* output_B,
@@ -206,7 +199,7 @@ namespace Opm
         data1_.resize(n);
         data2_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
-            props_[phase]->dBdp(n, p, z, &data1_[0], &data2_[0]);
+            props_[phase]->dBdp(n, pvtTableIdx, p, z, &data1_[0], &data2_[0]);
 // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_B[phase_usage_.num_phases*i + phase] = data1_[i];
@@ -217,13 +210,14 @@ namespace Opm
 
 
     void BlackoilPvtProperties::R(const int n,
+                                  const int* pvtTableIdx,
                                   const double* p,
                                   const double* z,
                                   double* output_R) const
     {
         data1_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
-            props_[phase]->R(n, p, z, &data1_[0]);
+            props_[phase]->R(n, pvtTableIdx, p, z, &data1_[0]);
 // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_R[phase_usage_.num_phases*i + phase] = data1_[i];
@@ -232,6 +226,7 @@ namespace Opm
     }
 
     void BlackoilPvtProperties::dRdp(const int n,
+                                     const int* pvtTableIdx,
                                      const double* p,
                                      const double* z,
                                      double* output_R,
@@ -240,7 +235,7 @@ namespace Opm
         data1_.resize(n);
         data2_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
-            props_[phase]->dRdp(n, p, z, &data1_[0], &data2_[0]);
+            props_[phase]->dRdp(n, pvtTableIdx, p, z, &data1_[0], &data2_[0]);
 // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_R[phase_usage_.num_phases*i + phase] = data1_[i];

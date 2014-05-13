@@ -33,10 +33,12 @@ namespace Opm
 {
 
     /// Class collecting the pvt properties for all active phases.
-    /// For all the methods, the following apply: p and z
-    /// are expected to be of size n and n*num_phases, respectively.
-    /// Output arrays shall be of size n*num_phases, and must be valid
-    /// before calling the method.
+    /// For all the methods, the following apply:
+    /// - p and z are expected to be of size n and n*num_phases, respectively.
+    /// - pvtTableIdx specifies the PVT table to be used for each data
+    ///               point and is thus expected to be an array of size n
+    /// - Output arrays shall be of size n*num_phases, and must be valid
+    ///   before calling the method.
     /// NOTE: The difference between this interface and the one defined
     /// by PvtInterface is that this collects all phases' properties,
     /// and therefore the output arrays are of size n*num_phases as opposed
@@ -49,16 +51,9 @@ namespace Opm
 
         /// Initialize from deck.
         ///
-        /// This method needs the mapping for compressed to cartesian
-        /// cell indices because the methods which do the actual work
-        /// are specified for compressed cells, but the eclipse input
-        /// data is specified on cartesian cell indices...
-        ///
         /// \param deck     An input deck from the opm-parser module.
         void init(Opm::DeckConstPtr deck,
-                  int samples,
-                  int numCompressedCells,
-                  const int *compressedToCartesianCellIdx);
+                  int samples);
 
         /// \return   Object describing the active phases.
         PhaseUsage phaseUsage() const;
@@ -82,18 +77,21 @@ namespace Opm
 
         /// Viscosity as a function of p and z.
         void mu(const int n,
+                const int *pvtTableIdx,
                 const double* p,
                 const double* z,
                 double* output_mu) const;
 
         /// Formation volume factor as a function of p and z.
         void B(const int n,
+               const int *pvtTableIdx,
                const double* p,
                const double* z,
                double* output_B) const;
 
         /// Formation volume factor and p-derivative as functions of p and z.
         void dBdp(const int n,
+                  const int *pvtTableIdx,
                   const double* p,
                   const double* z,
                   double* output_B,
@@ -101,12 +99,14 @@ namespace Opm
 
         /// Solution factor as a function of p and z.
         void R(const int n,
+               const int *pvtTableIdx,
                const double* p,
                const double* z,
                double* output_R) const;
 
         /// Solution factor and p-derivative as functions of p and z.
         void dRdp(const int n,
+                  const int *pvtTableIdx,
                   const double* p,
                   const double* z,
                   double* output_R,
@@ -119,19 +119,11 @@ namespace Opm
 
         PhaseUsage phase_usage_;
 
-        // The PVT properties. One object per active fluid phase.
+        // The PVT properties. We need to store one object per PVT
+        // region per active fluid phase.
         std::vector<std::shared_ptr<PvtInterface> > props_;
-
-        // The index of the PVT table which ought to be used for each
-        // cell. Eclipse does not seem to allow specifying fluid-phase
-        // specific table indices, so for the sake of simplicity, we
-        // don't do this either. (if it turns out that Eclipes does in
-        // fact support it or if it by some miracle gains this feature
-        // in the future, this attribute needs to become a vector of
-        // vectors of ints.)
-        std::vector<int> pvtTableIdx_;
-
         std::vector<std::array<double, MaxNumPhases> > densities_;
+
         mutable std::vector<double> data1_;
         mutable std::vector<double> data2_;
     };

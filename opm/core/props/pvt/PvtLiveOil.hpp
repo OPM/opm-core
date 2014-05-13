@@ -39,11 +39,12 @@ namespace Opm
     class PvtLiveOil : public PvtInterface
     {
     public:
-        PvtLiveOil(Opm::DeckKeywordConstPtr pvtoKeyword, const std::vector<int> &pvtTableIdx);
+        PvtLiveOil(Opm::DeckKeywordConstPtr pvtoKeyword);
         virtual ~PvtLiveOil();
 
         /// Viscosity as a function of p and z.
         virtual void mu(const int n,
+                        const int* pvtTableIdx,
                         const double* p,
                         const double* z,
                         double* output_mu) const;
@@ -51,6 +52,7 @@ namespace Opm
         /// Viscosity and its derivatives as a function of p and r.
         /// The fluid is considered saturated if r >= rsSat(p).
         virtual void mu(const int n,
+                        const int* pvtTableIdx,
                         const double* p,
                         const double* r,
                         double* output_mu,
@@ -60,6 +62,7 @@ namespace Opm
         /// Viscosity as a function of p and r.
         /// State condition determined by 'cond'.
         virtual void mu(const int n,
+                        const int* pvtTableIdx,
                         const double* p,
                         const double* r,
                         const PhasePresence* cond,
@@ -69,12 +72,14 @@ namespace Opm
 
         /// Formation volume factor as a function of p and z.
         virtual void B(const int n,
+                       const int* pvtTableIdx,
                        const double* p,
                        const double* z,
                        double* output_B) const;
 
         /// Formation volume factor and p-derivative as functions of p and z.
         virtual void dBdp(const int n,
+                          const int* pvtTableIdx,
                           const double* p,
                           const double* z,
                           double* output_B,
@@ -83,6 +88,7 @@ namespace Opm
         /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
         /// The fluid is considered saturated if r >= rsSat(p).
         virtual void b(const int n,
+                       const int* pvtTableIdx,
                        const double* p,
                        const double* r,
                        double* output_b,
@@ -92,6 +98,7 @@ namespace Opm
         /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
         /// State condition determined by 'cond'.
         virtual void b(const int n,
+                       const int* pvtTableIdx,
                        const double* p,
                        const double* r,
                        const PhasePresence* cond,
@@ -101,30 +108,41 @@ namespace Opm
 
         /// Solution gas/oil ratio and its derivatives at saturated conditions as a function of p.
         virtual void rsSat(const int n,
+                           const int* pvtTableIdx,
                           const double* p,
                           double* output_rsSat,
                           double* output_drsSatdp) const;
 
         /// Vapor oil/gas ratio and its derivatives at saturated conditions as a function of p.
         virtual void rvSat(const int n,
+                           const int* pvtTableIdx,
                           const double* p,
                           double* output_rvSat,
                           double* output_drvSatdp) const;
 
         /// Solution factor as a function of p and z.
         virtual void R(const int n,
+                       const int* pvtTableIdx,
                        const double* p,
                        const double* z,
                        double* output_R) const;
 
         /// Solution factor and p-derivative as functions of p and z.
         virtual void dRdp(const int n,
+                          const int* pvtTableIdx,
                           const double* p,
                           const double* z,
                           double* output_R,
                           double* output_dRdp) const;
 
     private:
+        int getTableIndex_(const int* pvtTableIdx, int cellIdx) const
+        {
+            if (!pvtTableIdx)
+                return 0;
+            return pvtTableIdx[cellIdx];
+        }
+
         double evalB(size_t pvtTableIdx, double press, const double* surfvol) const;
         void evalBDeriv(size_t pvtTableIdx, double press, const double* surfvol, double& B, double& dBdp) const;
         double evalR(size_t pvtTableIdx, double press, const double* surfvol) const;
@@ -150,8 +168,8 @@ namespace Opm
                             const int item,
                             const int deriv = 0) const;
 
-        // PVT properties of live oil (with dissolved gas)
-        std::vector<int> pvtTableIdx_;
+        // PVT properties of live oil (with dissolved gas). We need to
+        // store one table per PVT region.
         std::vector<std::vector<std::vector<double> > > saturated_oil_table_;
         std::vector<std::vector<std::vector<std::vector<double> > > > undersat_oil_tables_;
     };

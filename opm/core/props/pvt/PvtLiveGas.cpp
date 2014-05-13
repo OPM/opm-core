@@ -46,11 +46,8 @@ namespace Opm
     //------------------------------------------------------------------------
     // Member functions
     //-------------------------------------------------------------------------
-    PvtLiveGas::PvtLiveGas(Opm::DeckKeywordConstPtr pvtgKeyword,
-                           const std::vector<int> &pvtTableIdx)
+    PvtLiveGas::PvtLiveGas(Opm::DeckKeywordConstPtr pvtgKeyword)
     {
-        pvtTableIdx_ = pvtTableIdx;
-
         int numTables = Opm::PvtgTable::numTables(pvtgKeyword);
         saturated_gas_table_.resize(numTables);
         undersat_gas_tables_.resize(numTables);
@@ -93,18 +90,20 @@ namespace Opm
 
 
     void PvtLiveGas::mu(const int n,
+                        const int* pvtRegionIdx,
                         const double* p,
                         const double* z,
                         double* output_mu) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            output_mu[i] = miscible_gas(p[i], z + num_phases_*i, pvtTableIdx_[i], 2, false);
+            output_mu[i] = miscible_gas(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i), 2, false);
         }
     }
 
     /// Viscosity and its derivatives as a function of p and r.
     void PvtLiveGas::mu(const int /*n*/,
+                        const int* /*pvtRegionIdx*/,
                               const double* /*p*/,
                               const double* /*r*/,
                               double* /*output_mu*/,
@@ -116,6 +115,7 @@ namespace Opm
 
     /// Viscosity and its derivatives as a function of p and r.
     void PvtLiveGas::mu(const int n,
+                        const int* pvtRegionIdx,
                                const double* p,
                                const double* r,
                                const PhasePresence* cond,
@@ -125,9 +125,10 @@ namespace Opm
     {
         for (int i = 0; i < n; ++i) {
             const PhasePresence& cnd = cond[i];
-            output_mu[i] = miscible_gas(p[i], r[i], cnd, pvtTableIdx_[i], 2, 0);
-            output_dmudp[i] = miscible_gas(p[i], r[i], cnd, pvtTableIdx_[i], 2, 1);
-            output_dmudr[i] = miscible_gas(p[i], r[i], cnd, pvtTableIdx_[i], 2, 2);
+            int tableIdx = getTableIndex_(pvtRegionIdx, i);
+            output_mu[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 0);
+            output_dmudp[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 1);
+            output_dmudr[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 2);
         }
 
     }
@@ -135,13 +136,14 @@ namespace Opm
 
     /// Formation volume factor as a function of p and z.
     void PvtLiveGas::B(const int n,
+                       const int* pvtRegionIdx,
                              const double* p,
                              const double* z,
                              double* output_B) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            output_B[i] = evalB(p[i], z + num_phases_*i, pvtTableIdx_[i]);
+            output_B[i] = evalB(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i));
         }
 
     }
@@ -149,6 +151,7 @@ namespace Opm
 
     /// Formation volume factor and p-derivative as functions of p and z.
     void PvtLiveGas::dBdp(const int n,
+                       const int* pvtRegionIdx,
                                 const double* p,
                                 const double* z,
                                 double* output_B,
@@ -156,12 +159,13 @@ namespace Opm
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            evalBDeriv(p[i], z + num_phases_*i, pvtTableIdx_[i], output_B[i], output_dBdp[i]);
+            evalBDeriv(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i), output_B[i], output_dBdp[i]);
         }
     }
 
     /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
     void PvtLiveGas::b(const int /*n*/,
+                       const int* /*pvtRegionIdx*/,
                              const double* /*p*/,
                              const double* /*r*/,
                              double* /*output_b*/,
@@ -174,6 +178,7 @@ namespace Opm
 
     /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
     void PvtLiveGas::b(const int n,
+                       const int* pvtRegionIdx,
                           const double* p,
                           const double* r,
                           const PhasePresence* cond,
@@ -186,21 +191,23 @@ namespace Opm
                 for (int i = 0; i < n; ++i) {
                     const PhasePresence& cnd = cond[i];
 
-                    output_b[i] = miscible_gas(p[i], r[i], cnd, pvtTableIdx_[i], 1, 0);
-                    output_dbdp[i] = miscible_gas(p[i], r[i], cnd, pvtTableIdx_[i], 1, 1);
-                    output_dbdr[i] = miscible_gas(p[i], r[i], cnd, pvtTableIdx_[i], 1, 2);
+                    int tableIdx = getTableIndex_(pvtRegionIdx, i);
+                    output_b[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 1, 0);
+                    output_dbdp[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 1, 1);
+                    output_dbdr[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 1, 2);
 
                 }
     }
 
     /// Gas resolution and its derivatives at bublepoint as a function of p.
     void PvtLiveGas::rvSat(const int n,
+                           const int* pvtRegionIdx,
                              const double* p,
                              double* output_rvSat,
                              double* output_drvSatdp) const
     {
         for (int i = 0; i < n; ++i) {
-            int pvtTableIdx = pvtTableIdx_[i];
+            int pvtTableIdx = getTableIndex_(pvtRegionIdx, i);
             output_rvSat[i] = linearInterpolation(saturated_gas_table_[pvtTableIdx][0],
                     saturated_gas_table_[pvtTableIdx][3],p[i]);
             output_drvSatdp[i] = linearInterpolationDerivative(saturated_gas_table_[pvtTableIdx][0],
@@ -210,6 +217,7 @@ namespace Opm
     }
 
     void PvtLiveGas::rsSat(const int n,
+                           const int* pvtRegionIdx,
                              const double* /*p*/,
                              double* output_rsSat,
                              double* output_drsSatdp) const
@@ -220,13 +228,14 @@ namespace Opm
 
     /// Solution factor as a function of p and z.
     void PvtLiveGas::R(const int n,
+                       const int* pvtRegionIdx,
                              const double* p,
                              const double* z,
                              double* output_R) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            output_R[i] = evalR(p[i], z + num_phases_*i, pvtTableIdx_[i]);
+            output_R[i] = evalR(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i));
         }
 
     }
@@ -234,6 +243,7 @@ namespace Opm
 
     /// Solution factor and p-derivative as functions of p and z.
     void PvtLiveGas::dRdp(const int n,
+                          const int* pvtRegionIdx,
                                 const double* p,
                                 const double* z,
                                 double* output_R,
@@ -241,7 +251,7 @@ namespace Opm
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            evalRDeriv(p[i], z + num_phases_*i, pvtTableIdx_[i], output_R[i], output_dRdp[i]);
+            evalRDeriv(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i), output_R[i], output_dRdp[i]);
         }
     }
 

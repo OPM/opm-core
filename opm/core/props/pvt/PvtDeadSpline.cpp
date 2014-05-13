@@ -40,11 +40,8 @@ namespace Opm
     {}
 
     void PvtDeadSpline::initFromOil(Opm::DeckKeywordConstPtr pvdoKeyword,
-                                    const std::vector<int> &pvtTableIdx,
                                     int numSamples)
     {
-        pvtTableIdx_ = pvtTableIdx;
-
         int numRegions = Opm::PvdoTable::numTables(pvdoKeyword);
 
         // resize the attributes of the object
@@ -72,11 +69,8 @@ namespace Opm
     }
 
     void PvtDeadSpline::initFromGas(Opm::DeckKeywordConstPtr pvdgKeyword,
-                                    const std::vector<int> &pvtTableIdx,
                                     int numSamples)
     {
-        pvtTableIdx_ = pvtTableIdx;
-
         int numRegions = Opm::PvdgTable::numTables(pvdgKeyword);
 
         // resize the attributes of the object
@@ -111,18 +105,20 @@ namespace Opm
 
 
     void PvtDeadSpline::mu(const int n,
+                           const int* pvtTableIdx,
                                  const double* p,
                                  const double* /*z*/,
                                  double* output_mu) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            int regionIdx = pvtTableIdx_[i];
+            int regionIdx = getTableIndex_(pvtTableIdx, i);
             output_mu[i] = viscosity_[regionIdx](p[i]);
         }
     }
 
     void PvtDeadSpline::mu(const int n,
+                           const int* pvtTableIdx,
                            const double* p,
                            const double* /*r*/,
                            double* output_mu,
@@ -131,7 +127,7 @@ namespace Opm
     {
         // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            int regionIdx = pvtTableIdx_[i];
+            int regionIdx = getTableIndex_(pvtTableIdx, i);
             output_mu[i] = viscosity_[regionIdx](p[i]);
             output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
         }
@@ -139,6 +135,7 @@ namespace Opm
     }
 
     void PvtDeadSpline::mu(const int n,
+                           const int* pvtTableIdx,
                            const double* p,
                            const double* /*r*/,
                            const PhasePresence* /*cond*/,
@@ -149,7 +146,7 @@ namespace Opm
     // #pragma omp parallel for
 
         for (int i = 0; i < n; ++i) {
-            int regionIdx = pvtTableIdx_[i];
+            int regionIdx = getTableIndex_(pvtTableIdx, i);
             output_mu[i] = viscosity_[regionIdx](p[i]);
             output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
         }
@@ -157,33 +154,36 @@ namespace Opm
     }
 
     void PvtDeadSpline::B(const int n,
+                          const int* pvtTableIdx,
                                 const double* p,
                                 const double* /*z*/,
                                 double* output_B) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            int regionIdx = pvtTableIdx_[i];
+            int regionIdx = getTableIndex_(pvtTableIdx, i);
             output_B[i] = 1.0/b_[regionIdx](p[i]);
         }
     }
 
     void PvtDeadSpline::dBdp(const int n,
+                             const int* pvtTableIdx,
                              const double* p,
                              const double* /*z*/,
                              double* output_B,
                              double* output_dBdp) const
     {
-        B(n, p, 0, output_B);
+        B(n, pvtTableIdx, p, 0, output_B);
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            int regionIdx = pvtTableIdx_[i];
+            int regionIdx = getTableIndex_(pvtTableIdx, i);
             double Bg = output_B[i];
             output_dBdp[i] = -Bg*Bg*b_[regionIdx].derivative(p[i]);
         }
     }
 
     void PvtDeadSpline::b(const int n,
+                          const int* pvtTableIdx,
                               const double* p,
                               const double* /*r*/,
                               double* output_b,
@@ -192,7 +192,7 @@ namespace Opm
     {
     // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            int regionIdx = pvtTableIdx_[i];
+            int regionIdx = getTableIndex_(pvtTableIdx, i);
             output_b[i] = b_[regionIdx](p[i]);
             output_dbdp[i] = b_[regionIdx].derivative(p[i]);
         }
@@ -200,6 +200,7 @@ namespace Opm
     }
 
     void PvtDeadSpline::b(const int n,
+                          const int* pvtTableIdx,
                           const double* p,
                           const double* /*r*/,
                           const PhasePresence* /*cond*/,
@@ -209,7 +210,7 @@ namespace Opm
     {
     // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            int regionIdx = pvtTableIdx_[i];
+            int regionIdx = getTableIndex_(pvtTableIdx, i);
             output_b[i] = b_[regionIdx](p[i]);
             output_dbdp[i] = b_[regionIdx].derivative(p[i]);
         }
@@ -217,6 +218,7 @@ namespace Opm
     }
 
     void PvtDeadSpline::rsSat(const int n,
+                              const int* /*pvtTableIdx*/,
                              const double* /*p*/,
                              double* output_rsSat,
                              double* output_drsSatdp) const
@@ -226,6 +228,7 @@ namespace Opm
     }
 
     void PvtDeadSpline::rvSat(const int n,
+                              const int* /*pvtTableIdx*/,
                              const double* /*p*/,
                              double* output_rvSat,
                              double* output_drvSatdp) const
@@ -235,6 +238,7 @@ namespace Opm
     }
 
     void PvtDeadSpline::R(const int n,
+                          const int* /*pvtTableIdx*/,
                           const double* /*p*/,
                           const double* /*z*/,
                           double* output_R) const
@@ -243,6 +247,7 @@ namespace Opm
     }
 
     void PvtDeadSpline::dRdp(const int n,
+                             const int* /*pvtTableIdx*/,
                              const double* /*p*/,
                              const double* /*z*/,
                              double* output_R,

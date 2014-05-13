@@ -42,10 +42,14 @@ namespace Opm
                                                  int dimension,
                                                  bool init_rock)
     {
+        // retrieve the cell specific PVT table index from the deck
+        // and using the grid...
+        extractPvtTableIndex(cellPvtRegionIdx_, deck, number_of_cells, global_cell);
+
         if (init_rock){
            rock_.init(deck, number_of_cells, global_cell, cart_dims);
         }
-        pvt_.init(deck, /*numSamples=*/0, number_of_cells, global_cell);
+        pvt_.init(deck, /*numSamples=*/0);
         SaturationPropsFromDeck<SatFuncSimpleNonuniform>* ptr
             = new SaturationPropsFromDeck<SatFuncSimpleNonuniform>();
         satprops_.reset(ptr);
@@ -68,13 +72,16 @@ namespace Opm
                                                  const parameter::ParameterGroup& param,
                                                  bool init_rock)
     {
+        // retrieve the cell specific PVT table index from the deck
+        // and using the grid...
+        extractPvtTableIndex(cellPvtRegionIdx_, deck, number_of_cells, global_cell);
 
         if(init_rock){
             rock_.init(deck, number_of_cells, global_cell, cart_dims);
         }
 
         const int pvt_samples = param.getDefault("pvt_tab_size", 200);
-        pvt_.init(deck, pvt_samples, number_of_cells, global_cell);
+        pvt_.init(deck, pvt_samples);
 
         // Unfortunate lack of pointer smartness here...
         const int sat_samples = param.getDefault("sat_tab_size", 200);

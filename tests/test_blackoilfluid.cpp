@@ -40,19 +40,9 @@ using namespace std;
 
 std::vector<std::shared_ptr<PvtInterface> > getProps(Opm::DeckConstPtr deck, PhaseUsage phase_usage_){
     Opm::GridManager grid(deck);
-    const UnstructuredGrid* cgrid = grid.c_grid();
 
     enum PhaseIndex { Aqua = 0, Liquid = 1, Vapour = 2 };
     int samples = 0;
-
-    // first, calculate the PVT table index for each compressed
-    // cell. This array is required to construct the PVT classes
-    // below.
-    std::vector<int> pvtTableIdx;
-    Opm::extractPvtTableIndex(pvtTableIdx,
-                              deck,
-                              cgrid->number_of_cells,
-                              cgrid->global_cell);
 
     std::vector<std::shared_ptr<PvtInterface> > props_;
     // Set the properties.
@@ -62,7 +52,7 @@ std::vector<std::shared_ptr<PvtInterface> > getProps(Opm::DeckConstPtr deck, Pha
     if (phase_usage_.phase_used[Aqua]) {
         if (deck->hasKeyword("PVTW")) {
             std::shared_ptr<PvtConstCompr> pvtw(new PvtConstCompr);
-            pvtw->initFromWater(deck->getKeyword("PVTW"), pvtTableIdx);
+            pvtw->initFromWater(deck->getKeyword("PVTW"));
 
             props_[phase_usage_.phase_pos[Aqua]] = pvtw;
         } else {
@@ -77,18 +67,18 @@ std::vector<std::shared_ptr<PvtInterface> > getProps(Opm::DeckConstPtr deck, Pha
             Opm::DeckKeywordConstPtr pvdoKeyword(deck->getKeyword("PVDO"));
             if (samples > 0) {
                 std::shared_ptr<PvtDeadSpline> splinePvt(new PvtDeadSpline);
-                splinePvt->initFromOil(pvdoKeyword, pvtTableIdx, samples);
+                splinePvt->initFromOil(pvdoKeyword, samples);
                 props_[phase_usage_.phase_pos[Liquid]] = splinePvt;
             } else {
                 std::shared_ptr<PvtDead> deadPvt(new PvtDead);
-                deadPvt->initFromOil(pvdoKeyword, pvtTableIdx);
+                deadPvt->initFromOil(pvdoKeyword);
                 props_[phase_usage_.phase_pos[Liquid]] = deadPvt;
             }
         } else if (deck->hasKeyword("PVTO")) {
-            props_[phase_usage_.phase_pos[Liquid]].reset(new PvtLiveOil(deck->getKeyword("PVTO"), pvtTableIdx));
+            props_[phase_usage_.phase_pos[Liquid]].reset(new PvtLiveOil(deck->getKeyword("PVTO")));
         } else if (deck->hasKeyword("PVCDO")) {
             std::shared_ptr<PvtConstCompr> pvcdo(new PvtConstCompr);
-            pvcdo->initFromOil(deck->getKeyword("PVCDO"), pvtTableIdx);
+            pvcdo->initFromOil(deck->getKeyword("PVCDO"));
 
             props_[phase_usage_.phase_pos[Liquid]] = pvcdo;
         } else {
@@ -101,15 +91,15 @@ std::vector<std::shared_ptr<PvtInterface> > getProps(Opm::DeckConstPtr deck, Pha
             Opm::DeckKeywordConstPtr pvdgKeyword(deck->getKeyword("PVDG"));
             if (samples > 0) {
                 std::shared_ptr<PvtDeadSpline> splinePvt(new PvtDeadSpline);
-                splinePvt->initFromGas(pvdgKeyword, pvtTableIdx, samples);
+                splinePvt->initFromGas(pvdgKeyword, samples);
                 props_[phase_usage_.phase_pos[Vapour]] = splinePvt;
             } else {
                 std::shared_ptr<PvtDead> deadPvt(new PvtDead);
-                deadPvt->initFromGas(pvdgKeyword, pvtTableIdx);
+                deadPvt->initFromGas(pvdgKeyword);
                 props_[phase_usage_.phase_pos[Vapour]] = deadPvt;
             }
         } else if (deck->hasKeyword("PVTG")) {
-            props_[phase_usage_.phase_pos[Vapour]].reset(new PvtLiveGas(deck->getKeyword("PVTG"), pvtTableIdx));
+            props_[phase_usage_.phase_pos[Vapour]].reset(new PvtLiveGas(deck->getKeyword("PVTG")));
         } else {
             OPM_THROW(std::runtime_error, "Input is missing PVDG or PVTG\n");
         }
@@ -118,7 +108,7 @@ std::vector<std::shared_ptr<PvtInterface> > getProps(Opm::DeckConstPtr deck, Pha
     return props_;
 }
 
-void testmu(const double reltol, int n, int np, std::vector<double> p, std::vector<double> r,std::vector<double> z,
+void testmu(const double reltol, int n, int np, const std::vector<int> &pvtTableIdx, std::vector<double> p, std::vector<double> r,std::vector<double> z,
             std::vector<std::shared_ptr<PvtInterface> > props_, std::vector<Opm::PhasePresence> condition)
 {
     std::vector<double> mu(n);
@@ -132,8 +122,8 @@ void testmu(const double reltol, int n, int np, std::vector<double> p, std::vect
 
     // test mu
     for (int phase = 0; phase < np; ++phase) {
-        props_[phase]->mu(n, &p[0], &r[0], &condition[0], &mu_new[0], &dmudp[0], &dmudr[0]);
-        props_[phase]->mu(n, &p[0], &z[0], &mu[0]);
+        props_[phase]->mu(n, &pvtTableIdx[0], &p[0], &r[0], &condition[0], &mu_new[0], &dmudp[0], &dmudr[0]);
+        props_[phase]->mu(n, &pvtTableIdx[0], &p[0], &z[0], &mu[0]);
         dmudp_diff = (mu_new[1]-mu_new[0])/(p[1]-p[0]);
         dmudr_diff = (mu_new[2]-mu_new[0])/(r[2]-r[0]);
         dmudp_diff_u = (mu_new[4]-mu_new[3])/(p[4]-p[3]);
@@ -154,7 +144,7 @@ void testmu(const double reltol, int n, int np, std::vector<double> p, std::vect
     }
 }
 
-void testb(const double reltol, int n, int np, std::vector<double> p, std::vector<double> r,std::vector<double> z,
+void testb(const double reltol, int n, int np, const std::vector<int> &pvtTableIdx, std::vector<double> p, std::vector<double> r,std::vector<double> z,
             std::vector<std::shared_ptr<PvtInterface> > props_, std::vector<Opm::PhasePresence> condition)
 {
     // test b
@@ -171,8 +161,8 @@ void testb(const double reltol, int n, int np, std::vector<double> p, std::vecto
     double dbdr_diff_u;
 
     for (int phase = 0; phase < np; ++phase) {
-        props_[phase]->b(n, &p[0], &r[0], &condition[0], &b[0], &dbdp[0], &dbdr[0]);
-        props_[phase]->dBdp(n, &p[0], &z[0], &B[0], &dBdp[0]);
+        props_[phase]->b(n, &pvtTableIdx[0], &p[0], &r[0], &condition[0], &b[0], &dbdp[0], &dbdr[0]);
+        props_[phase]->dBdp(n, &pvtTableIdx[0], &p[0], &z[0], &B[0], &dBdp[0]);
         dbdp_diff = (b[1]-b[0])/(p[1]-p[0]);
         dbdr_diff = (b[2]-b[0])/(r[2]-r[0]);
         dbdp_diff_u = (b[4]-b[3])/(p[4]-p[3]);
@@ -197,7 +187,7 @@ void testb(const double reltol, int n, int np, std::vector<double> p, std::vecto
     }
 }
 
-void testrsSat(double reltol, int n, int np, std::vector<double> p, std::vector<std::shared_ptr<PvtInterface> > props_){
+void testrsSat(double reltol, int n, int np, const std::vector<int> &pvtTableIdx, std::vector<double> p, std::vector<std::shared_ptr<PvtInterface> > props_){
     // test bublepoint pressure
     std::vector<double> rs(n);
     std::vector<double> drsdp(n);
@@ -205,7 +195,7 @@ void testrsSat(double reltol, int n, int np, std::vector<double> p, std::vector<
     double drsdp_diff_u;
 
     for (int phase = 0; phase < np; ++phase) {
-        props_[phase] ->rsSat(n, &p[0], &rs[0], &drsdp[0]);
+        props_[phase] ->rsSat(n, &pvtTableIdx[0], &p[0], &rs[0], &drsdp[0]);
 
         drsdp_diff = (rs[1]-rs[0])/(p[1]-p[0]);
         drsdp_diff_u = (rs[4]-rs[3])/(p[4]-p[3]);
@@ -219,7 +209,7 @@ void testrsSat(double reltol, int n, int np, std::vector<double> p, std::vector<
     }
 }
 
-void testrvSat(double reltol, int n, int np, std::vector<double> p, std::vector<std::shared_ptr<PvtInterface> > props_){
+void testrvSat(double reltol, int n, int np, const std::vector<int> &pvtTableIdx, std::vector<double> p, std::vector<std::shared_ptr<PvtInterface> > props_){
     // test rv saturated
     std::vector<double> rv(n);
     std::vector<double> drvdp(n);
@@ -227,7 +217,7 @@ void testrvSat(double reltol, int n, int np, std::vector<double> p, std::vector<
     double drvdp_diff_u;
 
     for (int phase = 0; phase < np; ++phase) {
-        props_[phase] ->rvSat(n, &p[0], &rv[0], &drvdp[0]);
+        props_[phase] ->rvSat(n, &pvtTableIdx[0], &p[0], &rv[0], &drvdp[0]);
 
         drvdp_diff = (rv[1]-rv[0])/(p[1]-p[0]);
         drvdp_diff_u = (rv[4]-rv[3])/(p[4]-p[3]);
@@ -262,6 +252,7 @@ BOOST_AUTO_TEST_CASE(test_liveoil)
     // approximation of the derivatives.
     const int n = 6;
     const int np = phase_usage_.num_phases;
+    std::vector<int> pvtRegionIdx(n, 0);
 
     // the tolerance for acceptable difference in values
     const double reltol = 1e-9;
@@ -306,13 +297,13 @@ BOOST_AUTO_TEST_CASE(test_liveoil)
 
     }
 
-    testmu(reltol, n, np, p, r,z, props_, condition);
+    testmu(reltol, n, np, pvtRegionIdx, p, r,z, props_, condition);
 
-    testb(reltol,n,np,p,r,z,props_,condition);
+    testb(reltol,n,np,pvtRegionIdx,p,r,z,props_,condition);
 
-    testrsSat(reltol,n,np,p,props_);
+    testrsSat(reltol,n,np,pvtRegionIdx,p,props_);
 
-    testrvSat(reltol,n,np,p,props_);
+    testrvSat(reltol,n,np,pvtRegionIdx,p,props_);
 
 
 }
@@ -337,6 +328,7 @@ BOOST_AUTO_TEST_CASE(test_wetgas)
     // approximation of the derivatives.
     const int n = 6;
     const int np = phase_usage_.num_phases;
+    std::vector<int> pvtRegionIdx(n, 0);
 
     // the tolerance for acceptable difference in values
     const double reltol = 1e-9;
@@ -381,12 +373,12 @@ BOOST_AUTO_TEST_CASE(test_wetgas)
 
     }
 
-    testmu(reltol, n, np, p, r,z, props_, condition);
+    testmu(reltol, n, np, pvtRegionIdx, p, r,z, props_, condition);
 
-    testb(reltol,n,np,p,r,z,props_,condition);
+    testb(reltol,n,np,pvtRegionIdx,p,r,z,props_,condition);
 
-    testrsSat(reltol,n,np,p,props_);
+    testrsSat(reltol,n,np,pvtRegionIdx,p,props_);
 
-    testrvSat(reltol,n,np,p,props_);
+    testrvSat(reltol,n,np,pvtRegionIdx,p,props_);
 
 }

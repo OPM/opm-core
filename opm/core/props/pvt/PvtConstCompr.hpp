@@ -34,22 +34,24 @@ namespace Opm
 {
 
     /// Class for constant compressible phases (PVTW or PVCDO).
-    /// The PVT properties can either be given as a function of pressure (p) and surface volume (z)
-    /// or pressure (p) and gas resolution factor (r).
-    /// For all the virtual methods, the following apply: p, r and z
-    /// are expected to be of size n, size n and n*num_phases, respectively.
-    /// Output arrays shall be of size n, and must be valid before
-    /// calling the method.
+    /// The PVT properties can either be given as a function of
+    /// pressure (p) and surface volume (z) or pressure (p) and gas
+    /// resolution factor (r). Also, since this class supports
+    /// multiple PVT regions, the concrete table to be used for each
+    /// data point needs to be specified via the pvtTableIdx argument
+    /// of the respective method. For all the virtual methods, the
+    /// following apply: pvtTableIdx, p, r and z are expected to be of
+    /// size n, size n, size n and n*num_phases, respectively.  Output
+    /// arrays shall be of size n, and must be valid before calling
+    /// the method.
     class PvtConstCompr : public PvtInterface
     {
     public:
         PvtConstCompr()
         {}
 
-        void initFromWater(Opm::DeckKeywordConstPtr pvtwKeyword, const std::vector<int> &pvtTableIdx)
+        void initFromWater(Opm::DeckKeywordConstPtr pvtwKeyword)
         {
-            pvtTableIdx_ = pvtTableIdx;
-
             int numRegions = pvtwKeyword->size();
 
             ref_press_.resize(numRegions);
@@ -69,10 +71,8 @@ namespace Opm
             }
         }
 
-        void initFromOil(Opm::DeckKeywordConstPtr pvcdoKeyword, const std::vector<int> &pvtTableIdx)
+        void initFromOil(Opm::DeckKeywordConstPtr pvcdoKeyword)
         {
-            pvtTableIdx_ = pvtTableIdx;
-
             int numRegions = pvcdoKeyword->size();
 
             ref_press_.resize(numRegions);
@@ -92,7 +92,11 @@ namespace Opm
             }
         }
 
-        PvtConstCompr(double visc)
+        /*!
+         * \brief Create a PVT object with a given viscosity that
+         *        assumes all fluid phases to be incompressible.
+         */
+        explicit PvtConstCompr(double visc)
             : ref_press_(1, 0.0),
               ref_B_(1, 1.0),
               comp_(1, 0.0),
@@ -106,6 +110,7 @@ namespace Opm
         }
 
         virtual void mu(const int n,
+                        const int* pvtRegionIdx,
                         const double* p,
                         const double* /*z*/,
                         double* output_mu) const
@@ -113,13 +118,14 @@ namespace Opm
 // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 // Computing a polynomial approximation to the exponential.
-                int tableIdx = getTableIndex_(i);
+                int tableIdx = getTableIndex_(pvtRegionIdx, i);
                 double x = -visc_comp_[tableIdx]*(p[i] - ref_press_[tableIdx]);
                 output_mu[i] = viscosity_[tableIdx]/(1.0 + x + 0.5*x*x);
             }
         }
 
         virtual void mu(const int n,
+                        const int* pvtRegionIdx,
                         const double* p,
                         const double* /*r*/,
                         double* output_mu,
@@ -129,7 +135,7 @@ namespace Opm
             // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 // Computing a polynomial approximation to the exponential.
-                int tableIdx = getTableIndex_(i);
+                int tableIdx = getTableIndex_(pvtRegionIdx, i);
                 double x = -visc_comp_[tableIdx]*(p[i] - ref_press_[tableIdx]);
                 double d = (1.0 + x + 0.5*x*x);
                 output_mu[i] = viscosity_[tableIdx]/d;
@@ -139,6 +145,7 @@ namespace Opm
         }
 
         virtual void mu(const int n,
+                        const int* pvtRegionIdx,
                         const double* p,
                         const double* /*r*/,
                         const PhasePresence* /*cond*/,
@@ -149,7 +156,7 @@ namespace Opm
             // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 // Computing a polynomial approximation to the exponential.
-                int tableIdx = getTableIndex_(i);
+                int tableIdx = getTableIndex_(pvtRegionIdx, i);
                 double x = -visc_comp_[tableIdx]*(p[i] - ref_press_[tableIdx]);
                 double d = (1.0 + x + 0.5*x*x);
                 output_mu[i] = viscosity_[tableIdx]/d;
@@ -159,6 +166,7 @@ namespace Opm
         }
 
         virtual void B(const int n,
+                       const int* pvtRegionIdx,
                        const double* p,
                        const double* /*z*/,
                        double* output_B) const
@@ -166,13 +174,14 @@ namespace Opm
 // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 // Computing a polynomial approximation to the exponential.
-                int tableIdx = getTableIndex_(i);
+                int tableIdx = getTableIndex_(pvtRegionIdx, i);
                 double x = comp_[tableIdx]*(p[i] - ref_press_[tableIdx]);
                 output_B[i] = ref_B_[tableIdx]/(1.0 + x + 0.5*x*x);
             }
         }
 
         virtual void dBdp(const int n,
+                          const int* pvtRegionIdx,
                           const double* p,
                           const double* /*z*/,
                           double* output_B,
@@ -180,7 +189,7 @@ namespace Opm
         {
 // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
-                int tableIdx = getTableIndex_(i);
+                int tableIdx = getTableIndex_(pvtRegionIdx, i);
                 double x = comp_[tableIdx]*(p[i] - ref_press_[tableIdx]);
                 double d = (1.0 + x + 0.5*x*x);
                 output_B[i] = ref_B_[tableIdx]/d;
@@ -189,6 +198,7 @@ namespace Opm
         }
 
         virtual void b(const int n,
+                       const int* pvtRegionIdx,
                        const double* p,
                        const double* /*r*/,
                        double* output_b,
@@ -198,7 +208,7 @@ namespace Opm
         // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 // Computing a polynomial approximation to the exponential.
-                int tableIdx = getTableIndex_(i);
+                int tableIdx = getTableIndex_(pvtRegionIdx, i);
                 double x = comp_[tableIdx]*(p[i] - ref_press_[tableIdx]);
                 double d = (1.0 + x + 0.5*x*x);
 
@@ -211,6 +221,7 @@ namespace Opm
         }
 
         virtual void b(const int n,
+                       const int* pvtRegionIdx,
                        const double* p,
                        const double* /*r*/,
                        const PhasePresence* /*cond*/,
@@ -221,7 +232,7 @@ namespace Opm
         // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 // Computing a polynomial approximation to the exponential.
-                int tableIdx = getTableIndex_(i);
+                int tableIdx = getTableIndex_(pvtRegionIdx, i);
                 double x = comp_[tableIdx]*(p[i] - ref_press_[tableIdx]);
                 double d = (1.0 + x + 0.5*x*x);
 
@@ -233,6 +244,7 @@ namespace Opm
         }
 
         virtual void rsSat(const int n,
+                           const int* /*pvtRegionIdx*/,
                            const double* /*p*/,
                            double* output_rsSat,
                            double* output_drsSatdp) const
@@ -242,6 +254,7 @@ namespace Opm
         }
 
         virtual void rvSat(const int n,
+                           const int* /*pvtRegionIdx*/,
                            const double* /*p*/,
                            double* output_rvSat,
                            double* output_drvSatdp) const
@@ -251,6 +264,7 @@ namespace Opm
         }
 
         virtual void R(const int n,
+                       const int* /*pvtRegionIdx*/,
                        const double* /*p*/,
                        const double* /*z*/,
                        double* output_R) const
@@ -259,6 +273,7 @@ namespace Opm
         }
 
         virtual void dRdp(const int n,
+                          const int* /*pvtRegionIdx*/,
                           const double* /*p*/,
                           const double* /*z*/,
                           double* output_R,
@@ -269,14 +284,15 @@ namespace Opm
         }
 
     private:
-        int getTableIndex_(int cellIdx) const
+        int getTableIndex_(const int* pvtTableIdx, int cellIdx) const
         {
-            if (pvtTableIdx_.empty())
+            if (!pvtTableIdx)
                 return 0;
-            return pvtTableIdx_[cellIdx];
+            return pvtTableIdx[cellIdx];
         }
 
-        std::vector<int> pvtTableIdx_;
+        // The PVT properties. We need to store one value per PVT
+        // region.
         std::vector<double> ref_press_;
         std::vector<double> ref_B_;
         std::vector<double> comp_;

@@ -34,11 +34,8 @@ namespace Opm
     //------------------------------------------------------------------------
     // Member functions
     //-------------------------------------------------------------------------
-    PvtLiveOil::PvtLiveOil(Opm::DeckKeywordConstPtr pvtoKeyword,
-                           const std::vector<int> &pvtTableIdx)
+    PvtLiveOil::PvtLiveOil(Opm::DeckKeywordConstPtr pvtoKeyword)
     {
-        pvtTableIdx_ = pvtTableIdx;
-
         int numTables = Opm::PvtoTable::numTables(pvtoKeyword);
         saturated_oil_table_.resize(numTables);
         undersat_oil_tables_.resize(numTables);
@@ -120,20 +117,22 @@ namespace Opm
 
     /// Viscosity as a function of p and z.
     void PvtLiveOil::mu(const int n,
+                        const int* pvtTableIdx,
                               const double* p,
                               const double* z,
                               double* output_mu) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            int pvtTableIdx = pvtTableIdx_[i];
+            int tableIdx = getTableIndex_(pvtTableIdx, i);
 
-            output_mu[i] = miscible_oil(p[i], z + num_phases_*i, pvtTableIdx, 2, false);
+            output_mu[i] = miscible_oil(p[i], z + num_phases_*i, tableIdx, 2, false);
         }
     }
 
     /// Viscosity and its derivatives as a function of p and r.
     void PvtLiveOil::mu(const int n,
+                        const int* pvtTableIdx,
                                const double* p,
                                const double* r,
                                double* output_mu,
@@ -142,17 +141,18 @@ namespace Opm
     {
         // #pragma omp parallel for
                 for (int i = 0; i < n; ++i) {
-                    int pvtTableIdx = pvtTableIdx_[i];
+                    int tableIdx = getTableIndex_(pvtTableIdx, i);
 
-                    output_mu[i] = miscible_oil(p[i], r[i], pvtTableIdx, 2, 0);
-                    output_dmudp[i] = miscible_oil(p[i], r[i], pvtTableIdx, 2, 1);
-                    output_dmudr[i] = miscible_oil(p[i], r[i], pvtTableIdx, 2, 2);
+                    output_mu[i] = miscible_oil(p[i], r[i], tableIdx, 2, 0);
+                    output_dmudp[i] = miscible_oil(p[i], r[i], tableIdx, 2, 1);
+                    output_dmudr[i] = miscible_oil(p[i], r[i], tableIdx, 2, 2);
 
                 }
     }
 
     /// Viscosity and its derivatives as a function of p and r.
     void PvtLiveOil::mu(const int n,
+                        const int* pvtTableIdx,
                                const double* p,
                                const double* r,
                                const PhasePresence* cond,
@@ -162,12 +162,12 @@ namespace Opm
     {
         // #pragma omp parallel for
                 for (int i = 0; i < n; ++i) {
-                    int pvtTableIdx = pvtTableIdx_[i];
+                    int tableIdx = getTableIndex_(pvtTableIdx, i);
                     const PhasePresence& cnd = cond[i];
 
-                    output_mu[i] = miscible_oil(p[i], r[i], cnd, pvtTableIdx, 2, 0);
-                    output_dmudp[i] = miscible_oil(p[i], r[i], cnd, pvtTableIdx, 2, 1);
-                    output_dmudr[i] = miscible_oil(p[i], r[i], cnd, pvtTableIdx, 2, 2);
+                    output_mu[i] = miscible_oil(p[i], r[i], cnd, tableIdx, 2, 0);
+                    output_dmudp[i] = miscible_oil(p[i], r[i], cnd, tableIdx, 2, 1);
+                    output_dmudr[i] = miscible_oil(p[i], r[i], cnd, tableIdx, 2, 2);
 
                 }
     }
@@ -175,15 +175,16 @@ namespace Opm
 
     /// Formation volume factor as a function of p and z.
     void PvtLiveOil::B(const int n,
+                       const int* pvtTableIdx,
                              const double* p,
                              const double* z,
                              double* output_B) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            int pvtTableIdx = pvtTableIdx_[i];
+            int tableIdx = getTableIndex_(pvtTableIdx, i);
 
-            output_B[i] = evalB(pvtTableIdx, p[i], z + num_phases_*i);
+            output_B[i] = evalB(tableIdx, p[i], z + num_phases_*i);
         }
 
     }
@@ -191,6 +192,7 @@ namespace Opm
 
     /// Formation volume factor and p-derivative as functions of p and z.
     void PvtLiveOil::dBdp(const int n,
+                        const int* pvtTableIdx,
                                 const double* p,
                                 const double* z,
                                 double* output_B,
@@ -198,13 +200,14 @@ namespace Opm
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            int pvtTableIdx = pvtTableIdx_[i];
+            int tableIdx = getTableIndex_(pvtTableIdx, i);
 
-            evalBDeriv(pvtTableIdx, p[i], z + num_phases_*i, output_B[i], output_dBdp[i]);
+            evalBDeriv(tableIdx, p[i], z + num_phases_*i, output_B[i], output_dBdp[i]);
         }
     }
 
     void PvtLiveOil::b(const int n,
+                        const int* pvtTableIdx,
                           const double* p,
                           const double* r,
                           double* output_b,
@@ -214,16 +217,17 @@ namespace Opm
     {
         // #pragma omp parallel for
                 for (int i = 0; i < n; ++i) {
-                    int pvtTableIdx = pvtTableIdx_[i];
+                    int tableIdx = getTableIndex_(pvtTableIdx, i);
 
-                    output_b[i] = miscible_oil(pvtTableIdx, p[i], r[i], 1, 0);
-                    output_dbdp[i] = miscible_oil(pvtTableIdx, p[i], r[i], 1, 1);
-                    output_dbdr[i] = miscible_oil(pvtTableIdx, p[i], r[i], 1, 2);
+                    output_b[i] = miscible_oil(tableIdx, p[i], r[i], 1, 0);
+                    output_dbdp[i] = miscible_oil(tableIdx, p[i], r[i], 1, 1);
+                    output_dbdr[i] = miscible_oil(tableIdx, p[i], r[i], 1, 2);
 
                 }
     }
 
     void PvtLiveOil::b(const int n,
+                        const int* pvtTableIdx,
                           const double* p,
                           const double* r,
                           const PhasePresence* cond,
@@ -235,32 +239,34 @@ namespace Opm
         // #pragma omp parallel for
                 for (int i = 0; i < n; ++i) {
                     const PhasePresence& cnd = cond[i];
-                    int pvtTableIdx = pvtTableIdx_[i];
+                    int tableIdx = getTableIndex_(pvtTableIdx, i);
 
-                    output_b[i] = miscible_oil(p[i], r[i], cnd, pvtTableIdx, 1, 0);
-                    output_dbdp[i] = miscible_oil(p[i], r[i], cnd, pvtTableIdx, 1, 1);
-                    output_dbdr[i] = miscible_oil(p[i], r[i], cnd, pvtTableIdx, 1, 2);
+                    output_b[i] = miscible_oil(p[i], r[i], cnd, tableIdx, 1, 0);
+                    output_dbdp[i] = miscible_oil(p[i], r[i], cnd, tableIdx, 1, 1);
+                    output_dbdr[i] = miscible_oil(p[i], r[i], cnd, tableIdx, 1, 2);
 
                 }
     }
 
     void PvtLiveOil::rsSat(const int n,
+                           const int* pvtTableIdx,
                              const double* p,
                              double* output_rsSat,
                              double* output_drsSatdp) const
     {
 
         for (int i = 0; i < n; ++i) {
-            int pvtTableIdx = pvtTableIdx_[i];
-            output_rsSat[i] = linearInterpolation(saturated_oil_table_[pvtTableIdx][0],
-                    saturated_oil_table_[pvtTableIdx][3],p[i]);
-            output_drsSatdp[i] = linearInterpolationDerivative(saturated_oil_table_[pvtTableIdx][0],
-                    saturated_oil_table_[pvtTableIdx][3],p[i]);
+            int tableIdx = getTableIndex_(pvtTableIdx, i);
+            output_rsSat[i] = linearInterpolation(saturated_oil_table_[tableIdx][0],
+                    saturated_oil_table_[tableIdx][3],p[i]);
+            output_drsSatdp[i] = linearInterpolationDerivative(saturated_oil_table_[tableIdx][0],
+                    saturated_oil_table_[tableIdx][3],p[i]);
 
         }
     }
 
     void PvtLiveOil::rvSat(const int n,
+                           const int* pvtTableIdx,
                              const double* /*p*/,
                              double* output_rvSat,
                              double* output_drvSatdp) const
@@ -271,14 +277,15 @@ namespace Opm
 
     /// Solution factor as a function of p and z.
     void PvtLiveOil::R(const int n,
+                       const int* pvtTableIdx,
                              const double* p,
                              const double* z,
                              double* output_R) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            int pvtTableIdx = pvtTableIdx_[i];
-            output_R[i] = evalR(pvtTableIdx, p[i], z + num_phases_*i);
+            int tableIdx = getTableIndex_(pvtTableIdx, i);
+            output_R[i] = evalR(tableIdx, p[i], z + num_phases_*i);
         }
 
     }
@@ -286,6 +293,7 @@ namespace Opm
 
     /// Solution factor and p-derivative as functions of p and z.
     void PvtLiveOil::dRdp(const int n,
+                          const int* pvtTableIdx,
                                 const double* p,
                                 const double* z,
                                 double* output_R,
@@ -293,8 +301,8 @@ namespace Opm
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            int pvtTableIdx = pvtTableIdx_[i];
-            evalRDeriv(pvtTableIdx, p[i], z + num_phases_*i, output_R[i], output_dRdp[i]);
+            int tableIdx = getTableIndex_(pvtTableIdx, i);
+            evalRDeriv(tableIdx, p[i], z + num_phases_*i, output_R[i], output_dRdp[i]);
         }
     }
 
