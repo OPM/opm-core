@@ -62,7 +62,7 @@ namespace Opm
             // instead of 0, we subtract 1.
             pvtTableIdx.resize(numCompressed);
             for (size_t cellIdx = 0; cellIdx < numCompressed; ++ cellIdx) {
-                size_t cartesianCellIdx = compressedToCartesianCellIdx[cellIdx];
+                size_t cartesianCellIdx = compressedToCartesianCellIdx?compressedToCartesianCellIdx[cellIdx]:cellIdx;
                 assert(cartesianCellIdx < pvtnumData.size());
 
                 pvtTableIdx[cellIdx] = pvtnumData[cartesianCellIdx] - 1;
