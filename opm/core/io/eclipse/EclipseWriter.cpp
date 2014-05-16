@@ -762,7 +762,8 @@ private:
                                      false, /* formatted   */
                                      true,  /* unified     */
                                      ":",    /* join string */
-                                     timer.simulationTimeElapsed (),
+                                     Opm::unit::convert::to (timer.simulationTimeElapsed (),
+                                                             Opm::unit::day),
                                      dim[0],
                                      dim[1],
                                      dim[2]);
