@@ -30,8 +30,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <petsc.h>
 int 
-call_Petsc(const int size, const int nonzeros, const int* ia, const int* ja, const double* sa, const double* b, double* x, const int ksp_type, const int pc_type, const double rtol, const double atol, const double dtol, const int maxits, const int view_ksp);
+call_Petsc(const int size, const int nonzeros, const int* ia, const int* ja, const double* sa, const double* b, double* x, const KSPType ksp_type, const PCType pc_type, const double rtol, const double atol, const double dtol, const int maxits, const int view_ksp);
 
 #ifdef __cplusplus
 }

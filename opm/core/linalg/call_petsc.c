@@ -30,7 +30,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <petsc.h>
 #include <opm/core/linalg/call_petsc.h>
 
 static PetscErrorCode code;
@@ -46,52 +45,16 @@ typedef struct {
 typedef struct {
     KSPType     method;  /*ksp method*/
     PCType      pcname;  /*pc method*/
-    int         view_ksp;    /*weather view ksp detail information*/
+    int         view_ksp;    /*whether view ksp detail information*/
     double      rtol;
     double      atol;
     double      dtol;
     int         maxits;
 } KSP_OPT;
 
-static const KSPType ksp_list[] = {
-    KSPRICHARDSON,  /*richardson*/ 
-    KSPCHEBYSHEV,   /*chebyshev*/
-    KSPCG,          /*cg*/
-    KSPBICG,        /*bicgs*/
-    KSPGMRES,       /*gmres*/
-    KSPFGMRES,      /*fgmres*/
-    KSPDGMRES,      /*dgmres*/
-    KSPGCR,         /*gcr*/
-    KSPBCGS,        /*bcgs*/
-    KSPCGS,         /*cgs*/
-    KSPTFQMR,       /*tfqmr*/
-    KSPTCQMR,       /*tcqmr*/
-    KSPCR,          /*cr*/
-    KSPLSQR,        /*lsqr*/
-    KSPPREONLY      /*preonly*/
-};
-
-static const PCType pc_list[] = {
-    PCJACOBI,       /*jacobi*/
-    PCBJACOBI,      /*bjacobi*/
-    PCSOR,          /*sor*/
-    PCEISENSTAT,    /*eisenstat*/
-    PCICC,          /*icc*/
-    PCILU,          /*ilu*/
-    PCASM,          /*asm*/
-    PCGAMG,         /*gamg*/
-    PCKSP,          /*ksp*/
-    PCCOMPOSITE,    /*composite*/
-    PCLU,           /*lu*/
-    PCCHOLESKY,     /*cholesky*/
-    PCNONE          /*none*/
-};
-
 static int
 init(OEM_DATA* t, KSP_OPT* opts)
 {
-    if (t == NULL)
-        t = calloc(1, sizeof(OEM_DATA));
     t->b = PETSC_NULL;
     t->u = PETSC_NULL;
     t->A = PETSC_NULL;
@@ -100,7 +63,7 @@ init(OEM_DATA* t, KSP_OPT* opts)
 
     /*set default options for ksp solvers*/
     opts->method = KSPGMRES;
-    opts->pcname = PCSOR;
+    opts->pcname = PCJACOBI;
     opts->view_ksp = 0;
     opts->rtol = PETSC_DEFAULT;
     opts->atol = PETSC_DEFAULT;
@@ -111,7 +74,7 @@ init(OEM_DATA* t, KSP_OPT* opts)
 }
 
 static int
-create(const int size, OEM_DATA* t)
+create_mat_vec(const int size, OEM_DATA* t)
 {
     code = VecCreate(PETSC_COMM_WORLD,&t->u);CHKERRQ(code);
     code = VecSetSizes(t->u,PETSC_DECIDE, size);CHKERRQ(code);
@@ -174,11 +137,12 @@ to_petsc_mat(const int size, const int nonzeros, const int* ia, const int* ja, c
     } 
     code = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(code);
     code = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(code);
+
     return 0;
 }
 
 static int
-solve(OEM_DATA* t, KSP_OPT* opts)
+solve_system(OEM_DATA* t, KSP_OPT* opts)
 {
     PetscInt its;
     PetscReal residual;
@@ -206,33 +170,37 @@ solve(OEM_DATA* t, KSP_OPT* opts)
 static int
 destory(OEM_DATA* t, KSP_OPT* opts)
 {
-    if(t == NULL)
+    if(t == NULL && opts == NULL)
        return 0;
-    if(t->u != PETSC_NULL)
-        code = VecDestroy(&t->u);CHKERRQ(code); 
-    if(t->b != PETSC_NULL)
-        code = VecDestroy(&t->b);CHKERRQ(code);
-    if(t->A != PETSC_NULL)
-        code = MatDestroy(&t->A);CHKERRQ(code); 
-    if(t->ksp != PETSC_NULL)
-        code = KSPDestroy(&t->ksp);CHKERRQ(code);
-    free(t);
 
-    if (opts == NULL)
-        return 0;
+    if(t->u != PETSC_NULL) {
+        code = VecDestroy(&t->u);
+        CHKERRQ(code); 
+    }
+    if(t->b != PETSC_NULL) {
+        code = VecDestroy(&t->b);
+        CHKERRQ(code);
+    }
+    if(t->A != PETSC_NULL) {
+        code = MatDestroy(&t->A);
+        CHKERRQ(code); 
+    }
+    if(t->ksp != PETSC_NULL) {
+        code = KSPDestroy(&t->ksp);
+        CHKERRQ(code);
+    }
+
+    free(t);
     free(opts);
 
     return 0; 
 }
 
 static int 
-set_ksp_opts(const int ksp_type, const int pc_type, const double rtol, const double atol, const double dtol, const int maxits, const int view_ksp, KSP_OPT* opts)
+set_ksp_opts(const KSPType ksp_type, const PCType pc_type, const double rtol, const double atol, const double dtol, const int maxits, const int view_ksp, KSP_OPT* opts)
 {
-    if(opts == NULL) {
-        opts = calloc(1, sizeof(KSP_OPT));
-    }
-    opts->method = ksp_list[ksp_type];
-    opts->pcname = pc_list[pc_type];
+    opts->method = ksp_type;
+    opts->pcname = pc_type;
     opts->view_ksp = view_ksp;
     opts->rtol = rtol;
     opts->atol = atol;
@@ -243,18 +211,20 @@ set_ksp_opts(const int ksp_type, const int pc_type, const double rtol, const dou
 }
 
 int
-call_Petsc(const int size, const int nonzeros, const int* ia, const int* ja, const double* sa, const double* b, double* x, const int ksp_type, const int pc_type, const double rtol, const double atol, const double dtol, const int maxits, const int view_ksp)
+call_Petsc(const int size, const int nonzeros, const int* ia, const int* ja, const double* sa, const double* b, double* x, const KSPType ksp_type, const PCType pc_type, const double rtol, const double atol, const double dtol, const int maxits, const int view_ksp)
 {
     OEM_DATA* t;
     KSP_OPT* opts;
-    t = calloc(1, sizeof(OEM_DATA));
-    opts = calloc(1, sizeof(KSP_OPT));
+    t = malloc(sizeof(OEM_DATA));
+    opts = malloc(sizeof(KSP_OPT));
+    assert(t);
+    assert(opts);
     init(t, opts);
-    create(size, t);
+    create_mat_vec(size, t);
     to_petsc_mat(size, nonzeros, ia, ja, sa, t->A);
     to_petsc_vec(b, t->b);
     set_ksp_opts(ksp_type, pc_type, rtol, atol, dtol, maxits, view_ksp, opts);
-    solve(t, opts);  
+    solve_system(t, opts);  
     from_petsc_vec(x, t->u);
     destory(t, opts);
 
