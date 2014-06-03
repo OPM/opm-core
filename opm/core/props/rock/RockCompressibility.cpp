@@ -19,7 +19,6 @@
 
 #include "config.h"
 #include <opm/core/props/rock/RockCompressibility.hpp>
-#include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
@@ -41,46 +40,19 @@ namespace Opm
         rock_comp_ = param.getDefault("rock_compressibility", 0.0)/unit::barsa;
     }
 
-    RockCompressibility::RockCompressibility(const EclipseGridParser& deck)
+    RockCompressibility::RockCompressibility(Opm::DeckConstPtr deck)
         : pref_(0.0),
           rock_comp_(0.0)
     {
-        if (deck.hasField("ROCKTAB")) {
-            const table_t& rt = deck.getROCKTAB().rocktab_;
-            if (rt.size() != 1) {
-                OPM_THROW(std::runtime_error, "Can only handle a single region in ROCKTAB.");
-            }
-            const int n = rt[0][0].size();
-            p_.resize(n);
-            poromult_.resize(n);
-            transmult_.resize(n);
-            for (int i = 0; i < n; ++i) {
-                p_[i] = rt[0][0][i];
-                poromult_[i] = rt[0][1][i];
-                transmult_[i] = rt[0][2][i];
-            }
-        } else if (deck.hasField("ROCK")) {
-            const ROCK& r = deck.getROCK();
-            pref_ = r.rock_compressibilities_[0][0];
-            rock_comp_ = r.rock_compressibilities_[0][1];
-        } else {
-            std::cout << "**** warning: no rock compressibility data found in deck (ROCK or ROCKTAB)." << std::endl;
-        }
-    }
-
-    RockCompressibility::RockCompressibility(Opm::DeckConstPtr newParserDeck)
-        : pref_(0.0),
-          rock_comp_(0.0)
-    {
-        if (newParserDeck->hasKeyword("ROCKTAB")) {
-            Opm::DeckKeywordConstPtr rtKeyword = newParserDeck->getKeyword("ROCKTAB");
+        if (deck->hasKeyword("ROCKTAB")) {
+            Opm::DeckKeywordConstPtr rtKeyword = deck->getKeyword("ROCKTAB");
             if (rtKeyword->size() != 1)
                 OPM_THROW(std::runtime_error, "Can only handle a single region in ROCKTAB.");
 
             // the number of colums of the "ROCKTAB" keyword
             // depends on the presence of the "RKTRMDIR"
             // keyword. Messy stuff...
-            bool isDirectional = newParserDeck->hasKeyword("RKTRMDIR");
+            bool isDirectional = deck->hasKeyword("RKTRMDIR");
             if (isDirectional)
             {
                 // well, okay. we don't support non-isotropic
@@ -94,8 +66,8 @@ namespace Opm
             p_ = rocktabTable.getPressureColumn();
             poromult_ = rocktabTable.getPoreVolumeMultiplierColumn();
             transmult_ =  rocktabTable.getTransmissibilityMultiplierColumn();
-        } else if (newParserDeck->hasKeyword("ROCK")) {
-            Opm::RockTable rockTable(newParserDeck->getKeyword("ROCK"));
+        } else if (deck->hasKeyword("ROCK")) {
+            Opm::RockTable rockTable(deck->getKeyword("ROCK"));
             if (rockTable.numRows() != 1)
                 OPM_THROW(std::runtime_error, "Can only handle a single region in ROCK.");
 

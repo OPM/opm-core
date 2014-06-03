@@ -38,9 +38,6 @@ namespace Opm
     class SinglePvtLiveOil : public SinglePvtInterface
     {
     public:
-        typedef std::vector<std::vector<std::vector<double> > > table_t;
-
-        SinglePvtLiveOil(const table_t& pvto);
         SinglePvtLiveOil(const Opm::PvtoTable &pvtoTable);
         virtual ~SinglePvtLiveOil();
 

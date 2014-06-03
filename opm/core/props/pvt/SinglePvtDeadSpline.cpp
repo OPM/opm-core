@@ -36,28 +36,6 @@ namespace Opm
     // Member functions
     //-------------------------------------------------------------------------
 
-    /// Constructor
-    SinglePvtDeadSpline::SinglePvtDeadSpline(const table_t& pvd_table, const int samples)
-    {
-        const int region_number = 0;
-        if (pvd_table.size() != 1) {
-            OPM_THROW(std::runtime_error, "More than one PVT-region");
-        }
-
-        // Copy data
-        const int sz = pvd_table[region_number][0].size();
-        std::vector<double> press(sz);
-        std::vector<double> B_inv(sz);
-        std::vector<double> visc(sz);
-        for (int i = 0; i < sz; ++i) {
-            press[i] = pvd_table[region_number][0][i];
-            B_inv[i] = 1.0 / pvd_table[region_number][1][i];
-            visc[i]  = pvd_table[region_number][2][i];
-        }
-        buildUniformMonotoneTable(press, B_inv, samples, b_);
-        buildUniformMonotoneTable(press, visc, samples, viscosity_);
-    }
-
     SinglePvtDeadSpline::SinglePvtDeadSpline(const Opm::PvdoTable &pvdoTable, int samples)
     {
         int numRows = pvdoTable.numRows();

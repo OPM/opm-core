@@ -131,9 +131,9 @@ BOOST_AUTO_TEST_CASE(DisjointColumn)
     correct_answer[9].resize(1);
 
     Opm::ParserPtr parser(new Opm::Parser());
-    Opm::DeckConstPtr newParserDeck(parser->parseString(grdecl));
+    Opm::DeckConstPtr deck(parser->parseString(grdecl));
 
-    Opm::GridManager manager(newParserDeck);
+    Opm::GridManager manager(deck);
 
     VVI columns;
     Opm::extractColumn(*manager.c_grid(), columns);

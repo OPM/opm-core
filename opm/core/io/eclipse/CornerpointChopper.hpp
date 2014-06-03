@@ -20,7 +20,6 @@
 #ifndef OPM_CORNERPOINTCHOPPER_HEADER_INCLUDED
 #define OPM_CORNERPOINTCHOPPER_HEADER_INCLUDED
 
-#include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/parser/eclipse/Parser/Parser.hpp>
 #include <opm/parser/eclipse/Units/UnitSystem.hpp>
@@ -44,7 +43,6 @@ namespace Opm
     {
     public:
         CornerPointChopper(const std::string& file)
-            : parser_(file, false)
         {
             Opm::ParserPtr parser(new Opm::Parser());
             deck_ = parser->parseFile(file);
@@ -258,38 +256,6 @@ namespace Opm
             filterIntegerField("SATNUM", new_SATNUM_);
         }
 
-
-
-        /// Return a subparser with fields corresponding to the selected subset.
-        /// Note that the returned parser is NOT converted to SI, that must be done
-        /// by the user afterwards with the parser's convertToSI() method.
-        EclipseGridParser subparser()
-        {
-            if (parser_.hasField("FIELD") || parser_.hasField("LAB") || parser_.hasField("PVT-M")) {
-                OPM_THROW(std::runtime_error, "CornerPointChopper::subparser() cannot handle any eclipse unit system other than METRIC.");
-            }
-
-            EclipseGridParser sp;
-            std::shared_ptr<SPECGRID> sg(new SPECGRID);
-            for (int dd = 0; dd < 3; ++dd) {
-                sg->dimensions[dd] = new_dims_[dd];
-            }
-            sp.setSpecialField("SPECGRID", sg);
-            sp.setFloatingPointField("COORD", new_COORD_);
-            sp.setFloatingPointField("ZCORN", new_ZCORN_);
-            if (!new_ACTNUM_.empty()) sp.setIntegerField("ACTNUM", new_ACTNUM_);
-            if (!new_PORO_.empty()) sp.setFloatingPointField("PORO", new_PORO_);
-            if (!new_NTG_.empty()) sp.setFloatingPointField("NTG", new_NTG_);
-            if (!new_SWCR_.empty()) sp.setFloatingPointField("SWCR", new_SWCR_);
-            if (!new_SOWCR_.empty()) sp.setFloatingPointField("SOWCR", new_SOWCR_);
-            if (!new_PERMX_.empty()) sp.setFloatingPointField("PERMX", new_PERMX_);
-            if (!new_PERMY_.empty()) sp.setFloatingPointField("PERMY", new_PERMY_);
-            if (!new_PERMZ_.empty()) sp.setFloatingPointField("PERMZ", new_PERMZ_);
-            if (!new_SATNUM_.empty()) sp.setIntegerField("SATNUM", new_SATNUM_);
-            sp.computeUnits(); // Always METRIC, since that is default.
-            return sp;
-        }
-
         /// Return a sub-deck with fields corresponding to the selected subset.
         Opm::DeckConstPtr subDeck()
         {
@@ -319,7 +285,6 @@ namespace Opm
             specGridKw->addRecord(specGridRecord);
 
             subDeck->addKeyword(specGridKw);
-
             addDoubleKeyword_(subDeck, "COORD", /*dimension=*/"Length", new_COORD_);
             addDoubleKeyword_(subDeck, "ZCORN", /*dimension=*/"Length", new_ZCORN_);
             addIntKeyword_(subDeck, "ACTNUM", new_ACTNUM_);
@@ -331,10 +296,8 @@ namespace Opm
             addDoubleKeyword_(subDeck, "PERMY", /*dimension=*/"Permeability", new_PERMY_);
             addDoubleKeyword_(subDeck, "PERMZ", /*dimension=*/"Permeability", new_PERMZ_);
             addIntKeyword_(subDeck, "SATNUM", new_SATNUM_);
-
             return subDeck;
         }
-
         void writeGrdecl(const std::string& filename)
         {
             // Output new versions of SPECGRID, COORD, ZCORN, ACTNUM, PERMX, PORO, SATNUM.
@@ -363,7 +326,6 @@ namespace Opm
         bool hasSOWCR() const {return !new_SOWCR_.empty(); }
 
     private:
-        Opm::EclipseGridParser parser_;
         Opm::DeckConstPtr deck_;
         std::shared_ptr<Opm::UnitSystem> metricUnits_;
 

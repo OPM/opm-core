@@ -42,8 +42,6 @@ namespace Opm
     class SinglePvtDead : public SinglePvtInterface
     {
     public:
-        typedef std::vector<std::vector<std::vector<double> > > table_t;
-        SinglePvtDead(const table_t& pvd_table);
         SinglePvtDead(const Opm::PvdoTable& pvdoTable);
         SinglePvtDead(const Opm::PvdgTable& pvdgTable);
         virtual ~SinglePvtDead();

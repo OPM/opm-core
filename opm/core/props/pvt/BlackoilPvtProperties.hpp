@@ -22,7 +22,6 @@
 
 #include <opm/core/props/pvt/SinglePvtInterface.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
-#include <opm/core/io/eclipse/EclipseGridParser.hpp>
 
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 
@@ -46,16 +45,6 @@ namespace Opm
     public:
         /// Default constructor.
         BlackoilPvtProperties();
-
-        /// Initialize from deck.
-        /// \param deck     An input deck.
-        /// \param samples  If greater than zero, indicates the number of
-        ///                 uniform samples to be taken from monotone spline
-        ///                 curves interpolating the fluid data.
-        ///                 Otherwise, interpolate linearly in the original
-        ///                 data without fitting a spline.
-        void init(const EclipseGridParser& deck, const int samples);
-
 
         /// Initialize from deck.
         /// \param deck     An input deck from the opm-parser module.

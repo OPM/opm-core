@@ -41,9 +41,6 @@ namespace Opm
     class SinglePvtDeadSpline : public SinglePvtInterface
     {
     public:
-        typedef std::vector<std::vector<std::vector<double> > > table_t;
-
-        SinglePvtDeadSpline(const table_t& pvd_table, const int samples);
         SinglePvtDeadSpline(const Opm::PvdoTable &pvdoTable, int samples);
         SinglePvtDeadSpline(const Opm::PvdgTable &pvdgTable, int samples);
         virtual ~SinglePvtDeadSpline();

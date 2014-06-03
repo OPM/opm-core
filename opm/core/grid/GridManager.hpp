@@ -30,9 +30,6 @@ struct grdecl;
 
 namespace Opm
 {
-
-    class EclipseGridParser;
-
     /// This class manages an Opm::UnstructuredGrid in the sense that it
     /// encapsulates creation and destruction of the grid.
     /// The following grid types can be constructed:
@@ -45,10 +42,7 @@ namespace Opm
     {
     public:
         /// Construct a 3d corner-point grid or tensor grid from a deck.
-        explicit GridManager(const Opm::EclipseGridParser& deck);
-
-        /// Construct a 3d corner-point grid or tensor grid from a deck.
-        explicit GridManager(Opm::DeckConstPtr newParserDeck);
+        explicit GridManager(Opm::DeckConstPtr deck);
 
         /// Construct a grid from an EclipseState::EclipseGrid instance
         explicit GridManager(Opm::EclipseGridConstPtr eclipseGrid);
@@ -74,14 +68,12 @@ namespace Opm
         /// Destructor.
         ~GridManager();
 
-        void saveEGRID(const std::string& filename , const Opm::EclipseGridParser& deck);
-
         /// Access the managed UnstructuredGrid.
         /// The method is named similarly to c_str() in std::string,
         /// to make it clear that we are returning a C-compatible struct.
         const UnstructuredGrid* c_grid() const;
 
-        static void createGrdecl(Opm::DeckConstPtr newParserDeck, struct grdecl &grdecl);
+        static void createGrdecl(Opm::DeckConstPtr deck, struct grdecl &grdecl);
 
     private:
         // Disable copying and assignment.
@@ -89,11 +81,9 @@ namespace Opm
         GridManager& operator=(const GridManager& other);
 
         // Construct corner-point grid from deck.
-        void initFromDeckCornerpoint(const Opm::EclipseGridParser& deck);
-        void initFromDeckCornerpoint(Opm::DeckConstPtr newParserDeck);
+        void initFromDeckCornerpoint(Opm::DeckConstPtr deck);
         // Construct tensor grid from deck.
-        void initFromDeckTensorgrid(const Opm::EclipseGridParser& deck);
-        void initFromDeckTensorgrid(Opm::DeckConstPtr newParserDeck);
+        void initFromDeckTensorgrid(Opm::DeckConstPtr deck);
 
         // The managed UnstructuredGrid.
         UnstructuredGrid* ug_;

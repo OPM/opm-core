@@ -49,30 +49,19 @@ namespace Opm
 
     /// Initialize from deck.
     template <class SatFuncSet>
-    void SaturationPropsFromDeck<SatFuncSet>::init(const EclipseGridParser& deck,
+    void SaturationPropsFromDeck<SatFuncSet>::init(Opm::DeckConstPtr deck,
                                                    const UnstructuredGrid& grid,
                                                    const int samples)
     {
-        init(deck, grid.number_of_cells, grid.global_cell, grid.cell_centroids,
-             grid.dimensions, samples);
-    }
-
-
-    /// Initialize from deck.
-    template <class SatFuncSet>
-    void SaturationPropsFromDeck<SatFuncSet>::init(Opm::DeckConstPtr newParserDeck,
-                                                   const UnstructuredGrid& grid,
-                                                   const int samples)
-    {
-        init(newParserDeck, grid.number_of_cells, 
-             grid.global_cell, grid.cell_centroids,
-             grid.dimensions, samples);
+        this->init(deck, grid.number_of_cells,
+                   grid.global_cell, grid.cell_centroids,
+                   grid.dimensions, samples);
     }
 
     /// Initialize from deck.
     template <class SatFuncSet>
-    template< class T>
-    void SaturationPropsFromDeck<SatFuncSet>::init(const EclipseGridParser& deck,
+    template<class T>
+    void SaturationPropsFromDeck<SatFuncSet>::init(Opm::DeckConstPtr deck,
                                                    int number_of_cells,
                                                    const int* global_cell,
                                                    const T& begin_cell_centroids,
@@ -86,16 +75,31 @@ namespace Opm
         if (!phase_usage_.phase_used[Liquid]) {
             OPM_THROW(std::runtime_error, "SaturationPropsFromDeck::init()   --  oil phase must be active.");
         }
+        
+        // Check SATOPTS status
+        bool hysteresis_switch = false;
+        if (deck->hasKeyword("SATOPTS")) {
+            const std::vector<std::string>& satopts = deck->getKeyword("SATOPTS")->getStringData();
+            for (size_t i = 0; i < satopts.size(); ++i) {
+                if (satopts[i] == std::string("HYSTER")) {
+                    hysteresis_switch = true;
+                } else {
+                    OPM_THROW(std::runtime_error, "Keyword SATOPTS:  Switch " << satopts[i] << " not supported. ");
+                }
+            }
+        }
 
         // Obtain SATNUM, if it exists, and create cell_to_func_.
         // Otherwise, let the cell_to_func_ mapping be just empty.
         int satfuncs_expected = 1;
-        if (deck.hasField("SATNUM")) {
-            const std::vector<int>& satnum = deck.getIntegerValue("SATNUM");
+        if (deck->hasKeyword("SATNUM")) {
+            const std::vector<int>& satnum = deck->getKeyword("SATNUM")->getIntData();
             satfuncs_expected = *std::max_element(satnum.begin(), satnum.end());
-            cell_to_func_.resize(number_of_cells);
-            for (int cell = 0; cell < number_of_cells; ++cell) {
-                const int deck_pos = (global_cell == NULL) ? cell : global_cell[cell];
+            const int num_cells = number_of_cells;
+            cell_to_func_.resize(num_cells);
+            const int* gc = global_cell;
+            for (int cell = 0; cell < num_cells; ++cell) {
+                const int deck_pos = (gc == NULL) ? cell : gc[cell];
                 cell_to_func_[cell] = satnum[deck_pos] - 1;
             }
         }
@@ -104,15 +108,13 @@ namespace Opm
         enum { Uninitialized = -1 };
         int num_tables = Uninitialized;
         if (phase_usage_.phase_used[Aqua]) {
-            const SWOF::table_t& swof_table = deck.getSWOF().swof_;
-            num_tables = swof_table.size();
+            num_tables = deck->getKeyword("SWOF")->size();
             if (num_tables < satfuncs_expected) {
                 OPM_THROW(std::runtime_error, "Found " << num_tables << " SWOF tables, SATNUM specifies at least " << satfuncs_expected);
             }
         }
         if (phase_usage_.phase_used[Vapour]) {
-            const SGOF::table_t& sgof_table = deck.getSGOF().sgof_;
-            int num_sgof_tables = sgof_table.size();
+            int num_sgof_tables = deck->getKeyword("SGOF")->size();
             if (num_sgof_tables < satfuncs_expected) {
                 OPM_THROW(std::runtime_error, "Found " << num_tables << " SGOF tables, SATNUM specifies at least " << satfuncs_expected);
             }
@@ -128,147 +130,34 @@ namespace Opm
         for (int table = 0; table < num_tables; ++table) {
             satfuncset_[table].init(deck, table, phase_usage_, samples);
         }
-
-        // Saturation table scaling
-        do_hyst_ = false;
-        do_eps_  = false;
-        do_3pt_  = false;
-        if (deck.hasField("ENDSCALE")) {
-            //if (!phase_usage_.phase_used[Aqua] || !phase_usage_.phase_used[Liquid] || phase_usage_.phase_used[Vapour]) {
-            //    OPM_THROW(std::runtime_error, "Currently endpoint-scaling limited to oil-water systems without gas.");
-            //}
-            if (deck.getENDSCALE().dir_switch_ != std::string("NODIR")) {
-                OPM_THROW(std::runtime_error, "SaturationPropsFromDeck::init()   --  ENDSCALE: Currently only 'NODIR' accepted.");
-            }
-            if (deck.getENDSCALE().revers_switch_ != std::string("REVERS")) {
-                OPM_THROW(std::runtime_error, "SaturationPropsFromDeck::init()   --  ENDSCALE: Currently only 'REVERS' accepted.");
-            }
-            if (deck.hasField("SCALECRS")) {
-                if (deck.getSCALECRS().scalecrs_ == std::string("YES")) {
-                    do_3pt_ = true;
-                }
-            }
-            do_eps_ = true;
-            initEPS(deck, number_of_cells, global_cell, begin_cell_centroids, dimensions);
-            
-            // For now, a primitive detection of hysteresis. TODO: SATOPTS HYSTER/ and EHYSTR
-            do_hyst_ = deck.hasField("ISWL") || deck.hasField("ISWU") || deck.hasField("ISWCR") || deck.hasField("ISGL") ||
-                       deck.hasField("ISGU") || deck.hasField("ISGCR") ||  deck.hasField("ISOWCR") || deck.hasField("ISOGCR");
-            if (do_hyst_) {
-                if (deck.hasField("KRW") || deck.hasField("KRG") || deck.hasField("KRO") || deck.hasField("KRWR") || 
-                    deck.hasField("KRGR") || deck.hasField("KRORW") || deck.hasField("KRORG") ||
-                    deck.hasField("IKRW") || deck.hasField("IKRG") || deck.hasField("IKRO") || deck.hasField("IKRWR") || 
-                    deck.hasField("IKRGR") || deck.hasField("IKRORW") || deck.hasField("IKRORG") ) {
-                    OPM_THROW(std::runtime_error, "SaturationPropsFromDeck::init()   --  ENDSCALE: Currently hysteresis and relperm value scaling can not be combined.");
-                }
-                initEPSHyst(deck, number_of_cells, global_cell, begin_cell_centroids,
-                            dimensions);
-            }
-
-            //OPM_THROW(std::runtime_error, "SaturationPropsFromDeck::init()   --  ENDSCALE: Under construction ...");
-        }
-    }
-
-    /// Initialize from deck.
-    template <class SatFuncSet>
-    template<class T>
-    void SaturationPropsFromDeck<SatFuncSet>::init(Opm::DeckConstPtr newParserDeck,
-                                                   int number_of_cells,
-                                                   const int* global_cell,
-                                                   const T& begin_cell_centroids,
-                                                   int dimensions,
-                                                   const int samples)
-    {
-        phase_usage_ = phaseUsageFromDeck(newParserDeck);
-
-        // Extract input data.
-        // Oil phase should be active.
-        if (!phase_usage_.phase_used[Liquid]) {
-            OPM_THROW(std::runtime_error, "SaturationPropsFromDeck::init()   --  oil phase must be active.");
-        }
-        
-        // Check SATOPTS status
-        bool hysteresis_switch = false;
-        if (newParserDeck->hasKeyword("SATOPTS")) {
-            const std::vector<std::string>& satopts = newParserDeck->getKeyword("SATOPTS")->getStringData();
-            for (size_t i = 0; i < satopts.size(); ++i) {
-                if (satopts[i] == std::string("HYSTER")) {
-                    hysteresis_switch = true;
-                } else {
-                    OPM_THROW(std::runtime_error, "Keyword SATOPTS:  Switch " << satopts[i] << " not supported. ");
-                }
-            }
-        }
-
-        // Obtain SATNUM, if it exists, and create cell_to_func_.
-        // Otherwise, let the cell_to_func_ mapping be just empty.
-        int satfuncs_expected = 1;
-        if (newParserDeck->hasKeyword("SATNUM")) {
-            const std::vector<int>& satnum = newParserDeck->getKeyword("SATNUM")->getIntData();
-            satfuncs_expected = *std::max_element(satnum.begin(), satnum.end());
-            const int num_cells = number_of_cells;
-            cell_to_func_.resize(num_cells);
-            const int* gc = global_cell;
-            for (int cell = 0; cell < num_cells; ++cell) {
-                const int newParserDeck_pos = (gc == NULL) ? cell : gc[cell];
-                cell_to_func_[cell] = satnum[newParserDeck_pos] - 1;
-            }
-        }
-
-        // Find number of tables, check for consistency.
-        enum { Uninitialized = -1 };
-        int num_tables = Uninitialized;
-        if (phase_usage_.phase_used[Aqua]) {
-            num_tables = newParserDeck->getKeyword("SWOF")->size();
-            if (num_tables < satfuncs_expected) {
-                OPM_THROW(std::runtime_error, "Found " << num_tables << " SWOF tables, SATNUM specifies at least " << satfuncs_expected);
-            }
-        }
-        if (phase_usage_.phase_used[Vapour]) {
-            int num_sgof_tables = newParserDeck->getKeyword("SGOF")->size();
-            if (num_sgof_tables < satfuncs_expected) {
-                OPM_THROW(std::runtime_error, "Found " << num_tables << " SGOF tables, SATNUM specifies at least " << satfuncs_expected);
-            }
-            if (num_tables == Uninitialized) {
-                num_tables = num_sgof_tables;
-            } else if (num_tables != num_sgof_tables) {
-                OPM_THROW(std::runtime_error, "Inconsistent number of tables in SWOF and SGOF.");
-            }
-        }
-
-        // Initialize tables.
-        satfuncset_.resize(num_tables);
-        for (int table = 0; table < num_tables; ++table) {
-            satfuncset_[table].init(newParserDeck, table, phase_usage_, samples);
-        }
         
         // Check EHYSTR status
         do_hyst_ = false;
-        if (hysteresis_switch && newParserDeck->hasKeyword("EHYSTR")) {
-           const int& relative_perm_hyst = newParserDeck->getKeyword("EHYSTR")->getRecord(0)->getItem(1)->getInt(0);
-           const std::string& limiting_hyst_flag = newParserDeck->getKeyword("EHYSTR")->getRecord(0)->getItem(4)->getString(0);
+        if (hysteresis_switch && deck->hasKeyword("EHYSTR")) {
+           const int& relative_perm_hyst = deck->getKeyword("EHYSTR")->getRecord(0)->getItem(1)->getInt(0);
+           const std::string& limiting_hyst_flag = deck->getKeyword("EHYSTR")->getRecord(0)->getItem(4)->getString(0);
            if (relative_perm_hyst != int(0)) {
                OPM_THROW(std::runtime_error, "Keyword EHYSTR, item 2: Flag '" << relative_perm_hyst << "' found, only '0' is supported. ");
            }          
            if (limiting_hyst_flag != std::string("KR")) {
                OPM_THROW(std::runtime_error, "Keyword EHYSTR, item 5: Flag '" << limiting_hyst_flag << "' found, only 'KR' is supported. ");
            }                   
-           if ( ! newParserDeck->hasKeyword("ENDSCALE")) {
+           if ( ! deck->hasKeyword("ENDSCALE")) {
                // TODO When use of IMBNUM is implemented, this constraint will be lifted.
                OPM_THROW(std::runtime_error, "Currently hysteris effects is only available through endpoint scaling.");
            }
            do_hyst_ = true;
         } else if (hysteresis_switch) {
            OPM_THROW(std::runtime_error, "Switch HYSTER of keyword SATOPTS is active, but keyword EHYSTR not found.");
-        } else if (newParserDeck->hasKeyword("EHYSTR")) {
+        } else if (deck->hasKeyword("EHYSTR")) {
            OPM_THROW(std::runtime_error, "Found keyword EHYSTR, but switch HYSTER of keyword SATOPTS is not set.");
         }
 
         // Saturation table scaling
         do_eps_ = false;
         do_3pt_ = false;
-        if (newParserDeck->hasKeyword("ENDSCALE")) {
-            Opm::EndscaleWrapper endscale(newParserDeck->getKeyword("ENDSCALE"));
+        if (deck->hasKeyword("ENDSCALE")) {
+            Opm::EndscaleWrapper endscale(deck->getKeyword("ENDSCALE"));
             if (endscale.directionSwitch() != std::string("NODIR")) {
                 OPM_THROW(std::runtime_error,
                           "SaturationPropsFromDeck::init()   --  ENDSCALE: "
@@ -279,8 +168,8 @@ namespace Opm
                           "SaturationPropsFromDeck::init()   --  ENDSCALE: "
                           "Currently only 'REVERS' accepted.");
             }
-            if (newParserDeck->hasKeyword("SCALECRS")) {
-                Opm::ScalecrsWrapper scalecrs(newParserDeck->getKeyword("SCALECRS"));
+            if (deck->hasKeyword("SCALECRS")) {
+                Opm::ScalecrsWrapper scalecrs(deck->getKeyword("SCALECRS"));
                 if (scalecrs.isEnabled()) {
                     do_3pt_ = true;
                 }
@@ -288,8 +177,8 @@ namespace Opm
             do_eps_ = true;
                  
             // Make a consistency check of ENDNUM: #regions = NTENDP (ENDSCALE::3, TABDIMS::8)...      
-            if (newParserDeck->hasKeyword("ENDNUM")) {
-                const std::vector<int>& endnum = newParserDeck->getKeyword("ENDNUM")->getIntData();
+            if (deck->hasKeyword("ENDNUM")) {
+                const std::vector<int>& endnum = deck->getKeyword("ENDNUM")->getIntData();
                 int endnum_regions = *std::max_element(endnum.begin(), endnum.end());
                 if (endnum_regions > endscale.numEndscaleTables()) {
                     OPM_THROW(std::runtime_error,
@@ -301,30 +190,29 @@ namespace Opm
             // TODO: ENPTVD/ENKRVD: Too few tables gives a cryptical message from parser, 
             //       superfluous tables are ignored by the parser without any warning ...
 
-            initEPS(newParserDeck, number_of_cells, global_cell, begin_cell_centroids,
+            initEPS(deck, number_of_cells, global_cell, begin_cell_centroids,
                     dimensions);
 
             if (do_hyst_) {
-                if (newParserDeck->hasKeyword("KRW")
-                    || newParserDeck->hasKeyword("KRG")
-                    || newParserDeck->hasKeyword("KRO")
-                    || newParserDeck->hasKeyword("KRWR")
-                    || newParserDeck->hasKeyword("KRGR")
-                    || newParserDeck->hasKeyword("KRORW")
-                    || newParserDeck->hasKeyword("KRORG")
-                    || newParserDeck->hasKeyword("ENKRVD")
-                    || newParserDeck->hasKeyword("IKRW")
-                    || newParserDeck->hasKeyword("IKRG")
-                    || newParserDeck->hasKeyword("IKRO")
-                    || newParserDeck->hasKeyword("IKRWR")
-                    || newParserDeck->hasKeyword("IKRGR")
-                    || newParserDeck->hasKeyword("IKRORW")
-                    || newParserDeck->hasKeyword("IKRORG") ) {
+                if (deck->hasKeyword("KRW")
+                    || deck->hasKeyword("KRG")
+                    || deck->hasKeyword("KRO")
+                    || deck->hasKeyword("KRWR")
+                    || deck->hasKeyword("KRGR")
+                    || deck->hasKeyword("KRORW")
+                    || deck->hasKeyword("KRORG")
+                    || deck->hasKeyword("ENKRVD")
+                    || deck->hasKeyword("IKRG")
+                    || deck->hasKeyword("IKRO")
+                    || deck->hasKeyword("IKRWR")
+                    || deck->hasKeyword("IKRGR")
+                    || deck->hasKeyword("IKRORW")
+                    || deck->hasKeyword("IKRORG") ) {
                     OPM_THROW(std::runtime_error,"Currently hysteresis and relperm value scaling cannot be combined.");
                 }
                 
-                if (newParserDeck->hasKeyword("IMBNUM")) {
-                    const std::vector<int>& imbnum = newParserDeck->getKeyword("IMBNUM")->getIntData();
+                if (deck->hasKeyword("IMBNUM")) {
+                    const std::vector<int>& imbnum = deck->getKeyword("IMBNUM")->getIntData();
                     int imbnum_regions = *std::max_element(imbnum.begin(), imbnum.end());
                     if (imbnum_regions > num_tables) {
                         OPM_THROW(std::runtime_error,
@@ -343,7 +231,7 @@ namespace Opm
                     //       to be a scaled version of the drainage curve (confer Norne model).
                 }
                 
-                initEPSHyst(newParserDeck, number_of_cells, global_cell, begin_cell_centroids,
+                initEPSHyst(deck, number_of_cells, global_cell, begin_cell_centroids,
                             dimensions);
             }
         }
@@ -534,8 +422,8 @@ namespace Opm
 
     // Initialize saturation scaling parameters
     template <class SatFuncSet>
-    template <class T>
-    void SaturationPropsFromDeck<SatFuncSet>::initEPS(const EclipseGridParser& deck,
+    template<class T>
+    void SaturationPropsFromDeck<SatFuncSet>::initEPS(Opm::DeckConstPtr deck,
                                                       int number_of_cells,
                                                       const int* global_cell,
                                                       const T& begin_cell_centroid,
@@ -615,93 +503,10 @@ namespace Opm
         }
     }
 
-    // Initialize saturation scaling parameters
-    template <class SatFuncSet>
-    template<class T>
-    void SaturationPropsFromDeck<SatFuncSet>::initEPS(Opm::DeckConstPtr newParserDeck,
-                                                      int number_of_cells,
-                                                      const int* global_cell,
-                                                      const T& begin_cell_centroid,
-                                                      int dimensions)
-    {
-        std::vector<double> swl, swcr, swu, sgl, sgcr, sgu, sowcr, sogcr;
-        std::vector<double> krw, krg, kro, krwr, krgr, krorw, krorg;
-        // Initialize saturation scaling parameter
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("SWL"),   swl);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("SWU"),   swu);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("SWCR"),  swcr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("SGL"),   sgl);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("SGU"),   sgu);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("SGCR"),  sgcr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("SOWCR"), sowcr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("SOGCR"), sogcr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("KRW"),   krw);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("KRG"),   krg);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("KRO"),   kro);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("KRWR"),  krwr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("KRGR"),  krgr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("KRORW"), krorw);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("KRORG"), krorg);
-
-        eps_transf_.resize(number_of_cells);
-
-        const int wpos = phase_usage_.phase_pos[BlackoilPhases::Aqua];
-        const int gpos = phase_usage_.phase_pos[BlackoilPhases::Vapour];
-        const bool oilWater = phase_usage_.phase_used[Aqua] && phase_usage_.phase_used[Liquid] && !phase_usage_.phase_used[Vapour];
-        const bool oilGas = !phase_usage_.phase_used[Aqua] && phase_usage_.phase_used[Liquid] && phase_usage_.phase_used[Vapour];
-        const bool threephase = phase_usage_.phase_used[Aqua] && phase_usage_.phase_used[Liquid] && phase_usage_.phase_used[Vapour];
-
-        for (int cell = 0; cell < number_of_cells; ++cell) {
-            if (oilWater) {
-                // ### krw
-                initEPSParam(cell, eps_transf_[cell].wat, false, funcForCell(cell).smin_[wpos], funcForCell(cell).swcr_, funcForCell(cell).smax_[wpos],
-                  funcForCell(cell).sowcr_, -1.0, funcForCell(cell).krwr_, funcForCell(cell).krwmax_, swl, swcr, swu, sowcr, sgl, krwr, krw);
-                // ### krow
-                initEPSParam(cell, eps_transf_[cell].watoil, true, 0.0, funcForCell(cell).sowcr_, funcForCell(cell).smin_[wpos],
-                  funcForCell(cell).swcr_, -1.0, funcForCell(cell).krorw_, funcForCell(cell).kromax_, swl, sowcr, swl, swcr, sgl, krorw, kro);
-            } else if (oilGas) {
-                // ### krg
-                initEPSParam(cell, eps_transf_[cell].gas, false, funcForCell(cell).smin_[gpos], funcForCell(cell).sgcr_, funcForCell(cell).smax_[gpos],
-                  funcForCell(cell).sogcr_, -1.0, funcForCell(cell).krgr_, funcForCell(cell).krgmax_, sgl, sgcr, sgu, sogcr, swl, krgr, krg);
-                // ### krog
-                initEPSParam(cell, eps_transf_[cell].gasoil, true, 0.0, funcForCell(cell).sogcr_, funcForCell(cell).smin_[gpos],
-                  funcForCell(cell).sgcr_, -1.0, funcForCell(cell).krorg_, funcForCell(cell).kromax_, sgl, sogcr, sgl, sgcr, swl, krorg, kro);
-            } else if (threephase) {
-                // ### krw
-                initEPSParam(cell, eps_transf_[cell].wat, false, funcForCell(cell).smin_[wpos], funcForCell(cell).swcr_, funcForCell(cell).smax_[wpos], funcForCell(cell).sowcr_,
-                  funcForCell(cell).smin_[gpos], funcForCell(cell).krwr_, funcForCell(cell).krwmax_, swl, swcr, swu, sowcr, sgl, krwr, krw);
-                // ### krow
-                initEPSParam(cell, eps_transf_[cell].watoil, true, 0.0, funcForCell(cell).sowcr_, funcForCell(cell).smin_[wpos], funcForCell(cell).swcr_,
-                  funcForCell(cell).smin_[gpos], funcForCell(cell).krorw_, funcForCell(cell).kromax_, swl, sowcr, swl, swcr, sgl, krorw, kro);
-                // ### krg
-                initEPSParam(cell, eps_transf_[cell].gas, false, funcForCell(cell).smin_[gpos], funcForCell(cell).sgcr_, funcForCell(cell).smax_[gpos], funcForCell(cell).sogcr_,
-                  funcForCell(cell).smin_[wpos], funcForCell(cell).krgr_, funcForCell(cell).krgmax_, sgl, sgcr, sgu, sogcr, swl, krgr, krg);
-                // ### krog
-                initEPSParam(cell, eps_transf_[cell].gasoil, true, 0.0, funcForCell(cell).sogcr_, funcForCell(cell).smin_[gpos], funcForCell(cell).sgcr_,
-                  funcForCell(cell).smin_[wpos], funcForCell(cell).krorg_, funcForCell(cell).kromax_, sgl, sogcr, sgl, sgcr, swl, krorg, kro);
-            }
-        }
-    }
-
     // Initialize hysteresis saturation scaling parameters
     template <class SatFuncSet>
     template<class T>
-    void SaturationPropsFromDeck<SatFuncSet>::initEPSHyst(const EclipseGridParser& deck,
+    void SaturationPropsFromDeck<SatFuncSet>::initEPSHyst(Opm::DeckConstPtr deck,
                                                       int number_of_cells,
                                                       const int* global_cell,
                                                       const T& begin_cell_centroid,
@@ -739,91 +544,6 @@ namespace Opm
         initEPSKey(deck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
                    std::string("IKRORW"), ikrorw);
         initEPSKey(deck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("IKRORG"), ikrorg);
-        
-
-        eps_transf_hyst_.resize(number_of_cells);
-        sat_hyst_.resize(number_of_cells);
-
-        const int wpos = phase_usage_.phase_pos[BlackoilPhases::Aqua];
-        const int gpos = phase_usage_.phase_pos[BlackoilPhases::Vapour];
-        const bool oilWater = phase_usage_.phase_used[Aqua] && phase_usage_.phase_used[Liquid] && !phase_usage_.phase_used[Vapour];
-        const bool oilGas = !phase_usage_.phase_used[Aqua] && phase_usage_.phase_used[Liquid] && phase_usage_.phase_used[Vapour];
-        const bool threephase = phase_usage_.phase_used[Aqua] && phase_usage_.phase_used[Liquid] && phase_usage_.phase_used[Vapour];
-
-        for (int cell = 0; cell < number_of_cells; ++cell) {
-            if (oilWater) {
-                // ### krw
-                initEPSParam(cell, eps_transf_hyst_[cell].wat, false, funcForCell(cell).smin_[wpos], funcForCell(cell).swcr_, funcForCell(cell).smax_[wpos],
-                  funcForCell(cell).sowcr_, -1.0, funcForCell(cell).krwr_, funcForCell(cell).krwmax_, iswl, iswcr, iswu, isowcr, isgl, ikrwr, ikrw);
-                // ### krow
-                initEPSParam(cell, eps_transf_hyst_[cell].watoil, true, 0.0, funcForCell(cell).sowcr_, funcForCell(cell).smin_[wpos],
-                  funcForCell(cell).swcr_, -1.0, funcForCell(cell).krorw_, funcForCell(cell).kromax_, iswl, isowcr, iswl, iswcr, isgl, ikrorw, ikro);
-            } else if (oilGas) {
-                // ### krg
-                initEPSParam(cell, eps_transf_hyst_[cell].gas, false, funcForCell(cell).smin_[gpos], funcForCell(cell).sgcr_, funcForCell(cell).smax_[gpos],
-                  funcForCell(cell).sogcr_, -1.0, funcForCell(cell).krgr_, funcForCell(cell).krgmax_, isgl, isgcr, isgu, isogcr, iswl, ikrgr, ikrg);
-                // ### krog
-                initEPSParam(cell, eps_transf_hyst_[cell].gasoil, true, 0.0, funcForCell(cell).sogcr_, funcForCell(cell).smin_[gpos],
-                  funcForCell(cell).sgcr_, -1.0, funcForCell(cell).krorg_, funcForCell(cell).kromax_, isgl, isogcr, isgl, isgcr, iswl, ikrorg, ikro);
-            } else if (threephase) {
-                // ### krw
-                initEPSParam(cell, eps_transf_hyst_[cell].wat, false, funcForCell(cell).smin_[wpos], funcForCell(cell).swcr_, funcForCell(cell).smax_[wpos], funcForCell(cell).sowcr_,
-                  funcForCell(cell).smin_[gpos], funcForCell(cell).krwr_, funcForCell(cell).krwmax_, iswl, iswcr, iswu, isowcr, isgl, ikrwr, ikrw);
-                // ### krow
-                initEPSParam(cell, eps_transf_hyst_[cell].watoil, true, 0.0, funcForCell(cell).sowcr_, funcForCell(cell).smin_[wpos], funcForCell(cell).swcr_,
-                  funcForCell(cell).smin_[gpos], funcForCell(cell).krorw_, funcForCell(cell).kromax_, iswl, isowcr, iswl, iswcr, isgl, ikrorw, ikro);
-                // ### krg
-                initEPSParam(cell, eps_transf_hyst_[cell].gas, false, funcForCell(cell).smin_[gpos], funcForCell(cell).sgcr_, funcForCell(cell).smax_[gpos], funcForCell(cell).sogcr_,
-                  funcForCell(cell).smin_[wpos], funcForCell(cell).krgr_, funcForCell(cell).krgmax_, isgl, isgcr, isgu, isogcr, iswl, ikrgr, ikrg);
-                // ### krog
-                initEPSParam(cell, eps_transf_hyst_[cell].gasoil, true, 0.0, funcForCell(cell).sogcr_, funcForCell(cell).smin_[gpos], funcForCell(cell).sgcr_,
-                  funcForCell(cell).smin_[wpos], funcForCell(cell).krorg_, funcForCell(cell).kromax_, isgl, isogcr, isgl, isgcr, iswl, ikrorg, ikro);
-            }
-        }
-    }
-
-    // Initialize hysteresis saturation scaling parameters
-    template <class SatFuncSet>
-    template<class T>
-    void SaturationPropsFromDeck<SatFuncSet>::initEPSHyst(Opm::DeckConstPtr newParserDeck,
-                                                      int number_of_cells,
-                                                      const int* global_cell,
-                                                      const T& begin_cell_centroid,
-                                                      int dimensions)
-    {
-        std::vector<double> iswl, iswcr, iswu, isgl, isgcr, isgu, isowcr, isogcr;
-        std::vector<double> ikrw, ikrg, ikro, ikrwr, ikrgr, ikrorw, ikrorg;
-        // Initialize hysteresis saturation scaling parameters
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("ISWL"),   iswl);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("ISWU"),   iswu);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("ISWCR"),  iswcr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("ISGL"),   isgl);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("ISGU"),   isgu);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("ISGCR"),  isgcr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("ISOWCR"), isowcr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("ISOGCR"), isogcr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("IKRW"),   ikrw);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("IKRG"),   ikrg);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("IKRO"),   ikro);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("IKRWR"),  ikrwr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("IKRGR"),  ikrgr);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
-                   std::string("IKRORW"), ikrorw);
-        initEPSKey(newParserDeck, number_of_cells, global_cell, begin_cell_centroid, dimensions,
                    std::string("IKRORG"), ikrorg);
 
         eps_transf_hyst_.resize(number_of_cells);
@@ -870,185 +590,7 @@ namespace Opm
     // Initialize saturation scaling parameter
     template <class SatFuncSet>
     template<class T>
-    void SaturationPropsFromDeck<SatFuncSet>::initEPSKey(const EclipseGridParser& deck,
-                                                         int number_of_cells,
-                                                         const int* global_cell,
-                                                         const T& begin_cell_centroid,
-                                                         int dimensions,
-                                                         const std::string& keyword,
-                                                         std::vector<double>& scaleparam)
-    {
-        const bool useAqua = phase_usage_.phase_used[Aqua];
-        const bool useLiquid = phase_usage_.phase_used[Liquid];
-        const bool useVapour = phase_usage_.phase_used[Vapour];
-        bool useKeyword = deck.hasField(keyword);
-        bool hasENPTVD = deck.hasField("ENPTVD");
-        bool hasENKRVD = deck.hasField("ENKRVD");
-        int itab = 0;
-        std::vector<std::vector<std::vector<double> > > table_dummy;
-        std::vector<std::vector<std::vector<double> > >& table = table_dummy;
-
-        // Active keyword assigned default values for each cell (in case of possible box-wise assignment)
-        int phase_pos_aqua = phase_usage_.phase_pos[BlackoilPhases::Aqua];
-        int phase_pos_vapour = phase_usage_.phase_pos[BlackoilPhases::Vapour];
-        if ((keyword[0] == 'S' && (useKeyword || hasENPTVD)) || (keyword[1] == 'S' && useKeyword) ) {
-            if (keyword == std::string("SWL") || keyword == std::string("ISWL") ) {
-                if (useAqua && (useKeyword || deck.getENPTVD().mask_[0])) {
-                    itab = 1;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).smin_[phase_pos_aqua];
-                }
-            } else if (keyword == std::string("SWCR") || keyword == std::string("ISWCR") ) {
-                if (useAqua && (useKeyword || deck.getENPTVD().mask_[1])) {
-                    itab = 2;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).swcr_;
-                }
-            } else if (keyword == std::string("SWU") || keyword == std::string("ISWU") ) {
-                if (useAqua && (useKeyword || deck.getENPTVD().mask_[2])) {
-                    itab = 3;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).smax_[phase_pos_aqua];
-                }
-            } else if (keyword == std::string("SGL") || keyword == std::string("ISGL") ) {
-                if (useVapour && (useKeyword || deck.getENPTVD().mask_[3])) {
-                    itab = 4;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).smin_[phase_pos_vapour];
-                }
-            } else if (keyword == std::string("SGCR") || keyword == std::string("ISGCR") ) {
-                if (useVapour && (useKeyword || deck.getENPTVD().mask_[4])) {
-                    itab = 5;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).sgcr_;
-                }
-            } else if (keyword == std::string("SGU") || keyword == std::string("ISGU") ) {
-                if (useVapour && (useKeyword || deck.getENPTVD().mask_[5])) {
-                    itab = 6;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).smax_[phase_pos_vapour];
-                }
-            } else if (keyword == std::string("SOWCR") || keyword == std::string("ISOWCR") ) {
-                if (useAqua && (useKeyword || deck.getENPTVD().mask_[6])) {
-                    itab = 7;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).sowcr_;
-                }
-            } else if (keyword == std::string("SOGCR") || keyword == std::string("ISOGCR") ) {
-                if (useVapour && (useKeyword || deck.getENPTVD().mask_[7])) {
-                    itab = 8;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).sogcr_;
-                }
-            } else {
-                OPM_THROW(std::runtime_error, " -- unknown keyword: '" << keyword << "'");
-            }
-            if (!useKeyword && itab > 0) {
-                table = deck.getENPTVD().table_;
-            }
-        } else if ((keyword[0] == 'K' && (useKeyword || hasENKRVD)) || (keyword[1] == 'K' && useKeyword) ) {
-            if (keyword == std::string("KRW") || keyword == std::string("IKRW") ) {
-                if (useAqua && (useKeyword || deck.getENKRVD().mask_[0])) {
-                    itab = 1;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).krwmax_;
-                }
-            } else if (keyword == std::string("KRG") || keyword == std::string("IKRG") ) {
-                if (useVapour && (useKeyword || deck.getENKRVD().mask_[1])) {
-                    itab = 2;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).krgmax_;
-                }
-            } else if (keyword == std::string("KRO") || keyword == std::string("IKRO") ) {
-                if (useLiquid && (useKeyword || deck.getENKRVD().mask_[2])) {
-                    itab = 3;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).kromax_;
-                }
-            } else if (keyword == std::string("KRWR") || keyword == std::string("IKRWR") ) {
-                if (useAqua && (useKeyword || deck.getENKRVD().mask_[3])) {
-                    itab = 4;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).krwr_;
-                }
-            } else if (keyword == std::string("KRGR") || keyword == std::string("IKRGR") ) {
-                if (useVapour && (useKeyword || deck.getENKRVD().mask_[4])) {
-                    itab = 5;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).krgr_;
-                }
-            } else if (keyword == std::string("KRORW") || keyword == std::string("IKRORW") ) {
-                if (useAqua && (useKeyword || deck.getENKRVD().mask_[5])) {
-                    itab = 6;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).krorw_;
-                }
-            } else if (keyword == std::string("KRORG") || keyword == std::string("IKRORG") ) {
-                if (useVapour && (useKeyword || deck.getENKRVD().mask_[6])) {
-                    itab = 7;
-                    scaleparam.resize(number_of_cells);
-                    for (int i=0; i<number_of_cells; ++i)
-                        scaleparam[i] = funcForCell(i).krorg_;
-                }
-            } else {
-                OPM_THROW(std::runtime_error, " -- unknown keyword: '" << keyword << "'");
-            }
-            if (!useKeyword && itab > 0) {
-                table = deck.getENKRVD().table_;
-            }
-        }
-
-        if (scaleparam.empty()) {
-            return;
-        } else if (useKeyword) {
-            // Keyword values from deck
-            std::cout << "--- Scaling parameter '" << keyword << "' assigned." << std::endl;
-            const std::vector<double>& val = deck.getFloatingPointValue(keyword);
-            for (int c = 0; c < int(scaleparam.size()); ++c) {
-                const int deck_pos = (global_cell == NULL) ? c : global_cell[c];
-                scaleparam[c] = val[deck_pos];
-            }
-        } else {
-            std::cout << "--- Scaling parameter '" << keyword << "' assigned via ";
-            if (keyword[0] == 'S')
-                deck.getENPTVD().write(std::cout);
-            else
-                deck.getENKRVD().write(std::cout);
-            for (int cell = 0; cell < number_of_cells; ++cell) {
-                int jtab = cell_to_func_.empty() ? 0 : cell_to_func_[cell];
-                if (table[itab][jtab][0] != -1.0) {
-                    std::vector<double>& depth = table[0][jtab];
-                    std::vector<double>& val = table[itab][jtab];
-                    double zc = UgGridHelpers
-                        ::getCoordinate(UgGridHelpers::increment(begin_cell_centroid, cell,
-                                                                 dimensions),
-                                              dimensions-1);
-                    if (zc >= depth.front() && zc <= depth.back()) { //don't want extrap outside depth interval
-                        scaleparam[cell] = linearInterpolation(depth, val, zc);
-                    }
-                }
-            }
-        }
-    }
-
-    // Initialize saturation scaling parameter
-    template <class SatFuncSet>
-    template<class T>
-    void SaturationPropsFromDeck<SatFuncSet>::initEPSKey(Opm::DeckConstPtr newParserDeck,
+    void SaturationPropsFromDeck<SatFuncSet>::initEPSKey(Opm::DeckConstPtr deck,
                                                          int number_of_cells,
                                                          const int* global_cell,
                                                          const T& begin_cell_centroid,
@@ -1059,9 +601,9 @@ namespace Opm
         const bool useAqua = phase_usage_.phase_used[Aqua];
         const bool useLiquid = phase_usage_.phase_used[Liquid];
         const bool useVapour = phase_usage_.phase_used[Vapour];
-        bool useKeyword = newParserDeck->hasKeyword(keyword);
-        bool hasENPTVD = newParserDeck->hasKeyword("ENPTVD");
-        bool hasENKRVD = newParserDeck->hasKeyword("ENKRVD");
+        bool useKeyword = deck->hasKeyword(keyword);
+        bool hasENPTVD = deck->hasKeyword("ENPTVD");
+        bool hasENKRVD = deck->hasKeyword("ENKRVD");
         int itab = 0;
         std::vector<std::vector<double> > param_col;
         std::vector<std::vector<double> > depth_col;
@@ -1072,56 +614,56 @@ namespace Opm
         int phase_pos_vapour = phase_usage_.phase_pos[BlackoilPhases::Vapour];
         if ((keyword[0] == 'S' && (useKeyword || hasENPTVD)) || (keyword[1] == 'S' && useKeyword) ) {
             if (keyword == std::string("SWL") || keyword == std::string("ISWL") ) {
-                if (useAqua && (useKeyword || columnIsMasked_(newParserDeck, "ENPTVD", 0))) {
+                if (useAqua && (useKeyword || columnIsMasked_(deck, "ENPTVD", 0))) {
                     itab = 1;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).smin_[phase_pos_aqua];
                 }
             } else if (keyword == std::string("SWCR") || keyword == std::string("ISWCR") ) {
-                if (useAqua && (useKeyword || columnIsMasked_(newParserDeck, "ENPTVD", 1))) {
+                if (useAqua && (useKeyword || columnIsMasked_(deck, "ENPTVD", 1))) {
                     itab = 2;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).swcr_;
                 }
             } else if (keyword == std::string("SWU") || keyword == std::string("ISWU") ) {
-                if (useAqua && (useKeyword || columnIsMasked_(newParserDeck, "ENPTVD", 2))) {
+                if (useAqua && (useKeyword || columnIsMasked_(deck, "ENPTVD", 2))) {
                     itab = 3;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).smax_[phase_pos_aqua];
                 }
             } else if (keyword == std::string("SGL") || keyword == std::string("ISGL") ) {
-                if (useVapour && (useKeyword || columnIsMasked_(newParserDeck, "ENPTVD", 3))) {
+                if (useVapour && (useKeyword || columnIsMasked_(deck, "ENPTVD", 3))) {
                     itab = 4;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).smin_[phase_pos_vapour];
                 }
             } else if (keyword == std::string("SGCR") || keyword == std::string("ISGCR") ) {
-                if (useVapour && (useKeyword || columnIsMasked_(newParserDeck, "ENPTVD", 4))) {
+                if (useVapour && (useKeyword || columnIsMasked_(deck, "ENPTVD", 4))) {
                     itab = 5;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).sgcr_;
                 }
             } else if (keyword == std::string("SGU") || keyword == std::string("ISGU") ) {
-                if (useVapour && (useKeyword || columnIsMasked_(newParserDeck, "ENPTVD", 5))) {
+                if (useVapour && (useKeyword || columnIsMasked_(deck, "ENPTVD", 5))) {
                     itab = 6;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).smax_[phase_pos_vapour];
                 }
             } else if (keyword == std::string("SOWCR") || keyword == std::string("ISOWCR") ) {
-                if (useAqua && (useKeyword || columnIsMasked_(newParserDeck, "ENPTVD", 6))) {
+                if (useAqua && (useKeyword || columnIsMasked_(deck, "ENPTVD", 6))) {
                     itab = 7;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).sowcr_;
                 }
             } else if (keyword == std::string("SOGCR") || keyword == std::string("ISOGCR") ) {
-                if (useVapour && (useKeyword || columnIsMasked_(newParserDeck, "ENPTVD", 7))) {
+                if (useVapour && (useKeyword || columnIsMasked_(deck, "ENPTVD", 7))) {
                     itab = 8;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
@@ -1131,61 +673,61 @@ namespace Opm
                 OPM_THROW(std::runtime_error, " -- unknown keyword: '" << keyword << "'");
             }
             if (!useKeyword && itab > 0) {
-                int num_tables = newParserDeck->getKeyword("ENPTVD")->size();
+                int num_tables = deck->getKeyword("ENPTVD")->size();
                 param_col.resize(num_tables);
                 depth_col.resize(num_tables);
                 col_names.resize(9);
                 for (int table_num=0; table_num<num_tables; ++table_num) {
-                    Opm::SingleRecordTable enptvd(newParserDeck->getKeyword("ENPTVD"), col_names, table_num);
+                    Opm::SingleRecordTable enptvd(deck->getKeyword("ENPTVD"), col_names, table_num);
                     depth_col[table_num] = enptvd.getColumn(0); // depth
                     param_col[table_num] = enptvd.getColumn(itab); // itab=[1-8]: swl swcr swu sgl sgcr sgu sowcr sogcr
                 }
             }
         } else if ((keyword[0] == 'K' && (useKeyword || hasENKRVD)) || (keyword[1] == 'K' && useKeyword) ) {
             if (keyword == std::string("KRW") || keyword == std::string("IKRW") ) {
-                if (useAqua && (useKeyword || columnIsMasked_(newParserDeck, "ENKRVD", 0))) {
+                if (useAqua && (useKeyword || columnIsMasked_(deck, "ENKRVD", 0))) {
                     itab = 1;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).krwmax_;
                 }
             } else if (keyword == std::string("KRG") || keyword == std::string("IKRG") ) {
-                if (useVapour && (useKeyword || columnIsMasked_(newParserDeck, "ENKRVD", 1))) {
+                if (useVapour && (useKeyword || columnIsMasked_(deck, "ENKRVD", 1))) {
                     itab = 2;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).krgmax_;
                 }
             } else if (keyword == std::string("KRO") || keyword == std::string("IKRO") ) {
-                if (useLiquid && (useKeyword || columnIsMasked_(newParserDeck, "ENKRVD", 2))) {
+                if (useLiquid && (useKeyword || columnIsMasked_(deck, "ENKRVD", 2))) {
                     itab = 3;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).kromax_;
                 }
             } else if (keyword == std::string("KRWR") || keyword == std::string("IKRWR") ) {
-                if (useAqua && (useKeyword || columnIsMasked_(newParserDeck, "ENKRVD", 3))) {
+                if (useAqua && (useKeyword || columnIsMasked_(deck, "ENKRVD", 3))) {
                     itab = 4;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).krwr_;
                 }
             } else if (keyword == std::string("KRGR") || keyword == std::string("IKRGR") ) {
-                if (useVapour && (useKeyword || columnIsMasked_(newParserDeck, "ENKRVD", 4))) {
+                if (useVapour && (useKeyword || columnIsMasked_(deck, "ENKRVD", 4))) {
                     itab = 5;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).krgr_;
                 }
             } else if (keyword == std::string("KRORW") || keyword == std::string("IKRORW") ) {
-                if (useAqua && (useKeyword || columnIsMasked_(newParserDeck, "ENKRVD", 5))) {
+                if (useAqua && (useKeyword || columnIsMasked_(deck, "ENKRVD", 5))) {
                     itab = 6;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
                         scaleparam[i] = funcForCell(i).krorw_;
                 }
             } else if (keyword == std::string("KRORG") || keyword == std::string("IKRORG") ) {
-                if (useVapour && (useKeyword || columnIsMasked_(newParserDeck, "ENKRVD", 6))) {
+                if (useVapour && (useKeyword || columnIsMasked_(deck, "ENKRVD", 6))) {
                     itab = 7;
                     scaleparam.resize(number_of_cells);
                     for (int i=0; i<number_of_cells; ++i)
@@ -1195,12 +737,12 @@ namespace Opm
                 OPM_THROW(std::runtime_error, " -- unknown keyword: '" << keyword << "'");
             }
             if (!useKeyword && itab > 0) {
-                int num_tables = newParserDeck->getKeyword("ENKRVD")->size();
+                int num_tables = deck->getKeyword("ENKRVD")->size();
                 param_col.resize(num_tables);
                 depth_col.resize(num_tables);
                 col_names.resize(8);
                 for (int table_num=0; table_num<num_tables; ++table_num) {
-                    Opm::SingleRecordTable enkrvd(newParserDeck->getKeyword("ENKRVD"), col_names, table_num);
+                    Opm::SingleRecordTable enkrvd(deck->getKeyword("ENKRVD"), col_names, table_num);
                     depth_col[table_num] = enkrvd.getColumn(0); // depth
                     param_col[table_num] = enkrvd.getColumn(itab); // itab=[1-7]: krw krg kro krwr krgr krorw krorg
                 }
@@ -1213,7 +755,7 @@ namespace Opm
             // Keyword values from deck
             std::cout << "--- Scaling parameter '" << keyword << "' assigned." << std::endl;
             const int* gc = global_cell;
-            const std::vector<double>& val = newParserDeck->getKeyword(keyword)->getSIDoubleData();
+            const std::vector<double>& val = deck->getKeyword(keyword)->getSIDoubleData();
             for (int c = 0; c < int(scaleparam.size()); ++c) {
                 const int deck_pos = (gc == NULL) ? c : gc[c];
                 scaleparam[c] = val[deck_pos];
@@ -1221,9 +763,9 @@ namespace Opm
         } else {
             const int dim = dimensions;
             std::vector<int> endnum;
-            if ( newParserDeck->hasKeyword("ENDNUM")) {
+            if ( deck->hasKeyword("ENDNUM")) {
                 const std::vector<int>& e = 
-                    newParserDeck->getKeyword("ENDNUM")->getIntData();              
+                    deck->getKeyword("ENDNUM")->getIntData();              
                 endnum.resize(number_of_cells);                                   
                 const int* gc = global_cell;
                 for (int cell = 0; cell < number_of_cells; ++cell) {

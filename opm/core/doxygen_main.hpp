@@ -48,7 +48,7 @@ creation and destruction of an UnstructuredGrid. The method
 Opm::GridManager::c_grid() provides access to the underlying
 UnstructuredGrid structure. This class also provides an easy way
 to initialize a grid from an ECLIPSE-format input deck, via the
-constructor taking an Opm::EclipseGridParser.
+constructor taking an Opm::DeckConstPtr.
 
 
 <h3>Well handling</h3>
@@ -109,7 +109,7 @@ There are two simulator programs for two-phase immiscible flow in opm-core:
 <h3>Various utilities</h3>
 
 Utilities contained in opm-core include:
-- IO utilities (Opm::EclipseGridParser, binary I/O via the ERT library, vtk output)
+- IO utilities (binary output via the ERT library, vtk output)
 - Interpolation utilities (Opm::MonotCubicInterpolator, Opm::VelocityInterpolationECVI)
 - Support for SI and non-SI units (Opm::unit and Opm::prefix)
 - Low-order quadratures for general geometries (Opm::CellQuadrature, Opm::FaceQuadrature)

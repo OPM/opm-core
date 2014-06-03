@@ -51,40 +51,30 @@
 
 namespace Opm
 {
-
-EclipseGridInspector::EclipseGridInspector(const EclipseGridParser& oldParser)
-{
-    Opm::ParserConstPtr parser(new Opm::Parser());
-    newParserDeck_ = parser->parseFile(oldParser.deckFileName());
-
-    init_();
-}
-
-
-EclipseGridInspector::EclipseGridInspector(Opm::DeckConstPtr newParserDeck)
-    : newParserDeck_(newParserDeck)
+EclipseGridInspector::EclipseGridInspector(Opm::DeckConstPtr deck)
+    : deck_(deck)
 {
     init_();
 }
 
 void EclipseGridInspector::init_()
 {
-    if (!newParserDeck_->hasKeyword("COORD")) {
+    if (!deck_->hasKeyword("COORD")) {
         OPM_THROW(std::runtime_error, "Needed field \"COORD\" is missing in file");
     }
-    if (!newParserDeck_->hasKeyword("ZCORN")) {
+    if (!deck_->hasKeyword("ZCORN")) {
         OPM_THROW(std::runtime_error, "Needed field \"ZCORN\" is missing in file");
     }
 
-    if (newParserDeck_->hasKeyword("SPECGRID")) {
+    if (deck_->hasKeyword("SPECGRID")) {
         Opm::DeckRecordConstPtr specgridRecord =
-            newParserDeck_->getKeyword("SPECGRID")->getRecord(0);
+            deck_->getKeyword("SPECGRID")->getRecord(0);
         logical_gridsize_[0] = specgridRecord->getItem("NX")->getInt(0);
         logical_gridsize_[1] = specgridRecord->getItem("NY")->getInt(0);
         logical_gridsize_[2] = specgridRecord->getItem("NZ")->getInt(0);
-    } else if (newParserDeck_->hasKeyword("DIMENS")) {
+    } else if (deck_->hasKeyword("DIMENS")) {
         Opm::DeckRecordConstPtr dimensRecord =
-            newParserDeck_->getKeyword("DIMENS")->getRecord(0);
+            deck_->getKeyword("DIMENS")->getRecord(0);
         logical_gridsize_[0] = dimensRecord->getItem("NX")->getInt(0);
         logical_gridsize_[1] = dimensRecord->getItem("NY")->getInt(0);
         logical_gridsize_[2] = dimensRecord->getItem("NZ")->getInt(0);
@@ -107,13 +97,13 @@ std::pair<double,double> EclipseGridInspector::cellDips(int i, int j, int k) con
 {
     checkLogicalCoords(i, j, k);
     const std::vector<double>& pillc =
-        newParserDeck_->getKeyword("COORD")->getSIDoubleData();
+        deck_->getKeyword("COORD")->getSIDoubleData();
     int num_pillars = (logical_gridsize_[0] + 1)*(logical_gridsize_[1] + 1);
         if (6*num_pillars != int(pillc.size())) {
         throw std::runtime_error("Wrong size of COORD field.");
     }
     const std::vector<double>& z =
-        newParserDeck_->getKeyword("ZCORN")->getSIDoubleData();
+        deck_->getKeyword("ZCORN")->getSIDoubleData();
     int num_cells = logical_gridsize_[0]*logical_gridsize_[1]*logical_gridsize_[2];
     if (8*num_cells != int(z.size())) {
         throw std::runtime_error("Wrong size of ZCORN field");
@@ -217,13 +207,13 @@ double EclipseGridInspector::cellVolumeVerticalPillars(int i, int j, int k) cons
     // Checking parameters and obtaining values from parser.
     checkLogicalCoords(i, j, k);
     const std::vector<double>& pillc =
-        newParserDeck_->getKeyword("COORD")->getSIDoubleData();
+        deck_->getKeyword("COORD")->getSIDoubleData();
     int num_pillars = (logical_gridsize_[0] + 1)*(logical_gridsize_[1] + 1);
     if (6*num_pillars != int(pillc.size())) {
 	throw std::runtime_error("Wrong size of COORD field.");
     }
     const std::vector<double>& z =
-        newParserDeck_->getKeyword("ZCORN")->getSIDoubleData();
+        deck_->getKeyword("ZCORN")->getSIDoubleData();
     int num_cells = logical_gridsize_[0]*logical_gridsize_[1]*logical_gridsize_[2];
     if (8*num_cells != int(z.size())) {
 	throw std::runtime_error("Wrong size of ZCORN field");
@@ -281,12 +271,12 @@ void EclipseGridInspector::checkLogicalCoords(int i, int j, int k) const
 
 std::array<double, 6> EclipseGridInspector::getGridLimits() const
 {
-    if (! (newParserDeck_->hasKeyword("COORD") && newParserDeck_->hasKeyword("ZCORN") && newParserDeck_->hasKeyword("SPECGRID")) ) {
+    if (! (deck_->hasKeyword("COORD") && deck_->hasKeyword("ZCORN") && deck_->hasKeyword("SPECGRID")) ) {
         throw std::runtime_error("EclipseGridInspector: Grid does not have SPECGRID, COORD, and ZCORN, can't find dimensions.");
     }
 
-    std::vector<double> coord = newParserDeck_->getKeyword("COORD")->getSIDoubleData();
-    std::vector<double> zcorn = newParserDeck_->getKeyword("ZCORN")->getSIDoubleData();
+    std::vector<double> coord = deck_->getKeyword("COORD")->getSIDoubleData();
+    std::vector<double> zcorn = deck_->getKeyword("ZCORN")->getSIDoubleData();
 
     double xmin = +DBL_MAX;
     double xmax = -DBL_MAX;
@@ -335,7 +325,7 @@ std::array<int, 3> EclipseGridInspector::gridSize() const
 std::array<double, 8> EclipseGridInspector::cellZvals(int i, int j, int k) const
 {
     // Get the zcorn field.
-    const std::vector<double>& z = newParserDeck_->getKeyword("ZCORN")->getSIDoubleData();
+    const std::vector<double>& z = deck_->getKeyword("ZCORN")->getSIDoubleData();
     int num_cells = logical_gridsize_[0]*logical_gridsize_[1]*logical_gridsize_[2];
     if (8*num_cells != int(z.size())) {
 	throw std::runtime_error("Wrong size of ZCORN field");

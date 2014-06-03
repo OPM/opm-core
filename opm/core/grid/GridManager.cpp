@@ -20,10 +20,10 @@
 #include "config.h"
 
 #include <opm/core/grid/GridManager.hpp>
-#include <opm/core/io/eclipse/EclipseGridParser.hpp>
 #include <opm/core/grid.h>
 #include <opm/core/grid/cart_grid.h>
 #include <opm/core/grid/cornerpoint_grid.h>
+#include <opm/core/utility/ErrorMacros.hpp>
 
 #include <array>
 #include <algorithm>
@@ -32,30 +32,6 @@
 namespace Opm
 {
     /// Construct a 3d corner-point grid from a deck.
-    GridManager::GridManager(const Opm::EclipseGridParser& deck)
-    {
-        // We accept two different ways to specify the grid.
-        //    1. Corner point format.
-        //       Requires ZCORN, COORDS, DIMENS or SPECGRID, optionally
-        //       ACTNUM, optionally MAPAXES.
-        //       For this format, we will verify that DXV, DYV, DZV,
-        //       DEPTHZ and TOPS are not present.
-        //    2. Tensor grid format.
-        //       Requires DXV, DYV, DZV, optionally DEPTHZ or TOPS.
-        //       For this format, we will verify that ZCORN, COORDS
-        //       and ACTNUM are not present.
-        //       Note that for TOPS, we only allow a uniform vector of values.
-
-        if (deck.hasField("ZCORN") && deck.hasField("COORD")) {
-            initFromDeckCornerpoint(deck);
-        } else if (deck.hasField("DXV") && deck.hasField("DYV") && deck.hasField("DZV")) {
-            initFromDeckTensorgrid(deck);
-        } else {
-            OPM_THROW(std::runtime_error, "Could not initialize grid from deck. "
-                  "Need either ZCORN + COORD or DXV + DYV + DZV keywords.");
-        }
-    }
-
     GridManager::GridManager(Opm::EclipseGridConstPtr eclipseGrid) {
         struct grdecl g;
         std::vector<int> actnum;
@@ -84,8 +60,7 @@ namespace Opm
     }
 
 
-    /// Construct a 3d corner-point grid from a deck.
-    GridManager::GridManager(Opm::DeckConstPtr newParserDeck)
+    GridManager::GridManager(Opm::DeckConstPtr deck)
     {
         // We accept two different ways to specify the grid.
         //    1. Corner point format.
@@ -99,10 +74,10 @@ namespace Opm
         //       and ACTNUM are not present.
         //       Note that for TOPS, we only allow a uniform vector of values.
 
-        if (newParserDeck->hasKeyword("ZCORN") && newParserDeck->hasKeyword("COORD")) {
-            initFromDeckCornerpoint(newParserDeck);
-        } else if (newParserDeck->hasKeyword("DXV") && newParserDeck->hasKeyword("DYV") && newParserDeck->hasKeyword("DZV")) {
-            initFromDeckTensorgrid(newParserDeck);
+        if (deck->hasKeyword("ZCORN") && deck->hasKeyword("COORD")) {
+            initFromDeckCornerpoint(deck);
+        } else if (deck->hasKeyword("DXV") && deck->hasKeyword("DYV") && deck->hasKeyword("DZV")) {
+            initFromDeckTensorgrid(deck);
         } else {
             OPM_THROW(std::runtime_error, "Could not initialize grid from deck. "
                       "Need either ZCORN + COORD or DXV + DYV + DZV keywords.");
@@ -165,11 +140,6 @@ namespace Opm
         }
     }
 
-    void GridManager::saveEGRID(const std::string& filename , const Opm::EclipseGridParser& deck) {
-        deck.saveEGRID( filename , ug_->number_of_cells , ug_->global_cell );
-    }
-
-
     /// Destructor.
     GridManager::~GridManager()
     {
@@ -187,28 +157,13 @@ namespace Opm
         return ug_;
     }
 
-
     // Construct corner-point grid from deck.
-    void GridManager::initFromDeckCornerpoint(const Opm::EclipseGridParser& deck)
-    {
-        // Extract data from deck.
-        // Collect in input struct for preprocessing.
-        struct grdecl grdecl = deck.get_grdecl();
-
-        // Process grid.
-        ug_ = create_grid_cornerpoint(&grdecl, 0.0);
-        if (!ug_) {
-            OPM_THROW(std::runtime_error, "Failed to construct grid.");
-        }
-    }
-
-    // Construct corner-point grid from deck.
-    void GridManager::initFromDeckCornerpoint(Opm::DeckConstPtr newParserDeck)
+    void GridManager::initFromDeckCornerpoint(Opm::DeckConstPtr deck)
     {
         // Extract data from deck.
         // Collect in input struct for preprocessing.
         struct grdecl grdecl;
-        createGrdecl(newParserDeck, grdecl);
+        createGrdecl(deck, grdecl);
 
         // Process grid.
         ug_ = create_grid_cornerpoint(&grdecl, 0.0);
@@ -217,24 +172,24 @@ namespace Opm
         }
     }
 
-    void GridManager::createGrdecl(Opm::DeckConstPtr newParserDeck, struct grdecl &grdecl)
+    void GridManager::createGrdecl(Opm::DeckConstPtr deck, struct grdecl &grdecl)
     {
         // Extract data from deck.
-        const std::vector<double>& zcorn = newParserDeck->getKeyword("ZCORN")->getSIDoubleData();
-        const std::vector<double>& coord = newParserDeck->getKeyword("COORD")->getSIDoubleData();
+        const std::vector<double>& zcorn = deck->getKeyword("ZCORN")->getSIDoubleData();
+        const std::vector<double>& coord = deck->getKeyword("COORD")->getSIDoubleData();
         const int* actnum = NULL;
-        if (newParserDeck->hasKeyword("ACTNUM")) {
-            actnum = &(newParserDeck->getKeyword("ACTNUM")->getIntData()[0]);
+        if (deck->hasKeyword("ACTNUM")) {
+            actnum = &(deck->getKeyword("ACTNUM")->getIntData()[0]);
         }
 
         std::array<int, 3> dims;
-        if (newParserDeck->hasKeyword("DIMENS")) {
-            Opm::DeckKeywordConstPtr dimensKeyword = newParserDeck->getKeyword("DIMENS");
+        if (deck->hasKeyword("DIMENS")) {
+            Opm::DeckKeywordConstPtr dimensKeyword = deck->getKeyword("DIMENS");
             dims[0] = dimensKeyword->getRecord(0)->getItem(0)->getInt(0);
             dims[1] = dimensKeyword->getRecord(0)->getItem(1)->getInt(0);
             dims[2] = dimensKeyword->getRecord(0)->getItem(2)->getInt(0);
-        } else if (newParserDeck->hasKeyword("SPECGRID")) {
-            Opm::DeckKeywordConstPtr specgridKeyword = newParserDeck->getKeyword("SPECGRID");
+        } else if (deck->hasKeyword("SPECGRID")) {
+            Opm::DeckKeywordConstPtr specgridKeyword = deck->getKeyword("SPECGRID");
             dims[0] = specgridKeyword->getRecord(0)->getItem(0)->getInt(0);
             dims[1] = specgridKeyword->getRecord(0)->getItem(1)->getInt(0);
             dims[2] = specgridKeyword->getRecord(0)->getItem(2)->getInt(0);
@@ -251,8 +206,8 @@ namespace Opm
         grdecl.dims[1] = dims[1];
         grdecl.dims[2] = dims[2];
 
-        if (newParserDeck->hasKeyword("MAPAXES")) {
-            Opm::DeckKeywordConstPtr mapaxesKeyword = newParserDeck->getKeyword("MAPAXES");
+        if (deck->hasKeyword("MAPAXES")) {
+            Opm::DeckKeywordConstPtr mapaxesKeyword = deck->getKeyword("MAPAXES");
             Opm::DeckRecordConstPtr mapaxesRecord = mapaxesKeyword->getRecord(0);
 
             // memleak alert: here we need to make sure that C code
@@ -280,82 +235,17 @@ namespace Opm
     } // anonymous namespace
 
 
-    // Construct tensor grid from deck.
-    void GridManager::initFromDeckTensorgrid(const Opm::EclipseGridParser& deck)
-    {
-        // Extract logical cartesian size.
-        std::vector<int> dims;
-        if (deck.hasField("DIMENS")) {
-            dims = deck.getIntegerValue("DIMENS");
-        } else if (deck.hasField("SPECGRID")) {
-            dims = deck.getSPECGRID().dimensions;
-        } else {
-            OPM_THROW(std::runtime_error, "Deck must have either DIMENS or SPECGRID.");
-        }
-
-        // Extract coordinates (or offsets from top, in case of z).
-        const std::vector<double>& dxv = deck.getFloatingPointValue("DXV");
-        const std::vector<double>& dyv = deck.getFloatingPointValue("DYV");
-        const std::vector<double>& dzv = deck.getFloatingPointValue("DZV");
-        std::vector<double> x = coordsFromDeltas(dxv);
-        std::vector<double> y = coordsFromDeltas(dyv);
-        std::vector<double> z = coordsFromDeltas(dzv);
-
-        // Check that number of cells given are consistent with DIMENS/SPECGRID.
-        if (dims[0] != int(dxv.size())) {
-            OPM_THROW(std::runtime_error, "Number of DXV data points do not match DIMENS or SPECGRID.");
-        }
-        if (dims[1] != int(dyv.size())) {
-            OPM_THROW(std::runtime_error, "Number of DYV data points do not match DIMENS or SPECGRID.");
-        }
-        if (dims[2] != int(dzv.size())) {
-            OPM_THROW(std::runtime_error, "Number of DZV data points do not match DIMENS or SPECGRID.");
-        }
-
-        // Extract top corner depths, if available.
-        const double* top_depths = 0;
-        std::vector<double> top_depths_vec;
-        if (deck.hasField("DEPTHZ")) {
-            const std::vector<double>& depthz = deck.getFloatingPointValue("DEPTHZ");
-            if (depthz.size() != x.size()*y.size()) {
-                OPM_THROW(std::runtime_error, "Incorrect size of DEPTHZ: " << depthz.size());
-            }
-            top_depths = &depthz[0];
-        } else if (deck.hasField("TOPS")) {
-            // We only support constant values for TOPS.
-            // It is not 100% clear how we best can deal with
-            // varying TOPS (stair-stepping grid, or not).
-            const std::vector<double>& tops = deck.getFloatingPointValue("TOPS");
-            if (std::count(tops.begin(), tops.end(), tops[0]) != int(tops.size())) {
-                OPM_THROW(std::runtime_error, "We do not support nonuniform TOPS, please use ZCORN/COORDS instead.");
-            }
-            top_depths_vec.resize(x.size()*y.size(), tops[0]);
-            top_depths = &top_depths_vec[0];
-        } else {
-            OPM_THROW(std::runtime_error,
-                      "Could not find either TOPS or DEPTHZ keyword, "
-                      "one of them is required for initialization with DXV/DYV/DZV.");
-        }
-
-        // Construct grid.
-        ug_ = create_grid_tensor3d(dxv.size(), dyv.size(), dzv.size(),
-                                   &x[0], &y[0], &z[0], top_depths);
-        if (!ug_) {
-            OPM_THROW(std::runtime_error, "Failed to construct grid.");
-        }
-    }
-
-    void GridManager::initFromDeckTensorgrid(Opm::DeckConstPtr newParserDeck)
+    void GridManager::initFromDeckTensorgrid(Opm::DeckConstPtr deck)
     {
         // Extract logical cartesian size.
         std::array<int, 3> dims;
-        if (newParserDeck->hasKeyword("DIMENS")) {
-            Opm::DeckKeywordConstPtr dimensKeyword = newParserDeck->getKeyword("DIMENS");
+        if (deck->hasKeyword("DIMENS")) {
+            Opm::DeckKeywordConstPtr dimensKeyword = deck->getKeyword("DIMENS");
             dims[0] = dimensKeyword->getRecord(0)->getItem(0)->getInt(0);
             dims[1] = dimensKeyword->getRecord(0)->getItem(1)->getInt(0);
             dims[2] = dimensKeyword->getRecord(0)->getItem(2)->getInt(0);
-        } else if (newParserDeck->hasKeyword("SPECGRID")) {
-            Opm::DeckKeywordConstPtr specgridKeyword = newParserDeck->getKeyword("SPECGRID");
+        } else if (deck->hasKeyword("SPECGRID")) {
+            Opm::DeckKeywordConstPtr specgridKeyword = deck->getKeyword("SPECGRID");
             dims[0] = specgridKeyword->getRecord(0)->getItem(0)->getInt(0);
             dims[1] = specgridKeyword->getRecord(0)->getItem(1)->getInt(0);
             dims[2] = specgridKeyword->getRecord(0)->getItem(2)->getInt(0);
@@ -364,9 +254,9 @@ namespace Opm
         }
 
         // Extract coordinates (or offsets from top, in case of z).
-        const std::vector<double>& dxv = newParserDeck->getKeyword("DXV")->getSIDoubleData();
-        const std::vector<double>& dyv = newParserDeck->getKeyword("DYV")->getSIDoubleData();
-        const std::vector<double>& dzv = newParserDeck->getKeyword("DZV")->getSIDoubleData();
+        const std::vector<double>& dxv = deck->getKeyword("DXV")->getSIDoubleData();
+        const std::vector<double>& dyv = deck->getKeyword("DYV")->getSIDoubleData();
+        const std::vector<double>& dzv = deck->getKeyword("DZV")->getSIDoubleData();
         std::vector<double> x = coordsFromDeltas(dxv);
         std::vector<double> y = coordsFromDeltas(dyv);
         std::vector<double> z = coordsFromDeltas(dzv);
@@ -385,17 +275,17 @@ namespace Opm
         // Extract top corner depths, if available.
         const double* top_depths = 0;
         std::vector<double> top_depths_vec;
-        if (newParserDeck->hasKeyword("DEPTHZ")) {
-            const std::vector<double>& depthz = newParserDeck->getKeyword("DEPTHZ")->getSIDoubleData();
+        if (deck->hasKeyword("DEPTHZ")) {
+            const std::vector<double>& depthz = deck->getKeyword("DEPTHZ")->getSIDoubleData();
             if (depthz.size() != x.size()*y.size()) {
                 OPM_THROW(std::runtime_error, "Incorrect size of DEPTHZ: " << depthz.size());
             }
             top_depths = &depthz[0];
-        } else if (newParserDeck->hasKeyword("TOPS")) {
+        } else if (deck->hasKeyword("TOPS")) {
             // We only support constant values for TOPS.
             // It is not 100% clear how we best can deal with
             // varying TOPS (stair-stepping grid, or not).
-            const std::vector<double>& tops = newParserDeck->getKeyword("TOPS")->getSIDoubleData();
+            const std::vector<double>& tops = deck->getKeyword("TOPS")->getSIDoubleData();
             if (std::count(tops.begin(), tops.end(), tops[0]) != int(tops.size())) {
                 OPM_THROW(std::runtime_error, "We do not support nonuniform TOPS, please use ZCORN/COORDS instead.");
             }
