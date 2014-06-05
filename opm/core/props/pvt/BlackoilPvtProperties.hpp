@@ -28,6 +28,7 @@
 
 #include <string>
 #include <memory>
+#include <array>
 
 namespace Opm
 {
