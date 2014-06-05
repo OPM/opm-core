@@ -1069,12 +1069,6 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
                         deck_,
                         uses_);
 
-    if (deck_->hasKeyword("PERM")) {
-        auto data = getAllSiDoubles_(deck_->getKeyword("PERM"));
-        convertUnit_(data, toMilliDarcy);
-        fortio.writeKeyword ("PERM", data);
-    }
-
     if (deck_->hasKeyword("PERMX")) {
         auto data = getAllSiDoubles_(deck_->getKeyword("PERMX"));
         convertUnit_(data, toMilliDarcy);
