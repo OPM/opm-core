@@ -20,26 +20,30 @@
 #ifndef OPM_BLACKOILPVTPROPERTIES_HEADER_INCLUDED
 #define OPM_BLACKOILPVTPROPERTIES_HEADER_INCLUDED
 
-#include <opm/core/props/pvt/SinglePvtInterface.hpp>
+#include <opm/core/props/pvt/PvtInterface.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 
 #include <opm/parser/eclipse/Deck/Deck.hpp>
+#include <opm/parser/eclipse/Utility/PvtoTable.hpp>
 
 #include <string>
 #include <memory>
+#include <array>
 
 namespace Opm
 {
 
     /// Class collecting the pvt properties for all active phases.
-    /// For all the methods, the following apply: p and z
-    /// are expected to be of size n and n*num_phases, respectively.
-    /// Output arrays shall be of size n*num_phases, and must be valid
-    /// before calling the method.
+    /// For all the methods, the following apply:
+    /// - p and z are expected to be of size n and n*num_phases, respectively.
+    /// - pvtTableIdx specifies the PVT table to be used for each data
+    ///               point and is thus expected to be an array of size n
+    /// - Output arrays shall be of size n*num_phases, and must be valid
+    ///   before calling the method.
     /// NOTE: The difference between this interface and the one defined
-    /// by SinglePvtInterface is that this collects all phases' properties,
+    /// by PvtInterface is that this collects all phases' properties,
     /// and therefore the output arrays are of size n*num_phases as opposed
-    /// to size n in SinglePvtInterface.
+    /// to size n in PvtInterface.
     class BlackoilPvtProperties : public BlackoilPhases
     {
     public:
@@ -47,8 +51,10 @@ namespace Opm
         BlackoilPvtProperties();
 
         /// Initialize from deck.
+        ///
         /// \param deck     An input deck from the opm-parser module.
-        void init(Opm::DeckConstPtr deck, int samples);
+        void init(Opm::DeckConstPtr deck,
+                  int samples);
 
         /// \return   Object describing the active phases.
         PhaseUsage phaseUsage() const;
@@ -68,22 +74,25 @@ namespace Opm
 
         /// Densities of stock components at surface conditions.
         /// \return  Array of size numPhases().
-        const double* surfaceDensities() const;
+        const double* surfaceDensities(int regionIdx = 0) const;
 
         /// Viscosity as a function of p and z.
         void mu(const int n,
+                const int *pvtTableIdx,
                 const double* p,
                 const double* z,
                 double* output_mu) const;
 
         /// Formation volume factor as a function of p and z.
         void B(const int n,
+               const int *pvtTableIdx,
                const double* p,
                const double* z,
                double* output_B) const;
 
         /// Formation volume factor and p-derivative as functions of p and z.
         void dBdp(const int n,
+                  const int *pvtTableIdx,
                   const double* p,
                   const double* z,
                   double* output_B,
@@ -91,12 +100,14 @@ namespace Opm
 
         /// Solution factor as a function of p and z.
         void R(const int n,
+               const int *pvtTableIdx,
                const double* p,
                const double* z,
                double* output_R) const;
 
         /// Solution factor and p-derivative as functions of p and z.
         void dRdp(const int n,
+                  const int *pvtTableIdx,
                   const double* p,
                   const double* z,
                   double* output_R,
@@ -109,11 +120,11 @@ namespace Opm
 
         PhaseUsage phase_usage_;
 
-        int region_number_;
+        // The PVT properties. We need to store one object per PVT
+        // region per active fluid phase.
+        std::vector<std::shared_ptr<PvtInterface> > props_;
+        std::vector<std::array<double, MaxNumPhases> > densities_;
 
-        std::vector<std::shared_ptr<SinglePvtInterface> > props_;
-
-        double densities_[MaxNumPhases];
         mutable std::vector<double> data1_;
         mutable std::vector<double> data2_;
     };

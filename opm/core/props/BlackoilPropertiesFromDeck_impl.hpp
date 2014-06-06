@@ -23,8 +23,14 @@ namespace Opm
                                                            const parameter::ParameterGroup& param,
                                                            bool init_rock)
     {
-        init(deck, number_of_cells, global_cell, cart_dims, begin_cell_centroids, dimension,
-             param, init_rock);
+        init(deck,
+             number_of_cells,
+             global_cell,
+             cart_dims,
+             begin_cell_centroids,
+             dimension,
+             param,
+             init_rock);
     }
 
     template<class CentroidIterator>
@@ -36,6 +42,10 @@ namespace Opm
                                                  int dimension,
                                                  bool init_rock)
     {
+        // retrieve the cell specific PVT table index from the deck
+        // and using the grid...
+        extractPvtTableIndex(cellPvtRegionIdx_, deck, number_of_cells, global_cell);
+
         if (init_rock){
            rock_.init(deck, number_of_cells, global_cell, cart_dims);
         }
@@ -62,6 +72,9 @@ namespace Opm
                                                  const parameter::ParameterGroup& param,
                                                  bool init_rock)
     {
+        // retrieve the cell specific PVT table index from the deck
+        // and using the grid...
+        extractPvtTableIndex(cellPvtRegionIdx_, deck, number_of_cells, global_cell);
 
         if(init_rock){
             rock_.init(deck, number_of_cells, global_cell, cart_dims);

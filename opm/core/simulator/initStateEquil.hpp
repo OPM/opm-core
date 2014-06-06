@@ -279,7 +279,7 @@ namespace Opm
                             if (rec[i].live_oil_table_index > 0) {
                                 if (deck->hasKeyword("RSVD") &&
                                     size_t(rec[i].live_oil_table_index) <= deck->getKeyword("RSVD")->size()) { 
-                                    Opm::SingleRecordTable rsvd(deck->getKeyword("RSVD"),std::vector<std::string>{"vd", "rs"},rec[i].live_oil_table_index-1);                                
+                                    Opm::SingleRecordTable rsvd(deck->getKeyword("RSVD"),std::vector<std::string>{"vd", "rs"},rec[i].live_oil_table_index-1);
                                     std::vector<double> vd(rsvd.getColumn("vd"));
                                     std::vector<double> rs(rsvd.getColumn("rs"));
                                     rs_func_.push_back(std::make_shared<Miscibility::RsVD>(props, cell, vd, rs));
@@ -369,8 +369,6 @@ namespace Opm
                                  const UnstructuredGrid&                 G    ,
                                  const double grav)
                 {
-                    typedef Miscibility::NoMixing NoMix;
-
                     for (typename RMap::RegionId
                              r = 0, nr = reg.numRegions();
                          r < nr; ++r)

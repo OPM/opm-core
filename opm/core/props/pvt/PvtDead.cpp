@@ -19,7 +19,7 @@
 
 
 #include "config.h"
-#include <opm/core/props/pvt/SinglePvtDead.hpp>
+#include <opm/core/props/pvt/PvtDead.hpp>
 #include <algorithm>
 
 // Extra includes for debug dumping of tables.
@@ -34,72 +34,80 @@ namespace Opm
     // Member functions
     //-------------------------------------------------------------------------
     /// Constructor
-    SinglePvtDead::SinglePvtDead(const Opm::PvdoTable& pvdoTable)
+    void PvtDead::initFromOil(Opm::DeckKeywordConstPtr pvdoKeyword)
     {
-        // Copy data
-        const std::vector<double>& press = pvdoTable.getPressureColumn();
-        const std::vector<double>& b = pvdoTable.getFormationFactorColumn();
-        const std::vector<double>& visc = pvdoTable.getViscosityColumn();
+        int numRegions = Opm::PvdoTable::numTables(pvdoKeyword);
 
-        const int sz = b.size();
-        std::vector<double> bInv(sz);
-        for (int i = 0; i < sz; ++i) {
-            bInv[i] = 1.0 / b[i];
+        // resize the attributes of the object
+        b_.resize(numRegions);
+        viscosity_.resize(numRegions);
+
+        for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
+            Opm::PvdoTable pvdoTable(pvdoKeyword, regionIdx);
+            // Copy data
+            const std::vector<double>& press = pvdoTable.getPressureColumn();
+            const std::vector<double>& b = pvdoTable.getFormationFactorColumn();
+            const std::vector<double>& visc = pvdoTable.getViscosityColumn();
+
+            const int sz = b.size();
+            std::vector<double> bInv(sz);
+            for (int i = 0; i < sz; ++i) {
+                bInv[i] = 1.0 / b[i];
+            }
+            b_[regionIdx] = NonuniformTableLinear<double>(press, bInv);
+            viscosity_[regionIdx] = NonuniformTableLinear<double>(press, visc);
         }
-        b_ = NonuniformTableLinear<double>(press, bInv);
-        viscosity_ = NonuniformTableLinear<double>(press, visc);
-
-        // Dumping the created tables.
-//         static int count = 0;
-//         std::ofstream os((std::string("dump-") + boost::lexical_cast<std::string>(count++)).c_str());
-//         os.precision(15);
-//         os << "1/B\n\n" << one_over_B_
-//            << "\n\nvisc\n\n" << viscosity_ << std::endl;
     }
 
-    /// Constructor
-    SinglePvtDead::SinglePvtDead(const Opm::PvdgTable& pvdgTable)
+
+    void PvtDead::initFromGas(Opm::DeckKeywordConstPtr pvdgKeyword)
     {
-        // Copy data
-        const std::vector<double>& press = pvdgTable.getPressureColumn();
-        const std::vector<double>& b = pvdgTable.getFormationFactorColumn();
-        const std::vector<double>& visc = pvdgTable.getViscosityColumn();
+        int numRegions = Opm::PvdgTable::numTables(pvdgKeyword);
 
-        const int sz = b.size();
-        std::vector<double> bInv(sz);
-        for (int i = 0; i < sz; ++i) {
-            bInv[i] = 1.0 / b[i];
+        // resize the attributes of the object
+        b_.resize(numRegions);
+        viscosity_.resize(numRegions);
+
+        for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
+            Opm::PvdgTable pvdgTable(pvdgKeyword, regionIdx);
+
+            // Copy data
+            const std::vector<double>& press = pvdgTable.getPressureColumn();
+            const std::vector<double>& b = pvdgTable.getFormationFactorColumn();
+            const std::vector<double>& visc = pvdgTable.getViscosityColumn();
+
+            const int sz = b.size();
+            std::vector<double> bInv(sz);
+            for (int i = 0; i < sz; ++i) {
+                bInv[i] = 1.0 / b[i];
+            }
+            b_[regionIdx] = NonuniformTableLinear<double>(press, bInv);
+            viscosity_[regionIdx] = NonuniformTableLinear<double>(press, visc);
         }
-        b_ = NonuniformTableLinear<double>(press, bInv);
-        viscosity_ = NonuniformTableLinear<double>(press, visc);
-
-        // Dumping the created tables.
-//         static int count = 0;
-//         std::ofstream os((std::string("dump-") + boost::lexical_cast<std::string>(count++)).c_str());
-//         os.precision(15);
-//         os << "1/B\n\n" << one_over_B_
-//            << "\n\nvisc\n\n" << viscosity_ << std::endl;
     }
 
     // Destructor
-    SinglePvtDead::~SinglePvtDead()
+    PvtDead::~PvtDead()
     {
     }
 
 
 
-    void SinglePvtDead::mu(const int n,
+    void PvtDead::mu(const int n,
+                     const int* pvtTableIdx,
                            const double* p,
                            const double* /*z*/,
                            double* output_mu) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            output_mu[i] = viscosity_(p[i]);
+            int regionIdx = getTableIndex_(pvtTableIdx, i);
+            output_mu[i] = viscosity_[regionIdx](p[i]);
         }
     }
 
-    void SinglePvtDead::mu(const int n,
+    void PvtDead::mu(const int n,
+                     const int* pvtTableIdx,
                                const double* p,
                                const double* /*r*/,
                                double* output_mu,
@@ -108,14 +116,16 @@ namespace Opm
         {
     // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
-                output_mu[i] = viscosity_(p[i]);
-                output_dmudp[i] = viscosity_.derivative(p[i]);
+                int regionIdx = getTableIndex_(pvtTableIdx, i);
+                output_mu[i] = viscosity_[regionIdx](p[i]);
+                output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
             }
             std::fill(output_dmudr, output_dmudr + n, 0.0);
 
         }
 
-    void SinglePvtDead::mu(const int n,
+    void PvtDead::mu(const int n,
+                     const int* pvtTableIdx,
                                const double* p,
                                const double* /*r*/,
                                const PhasePresence* /*cond*/,
@@ -125,14 +135,16 @@ namespace Opm
         {
     // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
-                output_mu[i] = viscosity_(p[i]);
-                output_dmudp[i] = viscosity_.derivative(p[i]);
+                int regionIdx = getTableIndex_(pvtTableIdx, i);
+                output_mu[i] = viscosity_[regionIdx](p[i]);
+                output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
             }
             std::fill(output_dmudr, output_dmudr + n, 0.0);
 
         }
 
-    void SinglePvtDead::B(const int n,
+    void PvtDead::B(const int n,
+                    const int* pvtTableIdx,
                           const double* p,
                           const double* /*z*/,
                           double* output_B) const
@@ -140,25 +152,29 @@ namespace Opm
 // #pragma omp parallel for
         // B = 1/b
         for (int i = 0; i < n; ++i) {
-            output_B[i] = 1.0/b_(p[i]);
+            int regionIdx = getTableIndex_(pvtTableIdx, i);
+            output_B[i] = 1.0/b_[regionIdx](p[i]);
         }
     }
 
-    void SinglePvtDead::dBdp(const int n,
+    void PvtDead::dBdp(const int n,
+                       const int* pvtTableIdx,
                              const double* p,
                              const double* /*z*/,
                              double* output_B,
                              double* output_dBdp) const
     {
-        B(n, p, 0, output_B);
+        B(n, pvtTableIdx, p, 0, output_B);
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
+            int regionIdx = getTableIndex_(pvtTableIdx, i);
             double Bg = output_B[i];
-            output_dBdp[i] = -Bg*Bg*b_.derivative(p[i]);
+            output_dBdp[i] = -Bg*Bg*b_[regionIdx].derivative(p[i]);
         }
     }
 
-    void SinglePvtDead::b(const int n,
+    void PvtDead::b(const int n,
+                    const int* pvtTableIdx,
                               const double* p,
                               const double* /*r*/,
                               double* output_b,
@@ -168,15 +184,18 @@ namespace Opm
         {
     // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
-                output_b[i] = b_(p[i]);
-                output_dbdp[i] = b_.derivative(p[i]);
+                int regionIdx = getTableIndex_(pvtTableIdx, i);
+
+                output_b[i] = b_[regionIdx](p[i]);
+                output_dbdp[i] = b_[regionIdx].derivative(p[i]);
 
             }
             std::fill(output_dbdr, output_dbdr + n, 0.0);
 
         }
 
-    void SinglePvtDead::b(const int n,
+    void PvtDead::b(const int n,
+                    const int* pvtTableIdx,
                               const double* p,
                               const double* /*r*/,
                               const PhasePresence* /*cond*/,
@@ -187,15 +206,18 @@ namespace Opm
         {
     // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
-                output_b[i] = b_(p[i]);
-                output_dbdp[i] = b_.derivative(p[i]);
+                int regionIdx = getTableIndex_(pvtTableIdx, i);
+
+                output_b[i] = b_[regionIdx](p[i]);
+                output_dbdp[i] = b_[regionIdx].derivative(p[i]);
 
             }
             std::fill(output_dbdr, output_dbdr + n, 0.0);
 
         }
 
-    void SinglePvtDead::rsSat(const int n,
+    void PvtDead::rsSat(const int n,
+                        const int* pvtTableIdx,
                              const double* /*p*/,
                              double* output_rsSat,
                              double* output_drsSatdp) const
@@ -204,7 +226,8 @@ namespace Opm
         std::fill(output_drsSatdp, output_drsSatdp + n, 0.0);
     }
 
-    void SinglePvtDead::rvSat(const int n,
+    void PvtDead::rvSat(const int n,
+                        const int* pvtTableIdx,
                              const double* /*p*/,
                              double* output_rvSat,
                              double* output_drvSatdp) const
@@ -213,7 +236,8 @@ namespace Opm
         std::fill(output_drvSatdp, output_drvSatdp + n, 0.0);
     }
 
-    void SinglePvtDead::R(const int n,
+    void PvtDead::R(const int n,
+                    const int* pvtTableIdx,
                           const double* /*p*/,
                           const double* /*z*/,
                           double* output_R) const
@@ -221,7 +245,8 @@ namespace Opm
         std::fill(output_R, output_R + n, 0.0);
     }
 
-    void SinglePvtDead::dRdp(const int n,
+    void PvtDead::dRdp(const int n,
+                       const int* pvtTableIdx,
                              const double* /*p*/,
                              const double* /*z*/,
                              double* output_R,
