@@ -55,6 +55,7 @@ namespace Opm
             double krSlopeCrit;
             double scaleKr(double s, double kr, double krsr_tab) const;
             double scaleKrDeriv(double s, double krDeriv) const;   // Returns scaleKr'(kr(scaleSat(s)))*kr'((scaleSat(s))
+            double pcFactor; // Scaling factor for capillary pressure.
             void printMe(std::ostream & out);
         };
 
@@ -99,6 +100,8 @@ namespace Opm
         double sogcr_;  // Critical oil-in-gas-and-connate-water saturation.
         double krorw_;  // Oil relperm at critical water saturation.
         double krorg_;  // Oil relperm at critical gas saturation.
+        double pcwmax_; // Max oil-water capillary pressure.
+        double pcgmax_; // Max gas-oil capillary pressure.
 
     protected:
         PhaseUsage phase_usage; // A copy of the outer class' phase_usage_.
@@ -182,6 +185,7 @@ namespace Opm
                    break;
                 }
             }
+            pcwmax_ = pcow.front();
         }
         if (phase_usage.phase_used[Vapour]) {
             Opm::SgofTable sgof(deck->getKeyword("SGOF"), table_num);
@@ -234,6 +238,7 @@ namespace Opm
                    break;
                 }
             }
+            pcgmax_ = pcog.back();
 
         }
 
