@@ -85,9 +85,9 @@ namespace Opm
                 Opm::DeckRecordConstPtr pvcdoRecord = pvcdoKeyword->getRecord(regionIdx);
 
                 ref_press_[regionIdx] = pvcdoRecord->getItem("P_REF")->getSIDouble(0);
-                ref_B_[regionIdx]     = pvcdoRecord->getItem("BO_REF")->getSIDouble(0);
-                comp_[regionIdx]      = pvcdoRecord->getItem("C_OIL_REF")->getSIDouble(0);
-                viscosity_[regionIdx] = pvcdoRecord->getItem("MUO_REF")->getSIDouble(0);
+                ref_B_[regionIdx]     = pvcdoRecord->getItem("OIL_VOL_FACTOR")->getSIDouble(0);
+                comp_[regionIdx]      = pvcdoRecord->getItem("OIL_COMPRESSIBILITY")->getSIDouble(0);
+                viscosity_[regionIdx] = pvcdoRecord->getItem("OIL_VISCOSITY")->getSIDouble(0);
                 visc_comp_[regionIdx] = pvcdoRecord->getItem("OIL_VISCOSIBILITY")->getSIDouble(0);
             }
         }
