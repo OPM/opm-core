@@ -121,7 +121,7 @@ try
         // Grid init
         grid.reset(new GridManager(deck));
         // Rock and fluid init
-        props.reset(new IncompPropertiesFromDeck(deck, *grid->c_grid()));
+        props.reset(new IncompPropertiesFromDeck(deck, eclipseState, *grid->c_grid()));
         // Wells init.
         wells.reset(new Opm::WellsManager(eclipseState , 0 , *grid->c_grid(), props->permeability()));
         // Gravity.

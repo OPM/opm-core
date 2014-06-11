@@ -2,6 +2,7 @@ namespace Opm
 {
     template<class CentroidIterator>
     BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(Opm::DeckConstPtr deck,
+                                                           Opm::EclipseStateConstPtr eclState,
                                                            int number_of_cells,
                                                            const int* global_cell,
                                                            const int* cart_dims,
@@ -9,12 +10,13 @@ namespace Opm
                                                            int dimension,
                                                            bool init_rock)
     {
-        init(deck, number_of_cells, global_cell, cart_dims, begin_cell_centroids, dimension,
+        init(deck, eclState, number_of_cells, global_cell, cart_dims, begin_cell_centroids, dimension,
              init_rock);
     }
 
     template<class CentroidIterator>
     BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(Opm::DeckConstPtr deck,
+                                                           Opm::EclipseStateConstPtr eclState,
                                                            int number_of_cells,
                                                            const int* global_cell,
                                                            const int* cart_dims,
@@ -24,6 +26,7 @@ namespace Opm
                                                            bool init_rock)
     {
         init(deck,
+             eclState,
              number_of_cells,
              global_cell,
              cart_dims,
@@ -35,6 +38,7 @@ namespace Opm
 
     template<class CentroidIterator>
     inline void BlackoilPropertiesFromDeck::init(Opm::DeckConstPtr deck,
+                                                 Opm::EclipseStateConstPtr eclState,
                                                  int number_of_cells,
                                                  const int* global_cell,
                                                  const int* cart_dims,
@@ -47,7 +51,7 @@ namespace Opm
         extractPvtTableIndex(cellPvtRegionIdx_, deck, number_of_cells, global_cell);
 
         if (init_rock){
-           rock_.init(deck, number_of_cells, global_cell, cart_dims);
+           rock_.init(eclState, number_of_cells, global_cell, cart_dims);
         }
         pvt_.init(deck, /*numSamples=*/0);
         SaturationPropsFromDeck<SatFuncSimpleNonuniform>* ptr
@@ -64,6 +68,7 @@ namespace Opm
 
     template<class CentroidIterator>
     inline void BlackoilPropertiesFromDeck::init(Opm::DeckConstPtr deck,
+                                                 Opm::EclipseStateConstPtr eclState,
                                                  int number_of_cells,
                                                  const int* global_cell,
                                                  const int* cart_dims,
@@ -77,7 +82,7 @@ namespace Opm
         extractPvtTableIndex(cellPvtRegionIdx_, deck, number_of_cells, global_cell);
 
         if(init_rock){
-            rock_.init(deck, number_of_cells, global_cell, cart_dims);
+            rock_.init(eclState, number_of_cells, global_cell, cart_dims);
         }
 
         const int pvt_samples = param.getDefault("pvt_tab_size", 200);
