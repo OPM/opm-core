@@ -59,6 +59,8 @@ namespace Opm
             basis_func_.reset(new DGBasisBoundedTotalDegree(grid_, dg_degree));
         }
 
+        tracers_ensure_unity_ = param.getDefault("tracers_ensure_unity", true);
+
         use_cvi_ = param.getDefault("use_cvi", use_cvi_);
         use_limiter_ = param.getDefault("use_limiter", use_limiter_);
         if (use_limiter_) {
@@ -273,12 +275,65 @@ namespace Opm
         // right-hand-sides, first for tof and then (optionally) for
         // all tracers.
 
-        const int dim = grid_.dimensions;
         const int num_basis = basis_func_->numBasisFunc();
         ++num_singlesolves_;
 
         std::fill(rhs_.begin(), rhs_.end(), 0.0);
         std::fill(jac_.begin(), jac_.end(), 0.0);
+
+        // Add cell contributions to res_ and jac_.
+        cellContribs(cell);
+
+        // Add face contributions to res_ and jac_.
+        faceContribs(cell);
+
+        // Solve linear equation.
+        solveLinearSystem(cell);
+
+        // The solution ends up in rhs_, so we must copy it.
+        std::copy(rhs_.begin(), rhs_.begin() + num_basis, tof_coeff_ + num_basis*cell);
+        if (num_tracers_ && tracerhead_by_cell_[cell] == NoTracerHead) {
+            std::copy(rhs_.begin() + num_basis, rhs_.end(), tracer_coeff_ + num_tracers_*num_basis*cell);
+        }
+
+        // Apply limiter.
+        if (basis_func_->degree() > 0 && use_limiter_ && limiter_usage_ == DuringComputations) {
+            applyLimiter(cell, tof_coeff_);
+            if (num_tracers_ && tracerhead_by_cell_[cell] == NoTracerHead) {
+                for (int tr = 0; tr < num_tracers_; ++tr) {
+                    applyTracerLimiter(cell, tracer_coeff_ + cell*num_tracers_*num_basis + tr*num_basis);
+                }
+            }
+        }
+
+        // Ensure that tracer averages sum to 1.
+        if (num_tracers_ && tracers_ensure_unity_ && tracerhead_by_cell_[cell] == NoTracerHead) {
+            std::vector<double> tr_aver(num_tracers_);
+            double tr_sum = 0.0;
+            for (int tr = 0; tr < num_tracers_; ++tr) {
+                const double* local_basis = tracer_coeff_ + cell*num_tracers_*num_basis + tr*num_basis;
+                tr_aver[tr] = basis_func_->functionAverage(local_basis);
+                tr_sum += tr_aver[tr];
+            }
+            if (tr_sum == 0.0) {
+                std::cout << "Tracer sum is zero in cell " << cell << std::endl;
+            } else {
+                for (int tr = 0; tr < num_tracers_; ++tr) {
+                    const double increment = tr_aver[tr]/tr_sum - tr_aver[tr];
+                    double* local_basis = tracer_coeff_ + cell*num_tracers_*num_basis + tr*num_basis;
+                    basis_func_->addConstant(increment, local_basis);
+                }
+            }
+        }
+    }
+
+
+
+
+    void TofDiscGalReorder::cellContribs(const int cell)
+    {
+        const int num_basis = basis_func_->numBasisFunc();
+        const int dim = grid_.dimensions;
 
         // Compute cell residual contribution.
         {
@@ -296,7 +351,70 @@ namespace Opm
             }
         }
 
-        // Compute upstream residual contribution.
+        // Compute cell jacobian contribution. We use Fortran ordering
+        // for jac_, i.e. rows cycling fastest.
+        {
+            // Even with ECVI velocity interpolation, degree of precision 1
+            // is sufficient for optimal convergence order for DG1 when we
+            // use linear (total degree 1) basis functions.
+            // With bi(tri)-linear basis functions, it still seems sufficient
+            // for convergence order 2, but the solution looks much better and
+            // has significantly lower error with degree of precision 2.
+            // For now, we err on the side of caution, and use 2*degree, even
+            // though this is wasteful for the pure linear basis functions.
+            // const int deg_needed = 2*basis_func_->degree() - 1;
+            const int deg_needed = 2*basis_func_->degree();
+            CellQuadrature quad(grid_, cell, deg_needed);
+            for (int quad_pt = 0; quad_pt < quad.numQuadPts(); ++quad_pt) {
+                // b_i (v \cdot \grad b_j)
+                quad.quadPtCoord(quad_pt, &coord_[0]);
+                basis_func_->eval(cell, &coord_[0], &basis_[0]);
+                basis_func_->evalGrad(cell, &coord_[0], &grad_basis_[0]);
+                velocity_interpolation_->interpolate(cell, &coord_[0], &velocity_[0]);
+                const double w = quad.quadPtWeight(quad_pt);
+                for (int j = 0; j < num_basis; ++j) {
+                    for (int i = 0; i < num_basis; ++i) {
+                        for (int dd = 0; dd < dim; ++dd) {
+                            jac_[j*num_basis + i] -= w * basis_[j] * grad_basis_[dim*i + dd] * velocity_[dd];
+                        }
+                    }
+                }
+            }
+        }
+
+        // Compute downstream jacobian contribution from sink terms.
+        // Contribution from inflow sources would be
+        // similar to the contribution from upstream faces, but
+        // it is zero since we let all external inflow be associated
+        // with a zero tof.
+        if (source_[cell] < 0.0) {
+            // A sink.
+            const double flux = -source_[cell]; // Sign convention for flux: outflux > 0.
+            const double flux_density = flux / grid_.cell_volumes[cell];
+            // Do quadrature over the cell to compute
+            // \int_{K} b_i flux b_j dx
+            CellQuadrature quad(grid_, cell, 2*basis_func_->degree());
+            for (int quad_pt = 0; quad_pt < quad.numQuadPts(); ++quad_pt) {
+                quad.quadPtCoord(quad_pt, &coord_[0]);
+                basis_func_->eval(cell, &coord_[0], &basis_[0]);
+                const double w = quad.quadPtWeight(quad_pt);
+                for (int j = 0; j < num_basis; ++j) {
+                    for (int i = 0; i < num_basis; ++i) {
+                        jac_[j*num_basis + i] += w * basis_[i] * flux_density * basis_[j];
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
+    void TofDiscGalReorder::faceContribs(const int cell)
+    {
+        const int num_basis = basis_func_->numBasisFunc();
+
+        // Compute upstream residual contribution from faces.
         for (int hface = grid_.cell_facepos[cell]; hface < grid_.cell_facepos[cell+1]; ++hface) {
             const int face = grid_.cell_faces[hface];
             double flux = 0.0;
@@ -352,37 +470,6 @@ namespace Opm
             }
         }
 
-        // Compute cell jacobian contribution. We use Fortran ordering
-        // for jac_, i.e. rows cycling fastest.
-        {
-            // Even with ECVI velocity interpolation, degree of precision 1
-            // is sufficient for optimal convergence order for DG1 when we
-            // use linear (total degree 1) basis functions.
-            // With bi(tri)-linear basis functions, it still seems sufficient
-            // for convergence order 2, but the solution looks much better and
-            // has significantly lower error with degree of precision 2.
-            // For now, we err on the side of caution, and use 2*degree, even
-            // though this is wasteful for the pure linear basis functions.
-            // const int deg_needed = 2*basis_func_->degree() - 1;
-            const int deg_needed = 2*basis_func_->degree();
-            CellQuadrature quad(grid_, cell, deg_needed);
-            for (int quad_pt = 0; quad_pt < quad.numQuadPts(); ++quad_pt) {
-                // b_i (v \cdot \grad b_j)
-                quad.quadPtCoord(quad_pt, &coord_[0]);
-                basis_func_->eval(cell, &coord_[0], &basis_[0]);
-                basis_func_->evalGrad(cell, &coord_[0], &grad_basis_[0]);
-                velocity_interpolation_->interpolate(cell, &coord_[0], &velocity_[0]);
-                const double w = quad.quadPtWeight(quad_pt);
-                for (int j = 0; j < num_basis; ++j) {
-                    for (int i = 0; i < num_basis; ++i) {
-                        for (int dd = 0; dd < dim; ++dd) {
-                            jac_[j*num_basis + i] -= w * basis_[j] * grad_basis_[dim*i + dd] * velocity_[dd];
-                        }
-                    }
-                }
-            }
-        }
-
         // Compute downstream jacobian contribution from faces.
         for (int hface = grid_.cell_facepos[cell]; hface < grid_.cell_facepos[cell+1]; ++hface) {
             const int face = grid_.cell_faces[hface];
@@ -412,33 +499,17 @@ namespace Opm
                 }
             }
         }
+    }
 
-        // Compute downstream jacobian contribution from sink terms.
-        // Contribution from inflow sources would be
-        // similar to the contribution from upstream faces, but
-        // it is zero since we let all external inflow be associated
-        // with a zero tof.
-        if (source_[cell] < 0.0) {
-            // A sink.
-            const double flux = -source_[cell]; // Sign convention for flux: outflux > 0.
-            const double flux_density = flux / grid_.cell_volumes[cell];
-            // Do quadrature over the cell to compute
-            // \int_{K} b_i flux b_j dx
-            CellQuadrature quad(grid_, cell, 2*basis_func_->degree());
-            for (int quad_pt = 0; quad_pt < quad.numQuadPts(); ++quad_pt) {
-                quad.quadPtCoord(quad_pt, &coord_[0]);
-                basis_func_->eval(cell, &coord_[0], &basis_[0]);
-                const double w = quad.quadPtWeight(quad_pt);
-                for (int j = 0; j < num_basis; ++j) {
-                    for (int i = 0; i < num_basis; ++i) {
-                        jac_[j*num_basis + i] += w * basis_[i] * flux_density * basis_[j];
-                    }
-                }
-            }
-        }
 
-        // Solve linear equation.
-        MAT_SIZE_T n = num_basis;
+
+    // This function assumes that jac_ and rhs_ contain the
+    // linear system to be solved. They are stored in orig_jac_
+    // and orig_rhs_, then the system is solved via LAPACK,
+    // overwriting the input data (jac_ and rhs_).
+    void TofDiscGalReorder::solveLinearSystem(const int cell)
+    {
+        MAT_SIZE_T n = basis_func_->numBasisFunc();
         int num_tracer_to_compute = num_tracers_;
         if (num_tracers_) {
             if (tracerhead_by_cell_[cell] != NoTracerHead) {
@@ -446,9 +517,9 @@ namespace Opm
             }
         }
         MAT_SIZE_T nrhs = 1 + num_tracer_to_compute;
-        MAT_SIZE_T lda = num_basis;
-        std::vector<MAT_SIZE_T> piv(num_basis);
-        MAT_SIZE_T ldb = num_basis;
+        MAT_SIZE_T lda = n;
+        std::vector<MAT_SIZE_T> piv(n);
+        MAT_SIZE_T ldb = n;
         MAT_SIZE_T info = 0;
         orig_jac_ = jac_;
         orig_rhs_ = rhs_;
@@ -468,65 +539,6 @@ namespace Opm
                 std::cerr << "    " << orig_rhs_[row] << '\n';
             }
             OPM_THROW(std::runtime_error, "Lapack error: " << info << " encountered in cell " << cell);
-        }
-
-        // The solution ends up in rhs_, so we must copy it.
-        std::copy(rhs_.begin(), rhs_.begin() + num_basis, tof_coeff_ + num_basis*cell);
-        if (num_tracers_ && tracerhead_by_cell_[cell] == NoTracerHead) {
-            std::copy(rhs_.begin() + num_basis, rhs_.end(), tracer_coeff_ + num_tracers_*num_basis*cell);
-        }
-
-        // Apply limiter.
-        if (basis_func_->degree() > 0 && use_limiter_ && limiter_usage_ == DuringComputations) {
-#ifdef EXTRA_VERBOSE
-            std::cout << "Cell: " << cell << "   ";
-            std::cout << "v = ";
-            for (int dd = 0; dd < dim; ++dd) {
-                std::cout << velocity_[dd] << ' ';
-            }
-            std::cout << "     grad tau = ";
-            for (int dd = 0; dd < dim; ++dd) {
-                std::cout << tof_coeff_[num_basis*cell + dd + 1] << ' ';
-            }
-            const double prod = std::inner_product(velocity_.begin(), velocity_.end(),
-                                                   tof_coeff_ + num_basis*cell + 1, 0.0);
-            const double vv = std::inner_product(velocity_.begin(), velocity_.end(),
-                                                 velocity_.begin(), 0.0);
-            const double gg = std::inner_product(tof_coeff_ + num_basis*cell + 1,
-                                                 tof_coeff_ + num_basis*cell + num_basis,
-                                                 tof_coeff_ + num_basis*cell + 1, 0.0);
-            std::cout << "     prod = " << std::inner_product(velocity_.begin(), velocity_.end(),
-                                                              tof_coeff_ + num_basis*cell + 1, 0.0);
-            std::cout << "     normalized = " << prod/std::sqrt(vv*gg);
-            std::cout << "     angle = " << std::acos(prod/std::sqrt(vv*gg))*360.0/(2.0*M_PI);
-            std::cout << std::endl;
-#endif
-            applyLimiter(cell, tof_coeff_);
-            if (num_tracers_ && tracerhead_by_cell_[cell] == NoTracerHead) {
-                for (int tr = 0; tr < num_tracers_; ++tr) {
-                    applyTracerLimiter(cell, tracer_coeff_ + cell*num_tracers_*num_basis + tr*num_basis);
-                }
-            }
-        }
-
-        // Ensure that tracer averages sum to 1.
-        if (num_tracers_ && tracerhead_by_cell_[cell] == NoTracerHead) {
-            std::vector<double> tr_aver(num_tracers_);
-            double tr_sum = 0.0;
-            for (int tr = 0; tr < num_tracers_; ++tr) {
-                const double* local_basis = tracer_coeff_ + cell*num_tracers_*num_basis + tr*num_basis;
-                tr_aver[tr] = basis_func_->functionAverage(local_basis);
-                tr_sum += tr_aver[tr];
-            }
-            if (tr_sum == 0.0) {
-                std::cout << "Tracer sum is zero in cell " << cell << std::endl;
-            } else {
-                for (int tr = 0; tr < num_tracers_; ++tr) {
-                    const double increment = tr_aver[tr]/tr_sum - tr_aver[tr];
-                    double* local_basis = tracer_coeff_ + cell*num_tracers_*num_basis + tr*num_basis;
-                    basis_func_->addConstant(increment, local_basis);
-                }
-            }
         }
     }
 

@@ -121,6 +121,10 @@ namespace Opm
         virtual void solveSingleCell(const int cell);
         virtual void solveMultiCell(const int num_cells, const int* cells);
 
+        void cellContribs(const int cell);
+        void faceContribs(const int cell);
+        void solveLinearSystem(const int cell);
+
     private:
         // Disable copying and assignment.
         TofDiscGalReorder(const TofDiscGalReorder&);
@@ -146,6 +150,7 @@ namespace Opm
         int num_tracers_;
         enum { NoTracerHead = -1 };
         std::vector<int> tracerhead_by_cell_;
+        bool tracers_ensure_unity_;
         // Used by solveSingleCell().
         std::vector<double> rhs_;   // single-cell right-hand-sides
         std::vector<double> jac_;   // single-cell jacobian

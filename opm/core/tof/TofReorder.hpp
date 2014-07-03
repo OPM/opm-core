@@ -80,6 +80,7 @@ namespace Opm
                             std::vector<double>& tracer);
 
     private:
+        void executeSolve();
         virtual void solveSingleCell(const int cell);
         void solveSingleCellMultidimUpwind(const int cell);
         void assembleSingleCell(const int cell,
@@ -90,6 +91,8 @@ namespace Opm
 
         void multidimUpwindTerms(const int face, const int upwind_cell,
                                  double& face_term, double& cell_term_factor) const;
+        void localMultidimUpwindTerms(const int face, const int upwind_cell, const int node_pos,
+                                      double& face_term, double& cell_term_factor) const;
 
     private:
         const UnstructuredGrid& grid_;
@@ -97,8 +100,7 @@ namespace Opm
         const double* porevolume_;  // one volume per cell
         const double* source_;      // one volumetric source term per cell
         double* tof_;
-        double* tracer_;
-        int num_tracers_;
+        bool compute_tracer_;
         enum { NoTracerHead = -1 };
         std::vector<int> tracerhead_by_cell_;
         // For solveMultiCell():
@@ -109,7 +111,7 @@ namespace Opm
         // For multidim upwinding:
         bool use_multidim_upwind_;
         std::vector<double> face_tof_;       // For multidim upwind face tofs.
-        mutable std::vector<int> adj_faces_; // For multidim upwind logic.
+        std::vector<double> face_part_tof_;  // For multidim upwind face tofs.
     };
 
 } // namespace Opm
