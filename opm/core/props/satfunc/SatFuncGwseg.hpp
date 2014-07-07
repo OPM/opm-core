@@ -553,12 +553,12 @@ namespace Opm
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
             double _sw = epst->wat.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
-            pc[pos] = this->pcow_(_sw);
+            pc[pos] = epst->wat.pcFactor*this->pcow_(_sw);
         }
         if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
             double _sg = epst->gas.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
-            pc[pos] = this->pcog_(_sg);
+            pc[pos] = epst->gas.pcFactor*this->pcog_(_sg);
         }
     }
 
@@ -602,16 +602,16 @@ namespace Opm
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
             double _sw = epst->wat.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
-            pc[pos] = this->pcow_(s[pos]);
+            pc[pos] = epst->wat.pcFactor*this->pcow_(s[pos]);
             double _dsdsw = epst->wat.scaleSatDerivPc(s[pos], this->smin_[pos], this->smax_[pos]);
-            dpcds[np*pos + pos] = _dsdsw*this->pcow_.derivative(_sw);
+            dpcds[np*pos + pos] = epst->wat.pcFactor*_dsdsw*this->pcow_.derivative(_sw);
         }
         if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
             double _sg = epst->gas.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
-            pc[pos] = this->pcog_(_sg);
+            pc[pos] = epst->gas.pcFactor*this->pcog_(_sg);
             double _dsdsg = epst->gas.scaleSatDerivPc(s[pos], this->smin_[pos], this->smax_[pos]);
-            dpcds[np*pos + pos] = _dsdsg*this->pcog_.derivative(_sg);
+            dpcds[np*pos + pos] = epst->gas.pcFactor*_dsdsg*this->pcog_.derivative(_sg);
         }
     }
 
