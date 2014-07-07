@@ -219,9 +219,9 @@ namespace Opm
                 for (int i = 0; i < n; ++i) {
                     int tableIdx = getTableIndex_(pvtTableIdx, i);
 
-                    output_b[i] = miscible_oil(tableIdx, p[i], r[i], 1, 0);
-                    output_dbdp[i] = miscible_oil(tableIdx, p[i], r[i], 1, 1);
-                    output_dbdr[i] = miscible_oil(tableIdx, p[i], r[i], 1, 2);
+                    output_b[i] = miscible_oil(p[i], r[i], tableIdx, 1, 0);
+                    output_dbdp[i] = miscible_oil(p[i], r[i], tableIdx, 1, 1);
+                    output_dbdr[i] = miscible_oil(p[i], r[i], tableIdx, 1, 2);
 
                 }
     }
