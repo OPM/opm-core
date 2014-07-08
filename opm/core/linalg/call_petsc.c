@@ -96,12 +96,15 @@ to_petsc_vec(const double *x, Vec v)
     PetscInt size;
     int i;
 
-    if (v == PETSC_NULL)
-        printf("PETSc CopySolution: invalid PETSc vector.\n");
+    if (v == PETSC_NULL) {
+        PetscPrintf(PETSC_COMM_WORLD,"PETSc CopySolution: invalid PETSc vector.\n");
+        CHKERRQ(code);
+    }
     code = VecGetLocalSize(v, &size); CHKERRQ(code);
     code = VecGetArray(v, &vec); CHKERRQ(code);
-    for (i = 0; i < size; ++i)
+    for (i = 0; i < size; ++i) {
         vec[i] = x[i];
+    }
     code = VecRestoreArray(v, &vec); CHKERRQ(code);
 
     return 0;
@@ -114,12 +117,15 @@ from_petsc_vec(double *x, Vec v)
     PetscInt size;
     int i;
     
-    if (v == PETSC_NULL)
-        printf("PETSc CopySolution: invalid PETSc vector.\n");
+    if (v == PETSC_NULL) {
+        PetscPrintf(PETSC_COMM_WORLD,"PETSc CopySolution: invalid PETSc vector.\n");
+        CHKERRQ(code);
+    }
     code = VecGetLocalSize(v, &size); CHKERRQ(code);
     code = VecGetArray(v, &vec); CHKERRQ(code);
-    for (i = 0; i < size; ++i)
+    for (i = 0; i < size; ++i) {
         x[i] = vec[i];
+    }
     code = VecRestoreArray(v, &vec); CHKERRQ(code);
 
     return 0;
@@ -130,10 +136,13 @@ to_petsc_mat(const int size, const int nonzeros, const int* ia, const int* ja, c
 {
     for (int i = 0; i < size; ++i) {
         int nrows = ia[i+1] - ia[i];
-        if (nrows == 0)
+        if (nrows == 0) {
             continue;
-        for (int j = ia[i]; j < ia[i+1]; ++j)
-            code = MatSetValues(A,1,&i,1,&ja[j],&sa[j],INSERT_VALUES);CHKERRQ(code);
+        }
+        for (int j = ia[i]; j < ia[i+1]; ++j) {
+            code = MatSetValues(A,1,&i,1,&ja[j],&sa[j],INSERT_VALUES);
+            CHKERRQ(code);
+        }
     } 
     code = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(code);
     code = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(code);
@@ -159,8 +168,10 @@ solve_system(OEM_DATA* t, KSP_OPT* opts)
     code = KSPGetConvergedReason(t->ksp, &reason); CHKERRQ(code);
     code = KSPGetIterationNumber(t->ksp, &its); CHKERRQ(code);
     code = KSPGetResidualNorm(t->ksp, &residual); CHKERRQ(code);
-    if (opts->view_ksp)
-        code = KSPView(t->ksp,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(code);
+    if (opts->view_ksp) {
+        code = KSPView(t->ksp,PETSC_VIEWER_STDOUT_WORLD);
+        CHKERRQ(code);
+    }
 
     code = PetscPrintf(PETSC_COMM_WORLD,"KSP Iterations %D, Final Residual %G\n",its,residual);CHKERRQ(code);
 
@@ -170,9 +181,9 @@ solve_system(OEM_DATA* t, KSP_OPT* opts)
 static int
 destory(OEM_DATA* t, KSP_OPT* opts)
 {
-    if(t == NULL && opts == NULL)
+    if(t == NULL && opts == NULL) {
        return 0;
-
+    }
     if(t->u != PETSC_NULL) {
         code = VecDestroy(&t->u);
         CHKERRQ(code); 
