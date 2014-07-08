@@ -49,7 +49,9 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/linalg/LinearSolverInterface.cpp
 	opm/core/linalg/LinearSolverIstl.cpp
 	opm/core/linalg/LinearSolverUmfpack.cpp
+	opm/core/linalg/LinearSolverPetsc.cpp
 	opm/core/linalg/call_umfpack.c
+	opm/core/linalg/call_petsc.c
 	opm/core/linalg/sparse_sys.c
 	opm/core/pressure/CompressibleTpfa.cpp
 	opm/core/pressure/FlowBCManager.cpp
@@ -274,8 +276,10 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/linalg/LinearSolverInterface.hpp
 	opm/core/linalg/LinearSolverIstl.hpp
 	opm/core/linalg/LinearSolverUmfpack.hpp
+	opm/core/linalg/LinearSolverPetsc.hpp
 	opm/core/linalg/blas_lapack.h
 	opm/core/linalg/call_umfpack.h
+	opm/core/linalg/call_petsc.h
 	opm/core/linalg/sparse_sys.h
 	opm/core/version.h
 	opm/core/wells.h
