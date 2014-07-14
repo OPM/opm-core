@@ -36,7 +36,7 @@ namespace Opm {
 
 // forward declarations
 namespace EclipseWriterDetails {
-class EclipseSummary;
+class Summary;
 }
 
 class SimulatorState;
@@ -105,7 +105,7 @@ private:
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck
-    std::shared_ptr <EclipseWriterDetails::EclipseSummary> summary_;
+    std::shared_ptr <EclipseWriterDetails::Summary> summary_;
 
     void init(const parameter::ParameterGroup& params);
 };
