@@ -168,67 +168,6 @@ void extractFromStripedData(std::vector<double> &data,
     data.resize(tmpIdx);
 }
 
-// enclosure of the current grid in a Cartesian space
-int getCartesianSize_(const int* cartdims) {
-    const int nx = cartdims[0];
-    const int ny = cartdims[1];
-    const int nz = cartdims[2];
-    return nx * ny * nz;
-}
-
-void getActiveCells_(int numCells,
-                     const int* cartdims,
-                     const int* compressedToCartesianCellIdx,
-                     std::vector <int>& actnum)
-{
-    // we must fill the Cartesian grid with flags
-    const int size = getCartesianSize_(cartdims);
-
-    // if we don't have a compressedToCartesianCellIdx field, then assume that all
-    // grid cells is active
-    if (!compressedToCartesianCellIdx) {
-        if (numCells != size) {
-            OPM_THROW (std::runtime_error,
-                       "No ACTNUM map but grid size != Cartesian size");
-        }
-        actnum.assign (size, 1);
-    }
-    else {
-        // start out with entire map being inactive
-        actnum.assign (size, 0);
-
-        // activate those cells that are actually there
-        for (int i = 0; i < numCells; ++i) {
-            actnum[compressedToCartesianCellIdx[i]] = 1;
-        }
-    }
-}
-
-/// Get cartesian size of the grid from the parser of the input file
-std::vector <int> cartesianSizeFromDeck(Opm::DeckConstPtr deck)
-{
-    std::vector<int> cartSize(/* n = */ 3);
-    // The Cartesians sizes are explicitly given
-    if (deck->hasKeyword("SPECGRID")) {
-        SpecgridWrapper specgrid(deck->getKeyword("SPECGRID"));
-        cartSize = specgrid.numBlocksVector();
-    }
-    // The Cartesians sizes are implicitly given by number of deltas
-    else if (deck->hasKeyword("DXV")) {
-        assert(deck->hasKeyword("DYV"));
-        assert(deck->hasKeyword("DZV"));
-        cartSize[0] = deck->getKeyword("DXV")->getRawDoubleData().size();
-        cartSize[1] = deck->getKeyword("DYV")->getRawDoubleData().size();
-        cartSize[2] = deck->getKeyword("DZV")->getRawDoubleData().size();
-    }
-    else {
-        OPM_THROW(std::runtime_error,
-                  "Only decks featureing either the SPECGRID or the D[XYZ]V keywords "
-                  "are currently supported");
-    }
-    return cartSize;
-}
-
 /// Convert OPM phase usage to ERT bitmask
 int ertPhaseMask(const PhaseUsage uses)
 {
@@ -366,8 +305,10 @@ public:
     void writeHeader(const SimulatorTimer& timer,
                      int reportStepIdx,
                      Opm::DeckConstPtr deck,
-                     const int numCells,
-                     const int *cartesianSize,
+                     int numCells,
+                     int nx,
+                     int ny,
+                     int nz,
                      const int *compressedToCartesianCellIdx,
                      const PhaseUsage uses)
     {
@@ -376,7 +317,7 @@ public:
                                    timer.currentPosixTime(),
                                    Opm::unit::convert::to(timer.simulationTimeElapsed(),
                                                           Opm::unit::day),
-                                   cartesianSize[0], cartesianSize[1], cartesianSize[2],
+                                   nx, ny, nz,
                                    numCells,
                                    ertPhaseMask(uses));
     }
@@ -424,22 +365,24 @@ class Summary : private boost::noncopyable
 {
 public:
     Summary(const std::string& outputDir,
-                   const std::string& baseName,
-                   const SimulatorTimer& timer,
-                   Opm::DeckConstPtr deck)
+            const std::string& baseName,
+            const SimulatorTimer& timer,
+            Opm::DeckConstPtr deck,
+            int nx,
+            int ny,
+            int nz)
     {
         boost::filesystem::path casePath(outputDir);
         casePath /= boost::to_upper_copy(baseName);
 
-        const std::vector <int> cartSize = cartesianSizeFromDeck(deck);
         ertHandle_ = ecl_sum_alloc_writer(casePath.string().c_str(),
                                           false, /* formatted   */
                                           true,  /* unified     */
                                           ":",    /* join string */
                                           timer.simulationTimeElapsed(),
-                                          cartSize[0],
-                                          cartSize[1],
-                                          cartSize[2]);
+                                          nx,
+                                          ny,
+                                          nz);
     }
 
     ~Summary()
@@ -505,12 +448,15 @@ public:
     /// Create a grid based on the keywords available in input file
     Grid(Opm::DeckConstPtr deck,
          int numCells,
-         const int* cartesianSize,
          const int* compressedToCartesianCellIdx)
     {
         auto runspecSection = std::make_shared<RUNSPECSection>(deck);
         auto gridSection = std::make_shared<GRIDSection>(deck);
         EclipseGrid eGrid(runspecSection, gridSection);
+
+        numX_ = eGrid.getNX();
+        numY_ = eGrid.getNY();
+        numZ_ = eGrid.getNZ();
 
         std::vector<double> mapaxesData;
         std::vector<double> zcornData;
@@ -527,9 +473,9 @@ public:
         Keyword<float> coordKeyword("COORD", coordData);
         Keyword<int> actnumKeyword("ACTNUM", actnumData);
 
-        ertHandle_ = ecl_grid_alloc_GRDECL_kw(eGrid.getNX(),
-                                              eGrid.getNY(),
-                                              eGrid.getNZ(),
+        ertHandle_ = ecl_grid_alloc_GRDECL_kw(numX_,
+                                              numY_,
+                                              numZ_,
                                               zcornKeyword.ertHandle(),
                                               coordKeyword.ertHandle(),
                                               actnumKeyword.ertHandle(),
@@ -539,6 +485,14 @@ public:
     ~Grid()
     { ecl_grid_free(ertHandle_); }
 
+    int numX() const
+    { return numX_; }
+
+    int numY() const
+    { return numY_; }
+
+    int numZ() const
+    { return numZ_; }
 
     /**
      * Save the grid in an .EGRID file.
@@ -559,6 +513,9 @@ public:
 
 private:
     ecl_grid_type *ertHandle_;
+    int numX_;
+    int numY_;
+    int numZ_;
 };
 
 /**
@@ -591,7 +548,6 @@ public:
     { fortio_fclose(ertHandle_); }
 
     void writeHeader(int numCells,
-                     const int* cartesianSize,
                      const int* compressedToCartesianCellIdx,
                      const SimulatorTimer& timer,
                      Opm::DeckConstPtr deck,
@@ -600,7 +556,7 @@ public:
         auto dataField = getAllSiDoubles(deck->getKeyword(PORO_KW));
         restrictToActiveCells(dataField, numCells, compressedToCartesianCellIdx);
 
-        Grid eclGrid(deck, numCells, cartesianSize, compressedToCartesianCellIdx);
+        Grid eclGrid(deck, numCells, compressedToCartesianCellIdx);
 
         Keyword<float> poro_kw(PORO_KW, dataField);
         ecl_init_file_fwrite_header(ertHandle(),
@@ -932,13 +888,11 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
     /* Grid files */
     EclipseWriterDetails::Grid eclGrid(deck_,
                                        numCells_,
-                                       cartesianSize_,
                                        compressedToCartesianCellIdx_);
     eclGrid.write(outputDir_, baseName_, /*stepIdx=*/0);
 
     EclipseWriterDetails::Init fortio(outputDir_, baseName_, /*stepIdx=*/0);
     fortio.writeHeader(numCells_,
-                       cartesianSize_,
                        compressedToCartesianCellIdx_,
                        timer,
                        deck_,
@@ -962,7 +916,13 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
 
     /* Create summary object (could not do it at construction time,
        since it requires knowledge of the start time). */
-    summary_.reset(new EclipseWriterDetails::Summary(outputDir_, baseName_, timer, deck_));
+    summary_.reset(new EclipseWriterDetails::Summary(outputDir_,
+                                                     baseName_,
+                                                     timer,
+                                                     deck_,
+                                                     eclGrid.numX(),
+                                                     eclGrid.numY(),
+                                                     eclGrid.numZ()));
     summary_->addAllWells(deck_, phaseUsage_);
 }
 
@@ -987,7 +947,9 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
                               reportStepIdx_,
                               deck_,
                               numCells_,
-                              cartesianSize_,
+                              cartesianSize_[0],
+                              cartesianSize_[1],
+                              cartesianSize_[2],
                               compressedToCartesianCellIdx_,
                               phaseUsage_);
     EclipseWriterDetails::Solution sol(restartHandle);
