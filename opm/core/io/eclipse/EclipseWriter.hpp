@@ -60,19 +60,9 @@ public:
      */
     EclipseWriter(const parameter::ParameterGroup& params,
                   Opm::DeckConstPtr deck,
-                  std::shared_ptr <const UnstructuredGrid> grid);
-
-    /*!
-     * \brief Sets the common attributes required to write eclipse
-     *        binary files using ERT.
-     */
-    EclipseWriter(const parameter::ParameterGroup& params,
-                  Opm::DeckConstPtr deck,
                   int number_of_cells, const int* global_cell, const int* cart_dims,
                   int dimension);
 
-
-                 
     /**
      * We need a destructor in the compilation unit to avoid the
      * EclipseSummary being a complete type here.
@@ -104,7 +94,6 @@ public:
 
 private:
     Opm::DeckConstPtr deck_;
-    std::shared_ptr <const UnstructuredGrid> grid_;
     int number_of_cells_;
     int dimensions_;
     const int* cart_dims_;

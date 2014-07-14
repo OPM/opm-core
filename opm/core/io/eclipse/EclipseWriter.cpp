@@ -23,9 +23,7 @@
 #include "EclipseWriter.hpp"
 
 #include <opm/core/props/BlackoilPhases.hpp>
-#include <opm/core/grid/GridManager.hpp>
-#include <opm/core/grid.h>
-#include <opm/core/grid/cpgpreprocess/preprocess.h>
+#include <opm/parser/eclipse/EclipseState/Grid/EclipseGrid.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/simulator/SimulatorState.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
@@ -512,44 +510,32 @@ struct EclipseWriterGrid : public EclipseHandle <ecl_grid_type> {
                              const int* cart_dims,
                              const int* global_cell)
     {
-        if (deck->hasKeyword("DXV")) {
-            // make sure that the DYV and DZV keywords are present if the
-            // DXV keyword is used in the deck...
-            assert(deck->hasKeyword("DYV"));
-            assert(deck->hasKeyword("DZV"));
+        auto runspecSection = std::make_shared<RUNSPECSection>(deck);
+        auto gridSection = std::make_shared<GRIDSection>(deck);
+        EclipseGrid eGrid(runspecSection, gridSection);
 
-            const auto& dxv = deck->getKeyword("DXV")->getSIDoubleData();
-            const auto& dyv = deck->getKeyword("DYV")->getSIDoubleData();
-            const auto& dzv = deck->getKeyword("DZV")->getSIDoubleData();
+        std::vector<double> mapaxesData;
+        std::vector<double> zcornData;
+        std::vector<double> coordData;
+        std::vector<int> actnumData;
 
-            return EclipseWriterGrid (dxv, dyv, dzv);
-        }
-        else if (deck->hasKeyword("ZCORN")) {
-            struct grdecl g;
-            GridManager::createGrdecl(deck, g);
+        eGrid.exportMAPAXES(mapaxesData);
+        eGrid.exportZCORN(zcornData);
+        eGrid.exportCOORD(coordData);
+        eGrid.exportACTNUM(actnumData);
 
-            auto coordData = getAllSiDoubles_(deck->getKeyword(COORD_KW));
-            auto zcornData = getAllSiDoubles_(deck->getKeyword(ZCORN_KW));
-            EclipseKeyword<float> coord_kw (COORD_KW, coordData);
-            EclipseKeyword<float> zcorn_kw (ZCORN_KW, zcornData);
+        EclipseKeyword<float> mapaxesKeyword("MAPAXES", mapaxesData);
+        EclipseKeyword<float> zcornKeyword("ZCORN", zcornData);
+        EclipseKeyword<float> coordKeyword("COORD", coordData);
+        EclipseKeyword<int> actnumKeyword("ACTNUM", actnumData);
 
-            // get the actually active cells, after processing
-            std::vector <int> actnum;
-            getActiveCells_(number_of_cells, cart_dims, global_cell, actnum);
-            EclipseKeyword<int> actnum_kw (ACTNUM_KW, actnum);
-
-            EclipseKeyword<float> mapaxes_kw (MAPAXES_KW);
-            if (g.mapaxes) {
-                auto mapaxesData = getAllSiDoubles_(deck->getKeyword(MAPAXES_KW));
-                mapaxes_kw = std::move (EclipseKeyword<float> (MAPAXES_KW, mapaxesData));
-            }
-
-            return EclipseWriterGrid (cart_dims, zcorn_kw, coord_kw, actnum_kw, mapaxes_kw);
-        }
-        else {
-            OPM_THROW(std::runtime_error,
-                  "Can't create an ERT grid (no supported keywords found in deck)");
-        }
+        return EclipseWriterGrid(eGrid.getNX(),
+                                 eGrid.getNY(),
+                                 eGrid.getNZ(),
+                                 zcornKeyword,
+                                 coordKeyword,
+                                 actnumKeyword,
+                                 mapaxesKeyword);
     }
 
     /**
@@ -577,34 +563,18 @@ struct EclipseWriterGrid : public EclipseHandle <ecl_grid_type> {
     EclipseWriterGrid& operator= (const EclipseWriterGrid&) = delete;
 
 private:
-    // each of these cases could have been their respective subclass,
-    // but there is not any polymorphism on each of these grid types
-    // once we have the handle
-
-    // setup smart pointer for Cartesian grid
-    EclipseWriterGrid (const std::vector<double>& dxv,
-                 const std::vector<double>& dyv,
-                 const std::vector<double>& dzv)
-        : EclipseHandle <ecl_grid_type> (
-              ecl_grid_alloc_dxv_dyv_dzv (dxv.size (),
-                                          dyv.size (),
-                                          dzv.size (),
-                                          &dxv[0],
-                                          &dyv[0],
-                                          &dzv[0],
-                                          NULL),
-              ecl_grid_free) { }
-
     // setup smart pointer for cornerpoint grid
-    EclipseWriterGrid (const int dims[],
-                 const EclipseKeyword<float>& zcorn,
-                 const EclipseKeyword<float>& coord,
-                 const EclipseKeyword<int>& actnum,
-                 const EclipseKeyword<float>& mapaxes)
+    EclipseWriterGrid (int nx,
+                       int ny,
+                       int nz,
+                       const EclipseKeyword<float>& zcorn,
+                       const EclipseKeyword<float>& coord,
+                       const EclipseKeyword<int>& actnum,
+                       const EclipseKeyword<float>& mapaxes)
         : EclipseHandle <ecl_grid_type> (
-              ecl_grid_alloc_GRDECL_kw(dims[0],
-                                       dims[1],
-                                       dims[2],
+              ecl_grid_alloc_GRDECL_kw(nx,
+                                       ny,
+                                       nz,
                                        zcorn,
                                        coord,
                                        actnum,
