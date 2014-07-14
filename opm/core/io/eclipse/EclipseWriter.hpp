@@ -28,7 +28,8 @@
 
 #include <string>
 #include <vector>
-#include <memory>  // std::unique_ptr
+#include <array>
+#include <memory>
 
 struct UnstructuredGrid;
 
@@ -99,7 +100,7 @@ public:
 private:
     Opm::DeckConstPtr deck_;
     int numCells_;
-    const int* cartesianSize_;
+    std::array<int, 3> cartesianSize_;
     const int* compressedToCartesianCellIdx_;
     bool enableOutput_;
     int outputInterval_;

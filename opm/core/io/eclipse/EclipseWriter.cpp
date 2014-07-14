@@ -1003,10 +1003,12 @@ EclipseWriter::EclipseWriter(const parameter::ParameterGroup& params,
                              const int* cartesianSize)
     : deck_ (deck)
     , numCells_(numCells)
-    , cartesianSize_(cartesianSize)
     , compressedToCartesianCellIdx_(compressedToCartesianCellIdx)
     , phaseUsage_(phaseUsageFromDeck(deck_))
 {
+    for (int i = 0; i < 3; ++i)
+        cartesianSize_[i] = cartesianSize[i];
+
     init(params);
 }
 
