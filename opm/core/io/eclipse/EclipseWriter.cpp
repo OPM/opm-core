@@ -49,9 +49,6 @@
 #include <memory>     // unique_ptr
 #include <utility>    // move
 
-using namespace Opm;
-using namespace Opm::parameter;
-
 #include <ert/ecl/fortio.h>
 #include <ert/ecl/ecl_endian_flip.h>
 #include <ert/ecl/ecl_grid.h>
@@ -1122,9 +1119,9 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
 }
 
 EclipseWriter::EclipseWriter (
-        const ParameterGroup& params,
-        Opm::DeckConstPtr deck,
-        int number_of_cells, const int* global_cell, const int* cart_dims)
+    const parameter::ParameterGroup& params,
+    Opm::DeckConstPtr deck,
+    int number_of_cells, const int* global_cell, const int* cart_dims)
     : deck_ (deck)
     , number_of_cells_(number_of_cells)
     , cart_dims_(cart_dims)
@@ -1133,7 +1130,7 @@ EclipseWriter::EclipseWriter (
     init(params);
 }
 
-void EclipseWriter::init(const ParameterGroup& params)
+void EclipseWriter::init(const parameter::ParameterGroup& params)
 {
     // get the base name from the name of the deck
     using boost::filesystem::path;
