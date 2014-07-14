@@ -65,9 +65,9 @@ using namespace Opm::parameter;
 #include <ert/ecl/ecl_rst_file.h>
 
 // namespace start here since we don't want the ERT headers in it
-namespace {
+namespace Opm {
+namespace EclipseWriterDetails {
 
-namespace {
 /// Helper function when we don't really want any transformation
 /// (The C++ committee removed std::identity because it was "troublesome" (!?!)
 static double noConversion (const double& u) { return u; }
@@ -88,8 +88,6 @@ static double toMilliDarcy (const double& permeability) {
 /// Names of the saturation property for each phase. The order of these
 /// names are critical; they must be the same as the BlackoilPhases enum
 static const char* SAT_NAMES[] = { "SWAT", "SOIL", "SGAS" };
-
-} // anonymous namespace
 
 /// Smart pointer/handle class for ERT opaque types, such as ecl_kw_type*.
 ///
@@ -657,9 +655,6 @@ private:
 // ask the compiler to explicitly instantiate it.
 template struct EclipseHandle<ecl_sum_tstep_struct>;
 
-
-} // anonymous namespace
-
 // Note: the following parts were taken out of the anonymous
 // namespace, since EclipseSummary is now used as a pointer member in
 // EclipseWriter and forward declared in EclipseWriter.hpp.
@@ -667,7 +662,8 @@ template struct EclipseHandle<ecl_sum_tstep_struct>;
 // forward decl. of mutually dependent type
 struct EclipseWellReport;
 
-struct EclipseSummary : public EclipseHandle <ecl_sum_type> {
+class EclipseSummary : public EclipseHandle <ecl_sum_type> {
+public:
     EclipseSummary (const std::string& outputDir,
                     const std::string& baseName,
                     const SimulatorTimer& timer,
@@ -1016,10 +1012,9 @@ EclipseSummary::addWells (Opm::DeckConstPtr deck,
                                             phase,
                                             WELL_TYPES[0])));
     }
-
 }
 
-namespace Opm {
+} // end namespace EclipseWriterDetails
 
 void EclipseWriter::writeInit(const SimulatorTimer &timer)
 {
@@ -1029,11 +1024,12 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
         return;
     }
     /* Grid files */
-    EclipseWriterGrid eclGrid = EclipseWriterGrid::make (deck_, number_of_cells_,
-                                                         cart_dims_, global_cell_);
+    EclipseWriterDetails::EclipseWriterGrid eclGrid = EclipseWriterDetails::EclipseWriterGrid::make(
+        deck_, number_of_cells_, cart_dims_, global_cell_);
     eclGrid.write (outputDir_, baseName_, /*stepIdx=*/0);
 
-    EclipseInit fortio = EclipseInit::make (outputDir_, baseName_, /*stepIdx=*/0);
+    EclipseWriterDetails::EclipseInit fortio = EclipseWriterDetails::EclipseInit::make(
+        outputDir_, baseName_, /*stepIdx=*/0);
     fortio.writeHeader (number_of_cells_,
                         cart_dims_,
                         global_cell_,
@@ -1042,24 +1038,24 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
                         uses_);
 
     if (deck_->hasKeyword("PERMX")) {
-        auto data = getAllSiDoubles_(deck_->getKeyword("PERMX"));
-        convertUnit_(data, toMilliDarcy);
+        auto data = EclipseWriterDetails::getAllSiDoubles_(deck_->getKeyword("PERMX"));
+        EclipseWriterDetails::convertUnit_(data, EclipseWriterDetails::toMilliDarcy);
         fortio.writeKeyword ("PERMX", data);
     }
     if (deck_->hasKeyword("PERMY")) {
-        auto data = getAllSiDoubles_(deck_->getKeyword("PERMY"));
-        convertUnit_(data, toMilliDarcy);
+        auto data = EclipseWriterDetails::getAllSiDoubles_(deck_->getKeyword("PERMY"));
+        EclipseWriterDetails::convertUnit_(data, EclipseWriterDetails::toMilliDarcy);
         fortio.writeKeyword ("PERMY", data);
     }
     if (deck_->hasKeyword("PERMZ")) {
-        auto data = getAllSiDoubles_(deck_->getKeyword("PERMZ"));
-        convertUnit_(data, toMilliDarcy);
+        auto data = EclipseWriterDetails::getAllSiDoubles_(deck_->getKeyword("PERMZ"));
+        EclipseWriterDetails::convertUnit_(data, EclipseWriterDetails::toMilliDarcy);
         fortio.writeKeyword ("PERMZ", data);
     }
 
     /* Create summary object (could not do it at construction time,
        since it requires knowledge of the start time). */
-    summary_.reset(new EclipseSummary(outputDir_, baseName_, timer, deck_));
+    summary_.reset(new EclipseWriterDetails::EclipseSummary(outputDir_, baseName_, timer, deck_));
     summary_->addWells (deck_, uses_);
 }
 
@@ -1079,18 +1075,18 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     }
 
     // start writing to files
-    EclipseRestart rst(outputDir_, baseName_, timer, outputTimeStepIdx_);
+    EclipseWriterDetails::EclipseRestart rst(outputDir_, baseName_, timer, outputTimeStepIdx_);
     rst.writeHeader (timer, outputTimeStepIdx_, uses_, deck_, reservoirState.pressure().size ());
-    EclipseSolution sol (rst);
+    EclipseWriterDetails::EclipseSolution sol (rst);
 
     // write out the pressure of the reference phase (whatever
     // phase that is...). this is not the most performant solution
     // thinkable, but this is also not in the most performance
     // critical code path!
     std::vector<double> tmp = reservoirState.pressure();
-    convertUnit_(tmp, toBar);
+    EclipseWriterDetails::convertUnit_(tmp, EclipseWriterDetails::toBar);
 
-    sol.add(EclipseKeyword<float>("PRESSURE", tmp));
+    sol.add(EclipseWriterDetails::EclipseKeyword<float>("PRESSURE", tmp));
 
     for (int phase = 0; phase != BlackoilPhases::MaxNumPhases; ++phase) {
         // Eclipse never writes the oil saturation, so all post-processors
@@ -1100,10 +1096,10 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
         }
         if (uses_.phase_used [phase]) {
             tmp = reservoirState.saturation();
-            extractFromStripedData_(tmp,
-                                    /*offset=*/uses_.phase_pos[phase],
-                                    /*stride=*/uses_.num_phases);
-            sol.add(EclipseKeyword<float>(SAT_NAMES[phase], tmp));
+            EclipseWriterDetails::extractFromStripedData_(tmp,
+                                                          /*offset=*/uses_.phase_pos[phase],
+                                                          /*stride=*/uses_.num_phases);
+            sol.add(EclipseWriterDetails::EclipseKeyword<float>(EclipseWriterDetails::SAT_NAMES[phase], tmp));
         }
     }
 

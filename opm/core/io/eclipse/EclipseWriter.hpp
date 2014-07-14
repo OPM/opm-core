@@ -31,11 +31,14 @@
 #include <memory>  // std::unique_ptr
 
 struct UnstructuredGrid;
-struct EclipseSummary;
 
 namespace Opm {
 
 // forward declarations
+namespace EclipseWriterDetails {
+class EclipseSummary;
+}
+
 class SimulatorState;
 class SimulatorTimer;
 class WellState;
@@ -102,7 +105,7 @@ private:
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage uses_;           // active phases in the input deck
-    std::shared_ptr <EclipseSummary> summary_;
+    std::shared_ptr <EclipseWriterDetails::EclipseSummary> summary_;
 
     void init(const parameter::ParameterGroup& params);
 };
