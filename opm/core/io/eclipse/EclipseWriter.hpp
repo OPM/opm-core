@@ -63,7 +63,9 @@ public:
      */
     EclipseWriter(const parameter::ParameterGroup& params,
                   Opm::DeckConstPtr deck,
-                  int number_of_cells, const int* global_cell, const int* cart_dims);
+                  int numCells,
+                  const int* compressedToCartesianCellIdx,
+                  const int* cartesianSize);
 
     /**
      * We need a destructor in the compilation unit to avoid the
@@ -96,15 +98,15 @@ public:
 
 private:
     Opm::DeckConstPtr deck_;
-    int number_of_cells_;
-    const int* cart_dims_;
-    const int* global_cell_;
+    int numCells_;
+    const int* cartesianSize_;
+    const int* compressedToCartesianCellIdx_;
     bool enableOutput_;
     int outputInterval_;
-    int outputTimeStepIdx_;
+    int reportStepIdx_;
     std::string outputDir_;
     std::string baseName_;
-    PhaseUsage uses_;           // active phases in the input deck
+    PhaseUsage phaseUsage_; // active phases in the input deck
     std::shared_ptr <EclipseWriterDetails::Summary> summary_;
 
     void init(const parameter::ParameterGroup& params);

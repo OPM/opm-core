@@ -66,24 +66,22 @@ namespace EclipseWriterDetails {
 
 /// Helper function when we don't really want any transformation
 /// (The C++ committee removed std::identity because it was "troublesome" (!?!)
-static double noConversion (const double& u) { return u; }
-
+static double noConversion(const double& u)
+{ return u; }
 
 /// Helper method that can be used in keyword transformation (must carry
 /// the barsa argument)
-static double toBar (const double& pressure) {
-    return Opm::unit::convert::to (pressure, Opm::unit::barsa);
-}
+static double toBar(const double& pressure)
+{ return Opm::unit::convert::to(pressure, Opm::unit::barsa); }
 
 /// Helper method that can be used in keyword transformation (must carry
 /// the milliDarcy argument)
-static double toMilliDarcy (const double& permeability) {
-    return Opm::unit::convert::to (permeability, Opm::prefix::milli * Opm::unit::darcy);
-}
+static double toMilliDarcy(const double& permeability)
+{ return Opm::unit::convert::to(permeability, Opm::prefix::milli * Opm::unit::darcy); }
 
 /// Names of the saturation property for each phase. The order of these
 /// names are critical; they must be the same as the BlackoilPhases enum
-static const char* SAT_NAMES[] = { "SWAT", "SOIL", "SGAS" };
+static const char* saturationKeywordNames[] = { "SWAT", "SOIL", "SGAS" };
 
 /// Smart pointer/handle class for ERT opaque types, such as ecl_kw_type*.
 ///
@@ -129,7 +127,7 @@ private:
 };
 
 // retrieve all data fields in SI units of a deck keyword
-std::vector<double> getAllSiDoubles_(Opm::DeckKeywordConstPtr keywordPtr)
+std::vector<double> getAllSiDoubles(Opm::DeckKeywordConstPtr keywordPtr)
 {
     std::vector<double> retBuff;
     for (unsigned i = 0; i < keywordPtr->size(); ++i) {
@@ -144,24 +142,8 @@ std::vector<double> getAllSiDoubles_(Opm::DeckKeywordConstPtr keywordPtr)
     return retBuff;
 }
 
-// retrieve all integer data fields of a deck keyword
-std::vector<int> getAllIntegers_(Opm::DeckKeywordConstPtr keywordPtr)
-{
-    std::vector<int> retBuff;
-    for (unsigned i = 0; i < keywordPtr->size(); ++i) {
-        Opm::DeckRecordConstPtr recordPtr(keywordPtr->getRecord(i));
-        for (unsigned j = 0; j < recordPtr->size(); ++j) {
-            Opm::DeckItemConstPtr itemPtr(recordPtr->getItem(j));
-            for (unsigned k = 0; k < itemPtr->size(); ++k) {
-                retBuff.push_back(itemPtr->getInt(k));
-            }
-        }
-    }
-    return retBuff;
-}
-
 // throw away the data for all non-active cells in an array
-void restrictToActiveCells_(std::vector<double> &data, const std::vector<int> &actnumData)
+void restrictToActiveCells(std::vector<double> &data, const std::vector<int> &actnumData)
 {
     assert(actnumData.size() == data.size());
 
@@ -180,32 +162,33 @@ void restrictToActiveCells_(std::vector<double> &data, const std::vector<int> &a
 
 // throw away the data for all non-active cells in an array. (this is
 // the variant of the function which takes an UnstructuredGrid object.)
-void restrictToActiveCells_(std::vector<double> &data, int number_of_cells,
-                            const int* global_cell)
+void restrictToActiveCells(std::vector<double> &data,
+                           int numCells,
+                           const int* compressedToCartesianCellIdx)
 {
-    if (!global_cell)
+    if (!compressedToCartesianCellIdx)
         // if there is no active -> global mapping, all cells
         // are considered active
         return;
 
     // activate those cells that are actually there
-    for (int i = 0; i < number_of_cells; ++i) {
+    for (int i = 0; i < numCells; ++i) {
         // make sure that global cell indices are always at least as
         // large as the active one and that the global cell indices
         // are in increasing order. the latter might become
         // problematic if cells are extensively re-ordered, but that
         // does not seem to be the case so far
-        assert(global_cell[i] >= i);
-        assert(i == 0 || global_cell[i - 1] < global_cell[i]);
+        assert(compressedToCartesianCellIdx[i] >= i);
+        assert(i == 0 || compressedToCartesianCellIdx[i - 1] < compressedToCartesianCellIdx[i]);
 
-        data[i] = data[global_cell[i]];
+        data[i] = data[compressedToCartesianCellIdx[i]];
     }
-    data.resize(number_of_cells);
+    data.resize(numCells);
 }
 
 // convert the units of an array
 template <class TransferFunction>
-void convertUnit_(std::vector<double> &data, TransferFunction &transferFn)
+void convertUnit(std::vector<double> &data, TransferFunction &transferFn)
 {
     for (size_t curIdx = 0; curIdx < data.size(); ++curIdx) {
         data[curIdx] = transferFn(data[curIdx]);
@@ -214,9 +197,9 @@ void convertUnit_(std::vector<double> &data, TransferFunction &transferFn)
 
 // extract a sub-array of a larger one which represents multiple
 // striped ones
-void extractFromStripedData_(std::vector<double> &data,
-                             int offset,
-                             int stride)
+void extractFromStripedData(std::vector<double> &data,
+                            int offset,
+                            int stride)
 {
     size_t tmpIdx = 0;
     for (size_t curIdx = offset; curIdx < data.size(); curIdx += stride) {
@@ -236,18 +219,18 @@ int getCartesianSize_(const int* cartdims) {
     return nx * ny * nz;
 }
 
-void getActiveCells_(int number_of_cells,
+void getActiveCells_(int numCells,
                      const int* cartdims,
-                     const int* global_cell,
+                     const int* compressedToCartesianCellIdx,
                      std::vector <int>& actnum)
 {
     // we must fill the Cartesian grid with flags
     const int size = getCartesianSize_(cartdims);
 
-    // if we don't have a global_cells field, then assume that all
+    // if we don't have a compressedToCartesianCellIdx field, then assume that all
     // grid cells is active
-    if (!global_cell) {
-        if (number_of_cells != size) {
+    if (!compressedToCartesianCellIdx) {
+        if (numCells != size) {
             OPM_THROW (std::runtime_error,
                        "No ACTNUM map but grid size != Cartesian size");
         }
@@ -258,8 +241,8 @@ void getActiveCells_(int number_of_cells,
         actnum.assign (size, 0);
 
         // activate those cells that are actually there
-        for (int i = 0; i < number_of_cells; ++i) {
-            actnum[global_cell[i]] = 1;
+        for (int i = 0; i < numCells; ++i) {
+            actnum[compressedToCartesianCellIdx[i]] = 1;
         }
     }
 }
@@ -502,9 +485,9 @@ private:
 struct  Grid : public Handle <ecl_grid_type> {
     /// Create a grid based on the keywords available in input file
     static Grid make (Opm::DeckConstPtr deck,
-                      int number_of_cells,
-                      const int* cart_dims,
-                      const int* global_cell)
+                      int numCells,
+                      const int* cartesianSize,
+                      const int* compressedToCartesianCellIdx)
     {
         auto runspecSection = std::make_shared<RUNSPECSection>(deck);
         auto gridSection = std::make_shared<GRIDSection>(deck);
@@ -602,18 +585,17 @@ struct  Init : public Handle <fortio_type> {
         return Init (initFileName, fmt_file);
     }
 
-    void writeHeader (int number_of_cells,
-                      const int* cart_dims,
-                      const int* global_cell,
+    void writeHeader (int numCells,
+                      const int* cartesianSize,
+                      const int* compressedToCartesianCellIdx,
                       const SimulatorTimer& timer,
                       Opm::DeckConstPtr deck,
                       const PhaseUsage uses)
     {
-        auto dataField = getAllSiDoubles_(deck->getKeyword(PORO_KW));
-        restrictToActiveCells_(dataField, number_of_cells, global_cell);
+        auto dataField = getAllSiDoubles(deck->getKeyword(PORO_KW));
+        restrictToActiveCells(dataField, numCells, compressedToCartesianCellIdx);
 
-        Grid eclGrid = Grid::make (deck, number_of_cells,
-                                   cart_dims, global_cell);
+        Grid eclGrid = Grid::make (deck, numCells, cartesianSize, compressedToCartesianCellIdx);
 
         Keyword<float> poro (PORO_KW, dataField);
         ecl_init_file_fwrite_header (*this,
@@ -752,10 +734,10 @@ protected:
                 std::string unit)
         : Handle <smspec_node_type> (
               ecl_sum_add_var (summary,
-                               varName (phase,
+                               varName_(phase,
                                         type,
                                         aggregation).c_str (),
-                               wellName (deck, whichWell).c_str (),
+                               wellName_(deck, whichWell).c_str (),
                                /* num = */ 0,
                                unit.c_str(),
                                /* defaultValue = */ 0.))
@@ -784,7 +766,7 @@ private:
     const double sign_;
 
     /// Get the name associated with this well
-    std::string wellName (Opm::DeckConstPtr deck,
+    std::string wellName_(Opm::DeckConstPtr deck,
                           int whichWell)
     {
         Opm::WelspecsWrapper welspecs(deck->getKeyword("WELSPECS"));
@@ -793,9 +775,10 @@ private:
 
     /// Compose the name of the summary variable, e.g. "WOPR" for
     /// well oil production rate.
-    std::string varName (BlackoilPhases::PhaseIndex phase,
+    std::string varName_(BlackoilPhases::PhaseIndex phase,
                          WellType type,
-                         char aggregation) {
+                         char aggregation)
+    {
         std::string name;
         name += 'W'; // well
         if (aggregation == 'B') {
@@ -949,7 +932,7 @@ static WellType WELL_TYPES[] = { INJECTOR, PRODUCER };
 
 inline void
 Summary::addWells (Opm::DeckConstPtr deck,
-                          const PhaseUsage& uses) {
+                   const PhaseUsage& uses) {
     // TODO: Only create report variables that are requested with keywords
     // (e.g. "WOPR") in the input files, and only for those wells that are
     // mentioned in those keywords
@@ -1021,38 +1004,38 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
     }
     /* Grid files */
     EclipseWriterDetails::Grid eclGrid = EclipseWriterDetails::Grid::make(
-        deck_, number_of_cells_, cart_dims_, global_cell_);
+        deck_, numCells_, cartesianSize_, compressedToCartesianCellIdx_);
     eclGrid.write (outputDir_, baseName_, /*stepIdx=*/0);
 
     EclipseWriterDetails::Init fortio = EclipseWriterDetails::Init::make(
         outputDir_, baseName_, /*stepIdx=*/0);
-    fortio.writeHeader (number_of_cells_,
-                        cart_dims_,
-                        global_cell_,
+    fortio.writeHeader (numCells_,
+                        cartesianSize_,
+                        compressedToCartesianCellIdx_,
                         timer,
                         deck_,
-                        uses_);
+                        phaseUsage_);
 
     if (deck_->hasKeyword("PERMX")) {
-        auto data = EclipseWriterDetails::getAllSiDoubles_(deck_->getKeyword("PERMX"));
-        EclipseWriterDetails::convertUnit_(data, EclipseWriterDetails::toMilliDarcy);
+        auto data = EclipseWriterDetails::getAllSiDoubles(deck_->getKeyword("PERMX"));
+        EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
         fortio.writeKeyword ("PERMX", data);
     }
     if (deck_->hasKeyword("PERMY")) {
-        auto data = EclipseWriterDetails::getAllSiDoubles_(deck_->getKeyword("PERMY"));
-        EclipseWriterDetails::convertUnit_(data, EclipseWriterDetails::toMilliDarcy);
+        auto data = EclipseWriterDetails::getAllSiDoubles(deck_->getKeyword("PERMY"));
+        EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
         fortio.writeKeyword ("PERMY", data);
     }
     if (deck_->hasKeyword("PERMZ")) {
-        auto data = EclipseWriterDetails::getAllSiDoubles_(deck_->getKeyword("PERMZ"));
-        EclipseWriterDetails::convertUnit_(data, EclipseWriterDetails::toMilliDarcy);
+        auto data = EclipseWriterDetails::getAllSiDoubles(deck_->getKeyword("PERMZ"));
+        EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
         fortio.writeKeyword ("PERMZ", data);
     }
 
     /* Create summary object (could not do it at construction time,
        since it requires knowledge of the start time). */
     summary_.reset(new EclipseWriterDetails::Summary(outputDir_, baseName_, timer, deck_));
-    summary_->addWells (deck_, uses_);
+    summary_->addWells (deck_, phaseUsage_);
 }
 
 void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
@@ -1066,13 +1049,13 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     }
 
     // respected the output_interval parameter
-    if (outputTimeStepIdx_ % outputInterval_ != 0) {
+    if (reportStepIdx_ % outputInterval_ != 0) {
         return;
     }
 
     // start writing to files
-    EclipseWriterDetails::Restart rst(outputDir_, baseName_, timer, outputTimeStepIdx_);
-    rst.writeHeader (timer, outputTimeStepIdx_, uses_, deck_, reservoirState.pressure().size ());
+    EclipseWriterDetails::Restart rst(outputDir_, baseName_, timer, reportStepIdx_);
+    rst.writeHeader (timer, reportStepIdx_, phaseUsage_, deck_, reservoirState.pressure().size ());
     EclipseWriterDetails::Solution sol (rst);
 
     // write out the pressure of the reference phase (whatever
@@ -1080,7 +1063,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     // thinkable, but this is also not in the most performance
     // critical code path!
     std::vector<double> tmp = reservoirState.pressure();
-    EclipseWriterDetails::convertUnit_(tmp, EclipseWriterDetails::toBar);
+    EclipseWriterDetails::convertUnit(tmp, EclipseWriterDetails::toBar);
 
     sol.add(EclipseWriterDetails::Keyword<float>("PRESSURE", tmp));
 
@@ -1090,12 +1073,12 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
         if (phase == BlackoilPhases::PhaseIndex::Liquid) {
             continue;
         }
-        if (uses_.phase_used [phase]) {
+        if (phaseUsage_.phase_used[phase]) {
             tmp = reservoirState.saturation();
-            EclipseWriterDetails::extractFromStripedData_(tmp,
-                                                          /*offset=*/uses_.phase_pos[phase],
-                                                          /*stride=*/uses_.num_phases);
-            sol.add(EclipseWriterDetails::Keyword<float>(EclipseWriterDetails::SAT_NAMES[phase], tmp));
+            EclipseWriterDetails::extractFromStripedData(tmp,
+                                                         /*offset=*/phaseUsage_.phase_pos[phase],
+                                                         /*stride=*/phaseUsage_.num_phases);
+            sol.add(EclipseWriterDetails::Keyword<float>(EclipseWriterDetails::saturationKeywordNames[phase], tmp));
         }
     }
 
@@ -1115,18 +1098,21 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     // the last step.
     summary_->writeTimeStep(timer, wellState);
 
-    ++outputTimeStepIdx_;
+    ++reportStepIdx_;
 }
 
 EclipseWriter::EclipseWriter (
     const parameter::ParameterGroup& params,
     Opm::DeckConstPtr deck,
-    int number_of_cells, const int* global_cell, const int* cart_dims)
+    int numCells,
+    const int* compressedToCartesianCellIdx,
+    const int* cartesianSize)
     : deck_ (deck)
-    , number_of_cells_(number_of_cells)
-    , cart_dims_(cart_dims)
-    , global_cell_(global_cell)
-    , uses_ (phaseUsageFromDeck (deck_)) {
+    , numCells_(numCells)
+    , cartesianSize_(cartesianSize)
+    , compressedToCartesianCellIdx_(compressedToCartesianCellIdx)
+    , phaseUsage_(phaseUsageFromDeck(deck_))
+{
     init(params);
 }
 
@@ -1134,17 +1120,17 @@ void EclipseWriter::init(const parameter::ParameterGroup& params)
 {
     // get the base name from the name of the deck
     using boost::filesystem::path;
-    path deck (params.get <std::string> ("deck_filename"));
-    if (boost::to_upper_copy (path (deck.extension ()).string ()) == ".DATA") {
-        baseName_ = path (deck.stem ()).string ();
+    path deck(params.get <std::string>("deck_filename"));
+    if (boost::to_upper_copy(path(deck.extension()).string()) == ".DATA") {
+        baseName_ = path(deck.stem()).string();
     }
     else {
-        baseName_ = path (deck.filename ()).string ();
+        baseName_ = path(deck.filename()).string();
     }
 
     // make uppercase of everything (or otherwise we'll get uppercase
     // of some of the files (.SMSPEC, .UNSMRY) and not others
-    baseName_ = boost::to_upper_copy (baseName_);
+    baseName_ = boost::to_upper_copy(baseName_);
 
     // retrieve the value of the "output" parameter
     enableOutput_ = params.getDefault<bool>("output", /*defaultValue=*/true);
@@ -1157,7 +1143,7 @@ void EclipseWriter::init(const parameter::ParameterGroup& params)
     outputDir_ = params.getDefault<std::string>("output_dir", ".");
 
     // set the index of the first time step written to 0...
-    outputTimeStepIdx_ = 0;
+    reportStepIdx_ = 0;
 
     if (enableOutput_) {
         // make sure that the output directory exists, if not try to create it
