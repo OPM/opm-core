@@ -52,7 +52,6 @@
 using namespace Opm;
 using namespace Opm::parameter;
 
-#ifdef HAVE_ERT
 #include <ert/ecl/fortio.h>
 #include <ert/ecl/ecl_endian_flip.h>
 #include <ert/ecl/ecl_grid.h>
@@ -1121,38 +1120,6 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
 
     ++outputTimeStepIdx_;
 }
-
-#else
-namespace Opm {
-
-void EclipseWriter::writeInit(const SimulatorTimer&)
- {
-    // if we don't want to write anything, this method becomes a
-    // no-op...
-     if (!enableOutput_) {
-        return;
-     }
-
-    OPM_THROW(std::runtime_error,
-              "The ERT libraries are required to write ECLIPSE output files.");
-}
-
-void EclipseWriter::writeTimeStep(
-        const SimulatorTimer&,
-        const SimulatorState&,
-        const WellState&)
-{
-    // if we don't want to write anything, this method becomes a
-    // no-op...
-    if (!enableOutput_) {
-        return;
-    }
-
-    OPM_THROW(std::runtime_error,
-              "The ERT libraries are required to write ECLIPSE output files.");
-}
-
-#endif // HAVE_ERT
 
 EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
