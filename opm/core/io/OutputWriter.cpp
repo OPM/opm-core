@@ -1,5 +1,6 @@
 #include "OutputWriter.hpp"
 
+#include <opm/core/grid.h>
 #include <opm/core/io/eclipse/EclipseWriter.hpp>
 #include <opm/core/utility/parameters/Parameter.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
@@ -48,7 +49,11 @@ template <typename Format> unique_ptr <OutputWriter>
 create (const ParameterGroup& params,
         std::shared_ptr <const Deck> parser,
         std::shared_ptr <const UnstructuredGrid> grid) {
-    return unique_ptr <OutputWriter> (new Format (params, parser, grid));
+    return unique_ptr <OutputWriter> (new Format (params,
+                                                  parser,
+                                                  grid->number_of_cells,
+                                                  grid->global_cell,
+                                                  grid->cartdims));
 }
 
 /// Map between keyword in configuration and the corresponding

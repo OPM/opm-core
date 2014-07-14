@@ -24,6 +24,8 @@
 
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/parser/eclipse/EclipseState/Grid/EclipseGrid.hpp>
+#include <opm/core/grid.h>
+#include <opm/core/grid/cpgpreprocess/preprocess.h>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/simulator/SimulatorState.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
@@ -1159,30 +1161,15 @@ void EclipseWriter::writeTimeStep(
 EclipseWriter::EclipseWriter (
         const ParameterGroup& params,
         Opm::DeckConstPtr deck,
-        int number_of_cells, const int* global_cell, const int* cart_dims,
-        int dimensions)
+        int number_of_cells, const int* global_cell, const int* cart_dims)
     : deck_ (deck)
     , number_of_cells_(number_of_cells)
-    , dimensions_(dimensions)
     , cart_dims_(cart_dims)
     , global_cell_(global_cell)
     , uses_ (phaseUsageFromDeck (deck_)) {
     init(params);
 }
 
-EclipseWriter::EclipseWriter (
-        const ParameterGroup& params,
-        Opm::DeckConstPtr deck,
-        std::shared_ptr<const UnstructuredGrid> grid)
-    : deck_ (deck)
-    , grid_(grid)
-    , number_of_cells_(grid->number_of_cells)
-    , dimensions_(grid->dimensions)
-    , cart_dims_(grid->cartdims)
-    , global_cell_(grid->global_cell)
-    , uses_ (phaseUsageFromDeck (deck_)) {
-    init(params);
-}
 void EclipseWriter::init(const ParameterGroup& params)
 {
     // get the base name from the name of the deck

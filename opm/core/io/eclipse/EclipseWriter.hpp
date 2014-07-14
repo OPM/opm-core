@@ -60,8 +60,7 @@ public:
      */
     EclipseWriter(const parameter::ParameterGroup& params,
                   Opm::DeckConstPtr deck,
-                  int number_of_cells, const int* global_cell, const int* cart_dims,
-                  int dimension);
+                  int number_of_cells, const int* global_cell, const int* cart_dims);
 
     /**
      * We need a destructor in the compilation unit to avoid the
@@ -95,7 +94,6 @@ public:
 private:
     Opm::DeckConstPtr deck_;
     int number_of_cells_;
-    int dimensions_;
     const int* cart_dims_;
     const int* global_cell_;
     bool enableOutput_;
