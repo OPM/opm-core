@@ -17,7 +17,7 @@
 
   You should have received a copy of the GNU General Public License
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
- */
+*/
 #include "config.h"
 
 #include "EclipseWriter.hpp"
@@ -172,8 +172,8 @@ void extractFromStripedData(std::vector<double> &data,
 int ertPhaseMask(const PhaseUsage uses)
 {
     return (uses.phase_used[BlackoilPhases::Liquid] ? ECL_OIL_PHASE : 0)
-         | (uses.phase_used[BlackoilPhases::Aqua] ? ECL_WATER_PHASE : 0)
-         | (uses.phase_used[BlackoilPhases::Vapour] ? ECL_GAS_PHASE : 0);
+        | (uses.phase_used[BlackoilPhases::Aqua] ? ECL_WATER_PHASE : 0)
+        | (uses.phase_used[BlackoilPhases::Vapour] ? ECL_GAS_PHASE : 0);
 }
 
 /**
@@ -190,13 +190,13 @@ public:
 
     /// Initialization from double-precision array.
     Keyword(const std::string& name,
-                   const std::vector<double>& data)
+            const std::vector<double>& data)
         : ertHandle_(0)
     { set(name, data); }
 
     /// Initialization from double-precision array.
     Keyword(const std::string& name,
-                   const std::vector<int>& data)
+            const std::vector<int>& data)
         : ertHandle_(0)
     { set(name, data); }
 
@@ -498,8 +498,8 @@ public:
      * Save the grid in an .EGRID file.
      */
     void write(const std::string& outputDir,
-                const std::string& baseName,
-                int reportStepIdx)
+               const std::string& baseName,
+               int reportStepIdx)
     {
         FileName fileNameHandle(outputDir,
                                 baseName,
@@ -797,7 +797,7 @@ public:
     { }
 
     virtual double update(const SimulatorTimer& /*timer*/,
-                           const WellState& wellState)
+                          const WellState& wellState)
     {
         return bhp(wellState);
     }
@@ -909,17 +909,17 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
     if (deck_->hasKeyword("PERMX")) {
         auto data = EclipseWriterDetails::getAllSiDoubles(deck_->getKeyword("PERMX"));
         EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
-        fortio.writeKeyword ("PERMX", data);
+        fortio.writeKeyword("PERMX", data);
     }
     if (deck_->hasKeyword("PERMY")) {
         auto data = EclipseWriterDetails::getAllSiDoubles(deck_->getKeyword("PERMY"));
         EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
-        fortio.writeKeyword ("PERMY", data);
+        fortio.writeKeyword("PERMY", data);
     }
     if (deck_->hasKeyword("PERMZ")) {
         auto data = EclipseWriterDetails::getAllSiDoubles(deck_->getKeyword("PERMZ"));
         EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
-        fortio.writeKeyword ("PERMZ", data);
+        fortio.writeKeyword("PERMZ", data);
     }
 
     /* Create summary object (could not do it at construction time,
