@@ -682,16 +682,24 @@ protected:
     {
         // convert m^3/s of injected fluid to m^3/d of produced fluid
         const double convFactor = Opm::unit::convert::to(1., Opm::unit::day);
-        const double value = sign_ * wellState.wellRates()[index_] * convFactor;
+        double value = 0;
+        if (wellState.wellRates().size() > 0) {
+            assert(int(wellState.wellRates().size()) > index_);
+            value = sign_ * wellState.wellRates()[index_] * convFactor;
+        }
         return value;
     }
 
     double bhp(const WellState& wellstate)
     {
-        // Note that 'index_' is used here even though it is meant
-        // to give a (well,phase) pair.
-        const int num_phases = wellstate.wellRates().size() / wellstate.bhp().size();
-        return wellstate.bhp()[index_/num_phases];
+        if (wellstate.bhp().size() > 0) {
+            // Note that 'index_' is used here even though it is meant
+            // to give a (well,phase) pair.
+            const int num_phases = wellstate.wellRates().size() / wellstate.bhp().size();
+
+            return wellstate.bhp()[index_/num_phases];
+        }
+        return 0.0;
     }
 };
 
