@@ -24,6 +24,7 @@
 #include <opm/core/io/OutputWriter.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 
+#include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 
 #include <string>
@@ -64,9 +65,9 @@ public:
      */
     EclipseWriter(const parameter::ParameterGroup& params,
                   Opm::DeckConstPtr deck,
+                  Opm::EclipseStateConstPtr eclipseState,
                   int numCells,
-                  const int* compressedToCartesianCellIdx,
-                  const int* cartesianSize);
+                  const int* compressedToCartesianCellIdx);
 
     /**
      * We need a destructor in the compilation unit to avoid the
@@ -99,6 +100,7 @@ public:
 
 private:
     Opm::DeckConstPtr deck_;
+    Opm::EclipseStateConstPtr eclipseState_;
     int numCells_;
     std::array<int, 3> cartesianSize_;
     const int* compressedToCartesianCellIdx_;

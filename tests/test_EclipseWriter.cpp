@@ -48,7 +48,7 @@
 std::shared_ptr<Opm::EclipseWriter> eclWriter;
 std::shared_ptr<Opm::SimulatorTimer> simTimer;
 std::shared_ptr<const Opm::Deck> deck;
-std::shared_ptr<Opm::EclipseGrid> eclGrid;
+std::shared_ptr<Opm::EclipseState> eclipseState;
 std::shared_ptr<Opm::GridManager> ourFineGridManagerPtr;
 std::shared_ptr<Opm::BlackoilState> blackoilState;
 std::shared_ptr<Opm::WellState> wellState;
@@ -61,29 +61,16 @@ void createEclipseWriter(const char *deckString)
     Opm::parameter::ParameterGroup params;
     params.insertParameter("deck_filename", "foo.data");
 
-    auto runspecSection = std::make_shared<Opm::RUNSPECSection>(deck);
-    auto gridSection = std::make_shared<Opm::GRIDSection>(deck);
-    eclGrid.reset(new Opm::EclipseGrid(runspecSection, gridSection));
+    eclipseState.reset(new Opm::EclipseState(deck));
 
+    auto eclGrid = eclipseState->getEclipseGrid();
     BOOST_CHECK(eclGrid->getNX() == 3);
     BOOST_CHECK(eclGrid->getNY() == 3);
     BOOST_CHECK(eclGrid->getNZ() == 3);
     BOOST_CHECK(eclGrid->getCartesianSize() == 3*3*3);
 
-    std::array<int, 3> cartSize;
-    cartSize[0] = eclGrid->getNX();
-    cartSize[1] = eclGrid->getNY();
-    cartSize[2] = eclGrid->getNZ();
-
     simTimer.reset(new Opm::SimulatorTimer());
-    Opm::TimeMapConstPtr timeMap(new Opm::TimeMap(deck));
-    simTimer->init(timeMap);
-
-    eclWriter.reset(new Opm::EclipseWriter(params,
-                                           deck,
-                                           eclGrid->getCartesianSize(),
-                                           0,
-                                           &cartSize[0]));
+    simTimer->init(eclipseState->getSchedule()->getTimeMap());
 
     // also create an UnstructuredGrid (required to create a BlackoilState)
     Opm::EclipseGridConstPtr constEclGrid(eclGrid);
@@ -95,6 +82,12 @@ void createEclipseWriter(const char *deckString)
     BOOST_CHECK(ourFinerUnstructuredGrid.cartdims[2] == 3);
 
     BOOST_CHECK(ourFinerUnstructuredGrid.number_of_cells == 3*3*3);
+
+    eclWriter.reset(new Opm::EclipseWriter(params,
+                                           deck,
+                                           eclipseState,
+                                           ourFinerUnstructuredGrid.number_of_cells,
+                                           0));
 
     // this check is disabled so far, because UnstructuredGrid uses some weird definition
     // of the term "face". For this grid, "number_of_faces" is 108 which is
@@ -212,6 +205,8 @@ void checkEgridFile()
 
     // use ERT directly to inspect the EGRID file produced by EclipseWriter
     auto egridFile = fortio_open_reader("FOO.EGRID", /*isFormated=*/0, ECL_ENDIAN_FLIP);
+
+    auto eclGrid = eclipseState->getEclipseGrid();
 
     ecl_kw_type *eclKeyword;
     // yes, that's an assignment!

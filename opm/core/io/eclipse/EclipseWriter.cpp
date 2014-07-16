@@ -477,37 +477,20 @@ public:
     void writeHeader(int numCells,
                      const int* compressedToCartesianCellIdx,
                      const SimulatorTimer& timer,
-                     Opm::DeckConstPtr deck,
+                     Opm::EclipseStateConstPtr eclipseState,
                      const PhaseUsage uses)
     {
-        auto dataField = getAllSiDoubles(deck->getKeyword(PORO_KW));
+        auto dataField = eclipseState->getDoubleGridProperty("PORO")->getData();
         restrictToActiveCells(dataField, numCells, compressedToCartesianCellIdx);
 
-        auto runspecSection = std::make_shared<RUNSPECSection>(deck);
-        auto gridSection = std::make_shared<GRIDSection>(deck);
-        eclGrid_ = std::make_shared<Opm::EclipseGrid>(runspecSection, gridSection);
-
-        // compute the ACTNUM field
-        int numCartesianCells = eclGrid_->getCartesianSize();
-        std::vector<int> actnumData(numCartesianCells, 1);
-        if (compressedToCartesianCellIdx) {
-            // if we have a compressed-to-Cartesian map, we activate only those cells
-            // which appear in that map
-            std::fill(actnumData.begin(), actnumData.end(), 0);
-            for (int cellIdx = 0; cellIdx < numCells; ++cellIdx) {
-                int cartesianCellIdx = compressedToCartesianCellIdx[cellIdx];
-                actnumData[cartesianCellIdx] = 1;
-            }
-        }
-
-        eclGrid_->resetACTNUM(&actnumData[0]);
+        auto eclGrid = eclipseState->getEclipseGrid();
 
         // finally, write the grid to disk
-        eclGrid_->fwriteEGRID(egridFileName_.ertHandle());
+        eclGrid->fwriteEGRID(egridFileName_.ertHandle());
 
-        Keyword<float> poro_kw(PORO_KW, dataField);
+        Keyword<float> poro_kw("PORO", dataField);
         ecl_init_file_fwrite_header(ertHandle(),
-                                    eclGrid_->c_ptr(),
+                                    eclGrid->c_ptr(),
                                     poro_kw.ertHandle(),
                                     ertPhaseMask(uses),
                                     timer.currentPosixTime());
@@ -522,13 +505,9 @@ public:
     fortio_type *ertHandle() const
     { return ertHandle_; }
 
-    Opm::EclipseGridConstPtr eclipseGrid() const
-    { return eclGrid_; }
-
 private:
     fortio_type *ertHandle_;
     FileName egridFileName_;
-    Opm::EclipseGridPtr eclGrid_;
 };
 
 /**
@@ -849,7 +828,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
     fortio.writeHeader(numCells_,
                        compressedToCartesianCellIdx_,
                        timer,
-                       deck_,
+                       eclipseState_,
                        phaseUsage_);
 
     if (deck_->hasKeyword("PERMX")) {
@@ -870,7 +849,7 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
 
     /* Create summary object (could not do it at construction time,
        since it requires knowledge of the start time). */
-    auto eclGrid = fortio.eclipseGrid();
+    auto eclGrid = eclipseState_->getEclipseGrid();
     summary_.reset(new EclipseWriterDetails::Summary(outputDir_,
                                                      baseName_,
                                                      timer,
@@ -953,16 +932,19 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
 
 EclipseWriter::EclipseWriter(const parameter::ParameterGroup& params,
                              Opm::DeckConstPtr deck,
+                             Opm::EclipseStateConstPtr eclipseState,
                              int numCells,
-                             const int* compressedToCartesianCellIdx,
-                             const int* cartesianSize)
-    : deck_ (deck)
+                             const int* compressedToCartesianCellIdx)
+    : deck_(deck)
+    , eclipseState_(eclipseState)
     , numCells_(numCells)
     , compressedToCartesianCellIdx_(compressedToCartesianCellIdx)
     , phaseUsage_(phaseUsageFromDeck(deck_))
 {
-    for (int i = 0; i < 3; ++i)
-        cartesianSize_[i] = cartesianSize[i];
+    const auto eclGrid = eclipseState->getEclipseGrid();
+    cartesianSize_[0] = eclGrid->getNX();
+    cartesianSize_[1] = eclGrid->getNY();
+    cartesianSize_[2] = eclGrid->getNZ();
 
     init(params);
 }

@@ -28,6 +28,7 @@ namespace Opm {
 
 // forward declaration
 class Deck;
+class EclipseState;
 namespace parameter { class ParameterGroup; }
 class SimulatorState;
 class SimulatorTimer;
@@ -95,9 +96,9 @@ public:
      *               multiplexer of applicable output formats based on the
      *               desired configuration values.
      *
-     * @param parser Input deck used to set up the simulation. The lifetime
-     *               of this object must exceed the lifetime of the writer
-     *               that is returned.
+     * @param deck Input deck used to set up the simulation.
+     *
+     * @param eclipseState The internalized input deck.
      *
      * @return       Pointer to a multiplexer to all applicable output formats.
      *
@@ -105,7 +106,8 @@ public:
      */
     static std::unique_ptr <OutputWriter>
     create (const parameter::ParameterGroup& params,
-            std::shared_ptr <const Deck> parser,
+            std::shared_ptr <const Deck> deck,
+            std::shared_ptr <const EclipseState> eclipseState,
             std::shared_ptr <const UnstructuredGrid> grid);
 };
 
