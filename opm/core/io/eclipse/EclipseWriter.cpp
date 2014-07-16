@@ -439,84 +439,6 @@ private:
     ecl_sum_tstep_type *ertHandle_;
 };
 
-/**
- * Representation of an Eclipse grid.
- */
-class Grid : private boost::noncopyable
-{
-public:
-    /// Create a grid based on the keywords available in input file
-    Grid(Opm::DeckConstPtr deck,
-         int numCells,
-         const int* compressedToCartesianCellIdx)
-    {
-        auto runspecSection = std::make_shared<RUNSPECSection>(deck);
-        auto gridSection = std::make_shared<GRIDSection>(deck);
-        EclipseGrid eGrid(runspecSection, gridSection);
-
-        numX_ = eGrid.getNX();
-        numY_ = eGrid.getNY();
-        numZ_ = eGrid.getNZ();
-
-        std::vector<double> mapaxesData;
-        std::vector<double> zcornData;
-        std::vector<double> coordData;
-        std::vector<int> actnumData;
-
-        eGrid.exportMAPAXES(mapaxesData);
-        eGrid.exportZCORN(zcornData);
-        eGrid.exportCOORD(coordData);
-        eGrid.exportACTNUM(actnumData);
-
-        Keyword<float> mapaxesKeyword("MAPAXES", mapaxesData);
-        Keyword<float> zcornKeyword("ZCORN", zcornData);
-        Keyword<float> coordKeyword("COORD", coordData);
-        Keyword<int> actnumKeyword("ACTNUM", actnumData);
-
-        ertHandle_ = ecl_grid_alloc_GRDECL_kw(numX_,
-                                              numY_,
-                                              numZ_,
-                                              zcornKeyword.ertHandle(),
-                                              coordKeyword.ertHandle(),
-                                              actnumKeyword.ertHandle(),
-                                              mapaxesKeyword.ertHandle());
-    }
-
-    ~Grid()
-    { ecl_grid_free(ertHandle_); }
-
-    int numX() const
-    { return numX_; }
-
-    int numY() const
-    { return numY_; }
-
-    int numZ() const
-    { return numZ_; }
-
-    /**
-     * Save the grid in an .EGRID file.
-     */
-    void write(const std::string& outputDir,
-               const std::string& baseName,
-               int reportStepIdx)
-    {
-        FileName fileNameHandle(outputDir,
-                                baseName,
-                                ECL_EGRID_FILE,
-                                reportStepIdx);
-        ecl_grid_fwrite_EGRID(ertHandle(), fileNameHandle.ertHandle());
-    }
-
-    ecl_grid_type *ertHandle() const
-    { return ertHandle_; }
-
-private:
-    ecl_grid_type *ertHandle_;
-    int numX_;
-    int numY_;
-    int numZ_;
-};
 
 /**
  * Initialization file which contains static properties (such as
@@ -528,11 +450,16 @@ public:
     Init(const std::string& outputDir,
          const std::string& baseName,
          int reportStepIdx)
+        : egridFileName_(outputDir,
+                         baseName,
+                         ECL_EGRID_FILE,
+                         reportStepIdx)
     {
         FileName initFileName(outputDir,
                               baseName,
                               ECL_INIT_FILE,
                               reportStepIdx);
+
         bool isFormatted;
         if (!ecl_util_fmt_file(initFileName.ertHandle(), &isFormatted)) {
             OPM_THROW(std::runtime_error,
@@ -556,11 +483,31 @@ public:
         auto dataField = getAllSiDoubles(deck->getKeyword(PORO_KW));
         restrictToActiveCells(dataField, numCells, compressedToCartesianCellIdx);
 
-        Grid eclGrid(deck, numCells, compressedToCartesianCellIdx);
+        auto runspecSection = std::make_shared<RUNSPECSection>(deck);
+        auto gridSection = std::make_shared<GRIDSection>(deck);
+        eclGrid_ = std::make_shared<Opm::EclipseGrid>(runspecSection, gridSection);
+
+        // compute the ACTNUM field
+        int numCartesianCells = eclGrid_->getCartesianSize();
+        std::vector<int> actnumData(numCartesianCells, 1);
+        if (compressedToCartesianCellIdx) {
+            // if we have a compressed-to-Cartesian map, we activate only those cells
+            // which appear in that map
+            std::fill(actnumData.begin(), actnumData.end(), 0);
+            for (int cellIdx = 0; cellIdx < numCells; ++cellIdx) {
+                int cartesianCellIdx = compressedToCartesianCellIdx[cellIdx];
+                actnumData[cartesianCellIdx] = 1;
+            }
+        }
+
+        eclGrid_->resetACTNUM(&actnumData[0]);
+
+        // finally, write the grid to disk
+        eclGrid_->fwriteEGRID(egridFileName_.ertHandle());
 
         Keyword<float> poro_kw(PORO_KW, dataField);
         ecl_init_file_fwrite_header(ertHandle(),
-                                    eclGrid.ertHandle(),
+                                    eclGrid_->c_ptr(),
                                     poro_kw.ertHandle(),
                                     ertPhaseMask(uses),
                                     timer.currentPosixTime());
@@ -575,8 +522,13 @@ public:
     fortio_type *ertHandle() const
     { return ertHandle_; }
 
+    Opm::EclipseGridConstPtr eclipseGrid() const
+    { return eclGrid_; }
+
 private:
     fortio_type *ertHandle_;
+    FileName egridFileName_;
+    Opm::EclipseGridPtr eclGrid_;
 };
 
 /**
@@ -893,12 +845,6 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
 
     reportStepIdx_ = 0;
 
-    /* Grid files */
-    EclipseWriterDetails::Grid eclGrid(deck_,
-                                       numCells_,
-                                       compressedToCartesianCellIdx_);
-    eclGrid.write(outputDir_, baseName_, /*stepIdx=*/0);
-
     EclipseWriterDetails::Init fortio(outputDir_, baseName_, /*stepIdx=*/0);
     fortio.writeHeader(numCells_,
                        compressedToCartesianCellIdx_,
@@ -924,13 +870,14 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
 
     /* Create summary object (could not do it at construction time,
        since it requires knowledge of the start time). */
+    auto eclGrid = fortio.eclipseGrid();
     summary_.reset(new EclipseWriterDetails::Summary(outputDir_,
                                                      baseName_,
                                                      timer,
                                                      deck_,
-                                                     eclGrid.numX(),
-                                                     eclGrid.numY(),
-                                                     eclGrid.numZ()));
+                                                     eclGrid->getNX(),
+                                                     eclGrid->getNY(),
+                                                     eclGrid->getNZ()));
     summary_->addAllWells(deck_, phaseUsage_);
 }
 
