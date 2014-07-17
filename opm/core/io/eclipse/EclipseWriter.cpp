@@ -483,7 +483,18 @@ public:
         auto dataField = eclipseState->getDoubleGridProperty("PORO")->getData();
         restrictToActiveCells(dataField, numCells, compressedToCartesianCellIdx);
 
-        auto eclGrid = eclipseState->getEclipseGrid();
+        auto eclGrid = eclipseState->getEclipseGridCopy();
+
+        // update the ACTNUM array using the processed cornerpoint grid
+        std::vector<int> actnumData(eclGrid->getCartesianSize(), 1);
+        if (compressedToCartesianCellIdx) {
+            std::fill(actnumData.begin(), actnumData.end(), 0);
+            for (int cellIdx = 0; cellIdx < numCells; ++cellIdx) {
+                int cartesianCellIdx = compressedToCartesianCellIdx[cellIdx];
+                actnumData[cartesianCellIdx] = 1;
+            }
+        }
+        eclGrid->resetACTNUM(&actnumData[0]);
 
         // finally, write the grid to disk
         eclGrid->fwriteEGRID(egridFileName_.ertHandle());
