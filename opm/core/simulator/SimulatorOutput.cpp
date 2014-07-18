@@ -20,7 +20,6 @@
 #include "SimulatorOutput.hpp"
 
 // we need complete definitions for these types
-#include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/TimeMap.hpp>
 #include <opm/core/io/OutputWriter.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
@@ -31,8 +30,8 @@ using namespace Opm;
 
 SimulatorOutputBase::SimulatorOutputBase (
         const parameter::ParameterGroup& params,
-        std::shared_ptr <const Deck> parser,
-        std::shared_ptr <const TimeMap> timeMap,
+        std::shared_ptr <const EclipseState> eclipseState,
+        const Opm::PhaseUsage &phaseUsage,
         std::shared_ptr <const UnstructuredGrid> grid,
         std::shared_ptr <const SimulatorTimer> timer,
         std::shared_ptr <const SimulatorState> state,
@@ -41,13 +40,12 @@ SimulatorOutputBase::SimulatorOutputBase (
     // store all parameters passed into the object, making them curried
     // parameters to the writeOutput function.
     : timer_          (timer    )
-    , timeMap_        (timeMap  )
     , reservoirState_ (state    )
     , wellState_      (wellState)
 
     // process parameters into a writer. we don't setup a new chain in
     // every timestep!
-    , writer_ (std::move (OutputWriter::create (params, parser, grid)))
+    , writer_ (std::move (OutputWriter::create (params, eclipseState, phaseUsage, grid)))
 
     // always start from the first timestep
     , next_ (0) {

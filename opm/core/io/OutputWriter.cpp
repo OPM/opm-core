@@ -1,5 +1,6 @@
 #include "OutputWriter.hpp"
 
+#include <opm/core/grid.h>
 #include <opm/core/io/eclipse/EclipseWriter.hpp>
 #include <opm/core/utility/parameters/Parameter.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
@@ -46,9 +47,14 @@ private:
 /// Psuedo-constructor, can appear in template
 template <typename Format> unique_ptr <OutputWriter>
 create (const ParameterGroup& params,
-        std::shared_ptr <const Deck> parser,
+        std::shared_ptr <const EclipseState> eclipseState,
+        const Opm::PhaseUsage &phaseUsage,
         std::shared_ptr <const UnstructuredGrid> grid) {
-    return unique_ptr <OutputWriter> (new Format (params, parser, grid));
+    return unique_ptr <OutputWriter> (new Format (params,
+                                                  eclipseState,
+                                                  phaseUsage,
+                                                  grid->number_of_cells,
+                                                  grid->global_cell));
 }
 
 /// Map between keyword in configuration and the corresponding
@@ -59,7 +65,8 @@ create (const ParameterGroup& params,
 /// to the list below!
 typedef map <const char*, unique_ptr <OutputWriter> (*)(
         const ParameterGroup&,
-        std::shared_ptr <const Deck>,
+        std::shared_ptr <const EclipseState> eclipseState,
+        const Opm::PhaseUsage &phaseUsage,
         std::shared_ptr <const UnstructuredGrid>)> map_t;
 map_t FORMATS = {
     { "output_ecl", &create <EclipseWriter> },
@@ -69,7 +76,8 @@ map_t FORMATS = {
 
 unique_ptr <OutputWriter>
 OutputWriter::create (const ParameterGroup& params,
-                      std::shared_ptr <const Deck> parser,
+                      std::shared_ptr <const EclipseState> eclipseState,
+                      const Opm::PhaseUsage &phaseUsage,
                       std::shared_ptr <const UnstructuredGrid> grid) {
     // allocate a list which will be filled with writers. this list
     // is initially empty (no output).
@@ -85,7 +93,7 @@ OutputWriter::create (const ParameterGroup& params,
         // invoke the constructor for the type if we found the keyword
         // and put the pointer to this writer onto the list
         if (params.getDefault <bool> (name, false)) {
-            list->push_front (it->second (params, parser, grid));
+            list->push_front (it->second (params, eclipseState, phaseUsage, grid));
         }
     }
 

@@ -24,18 +24,22 @@
 #include <opm/core/io/OutputWriter.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 
-#include <opm/parser/eclipse/Deck/Deck.hpp>
+#include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
 #include <string>
 #include <vector>
-#include <memory>  // std::unique_ptr
+#include <array>
+#include <memory>
 
 struct UnstructuredGrid;
-struct EclipseSummary;
 
 namespace Opm {
 
 // forward declarations
+namespace EclipseWriterDetails {
+class Summary;
+}
+
 class SimulatorState;
 class SimulatorTimer;
 class WellState;
@@ -59,20 +63,11 @@ public:
      *        binary files using ERT.
      */
     EclipseWriter(const parameter::ParameterGroup& params,
-                  Opm::DeckConstPtr deck,
-                  std::shared_ptr <const UnstructuredGrid> grid);
+                  Opm::EclipseStateConstPtr eclipseState,
+                  const Opm::PhaseUsage &phaseUsage,
+                  int numCells,
+                  const int* compressedToCartesianCellIdx);
 
-    /*!
-     * \brief Sets the common attributes required to write eclipse
-     *        binary files using ERT.
-     */
-    EclipseWriter(const parameter::ParameterGroup& params,
-                  Opm::DeckConstPtr deck,
-                  int number_of_cells, const int* global_cell, const int* cart_dims,
-                  int dimension);
-
-
-                 
     /**
      * We need a destructor in the compilation unit to avoid the
      * EclipseSummary being a complete type here.
@@ -103,19 +98,17 @@ public:
                                const WellState& wellState);
 
 private:
-    Opm::DeckConstPtr deck_;
-    std::shared_ptr <const UnstructuredGrid> grid_;
-    int number_of_cells_;
-    int dimensions_;
-    const int* cart_dims_;
-    const int* global_cell_;
+    Opm::EclipseStateConstPtr eclipseState_;
+    int numCells_;
+    std::array<int, 3> cartesianSize_;
+    const int* compressedToCartesianCellIdx_;
     bool enableOutput_;
     int outputInterval_;
-    int outputTimeStepIdx_;
+    int reportStepIdx_;
     std::string outputDir_;
     std::string baseName_;
-    PhaseUsage uses_;           // active phases in the input deck
-    std::shared_ptr <EclipseSummary> summary_;
+    PhaseUsage phaseUsage_; // active phases in the input deck
+    std::shared_ptr<EclipseWriterDetails::Summary> summary_;
 
     void init(const parameter::ParameterGroup& params);
 };

@@ -147,11 +147,12 @@ list (APPEND MAIN_SOURCE_FILES
 # originally generated with the command:
 # find tests -name '*.cpp' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
 list (APPEND TEST_SOURCE_FILES
+	tests/test_EclipseWriter.cpp
 	tests/test_spline.cpp
 	tests/test_propertysystem.cpp
 	tests/test_dgbasis.cpp
 	tests/test_cartgrid.cpp
-        tests/test_ug.cpp
+  tests/test_ug.cpp
 	tests/test_cubic.cpp
 	tests/test_event.cpp
 	tests/test_nonuniformtablelinear.cpp
