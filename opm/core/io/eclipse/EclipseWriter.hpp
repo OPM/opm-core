@@ -25,7 +25,6 @@
 #include <opm/core/props/BlackoilPhases.hpp>
 
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
-#include <opm/parser/eclipse/Deck/Deck.hpp>
 
 #include <string>
 #include <vector>
@@ -64,8 +63,8 @@ public:
      *        binary files using ERT.
      */
     EclipseWriter(const parameter::ParameterGroup& params,
-                  Opm::DeckConstPtr deck,
                   Opm::EclipseStateConstPtr eclipseState,
+                  const Opm::PhaseUsage &phaseUsage,
                   int numCells,
                   const int* compressedToCartesianCellIdx);
 
@@ -99,7 +98,6 @@ public:
                                const WellState& wellState);
 
 private:
-    Opm::DeckConstPtr deck_;
     Opm::EclipseStateConstPtr eclipseState_;
     int numCells_;
     std::array<int, 3> cartesianSize_;

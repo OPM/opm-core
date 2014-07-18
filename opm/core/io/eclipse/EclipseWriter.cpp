@@ -83,22 +83,6 @@ static double toMilliDarcy(const double& permeability)
 /// names are critical; they must be the same as the BlackoilPhases enum
 static const char* saturationKeywordNames[] = { "SWAT", "SOIL", "SGAS" };
 
-// retrieve all data fields in SI units of a deck keyword
-std::vector<double> getAllSiDoubles(Opm::DeckKeywordConstPtr keywordPtr)
-{
-    std::vector<double> retBuff;
-    for (unsigned i = 0; i < keywordPtr->size(); ++i) {
-        Opm::DeckRecordConstPtr recordPtr(keywordPtr->getRecord(i));
-        for (unsigned j = 0; j < recordPtr->size(); ++j) {
-            Opm::DeckItemConstPtr itemPtr(recordPtr->getItem(j));
-            for (unsigned k = 0; k < itemPtr->size(); ++k) {
-                retBuff.push_back(itemPtr->getSIDouble(k));
-            }
-        }
-    }
-    return retBuff;
-}
-
 // throw away the data for all non-active cells in an array
 void restrictToActiveCells(std::vector<double> &data, const std::vector<int> &actnumData)
 {
@@ -304,7 +288,6 @@ public:
 
     void writeHeader(const SimulatorTimer& timer,
                      int reportStepIdx,
-                     Opm::DeckConstPtr deck,
                      int numCells,
                      int nx,
                      int ny,
@@ -367,7 +350,6 @@ public:
     Summary(const std::string& outputDir,
             const std::string& baseName,
             const SimulatorTimer& timer,
-            Opm::DeckConstPtr deck,
             int nx,
             int ny,
             int nz)
@@ -401,7 +383,7 @@ public:
     // on the classes defined in the following.
 
     // add rate variables for each of the well in the input file
-    void addAllWells(Opm::DeckConstPtr deck,
+    void addAllWells(Opm::EclipseStateConstPtr eclipseState,
                      const PhaseUsage& uses);
     void writeTimeStep(int reportStepIdx,
                        const SimulatorTimer& timer,
@@ -535,7 +517,7 @@ protected:
     {}
 
     WellReport(const Summary& summary,    /* section to add to  */
-               Opm::DeckConstPtr deck,           /* well names         */
+               Opm::EclipseStateConstPtr eclipseState,/* well names         */
                int whichWell,                    /* index of well line */
                PhaseUsage uses,                  /* phases present     */
                BlackoilPhases::PhaseIndex phase, /* oil, water or gas  */
@@ -552,7 +534,7 @@ protected:
                                      varName_(phase,
                                               type,
                                               aggregation).c_str(),
-                                     wellName_(deck, whichWell).c_str(),
+                                     wellName_(eclipseState, whichWell).c_str(),
                                      /*num=*/ 0,
                                      unit.c_str(),
                                      /*defaultValue=*/ 0.);
@@ -581,11 +563,10 @@ private:
     const double sign_;
 
     /// Get the name associated with this well
-    std::string wellName_(Opm::DeckConstPtr deck,
+    std::string wellName_(Opm::EclipseStateConstPtr eclipseState,
                           int whichWell)
     {
-        Opm::WelspecsWrapper welspecs(deck->getKeyword("WELSPECS"));
-        return welspecs.wellName(whichWell);
+        return eclipseState->getSchedule()->getWells()[whichWell]->name();
     }
 
     /// Compose the name of the summary variable, e.g. "WOPR" for
@@ -650,13 +631,13 @@ class WellRate : public WellReport
 {
 public:
     WellRate(const Summary& summary,
-             Opm::DeckConstPtr deck,
+             Opm::EclipseStateConstPtr eclipseState,
              int whichWell,
              PhaseUsage uses,
              BlackoilPhases::PhaseIndex phase,
              WellType type)
         : WellReport(summary,
-                     deck,
+                     eclipseState,
                      whichWell,
                      uses,
                      phase,
@@ -678,13 +659,13 @@ class WellTotal : public WellReport
 {
 public:
     WellTotal(const Summary& summary,
-              Opm::DeckConstPtr deck,
+              Opm::EclipseStateConstPtr eclipseState,
               int whichWell,
               PhaseUsage uses,
               BlackoilPhases::PhaseIndex phase,
               WellType type)
         : WellReport(summary,
-                     deck,
+                     eclipseState,
                      whichWell,
                      uses,
                      phase,
@@ -723,13 +704,13 @@ class WellBhp : public WellReport
 {
 public:
     WellBhp(const Summary& summary,
-            Opm::DeckConstPtr deck,
+            Opm::EclipseStateConstPtr eclipseState,
             int whichWell,
             PhaseUsage uses,
             BlackoilPhases::PhaseIndex phase,
             WellType type)
         : WellReport(summary,
-                     deck,
+                     eclipseState,
                      whichWell,
                      uses,
                      phase,
@@ -763,14 +744,13 @@ void Summary::writeTimeStep(int reportStepIdx,
     ecl_sum_fwrite(ertHandle());
 }
 
-void Summary::addAllWells(Opm::DeckConstPtr deck,
+void Summary::addAllWells(Opm::EclipseStateConstPtr eclipseState,
                           const PhaseUsage& uses)
 {
     // TODO: Only create report variables that are requested with keywords
     // (e.g. "WOPR") in the input files, and only for those wells that are
     // mentioned in those keywords
-    Opm::DeckKeywordConstPtr welspecsKeyword = deck->getKeyword("WELSPECS");
-    const int numWells = welspecsKeyword->size();
+    const int numWells = eclipseState->getSchedule()->numWells();
     for (int phaseIdx = 0; phaseIdx != BlackoilPhases::MaxNumPhases; ++phaseIdx) {
         const BlackoilPhases::PhaseIndex ertPhaseIdx =
             static_cast <BlackoilPhases::PhaseIndex>(phaseIdx);
@@ -786,7 +766,7 @@ void Summary::addAllWells(Opm::DeckConstPtr deck,
                 // W{O,G,W}{I,P}R
                 addWell(std::unique_ptr <WellReport>(
                             new WellRate(*this,
-                                         deck,
+                                         eclipseState,
                                          whichWell,
                                          uses,
                                          ertPhaseIdx,
@@ -794,7 +774,7 @@ void Summary::addAllWells(Opm::DeckConstPtr deck,
                 // W{O,G,W}{I,P}T
                 addWell(std::unique_ptr <WellReport>(
                             new WellTotal(*this,
-                                          deck,
+                                          eclipseState,
                                           whichWell,
                                           uses,
                                           ertPhaseIdx,
@@ -816,7 +796,7 @@ void Summary::addAllWells(Opm::DeckConstPtr deck,
         }
         addWell(std::unique_ptr <WellReport>(
                     new WellBhp(*this,
-                                deck,
+                                eclipseState,
                                 whichWell,
                                 uses,
                                 ertPhaseIdx,
@@ -842,18 +822,18 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
                        eclipseState_,
                        phaseUsage_);
 
-    if (deck_->hasKeyword("PERMX")) {
-        auto data = EclipseWriterDetails::getAllSiDoubles(deck_->getKeyword("PERMX"));
+    if (eclipseState_->hasDoubleGridProperty("PERMX")) {
+        auto data = eclipseState_->getDoubleGridProperty("PERMX")->getData();
         EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
         fortio.writeKeyword("PERMX", data);
     }
-    if (deck_->hasKeyword("PERMY")) {
-        auto data = EclipseWriterDetails::getAllSiDoubles(deck_->getKeyword("PERMY"));
+    if (eclipseState_->hasDoubleGridProperty("PERMY")) {
+        auto data = eclipseState_->getDoubleGridProperty("PERMY")->getData();
         EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
         fortio.writeKeyword("PERMY", data);
     }
-    if (deck_->hasKeyword("PERMZ")) {
-        auto data = EclipseWriterDetails::getAllSiDoubles(deck_->getKeyword("PERMZ"));
+    if (eclipseState_->hasDoubleGridProperty("PERMZ")) {
+        auto data = eclipseState_->getDoubleGridProperty("PERMZ")->getData();
         EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
         fortio.writeKeyword("PERMZ", data);
     }
@@ -864,11 +844,10 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
     summary_.reset(new EclipseWriterDetails::Summary(outputDir_,
                                                      baseName_,
                                                      timer,
-                                                     deck_,
                                                      eclGrid->getNX(),
                                                      eclGrid->getNY(),
                                                      eclGrid->getNZ()));
-    summary_->addAllWells(deck_, phaseUsage_);
+    summary_->addAllWells(eclipseState_, phaseUsage_);
 }
 
 void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
@@ -890,7 +869,6 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     EclipseWriterDetails::Restart restartHandle(outputDir_, baseName_, reportStepIdx_);
     restartHandle.writeHeader(timer,
                               reportStepIdx_,
-                              deck_,
                               numCells_,
                               cartesianSize_[0],
                               cartesianSize_[1],
@@ -942,15 +920,14 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
 
 
 EclipseWriter::EclipseWriter(const parameter::ParameterGroup& params,
-                             Opm::DeckConstPtr deck,
                              Opm::EclipseStateConstPtr eclipseState,
+                             const Opm::PhaseUsage &phaseUsage,
                              int numCells,
                              const int* compressedToCartesianCellIdx)
-    : deck_(deck)
-    , eclipseState_(eclipseState)
+    : eclipseState_(eclipseState)
     , numCells_(numCells)
     , compressedToCartesianCellIdx_(compressedToCartesianCellIdx)
-    , phaseUsage_(phaseUsageFromDeck(deck_))
+    , phaseUsage_(phaseUsage)
 {
     const auto eclGrid = eclipseState->getEclipseGrid();
     cartesianSize_[0] = eclGrid->getNX();
@@ -964,12 +941,12 @@ void EclipseWriter::init(const parameter::ParameterGroup& params)
 {
     // get the base name from the name of the deck
     using boost::filesystem::path;
-    path deck(params.get <std::string>("deck_filename"));
-    if (boost::to_upper_copy(path(deck.extension()).string()) == ".DATA") {
-        baseName_ = path(deck.stem()).string();
+    path deckPath(params.get <std::string>("deck_filename"));
+    if (boost::to_upper_copy(path(deckPath.extension()).string()) == ".DATA") {
+        baseName_ = path(deckPath.stem()).string();
     }
     else {
-        baseName_ = path(deck.filename()).string();
+        baseName_ = path(deckPath.filename()).string();
     }
 
     // make uppercase of everything (or otherwise we'll get uppercase

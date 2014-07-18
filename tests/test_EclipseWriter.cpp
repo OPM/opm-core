@@ -83,9 +83,10 @@ void createEclipseWriter(const char *deckString)
 
     BOOST_CHECK(ourFinerUnstructuredGrid.number_of_cells == 3*3*3);
 
+    Opm::PhaseUsage phaseUsage = Opm::phaseUsageFromDeck(deck);
     eclWriter.reset(new Opm::EclipseWriter(params,
-                                           deck,
                                            eclipseState,
+                                           phaseUsage,
                                            ourFinerUnstructuredGrid.number_of_cells,
                                            0));
 

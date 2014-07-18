@@ -27,12 +27,12 @@ struct UnstructuredGrid;
 namespace Opm {
 
 // forward declaration
-class Deck;
 class EclipseState;
 namespace parameter { class ParameterGroup; }
 class SimulatorState;
 class SimulatorTimer;
 class WellState;
+struct PhaseUsage;
 
 /*!
  * Interface for writing non-compositional (blackoil, two-phase) simulation
@@ -106,8 +106,8 @@ public:
      */
     static std::unique_ptr <OutputWriter>
     create (const parameter::ParameterGroup& params,
-            std::shared_ptr <const Deck> deck,
             std::shared_ptr <const EclipseState> eclipseState,
+            const Opm::PhaseUsage &phaseUsage,
             std::shared_ptr <const UnstructuredGrid> grid);
 };
 
