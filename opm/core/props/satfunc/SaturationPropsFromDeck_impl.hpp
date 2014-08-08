@@ -414,28 +414,29 @@ namespace Opm
 
 
     /// Update capillary pressure scaling according to pressure diff. and initial water saturation.
-    /// \param[in]     cell  Cell index. 
+    /// \param[in]     cell  Cell index.
     /// \param[in]     pcow  P_oil - P_water.
-    /// \param[in/out] swat  Water saturation. / Possibly modified Water saturation.    
+    /// \param[in/out] swat  Water saturation. / Possibly modified Water saturation.
     template <class SatFuncSet>
-    void SaturationPropsFromDeck<SatFuncSet>::swatInitScaling(const int cell, 
-                                                              const double pcow, 
-                                                              double & swat)
+    void SaturationPropsFromDeck<SatFuncSet>::swatInitScaling(const int cell,
+                                                              const double pcow,
+                                                              double& swat)
     {
-        if (phase_usage_.phase_used[Aqua]) {
+        if (phase_usage_.phase_used[BlackoilPhases::Aqua]) {
+            const double pc_low_threshold = 1.0e-8;
             // TODO: Mixed wettability systems - see ecl kw OPTIONS switch 74
             if (swat <= eps_transf_[cell].wat.smin) {
                 swat = eps_transf_[cell].wat.smin;
-            } else if (pcow < 1.0e-8) {
+            } else if (pcow < pc_low_threshold) {
                 swat = eps_transf_[cell].wat.smax;
             } else {
                 const int wpos = phase_usage_.phase_pos[BlackoilPhases::Aqua];
-                const int np = phase_usage_.num_phases;
-                double s[np];
-                s[wpos] = swat; 
-                double pc[np];
-                funcForCell(cell).evalPc(s, pc, &(eps_transf_[cell]));          
-                if (pc[wpos] > 1.0e-8) {
+                const int max_np = BlackoilPhases::MaxNumPhases;
+                double s[max_np] = { 0.0 };
+                s[wpos] = swat;
+                double pc[max_np] = { 0.0 };
+                funcForCell(cell).evalPc(s, pc, &(eps_transf_[cell]));
+                if (pc[wpos] > pc_low_threshold) {
                     eps_transf_[cell].wat.pcFactor *= pcow/pc[wpos];
                 }
             }
