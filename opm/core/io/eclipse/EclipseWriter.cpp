@@ -63,12 +63,6 @@
 // namespace start here since we don't want the ERT headers in it
 namespace Opm {
 namespace EclipseWriterDetails {
-
-/// Helper function when we don't really want any transformation
-/// (The C++ committee removed std::identity because it was "troublesome" (!?!)
-static double noConversion(const double& u)
-{ return u; }
-
 /// Helper method that can be used in keyword transformation (must carry
 /// the barsa argument)
 static double toBar(const double& pressure)
@@ -370,12 +364,12 @@ public:
     ~Summary()
     { ecl_sum_free(ertHandle_); }
 
-    typedef std::unique_ptr <WellReport> var_t;
-    typedef std::vector <var_t> vars_t;
+    typedef std::unique_ptr<WellReport> SummaryReportVar;
+    typedef std::vector<SummaryReportVar> SummaryReportVarCollection;
 
-    Summary& addWell(var_t var)
+    Summary& addWell(SummaryReportVar var)
     {
-        vars_.push_back(std::move(var));
+        summaryReportVars_.push_back(std::move(var));
         return *this;
     }
 
@@ -395,7 +389,8 @@ public:
 private:
     ecl_sum_type *ertHandle_;
 
-    vars_t vars_;
+    Opm::EclipseStateConstPtr eclipseState_;
+    SummaryReportVarCollection summaryReportVars_;
 };
 
 class SummaryTimeStep : private boost::noncopyable
@@ -509,64 +504,101 @@ private:
 class WellReport : private boost::noncopyable
 {
 protected:
-    // this is only needed to allow derived classes to hide their copy
-    // constructor
-    WellReport()
-        : index_(0)
-        , sign_(0)
-    {}
-
     WellReport(const Summary& summary,    /* section to add to  */
-               Opm::EclipseStateConstPtr eclipseState,/* well names         */
-               int whichWell,                    /* index of well line */
+               Opm::EclipseStateConstPtr eclipseState,
+               Opm::WellConstPtr& well,
                PhaseUsage uses,                  /* phases present     */
                BlackoilPhases::PhaseIndex phase, /* oil, water or gas  */
                WellType type,                    /* prod. or inj.      */
                char aggregation,                 /* rate or total      */
                std::string unit)
         // save these for when we update the value in a timestep
-        : index_(whichWell * uses.num_phases + uses.phase_pos[phase])
-
-        // producers can be seen as negative injectors
-        , sign_(type == INJECTOR ? +1. : -1.)
+        : eclipseState_(eclipseState)
+        , well_(well)
+        , phaseUses_(uses)
+        , phaseIdx_(phase)
     {
+        // producers can be seen as negative injectors
+        if (type == INJECTOR)
+            sign_ = +1.0;
+        else
+            sign_ = -1.0;
         ertHandle_ = ecl_sum_add_var(summary.ertHandle(),
                                      varName_(phase,
                                               type,
                                               aggregation).c_str(),
-                                     wellName_(eclipseState, whichWell).c_str(),
+                                     well_->name().c_str(),
                                      /*num=*/ 0,
                                      unit.c_str(),
                                      /*defaultValue=*/ 0.);
     }
 
 public:
-    /// Allows us to pass this type to ecl_sum_tstep_iset
-    operator int()
-    { return smspec_node_get_params_index(ertHandle()); }
-
-    /// Update the monitor according to the new state of the well, and
-    /// get the reported value. Note: Only call this once for each timestep.
-    virtual double update(const SimulatorTimer& timer,
-                          const WellState& wellState) = 0;
+    /// Retrieve the value which the monitor is supposed to write to the summary file
+    /// according to the state of the well.
+    virtual double retrieveValue(const SimulatorTimer& timer,
+                                 const WellState& wellState,
+                                 const std::map<std::string, int>& nameToIdxMap) = 0;
 
     smspec_node_type *ertHandle() const
     { return ertHandle_; }
 
-private:
-    smspec_node_type *ertHandle_;
-
-    /// index into a (flattened) wells*phases matrix
-    const int index_;
-
-    /// natural sign of the rate
-    const double sign_;
-
-    /// Get the name associated with this well
-    std::string wellName_(Opm::EclipseStateConstPtr eclipseState,
-                          int whichWell)
+protected:
+    void updateTimeStepWellIndex_(const SimulatorTimer& timer,
+                                  const std::map<std::string, int>& nameToIdxMap)
     {
-        return eclipseState->getSchedule()->getWells()[whichWell]->name();
+        const std::string& wellName = well_->name();
+
+        const auto wellIdxIt = nameToIdxMap.find(wellName);
+        if (wellIdxIt == nameToIdxMap.end()) {
+            timeStepWellIdx_ = -1;
+            flatIdx_ = -1;
+            return;
+        }
+
+        timeStepWellIdx_ = wellIdxIt->second;
+        flatIdx_ = timeStepWellIdx_*phaseUses_.num_phases + phaseUses_.phase_pos[phaseIdx_];
+    }
+
+    double rate(const WellState& wellState)
+    {
+        // convert m^3/s of injected fluid to m^3/d of produced fluid
+        const double convFactor = Opm::unit::convert::to(1., Opm::unit::day);
+        double value = 0;
+        if (wellState.wellRates().size() > 0) {
+            assert(int(wellState.wellRates().size()) > flatIdx_);
+            value = sign_ * wellState.wellRates()[flatIdx_] * convFactor;
+        }
+        return value;
+    }
+
+    double bhp(const WellState& wellState)
+    {
+        if (wellState.bhp().size() > 0) {
+            // Note that 'flatIdx_' is used here even though it is meant
+            // to give a (well,phase) pair.
+            const int numPhases = wellState.wellRates().size() / wellState.bhp().size();
+
+            return wellState.bhp()[flatIdx_/numPhases];
+        }
+        return 0.0;
+    }
+
+    /// Get the index associated a well name
+    int wellIndex_(Opm::EclipseStateConstPtr eclipseState)
+    {
+        const Opm::ScheduleConstPtr schedule = eclipseState->getSchedule();
+
+        const std::string& wellName = well_->name();
+        const auto& wells = schedule->getWells();
+        for (size_t wellIdx = 0; wellIdx < wells.size(); ++wellIdx) {
+            if (wells[wellIdx]->name() == wellName) {
+                return wellIdx;
+            }
+        }
+
+        OPM_THROW(std::runtime_error,
+                  "Well '" << wellName << "' is not present in deck");
     }
 
     /// Compose the name of the summary variable, e.g. "WOPR" for
@@ -600,30 +632,21 @@ private:
         return name;
     }
 
-protected:
-    double rate(const WellState& wellState)
-    {
-        // convert m^3/s of injected fluid to m^3/d of produced fluid
-        const double convFactor = Opm::unit::convert::to(1., Opm::unit::day);
-        double value = 0;
-        if (wellState.wellRates().size() > 0) {
-            assert(int(wellState.wellRates().size()) > index_);
-            value = sign_ * wellState.wellRates()[index_] * convFactor;
-        }
-        return value;
-    }
+    smspec_node_type *ertHandle_;
 
-    double bhp(const WellState& wellstate)
-    {
-        if (wellstate.bhp().size() > 0) {
-            // Note that 'index_' is used here even though it is meant
-            // to give a (well,phase) pair.
-            const int num_phases = wellstate.wellRates().size() / wellstate.bhp().size();
+    Opm::EclipseStateConstPtr eclipseState_;
+    Opm::WellConstPtr well_;
 
-            return wellstate.bhp()[index_/num_phases];
-        }
-        return 0.0;
-    }
+    PhaseUsage phaseUses_;
+    BlackoilPhases::PhaseIndex phaseIdx_;
+
+    int timeStepWellIdx_;
+
+    /// index into a (flattened) wellsOfTimeStep*phases matrix
+    int flatIdx_;
+
+    /// natural sign of the rate
+    double sign_;
 };
 
 /// Monitors the rate given by a well.
@@ -632,13 +655,13 @@ class WellRate : public WellReport
 public:
     WellRate(const Summary& summary,
              Opm::EclipseStateConstPtr eclipseState,
-             int whichWell,
+             Opm::WellConstPtr well,
              PhaseUsage uses,
              BlackoilPhases::PhaseIndex phase,
              WellType type)
         : WellReport(summary,
                      eclipseState,
-                     whichWell,
+                     well,
                      uses,
                      phase,
                      type,
@@ -646,11 +669,19 @@ public:
                      "SM3/DAY" /* surf. cub. m. per day */)
     { }
 
-    virtual double update(const SimulatorTimer& /*timer*/,
-                          const WellState& wellState)
+    virtual double retrieveValue(const SimulatorTimer& timer,
+                                 const WellState& wellState,
+                                 const std::map<std::string, int>& wellNameToIdxMap)
     {
+        // find the index for the quantity in the wellState
+        this->updateTimeStepWellIndex_(timer, wellNameToIdxMap);
+        if (this->flatIdx_ < 0) {
+            // well not active in current time step
+            return 0.0;
+        }
+
         // TODO: Why only positive rates?
-        return std::max (0., rate (wellState));
+        return std::max(0., rate(wellState));
     }
 };
 
@@ -660,13 +691,13 @@ class WellTotal : public WellReport
 public:
     WellTotal(const Summary& summary,
               Opm::EclipseStateConstPtr eclipseState,
-              int whichWell,
+              Opm::WellConstPtr well,
               PhaseUsage uses,
               BlackoilPhases::PhaseIndex phase,
               WellType type)
         : WellReport(summary,
                      eclipseState,
-                     whichWell,
+                     well,
                      uses,
                      phase,
                      type,
@@ -676,14 +707,23 @@ public:
         , total_(0.)
     { }
 
-    virtual double update(const SimulatorTimer& timer,
-                          const WellState& wellState)
+    virtual double retrieveValue(const SimulatorTimer& timer,
+                                 const WellState& wellState,
+                                 const std::map<std::string, int>& wellNameToIdxMap)
     {
         if (timer.currentStepNum() == 0) {
             // We are at the initial state.
             // No step has been taken yet.
             return 0.0;
         }
+
+        // find the index for the quantity in the wellState
+        this->updateTimeStepWellIndex_(timer, wellNameToIdxMap);
+        if (this->flatIdx_ < 0) {
+            // well not active in current time step
+            return 0.0;
+        }
+
         // TODO: Is the rate average for the timestep, or is in
         // instantaneous (in which case trapezoidal or Simpson integration
         // would probably be better)
@@ -705,13 +745,13 @@ class WellBhp : public WellReport
 public:
     WellBhp(const Summary& summary,
             Opm::EclipseStateConstPtr eclipseState,
-            int whichWell,
+            Opm::WellConstPtr well,
             PhaseUsage uses,
             BlackoilPhases::PhaseIndex phase,
             WellType type)
         : WellReport(summary,
                      eclipseState,
-                     whichWell,
+                     well,
                      uses,
                      phase,
                      type,
@@ -719,9 +759,17 @@ public:
                      "Pascal")
     { }
 
-    virtual double update(const SimulatorTimer& /*timer*/,
-                          const WellState& wellState)
+    virtual double retrieveValue(const SimulatorTimer& timer,
+                                 const WellState& wellState,
+                                 const std::map<std::string, int>& wellNameToIdxMap)
     {
+        // find the index for the quantity in the wellState
+        this->updateTimeStepWellIndex_(timer, wellNameToIdxMap);
+        if (this->flatIdx_ < 0) {
+            // well not active in current time step
+            return 0.0;
+        }
+
         return bhp(wellState);
     }
 };
@@ -732,12 +780,21 @@ void Summary::writeTimeStep(int reportStepIdx,
                             const SimulatorTimer& timer,
                             const WellState& wellState)
 {
+    // create a name -> well index map
+    const Opm::ScheduleConstPtr schedule = eclipseState_->getSchedule();
+    const auto& timeStepWells = schedule->getWells(reportStepIdx);
+    std::map<std::string, int> wellNameToIdxMap;
+    for (size_t tsWellIdx = 0; tsWellIdx < timeStepWells.size(); ++tsWellIdx) {
+        wellNameToIdxMap[timeStepWells[tsWellIdx]->name()] = tsWellIdx;
+    }
+
     // internal view; do not move this code out of Summary!
     SummaryTimeStep tstep(*this, reportStepIdx, timer);
     // write all the variables
-    for (vars_t::iterator v = vars_.begin(); v != vars_.end(); ++v) {
-        const double value = (*v)->update(timer, wellState);
-        ecl_sum_tstep_iset(tstep.ertHandle(), *(*v).get(), value);
+    for (auto varIt = summaryReportVars_.begin(); varIt != summaryReportVars_.end(); ++varIt) {
+        ecl_sum_tstep_iset(tstep.ertHandle(),
+                           smspec_node_get_params_index((*varIt)->ertHandle()),
+                           (*varIt)->retrieveValue(timer, wellState, wellNameToIdxMap));
     }
 
     // write the summary file to disk
@@ -747,10 +804,13 @@ void Summary::writeTimeStep(int reportStepIdx,
 void Summary::addAllWells(Opm::EclipseStateConstPtr eclipseState,
                           const PhaseUsage& uses)
 {
+    eclipseState_ = eclipseState;
     // TODO: Only create report variables that are requested with keywords
     // (e.g. "WOPR") in the input files, and only for those wells that are
     // mentioned in those keywords
-    const int numWells = eclipseState->getSchedule()->numWells();
+    Opm::ScheduleConstPtr schedule = eclipseState->getSchedule();
+    const auto& wells = schedule->getWells();
+    const int numWells = schedule->numWells();
     for (int phaseIdx = 0; phaseIdx != BlackoilPhases::MaxNumPhases; ++phaseIdx) {
         const BlackoilPhases::PhaseIndex ertPhaseIdx =
             static_cast <BlackoilPhases::PhaseIndex>(phaseIdx);
@@ -758,33 +818,32 @@ void Summary::addAllWells(Opm::EclipseStateConstPtr eclipseState,
         if (!uses.phase_used[phaseIdx]) {
             continue;
         }
-        for (size_t typeIndex = 0;
-             typeIndex < sizeof(WELL_TYPES) / sizeof(WELL_TYPES[0]);
-             ++typeIndex) {
-            const WellType type = WELL_TYPES[typeIndex];
-            for (int whichWell = 0; whichWell != numWells; ++whichWell) {
+        size_t numWellTypes = sizeof(WELL_TYPES) / sizeof(WELL_TYPES[0]);
+        for (size_t wellTypeIdx = 0; wellTypeIdx < numWellTypes; ++wellTypeIdx) {
+            const WellType wellType = WELL_TYPES[wellTypeIdx];
+            for (int wellIdx = 0; wellIdx != numWells; ++wellIdx) {
                 // W{O,G,W}{I,P}R
                 addWell(std::unique_ptr <WellReport>(
                             new WellRate(*this,
                                          eclipseState,
-                                         whichWell,
+                                         wells[wellIdx],
                                          uses,
                                          ertPhaseIdx,
-                                         type)));
+                                         wellType)));
                 // W{O,G,W}{I,P}T
                 addWell(std::unique_ptr <WellReport>(
                             new WellTotal(*this,
                                           eclipseState,
-                                          whichWell,
+                                          wells[wellIdx],
                                           uses,
                                           ertPhaseIdx,
-                                          type)));
+                                          wellType)));
             }
         }
     }
 
     // Add BHP monitors
-    for (int whichWell = 0; whichWell != numWells; ++whichWell) {
+    for (int wellIdx = 0; wellIdx != numWells; ++wellIdx) {
         // In the call below: uses, phase and the well type arguments
         // are not used, except to set up an index that stores the
         // well indirectly. For details see the implementation of the
@@ -797,7 +856,7 @@ void Summary::addAllWells(Opm::EclipseStateConstPtr eclipseState,
         addWell(std::unique_ptr <WellReport>(
                     new WellBhp(*this,
                                 eclipseState,
-                                whichWell,
+                                wells[wellIdx],
                                 uses,
                                 ertPhaseIdx,
                                 WELL_TYPES[0])));
