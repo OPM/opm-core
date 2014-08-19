@@ -309,6 +309,9 @@ namespace Opm
             out << "SPECGRID\n" << new_dims_[0] << ' ' << new_dims_[1] << ' ' << new_dims_[2]
                 << " 1 F\n/\n\n";
 
+            out.precision(15);
+            out.setf(std::ios::scientific);
+
             outputField(out, new_COORD_, "COORD", /* nl = */ 3);
             outputField(out, new_ZCORN_, "ZCORN", /* nl = */ 4);
             outputField(out, new_ACTNUM_, "ACTNUM");
