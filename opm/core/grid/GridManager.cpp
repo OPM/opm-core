@@ -43,7 +43,7 @@ namespace Opm
     GridManager::GridManager(Opm::DeckConstPtr deck)
         : ug_(0)
     {
-        auto eclipseGrid = std::make_shared<Opm::EclipseGrid>(deck);
+        auto eclipseGrid = std::make_shared<const Opm::EclipseGrid>(deck);
         initFromEclipseGrid(eclipseGrid);
     }
 
