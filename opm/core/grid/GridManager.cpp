@@ -146,7 +146,9 @@ namespace Opm
         g.actnum = actnum.data();
         g.mapaxes = mapaxes.data();
 
-        ug_ = create_grid_cornerpoint(&g , 0.0);
+        const double z_tolerance = eclipseGrid->isPinchActive() ?
+            eclipseGrid->getPinchThresholdThickness() : 0.0;
+        ug_ = create_grid_cornerpoint(&g, z_tolerance);
         if (!ug_) {
             OPM_THROW(std::runtime_error, "Failed to construct grid.");
         }
