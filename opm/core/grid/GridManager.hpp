@@ -80,10 +80,8 @@ namespace Opm
         GridManager(const GridManager& other);
         GridManager& operator=(const GridManager& other);
 
-        // Construct corner-point grid from deck.
-        void initFromDeckCornerpoint(Opm::DeckConstPtr deck);
-        // Construct tensor grid from deck.
-        void initFromDeckTensorgrid(Opm::DeckConstPtr deck);
+        // Construct corner-point grid from EclipseGrid.
+        void initFromEclipseGrid(Opm::EclipseGridConstPtr eclipseGrid);
 
         // The managed UnstructuredGrid.
         UnstructuredGrid* ug_;
