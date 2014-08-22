@@ -76,9 +76,7 @@ BOOST_AUTO_TEST_CASE(EqualEclipseGrid) {
     Opm::ParserPtr parser(new Opm::Parser() );
     Opm::DeckConstPtr deck = parser->parseFile( filename );
 
-    std::shared_ptr<Opm::RUNSPECSection> runspecSection(new Opm::RUNSPECSection(deck) );
-    std::shared_ptr<Opm::GRIDSection> gridSection(new Opm::GRIDSection(deck) );
-    std::shared_ptr<const Opm::EclipseGrid> grid(new Opm::EclipseGrid( runspecSection , gridSection ));
+    std::shared_ptr<const Opm::EclipseGrid> grid(new Opm::EclipseGrid(deck));
 
     Opm::GridManager gridM(grid);
     const UnstructuredGrid* cgrid1 = gridM.c_grid();

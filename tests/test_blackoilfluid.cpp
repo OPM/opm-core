@@ -1,6 +1,5 @@
 #include <config.h>
 
-#include <opm/core/grid/GridManager.hpp>
 #include <opm/core/props/pvt/PvtConstCompr.hpp>
 #include <opm/core/props/pvt/PvtDead.hpp>
 #include <opm/core/props/pvt/PvtDeadSpline.hpp>
@@ -11,7 +10,6 @@
 #include <opm/core/props/pvt/BlackoilPvtProperties.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
-#include <opm/core/grid.h>
 
 #include <opm/parser/eclipse/Utility/PvtoTable.hpp>
 #include <opm/parser/eclipse/Utility/PvtgTable.hpp>
@@ -39,8 +37,6 @@ using namespace std;
 
 
 std::vector<std::shared_ptr<PvtInterface> > getProps(Opm::DeckConstPtr deck, PhaseUsage phase_usage_){
-    Opm::GridManager grid(deck);
-
     enum PhaseIndex { Aqua = 0, Liquid = 1, Vapour = 2 };
     int samples = 0;
 
