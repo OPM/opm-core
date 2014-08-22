@@ -57,7 +57,7 @@ namespace Opm
         SaturationPropsFromDeck<SatFuncSimpleNonuniform>* ptr
             = new SaturationPropsFromDeck<SatFuncSimpleNonuniform>();
         satprops_.reset(ptr);
-        ptr->init(deck, number_of_cells, global_cell, begin_cell_centroids, dimension,
+        ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids, dimension,
                   /*numSamples=*/0);
 
         if (pvt_.numPhases() != satprops_->numPhases()) {
@@ -99,19 +99,19 @@ namespace Opm
                 SaturationPropsFromDeck<SatFuncStone2Uniform>* ptr
                     = new SaturationPropsFromDeck<SatFuncStone2Uniform>();
                 satprops_.reset(ptr);
-                ptr->init(deck, number_of_cells, global_cell, begin_cell_centroids,
+                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
                           dimension, sat_samples);
             } else if (threephase_model == "simple") {
                 SaturationPropsFromDeck<SatFuncSimpleUniform>* ptr
                     = new SaturationPropsFromDeck<SatFuncSimpleUniform>();
                 satprops_.reset(ptr);
-                ptr->init(deck, number_of_cells, global_cell, begin_cell_centroids,
+                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
                           dimension, sat_samples);
             } else if (threephase_model == "gwseg") {
                 SaturationPropsFromDeck<SatFuncGwsegUniform>* ptr
                     = new SaturationPropsFromDeck<SatFuncGwsegUniform>();
                 satprops_.reset(ptr);
-                ptr->init(deck, number_of_cells, global_cell, begin_cell_centroids,
+                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
                           dimension, sat_samples);
             } else {
                 OPM_THROW(std::runtime_error, "Unknown threephase_model: " << threephase_model);
@@ -121,19 +121,19 @@ namespace Opm
                 SaturationPropsFromDeck<SatFuncStone2Nonuniform>* ptr
                     = new SaturationPropsFromDeck<SatFuncStone2Nonuniform>();
                 satprops_.reset(ptr);
-                ptr->init(deck, number_of_cells, global_cell, begin_cell_centroids,
+                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
                           dimension, sat_samples);
             } else if (threephase_model == "simple") {
                 SaturationPropsFromDeck<SatFuncSimpleNonuniform>* ptr
                     = new SaturationPropsFromDeck<SatFuncSimpleNonuniform>();
                 satprops_.reset(ptr);
-                ptr->init(deck, number_of_cells, global_cell, begin_cell_centroids,
+                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
                           dimension, sat_samples);
             } else if (threephase_model == "gwseg") {
                 SaturationPropsFromDeck<SatFuncGwsegNonuniform>* ptr
                     = new SaturationPropsFromDeck<SatFuncGwsegNonuniform>();
                 satprops_.reset(ptr);
-                ptr->init(deck, number_of_cells, global_cell, begin_cell_centroids,
+                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
                           dimension, sat_samples);
             } else {
                 OPM_THROW(std::runtime_error, "Unknown threephase_model: " << threephase_model);
