@@ -180,6 +180,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_wellsgroup.cpp
 	tests/test_wellcollection.cpp
 	tests/test_timer.cpp
+	tests/test_minpvprocessor.cpp
   )
 
 # originally generated with the command:
@@ -248,6 +249,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/grid/FaceQuadrature.hpp
 	opm/core/grid/GridHelpers.hpp
 	opm/core/grid/GridManager.hpp
+	opm/core/grid/MinpvProcessor.hpp
 	opm/core/grid/cart_grid.h
 	opm/core/grid/cornerpoint_grid.h
 	opm/core/grid/cpgpreprocess/facetopology.h
