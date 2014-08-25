@@ -28,10 +28,22 @@
 namespace Opm
 {
 
+    /// \brief Transform a corner-point grid ZCORN field to account for MINPV processing.
     class MinpvProcessor
     {
     public:
+        /// \brief Create a processor.
+        /// \param[in]   nx   logical cartesian number of cells in I-direction
+        /// \param[in]   ny   logical cartesian number of cells in J-direction
+        /// \param[in]   nz   logical cartesian number of cells in K-direction
         MinpvProcessor(const int nx, const int ny, const int nz);
+        /// Change zcorn so that it respects the minpv property.
+        /// \param[in]   pv     pore volumes of all logical cartesian cells
+        /// \param[in]   minpv  minimum pore volume to accept a cell
+        /// \param[in]   zcorn  ZCORN array to be manipulated
+        /// After processing, all cells that have lower pore volume than minpv
+        /// will have the zcorn numbers changed so they are zero-thickness. Any
+        /// cell below will be changed to include the deleted volume.
         void process(const std::vector<double>& pv, const double minpv, double* zcorn);
     private:
         std::array<double, 8> getCellZcorn(const int i, const int j, const int k, const double* z);
