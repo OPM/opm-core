@@ -82,9 +82,9 @@ namespace Opm
         }
 
         // Main loop.
-        for (int ii = 0; ii < dims_[0]; ++ii) {
+        for (int kk = 0; kk < dims_[2]; ++kk) {
             for (int jj = 0; jj < dims_[1]; ++jj) {
-                for (int kk = 0; kk < dims_[2]; ++kk) {
+                for (int ii = 0; ii < dims_[0]; ++ii) {
                     const int c = ii + jj*dims_[0] + kk*dims_[0]*dims_[1];
                     if (pv[c] < minpv) {
                         // Move deeper (higher k) coordinates to lower k coordinates.
