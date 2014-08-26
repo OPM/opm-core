@@ -309,16 +309,19 @@ namespace Opm
             out << "SPECGRID\n" << new_dims_[0] << ' ' << new_dims_[1] << ' ' << new_dims_[2]
                 << " 1 F\n/\n\n";
 
-            outputField(out, new_COORD_, "COORD", /* nl = */ 6);
-            outputField(out, new_ZCORN_, "ZCORN", /* nl = */ 8);
+            out.precision(15);
+            out.setf(std::ios::scientific);
+
+            outputField(out, new_COORD_, "COORD", /* nl = */ 3);
+            outputField(out, new_ZCORN_, "ZCORN", /* nl = */ 4);
             outputField(out, new_ACTNUM_, "ACTNUM");
-            outputField(out, new_PORO_, "PORO");
-            if (hasNTG()) {outputField(out, new_NTG_, "NTG");}
-            if (hasSWCR()) {outputField(out, new_SWCR_, "SWCR");}
-            if (hasSOWCR()) {outputField(out, new_SOWCR_, "SOWCR");}
-            outputField(out, new_PERMX_, "PERMX");
-            outputField(out, new_PERMY_, "PERMY");
-            outputField(out, new_PERMZ_, "PERMZ");
+            outputField(out, new_PORO_, "PORO", 4);
+            if (hasNTG()) {outputField(out, new_NTG_, "NTG", 4);}
+            if (hasSWCR()) {outputField(out, new_SWCR_, "SWCR", 4);}
+            if (hasSOWCR()) {outputField(out, new_SOWCR_, "SOWCR", 4);}
+            outputField(out, new_PERMX_, "PERMX", 4);
+            outputField(out, new_PERMY_, "PERMY", 4);
+            outputField(out, new_PERMZ_, "PERMZ", 4);
             outputField(out, new_SATNUM_, "SATNUM");
         }
         bool hasNTG() const {return !new_NTG_.empty(); }
