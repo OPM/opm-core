@@ -268,7 +268,7 @@ namespace Opm {
 
         /**
          * Predefined data array policies for use with class template
-         * \code CompressedAccess<> \endcode.
+         * \code Compressed<> \endcode.
          */
         namespace ArrayPolicy {
             /**
