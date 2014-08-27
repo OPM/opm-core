@@ -57,8 +57,12 @@ namespace Opm
     {
         // Not doing init-list init since bracket-init not available
         // for all compilers we support (gcc 4.4).
-        dims_ = {{ nx, ny, nz }};
-        delta_ = {{ 1, 2*nx, 4*nx*ny }};
+        dims_[0] = nx;
+        dims_[1] = ny;
+        dims_[2] = nz;
+        delta_[0] = 1;
+        delta_[1] = 2*nx;
+        delta_[2] = 4*nx*ny;
     }
 
 
