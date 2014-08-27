@@ -44,10 +44,11 @@ namespace Opm
         /// After processing, all cells that have lower pore volume than minpv
         /// will have the zcorn numbers changed so they are zero-thickness. Any
         /// cell below will be changed to include the deleted volume.
-        void process(const std::vector<double>& pv, const double minpv, double* zcorn);
+        void process(const std::vector<double>& pv, const double minpv, double* zcorn) const;
     private:
-        std::array<double, 8> getCellZcorn(const int i, const int j, const int k, const double* z);
-        void setCellZcorn(const int i, const int j, const int k, const std::array<double, 8>& cellz, double* z);
+        std::array<int,8> cornerIndices(const int i, const int j, const int k) const;
+        std::array<double, 8> getCellZcorn(const int i, const int j, const int k, const double* z) const;
+        void setCellZcorn(const int i, const int j, const int k, const std::array<double, 8>& cellz, double* z) const;
         std::array<int, 3> dims_;
         std::array<int, 3> delta_;
     };
@@ -62,7 +63,7 @@ namespace Opm
 
 
 
-    void MinpvProcessor::process(const std::vector<double>& pv, const double minpv, double* zcorn)
+    void MinpvProcessor::process(const std::vector<double>& pv, const double minpv, double* zcorn) const
     {
         // Algorithm:
         // 1. Process each column of cells (with same i and j
@@ -85,7 +86,7 @@ namespace Opm
         for (int kk = 0; kk < dims_[2]; ++kk) {
             for (int jj = 0; jj < dims_[1]; ++jj) {
                 for (int ii = 0; ii < dims_[0]; ++ii) {
-                    const int c = ii + jj*dims_[0] + kk*dims_[0]*dims_[1];
+                    const int c = ii + dims_[0] * (jj + dims_[1] * kk);
                     if (pv[c] < minpv) {
                         // Move deeper (higher k) coordinates to lower k coordinates.
                         std::array<double, 8> cz = getCellZcorn(ii, jj, kk, zcorn);
@@ -109,17 +110,27 @@ namespace Opm
     }
 
 
+
+    std::array<int,8> MinpvProcessor::cornerIndices(const int i, const int j, const int k) const
+    {
+        const int ix = 2*(i*delta_[0] + j*delta_[1] + k*delta_[2]);
+        std::array<int, 8> ixs = {{ ix,                         ix + delta_[0],
+                                    ix + delta_[1],             ix + delta_[1] + delta_[0],
+                                    ix + delta_[2],             ix + delta_[2] + delta_[0],
+                                    ix + delta_[2] + delta_[1], ix + delta_[2] + delta_[1] + delta_[0] }};
+
+        return ixs;
+    }
+
+
+
     // Returns the eight z-values associated with a given cell.
     // The ordering is such that i runs fastest. That is, with
     // L = low and H = high:
     // {LLL, HLL, LHL, HHL, LLH, HLH, LHH, HHH }.
-    std::array<double, 8> MinpvProcessor::getCellZcorn(const int i, const int j, const int k, const double* z)
+    std::array<double, 8> MinpvProcessor::getCellZcorn(const int i, const int j, const int k, const double* z) const
     {
-        const int ix = 2*(i*delta_[0] + j*delta_[1] + k*delta_[2]);
-        std::array<int, 8> ixs = {{ ix,                       ix + delta_[0],
-                                    ix + delta_[1],            ix + delta_[1] + delta_[0],
-                                    ix + delta_[2],            ix + delta_[2] + delta_[0],
-                                    ix + delta_[2] + delta_[1], ix + delta_[2] + delta_[1] + delta_[0] }};
+        const std::array<int, 8> ixs = cornerIndices(i, j, k);
         std::array<double, 8> cellz;
         for (int count = 0; count < 8; ++count) {
             cellz[count] = z[ixs[count]];
@@ -129,13 +140,9 @@ namespace Opm
 
 
 
-    void MinpvProcessor::setCellZcorn(const int i, const int j, const int k, const std::array<double, 8>& cellz, double* z)
+    void MinpvProcessor::setCellZcorn(const int i, const int j, const int k, const std::array<double, 8>& cellz, double* z) const
     {
-        const int ix = 2*(i*delta_[0] + j*delta_[1] + k*delta_[2]);
-        std::array<int, 8> ixs = {{ ix,                       ix + delta_[0],
-                                    ix + delta_[1],            ix + delta_[1] + delta_[0],
-                                    ix + delta_[2],            ix + delta_[2] + delta_[0],
-                                    ix + delta_[2] + delta_[1], ix + delta_[2] + delta_[1] + delta_[0] }};
+        const std::array<int, 8> ixs = cornerIndices(i, j, k);
         for (int count = 0; count < 8; ++count) {
             z[ixs[count]] = cellz[count];
         }
