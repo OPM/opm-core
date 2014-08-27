@@ -107,13 +107,6 @@ namespace Opm
             OPM_THROW(std::runtime_error, "Invalid permeability field.");
         }
 
-        // Assign permeability values only if such values are
-        // given in the input deck represented by 'deck'.  In
-        // other words: Don't set any (arbitrary) default values.
-        // It is infinitely better to experience a reproducible
-        // crash than subtle errors resulting from a (poorly
-        // chosen) default value...
-        //
         if (tensor.size() > 1) {
             const int* gc = global_cell;
             int off = 0;
@@ -126,10 +119,12 @@ namespace Opm
                 for (int i = 0; i < dim; ++i) {
                     for (int j = 0; j < dim; ++j, ++kix) {
                         // K(i,j) = (*tensor[kmap[kix]])[glob];
-                        permeability_[off + kix] = (*tensor[kmap[kix]])[glob];
+                        permeability_[off + (i + dim*j)] = (*tensor[kmap[kix]])[glob];
                     }
+
                     // K(i,i) = std::max(K(i,i), perm_threshold);
-                    permeability_[off + 3*i + i] = std::max(permeability_[off + 3*i + i], perm_threshold);
+                    double& kii = permeability_[off + i*(dim + 1)];
+                    kii = std::max(kii, perm_threshold);
                 }
 
                 permfield_valid_[c] = std::vector<unsigned char>::value_type(1);
