@@ -92,7 +92,7 @@ namespace Opm
                         for (int count = 0; count < 4; ++count) {
                             cz[count + 4] = cz[count];
                         }
-                        setCellZcorn(ii, jj, kk, cz, const_cast<double*>(zcorn));
+                        setCellZcorn(ii, jj, kk, cz, zcorn);
                         // Check if there is a cell below.
                         if (kk < dims_[2] - 1) {
                             // Set lower k coordinates of cell below to upper cells's coordinates.
@@ -100,7 +100,7 @@ namespace Opm
                             for (int count = 0; count < 4; ++count) {
                                 cz_below[count] = cz[count];
                             }
-                            setCellZcorn(ii, jj, kk + 1, cz_below, const_cast<double*>(zcorn));
+                            setCellZcorn(ii, jj, kk + 1, cz_below, zcorn);
                         }
                     }
                 }
