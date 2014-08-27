@@ -38,9 +38,9 @@ namespace Opm
         /// \param[in]   nz   logical cartesian number of cells in K-direction
         MinpvProcessor(const int nx, const int ny, const int nz);
         /// Change zcorn so that it respects the minpv property.
-        /// \param[in]   pv     pore volumes of all logical cartesian cells
-        /// \param[in]   minpv  minimum pore volume to accept a cell
-        /// \param[in]   zcorn  ZCORN array to be manipulated
+        /// \param[in]       pv     pore volumes of all logical cartesian cells
+        /// \param[in]       minpv  minimum pore volume to accept a cell
+        /// \param[in, out]  zcorn  ZCORN array to be manipulated
         /// After processing, all cells that have lower pore volume than minpv
         /// will have the zcorn numbers changed so they are zero-thickness. Any
         /// cell below will be changed to include the deleted volume.
