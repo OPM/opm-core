@@ -23,6 +23,7 @@
 #include <opm/core/grid.h>
 #include <opm/core/grid/cart_grid.h>
 #include <opm/core/grid/cornerpoint_grid.h>
+#include <opm/core/grid/MinpvProcessor.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
@@ -32,11 +33,12 @@
 
 namespace Opm
 {
+
     /// Construct a 3d corner-point grid from a deck.
     GridManager::GridManager(Opm::EclipseGridConstPtr eclipseGrid)
         : ug_(0)
     {
-        initFromEclipseGrid(eclipseGrid);
+        initFromEclipseGrid(eclipseGrid, std::vector<double>());
     }
 
 
@@ -44,9 +46,16 @@ namespace Opm
         : ug_(0)
     {
         auto eclipseGrid = std::make_shared<const Opm::EclipseGrid>(deck);
-        initFromEclipseGrid(eclipseGrid);
+        initFromEclipseGrid(eclipseGrid, std::vector<double>());
     }
 
+
+    GridManager::GridManager(Opm::EclipseGridConstPtr eclipseGrid,
+                             const std::vector<double>& poreVolumes)
+        : ug_(0)
+    {
+        initFromEclipseGrid(eclipseGrid, poreVolumes);
+    }
 
 
     /// Construct a 2d cartesian grid with cells of unit size.
@@ -124,7 +133,8 @@ namespace Opm
 
 
     // Construct corner-point grid from EclipseGrid.
-    void GridManager::initFromEclipseGrid(Opm::EclipseGridConstPtr eclipseGrid)
+    void GridManager::initFromEclipseGrid(Opm::EclipseGridConstPtr eclipseGrid,
+                                          const std::vector<double>& poreVolumes)
     {
         struct grdecl g;
         std::vector<int> actnum;
@@ -145,6 +155,11 @@ namespace Opm
         g.zcorn = zcorn.data();
         g.actnum = actnum.data();
         g.mapaxes = mapaxes.data();
+
+        if (!poreVolumes.empty() && eclipseGrid->isMinpvActive()) {
+            MinpvProcessor mp(g.dims[0], g.dims[1], g.dims[2]);
+            mp.process(poreVolumes, eclipseGrid->getMinpvValue(), zcorn.data());
+        }
 
         const double z_tolerance = eclipseGrid->isPinchActive() ?
             eclipseGrid->getPinchThresholdThickness() : 0.0;
@@ -207,5 +222,10 @@ namespace Opm
             grdecl.mapaxes = NULL;
 
     }
+
+
+
+
+
 
 } // namespace Opm
