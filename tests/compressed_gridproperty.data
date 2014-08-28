@@ -1,0 +1,48 @@
+RUNSPEC
+
+DIMENS
+  1 1 4
+/
+
+GRID
+
+COORD
+  0 0 0  0 0 0
+  1 0 0  1 0 0
+  0 1 0  0 1 0
+  1 1 0  1 1 0
+/
+
+ZCORN
+  0 0 0 0
+  1 1 1 1
+
+  1 1 1 1
+  2 2 2 2
+
+  2 2 2 2
+  3 3 3 3
+
+  3 3 3 3
+  4 4 4 4
+/
+
+ACTNUM
+  0 1 0 1
+/
+
+NTG
+  0.1 0.2 0.3 0.4
+/
+
+REGIONS
+
+SATNUM
+  4 3 2 1
+/
+
+-- Note: Dummy 'PROPS' and 'SCHEDULE' sections only
+PROPS
+SCHEDULE
+
+END

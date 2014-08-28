@@ -148,6 +148,7 @@ list (APPEND MAIN_SOURCE_FILES
 # find tests -name '*.cpp' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
 list (APPEND TEST_SOURCE_FILES
 	tests/test_EclipseWriter.cpp
+	tests/test_compressedpropertyaccess.cpp
 	tests/test_spline.cpp
 	tests/test_propertysystem.cpp
 	tests/test_dgbasis.cpp
@@ -191,6 +192,7 @@ list (APPEND TEST_DATA_FILES
 	tests/liveoil.DATA
 	tests/capillary.DATA
 	tests/capillary_overlap.DATA
+	tests/compressed_gridproperty.data
 	tests/deadfluids.DATA
 	tests/equil_livegas.DATA
 	tests/equil_liveoil.DATA
@@ -370,6 +372,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/reorder/tarjan.h
 	opm/core/utility/Average.hpp
 	opm/core/utility/ClassName.hpp
+	opm/core/utility/CompressedPropertyAccess.hpp
 	opm/core/utility/DataMap.hpp
 	opm/core/utility/ErrorMacros.hpp
 	opm/core/utility/Event.hpp
