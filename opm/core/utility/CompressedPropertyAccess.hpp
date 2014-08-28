@@ -219,7 +219,7 @@ namespace Opm {
 
                     return ecl->getDoubleGridProperty(kw);
                 }
-            } // namespace EclipsePropertyImpl
+            } // namespace EclPropImpl
 
             /**
              * Conditional retrieval of property values from an
