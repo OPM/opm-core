@@ -266,7 +266,7 @@ namespace Opm
     }
 
     void PvtLiveOil::rvSat(const int n,
-                           const int* pvtTableIdx,
+                           const int* /*pvtTableIdx*/,
                              const double* /*p*/,
                              double* output_rvSat,
                              double* output_drvSatdp) const

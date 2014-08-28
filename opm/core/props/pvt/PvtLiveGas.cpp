@@ -217,7 +217,7 @@ namespace Opm
     }
 
     void PvtLiveGas::rsSat(const int n,
-                           const int* pvtRegionIdx,
+                           const int* /*pvtRegionIdx*/,
                              const double* /*p*/,
                              double* output_rsSat,
                              double* output_drsSatdp) const

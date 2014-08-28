@@ -217,7 +217,7 @@ namespace Opm
         }
 
     void PvtDead::rsSat(const int n,
-                        const int* pvtTableIdx,
+                        const int* /*pvtTableIdx*/,
                              const double* /*p*/,
                              double* output_rsSat,
                              double* output_drsSatdp) const
@@ -227,7 +227,7 @@ namespace Opm
     }
 
     void PvtDead::rvSat(const int n,
-                        const int* pvtTableIdx,
+                        const int* /*pvtTableIdx*/,
                              const double* /*p*/,
                              double* output_rvSat,
                              double* output_drvSatdp) const
@@ -237,7 +237,7 @@ namespace Opm
     }
 
     void PvtDead::R(const int n,
-                    const int* pvtTableIdx,
+                    const int* /*pvtTableIdx*/,
                           const double* /*p*/,
                           const double* /*z*/,
                           double* output_R) const
@@ -246,7 +246,7 @@ namespace Opm
     }
 
     void PvtDead::dRdp(const int n,
-                       const int* pvtTableIdx,
+                       const int* /*pvtTableIdx*/,
                              const double* /*p*/,
                              const double* /*z*/,
                              double* output_R,

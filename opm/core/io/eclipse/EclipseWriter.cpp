@@ -286,7 +286,6 @@ public:
                      int nx,
                      int ny,
                      int nz,
-                     const int *compressedToCartesianCellIdx,
                      const PhaseUsage uses)
     {
         ecl_rst_file_fwrite_header(restartFileHandle_,
@@ -544,8 +543,7 @@ public:
     { return ertHandle_; }
 
 protected:
-    void updateTimeStepWellIndex_(const SimulatorTimer& timer,
-                                  const std::map<std::string, int>& nameToIdxMap)
+    void updateTimeStepWellIndex_(const std::map<std::string, int>& nameToIdxMap)
     {
         const std::string& wellName = well_->name();
 
@@ -669,12 +667,12 @@ public:
                      "SM3/DAY" /* surf. cub. m. per day */)
     { }
 
-    virtual double retrieveValue(const SimulatorTimer& timer,
+    virtual double retrieveValue(const SimulatorTimer& /*timer*/,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
     {
         // find the index for the quantity in the wellState
-        this->updateTimeStepWellIndex_(timer, wellNameToIdxMap);
+        this->updateTimeStepWellIndex_(wellNameToIdxMap);
         if (this->flatIdx_ < 0) {
             // well not active in current time step
             return 0.0;
@@ -718,7 +716,7 @@ public:
         }
 
         // find the index for the quantity in the wellState
-        this->updateTimeStepWellIndex_(timer, wellNameToIdxMap);
+        this->updateTimeStepWellIndex_(wellNameToIdxMap);
         if (this->flatIdx_ < 0) {
             // well not active in current time step
             return 0.0;
@@ -759,12 +757,12 @@ public:
                      "Pascal")
     { }
 
-    virtual double retrieveValue(const SimulatorTimer& timer,
+    virtual double retrieveValue(const SimulatorTimer& /*timer*/,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
     {
         // find the index for the quantity in the wellState
-        this->updateTimeStepWellIndex_(timer, wellNameToIdxMap);
+        this->updateTimeStepWellIndex_(wellNameToIdxMap);
         if (this->flatIdx_ < 0) {
             // well not active in current time step
             return 0.0;
@@ -932,7 +930,6 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
                               cartesianSize_[0],
                               cartesianSize_[1],
                               cartesianSize_[2],
-                              compressedToCartesianCellIdx_,
                               phaseUsage_);
     EclipseWriterDetails::Solution sol(restartHandle);
 

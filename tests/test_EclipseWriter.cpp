@@ -155,7 +155,7 @@ void createBlackoilState(int timeStepIdx)
     }
 }
 
-void createWellState(int timeStepIdx)
+void createWellState(int /*timeStepIdx*/)
 {
     // allocate a new BlackoilState object
     wellState.reset(new Opm::WellState);
@@ -314,8 +314,8 @@ void checkRestartFile(int timeStepIdx)
                 getErtData(eclKeyword, resultData);
 
                 // convert the data from ERT from Metric to SI units (bar to Pa)
-                for (size_t i = 0; i < resultData.size(); ++i) {
-                    resultData[i] *= 1e5;
+                for (size_t ii = 0; ii < resultData.size(); ++ii) {
+                    resultData[ii] *= 1e5;
                 }
 
                 compareErtData(sourceData, resultData, /*percentTolerance=*/1e-4);
@@ -328,9 +328,9 @@ void checkRestartFile(int timeStepIdx)
 
                 // extract the water saturation from the black-oil state
                 sourceData.resize(numCells);
-                for (size_t i = 0; i < sourceData.size(); ++i) {
+                for (size_t ii = 0; ii < sourceData.size(); ++ii) {
                     // again, fun with direct index manipulation...
-                    sourceData[i] = blackoilState->saturation()[i*numActivePhases + waterPhaseIdx];
+                    sourceData[ii] = blackoilState->saturation()[ii*numActivePhases + waterPhaseIdx];
                 }
 
                 compareErtData(sourceData, resultData, /*percentTolerance=*/1e-4);
@@ -343,9 +343,9 @@ void checkRestartFile(int timeStepIdx)
 
                 // extract the water saturation from the black-oil state
                 sourceData.resize(numCells);
-                for (size_t i = 0; i < sourceData.size(); ++i) {
+                for (size_t ii = 0; ii < sourceData.size(); ++ii) {
                     // again, fun with direct index manipulation...
-                    sourceData[i] = blackoilState->saturation()[i*numActivePhases + gasPhaseIdx];
+                    sourceData[ii] = blackoilState->saturation()[ii*numActivePhases + gasPhaseIdx];
                 }
 
                 compareErtData(sourceData, resultData, /*percentTolerance=*/1e-4);
@@ -356,7 +356,7 @@ void checkRestartFile(int timeStepIdx)
     }
 }
 
-void checkSummaryFile(int timeStepIdx)
+void checkSummaryFile(int /*timeStepIdx*/)
 {
     // TODO
 }
