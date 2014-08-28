@@ -83,10 +83,10 @@ BOOST_FIXTURE_TEST_CASE(APExtractDoubleUndefined,
 
     ECLGlobalDoubleArray multpv(ecl, "MULTPV", 1.0);
 
-    BOOST_REQUIRE_CLOSE(multpv[0], 1.0, reltol);
-    BOOST_REQUIRE_CLOSE(multpv[1], 1.0, reltol);
-    BOOST_REQUIRE_CLOSE(multpv[2], 1.0, reltol);
-    BOOST_REQUIRE_CLOSE(multpv[3], 1.0, reltol);
+    BOOST_CHECK_CLOSE(multpv[0], 1.0, reltol);
+    BOOST_CHECK_CLOSE(multpv[1], 1.0, reltol);
+    BOOST_CHECK_CLOSE(multpv[2], 1.0, reltol);
+    BOOST_CHECK_CLOSE(multpv[3], 1.0, reltol);
 }
 
 
@@ -100,10 +100,10 @@ BOOST_FIXTURE_TEST_CASE(APExtractDoubleDefined,
 
     ECLGlobalDoubleArray ntg(ecl, "NTG", 1.0);
 
-    BOOST_REQUIRE_CLOSE(ntg[0], 0.1, reltol);
-    BOOST_REQUIRE_CLOSE(ntg[1], 0.2, reltol);
-    BOOST_REQUIRE_CLOSE(ntg[2], 0.3, reltol);
-    BOOST_REQUIRE_CLOSE(ntg[3], 0.4, reltol);
+    BOOST_CHECK_CLOSE(ntg[0], 0.1, reltol);
+    BOOST_CHECK_CLOSE(ntg[1], 0.2, reltol);
+    BOOST_CHECK_CLOSE(ntg[2], 0.3, reltol);
+    BOOST_CHECK_CLOSE(ntg[3], 0.4, reltol);
 }
 
 
@@ -117,10 +117,10 @@ BOOST_FIXTURE_TEST_CASE(APExtractIntUndefined,
 
     ECLGlobalIntArray imbnum(ecl, "IMBNUM", 1);
 
-    BOOST_REQUIRE_EQUAL(imbnum[0], 1);
-    BOOST_REQUIRE_EQUAL(imbnum[1], 1);
-    BOOST_REQUIRE_EQUAL(imbnum[2], 1);
-    BOOST_REQUIRE_EQUAL(imbnum[3], 1);
+    BOOST_CHECK_EQUAL(imbnum[0], 1);
+    BOOST_CHECK_EQUAL(imbnum[1], 1);
+    BOOST_CHECK_EQUAL(imbnum[2], 1);
+    BOOST_CHECK_EQUAL(imbnum[3], 1);
 }
 
 
@@ -134,10 +134,10 @@ BOOST_FIXTURE_TEST_CASE(APExtractIntDefined,
 
     ECLGlobalIntArray satnum(ecl, "SATNUM", 1);
 
-    BOOST_REQUIRE_EQUAL(satnum[0], 4);
-    BOOST_REQUIRE_EQUAL(satnum[1], 3);
-    BOOST_REQUIRE_EQUAL(satnum[2], 2);
-    BOOST_REQUIRE_EQUAL(satnum[3], 1);
+    BOOST_CHECK_EQUAL(satnum[0], 4);
+    BOOST_CHECK_EQUAL(satnum[1], 3);
+    BOOST_CHECK_EQUAL(satnum[2], 2);
+    BOOST_CHECK_EQUAL(satnum[3], 1);
 }
 
 
@@ -153,10 +153,10 @@ BOOST_FIXTURE_TEST_CASE(APConstantDouble,
 
     ConstantDoubleArray x(c);
 
-    BOOST_REQUIRE_CLOSE(x[    0], c, reltol);
-    BOOST_REQUIRE_CLOSE(x[    1], c, reltol);
-    BOOST_REQUIRE_CLOSE(x[    2], c, reltol);
-    BOOST_REQUIRE_CLOSE(x[10000], c, reltol); // Infinite size array
+    BOOST_CHECK_CLOSE(x[    0], c, reltol);
+    BOOST_CHECK_CLOSE(x[    1], c, reltol);
+    BOOST_CHECK_CLOSE(x[    2], c, reltol);
+    BOOST_CHECK_CLOSE(x[10000], c, reltol); // Infinite size array
 }
 
 
@@ -172,10 +172,10 @@ BOOST_FIXTURE_TEST_CASE(APConstantInt,
 
     ConstantIntArray a(i);
 
-    BOOST_REQUIRE_EQUAL(a[    0], i);
-    BOOST_REQUIRE_EQUAL(a[    1], i);
-    BOOST_REQUIRE_EQUAL(a[    2], i);
-    BOOST_REQUIRE_EQUAL(a[10001], i); // Inifinite size array
+    BOOST_CHECK_EQUAL(a[    0], i);
+    BOOST_CHECK_EQUAL(a[    1], i);
+    BOOST_CHECK_EQUAL(a[    2], i);
+    BOOST_CHECK_EQUAL(a[10001], i); // Inifinite size array
 }
 
 
@@ -193,8 +193,8 @@ BOOST_FIXTURE_TEST_CASE(CAExtractDoubleUndefinedAny,
     ECLGlobalDoubleArray multpv_glob(ecl, "MULTPV", 1.0);
     CompressedArray multpv(multpv_glob, grid.c_grid()->global_cell);
 
-    BOOST_REQUIRE_CLOSE(multpv[0], 1.0, reltol);
-    BOOST_REQUIRE_CLOSE(multpv[1], 1.0, reltol);
+    BOOST_CHECK_CLOSE(multpv[0], 1.0, reltol);
+    BOOST_CHECK_CLOSE(multpv[1], 1.0, reltol);
 }
 
 
@@ -214,8 +214,8 @@ BOOST_FIXTURE_TEST_CASE(CAExtractDoubleDefinedNTG,
     ECLGlobalDoubleArray ntg_glob(ecl, "NTG", 1.0);
     CompressedArray ntg(ntg_glob, grid.c_grid()->global_cell);
 
-    BOOST_REQUIRE_CLOSE(ntg[0], 0.2, reltol);
-    BOOST_REQUIRE_CLOSE(ntg[1], 0.4, reltol);
+    BOOST_CHECK_CLOSE(ntg[0], 0.2, reltol);
+    BOOST_CHECK_CLOSE(ntg[1], 0.4, reltol);
 }
 
 
@@ -234,8 +234,8 @@ BOOST_FIXTURE_TEST_CASE(CAExtractIntUndefinedAny,
     ECLGlobalIntArray imbnum_glob(ecl, "IMBNUM", 1);
     CompressedArray imbnum(imbnum_glob, grid.c_grid()->global_cell);
 
-    BOOST_REQUIRE_EQUAL(imbnum[0], 1);
-    BOOST_REQUIRE_EQUAL(imbnum[1], 1);
+    BOOST_CHECK_EQUAL(imbnum[0], 1);
+    BOOST_CHECK_EQUAL(imbnum[1], 1);
 }
 
 
@@ -255,8 +255,8 @@ BOOST_FIXTURE_TEST_CASE(CAExtractIntDefinedCustom,
     ECLGlobalIntArray satnum_glob(ecl, "SATNUM", 1);
     CompressedArray satnum(satnum_glob, grid.c_grid()->global_cell);
 
-    BOOST_REQUIRE_EQUAL(satnum[0], 3);
-    BOOST_REQUIRE_EQUAL(satnum[1], 1);
+    BOOST_CHECK_EQUAL(satnum[0], 3);
+    BOOST_CHECK_EQUAL(satnum[1], 1);
 }
 
 
@@ -276,8 +276,8 @@ BOOST_FIXTURE_TEST_CASE(CAConstantDoubleAny,
     ConstantDoubleArray x_glob(c);
     CompressedArray x(x_glob, grid.c_grid()->global_cell);
 
-    BOOST_REQUIRE_CLOSE(x[0], c, reltol);
-    BOOST_REQUIRE_CLOSE(x[1], c, reltol);
+    BOOST_CHECK_CLOSE(x[0], c, reltol);
+    BOOST_CHECK_CLOSE(x[1], c, reltol);
 }
 
 
@@ -299,8 +299,8 @@ BOOST_FIXTURE_TEST_CASE(CAConstantDoubleCustom,
     ConstantDoubleArray x_glob(c);
     CompressedArray x(x_glob, grid.c_grid()->global_cell);
 
-    BOOST_REQUIRE_CLOSE(x[0], c, reltol);
-    BOOST_REQUIRE_CLOSE(x[1], c, reltol);
+    BOOST_CHECK_CLOSE(x[0], c, reltol);
+    BOOST_CHECK_CLOSE(x[1], c, reltol);
 }
 
 
@@ -320,8 +320,8 @@ BOOST_FIXTURE_TEST_CASE(CAConstantIntAny,
     ConstantIntArray x_glob(i);
     CompressedArray x(x_glob, grid.c_grid()->global_cell);
 
-    BOOST_REQUIRE_EQUAL(x[0], i);
-    BOOST_REQUIRE_EQUAL(x[1], i);
+    BOOST_CHECK_EQUAL(x[0], i);
+    BOOST_CHECK_EQUAL(x[1], i);
 }
 
 
@@ -343,8 +343,8 @@ BOOST_FIXTURE_TEST_CASE(CAConstantIntCustom,
     ConstantIntArray x_glob(i);
     CompressedArray x(x_glob, grid.c_grid()->global_cell);
 
-    BOOST_REQUIRE_EQUAL(x[0], i);
-    BOOST_REQUIRE_EQUAL(x[1], i);
+    BOOST_CHECK_EQUAL(x[0], i);
+    BOOST_CHECK_EQUAL(x[1], i);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
