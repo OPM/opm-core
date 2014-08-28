@@ -96,8 +96,8 @@ namespace Opm {
                      *
                      * \param[in] kw ECLIPSE property keyword.
                      *
-                     * \return Whether or property \c kw exists in the
-                     * container \c ecl.
+                     * \return Whether or not property \c kw exists in
+                     * the container \c ecl.
                      */
                     template <class PropertyContainer>
                     static bool
@@ -131,8 +131,8 @@ namespace Opm {
                      *
                      * \param[in] kw ECLIPSE property keyword.
                      *
-                     * \return Whether or property \c kw exists in the
-                     * container \c ecl.
+                     * \return Whether or not property \c kw exists in
+                     * the container \c ecl.
                      */
                     template <class PropertyContainer>
                     static bool
