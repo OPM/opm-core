@@ -241,13 +241,13 @@ BOOST_FIXTURE_TEST_CASE(CAExtractIntUndefinedAny,
 
 // Construct compressed integer (int) array based on global, fully
 // specified array extracted from input deck.  Custom type-check tag.
+struct RegionID : public Opm::GridPropertyAccess::Tag::Any {};
+
 BOOST_FIXTURE_TEST_CASE(CAExtractIntDefinedCustom,
                         TestFixture<SetupSimple>)
 {
     typedef Opm::GridPropertyAccess::ArrayPolicy
         ::ExtractFromDeck<int> ECLGlobalIntArray;
-
-    struct RegionID : public Opm::GridPropertyAccess::Tag::Any {};
 
     typedef Opm::GridPropertyAccess::
         Compressed<ECLGlobalIntArray, RegionID> CompressedArray;
@@ -283,13 +283,13 @@ BOOST_FIXTURE_TEST_CASE(CAConstantDoubleAny,
 
 // Construct compressed double array based on global constant value
 // for all cells.  Custom type-check tag.
+struct MyTag : public Opm::GridPropertyAccess::Tag::Any {};
+
 BOOST_FIXTURE_TEST_CASE(CAConstantDoubleCustom,
                         TestFixture<SetupSimple>)
 {
     typedef Opm::GridPropertyAccess::ArrayPolicy
         ::Constant<double> ConstantDoubleArray;
-
-    struct MyTag : public Opm::GridPropertyAccess::Tag::Any {};
 
     typedef Opm::GridPropertyAccess::
         Compressed<ConstantDoubleArray, MyTag> CompressedArray;
@@ -332,8 +332,6 @@ BOOST_FIXTURE_TEST_CASE(CAConstantIntCustom,
 {
     typedef Opm::GridPropertyAccess::ArrayPolicy
         ::Constant<int> ConstantIntArray;
-
-    struct MyTag : public Opm::GridPropertyAccess::Tag::Any {};
 
     typedef Opm::GridPropertyAccess::
         Compressed<ConstantIntArray, MyTag> CompressedArray;
