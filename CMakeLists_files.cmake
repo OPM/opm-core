@@ -413,6 +413,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/parameters/tinyxml/tinyxml.h
 	opm/core/utility/PropertySystem.hpp
 	opm/core/utility/share_obj.hpp
+	opm/core/utility/thresholdPressures.hpp
 	opm/core/wells/InjectionSpecification.hpp
 	opm/core/wells/ProductionSpecification.hpp
 	opm/core/wells/WellCollection.hpp
