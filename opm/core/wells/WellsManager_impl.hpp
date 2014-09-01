@@ -1,7 +1,13 @@
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/grid/GridHelpers.hpp>
 
+#include <opm/core/utility/ErrorMacros.hpp>
+
+#include <algorithm>
 #include <array>
+#include <cstddef>
+#include <exception>
+#include <iterator>
 
 namespace WellsManagerDetail
 {
@@ -44,39 +50,57 @@ namespace WellsManagerDetail
 double computeWellIndex(const double radius,
                         const std::array<double, 3>& cubical,
                         const double* cell_permeability,
-                        const double skin_factor);
+                        const double skin_factor,
+                        const Opm::CompletionDirection::DirectionEnum direction,
+                        const double ntg);
 
-template<class C2F, class FC>
-std::array<double, 3> getCubeDim(const C2F& c2f, FC begin_face_centroids, int dimensions, 
-                                 int cell)
+template <int dim, class C2F, class FC>
+std::array<double, dim>
+getCubeDim(const C2F& c2f,
+           FC         begin_face_centroids,
+           int        cell)
 {
-    using namespace std;
-    std::array<double, 3> cube;
-    //typedef Opm::UgGridHelpers::Cell2FacesTraits<UnstructuredGrid>::Type Cell2Faces;
-    //Cell2Faces c2f=Opm::UgGridHelpers::cell2Faces(grid);
-    typedef typename C2F::row_type FaceRow;
-    FaceRow faces=c2f[cell];
-    typename FaceRow::const_iterator face=faces.begin();
-    int num_local_faces = faces.end()-face;
-    vector<double> x(num_local_faces);
-    vector<double> y(num_local_faces);
-    vector<double> z(num_local_faces);
-    for (int lf=0; lf<num_local_faces; ++ lf, ++face) {
-        FC centroid = Opm::UgGridHelpers::increment(begin_face_centroids, *face, dimensions);
-        x[lf] = Opm::UgGridHelpers::getCoordinate(centroid, 0);
-        y[lf] = Opm::UgGridHelpers::getCoordinate(centroid, 1);
-        z[lf] = Opm::UgGridHelpers::getCoordinate(centroid, 2);
+    std::array< std::vector<double>, dim > X;
+    {
+        const std::vector<double>::size_type
+            nf = std::distance(c2f[cell].begin(),
+                               c2f[cell].end  ());
+
+        for (int d = 0; d < dim; ++d) {
+            X[d].reserve(nf);
+        }
     }
-    cube[0] = *max_element(x.begin(), x.end()) - *min_element(x.begin(), x.end());
-    cube[1] = *max_element(y.begin(), y.end()) - *min_element(y.begin(), y.end());
-    cube[2] = *max_element(z.begin(), z.end()) - *min_element(z.begin(), z.end());
+
+    typedef typename C2F::row_type::const_iterator FI;
+
+    for (FI f = c2f[cell].begin(), e = c2f[cell].end(); f != e; ++f) {
+        using Opm::UgGridHelpers::increment;
+        using Opm::UgGridHelpers::getCoordinate;
+
+        const FC& fc = increment(begin_face_centroids, *f, dim);
+
+        for (int d = 0; d < dim; ++d) {
+            X[d].push_back(getCoordinate(fc, d));
+        }
+    }
+
+    std::array<double, dim> cube;
+    for (int d = 0; d < dim; ++d) {
+        typedef std::vector<double>::iterator VI;
+        typedef std::pair<VI,VI>              PVI;
+
+        const PVI m = std::minmax_element(X[d].begin(), X[d].end());
+
+        cube[d] = *m.second - *m.first;
+    }
+
     return cube;
 }
-} // end namespace
+} // end namespace WellsManagerDetail
 
 namespace Opm
 {
-template<class C2F, class CC, class FC>
+template<class C2F, class CC, class FC, class NTG>
 void WellsManager::createWellsFromSpecs(std::vector<WellConstPtr>& wells, size_t timeStep,
                                         const C2F& c2f, 
                                         const int* cart_dims,
@@ -87,9 +111,16 @@ void WellsManager::createWellsFromSpecs(std::vector<WellConstPtr>& wells, size_t
                                         std::vector<WellData>& well_data,
                                         std::map<std::string, int>& well_names_to_index,
                                         const PhaseUsage& phaseUsage,
-                                        std::map<int,int> cartesian_to_compressed,
-                                        const double* permeability)
+                                        const std::map<int,int>& cartesian_to_compressed,
+                                        const double* permeability,
+                                        const NTG& ntg)
 {
+    if (dimensions != 3) {
+        OPM_THROW(std::domain_error,
+                  "WellsManager::createWellsFromSpecs() only "
+                  "supported in three space dimensions");
+    }
+
     std::vector<std::vector<PerfData> > wellperf_data;
     wellperf_data.resize(wells.size());
 
@@ -141,10 +172,16 @@ void WellsManager::createWellsFromSpecs(std::vector<WellConstPtr>& wells, size_t
                         radius = 0.5*unit::feet;
                         OPM_MESSAGE("**** Warning: Well bore internal radius set to " << radius);
                     }
-                    std::array<double, 3> cubical = WellsManagerDetail::getCubeDim(c2f, begin_face_centroids,
-                                                                                   dimensions, cell);
+
+                    const std::array<double, 3> cubical =
+                        WellsManagerDetail::getCubeDim<3>(c2f, begin_face_centroids, cell);
+
                     const double* cell_perm = &permeability[dimensions*dimensions*cell];
-                    pd.well_index = WellsManagerDetail::computeWellIndex(radius, cubical, cell_perm, completion->getSkinFactor());
+                    pd.well_index =
+                        WellsManagerDetail::computeWellIndex(radius, cubical, cell_perm,
+                                                             completion->getSkinFactor(),
+                                                             completion->getDirection(),
+                                                             ntg[cell]);
                 }
                 wellperf_data[well_index].push_back(pd);
             }
@@ -157,7 +194,7 @@ void WellsManager::createWellsFromSpecs(std::vector<WellConstPtr>& wells, size_t
     const int num_wells = well_data.size();
 
     int num_perfs = 0;
-    assert(dimensions == 3);
+    assert (dimensions == 3);
     for (int w = 0; w < num_wells; ++w) {
         num_perfs += wellperf_data[w].size();
         if (well_data[w].reference_bhp_depth == -1e100) {
@@ -165,13 +202,19 @@ void WellsManager::createWellsFromSpecs(std::vector<WellConstPtr>& wells, size_t
             double min_depth = 1e100;
             int num_wperfs = wellperf_data[w].size();
             for (int perf = 0; perf < num_wperfs; ++perf) {
-                double depth = UgGridHelpers
-                    ::getCoordinate(UgGridHelpers::increment(begin_cell_centroids,
-                                                             wellperf_data[w][perf].cell,
-                                                             dimensions),
-                                    2);
+                using UgGridHelpers::increment;
+                using UgGridHelpers::getCoordinate;
+
+                const CC& cc =
+                    increment(begin_cell_centroids,
+                              wellperf_data[w][perf].cell,
+                              dimensions);
+
+                const double depth = getCoordinate(cc, 2);
+
                 min_depth = std::min(min_depth, depth);
             }
+
             well_data[w].reference_bhp_depth = min_depth;
         }
     }
@@ -185,66 +228,86 @@ void WellsManager::createWellsFromSpecs(std::vector<WellConstPtr>& wells, size_t
 
     // Add wells.
     for (int w = 0; w < num_wells; ++w) {
-        const int w_num_perf = wellperf_data[w].size();
-        std::vector<int> perf_cells(w_num_perf);
+        const int           w_num_perf = wellperf_data[w].size();
+        std::vector<int>    perf_cells  (w_num_perf);
         std::vector<double> perf_prodind(w_num_perf);
+
         for (int perf = 0; perf < w_num_perf; ++perf) {
-            perf_cells[perf] = wellperf_data[w][perf].cell;
+            perf_cells  [perf] = wellperf_data[w][perf].cell;
             perf_prodind[perf] = wellperf_data[w][perf].well_index;
         }
+
         const double* comp_frac = NULL;
+
         // We initialize all wells with a null component fraction,
         // and must (for injection wells) overwrite it later.
-        int ok = add_well(well_data[w].type, well_data[w].reference_bhp_depth, w_num_perf,
-                          comp_frac, &perf_cells[0], &perf_prodind[0], well_names[w].c_str(), w_);
+        const int ok =
+            add_well(well_data[w].type,
+                     well_data[w].reference_bhp_depth,
+                     w_num_perf,
+                     comp_frac,
+                     & perf_cells  [0],
+                     & perf_prodind[0],
+                     well_names[w].c_str(),
+                     w_);
+
         if (!ok) {
-            OPM_THROW(std::runtime_error, "Failed adding well " << well_names[w] << " to Wells data structure.");
+            OPM_THROW(std::runtime_error,
+                      "Failed adding well "
+                      << well_names[w]
+                      << " to Wells data structure.");
         }
     }
 }
 
-template<class CC, class C2F, class FC>
-WellsManager::WellsManager(const Opm::EclipseStateConstPtr eclipseState,
-                           const size_t timeStep,
-                           int number_of_cells,
-                           const int* global_cell,
-                           const int* cart_dims,
-                           int dimensions,
-                           CC begin_cell_centroids,
-                           const C2F& cell_to_faces,
-                           FC begin_face_centroids,
-                           const double* permeability)
+template <class CC, class C2F, class FC>
+WellsManager::
+WellsManager(const Opm::EclipseStateConstPtr eclipseState,
+             const size_t                    timeStep,
+             int                             number_of_cells,
+             const int*                      global_cell,
+             const int*                      cart_dims,
+             int                             dimensions,
+             CC                              begin_cell_centroids,
+             const C2F&                      cell_to_faces,
+             FC                              begin_face_centroids,
+             const double*                   permeability)
     : w_(0)
 {
-    init(eclipseState, timeStep, number_of_cells, global_cell, cart_dims, dimensions,
-         begin_cell_centroids, cell_to_faces, begin_face_centroids, permeability);
+    init(eclipseState, timeStep, number_of_cells, global_cell,
+         cart_dims, dimensions, begin_cell_centroids,
+         cell_to_faces, begin_face_centroids, permeability);
 }
 
 /// Construct wells from deck.
-template<class CC, class C2F, class FC>
-void WellsManager::init(const Opm::EclipseStateConstPtr eclipseState,
-                        const size_t timeStep,
-                        int number_of_cells,
-                        const int* global_cell,
-                        const int* cart_dims,
-                        int dimensions,
-                        CC begin_cell_centroids,
-                        const C2F& cell_to_faces,
-                        FC begin_face_centroids,
-                        const double* permeability)
+template <class CC, class C2F, class FC>
+void
+WellsManager::init(const Opm::EclipseStateConstPtr eclipseState,
+                   const size_t                    timeStep,
+                   int                             number_of_cells,
+                   const int*                      global_cell,
+                   const int*                      cart_dims,
+                   int                             dimensions,
+                   CC                              begin_cell_centroids,
+                   const C2F&                      cell_to_faces,
+                   FC                              begin_face_centroids,
+                   const double*                   permeability)
 {
     if (dimensions != 3) {
-        OPM_THROW(std::runtime_error, "We cannot initialize wells from a deck unless the corresponding grid is 3-dimensional.");
+        OPM_THROW(std::runtime_error,
+                  "We cannot initialize wells from a deck unless "
+                  "the corresponding grid is 3-dimensional.");
     }
 
     if (eclipseState->getSchedule()->numWells() == 0) {
-        OPM_MESSAGE("No wells specified in Schedule section, initializing no wells");
+        OPM_MESSAGE("No wells specified in Schedule section, "
+                    "initializing no wells");
         return;
     }
 
     std::map<int,int> cartesian_to_compressed;
-    setupCompressedToCartesian(global_cell, 
-                               number_of_cells, cartesian_to_compressed);
+    setupCompressedToCartesian(global_cell, number_of_cells,
+                               cartesian_to_compressed);
 
     // Obtain phase usage data.
     PhaseUsage pu = phaseUsageFromDeck(eclipseState);
@@ -258,34 +321,45 @@ void WellsManager::init(const Opm::EclipseStateConstPtr eclipseState,
     // For easy lookup:
     std::map<std::string, int> well_names_to_index;
 
-    ScheduleConstPtr schedule = eclipseState->getSchedule();
-    std::vector<WellConstPtr> wells = schedule->getWells(timeStep);
+    ScheduleConstPtr          schedule = eclipseState->getSchedule();
+    std::vector<WellConstPtr> wells    = schedule->getWells(timeStep);
 
     well_names.reserve(wells.size());
     well_data.reserve(wells.size());
+
+    typedef GridPropertyAccess::ArrayPolicy::ExtractFromDeck<double> DoubleArray;
+    typedef GridPropertyAccess::Compressed<DoubleArray, GridPropertyAccess::Tag::NTG> NTGArray;
+
+    DoubleArray ntg_glob(eclipseState, "NTG", 1.0);
+    NTGArray    ntg(ntg_glob, global_cell);
 
     createWellsFromSpecs(wells, timeStep, cell_to_faces,
                          cart_dims,
                          begin_face_centroids,
                          begin_cell_centroids,
                          dimensions,
-                         well_names, well_data, well_names_to_index, pu, cartesian_to_compressed, permeability);
+                         well_names, well_data, well_names_to_index,
+                         pu, cartesian_to_compressed, permeability, ntg);
+
     setupWellControls(wells, timeStep, well_names, pu);
 
     {
-        GroupTreeNodeConstPtr fieldNode = eclipseState->getSchedule()->getGroupTree(timeStep)->getNode("FIELD");
-        GroupConstPtr fieldGroup = eclipseState->getSchedule()->getGroup(fieldNode->name());
+        GroupTreeNodeConstPtr fieldNode =
+            schedule->getGroupTree(timeStep)->getNode("FIELD");
+
+        GroupConstPtr fieldGroup =
+            schedule->getGroup(fieldNode->name());
+
         well_collection_.addField(fieldGroup, timeStep, pu);
-        addChildGroups(fieldNode, eclipseState->getSchedule(), timeStep, pu);
+        addChildGroups(fieldNode, schedule, timeStep, pu);
     }
 
-    for (auto wellIter = wells.begin(); wellIter != wells.end(); ++wellIter ) {
-        well_collection_.addWell((*wellIter), timeStep, pu);
+    for (auto w = wells.begin(), e = wells.end(); w != e; ++w) {
+        well_collection_.addWell(*w, timeStep, pu);
     }
 
     well_collection_.setWellsPointer(w_);
     well_collection_.applyGroupControls();
-
 
     setupGuideRates(wells, timeStep, well_data, well_names_to_index);
 
