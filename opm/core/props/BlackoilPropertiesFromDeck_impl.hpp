@@ -85,11 +85,11 @@ namespace Opm
             rock_.init(eclState, number_of_cells, global_cell, cart_dims);
         }
 
-        const int pvt_samples = param.getDefault("pvt_tab_size", 200);
+        const int pvt_samples = param.getDefault("pvt_tab_size", -1);
         pvt_.init(deck, pvt_samples);
 
         // Unfortunate lack of pointer smartness here...
-        const int sat_samples = param.getDefault("sat_tab_size", 200);
+        const int sat_samples = param.getDefault("sat_tab_size", -1);
         std::string threephase_model = param.getDefault<std::string>("threephase_model", "gwseg");
         if (deck->hasKeyword("ENDSCALE") && threephase_model != "gwseg") {
             OPM_THROW(std::runtime_error, "Sorry, end point scaling currently available for the 'gwseg' model only.");
