@@ -90,7 +90,7 @@ namespace Opm
 
         // Unfortunate lack of pointer smartness here...
         const int sat_samples = param.getDefault("sat_tab_size", 200);
-        std::string threephase_model = param.getDefault<std::string>("threephase_model", "simple");
+        std::string threephase_model = param.getDefault<std::string>("threephase_model", "gwseg");
         if (deck->hasKeyword("ENDSCALE") && threephase_model != "gwseg") {
             OPM_THROW(std::runtime_error, "Sorry, end point scaling currently available for the 'gwseg' model only.");
         }
