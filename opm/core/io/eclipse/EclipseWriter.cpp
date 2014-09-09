@@ -115,7 +115,7 @@ void restrictToActiveCells(std::vector<double> &data,
 void convertFromSiTo(std::vector<double> &siValues, double toSiConversionFactor)
 {
     for (size_t curIdx = 0; curIdx < siValues.size(); ++curIdx) {
-        siValues[curIdx] /= toSiConversionFactor;
+        siValues[curIdx] = unit::convert::to(siValues[curIdx], toSiConversionFactor);
     }
 }
 
