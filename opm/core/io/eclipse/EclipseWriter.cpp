@@ -63,16 +63,6 @@
 // namespace start here since we don't want the ERT headers in it
 namespace Opm {
 namespace EclipseWriterDetails {
-/// Helper method that can be used in keyword transformation (must carry
-/// the barsa argument)
-static double toBar(const double& pressure)
-{ return Opm::unit::convert::to(pressure, Opm::unit::barsa); }
-
-/// Helper method that can be used in keyword transformation (must carry
-/// the milliDarcy argument)
-static double toMilliDarcy(const double& permeability)
-{ return Opm::unit::convert::to(permeability, Opm::prefix::milli * Opm::unit::darcy); }
-
 /// Names of the saturation property for each phase. The order of these
 /// names are critical; they must be the same as the BlackoilPhases enum
 static const char* saturationKeywordNames[] = { "SWAT", "SOIL", "SGAS" };
@@ -122,11 +112,10 @@ void restrictToActiveCells(std::vector<double> &data,
 }
 
 // convert the units of an array
-template <class TransferFunction>
-void convertUnit(std::vector<double> &data, TransferFunction &transferFn)
+void convertFromSiTo(std::vector<double> &siValues, double toSiConversionFactor)
 {
-    for (size_t curIdx = 0; curIdx < data.size(); ++curIdx) {
-        data[curIdx] = transferFn(data[curIdx]);
+    for (size_t curIdx = 0; curIdx < siValues.size(); ++curIdx) {
+        siValues[curIdx] /= toSiConversionFactor;
     }
 }
 
@@ -561,7 +550,7 @@ protected:
     double rate(const WellState& wellState)
     {
         // convert m^3/s of injected fluid to m^3/d of produced fluid
-        const double convFactor = Opm::unit::convert::to(1., Opm::unit::day);
+        const double convFactor = Opm::unit::day;
         double value = 0;
         if (wellState.wellRates().size() > 0) {
             assert(int(wellState.wellRates().size()) > flatIdx_);
@@ -881,17 +870,17 @@ void EclipseWriter::writeInit(const SimulatorTimer &timer)
 
     if (eclipseState_->hasDoubleGridProperty("PERMX")) {
         auto data = eclipseState_->getDoubleGridProperty("PERMX")->getData();
-        EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
+        EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
         fortio.writeKeyword("PERMX", data);
     }
     if (eclipseState_->hasDoubleGridProperty("PERMY")) {
         auto data = eclipseState_->getDoubleGridProperty("PERMY")->getData();
-        EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
+        EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
         fortio.writeKeyword("PERMY", data);
     }
     if (eclipseState_->hasDoubleGridProperty("PERMZ")) {
         auto data = eclipseState_->getDoubleGridProperty("PERMZ")->getData();
-        EclipseWriterDetails::convertUnit(data, EclipseWriterDetails::toMilliDarcy);
+        EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
         fortio.writeKeyword("PERMZ", data);
     }
 
@@ -933,12 +922,15 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
                               phaseUsage_);
     EclipseWriterDetails::Solution sol(restartHandle);
 
-    // write out the pressure of the reference phase (whatever
-    // phase that is...). this is not the most performant solution
-    // thinkable, but this is also not in the most performance
-    // critical code path!
+    // write out the pressure of the reference phase (whatever phase that is...). this is
+    // not the most performant solution thinkable, but this is also not in the most
+    // performance critical code path!
+    //
+    // Also, we want to use the same units as the deck for pressure output, i.e. we have
+    // to mutliate our nice SI pressures by the inverse of the conversion factor of deck
+    // to SI pressure units...
     std::vector<double> tmp = reservoirState.pressure();
-    EclipseWriterDetails::convertUnit(tmp, EclipseWriterDetails::toBar);
+    EclipseWriterDetails::convertFromSiTo(tmp, deckToSiPressure_);
 
     sol.add(EclipseWriterDetails::Keyword<float>("PRESSURE", tmp));
 
@@ -989,6 +981,10 @@ EclipseWriter::EclipseWriter(const parameter::ParameterGroup& params,
     cartesianSize_[0] = eclGrid->getNX();
     cartesianSize_[1] = eclGrid->getNY();
     cartesianSize_[2] = eclGrid->getNZ();
+
+    // factor from the pressure values given in the deck to Pascals
+    deckToSiPressure_ =
+        eclipseState->getDeckUnitSystem()->parse("Pressure")->getSIScaling();
 
     init(params);
 }
