@@ -102,6 +102,7 @@ private:
     int numCells_;
     std::array<int, 3> cartesianSize_;
     const int* compressedToCartesianCellIdx_;
+    double deckToSiPressure_;
     bool enableOutput_;
     int outputInterval_;
     int reportStepIdx_;
