@@ -157,6 +157,7 @@ namespace Opm
         // table per PVT region.
         std::vector<NonuniformTableLinear<double> > b_;
         std::vector<NonuniformTableLinear<double> > viscosity_;
+        std::vector<NonuniformTableLinear<double> > inverseBV_;
     };
 }
 
