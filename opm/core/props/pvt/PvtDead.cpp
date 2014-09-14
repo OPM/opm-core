@@ -156,7 +156,10 @@ namespace Opm
                 double tempInvBV = inverseBV_[regionIdx](p[i]);
                 // output_mu[i] = viscosity_[regionIdx](p[i]);
                 output_mu[i] = tempInvB / tempInvBV;
-                output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
+                // output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
+                // output_dmudp[i] = tempInvB / (tempInvBV * tempInvBV) * inverseBV_[regionIdx].derivative(p[i]);
+                output_dmudp[i] = (tempInvBV * b_[regionIdx].derivative(p[i])
+                                 - tempInvB * inverseBV_[regionIdx].derivative(p[i])) / (tempInvBV * tempInvBV);
             }
             std::fill(output_dmudr, output_dmudr + n, 0.0);
 
