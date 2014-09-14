@@ -56,6 +56,8 @@ namespace Opm
                 bInv[i] = 1.0 / b[i];
             }
 
+            // TODO: should we change the name of b so that we know it is the 
+            // inverse more explicitly?
             std::vector<double> bvInv(sz);
             for (int i = 0; i < sz; ++i) {
                 bvInv[i] = 1.0 / (b[i] * visc[i]);
@@ -118,7 +120,10 @@ namespace Opm
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             int regionIdx = getTableIndex_(pvtTableIdx, i);
-            output_mu[i] = viscosity_[regionIdx](p[i]);
+            // output_mu[i] = viscosity_[regionIdx](p[i]);
+            double tempInvB = b_[regionIdx](p[i]);
+            double tempInvBV = inverseBV_[regionIdx](p[i]);
+            output_mu[i] = tempInvB / tempInvBV;
         }
     }
 
@@ -133,8 +138,13 @@ namespace Opm
     // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 int regionIdx = getTableIndex_(pvtTableIdx, i);
-                output_mu[i] = viscosity_[regionIdx](p[i]);
-                output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
+                // output_mu[i] = viscosity_[regionIdx](p[i]);
+                // output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
+                double tempInvB = b_[regionIdx](p[i]);
+                double tempInvBV = inverseBV_[regionIdx](p[i]);
+                output_mu[i] = tempInvB / tempInvBV;
+                output_dmudp[i] = (tempInvBV * b_[regionIdx].derivative(p[i])
+                                 - tempInvB * inverseBV_[regionIdx].derivative(p[i])) / (tempInvBV * tempInvBV);
             }
             std::fill(output_dmudr, output_dmudr + n, 0.0);
 
