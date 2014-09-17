@@ -58,6 +58,7 @@ namespace Opm
 
             // TODO: should we change the name of b so that we know it is the 
             // inverse more explicitly?
+            // or use the captial B in a exlicit way to show the difference.
             std::vector<double> bvInv(sz);
             for (int i = 0; i < sz; ++i) {
                 bvInv[i] = 1.0 / (b[i] * visc[i]);
