@@ -22,7 +22,7 @@
 
 #include <opm/core/props/pvt/PvtInterface.hpp>
 
-#include <opm/parser/eclipse/Utility/PvtgTable.hpp>
+#include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
 #include <vector>
 
@@ -38,7 +38,7 @@ namespace Opm
     class PvtLiveGas : public PvtInterface
     {
     public:
-        PvtLiveGas(Opm::DeckKeywordConstPtr pvtgKeyword);
+        PvtLiveGas(const std::vector<Opm::PvtgTable>& pvtgTables);
         virtual ~PvtLiveGas();
 
         /// Viscosity as a function of p and z.

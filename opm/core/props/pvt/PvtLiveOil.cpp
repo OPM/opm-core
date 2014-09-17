@@ -34,14 +34,14 @@ namespace Opm
     //------------------------------------------------------------------------
     // Member functions
     //-------------------------------------------------------------------------
-    PvtLiveOil::PvtLiveOil(Opm::DeckKeywordConstPtr pvtoKeyword)
+    PvtLiveOil::PvtLiveOil(const std::vector<Opm::PvtoTable>& pvtoTables)
     {
-        int numTables = Opm::PvtoTable::numTables(pvtoKeyword);
+        int numTables = pvtoTables.size();
         saturated_oil_table_.resize(numTables);
         undersat_oil_tables_.resize(numTables);
 
         for (int pvtTableIdx = 0; pvtTableIdx < numTables; ++pvtTableIdx) {
-            Opm::PvtoTable pvtoTable(pvtoKeyword, pvtTableIdx);
+            Opm::PvtoTable pvtoTable = pvtoTables[pvtTableIdx];
 
             const auto saturatedPvto = pvtoTable.getOuterTable();
 
