@@ -56,28 +56,37 @@ namespace Opm
             Opm::PvtgTable pvtgTable(pvtgKeyword, pvtTableIdx);
 
             // GAS, PVTG
-            saturated_gas_table_[pvtTableIdx].resize(4);
-            saturated_gas_table_[pvtTableIdx][0] = pvtgTable.getOuterTable()->getPressureColumn();
-            saturated_gas_table_[pvtTableIdx][1] = pvtgTable.getOuterTable()->getGasFormationFactorColumn();
-            saturated_gas_table_[pvtTableIdx][2] = pvtgTable.getOuterTable()->getGasViscosityColumn();
-            saturated_gas_table_[pvtTableIdx][3] = pvtgTable.getOuterTable()->getOilSolubilityColumn();
+            // saturated_gas_table_[pvtTableIdx].resize(4);
+            // Adding one extra line to PVTG to store 1./(Bg*mu_g)
+            saturated_gas_table_[pvtTableIdx].resize(5);
+            saturated_gas_table_[pvtTableIdx][0] = pvtgTable.getOuterTable()->getPressureColumn(); // Pressure
+            saturated_gas_table_[pvtTableIdx][1] = pvtgTable.getOuterTable()->getGasFormationFactorColumn(); // Bg
+            saturated_gas_table_[pvtTableIdx][2] = pvtgTable.getOuterTable()->getGasViscosityColumn(); // mu_g
+            saturated_gas_table_[pvtTableIdx][3] = pvtgTable.getOuterTable()->getGasFormationFactorColumn(); // TODO
+            saturated_gas_table_[pvtTableIdx][4] = pvtgTable.getOuterTable()->getOilSolubilityColumn(); // Rv
 
             int sz = pvtgTable.getOuterTable()->numRows();
             undersat_gas_tables_[pvtTableIdx].resize(sz);
             for (int i=0; i<sz; ++i) {
                 const auto &undersatTable = *pvtgTable.getInnerTable(i);
 
-                undersat_gas_tables_[pvtTableIdx][i].resize(3);
-                undersat_gas_tables_[pvtTableIdx][i][0] = undersatTable.getOilSolubilityColumn();
-                undersat_gas_tables_[pvtTableIdx][i][1] = undersatTable.getGasFormationFactorColumn();
-                undersat_gas_tables_[pvtTableIdx][i][2] = undersatTable.getGasViscosityColumn();
+                // undersat_gas_tables_[pvtTableIdx][i].resize(3);
+                undersat_gas_tables_[pvtTableIdx][i].resize(4);
+                undersat_gas_tables_[pvtTableIdx][i][0] = undersatTable.getOilSolubilityColumn(); // Rv
+                undersat_gas_tables_[pvtTableIdx][i][1] = undersatTable.getGasFormationFactorColumn(); // Bg
+                undersat_gas_tables_[pvtTableIdx][i][2] = undersatTable.getGasViscosityColumn();  // mu_g
+                undersat_gas_tables_[pvtTableIdx][i][3] = undersatTable.getGasViscosityColumn();  // TODO
             }
 
             // Bg -> 1/Bg
             for (int i=0; i<sz; ++i) {
-                saturated_gas_table_[pvtTableIdx][1][i] = 1.0/saturated_gas_table_[pvtTableIdx][1][i];
+                saturated_gas_table_[pvtTableIdx][3][i] = 1.0 / (saturated_gas_table_[pvtTableIdx][1][i] *
+                                                                 saturated_gas_table_[pvtTableIdx][2][i]); // 1/(Bg*mu_g)
+                saturated_gas_table_[pvtTableIdx][1][i] = 1.0 / saturated_gas_table_[pvtTableIdx][1][i];
                 for (size_t j=0; j<undersat_gas_tables_[pvtTableIdx][i][1].size(); ++j) {
-                    undersat_gas_tables_[pvtTableIdx][i][1][j] = 1.0/undersat_gas_tables_[pvtTableIdx][i][1][j];
+                    undersat_gas_tables_[pvtTableIdx][i][3][j] = 1.0 / (undersat_gas_tables_[pvtTableIdx][i][1][j] *
+                                                                        undersat_gas_tables_[pvtTableIdx][i][2][j]); // 1/(Bg*mu_g)
+                    undersat_gas_tables_[pvtTableIdx][i][1][j] = 1.0 / undersat_gas_tables_[pvtTableIdx][i][1][j];
                 }
             }
         }
@@ -97,7 +106,11 @@ namespace Opm
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
-            output_mu[i] = miscible_gas(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i), 2, false);
+            double inverseB = miscible_gas(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i), 1, false);
+            double inverseBMu = miscible_gas(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i), 3, false);
+
+            output_mu[i] = inverseB / inverseBMu;
+            // output_mu[i] = miscible_gas(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i), 2, false);
         }
     }
 
@@ -126,9 +139,27 @@ namespace Opm
         for (int i = 0; i < n; ++i) {
             const PhasePresence& cnd = cond[i];
             int tableIdx = getTableIndex_(pvtRegionIdx, i);
-            output_mu[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 0);
-            output_dmudp[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 1);
-            output_dmudr[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 2);
+
+            double inverseBMu = miscible_gas(p[i], r[i], cnd, tableIdx, 3, 0);
+            double inverseB = miscible_gas(p[i], r[i], cnd, tableIdx, 1, 0);
+
+            output_mu[i] = inverseB / inverseBMu;
+
+            double dinverseBmudp = miscible_gas(p[i], r[i], cnd, tableIdx, 3, 1);
+            double dinverseBdp = miscible_gas(p[i], r[i], cnd, tableIdx, 1, 1);
+
+            output_dmudp[i] = (inverseBMu * dinverseBdp - inverseB * dinverseBmudp)
+                              / (inverseBMu * inverseBMu);
+
+            double dinverseBmudr = miscible_gas(p[i], r[i], cnd, tableIdx, 3, 2);
+            double dinverseBdr = miscible_gas(p[i], r[i], cnd, tableIdx, 1, 2);
+
+            output_dmudr[i] = (inverseBMu * dinverseBdr - inverseB * dinverseBmudr)
+                              / (inverseBMu * inverseBMu);
+
+            // output_mu[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 0);
+            // output_dmudp[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 1);
+            // output_dmudr[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 2);
         }
 
     }
@@ -209,9 +240,9 @@ namespace Opm
         for (int i = 0; i < n; ++i) {
             int pvtTableIdx = getTableIndex_(pvtRegionIdx, i);
             output_rvSat[i] = linearInterpolation(saturated_gas_table_[pvtTableIdx][0],
-                    saturated_gas_table_[pvtTableIdx][3],p[i]);
+                    saturated_gas_table_[pvtTableIdx][4],p[i]);
             output_drvSatdp[i] = linearInterpolationDerivative(saturated_gas_table_[pvtTableIdx][0],
-                    saturated_gas_table_[pvtTableIdx][3],p[i]);
+                    saturated_gas_table_[pvtTableIdx][4],p[i]);
 
         }
     }
@@ -287,7 +318,7 @@ namespace Opm
             return 0.0;
         }
         double satR = linearInterpolation(saturated_gas_table_[pvtTableIdx][0],
-                                             saturated_gas_table_[pvtTableIdx][3], press);
+                                             saturated_gas_table_[pvtTableIdx][4], press);
         double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
         if (satR < maxR ) {
             // Saturated case
@@ -308,13 +339,13 @@ namespace Opm
             return;
         }
         double satR = linearInterpolation(saturated_gas_table_[pvtTableIdx][0],
-                                             saturated_gas_table_[pvtTableIdx][3], press);
+                                             saturated_gas_table_[pvtTableIdx][4], press);
         double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
         if (satR < maxR ) {
             // Saturated case
             Rval = satR;
             dRdpval = linearInterpolationDerivative(saturated_gas_table_[pvtTableIdx][0],
-                                            saturated_gas_table_[pvtTableIdx][3],
+                                            saturated_gas_table_[pvtTableIdx][4],
                                             press);
         } else {
             // Undersaturated case
@@ -336,7 +367,7 @@ namespace Opm
 
         int section;
         double Rval = linearInterpolation(saturatedGasTable[0],
-                                                saturatedGasTable[3], press,
+                                                saturatedGasTable[4], press,
                                                 section);
         double maxR = surfvol[phase_pos_[Liquid]]/surfvol[phase_pos_[Vapour]];
         if (deriv) {
