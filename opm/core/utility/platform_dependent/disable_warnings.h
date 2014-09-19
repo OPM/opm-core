@@ -20,6 +20,8 @@
 #ifndef OPM_DISABLE_WARNINGS_HEADER_INCLUDED
 #define OPM_DISABLE_WARNINGS_HEADER_INCLUDED
 
+#ifdef SILENCE_EXTERNAL_WARNINGS
+
 // To use this feature, we must have sufficiently new compiler.
 
 // Using gcc is ok if version 4.6 or newer.
@@ -61,5 +63,7 @@
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif // COMPATIBLE_COMPILER
+
+#endif
 
 #endif // OPM_DISABLE_WARNINGS_HEADER_INCLUDED
