@@ -547,14 +547,13 @@ protected:
         flatIdx_ = timeStepWellIdx_*phaseUses_.num_phases + phaseUses_.phase_pos[phaseIdx_];
     }
 
+    // return m^3/s of injected or produced fluid
     double rate(const WellState& wellState)
     {
-        // convert m^3/s of injected fluid to m^3/d of produced fluid
-        const double convFactor = Opm::unit::day;
         double value = 0;
         if (wellState.wellRates().size() > 0) {
             assert(int(wellState.wellRates().size()) > flatIdx_);
-            value = sign_ * wellState.wellRates()[flatIdx_] * convFactor;
+            value = sign_ * wellState.wellRates()[flatIdx_];
         }
         return value;
     }
@@ -668,7 +667,9 @@ public:
         }
 
         // TODO: Why only positive rates?
-        return std::max(0., rate(wellState));
+        using namespace Opm::unit;
+        return convert::to(std::max(0., rate(wellState)),
+                           cubic(meter)/day);
     }
 };
 
