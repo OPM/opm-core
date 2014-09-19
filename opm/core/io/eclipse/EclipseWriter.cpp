@@ -711,10 +711,11 @@ public:
             return 0.0;
         }
 
-        // TODO: Is the rate average for the timestep, or is in
-        // instantaneous (in which case trapezoidal or Simpson integration
-        // would probably be better)
+        // due to using an Euler method as time integration scheme, the well rate is the
+        // average for the time step. For more complicated time stepping schemes, the
+        // integral of the rate is not simply multiplying two numbers...
         const double intg = timer.stepLengthTaken() * rate(wellState);
+
         // add this timesteps production to the total
         total_ += intg;
         // report the new production total
