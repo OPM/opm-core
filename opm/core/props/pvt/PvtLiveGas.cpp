@@ -46,14 +46,14 @@ namespace Opm
     //------------------------------------------------------------------------
     // Member functions
     //-------------------------------------------------------------------------
-    PvtLiveGas::PvtLiveGas(Opm::DeckKeywordConstPtr pvtgKeyword)
+    PvtLiveGas::PvtLiveGas(const std::vector<Opm::PvtgTable>& pvtgTables)
     {
-        int numTables = Opm::PvtgTable::numTables(pvtgKeyword);
+        int numTables = pvtgTables.size();
         saturated_gas_table_.resize(numTables);
         undersat_gas_tables_.resize(numTables);
 
         for (int pvtTableIdx = 0; pvtTableIdx < numTables; ++pvtTableIdx) {
-            Opm::PvtgTable pvtgTable(pvtgKeyword, pvtTableIdx);
+            const Opm::PvtgTable& pvtgTable = pvtgTables[pvtTableIdx];
 
             // GAS, PVTG
             saturated_gas_table_[pvtTableIdx].resize(4);

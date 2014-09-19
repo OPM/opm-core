@@ -23,7 +23,7 @@
 #include <opm/core/props/pvt/PvtInterface.hpp>
 
 #include <opm/parser/eclipse/Deck/Deck.hpp>
-#include <opm/parser/eclipse/Utility/PvtoTable.hpp>
+#include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
 #include <vector>
 
@@ -39,7 +39,7 @@ namespace Opm
     class PvtLiveOil : public PvtInterface
     {
     public:
-        PvtLiveOil(Opm::DeckKeywordConstPtr pvtoKeyword);
+        PvtLiveOil(const std::vector<Opm::PvtoTable>& pvtoTables);
         virtual ~PvtLiveOil();
 
         /// Viscosity as a function of p and z.

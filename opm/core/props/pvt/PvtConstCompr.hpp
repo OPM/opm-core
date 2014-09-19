@@ -23,9 +23,6 @@
 #include <opm/core/props/pvt/PvtInterface.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 
-#include <opm/parser/eclipse/Utility/PvtwTable.hpp>
-#include <opm/parser/eclipse/Utility/PvcdoTable.hpp>
-
 #include <vector>
 #include <algorithm>
 
