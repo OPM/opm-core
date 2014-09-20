@@ -17,8 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_REENABLE_WARNINGS_HEADER_INCLUDED
-#define OPM_REENABLE_WARNINGS_HEADER_INCLUDED
+// Note: this file shall not have include guards or #pragma once.
 
 #ifdef SILENCE_EXTERNAL_WARNINGS
 
@@ -55,6 +54,4 @@
 #pragma GCC diagnostic pop
 #endif // COMPATIBLE_COMPILER
 
-#endif
-
-#endif // OPM_REENABLE_WARNINGS_HEADER_INCLUDED
+#endif // SILENCE_EXTERNAL_WARNINGS

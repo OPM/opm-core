@@ -17,8 +17,7 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_DISABLE_WARNINGS_HEADER_INCLUDED
-#define OPM_DISABLE_WARNINGS_HEADER_INCLUDED
+// Note: this file shall not have include guards or #pragma once.
 
 #ifdef SILENCE_EXTERNAL_WARNINGS
 
@@ -64,6 +63,4 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif // COMPATIBLE_COMPILER
 
-#endif
-
-#endif // OPM_DISABLE_WARNINGS_HEADER_INCLUDED
+#endif // SILENCE_EXTERNAL_WARNINGS
