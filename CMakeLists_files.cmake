@@ -51,7 +51,6 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/linalg/LinearSolverUmfpack.cpp
 	opm/core/linalg/LinearSolverPetsc.cpp
 	opm/core/linalg/call_umfpack.c
-	opm/core/linalg/call_petsc.c
 	opm/core/linalg/sparse_sys.c
 	opm/core/pressure/CompressibleTpfa.cpp
 	opm/core/pressure/FlowBCManager.cpp
