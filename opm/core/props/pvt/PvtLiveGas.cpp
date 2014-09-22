@@ -83,12 +83,12 @@ namespace Opm
 
             // Bg -> 1/Bg
             for (int i=0; i<sz; ++i) {
-                saturated_gas_table_[pvtTableIdx][3][i] = 1.0 / (saturated_gas_table_[pvtTableIdx][1][i] *
-                                                                 saturated_gas_table_[pvtTableIdx][2][i]); // 1/(Bg*mu_g)
+                saturated_gas_table_[pvtTableIdx][3][i] = 1.0 / (saturated_gas_table_[pvtTableIdx][1][i]
+                                                               * saturated_gas_table_[pvtTableIdx][2][i]); // 1/(Bg*mu_g)
                 saturated_gas_table_[pvtTableIdx][1][i] = 1.0 / saturated_gas_table_[pvtTableIdx][1][i];
                 for (size_t j=0; j<undersat_gas_tables_[pvtTableIdx][i][1].size(); ++j) {
-                    undersat_gas_tables_[pvtTableIdx][i][3][j] = 1.0 / (undersat_gas_tables_[pvtTableIdx][i][1][j] *
-                                                                        undersat_gas_tables_[pvtTableIdx][i][2][j]); // 1/(Bg*mu_g)
+                    undersat_gas_tables_[pvtTableIdx][i][3][j] = 1.0 / (undersat_gas_tables_[pvtTableIdx][i][1][j]
+                                                                      * undersat_gas_tables_[pvtTableIdx][i][2][j]); // 1/(Bg*mu_g)
                     undersat_gas_tables_[pvtTableIdx][i][1][j] = 1.0 / undersat_gas_tables_[pvtTableIdx][i][1][j];
                 }
             }

@@ -58,8 +58,8 @@ namespace Opm
                 saturated_oil_table_[pvtTableIdx][0][i] = saturatedPvto->getPressureColumn()[i]; // p
                 saturated_oil_table_[pvtTableIdx][1][i] = 1.0/saturatedPvto->getOilFormationFactorColumn()[i]; // 1/Bo
                 saturated_oil_table_[pvtTableIdx][2][i] = saturatedPvto->getOilViscosityColumn()[i]; // mu_o
-                saturated_oil_table_[pvtTableIdx][3][i] = 1.0 / (saturatedPvto->getOilFormationFactorColumn()[i] *
-                                                                 saturatedPvto->getOilViscosityColumn()[i]); // 1/(Bo*mu_o)
+                saturated_oil_table_[pvtTableIdx][3][i] = 1.0 / (saturatedPvto->getOilFormationFactorColumn()[i]
+                                                               * saturatedPvto->getOilViscosityColumn()[i]); // 1/(Bo*mu_o)
                 saturated_oil_table_[pvtTableIdx][4][i] = saturatedPvto->getGasSolubilityColumn()[i]; // Rs
             }
 
