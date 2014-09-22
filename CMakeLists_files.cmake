@@ -411,6 +411,8 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/parameters/ParameterXML.hpp
 	opm/core/utility/parameters/tinyxml/tinystr.h
 	opm/core/utility/parameters/tinyxml/tinyxml.h
+	opm/core/utility/platform_dependent/disable_warnings.h
+	opm/core/utility/platform_dependent/reenable_warnings.h
 	opm/core/utility/PropertySystem.hpp
 	opm/core/utility/share_obj.hpp
 	opm/core/utility/thresholdPressures.hpp
