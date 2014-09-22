@@ -217,16 +217,5 @@ namespace Opm
             }
         } // namespace convert
     } // namespace unit
-
-    namespace units {
-        //     const double MILLIDARCY = 1.0;//9.86923e-16;
-        //     const double VISCOSITY_UNIT = 1.0;//1e-3;
-        //     const double DAYS2SECONDS = 1.0;//86400;
-        const double MILLIDARCY = 9.86923e-16;
-        const double VISCOSITY_UNIT = 1e-3;
-        const double DAYS2SECONDS = 86400;
-        const double FEET = 0.30479999798832;
-        const double WELL_INDEX_UNIT = VISCOSITY_UNIT/(DAYS2SECONDS*1e5);
-    } // namespace units
 } // namespace Opm
 #endif // OPM_UNITS_HEADER
