@@ -68,7 +68,7 @@ namespace Opm
                 const auto undersaturatedPvto = pvtoTable.getInnerTable(i);
 
                 // undersat_oil_tables_[pvtTableIdx][i].resize(3);
-                // adding a extra colummn to the PVTO to store 1/BV
+                // adding a extra colummn to the PVTO to store 1/(B*mu)
                 undersat_oil_tables_[pvtTableIdx][i].resize(4);
                 int tsize = undersaturatedPvto->numRows();
                 undersat_oil_tables_[pvtTableIdx][i][0].resize(tsize);
@@ -117,7 +117,7 @@ namespace Opm
                     double mu = (undersat_oil_tables_[pvtTableIdx][i][2].back())*(1.0+0.5*visc)/(1.0-0.5*visc);
                     undersat_oil_tables_[pvtTableIdx][i][2].push_back(mu);
 
-                    // a try to expolate the 1/BMu
+                    // A try to expolate the 1/BMu with the expolated mu and B
                     double inverseBMu = 1.0 / (B*mu);
                     undersat_oil_tables_[pvtTableIdx][i][3].push_back(inverseBMu);
 
