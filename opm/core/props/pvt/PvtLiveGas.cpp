@@ -65,7 +65,6 @@ namespace Opm
             // The number of the columns
             int nColumns = saturated_gas_table_[pvtTableIdx][2].size();
             saturated_gas_table_[pvtTableIdx][3].resize(nColumns); // allocate memory for 1/(Bg*mu_g)
-            // saturated_gas_table_[pvtTableIdx][3] = pvtgTable.getOuterTable()->getGasFormationFactorColumn(); // TODO
             saturated_gas_table_[pvtTableIdx][4] = pvtgTable.getOuterTable()->getOilSolubilityColumn(); // Rv
 
             int sz = pvtgTable.getOuterTable()->numRows();
@@ -80,7 +79,6 @@ namespace Opm
                 undersat_gas_tables_[pvtTableIdx][i][2] = undersatTable.getGasViscosityColumn();  // mu_g
                 int nColumns = undersat_gas_tables_[pvtTableIdx][i][2].size();
                 undersat_gas_tables_[pvtTableIdx][i][3].resize(nColumns); // allocate memory for 1/(Bg*mu_g)
-                // undersat_gas_tables_[pvtTableIdx][i][3] = undersatTable.getGasViscosityColumn();  // TODO
             }
 
             // Bg -> 1/Bg
@@ -115,7 +113,6 @@ namespace Opm
             double inverseBMu = miscible_gas(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i), 3, false);
 
             output_mu[i] = inverseB / inverseBMu;
-            // output_mu[i] = miscible_gas(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i), 2, false);
         }
     }
 
@@ -162,9 +159,6 @@ namespace Opm
             output_dmudr[i] = (inverseBMu * dinverseBdr - inverseB * dinverseBmudr)
                               / (inverseBMu * inverseBMu);
 
-            // output_mu[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 0);
-            // output_dmudp[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 1);
-            // output_dmudr[i] = miscible_gas(p[i], r[i], cnd, tableIdx, 2, 2);
         }
 
     }

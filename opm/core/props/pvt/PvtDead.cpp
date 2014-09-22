@@ -57,9 +57,6 @@ namespace Opm
                 inverseB[i] = 1.0 / b[i];
             }
 
-            // TODO: should we change the name of b so that we know it is the 
-            // inverse more explicitly?
-            // or use the captial B in a exlicit way to show the difference.
             std::vector<double> inverseBmu(sz);
             for (int i = 0; i < sz; ++i) {
                 inverseBmu[i] = 1.0 / (b[i] * visc[i]);
@@ -122,7 +119,6 @@ namespace Opm
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             int regionIdx = getTableIndex_(pvtTableIdx, i);
-            // output_mu[i] = viscosity_[regionIdx](p[i]);
             double tempInvB = b_[regionIdx](p[i]);
             double tempInvBmu = inverseBmu_[regionIdx](p[i]);
             output_mu[i] = tempInvB / tempInvBmu;
@@ -140,8 +136,6 @@ namespace Opm
     // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 int regionIdx = getTableIndex_(pvtTableIdx, i);
-                // output_mu[i] = viscosity_[regionIdx](p[i]);
-                // output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
                 double tempInvB = b_[regionIdx](p[i]);
                 double tempInvBmu = inverseBmu_[regionIdx](p[i]);
                 output_mu[i] = tempInvB / tempInvBmu;
@@ -166,12 +160,10 @@ namespace Opm
                 int regionIdx = getTableIndex_(pvtTableIdx, i);
                 double tempInvB = b_[regionIdx](p[i]);
                 double tempInvBmu = inverseBmu_[regionIdx](p[i]);
-                // output_mu[i] = viscosity_[regionIdx](p[i]);
                 output_mu[i] = tempInvB / tempInvBmu;
-                // output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
-                // output_dmudp[i] = tempInvB / (tempInvBV * tempInvBV) * inverseBV_[regionIdx].derivative(p[i]);
                 output_dmudp[i] = (tempInvBmu * b_[regionIdx].derivative(p[i])
-                                 - tempInvB * inverseBmu_[regionIdx].derivative(p[i])) / (tempInvBmu * tempInvBmu);
+                                 - tempInvB * inverseBmu_[regionIdx].derivative(p[i]))
+                                 / (tempInvBmu * tempInvBmu);
             }
             std::fill(output_dmudr, output_dmudr + n, 0.0);
 

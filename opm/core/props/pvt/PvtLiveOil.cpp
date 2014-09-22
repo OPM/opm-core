@@ -147,9 +147,6 @@ namespace Opm
             double inverseBMu = miscible_oil(p[i], z + num_phases_*i, tableIdx, 3, false);
 
             output_mu[i] = inverseB / inverseBMu; 
-
-            // output_mu[i] = miscible_oil(p[i], z + num_phases_*i, tableIdx, 2, false);
-            // output_mu[i] = miscible_oil(p[i], z + num_phases_*i, tableIdx, 2, false);
         }
     }
 
@@ -183,10 +180,6 @@ namespace Opm
 
                     output_dmudr[i] = (inverseBMu * dinverseBdr - inverseB * dinverseBmudr)
                                       / (inverseBMu * inverseBMu);
-
-                    // output_mu[i] = miscible_oil(p[i], r[i], tableIdx, 2, 0);
-                    // output_dmudp[i] = miscible_oil(p[i], r[i], tableIdx, 2, 1);
-                    // output_dmudr[i] = miscible_oil(p[i], r[i], tableIdx, 2, 2);
 
                 }
     }
@@ -223,9 +216,6 @@ namespace Opm
 
                     output_dmudr[i] = (inverseBMu * dinverseBdr - inverseB * dinverseBmudr)
                                       / (inverseBMu * inverseBMu);
-                    // output_mu[i] = miscible_oil(p[i], r[i], cnd, tableIdx, 2, 0);
-                    // output_dmudp[i] = miscible_oil(p[i], r[i], cnd, tableIdx, 2, 1);
-                    // output_dmudr[i] = miscible_oil(p[i], r[i], cnd, tableIdx, 2, 2);
 
                 }
     }
