@@ -23,8 +23,7 @@
 #include <opm/core/props/pvt/PvtInterface.hpp>
 #include <opm/core/utility/UniformTableLinear.hpp>
 
-#include <opm/parser/eclipse/Utility/PvdoTable.hpp>
-#include <opm/parser/eclipse/Utility/PvdgTable.hpp>
+#include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
 #include <vector>
 
@@ -43,9 +42,9 @@ namespace Opm
     public:
         PvtDeadSpline();
 
-        void initFromOil(Opm::DeckKeywordConstPtr pvdoKeyword,
+        void initFromOil(const std::vector<Opm::PvdoTable>& pvdoTables,
                          int numSamples);
-        void initFromGas(Opm::DeckKeywordConstPtr pvdgKeyword,
+        void initFromGas(const std::vector<Opm::PvdgTable>& pvdgTables,
                          int numSamples);
 
         virtual ~PvtDeadSpline();

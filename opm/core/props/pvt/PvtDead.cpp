@@ -34,9 +34,9 @@ namespace Opm
     // Member functions
     //-------------------------------------------------------------------------
     /// Constructor
-    void PvtDead::initFromOil(Opm::DeckKeywordConstPtr pvdoKeyword)
+    void PvtDead::initFromOil(const std::vector<Opm::PvdoTable>& pvdoTables)
     {
-        int numRegions = Opm::PvdoTable::numTables(pvdoKeyword);
+        int numRegions = pvdoTables.size();
 
         // resize the attributes of the object
         b_.resize(numRegions);
@@ -44,7 +44,8 @@ namespace Opm
         inverseBV_.resize(numRegions);
 
         for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
-            Opm::PvdoTable pvdoTable(pvdoKeyword, regionIdx);
+            const Opm::PvdoTable& pvdoTable = pvdoTables[regionIdx];
+
             // Copy data
             const std::vector<double>& press = pvdoTable.getPressureColumn();
             const std::vector<double>& b = pvdoTable.getFormationFactorColumn();
@@ -71,9 +72,9 @@ namespace Opm
     }
 
 
-    void PvtDead::initFromGas(Opm::DeckKeywordConstPtr pvdgKeyword)
+    void PvtDead::initFromGas(const std::vector<Opm::PvdgTable>& pvdgTables)
     {
-        int numRegions = Opm::PvdgTable::numTables(pvdgKeyword);
+        int numRegions = pvdgTables.size();
 
         // resize the attributes of the object
         b_.resize(numRegions);
@@ -81,7 +82,7 @@ namespace Opm
         inverseBV_.resize(numRegions);
 
         for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
-            Opm::PvdgTable pvdgTable(pvdgKeyword, regionIdx);
+            const Opm::PvdgTable& pvdgTable = pvdgTables[regionIdx];
 
             // Copy data
             const std::vector<double>& press = pvdgTable.getPressureColumn();

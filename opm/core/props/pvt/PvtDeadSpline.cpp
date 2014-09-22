@@ -21,7 +21,6 @@
 #include <opm/core/props/pvt/PvtDeadSpline.hpp>
 #include <opm/core/utility/buildUniformMonotoneTable.hpp>
 
-#include <opm/parser/eclipse/Utility/SingleRecordTable.hpp>
 
 #include <algorithm>
 
@@ -39,17 +38,17 @@ namespace Opm
     PvtDeadSpline::PvtDeadSpline()
     {}
 
-    void PvtDeadSpline::initFromOil(Opm::DeckKeywordConstPtr pvdoKeyword,
+    void PvtDeadSpline::initFromOil(const std::vector<Opm::PvdoTable>& pvdoTables,
                                     int numSamples)
     {
-        int numRegions = Opm::PvdoTable::numTables(pvdoKeyword);
+        int numRegions = pvdoTables.size();
 
         // resize the attributes of the object
         b_.resize(numRegions);
         viscosity_.resize(numRegions);
 
         for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
-            Opm::PvdoTable pvdoTable(pvdoKeyword, regionIdx);
+            const Opm::PvdoTable& pvdoTable = pvdoTables[regionIdx];
 
             int numRows = pvdoTable.numRows();
 
@@ -68,17 +67,17 @@ namespace Opm
         }
     }
 
-    void PvtDeadSpline::initFromGas(Opm::DeckKeywordConstPtr pvdgKeyword,
+    void PvtDeadSpline::initFromGas(const std::vector<Opm::PvdgTable>& pvdgTables,
                                     int numSamples)
     {
-        int numRegions = Opm::PvdgTable::numTables(pvdgKeyword);
+        int numRegions = pvdgTables.size();
 
         // resize the attributes of the object
         b_.resize(numRegions);
         viscosity_.resize(numRegions);
 
         for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
-            Opm::PvdgTable pvdgTable(pvdgKeyword, regionIdx);
+            const Opm::PvdgTable& pvdgTable = pvdgTables[regionIdx];
 
             int numRows = pvdgTable.numRows();
 

@@ -22,9 +22,7 @@
 #include <opm/core/utility/NonuniformTableLinear.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 
-#include <opm/parser/eclipse/Deck/Deck.hpp>
-#include <opm/parser/eclipse/Utility/SwofTable.hpp>
-#include <opm/parser/eclipse/Utility/SgofTable.hpp>
+#include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
 #include <vector>
 
@@ -79,7 +77,7 @@ namespace Opm
     class SatFuncBase : public BlackoilPhases
     {
     public:
-        void init(Opm::DeckConstPtr deck,
+        void init(Opm::EclipseStateConstPtr eclipseState,
                   const int table_num,
                   const PhaseUsage phase_usg,
                   const int samples);
@@ -124,7 +122,7 @@ namespace Opm
     };
 
     template <class TableType>
-    void SatFuncBase<TableType>::init(Opm::DeckConstPtr deck,
+    void SatFuncBase<TableType>::init(Opm::EclipseStateConstPtr eclipseState,
                                       const int table_num,
                                       const PhaseUsage phase_usg,
                                       const int samples)
@@ -133,7 +131,7 @@ namespace Opm
         double swco = 0.0;
         double swmax = 1.0;
         if (phase_usage.phase_used[Aqua]) {
-            Opm::SwofTable swof(deck->getKeyword("SWOF"), table_num);
+            const Opm::SwofTable& swof(eclipseState->getSwofTables()[table_num]);
             const std::vector<double>& sw = swof.getSwColumn();
             const std::vector<double>& krw = swof.getKrwColumn();
             const std::vector<double>& krow = swof.getKrowColumn();
@@ -188,7 +186,7 @@ namespace Opm
             pcwmax_ = pcow.front();
         }
         if (phase_usage.phase_used[Vapour]) {
-            Opm::SgofTable sgof(deck->getKeyword("SGOF"), table_num);
+            const Opm::SgofTable& sgof = eclipseState->getSgofTables()[table_num];
             const std::vector<double>& sg = sgof.getSgColumn();
             const std::vector<double>& krg = sgof.getKrgColumn();
             const std::vector<double>& krog = sgof.getKrogColumn();

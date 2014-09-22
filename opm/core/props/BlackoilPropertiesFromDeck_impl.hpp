@@ -53,7 +53,7 @@ namespace Opm
         if (init_rock){
            rock_.init(eclState, number_of_cells, global_cell, cart_dims);
         }
-        pvt_.init(deck, /*numSamples=*/0);
+        pvt_.init(deck, eclState, /*numSamples=*/0);
         SaturationPropsFromDeck<SatFuncSimpleNonuniform>* ptr
             = new SaturationPropsFromDeck<SatFuncSimpleNonuniform>();
         satprops_.reset(ptr);
@@ -86,7 +86,7 @@ namespace Opm
         }
 
         const int pvt_samples = param.getDefault("pvt_tab_size", -1);
-        pvt_.init(deck, pvt_samples);
+        pvt_.init(deck, eclState, pvt_samples);
 
         // Unfortunate lack of pointer smartness here...
         const int sat_samples = param.getDefault("sat_tab_size", -1);

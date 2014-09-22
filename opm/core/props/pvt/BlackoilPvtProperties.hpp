@@ -24,7 +24,7 @@
 #include <opm/core/props/BlackoilPhases.hpp>
 
 #include <opm/parser/eclipse/Deck/Deck.hpp>
-#include <opm/parser/eclipse/Utility/PvtoTable.hpp>
+#include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
 #include <string>
 #include <memory>
@@ -54,6 +54,7 @@ namespace Opm
         ///
         /// \param deck     An input deck from the opm-parser module.
         void init(Opm::DeckConstPtr deck,
+                  Opm::EclipseStateConstPtr eclipseState,
                   int samples);
 
         /// \return   Object describing the active phases.

@@ -20,12 +20,10 @@
 #ifndef OPM_PVTDEAD_HEADER_INCLUDED
 #define OPM_PVTDEAD_HEADER_INCLUDED
 
-
 #include <opm/core/props/pvt/PvtInterface.hpp>
 #include <opm/core/utility/NonuniformTableLinear.hpp>
 
-#include <opm/parser/eclipse/Utility/PvdoTable.hpp>
-#include <opm/parser/eclipse/Utility/PvdgTable.hpp>
+#include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
 #include <vector>
 
@@ -48,8 +46,8 @@ namespace Opm
     public:
         PvtDead() {};
 
-        void initFromOil(Opm::DeckKeywordConstPtr pvdoKeyword);
-        void initFromGas(Opm::DeckKeywordConstPtr pvdgKeyword);
+        void initFromOil(const std::vector<Opm::PvdoTable>& pvdoTables);
+        void initFromGas(const std::vector<Opm::PvdgTable>& pvdgTables);
         virtual ~PvtDead();
 
         /// Viscosity as a function of p and z.
