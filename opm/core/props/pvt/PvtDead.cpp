@@ -41,6 +41,7 @@ namespace Opm
         // resize the attributes of the object
         b_.resize(numRegions);
         viscosity_.resize(numRegions);
+        inverseBmu_.resize(numRegions);
 
         for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
             const Opm::PvdoTable& pvdoTable = pvdoTables[regionIdx];
@@ -51,12 +52,19 @@ namespace Opm
             const std::vector<double>& visc = pvdoTable.getViscosityColumn();
 
             const int sz = b.size();
-            std::vector<double> bInv(sz);
+            std::vector<double> inverseB(sz);
             for (int i = 0; i < sz; ++i) {
-                bInv[i] = 1.0 / b[i];
+                inverseB[i] = 1.0 / b[i];
             }
-            b_[regionIdx] = NonuniformTableLinear<double>(press, bInv);
+
+            std::vector<double> inverseBmu(sz);
+            for (int i = 0; i < sz; ++i) {
+                inverseBmu[i] = 1.0 / (b[i] * visc[i]);
+            }
+
+            b_[regionIdx] = NonuniformTableLinear<double>(press, inverseB);
             viscosity_[regionIdx] = NonuniformTableLinear<double>(press, visc);
+            inverseBmu_[regionIdx] = NonuniformTableLinear<double>(press, inverseBmu);
         }
     }
 
@@ -68,6 +76,7 @@ namespace Opm
         // resize the attributes of the object
         b_.resize(numRegions);
         viscosity_.resize(numRegions);
+        inverseBmu_.resize(numRegions);
 
         for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
             const Opm::PvdgTable& pvdgTable = pvdgTables[regionIdx];
@@ -78,12 +87,19 @@ namespace Opm
             const std::vector<double>& visc = pvdgTable.getViscosityColumn();
 
             const int sz = b.size();
-            std::vector<double> bInv(sz);
+            std::vector<double> inverseB(sz);
             for (int i = 0; i < sz; ++i) {
-                bInv[i] = 1.0 / b[i];
+                inverseB[i] = 1.0 / b[i];
             }
-            b_[regionIdx] = NonuniformTableLinear<double>(press, bInv);
+
+            std::vector<double> inverseBmu(sz);
+            for (int i = 0; i < sz; ++i) {
+                inverseBmu[i] = 1.0 / (b[i] * visc[i]);
+            }
+
+            b_[regionIdx] = NonuniformTableLinear<double>(press, inverseB);
             viscosity_[regionIdx] = NonuniformTableLinear<double>(press, visc);
+            inverseBmu_[regionIdx] = NonuniformTableLinear<double>(press, inverseBmu);
         }
     }
 
@@ -103,7 +119,9 @@ namespace Opm
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             int regionIdx = getTableIndex_(pvtTableIdx, i);
-            output_mu[i] = viscosity_[regionIdx](p[i]);
+            double tempInvB = b_[regionIdx](p[i]);
+            double tempInvBmu = inverseBmu_[regionIdx](p[i]);
+            output_mu[i] = tempInvB / tempInvBmu;
         }
     }
 
@@ -118,8 +136,11 @@ namespace Opm
     // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 int regionIdx = getTableIndex_(pvtTableIdx, i);
-                output_mu[i] = viscosity_[regionIdx](p[i]);
-                output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
+                double tempInvB = b_[regionIdx](p[i]);
+                double tempInvBmu = inverseBmu_[regionIdx](p[i]);
+                output_mu[i] = tempInvB / tempInvBmu;
+                output_dmudp[i] = (tempInvBmu * b_[regionIdx].derivative(p[i])
+                                 - tempInvB * inverseBmu_[regionIdx].derivative(p[i])) / (tempInvBmu * tempInvBmu);
             }
             std::fill(output_dmudr, output_dmudr + n, 0.0);
 
@@ -137,8 +158,12 @@ namespace Opm
     // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 int regionIdx = getTableIndex_(pvtTableIdx, i);
-                output_mu[i] = viscosity_[regionIdx](p[i]);
-                output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
+                double tempInvB = b_[regionIdx](p[i]);
+                double tempInvBmu = inverseBmu_[regionIdx](p[i]);
+                output_mu[i] = tempInvB / tempInvBmu;
+                output_dmudp[i] = (tempInvBmu * b_[regionIdx].derivative(p[i])
+                                 - tempInvB * inverseBmu_[regionIdx].derivative(p[i]))
+                                 / (tempInvBmu * tempInvBmu);
             }
             std::fill(output_dmudr, output_dmudr + n, 0.0);
 
