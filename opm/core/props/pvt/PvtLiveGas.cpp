@@ -63,8 +63,8 @@ namespace Opm
             saturated_gas_table_[pvtTableIdx][1] = pvtgTable.getOuterTable()->getGasFormationFactorColumn(); // Bg
             saturated_gas_table_[pvtTableIdx][2] = pvtgTable.getOuterTable()->getGasViscosityColumn(); // mu_g
             // The number of the columns
-            int nColumns = saturated_gas_table_[pvtTableIdx][2].size();
-            saturated_gas_table_[pvtTableIdx][3].resize(nColumns); // allocate memory for 1/(Bg*mu_g)
+            int nRows = saturated_gas_table_[pvtTableIdx][2].size();
+            saturated_gas_table_[pvtTableIdx][3].resize(nRows); // allocate memory for 1/(Bg*mu_g)
             saturated_gas_table_[pvtTableIdx][4] = pvtgTable.getOuterTable()->getOilSolubilityColumn(); // Rv
 
             int sz = pvtgTable.getOuterTable()->numRows();
@@ -77,8 +77,8 @@ namespace Opm
                 undersat_gas_tables_[pvtTableIdx][i][0] = undersatTable.getOilSolubilityColumn(); // Rv
                 undersat_gas_tables_[pvtTableIdx][i][1] = undersatTable.getGasFormationFactorColumn(); // Bg
                 undersat_gas_tables_[pvtTableIdx][i][2] = undersatTable.getGasViscosityColumn();  // mu_g
-                int nColumns = undersat_gas_tables_[pvtTableIdx][i][2].size();
-                undersat_gas_tables_[pvtTableIdx][i][3].resize(nColumns); // allocate memory for 1/(Bg*mu_g)
+                int nRows = undersat_gas_tables_[pvtTableIdx][i][2].size();
+                undersat_gas_tables_[pvtTableIdx][i][3].resize(nRows); // allocate memory for 1/(Bg*mu_g)
             }
 
             // Bg -> 1/Bg
