@@ -247,9 +247,10 @@ BOOST_AUTO_TEST_CASE(test_liveoil)
     const int np = phase_usage_.num_phases;
     std::vector<int> pvtRegionIdx(n, 0);
 
-    // the tolerance for acceptable difference in values
-    // const double reltol = 1e-9;
-    const double reltol = 1e-1;
+    // the relative tolerance in percentage for acceptable difference in values
+    const double reltolper = 1e-9;
+    // the relative tolerance in percentage for acceptable difference in values for viscosity
+    const double reltolpermu = 1e-1;
 
     std::vector<double> p(n);
     std::vector<double> r(n);
@@ -291,13 +292,13 @@ BOOST_AUTO_TEST_CASE(test_liveoil)
 
     }
 
-    testmu(reltol, n, np, pvtRegionIdx, p, r,z, props_, condition);
+    testmu(reltolpermu, n, np, pvtRegionIdx, p, r,z, props_, condition);
 
-    testb(reltol,n,np,pvtRegionIdx,p,r,z,props_,condition);
+    testb(reltolper,n,np,pvtRegionIdx,p,r,z,props_,condition);
 
-    testrsSat(reltol,n,np,pvtRegionIdx,p,props_);
+    testrsSat(reltolper,n,np,pvtRegionIdx,p,props_);
 
-    testrvSat(reltol,n,np,pvtRegionIdx,p,props_);
+    testrvSat(reltolper,n,np,pvtRegionIdx,p,props_);
 
 
 }
@@ -325,9 +326,10 @@ BOOST_AUTO_TEST_CASE(test_wetgas)
     const int np = phase_usage_.num_phases;
     std::vector<int> pvtRegionIdx(n, 0);
 
-    // the tolerance for acceptable difference in values
-    // const double reltol = 1e-9;
-    const double reltol = 1e-1;
+    // the relative tolerance in percentage for acceptable difference in values
+    const double reltolper = 1e-9;
+    // the relative tolerance in percentage for acceptable difference in values for viscosity
+    const double reltolpermu = 1e-1;
 
     std::vector<double> p(n);
     std::vector<double> r(n);
@@ -369,12 +371,12 @@ BOOST_AUTO_TEST_CASE(test_wetgas)
 
     }
 
-    testmu(reltol, n, np, pvtRegionIdx, p, r,z, props_, condition);
+    testmu(reltolpermu, n, np, pvtRegionIdx, p, r,z, props_, condition);
 
-    testb(reltol,n,np,pvtRegionIdx,p,r,z,props_,condition);
+    testb(reltolper,n,np,pvtRegionIdx,p,r,z,props_,condition);
 
-    testrsSat(reltol,n,np,pvtRegionIdx,p,props_);
+    testrsSat(reltolper,n,np,pvtRegionIdx,p,props_);
 
-    testrvSat(reltol,n,np,pvtRegionIdx,p,props_);
+    testrvSat(reltolper,n,np,pvtRegionIdx,p,props_);
 
 }
