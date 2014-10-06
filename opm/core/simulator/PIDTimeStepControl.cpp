@@ -17,14 +17,15 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cassert>
+#include <cmath>
+#include <iostream>
+
 #include <opm/core/simulator/PIDTimeStepControl.hpp>
 
 namespace Opm 
 {
-    /// \brief constructor 
-    /// \param tol  tolerance for the relative changes of the numerical solution to be accepted 
-    ///             in one time step (default is 1e-3)
-    PIDTimeStepControl::PIDTimeStepControl( const double, const bool verbose ) 
+    PIDTimeStepControl::PIDTimeStepControl( const double tol, const bool verbose ) 
         : p0_()
         , sat0_() 
         , tol_( tol )
@@ -32,7 +33,6 @@ namespace Opm
         , verbose_( verbose )
     {}
 
-    /// \brief \copydoc TimeStepControlInterface::initialize
     void PIDTimeStepControl::initialize( const SimulatorState& state ) 
     {
         // store current state for later time step computation
@@ -40,16 +40,16 @@ namespace Opm
         sat0_ = state.saturation();
     }
 
-    /// \brief \copydoc TimeStepControlInterface::computeTimeStepSize
-    double PIDTimeStepControl::computeTimeStepSize( const double dt, const int /* iterations */, const SimulatorState& state ) const
+    double PIDTimeStepControl::
+    computeTimeStepSize( const double dt, const int /* iterations */, const SimulatorState& state ) const
     {
-        const size_t size = p0_.size();
+        const std::size_t size = p0_.size();
         assert( state.pressure().size() == size );
         assert( state.saturation().size() == size );
         assert( sat0_.size() == size );
 
         // compute u^n - u^n+1 
-        for( size_t i=0; i<size; ++i ) 
+        for( std::size_t i=0; i<size; ++i ) 
         {
             p0_[ i ]   -= state.pressure()[ i ];
             sat0_[ i ] -= state.saturation()[ i ];
@@ -118,4 +118,3 @@ namespace Opm
     }
 
 } // end namespace Opm
-#endif
