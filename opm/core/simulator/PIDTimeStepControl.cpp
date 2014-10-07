@@ -21,6 +21,7 @@
 #include <cmath>
 #include <iostream>
 
+#include <opm/core/utility/Units.hpp>
 #include <opm/core/simulator/PIDTimeStepControl.hpp>
 
 namespace Opm 
@@ -74,9 +75,10 @@ namespace Opm
         if( error > tol_ )
         {
             // adjust dt by given tolerance 
+            const double newDt = dt * tol_ / error;
             if( verbose_ )
-                std::cout << "Computed step size (tol): " << (dt * tol_ / error )/86400.0 << " (days)" << std::endl;
-            return (dt * tol_ / error );
+                std::cout << "Computed step size (tol): " << unit::convert::to( newDt, unit::day ) << " (days)" << std::endl;
+            return newDt;
         }
         else
         {
@@ -84,11 +86,11 @@ namespace Opm
             const double kP = 0.075 ;
             const double kI = 0.175 ;
             const double kD = 0.01 ;
-            double newDt = (dt * std::pow( errors_[ 1 ] / errors_[ 2 ], kP ) *
-                         std::pow( tol_         / errors_[ 2 ], kI ) *
-                         std::pow( errors_[0]*errors_[0]/errors_[ 1 ]/errors_[ 2 ], kD ));
+            const double newDt = (dt * std::pow( errors_[ 1 ] / errors_[ 2 ], kP ) *
+                                 std::pow( tol_         / errors_[ 2 ], kI ) *
+                                 std::pow( errors_[0]*errors_[0]/errors_[ 1 ]/errors_[ 2 ], kD ));
             if( verbose_ )
-                std::cout << "Computed step size (pow): " << newDt/86400.0 << " (days)" << std::endl;
+                std::cout << "Computed step size (pow): " << unit::convert::to( newDt, unit::day ) << " (days)" << std::endl;
             return newDt;
         }
     }
