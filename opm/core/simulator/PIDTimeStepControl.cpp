@@ -57,12 +57,12 @@ namespace Opm
         }
 
         // compute || u^n - u^n+1 || 
-        const double stateOld  = inner_product( p0_.begin(),   p0_.end() ) +
-                                 inner_product( sat0_.begin(), sat0_.end() );
+        const double stateOld  = innerProduct( p0_.begin(),   p0_.end() ) +
+                                 innerProduct( sat0_.begin(), sat0_.end() );
 
         // compute || u^n+1 || 
-        const double stateNew  = inner_product( state.pressure().begin(), state.pressure().end() ) +
-                                 inner_product( state.saturation().begin(), state.saturation().end() );
+        const double stateNew  = innerProduct( state.pressure().begin(), state.pressure().end() ) +
+                                 innerProduct( state.saturation().begin(), state.saturation().end() );
 
         // shift errors
         for( int i=0; i<2; ++i )
