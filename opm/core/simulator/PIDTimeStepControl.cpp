@@ -57,12 +57,12 @@ namespace Opm
         }
 
         // compute || u^n - u^n+1 || 
-        const double stateOld  = euclideanNormSquared( p0_.begin(),   p0_.end() ) +
-                                 euclideanNormSquared( sat0_.begin(), sat0_.end() );
+        const double stateOld  = euclidianNormSquared( p0_.begin(),   p0_.end() ) +
+                                 euclidianNormSquared( sat0_.begin(), sat0_.end() );
 
         // compute || u^n+1 || 
-        const double stateNew  = euclideanNormSquared( state.pressure().begin(), state.pressure().end() ) +
-                                 euclideanNormSquared( state.saturation().begin(), state.saturation().end() );
+        const double stateNew  = euclidianNormSquared( state.pressure().begin(), state.pressure().end() ) +
+                                 euclidianNormSquared( state.saturation().begin(), state.saturation().end() );
 
         // shift errors
         for( int i=0; i<2; ++i )
