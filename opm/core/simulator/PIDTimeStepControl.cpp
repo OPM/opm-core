@@ -57,12 +57,12 @@ namespace Opm
         }
 
         // compute || u^n - u^n+1 || 
-        const double stateOld  = innerProduct( p0_.begin(),   p0_.end() ) +
-                                 innerProduct( sat0_.begin(), sat0_.end() );
+        const double stateOld  = euclideanNorm2( p0_.begin(),   p0_.end() ) +
+                                 euclideanNorm2( sat0_.begin(), sat0_.end() );
 
         // compute || u^n+1 || 
-        const double stateNew  = innerProduct( state.pressure().begin(), state.pressure().end() ) +
-                                 innerProduct( state.saturation().begin(), state.saturation().end() );
+        const double stateNew  = euclideanNorm2( state.pressure().begin(), state.pressure().end() ) +
+                                 euclideanNorm2( state.saturation().begin(), state.saturation().end() );
 
         // shift errors
         for( int i=0; i<2; ++i )

@@ -57,7 +57,7 @@ namespace Opm
     protected:    
         // return inner product for given container, here std::vector
         template <class Iterator>
-        double innerProduct( Iterator it, const Iterator end ) const 
+        double euclideanNorm2( Iterator it, const Iterator end ) const 
         {
             double product = 0.0 ;
             for( ; it != end; ++it ) 
