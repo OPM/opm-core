@@ -55,26 +55,16 @@ WCONINJE
    'INJ1' 'WATER' 'OPEN' 'RESV' 10 20 40 /
 /
 
-END
 
-TSTEP
-  14.0 /
+DATES
+ 1 'MAR' 2000 /
 /
 
 
-WELSPECS
-    'TEST1' 'G1'    1  1    8335 'GAS'  /
-    'TEST2' 'G2'   10 10    8400 'OIL'  /
-/
-
-GRUPTREE
- 'G1' 'SHIP' /
- 'G2' 'SHIP' /
-/
-
-TSTEP
-  3 /
+WCONPROD 
+  'PROD1'  'SHUT' 15* /
 /
 
 
 END
+
