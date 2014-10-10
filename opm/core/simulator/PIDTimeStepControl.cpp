@@ -44,24 +44,24 @@ namespace Opm
     double PIDTimeStepControl::
     computeTimeStepSize( const double dt, const int /* iterations */, const SimulatorState& state ) const
     {
-        const std::size_t size = p0_.size();
-        assert( state.pressure().size() == size );
-        assert( state.saturation().size() == size );
-        assert( sat0_.size() == size );
+        const std::size_t pSize = p0_.size();
+        assert( state.pressure().size() == pSize );
+        const std::size_t satSize = sat0_.size();
+        assert( state.saturation().size() == satSize );
 
         // compute u^n - u^n+1 
-        for( std::size_t i=0; i<size; ++i ) 
-        {
+        for( std::size_t i=0; i<pSize; ++i )
             p0_[ i ]   -= state.pressure()[ i ];
+
+        for( std::size_t i=0; i<satSize; ++i )
             sat0_[ i ] -= state.saturation()[ i ];
-        }
 
         // compute || u^n - u^n+1 || 
         const double stateOld  = euclidianNormSquared( p0_.begin(),   p0_.end() ) +
                                  euclidianNormSquared( sat0_.begin(), sat0_.end() );
 
         // compute || u^n+1 || 
-        const double stateNew  = euclidianNormSquared( state.pressure().begin(), state.pressure().end() ) +
+        const double stateNew  = euclidianNormSquared( state.pressure().begin(),   state.pressure().end()   ) +
                                  euclidianNormSquared( state.saturation().begin(), state.saturation().end() );
 
         // shift errors
