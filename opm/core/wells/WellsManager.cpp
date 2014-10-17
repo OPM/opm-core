@@ -413,6 +413,7 @@ namespace Opm
 
             if (well->getStatus(timeStep) == WellCommon::SHUT) {
                 well_controls_shut_well( w_->ctrls[well_index] );
+                well_index++;
                 continue;
             }
 
@@ -476,13 +477,11 @@ namespace Opm
                     OPM_THROW(std::runtime_error, "We cannot handle THP limit for well " << well_names[well_index]);
                 }
 
-
                 if (!ok) {
                     OPM_THROW(std::runtime_error, "Failure occured appending controls for well " << well_names[well_index]);
                 }
 
-
-                {
+                if (injectionProperties.controlMode != WellInjector::CMODE_UNDEFINED) {
                     WellsManagerDetail::InjectionControl::Mode mode = WellsManagerDetail::InjectionControl::mode( injectionProperties.controlMode );
                     int cpos = control_pos[mode];
                     if (cpos == -1 && mode != WellsManagerDetail::InjectionControl::GRUP) {
@@ -491,7 +490,6 @@ namespace Opm
 
                     set_current_control(well_index, cpos, w_);
                 }
-
 
                 // Set well component fraction.
                 double cf[3] = { 0.0, 0.0, 0.0 };
@@ -615,16 +613,18 @@ namespace Opm
                     OPM_THROW(std::runtime_error, "Failure occured appending controls for well " << well_names[well_index]);
                 }
 
-                WellsManagerDetail::ProductionControl::Mode mode = WellsManagerDetail::ProductionControl::mode(productionProperties.controlMode);
-                int cpos = control_pos[mode];
-                if (cpos == -1 && mode != WellsManagerDetail::ProductionControl::GRUP) {
-                    OPM_THROW(std::runtime_error, "Control mode type " << mode << " not present in well " << well_names[well_index]);
-                }
-                if (cpos == -1 && mode != WellsManagerDetail::ProductionControl::GRUP) {
-                    OPM_THROW(std::runtime_error, "Control mode type " << mode << " not present in well " << well_names[well_index]);
-                }
-                else {
-                    set_current_control(well_index, cpos, w_);
+                if (productionProperties.controlMode != WellProducer::CMODE_UNDEFINED) {
+                    WellsManagerDetail::ProductionControl::Mode mode = WellsManagerDetail::ProductionControl::mode(productionProperties.controlMode);
+                    int cpos = control_pos[mode];
+                    if (cpos == -1 && mode != WellsManagerDetail::ProductionControl::GRUP) {
+                        OPM_THROW(std::runtime_error, "Control mode type " << mode << " not present in well " << well_names[well_index]);
+                    }
+                    if (cpos == -1 && mode != WellsManagerDetail::ProductionControl::GRUP) {
+                        OPM_THROW(std::runtime_error, "Control mode type " << mode << " not present in well " << well_names[well_index]);
+                    }
+                    else {
+                        set_current_control(well_index, cpos, w_);
+                    }
                 }
 
                 // Set well component fraction to match preferred phase for the well.
