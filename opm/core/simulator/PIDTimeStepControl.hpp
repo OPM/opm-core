@@ -60,8 +60,9 @@ namespace Opm
         double euclidianNormSquared( Iterator it, const Iterator end ) const 
         {
             double product = 0.0 ;
-            for( ; it != end; ++it ) 
+            for( ; it != end; ++it ) {
                 product += ( *it * *it );
+            }
             return product;
         }
 

@@ -50,11 +50,13 @@ namespace Opm
         assert( state.saturation().size() == satSize );
 
         // compute u^n - u^n+1 
-        for( std::size_t i=0; i<pSize; ++i )
+        for( std::size_t i=0; i<pSize; ++i ) {
             p0_[ i ]   -= state.pressure()[ i ];
+        }
 
-        for( std::size_t i=0; i<satSize; ++i )
+        for( std::size_t i=0; i<satSize; ++i ) {
             sat0_[ i ] -= state.saturation()[ i ];
+        }
 
         // compute || u^n - u^n+1 || 
         const double stateOld  = euclidianNormSquared( p0_.begin(),   p0_.end() ) +
@@ -65,8 +67,9 @@ namespace Opm
                                  euclidianNormSquared( state.saturation().begin(), state.saturation().end() );
 
         // shift errors
-        for( int i=0; i<2; ++i )
+        for( int i=0; i<2; ++i ) {
           errors_[ i ] = errors_[i+1];
+        }
 
         // store new error
         const double error = stateOld / stateNew;
