@@ -655,7 +655,7 @@ public:
                      "SM3/DAY" /* surf. cub. m. per day */)
     { }
 
-    virtual double retrieveValue(const SimulatorTimer& /*timer*/,
+    virtual double retrieveValue(const SimulatorTimer& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
     {
@@ -663,6 +663,11 @@ public:
         this->updateTimeStepWellIndex_(wellNameToIdxMap);
         if (this->flatIdx_ < 0) {
             // well not active in current time step
+            return 0.0;
+        }
+
+        if (well_->getStatus(timer.currentStepNum()) == WellCommon::SHUT) {
+            // well is shut in the current time step
             return 0.0;
         }
 
@@ -702,6 +707,11 @@ public:
         if (timer.currentStepNum() == 0) {
             // We are at the initial state.
             // No step has been taken yet.
+            return 0.0;
+        }
+
+        if (well_->getStatus(timer.currentStepNum()) == WellCommon::SHUT) {
+            // well is shut in the current time step
             return 0.0;
         }
 
@@ -748,7 +758,7 @@ public:
                      "Pascal")
     { }
 
-    virtual double retrieveValue(const SimulatorTimer& /*timer*/,
+    virtual double retrieveValue(const SimulatorTimer& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
     {
@@ -756,6 +766,10 @@ public:
         this->updateTimeStepWellIndex_(wellNameToIdxMap);
         if (this->flatIdx_ < 0) {
             // well not active in current time step
+            return 0.0;
+        }
+        if (well_->getStatus(timer.currentStepNum()) == WellCommon::SHUT) {
+            // well is shut in the current time step
             return 0.0;
         }
 
