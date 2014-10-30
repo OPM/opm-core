@@ -201,7 +201,11 @@ list (APPEND TEST_DATA_FILES
 	tests/equil_liveoil.DATA
 	tests/equil_rsvd_and_rvvd.DATA
 	tests/wetgas.DATA
-	tests/satfunc.DATA
+	tests/satfuncStandard.DATA
+	tests/satfuncEPSBase.DATA
+	tests/satfuncEPS_A.DATA
+	tests/satfuncEPS_B.DATA
+	tests/satfuncEPS_C.DATA
 	tests/testBlackoilState1.DATA
 	tests/testBlackoilState2.DATA
 	tests/wells_manager_data.data
