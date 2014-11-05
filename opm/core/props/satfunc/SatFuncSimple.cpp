@@ -159,7 +159,7 @@ namespace Opm
     double EPSTransforms::Transform::scaleKrDeriv(double s, double krDeriv)  const
     {
         if (doKrCrit) {
-            if (s <= scr) {
+            if (s < scr) {
                 return 0.0;
             } else if (s <= sr) {
                 return krDeriv*krSlopeCrit;
@@ -172,7 +172,7 @@ namespace Opm
                 return 0.0;
             }
         } else if (doKrMax) {
-            if (s <= scr) {
+            if (s < scr) {
                 return 0.0;
             } else if (s <= smax) {
                 return krDeriv*krSlopeMax;
@@ -180,7 +180,7 @@ namespace Opm
                 return 0.0;
             }
         } else {
-            if (s <= scr) {
+            if (s < scr) {
                 return 0.0;
             } else if (s <= smax) {
                 return krDeriv;

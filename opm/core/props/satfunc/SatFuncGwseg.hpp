@@ -286,7 +286,7 @@ namespace Opm
             const double dkrww = this->krw_.derivative(sw);
             const double dkrgg = this->krg_.derivative(sg);
             const double dkrow = this->krow_.derivative(ssw);
-            const double dkrog = this->krog_.derivative(d);
+            const double dkrog = this->krog_.derivative(d);          
             dkrds[BlackoilPhases::Aqua   + BlackoilPhases::Aqua*np]   =  dkrww;
             dkrds[BlackoilPhases::Liquid + BlackoilPhases::Aqua*np]   =  (xg/d)*krow + xw*dkrow - (xg/d)*krog + xg*dkrog;
             dkrds[BlackoilPhases::Liquid + BlackoilPhases::Vapour*np] = -(xw/d)*krow + xw*dkrow + (xw/d)*krog + xg*dkrog;
@@ -360,8 +360,8 @@ namespace Opm
 
             const double krw = epst->wat.scaleKr(sw, this->krw_(_sw), this->krwr_);
             const double krg = epst->gas.scaleKr(sg, this->krg_(_sg), this->krgr_);
-            const double krow = epst->watoil.scaleKr(ssow, this->krow_(1.0-_ssow), this->krorw_);
-            const double krog = epst->gasoil.scaleKr(ssog, this->krog_(1.0-_ssog-_swco), this->krorg_);
+            const double krow = epst->watoil.scaleKr(ssow, this->krow_(std::max(1.0-_ssow,_swco)), this->krorw_);
+            const double krog = epst->gasoil.scaleKr(ssog, this->krog_(std::max(1.0-_ssog-_swco,eps)), this->krorg_);
 
             // xw and xg are the fractions occupied by water and gas zones.
             const double xw = (sw - swco) / d;
@@ -373,8 +373,8 @@ namespace Opm
             // Derivatives.
             double dkrww = _dsdsw*epst->wat.scaleKrDeriv(sw, this->krw_.derivative(_sw));
             double dkrgg = _dsdsg*epst->gas.scaleKrDeriv(sg, this->krg_.derivative(_sg));
-            double dkrow = _dsdssow*epst->watoil.scaleKrDeriv(ssow, this->krow_.derivative(1.0-_ssow));
-            double dkrog = _dsdssog*epst->gasoil.scaleKrDeriv(ssog, this->krog_.derivative(1.0-_ssog-_swco));
+            double dkrow = _dsdssow*epst->watoil.scaleKrDeriv(ssow, this->krow_.derivative(std::max(1.0-_ssow,_swco)));
+            double dkrog = _dsdssog*epst->gasoil.scaleKrDeriv(ssog, this->krog_.derivative(std::max(1.0-_ssog-_swco,eps)));           
             dkrds[BlackoilPhases::Aqua   + BlackoilPhases::Aqua*np]   =  dkrww;
             dkrds[BlackoilPhases::Liquid + BlackoilPhases::Aqua*np]   =  (xg/d)*krow + xw*dkrow - (xg/d)*krog + xg*dkrog;
             dkrds[BlackoilPhases::Liquid + BlackoilPhases::Vapour*np] = -(xw/d)*krow + xw*dkrow + (xw/d)*krog + xg*dkrog;
