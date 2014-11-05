@@ -206,6 +206,7 @@ list (APPEND TEST_DATA_FILES
 	tests/satfuncEPS_A.DATA
 	tests/satfuncEPS_B.DATA
 	tests/satfuncEPS_C.DATA
+	tests/satfuncEPS_D.DATA
 	tests/testBlackoilState1.DATA
 	tests/testBlackoilState2.DATA
 	tests/wells_manager_data.data
