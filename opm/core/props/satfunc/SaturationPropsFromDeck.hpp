@@ -60,7 +60,7 @@ namespace Opm
         /// \param[in]  samples  Number of uniform sample points for saturation tables.
         /// NOTE: samples will only be used with the SatFuncSetUniform template argument.
         void init(Opm::DeckConstPtr deck,
-                  Opm::EclipseStateConstPtr eclState,
+                  Opm::EclipseStateConstPtr eclipseState,
                   const UnstructuredGrid& grid,
                   const int samples);
 
@@ -79,7 +79,7 @@ namespace Opm
         /// NOTE: samples will only be used with the SatFuncSetUniform template argument.
         template<class T>
         void init(Opm::DeckConstPtr deck,
-                  Opm::EclipseStateConstPtr eclState,
+                  Opm::EclipseStateConstPtr eclipseState,
                   int number_of_cells,
                   const int* global_cell,
                   const T& begin_cell_centroids,
@@ -165,14 +165,9 @@ namespace Opm
                      int number_of_cells,
                      const int* global_cell,
                      const T& begin_cell_centroids,
-                     int dimensions);
-        template<class T>
-        void initEPSHyst(Opm::DeckConstPtr deck,
-                         Opm::EclipseStateConstPtr eclipseState,
-                         int number_of_cells,
-                         const int* global_cell,
-                         const T& begin_cell_centroids,
-                         int dimensions);
+                     int dimensions,
+                     const std::vector<std::string>& eps_kw,
+                     std::vector<EPSTransforms>& eps_transf);
         template<class T>
         void initEPSKey(Opm::DeckConstPtr deck,
                         Opm::EclipseStateConstPtr eclipseState,
@@ -204,8 +199,8 @@ namespace Opm
 
         bool columnIsMasked_(Opm::DeckConstPtr deck,
                              const std::string& keywordName,
-                             int /* columnIdx */)
-        { return deck->getKeyword(keywordName)->getRecord(0)->getItem(0)->getSIDouble(0) != -1.0; }
+                             int columnIdx)
+        { return deck->getKeyword(keywordName)->getRecord(columnIdx)->getItem(0)->getSIDouble(0) != -1.0; }
     };
 
 

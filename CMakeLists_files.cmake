@@ -172,6 +172,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_parallel_linearsolver.cpp
 	tests/test_param.cpp
 	tests/test_blackoilfluid.cpp
+	tests/test_satfunc.cpp
 	tests/test_shadow.cpp
 	tests/test_equil.cpp
 	tests/test_regionmapping.cpp
@@ -200,6 +201,12 @@ list (APPEND TEST_DATA_FILES
 	tests/equil_liveoil.DATA
 	tests/equil_rsvd_and_rvvd.DATA
 	tests/wetgas.DATA
+	tests/satfuncStandard.DATA
+	tests/satfuncEPSBase.DATA
+	tests/satfuncEPS_A.DATA
+	tests/satfuncEPS_B.DATA
+	tests/satfuncEPS_C.DATA
+	tests/satfuncEPS_D.DATA
 	tests/testBlackoilState1.DATA
 	tests/testBlackoilState2.DATA
 	tests/wells_manager_data.data

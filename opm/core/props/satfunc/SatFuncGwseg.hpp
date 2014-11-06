@@ -360,8 +360,8 @@ namespace Opm
 
             const double krw = epst->wat.scaleKr(sw, this->krw_(_sw), this->krwr_);
             const double krg = epst->gas.scaleKr(sg, this->krg_(_sg), this->krgr_);
-            const double krow = epst->watoil.scaleKr(ssow, this->krow_(1.0-_ssow), this->krorw_);
-            const double krog = epst->gasoil.scaleKr(ssog, this->krog_(1.0-_ssog-_swco), this->krorg_);
+            const double krow = epst->watoil.scaleKr(ssow, this->krow_(std::max(1.0-_ssow,_swco)), this->krorw_);
+            const double krog = epst->gasoil.scaleKr(ssog, this->krog_(std::max(1.0-_ssog-_swco,eps)), this->krorg_);
 
             // xw and xg are the fractions occupied by water and gas zones.
             const double xw = (sw - swco) / d;
@@ -373,8 +373,8 @@ namespace Opm
             // Derivatives.
             double dkrww = _dsdsw*epst->wat.scaleKrDeriv(sw, this->krw_.derivative(_sw));
             double dkrgg = _dsdsg*epst->gas.scaleKrDeriv(sg, this->krg_.derivative(_sg));
-            double dkrow = _dsdssow*epst->watoil.scaleKrDeriv(ssow, this->krow_.derivative(1.0-_ssow));
-            double dkrog = _dsdssog*epst->gasoil.scaleKrDeriv(ssog, this->krog_.derivative(1.0-_ssog-_swco));
+            double dkrow = _dsdssow*epst->watoil.scaleKrDeriv(ssow, this->krow_.derivative(std::max(1.0-_ssow,_swco)));
+            double dkrog = _dsdssog*epst->gasoil.scaleKrDeriv(ssog, this->krog_.derivative(std::max(1.0-_ssog-_swco,eps)));           
             dkrds[BlackoilPhases::Aqua   + BlackoilPhases::Aqua*np]   =  dkrww;
             dkrds[BlackoilPhases::Liquid + BlackoilPhases::Aqua*np]   =  (xg/d)*krow + xw*dkrow - (xg/d)*krog + xg*dkrog;
             dkrds[BlackoilPhases::Liquid + BlackoilPhases::Vapour*np] = -(xw/d)*krow + xw*dkrow + (xw/d)*krog + xg*dkrog;
@@ -469,21 +469,21 @@ namespace Opm
             if (ssow >= sat_hyst->sow_hyst) { // Drainage
                 double _ssow = epst->watoil.scaleSat(ssow, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
                 double _dsdssow = epst->watoil.scaleSatDeriv(ssow, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
-                krow = epst->watoil.scaleKr(ssow, this->krow_(1.0-_ssow), this->krorw_);
-                dkrow = _dsdssow*epst->watoil.scaleKrDeriv(ssow, this->krow_.derivative(1.0-_ssow));
+                krow = epst->watoil.scaleKr(ssow, this->krow_(std::max(1.0-_ssow,_swco)), this->krorw_);
+                dkrow = _dsdssow*epst->watoil.scaleKrDeriv(ssow, this->krow_.derivative(std::max(1.0-_ssow,_swco)));
             } else { // Imbibition
                 double ssow_shifted = ssow + sat_hyst->sow_shift;
                 double _ssow = epst_hyst->watoil.scaleSat(ssow_shifted, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
                 double _dsdssow = epst_hyst->watoil.scaleSatDeriv(ssow_shifted, 1.0-this->swcr_-this->smin_[gpos], this->sowcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
-                krow = epst_hyst->watoil.scaleKr(ssow_shifted, this->krow_(1.0-_ssow), this->krorw_);
-                dkrow = _dsdssow*epst_hyst->watoil.scaleKrDeriv(ssow_shifted, this->krow_.derivative(1.0-_ssow));
+                krow = epst_hyst->watoil.scaleKr(ssow_shifted, this->krow_(std::max(1.0-_ssow,_swco)), this->krorw_);
+                dkrow = _dsdssow*epst_hyst->watoil.scaleKrDeriv(ssow_shifted, this->krow_.derivative(std::max(1.0-_ssow,_swco)));
             }
             
             // Oil in gas and connate water - use drainage curve only 
             double _ssog = epst->gasoil.scaleSat(ssog, 1.0-this->sgcr_-this->smin_[wpos], this->sogcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
             double _dsdssog = epst->gasoil.scaleSatDeriv(ssog, 1.0-this->sgcr_-this->smin_[wpos], this->sogcr_, 1.0-this->smin_[wpos]-this->smin_[gpos]);
-            double krog = epst->gasoil.scaleKr(ssog, this->krog_(1.0-_ssog-_swco), this->krorg_);
-            double dkrog = _dsdssog*epst->gasoil.scaleKrDeriv(ssog, this->krog_.derivative(1.0-_ssog-_swco));
+            double krog = epst->gasoil.scaleKr(ssog, this->krog_(std::max(1.0-_ssog-_swco,eps)), this->krorg_);
+            double dkrog = _dsdssog*epst->gasoil.scaleKrDeriv(ssog, this->krog_.derivative(std::max(1.0-_ssog-_swco,eps)));
 
             // xw and xg are the fractions occupied by water and gas zones.
             const double xw = (sw - swco) / d;
