@@ -787,8 +787,12 @@ void Summary::writeTimeStep(int reportStepIdx,
     const Opm::ScheduleConstPtr schedule = eclipseState_->getSchedule();
     const auto& timeStepWells = schedule->getWells(reportStepIdx);
     std::map<std::string, int> wellNameToIdxMap;
+    int openWellIdx = 0;
     for (size_t tsWellIdx = 0; tsWellIdx < timeStepWells.size(); ++tsWellIdx) {
-        wellNameToIdxMap[timeStepWells[tsWellIdx]->name()] = tsWellIdx;
+        if (timeStepWells[tsWellIdx]->getStatus(timer.currentStepNum()) != WellCommon::SHUT ) {
+            wellNameToIdxMap[timeStepWells[tsWellIdx]->name()] = openWellIdx;
+            openWellIdx++;
+        }
     }
 
     // internal view; do not move this code out of Summary!
