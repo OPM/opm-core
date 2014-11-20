@@ -12,6 +12,7 @@ SimulatorState::equals (const SimulatorState& other,
 
     // if we use &=, then all the tests will be run regardless
     equal = equal && vectorApproxEqual( pressure() , other.pressure() , epsilon);
+    equal = equal && vectorApproxEqual( temperature() , other.temperature() , epsilon);
     equal = equal && vectorApproxEqual( facepressure() , other.facepressure() , epsilon);
     equal = equal && vectorApproxEqual( faceflux() , other.faceflux() , epsilon);
     equal = equal && vectorApproxEqual( saturation() , other.saturation() , epsilon);
@@ -48,6 +49,7 @@ SimulatorState::init(int number_of_cells, int number_of_faces, int num_phases)
 {
     num_phases_ = num_phases;
     press_.resize(number_of_cells, 0.0);
+    temp_.resize(number_of_cells, 273.15 + 20);
     fpress_.resize(number_of_faces, 0.0);
     flux_.resize(number_of_faces, 0.0);
     sat_.resize(num_phases_ * number_of_cells, 0.0);

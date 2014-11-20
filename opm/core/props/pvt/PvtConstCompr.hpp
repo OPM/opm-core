@@ -109,6 +109,7 @@ namespace Opm
         virtual void mu(const int n,
                         const int* pvtRegionIdx,
                         const double* p,
+                        const double* /*T*/,
                         const double* /*z*/,
                         double* output_mu) const
         {
@@ -124,6 +125,7 @@ namespace Opm
         virtual void mu(const int n,
                         const int* pvtRegionIdx,
                         const double* p,
+                        const double* /*T*/,
                         const double* /*r*/,
                         double* output_mu,
                         double* output_dmudp,
@@ -144,6 +146,7 @@ namespace Opm
         virtual void mu(const int n,
                         const int* pvtRegionIdx,
                         const double* p,
+                        const double* /*T*/,
                         const double* /*r*/,
                         const PhasePresence* /*cond*/,
                         double* output_mu,
@@ -165,6 +168,7 @@ namespace Opm
         virtual void B(const int n,
                        const int* pvtRegionIdx,
                        const double* p,
+                       const double* /*T*/,
                        const double* /*z*/,
                        double* output_B) const
         {
@@ -180,6 +184,7 @@ namespace Opm
         virtual void dBdp(const int n,
                           const int* pvtRegionIdx,
                           const double* p,
+                          const double* /*T*/,
                           const double* /*z*/,
                           double* output_B,
                           double* output_dBdp) const
@@ -197,6 +202,7 @@ namespace Opm
         virtual void b(const int n,
                        const int* pvtRegionIdx,
                        const double* p,
+                       const double* /*T*/,
                        const double* /*r*/,
                        double* output_b,
                        double* output_dbdp,
@@ -220,6 +226,7 @@ namespace Opm
         virtual void b(const int n,
                        const int* pvtRegionIdx,
                        const double* p,
+                       const double* /*T*/,
                        const double* /*r*/,
                        const PhasePresence* /*cond*/,
                        double* output_b,

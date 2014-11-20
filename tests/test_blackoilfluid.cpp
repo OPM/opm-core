@@ -102,7 +102,7 @@ std::vector<std::shared_ptr<PvtInterface> > getProps(Opm::DeckConstPtr deck, Opm
     return props_;
 }
 
-void testmu(const double reltol, int n, int np, const std::vector<int> &pvtTableIdx, std::vector<double> p, std::vector<double> r,std::vector<double> z,
+void testmu(const double reltol, int n, int np, const std::vector<int> &pvtTableIdx, std::vector<double> p, std::vector<double> T, std::vector<double> r,std::vector<double> z,
             std::vector<std::shared_ptr<PvtInterface> > props_, std::vector<Opm::PhasePresence> condition)
 {
     std::vector<double> mu(n);
@@ -116,8 +116,8 @@ void testmu(const double reltol, int n, int np, const std::vector<int> &pvtTable
 
     // test mu
     for (int phase = 0; phase < np; ++phase) {
-        props_[phase]->mu(n, &pvtTableIdx[0], &p[0], &r[0], &condition[0], &mu_new[0], &dmudp[0], &dmudr[0]);
-        props_[phase]->mu(n, &pvtTableIdx[0], &p[0], &z[0], &mu[0]);
+        props_[phase]->mu(n, &pvtTableIdx[0], &p[0], &T[0], &r[0], &condition[0], &mu_new[0], &dmudp[0], &dmudr[0]);
+        props_[phase]->mu(n, &pvtTableIdx[0], &p[0], &T[0], &z[0], &mu[0]);
         dmudp_diff = (mu_new[1]-mu_new[0])/(p[1]-p[0]);
         dmudr_diff = (mu_new[2]-mu_new[0])/(r[2]-r[0]);
         dmudp_diff_u = (mu_new[4]-mu_new[3])/(p[4]-p[3]);
@@ -138,7 +138,7 @@ void testmu(const double reltol, int n, int np, const std::vector<int> &pvtTable
     }
 }
 
-void testb(const double reltol, int n, int np, const std::vector<int> &pvtTableIdx, std::vector<double> p, std::vector<double> r,std::vector<double> z,
+void testb(const double reltol, int n, int np, const std::vector<int> &pvtTableIdx, std::vector<double> p, std::vector<double> T, std::vector<double> r,std::vector<double> z,
             std::vector<std::shared_ptr<PvtInterface> > props_, std::vector<Opm::PhasePresence> condition)
 {
     // test b
@@ -155,8 +155,8 @@ void testb(const double reltol, int n, int np, const std::vector<int> &pvtTableI
     double dbdr_diff_u;
 
     for (int phase = 0; phase < np; ++phase) {
-        props_[phase]->b(n, &pvtTableIdx[0], &p[0], &r[0], &condition[0], &b[0], &dbdp[0], &dbdr[0]);
-        props_[phase]->dBdp(n, &pvtTableIdx[0], &p[0], &z[0], &B[0], &dBdp[0]);
+        props_[phase]->b(n, &pvtTableIdx[0], &p[0], &T[0], &r[0], &condition[0], &b[0], &dbdp[0], &dbdr[0]);
+        props_[phase]->dBdp(n, &pvtTableIdx[0], &p[0], &T[0], &z[0], &B[0], &dBdp[0]);
         dbdp_diff = (b[1]-b[0])/(p[1]-p[0]);
         dbdr_diff = (b[2]-b[0])/(r[2]-r[0]);
         dbdp_diff_u = (b[4]-b[3])/(p[4]-p[3]);
@@ -253,6 +253,7 @@ BOOST_AUTO_TEST_CASE(test_liveoil)
     const double reltolpermu = 1e-1;
 
     std::vector<double> p(n);
+    std::vector<double> T(n, 273.15 + 20);
     std::vector<double> r(n);
     std::vector<PhasePresence> condition(n);
     std::vector<double> z(n * np);
@@ -292,9 +293,9 @@ BOOST_AUTO_TEST_CASE(test_liveoil)
 
     }
 
-    testmu(reltolpermu, n, np, pvtRegionIdx, p, r,z, props_, condition);
+    testmu(reltolpermu, n, np, pvtRegionIdx, p, T, r,z, props_, condition);
 
-    testb(reltolper,n,np,pvtRegionIdx,p,r,z,props_,condition);
+    testb(reltolper,n,np,pvtRegionIdx,p,T,r,z,props_,condition);
 
     testrsSat(reltolper,n,np,pvtRegionIdx,p,props_);
 
@@ -332,6 +333,7 @@ BOOST_AUTO_TEST_CASE(test_wetgas)
     const double reltolpermu = 1e-1;
 
     std::vector<double> p(n);
+    std::vector<double> T(n, 273.15+20);
     std::vector<double> r(n);
     std::vector<PhasePresence> condition(n);
     std::vector<double> z(n * np);
@@ -371,9 +373,9 @@ BOOST_AUTO_TEST_CASE(test_wetgas)
 
     }
 
-    testmu(reltolpermu, n, np, pvtRegionIdx, p, r,z, props_, condition);
+    testmu(reltolpermu, n, np, pvtRegionIdx, p,T, r,z, props_, condition);
 
-    testb(reltolper,n,np,pvtRegionIdx,p,r,z,props_,condition);
+    testb(reltolper,n,np,pvtRegionIdx,p,T,r,z,props_,condition);
 
     testrsSat(reltolper,n,np,pvtRegionIdx,p,props_);
 

@@ -132,10 +132,11 @@ namespace Opm
     }
 
 
-    /// Viscosity as a function of p and z.
+    /// Viscosity as a function of p, T and z.
     void PvtLiveOil::mu(const int n,
                         const int* pvtTableIdx,
-                              const double* p,
+                        const double* p,
+                        const double* /*T*/,
                               const double* z,
                               double* output_mu) const
     {
@@ -150,10 +151,11 @@ namespace Opm
         }
     }
 
-    /// Viscosity and its derivatives as a function of p and r.
+    /// Viscosity and its p and r derivatives as a function of p, T and r.
     void PvtLiveOil::mu(const int n,
                         const int* pvtTableIdx,
-                               const double* p,
+                        const double* p,
+                        const double* /*T*/,
                                const double* r,
                                double* output_mu,
                                double* output_dmudp,
@@ -184,10 +186,11 @@ namespace Opm
                 }
     }
 
-    /// Viscosity and its derivatives as a function of p and r.
+    /// Viscosity and its p and r derivatives as a function of p, T and r.
     void PvtLiveOil::mu(const int n,
                         const int* pvtTableIdx,
-                               const double* p,
+                        const double* p,
+                        const double* /*T*/,
                                const double* r,
                                const PhasePresence* cond,
                                double* output_mu,
@@ -221,10 +224,11 @@ namespace Opm
     }
 
 
-    /// Formation volume factor as a function of p and z.
+    /// Formation volume factor as a function of p, T and z.
     void PvtLiveOil::B(const int n,
                        const int* pvtTableIdx,
-                             const double* p,
+                       const double* p,
+                       const double* /*T*/,
                              const double* z,
                              double* output_B) const
     {
@@ -238,10 +242,11 @@ namespace Opm
     }
 
 
-    /// Formation volume factor and p-derivative as functions of p and z.
+    /// Formation volume factor and p-derivative as functions of p, T and z.
     void PvtLiveOil::dBdp(const int n,
-                        const int* pvtTableIdx,
-                                const double* p,
+                          const int* pvtTableIdx,
+                          const double* p,
+                          const double* /*T*/,
                                 const double* z,
                                 double* output_B,
                                 double* output_dBdp) const
@@ -255,8 +260,9 @@ namespace Opm
     }
 
     void PvtLiveOil::b(const int n,
-                        const int* pvtTableIdx,
-                          const double* p,
+                       const int* pvtTableIdx,
+                       const double* p,
+                       const double* /*T*/,
                           const double* r,
                           double* output_b,
                           double* output_dbdp,
@@ -275,8 +281,9 @@ namespace Opm
     }
 
     void PvtLiveOil::b(const int n,
-                        const int* pvtTableIdx,
-                          const double* p,
+                       const int* pvtTableIdx,
+                       const double* p,
+                       const double* /*T*/,
                           const double* r,
                           const PhasePresence* cond,
                           double* output_b,

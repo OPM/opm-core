@@ -29,8 +29,8 @@
 namespace Opm
 {
     /// Class for miscible wet gas (with vaporized oil in vapour phase).
-    /// The PVT properties can either be given as a function of pressure (p) and surface volume (z)
-    /// or pressure (p) and gas resolution factor (r).
+    /// The PVT properties can either be given as a function of pressure (p), temperature (T) and surface volume (z)
+    /// or pressure (p), temperature (T) and gas resolution factor (r).
     /// For all the virtual methods, the following apply: p, r and z
     /// are expected to be of size n, size n and n*num_phases, respectively.
     /// Output arrays shall be of size n, and must be valid before
@@ -41,64 +41,71 @@ namespace Opm
         PvtLiveGas(const std::vector<Opm::PvtgTable>& pvtgTables);
         virtual ~PvtLiveGas();
 
-        /// Viscosity as a function of p and z.
+        /// Viscosity as a function of p, T and z.
         virtual void mu(const int n,
                         const int* pvtRegionIdx,
                         const double* p,
+                        const double* T,
                         const double* z,
                         double* output_mu) const;
 
-        /// Viscosity and its derivatives as a function of p and r.
+        /// Viscosity and its p and r derivatives as a function of p, T and r.
         /// The fluid is considered saturated if r >= rsSat(p).
         virtual void mu(const int n,
                         const int* pvtRegionIdx,
                         const double* p,
+                        const double* T,
                         const double* r,
                         double* output_mu,
                         double* output_dmudp,
                         double* output_dmudr) const;
 
-        /// Viscosity as a function of p and r.
+        /// Viscosity as a function of p, T and r.
         /// State condition determined by 'cond'.
         virtual void mu(const int n,
                         const int* pvtRegionIdx,
                         const double* p,
+                        const double* T,
                         const double* r,
                         const PhasePresence* cond,
                         double* output_mu,
                         double* output_dmudp,
                         double* output_dmudr) const;
 
-        /// Formation volume factor as a function of p and z.
+        /// Formation volume factor as a function of p, T and z.
         virtual void B(const int n,
                        const int* pvtRegionIdx,
                        const double* p,
+                       const double* T,
                        const double* z,
                        double* output_B) const;
 
-        /// Formation volume factor and p-derivative as functions of p and z.
+        /// Formation volume factor and p-derivative as functions of p, T and z.
         virtual void dBdp(const int n,
                           const int* pvtRegionIdx,
                           const double* p,
+                          const double* T,
                           const double* z,
                           double* output_B,
                           double* output_dBdp) const;
 
-        /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
+        /// The inverse of the formation volume factor b = 1 / B, and its p and r derivatives as a function of p, T and r.
         /// The fluid is considered saturated if r >= rsSat(p).
         virtual void b(const int n,
                        const int* pvtRegionIdx,
                        const double* p,
+                       const double* T,
                        const double* r,
                        double* output_b,
                        double* output_dbdp,
                        double* output_dbdr) const;
 
-        /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
+        /// The inverse of the formation volume factor b = 1 / B, and its p and r derivatives as a function of p, T and r.
         /// State condition determined by 'cond'.
         virtual void b(const int n,
                        const int* pvtRegionIdx,
                        const double* p,
+                       const double* T,
                        const double* r,
                        const PhasePresence* cond,
                        double* output_b,
@@ -107,7 +114,7 @@ namespace Opm
 
 
 
-        /// Solution gas/oil ratio and its derivatives at saturated conditions as a function of p.
+        /// Solution gas/oil ratio and its derivatives at saturated conditions as a function of p, T.
         virtual void rsSat(const int n,
                            const int* pvtRegionIdx,
                           const double* p,

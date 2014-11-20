@@ -77,24 +77,27 @@ namespace Opm
         /// \return  Array of size numPhases().
         const double* surfaceDensities(int regionIdx = 0) const;
 
-        /// Viscosity as a function of p and z.
+        /// Viscosity as a function of p, T and z.
         void mu(const int n,
                 const int *pvtTableIdx,
                 const double* p,
+                const double* T,
                 const double* z,
                 double* output_mu) const;
 
-        /// Formation volume factor as a function of p and z.
+        /// Formation volume factor as a function of p, T and z.
         void B(const int n,
                const int *pvtTableIdx,
                const double* p,
+               const double* T,
                const double* z,
                double* output_B) const;
 
-        /// Formation volume factor and p-derivative as functions of p and z.
+        /// Formation volume factor and p-derivative as functions of p, T and z.
         void dBdp(const int n,
                   const int *pvtTableIdx,
                   const double* p,
+                  const double* T,
                   const double* z,
                   double* output_B,
                   double* output_dBdp) const;
