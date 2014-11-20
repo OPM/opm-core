@@ -31,6 +31,7 @@
 list (APPEND MAIN_SOURCE_FILES
   opm/core/grid/GridHelpers.cpp
 	opm/core/grid/GridManager.cpp
+	opm/core/grid/GridUtilities.cpp
 	opm/core/grid/grid.c
 	opm/core/grid/cart_grid.c
 	opm/core/grid/cornerpoint_grid.c
@@ -185,6 +186,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_wellcollection.cpp
 	tests/test_timer.cpp
 	tests/test_minpvprocessor.cpp
+	tests/test_gridutilities.cpp
   )
 
 # originally generated with the command:
@@ -262,6 +264,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/grid/FaceQuadrature.hpp
 	opm/core/grid/GridHelpers.hpp
 	opm/core/grid/GridManager.hpp
+	opm/core/grid/GridUtilities.hpp
 	opm/core/grid/MinpvProcessor.hpp
 	opm/core/grid/cart_grid.h
 	opm/core/grid/cornerpoint_grid.h
