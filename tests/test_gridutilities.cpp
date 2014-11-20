@@ -25,7 +25,7 @@
 #endif
 #define NVERBOSE // to suppress our messages when throwing
 
-#define BOOST_TEST_MODULE SparseTableTest
+#define BOOST_TEST_MODULE GridUtilitiesTest
 #include <boost/test/unit_test.hpp>
 
 #include <opm/core/grid/GridUtilities.hpp>
