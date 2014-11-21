@@ -20,6 +20,8 @@
 #include <opm/core/grid/GridUtilities.hpp>
 #include <set>
 #include <vector>
+#include <cmath>
+#include <algorithm>
 
 namespace Opm
 {
@@ -72,4 +74,51 @@ namespace Opm
 	// 3. Done. Return.
 	return cell_nb;
     }
+
+
+
+
+
+
+    /// For each cell, order the (cell) neighbours counterclockwise.
+    /// \param[in] grid    A 2d grid object.
+    /// \param[in, out] nb A cell-cell neighbourhood table, such as from vertexNeighbours().
+    void orderCounterClockwise(const UnstructuredGrid& grid,
+			       SparseTable<int>& nb)
+    {
+	if (grid.dimensions != 2) {
+	    OPM_THROW(std::logic_error, "Cannot use orderCounterClockwise in " << grid.dimensions << " dimensions.");
+	}
+	const int num_cells = grid.number_of_cells;
+	if (nb.size() != num_cells) {
+	    OPM_THROW(std::logic_error, "Inconsistent arguments for orderCounterClockwise().");
+	}
+
+	// For each cell, compute each neighbour's angle with the x axis,
+	// sort that to find the correct permutation of the neighbours.
+	typedef std::pair<double, int> AngleAndPos;
+	std::vector<AngleAndPos> angle_and_pos;
+	std::vector<int> original;
+	for (int cell = 0; cell < num_cells; ++cell) {
+	    const int num_nb = nb[cell].size();
+	    angle_and_pos.clear();
+	    angle_and_pos.resize(num_nb);
+	    for (int ii = 0; ii < num_nb; ++ii) {
+		const int cell2 = nb[cell][ii];
+		const double v[2] = { grid.cell_centroids[2*cell2] - grid.cell_centroids[2*cell],
+				      grid.cell_centroids[2*cell2 + 1] - grid.cell_centroids[2*cell + 1] };
+		double angle = std::acos(v[0]/std::sqrt(v[0]*v[0] + v[1]*v[1]));
+		if (v[1] < 0.0) {
+		    angle = 2*M_PI - angle;
+		}
+		angle_and_pos[ii] = std::make_pair(angle, ii);
+	    }
+	    original.assign(nb[cell].begin(), nb[cell].end());
+	    std::sort(angle_and_pos.begin(), angle_and_pos.end());
+	    for (int ii = 0; ii < num_nb; ++ii) {
+		nb[cell][ii] = original[angle_and_pos[ii].second];
+	    }
+	}
+    }
+
 } // namespace Opm

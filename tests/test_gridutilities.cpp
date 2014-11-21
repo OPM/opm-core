@@ -33,7 +33,7 @@
 
 using namespace Opm;
 
-BOOST_AUTO_TEST_CASE(cartesian_2d)
+BOOST_AUTO_TEST_CASE(cartesian_2d_vertexNeighbours)
 {
     const GridManager gm(2, 2);
     const UnstructuredGrid& grid = *gm.c_grid();
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(cartesian_2d)
     BOOST_CHECK(vnb == truth);
 }
 
-BOOST_AUTO_TEST_CASE(cartesian_3d)
+BOOST_AUTO_TEST_CASE(cartesian_3d_vertexNeighbours)
 {
     const GridManager gm(3, 2, 2);
     const UnstructuredGrid& grid = *gm.c_grid();
@@ -59,4 +59,23 @@ BOOST_AUTO_TEST_CASE(cartesian_3d)
     BOOST_CHECK_EQUAL(int(vnb[0].size()), n);
     const int nb[n] = { 1, 3, 4, 6, 7, 9, 10 };
     BOOST_CHECK_EQUAL_COLLECTIONS(vnb[0].begin(), vnb[0].end(), nb, nb + n);
+}
+
+BOOST_AUTO_TEST_CASE(cartesian_2d_orderCounterClockwise)
+{
+    const GridManager gm(2, 2);
+    const UnstructuredGrid& grid = *gm.c_grid();
+    SparseTable<int> vnb = vertexNeighbours(grid);
+    orderCounterClockwise(grid, vnb);
+
+    BOOST_REQUIRE(!vnb.empty());
+    const int num_elem = 12;
+    const int elem[num_elem] = { 1, 3, 2, 3, 2, 0, 3, 0, 1, 2, 0, 1 };
+    const int num_rows = 4;
+    const int rowsizes[num_rows] = { 3, 3, 3, 3 };
+    const SparseTable<int> truth(elem, elem + num_elem, rowsizes, rowsizes + num_rows);
+    BOOST_CHECK(vnb == truth);
+    for (int c = 0; c < num_rows; ++c) {
+	BOOST_CHECK_EQUAL_COLLECTIONS(vnb[c].begin(), vnb[c].end(), truth[c].begin(), truth[c].end());
+    }
 }
