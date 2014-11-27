@@ -77,8 +77,8 @@ namespace Opm
                 undersat_gas_tables_[pvtTableIdx][i][0] = undersatTable.getOilSolubilityColumn(); // Rv
                 undersat_gas_tables_[pvtTableIdx][i][1] = undersatTable.getGasFormationFactorColumn(); // Bg
                 undersat_gas_tables_[pvtTableIdx][i][2] = undersatTable.getGasViscosityColumn();  // mu_g
-                int nRows = undersat_gas_tables_[pvtTableIdx][i][2].size();
-                undersat_gas_tables_[pvtTableIdx][i][3].resize(nRows); // allocate memory for 1/(Bg*mu_g)
+                int nUndersatRows = undersat_gas_tables_[pvtTableIdx][i][2].size();
+                undersat_gas_tables_[pvtTableIdx][i][3].resize(nUndersatRows); // allocate memory for 1/(Bg*mu_g)
             }
 
             // Bg -> 1/Bg
