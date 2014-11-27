@@ -40,7 +40,7 @@ void printInitMessage(std::ofstream& out, const char* origfilename, std::string 
     std::ifstream infile;
     infile.open(origfilename, std::ios::in);
     if (!infile) {
-        std::cerr << "Can't open input file " << std::string(origfilename) << std::endl;
+        std::cerr << "Can't open input file " << origfilename << std::endl;
         exit(1);
     }
     // Print init message and copy comments from original grid file
@@ -252,11 +252,11 @@ void mirror_zcorn(Opm::DeckConstPtr deck, std::string direction, std::ofstream& 
     printKeywordValues(out, "ZCORN", zcorn_mirrored, 8);
 }
 
-std::vector<int> getKeywordValues(std::string keyword, Opm::DeckConstPtr deck, int dummy) {
+std::vector<int> getKeywordValues(std::string keyword, Opm::DeckConstPtr deck, int /*dummy*/) {
     return deck->getKeyword(keyword)->getIntData();
 }
 
-std::vector<double> getKeywordValues(std::string keyword, Opm::DeckConstPtr deck, double dummy) {
+std::vector<double> getKeywordValues(std::string keyword, Opm::DeckConstPtr deck, double /*dummy*/) {
     return deck->getKeyword(keyword)->getRawDoubleData();
 }
 
@@ -372,7 +372,7 @@ int main(int argc, char** argv)
     std::string::size_type last_dot = mirrored_eclipsefilename.find_last_of('.');
     mirrored_eclipsefilename = mirrored_eclipsefilename.substr(0, last_dot) + "_mirrored-" + direction + ".grdecl";
     std::ofstream outfile;
-    outfile.open(mirrored_eclipsefilename, std::ios::out | std::ios::trunc);
+    outfile.open(mirrored_eclipsefilename.c_str(), std::ios::out | std::ios::trunc);
     if (!outfile) {
         std::cerr << "Can't open output file " << mirrored_eclipsefilename << std::endl;
         exit(1);
