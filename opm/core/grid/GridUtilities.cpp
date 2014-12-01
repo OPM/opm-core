@@ -19,6 +19,7 @@
 
 #include <opm/core/grid/GridUtilities.hpp>
 #include <opm/core/grid/GridHelpers.hpp>
+#include <boost/math/constants/constants.hpp>
 #include <set>
 #include <vector>
 #include <cmath>
@@ -115,7 +116,7 @@ namespace Opm
                                       grid.cell_centroids[2*cell2 + 1] - grid.cell_centroids[2*cell + 1] };
                 double angle = std::acos(v[0]/std::sqrt(v[0]*v[0] + v[1]*v[1]));
                 if (v[1] < 0.0) {
-                    angle = 2*M_PI - angle;
+                    angle = 2*boost::math::double_constants::pi - angle;
                 }
                 angle_and_pos[ii] = std::make_pair(angle, ii);
             }
