@@ -206,9 +206,9 @@ public:
     FaceCellsProxy(const UnstructuredGrid& grid)
     : face_cells_(grid.face_cells)
     {}
-    int operator()(int cell_index, int local_index)
+    int operator()(int face_index, int local_index) const
     {
-        return face_cells_[2*cell_index+local_index];
+        return face_cells_[2*face_index+local_index];
     }
 private:
     const int* face_cells_;
