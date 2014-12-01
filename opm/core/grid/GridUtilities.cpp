@@ -89,7 +89,7 @@ namespace Opm
 
     /// For each cell, order the (cell) neighbours counterclockwise.
     /// \param[in] grid    A 2d grid object.
-    /// \param[in, out] nb A cell-cell neighbourhood table, such as from vertexNeighbours().
+    /// \param[in, out] nb A cell-cell neighbourhood table, such as from cellNeighboursAcrossVertices().
     void orderCounterClockwise(const UnstructuredGrid& grid,
                                SparseTable<int>& nb)
     {
