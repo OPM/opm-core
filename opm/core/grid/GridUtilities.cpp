@@ -18,6 +18,7 @@
 */
 
 #include <opm/core/grid/GridUtilities.hpp>
+#include <opm/core/grid/GridHelpers.hpp>
 #include <set>
 #include <vector>
 #include <cmath>
@@ -33,14 +34,16 @@ namespace Opm
 	// 1. Create vertex->cell mapping. We do this by iterating
 	//    over all faces, and adding both its cell neighbours
 	//    to each of its vertices' data.
+        using namespace UgGridHelpers;
 	const int num_vertices = grid.number_of_nodes;
 	std::vector<std::set<int>> v2c(num_vertices);
-	const int num_faces = grid.number_of_faces;
+	const int num_faces = numFaces(grid);
+        const auto fc = faceCells(grid);
 	for (int face = 0; face < num_faces; ++face) {
 	    for (int nodepos = grid.face_nodepos[face]; nodepos < grid.face_nodepos[face + 1]; ++nodepos) {
 		const int vertex = grid.face_nodes[nodepos];
 		for (int face_nb = 0; face_nb < 2; ++face_nb) {
-		    const int face_nb_cell = grid.face_cells[2*face + face_nb];
+		    const int face_nb_cell = fc(face, face_nb);
 		    if (face_nb_cell >= 0) {
 			v2c[vertex].insert(face_nb_cell);
 		    }
@@ -52,16 +55,19 @@ namespace Opm
 	//    their vertices, and collect all those vertices' cell
 	//    neighbours. Add as row to sparse table.
 	SparseTable<int> cell_nb;
-	const int num_cells = grid.number_of_cells;
+	const int num_cells = numCells(grid);
+        const auto c2f = cell2Faces(grid);
 	// Reserve sufficient room for cartesian grids in 2 and 3
 	// dimensions. Note that this is not a limit, just an
 	// optimization similar to std::vector.
-	cell_nb.reserve(num_cells, (grid.dimensions == 2 ? 8 : 26) * num_cells);
+	cell_nb.reserve(num_cells, (dimensions(grid) == 2 ? 8 : 26) * num_cells);
 	std::set<int> nb;
 	for (int cell = 0; cell < num_cells; ++cell) {
 	    nb.clear();
-	    for (int hf = grid.cell_facepos[cell]; hf < grid.cell_facepos[cell + 1]; ++hf) {
-		const int face = grid.cell_faces[hf];
+            const auto cell_faces = c2f[cell];
+            const int num_cell_faces = cell_faces.size();
+            for (int local_face = 0; local_face < num_cell_faces; ++local_face) {
+                const int face = cell_faces[local_face];
 		for (int nodepos = grid.face_nodepos[face]; nodepos < grid.face_nodepos[face + 1]; ++nodepos) {
 		    const int vertex = grid.face_nodes[nodepos];
 		    nb.insert(v2c[vertex].begin(), v2c[vertex].end());
