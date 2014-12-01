@@ -114,10 +114,8 @@ namespace Opm
                 const int cell2 = nb[cell][ii];
                 const double v[2] = { grid.cell_centroids[2*cell2] - grid.cell_centroids[2*cell],
                                       grid.cell_centroids[2*cell2 + 1] - grid.cell_centroids[2*cell + 1] };
-                double angle = std::acos(v[0]/std::sqrt(v[0]*v[0] + v[1]*v[1]));
-                if (v[1] < 0.0) {
-                    angle = 2*boost::math::double_constants::pi - angle;
-                }
+                // The formula below gives an angle in [0, 2*pi] with the positive x axis.
+                const double angle = boost::math::double_constants::pi - std::atan2(v[1], -v[0]);
                 angle_and_pos[ii] = std::make_pair(angle, ii);
             }
             original.assign(nb[cell].begin(), nb[cell].end());
