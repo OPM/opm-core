@@ -33,11 +33,11 @@
 
 using namespace Opm;
 
-BOOST_AUTO_TEST_CASE(cartesian_2d_vertexNeighbours)
+BOOST_AUTO_TEST_CASE(cartesian_2d_cellNeighboursAcrossVertices)
 {
     const GridManager gm(2, 2);
     const UnstructuredGrid& grid = *gm.c_grid();
-    const SparseTable<int> vnb = vertexNeighbours(grid);
+    const SparseTable<int> vnb = cellNeighboursAcrossVertices(grid);
 
     const int num_elem = 12;
     const int elem[num_elem] = { 1, 2, 3, 0, 2, 3, 0, 1, 3, 0, 1, 2 };
@@ -47,11 +47,11 @@ BOOST_AUTO_TEST_CASE(cartesian_2d_vertexNeighbours)
     BOOST_CHECK(vnb == truth);
 }
 
-BOOST_AUTO_TEST_CASE(cartesian_3d_vertexNeighbours)
+BOOST_AUTO_TEST_CASE(cartesian_3d_cellNeighboursAcrossVertices)
 {
     const GridManager gm(3, 2, 2);
     const UnstructuredGrid& grid = *gm.c_grid();
-    const SparseTable<int> vnb = vertexNeighbours(grid);
+    const SparseTable<int> vnb = cellNeighboursAcrossVertices(grid);
 
     BOOST_CHECK_EQUAL(int(vnb.size()), grid.number_of_cells);
     BOOST_REQUIRE(!vnb.empty());
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(cartesian_2d_orderCounterClockwise)
 {
     const GridManager gm(2, 2);
     const UnstructuredGrid& grid = *gm.c_grid();
-    SparseTable<int> vnb = vertexNeighbours(grid);
+    SparseTable<int> vnb = cellNeighboursAcrossVertices(grid);
     orderCounterClockwise(grid, vnb);
 
     BOOST_REQUIRE(!vnb.empty());
