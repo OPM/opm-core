@@ -76,6 +76,6 @@ BOOST_AUTO_TEST_CASE(cartesian_2d_orderCounterClockwise)
     const SparseTable<int> truth(elem, elem + num_elem, rowsizes, rowsizes + num_rows);
     BOOST_CHECK(vnb == truth);
     for (int c = 0; c < num_rows; ++c) {
-	BOOST_CHECK_EQUAL_COLLECTIONS(vnb[c].begin(), vnb[c].end(), truth[c].begin(), truth[c].end());
+        BOOST_CHECK_EQUAL_COLLECTIONS(vnb[c].begin(), vnb[c].end(), truth[c].begin(), truth[c].end());
     }
 }

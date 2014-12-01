@@ -35,7 +35,7 @@ namespace Opm
     /// \param[in] grid    A 2d grid object.
     /// \param[in, out] nb A cell-cell neighbourhood table, such as from vertexNeighbours().
     void orderCounterClockwise(const UnstructuredGrid& grid,
-			       SparseTable<int>& nb);
+                               SparseTable<int>& nb);
 
 } // namespace Opm
 
