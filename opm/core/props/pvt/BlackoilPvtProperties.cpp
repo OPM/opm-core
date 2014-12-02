@@ -161,12 +161,13 @@ namespace Opm
     void BlackoilPvtProperties::mu(const int n,
                                    const int* pvtTableIdx,
                                    const double* p,
+                                   const double* T,
                                    const double* z,
                                    double* output_mu) const
     {
         data1_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
-            props_[phase]->mu(n, pvtTableIdx, p, z, &data1_[0]);
+            props_[phase]->mu(n, pvtTableIdx, p, T, z, &data1_[0]);
 // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_mu[phase_usage_.num_phases*i + phase] = data1_[i];
@@ -177,12 +178,13 @@ namespace Opm
     void BlackoilPvtProperties::B(const int n,
                                   const int* pvtTableIdx,
                                   const double* p,
+                                  const double* T,
                                   const double* z,
                                   double* output_B) const
     {
         data1_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
-            props_[phase]->B(n, pvtTableIdx, p, z, &data1_[0]);
+            props_[phase]->B(n, pvtTableIdx, p, T, z, &data1_[0]);
 // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_B[phase_usage_.num_phases*i + phase] = data1_[i];
@@ -193,6 +195,7 @@ namespace Opm
     void BlackoilPvtProperties::dBdp(const int n,
                                      const int* pvtTableIdx,
                                      const double* p,
+                                     const double* T,
                                      const double* z,
                                      double* output_B,
                                      double* output_dBdp) const
@@ -200,7 +203,7 @@ namespace Opm
         data1_.resize(n);
         data2_.resize(n);
         for (int phase = 0; phase < phase_usage_.num_phases; ++phase) {
-            props_[phase]->dBdp(n, pvtTableIdx, p, z, &data1_[0], &data2_[0]);
+            props_[phase]->dBdp(n, pvtTableIdx, p, T, z, &data1_[0], &data2_[0]);
 // #pragma omp parallel for
             for (int i = 0; i < n; ++i) {
                 output_B[phase_usage_.num_phases*i + phase] = data1_[i];

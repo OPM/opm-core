@@ -105,7 +105,8 @@ namespace Opm
 
     void PvtDeadSpline::mu(const int n,
                            const int* pvtTableIdx,
-                                 const double* p,
+                           const double* p,
+                           const double* /*T*/,
                                  const double* /*z*/,
                                  double* output_mu) const
     {
@@ -119,6 +120,7 @@ namespace Opm
     void PvtDeadSpline::mu(const int n,
                            const int* pvtTableIdx,
                            const double* p,
+                           const double* /*T*/,
                            const double* /*r*/,
                            double* output_mu,
                            double* output_dmudp,
@@ -136,6 +138,7 @@ namespace Opm
     void PvtDeadSpline::mu(const int n,
                            const int* pvtTableIdx,
                            const double* p,
+                           const double* /*T*/,
                            const double* /*r*/,
                            const PhasePresence* /*cond*/,
                            double* output_mu,
@@ -154,7 +157,8 @@ namespace Opm
 
     void PvtDeadSpline::B(const int n,
                           const int* pvtTableIdx,
-                                const double* p,
+                          const double* p,
+                          const double* /*T*/,
                                 const double* /*z*/,
                                 double* output_B) const
     {
@@ -168,11 +172,12 @@ namespace Opm
     void PvtDeadSpline::dBdp(const int n,
                              const int* pvtTableIdx,
                              const double* p,
+                             const double* T,
                              const double* /*z*/,
                              double* output_B,
                              double* output_dBdp) const
     {
-        B(n, pvtTableIdx, p, 0, output_B);
+        B(n, pvtTableIdx, p, T, 0, output_B);
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             int regionIdx = getTableIndex_(pvtTableIdx, i);
@@ -183,7 +188,8 @@ namespace Opm
 
     void PvtDeadSpline::b(const int n,
                           const int* pvtTableIdx,
-                              const double* p,
+                          const double* p,
+                          const double* T,
                               const double* /*r*/,
                               double* output_b,
                               double* output_dbdp,
@@ -201,6 +207,7 @@ namespace Opm
     void PvtDeadSpline::b(const int n,
                           const int* pvtTableIdx,
                           const double* p,
+                          const double* T,
                           const double* /*r*/,
                           const PhasePresence* /*cond*/,
                           double* output_b,

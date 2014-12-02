@@ -38,11 +38,13 @@ namespace Opm
         int numPhases() const { return num_phases_; }
 
         std::vector<double>& pressure    () { return press_ ; }
+        std::vector<double>& temperature () { return temp_  ; }
         std::vector<double>& facepressure() { return fpress_; }
         std::vector<double>& faceflux    () { return flux_  ; }
         std::vector<double>& saturation  () { return sat_   ; }
 
         const std::vector<double>& pressure    () const { return press_ ; }
+        const std::vector<double>& temperature () const { return temp_  ; }
         const std::vector<double>& facepressure() const { return fpress_; }
         const std::vector<double>& faceflux    () const { return flux_  ; }
         const std::vector<double>& saturation  () const { return sat_   ; }
@@ -56,6 +58,7 @@ namespace Opm
     private:
         int num_phases_;
         std::vector<double> press_ ;
+        std::vector<double> temp_  ;
         std::vector<double> fpress_;
         std::vector<double> flux_  ;
         std::vector<double> sat_   ;

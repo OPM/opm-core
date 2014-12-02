@@ -104,6 +104,7 @@ namespace Opm
     void PvtLiveGas::mu(const int n,
                         const int* pvtRegionIdx,
                         const double* p,
+                        const double* /*T*/,
                         const double* z,
                         double* output_mu) const
     {
@@ -116,10 +117,11 @@ namespace Opm
         }
     }
 
-    /// Viscosity and its derivatives as a function of p and r.
+    /// Viscosity and its p and r derivatives as a function of p, T and r.
     void PvtLiveGas::mu(const int /*n*/,
                         const int* /*pvtRegionIdx*/,
-                              const double* /*p*/,
+                        const double* /*p*/,
+                        const double* /*T*/,
                               const double* /*r*/,
                               double* /*output_mu*/,
                               double* /*output_dmudp*/,
@@ -128,10 +130,11 @@ namespace Opm
         OPM_THROW(std::runtime_error, "The new fluid interface not yet implemented");
     }
 
-    /// Viscosity and its derivatives as a function of p and r.
+    /// Viscosity and its p and r derivatives as a function of p, T and r.
     void PvtLiveGas::mu(const int n,
                         const int* pvtRegionIdx,
-                               const double* p,
+                        const double* p,
+                        const double* /*T*/,
                                const double* r,
                                const PhasePresence* cond,
                                double* output_mu,
@@ -164,10 +167,11 @@ namespace Opm
     }
 
 
-    /// Formation volume factor as a function of p and z.
+    /// Formation volume factor as a function of p, T and z.
     void PvtLiveGas::B(const int n,
                        const int* pvtRegionIdx,
-                             const double* p,
+                       const double* p,
+                       const double* /*T*/,
                              const double* z,
                              double* output_B) const
     {
@@ -181,8 +185,9 @@ namespace Opm
 
     /// Formation volume factor and p-derivative as functions of p and z.
     void PvtLiveGas::dBdp(const int n,
-                       const int* pvtRegionIdx,
-                                const double* p,
+                          const int* pvtRegionIdx,
+                          const double* p,
+                          const double* /*T*/,
                                 const double* z,
                                 double* output_B,
                                 double* output_dBdp) const
@@ -193,10 +198,11 @@ namespace Opm
         }
     }
 
-    /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
+    /// The inverse of the formation volume factor b = 1 / B, and its p and r derivatives as a function of p, T and r.
     void PvtLiveGas::b(const int /*n*/,
                        const int* /*pvtRegionIdx*/,
-                             const double* /*p*/,
+                       const double* /*p*/,
+                       const double* /*T*/,
                              const double* /*r*/,
                              double* /*output_b*/,
                              double* /*output_dbdp*/,
@@ -206,10 +212,11 @@ namespace Opm
         OPM_THROW(std::runtime_error, "The new fluid interface not yet implemented");
     }
 
-    /// The inverse of the formation volume factor b = 1 / B, and its derivatives as a function of p and r.
+    /// The inverse of the formation volume factor b = 1 / B, and its p and r derivatives as a function of p, T and r.
     void PvtLiveGas::b(const int n,
                        const int* pvtRegionIdx,
-                          const double* p,
+                       const double* p,
+                       const double* /*T*/,
                           const double* r,
                           const PhasePresence* cond,
                           double* output_b,
