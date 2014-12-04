@@ -325,7 +325,7 @@ public:
 
       int zero_pad = ncwmax - completions_set_ptr->size();
 
-      for (int i = 0; i < completions_set_ptr->size(); ++i) {
+      for (size_t i = 0; i < completions_set_ptr->size(); ++i) {
         CompletionConstPtr completion_ptr = completions_set_ptr->get(i);
         icon_data.push_back(1);
 
@@ -336,7 +336,7 @@ public:
         icon_data.push_back(0);
 
         CompletionStateEnum completion_state = completion_ptr->getState();
-        if (completion_state == WellCommon::OPEN) {
+        if (completion_state == CompletionStateEnum::OPEN) {
           icon_data.push_back(1);
         } else {
           icon_data.push_back(0);
@@ -972,6 +972,9 @@ int EclipseWriter::eclipseWellTypeMask(WellType wellType, WellInjector::TypeEnum
           break;
         case WellInjector::OIL :
           ert_well_type = IWEL_OIL_INJECTOR;
+          break;
+        default:
+          ert_well_type = IWEL_UNDOCUMENTED_ZERO;
       }
   }
 
