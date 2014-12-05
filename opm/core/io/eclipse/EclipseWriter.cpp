@@ -96,19 +96,26 @@ void restrictToActiveCells(std::vector<double> &data,
         // are considered active
         return;
 
+    const std::vector<double> oldData( data );
+
     // activate those cells that are actually there
     for (int i = 0; i < numCells; ++i) {
-        // make sure that global cell indices are always at least as
-        // large as the active one and that the global cell indices
-        // are in increasing order. the latter might become
-        // problematic if cells are extensively re-ordered, but that
-        // does not seem to be the case so far
-        assert(compressedToCartesianCellIdx[i] >= i);
-        assert(i == 0 || compressedToCartesianCellIdx[i - 1] < compressedToCartesianCellIdx[i]);
-
-        data[i] = data[compressedToCartesianCellIdx[i]];
+        data[i] = oldData[ compressedToCartesianCellIdx[i] ];
     }
     data.resize(numCells);
+}
+
+// throw away the data for all non-active cells in an array. (this is
+// the variant of the function which takes an UnstructuredGrid object.)
+void convertToEclipseOrder(std::vector<double>& data,
+                           const std::vector<int>& gridToEclipseIdx )
+{
+    const std::vector<double> oldData( data );
+    const int numCells = gridToEclipseIdx.size();
+    // activate those cells that are actually there
+    for (int i = 0; i < numCells; ++i) {
+        data[i] = oldData[ gridToEclipseIdx[i] ];
+    }
 }
 
 // convert the units of an array
@@ -459,6 +466,7 @@ public:
                 actnumData[cartesianCellIdx] = 1;
             }
         }
+
         eclGrid->resetACTNUM(&actnumData[0]);
 
         // finally, write the grid to disk
@@ -951,6 +959,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     // to SI pressure units...
     std::vector<double> tmp = reservoirState.pressure();
     EclipseWriterDetails::convertFromSiTo(tmp, deckToSiPressure_);
+    EclipseWriterDetails::convertToEclipseOrder(tmp, gridToEclipseIdx_);
 
     sol.add(EclipseWriterDetails::Keyword<float>("PRESSURE", tmp));
 
@@ -965,6 +974,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
             EclipseWriterDetails::extractFromStripedData(tmp,
                                                          /*offset=*/phaseUsage_.phase_pos[phase],
                                                          /*stride=*/phaseUsage_.num_phases);
+            EclipseWriterDetails::convertToEclipseOrder(tmp, gridToEclipseIdx_);
             sol.add(EclipseWriterDetails::Keyword<float>(EclipseWriterDetails::saturationKeywordNames[phase], tmp));
         }
     }
@@ -995,12 +1005,35 @@ EclipseWriter::EclipseWriter(const parameter::ParameterGroup& params,
     : eclipseState_(eclipseState)
     , numCells_(numCells)
     , compressedToCartesianCellIdx_(compressedToCartesianCellIdx)
+    , gridToEclipseIdx_(numCells, int(-1) )
     , phaseUsage_(phaseUsage)
 {
     const auto eclGrid = eclipseState->getEclipseGrid();
     cartesianSize_[0] = eclGrid->getNX();
     cartesianSize_[1] = eclGrid->getNY();
     cartesianSize_[2] = eclGrid->getNZ();
+
+    if( compressedToCartesianCellIdx ) {
+        // if compressedToCartesianCellIdx available then
+        // compute mapping to eclipse order
+        std::map< int , int > indexMap;
+        for (int cellIdx = 0; cellIdx < numCells; ++cellIdx) {
+            int cartesianCellIdx = compressedToCartesianCellIdx[cellIdx];
+            indexMap[ cartesianCellIdx ] = cellIdx;
+        }
+
+        int idx = 0;
+        for( auto it = indexMap.begin(), end = indexMap.end(); it != end; ++it ) {
+            gridToEclipseIdx_[ idx++ ] = (*it).second;
+        }
+    }
+    else {
+        // if not compressedToCartesianCellIdx was given use identity
+        for (int cellIdx = 0; cellIdx < numCells; ++cellIdx) {
+            gridToEclipseIdx_[ cellIdx ] = cellIdx;
+        }
+    }
+
 
     // factor from the pressure values given in the deck to Pascals
     deckToSiPressure_ =
