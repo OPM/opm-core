@@ -105,8 +105,7 @@ void restrictToActiveCells(std::vector<double> &data,
     data.resize(numCells);
 }
 
-// throw away the data for all non-active cells in an array. (this is
-// the variant of the function which takes an UnstructuredGrid object.)
+// convert contents of the data array to the Eclipse Cartesian logic.
 void convertToEclipseOrder(std::vector<double>& data,
                            const std::vector<int>& gridToEclipseIdx )
 {
