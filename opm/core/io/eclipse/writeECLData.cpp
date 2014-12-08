@@ -124,24 +124,22 @@ namespace Opm
       rst_file = ecl_rst_file_open_write( filename );
 
     {
-      ecl_rsthead_type * rsthead_data = ecl_rsthead_alloc_empty();
-      rsthead_data->nx        = nx;
-      rsthead_data->ny        = ny;
-      rsthead_data->nz        = nz;
-      rsthead_data->nwells    = num_wells;
-      rsthead_data->niwelz    = niwelz;
-      rsthead_data->nzwelz    = nzwelz;
-      rsthead_data->niconz    = niconz;
-      rsthead_data->ncwmax    = ncwmax;
-      rsthead_data->nactive   = nactive;
-      rsthead_data->phase_sum = phases;
-      rsthead_data->sim_time  = date;
+      ecl_rsthead_type rsthead_data = { 0 };
+      rsthead_data.nx        = nx;
+      rsthead_data.ny        = ny;
+      rsthead_data.nz        = nz;
+      rsthead_data.nwells    = num_wells;
+      rsthead_data.niwelz    = niwelz;
+      rsthead_data.nzwelz    = nzwelz;
+      rsthead_data.niconz    = niconz;
+      rsthead_data.ncwmax    = ncwmax;
+      rsthead_data.nactive   = nactive;
+      rsthead_data.phase_sum = phases;
+      rsthead_data.sim_time  = date;
 
-      rsthead_data->sim_days = Opm::unit::convert::to(current_time, Opm::unit::day); //Data for doubhead
+      rsthead_data.sim_days = Opm::unit::convert::to(current_time, Opm::unit::day); //Data for doubhead
 
-      ecl_rst_file_fwrite_header( rst_file , current_step , rsthead_data);
-
-      ecl_rsthead_free(rsthead_data);
+      ecl_rst_file_fwrite_header( rst_file , current_step , &rsthead_data);
     }
 
     ecl_rst_file_start_solution( rst_file );
