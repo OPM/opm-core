@@ -90,6 +90,11 @@ namespace Opm
                     const int current_step,
                     const double current_time,
                     const boost::posix_time::ptime& current_date_time,
+                    const int num_wells,
+                    const int niwelz,
+                    const int nzwelz,
+                    const int niconz,
+                    const int ncwmax,
                     const std::string& output_dir,
                     const std::string& base_name) {
 
@@ -98,7 +103,6 @@ namespace Opm
 
     char * filename         = ecl_util_alloc_filename(output_dir.c_str() , base_name.c_str() , file_type , fmt_file , current_step );
     int phases              = ECL_OIL_PHASE + ECL_WATER_PHASE;
-    double days             = Opm::unit::convert::to(current_time, Opm::unit::day);
     time_t date             = 0;
     int nx                  = grid.cartdims[0];
     int ny                  = grid.cartdims[1];
@@ -119,7 +123,25 @@ namespace Opm
     else
       rst_file = ecl_rst_file_open_write( filename );
 
-    ecl_rst_file_fwrite_header( rst_file , current_step , date , days , nx , ny , nz , nactive , phases );
+    {
+      ecl_rsthead_type rsthead_data = { 0 };
+      rsthead_data.nx        = nx;
+      rsthead_data.ny        = ny;
+      rsthead_data.nz        = nz;
+      rsthead_data.nwells    = num_wells;
+      rsthead_data.niwelz    = niwelz;
+      rsthead_data.nzwelz    = nzwelz;
+      rsthead_data.niconz    = niconz;
+      rsthead_data.ncwmax    = ncwmax;
+      rsthead_data.nactive   = nactive;
+      rsthead_data.phase_sum = phases;
+      rsthead_data.sim_time  = date;
+
+      rsthead_data.sim_days = Opm::unit::convert::to(current_time, Opm::unit::day); //Data for doubhead
+
+      ecl_rst_file_fwrite_header( rst_file , current_step , &rsthead_data);
+    }
+
     ecl_rst_file_start_solution( rst_file );
 
     {
