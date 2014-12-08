@@ -90,11 +90,6 @@ namespace Opm
                     const int current_step,
                     const double current_time,
                     const boost::posix_time::ptime& current_date_time,
-                    const int num_wells,
-                    const int niwelz,
-                    const int nzwelz,
-                    const int niconz,
-                    const int ncwmax,
                     const std::string& output_dir,
                     const std::string& base_name) {
 
@@ -125,6 +120,13 @@ namespace Opm
 
     {
       ecl_rsthead_type rsthead_data = { 0 };
+      
+      const int num_wells    = 0;
+      const int niwelz       = 0;
+      const int nzwelz       = 0;
+      const int niconz       = 0;
+      const int ncwmax       = 0;
+      
       rsthead_data.nx        = nx;
       rsthead_data.ny        = ny;
       rsthead_data.nz        = nz;
