@@ -67,54 +67,25 @@ namespace EclipseWriterDetails {
 /// names are critical; they must be the same as the BlackoilPhases enum
 static const char* saturationKeywordNames[] = { "SWAT", "SOIL", "SGAS" };
 
-// throw away the data for all non-active cells in an array
-void restrictToActiveCells(std::vector<double> &data, const std::vector<int> &actnumData)
-{
-    assert(actnumData.size() == data.size());
-
-    size_t curActiveIdx = 0;
-    for (size_t curIdx = 0; curIdx < data.size(); ++curIdx) {
-        if (!actnumData[curIdx])
-            continue; // ignore non-active cells
-
-        assert(curActiveIdx <= curIdx);
-        data[curActiveIdx] = data[curIdx];
-        ++ curActiveIdx;
-    }
-
-    data.resize(curActiveIdx);
-}
-
-// throw away the data for all non-active cells in an array. (this is
-// the variant of the function which takes an UnstructuredGrid object.)
-void restrictToActiveCells(std::vector<double> &data,
-                           int numCells,
-                           const int* compressedToCartesianCellIdx)
+// throw away the data for all non-active cells and reorder to the Cartesian logic of
+// eclipse
+void restrictAndReorderToActiveCells(std::vector<double> &data,
+                                     int numCells,
+                                     const int* compressedToCartesianCellIdx)
 {
     if (!compressedToCartesianCellIdx)
         // if there is no active -> global mapping, all cells
         // are considered active
         return;
 
-    const std::vector<double> oldData( data );
+    std::vector<double> eclData;
+    eclData.reserve( numCells );
 
     // activate those cells that are actually there
     for (int i = 0; i < numCells; ++i) {
-        data[i] = oldData[ compressedToCartesianCellIdx[i] ];
+        eclData.push_back( data[ compressedToCartesianCellIdx[i] ] );
     }
-    data.resize(numCells);
-}
-
-// convert contents of the data array to the Eclipse Cartesian logic.
-void convertToEclipseOrder(std::vector<double>& data,
-                           const std::vector<int>& gridToEclipseIdx )
-{
-    const std::vector<double> oldData( data );
-    const int numCells = gridToEclipseIdx.size();
-    // activate those cells that are actually there
-    for (int i = 0; i < numCells; ++i) {
-        data[i] = oldData[ gridToEclipseIdx[i] ];
-    }
+    data.swap( eclData );
 }
 
 // convert the units of an array
@@ -452,7 +423,7 @@ public:
                      const PhaseUsage uses)
     {
         auto dataField = eclipseState->getDoubleGridProperty("PORO")->getData();
-        restrictToActiveCells(dataField, numCells, compressedToCartesianCellIdx);
+        restrictAndReorderToActiveCells(dataField, numCells, compressedToCartesianCellIdx);
 
         auto eclGrid = eclipseState->getEclipseGridCopy();
 
@@ -958,7 +929,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
     // to SI pressure units...
     std::vector<double> tmp = reservoirState.pressure();
     EclipseWriterDetails::convertFromSiTo(tmp, deckToSiPressure_);
-    EclipseWriterDetails::convertToEclipseOrder(tmp, gridToEclipseIdx_);
+    EclipseWriterDetails::restrictAndReorderToActiveCells(tmp, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
 
     sol.add(EclipseWriterDetails::Keyword<float>("PRESSURE", tmp));
 
@@ -973,7 +944,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
             EclipseWriterDetails::extractFromStripedData(tmp,
                                                          /*offset=*/phaseUsage_.phase_pos[phase],
                                                          /*stride=*/phaseUsage_.num_phases);
-            EclipseWriterDetails::convertToEclipseOrder(tmp, gridToEclipseIdx_);
+            EclipseWriterDetails::restrictAndReorderToActiveCells(tmp, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
             sol.add(EclipseWriterDetails::Keyword<float>(EclipseWriterDetails::saturationKeywordNames[phase], tmp));
         }
     }
