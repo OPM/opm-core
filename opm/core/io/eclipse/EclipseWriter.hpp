@@ -1,6 +1,7 @@
 /*
   Copyright (c) 2013 Andreas Lauser
   Copyright (c) 2013 Uni Research AS
+  Copyright (c) 2014 IRIS AS
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -39,10 +40,12 @@ namespace Opm {
 // forward declarations
 namespace EclipseWriterDetails {
 class Summary;
+struct WriterTimer;
 }
 
 class SimulatorState;
 class SimulatorTimer;
+class AdaptiveSimulatorTimer;
 class WellState;
 
 namespace parameter { class ParameterGroup; }
@@ -91,10 +94,33 @@ public:
      * ERT or ECLIPSE. Note that calling this method is only
      * meaningful after the first time step has been completed.
      *
+     * \param[in] timer          The timer providing time step and time information
      * \param[in] reservoirState The thermodynamic state of the reservoir
-     * \param[in] wellState The production/injection data for all wells
+     * \param[in] wellState      The production/injection data for all wells
      */
     virtual void writeTimeStep(const SimulatorTimer& timer,
+                               const SimulatorState& reservoirState,
+                               const WellState& wellState);
+
+
+    /*!
+     * \brief Write a reservoir state and summary information to disk.
+     *
+     *
+     * The reservoir state can be inspected with visualization tools like
+     * ResInsight.
+     *
+     * The summary information can then be visualized using tools from
+     * ERT or ECLIPSE. Note that calling this method is only
+     * meaningful after the first time step has been completed.
+     *
+     * \param[in] timer          The timer providing time step and time information
+     * \param[in] subStepTimer   The timer providing sub step information
+     * \param[in] reservoirState The thermodynamic state of the reservoir
+     * \param[in] wellState      The production/injection data for all wells
+     */
+    virtual void writeTimeStep(const SimulatorTimer& timer,
+                               const AdaptiveSimulatorTimer& subStepTimer,
                                const SimulatorState& reservoirState,
                                const WellState& wellState);
 
@@ -117,6 +143,13 @@ private:
     std::shared_ptr<EclipseWriterDetails::Summary> summary_;
 
     void init(const parameter::ParameterGroup& params);
+    // implementation of writeInit
+    void writeInit(const EclipseWriterDetails::WriterTimer &timer);
+    // implementation of writeTimeStep
+    void writeTimeStep(const EclipseWriterDetails::WriterTimer& timer,
+                       const SimulatorState& reservoirState,
+                       const WellState& wellState);
+
 };
 
 typedef std::shared_ptr<EclipseWriter> EclipseWriterPtr;
