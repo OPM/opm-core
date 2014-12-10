@@ -278,7 +278,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/linalg/LinearSolverPetsc.hpp
 	opm/core/linalg/blas_lapack.h
 	opm/core/linalg/call_umfpack.h
-	opm/core/linalg/call_petsc.h
 	opm/core/linalg/sparse_sys.h
 	opm/core/version.h
 	opm/core/wells.h
