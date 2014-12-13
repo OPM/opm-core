@@ -135,8 +135,8 @@ std::shared_ptr<Opm::BlackoilState> createBlackOilState(Opm::EclipseGridConstPtr
 
 Opm::DeckConstPtr createDeck(const std::string& eclipse_data_filename) {
   Opm::ParserPtr parser(new Opm::Parser());
-  Opm::ParserLogPtr parserLog(new Opm::ParserLog);
-  Opm::DeckConstPtr deck = parser->parseFile(eclipse_data_filename, parserLog);
+  Opm::LoggerPtr logger(new Opm::Logger);
+  Opm::DeckConstPtr deck = parser->parseFile(eclipse_data_filename, logger);
 
   return deck;
 }
