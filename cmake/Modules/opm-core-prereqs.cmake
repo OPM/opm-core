@@ -7,6 +7,7 @@ set (opm-core_CONFIG_VAR
 	HAVE_SUITESPARSE_UMFPACK_H
 	HAVE_DUNE_ISTL
 	HAVE_MPI
+	HAVE_PETSC
 	)
 
 # dependencies
@@ -25,6 +26,7 @@ set (opm-core_DEPS
 	"SuiteSparse COMPONENTS umfpack"
 	# solver
 	"SuperLU"
+	"Petsc"
 	# xml processing (for config parsing)
 	"TinyXML"
 	# Ensembles-based Reservoir Tools (ERT)

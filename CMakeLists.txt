@@ -71,6 +71,12 @@ macro (sources_hook)
 			)
 	endif (NOT SuiteSparse_FOUND)
 
+	if (NOT PETSC_FOUND)
+		list (REMOVE_ITEM opm-core_SOURCES
+			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/call_petsc.c
+			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverPetsc.cpp
+			)
+	endif (NOT PETSC_FOUND)
 	if ((NOT MPI_FOUND) OR (NOT DUNE_ISTL_FOUND))
 		list (REMOVE_ITEM tests_SOURCES
 			${PROJECT_SOURCE_DIR}/tests/test_parallel_linearsolver.cpp
