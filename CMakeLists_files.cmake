@@ -367,6 +367,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/SimulatorOutput.hpp
 	opm/core/simulator/SimulatorReport.hpp
 	opm/core/simulator/SimulatorState.hpp
+	opm/core/simulator/SimulatorTimerInterface.hpp
 	opm/core/simulator/SimulatorTimer.hpp
 	opm/core/simulator/TimeStepControlInterface.hpp
 	opm/core/simulator/TwophaseState.hpp
