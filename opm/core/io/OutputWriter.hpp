@@ -21,6 +21,7 @@
 #define OPM_OUTPUT_WRITER_HPP
 
 #include <memory>  // unique_ptr, shared_ptr
+#include <opm/core/simulator/SimulatorTimerInterface.hpp>
 
 struct UnstructuredGrid;
 
@@ -30,8 +31,6 @@ namespace Opm {
 class EclipseState;
 namespace parameter { class ParameterGroup; }
 class SimulatorState;
-class SimulatorTimer;
-class AdaptiveSimulatorTimer;
 class WellState;
 struct PhaseUsage;
 
@@ -74,7 +73,7 @@ public:
      * This routine should be called before the first timestep (i.e. when
      * timer.currentStepNum () == 0)
      */
-    virtual void writeInit(const SimulatorTimer &timer) = 0;
+    virtual void writeInit(const SimulatorTimerInterface &timer) = 0;
 
     /*!
      * \brief Write a blackoil reservoir state to disk for later inspection with
@@ -87,24 +86,7 @@ public:
      * This routine should be called after the timestep has been advanced,
      * i.e. timer.currentStepNum () > 0.
      */
-    virtual void writeTimeStep(const SimulatorTimer& timer,
-                               const SimulatorState& reservoirState,
-                               const WellState& wellState) = 0;
-
-    /*!
-     * \brief Write a blackoil reservoir state to disk for later inspection with
-     *        visualization tools like ResInsight
-     *
-     * \param[in] timer          The timer providing time, time step, etc. information
-     * \param[in] subStepTimer   The timer providing sub step time information
-     * \param[in] reservoirState The thermodynamic state of the reservoir
-     * \param[in] wellState      The production/injection data for all wells
-     *
-     * This routine should be called after the timestep has been advanced,
-     * i.e. timer.currentStepNum () > 0.
-     */
-    virtual void writeTimeStep(const SimulatorTimer& timer,
-                               const AdaptiveSimulatorTimer& subStepTimer,
+    virtual void writeTimeStep(const SimulatorTimerInterface& timer,
                                const SimulatorState& reservoirState,
                                const WellState& wellState) = 0;
 

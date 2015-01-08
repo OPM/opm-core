@@ -25,6 +25,7 @@
 #include <opm/core/io/OutputWriter.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/wells.h> // WellType
+#include <opm/core/simulator/SimulatorTimerInterface.hpp>
 
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
@@ -44,8 +45,6 @@ struct WriterTimer;
 }
 
 class SimulatorState;
-class SimulatorTimer;
-class AdaptiveSimulatorTimer;
 class WellState;
 
 namespace parameter { class ParameterGroup; }
@@ -81,7 +80,7 @@ public:
     /**
      * Write the static eclipse data (grid, PVT curves, etc) to disk.
      */
-    virtual void writeInit(const SimulatorTimer &timer);
+    virtual void writeInit(const SimulatorTimerInterface &timer);
 
     /*!
      * \brief Write a reservoir state and summary information to disk.
@@ -98,31 +97,10 @@ public:
      * \param[in] reservoirState The thermodynamic state of the reservoir
      * \param[in] wellState      The production/injection data for all wells
      */
-    virtual void writeTimeStep(const SimulatorTimer& timer,
+    virtual void writeTimeStep(const SimulatorTimerInterface& timer,
                                const SimulatorState& reservoirState,
                                const WellState& wellState);
 
-
-    /*!
-     * \brief Write a reservoir state and summary information to disk.
-     *
-     *
-     * The reservoir state can be inspected with visualization tools like
-     * ResInsight.
-     *
-     * The summary information can then be visualized using tools from
-     * ERT or ECLIPSE. Note that calling this method is only
-     * meaningful after the first time step has been completed.
-     *
-     * \param[in] timer          The timer providing time step and time information
-     * \param[in] subStepTimer   The timer providing sub step information
-     * \param[in] reservoirState The thermodynamic state of the reservoir
-     * \param[in] wellState      The production/injection data for all wells
-     */
-    virtual void writeTimeStep(const SimulatorTimer& timer,
-                               const AdaptiveSimulatorTimer& subStepTimer,
-                               const SimulatorState& reservoirState,
-                               const WellState& wellState);
 
     static int eclipseWellTypeMask(WellType wellType, WellInjector::TypeEnum injectorType);
     static int eclipseWellStatusMask(WellCommon::StatusEnum wellStatus);

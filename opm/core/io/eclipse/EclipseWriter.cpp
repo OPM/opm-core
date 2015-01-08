@@ -27,8 +27,7 @@
 #include <opm/core/grid.h>
 #include <opm/core/grid/cpgpreprocess/preprocess.h>
 #include <opm/core/simulator/SimulatorState.hpp>
-#include <opm/core/simulator/SimulatorTimer.hpp>
-#include <opm/core/simulator/AdaptiveSimulatorTimer.hpp>
+#include <opm/core/simulator/SimulatorTimerInterface.hpp>
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/parameters/Parameter.hpp>
@@ -124,40 +123,6 @@ int ertPhaseMask(const PhaseUsage uses)
         | (uses.phase_used[BlackoilPhases::Aqua] ? ECL_WATER_PHASE : 0)
         | (uses.phase_used[BlackoilPhases::Vapour] ? ECL_GAS_PHASE : 0);
 }
-
-
-// wrapper class to make EclipseWriter work with either the SimulatorTimer or a
-// combination of SimulatorTimer and AdaptiveSimulatorTimer.
-struct WriterTimer
-{
-    const double time_;
-    const double stepLength_;
-    const time_t posixTime_;
-    const int deckReportStep_;
-
-    // copy values from SimulatorTimer
-    WriterTimer( const SimulatorTimer& timer )
-        : time_( timer.simulationTimeElapsed() ),
-          stepLength_( timer.stepLengthTaken() ),
-          posixTime_( timer.currentPosixTime() ),
-          deckReportStep_( timer.currentStepNum() )
-    {}
-
-    // copy values from SimulatorTimer and add values from
-    // AdaptiveSimulatorTimer, except the deck's reportStep
-    WriterTimer( const SimulatorTimer& timer, const AdaptiveSimulatorTimer& subStepTimer )
-        : time_( subStepTimer.simulationTimeElapsed() ),
-          stepLength_( subStepTimer.currentStepLength() ),
-          posixTime_( timer.currentPosixTime() + time_t(time_ - timer.simulationTimeElapsed()) ),
-          deckReportStep_( timer.currentStepNum() )
-    {}
-
-    int deckReportStep () const { return deckReportStep_; }
-    double simulationTimeElapsed() const { return time_; }
-    /// time elapsed since the start of the POSIX epoch (Jan 1st, 1970) [s].
-    time_t currentPosixTime() const { return posixTime_; }
-    double stepLengthTaken () const { return stepLength_; }
-};
 
 
 /**
@@ -405,7 +370,7 @@ public:
         ecl_rst_file_close(restartFileHandle_);
     }
 
-    void writeHeader(const WriterTimer& timer,
+    void writeHeader(const SimulatorTimerInterface& timer,
                      int reportStepIdx,
                      ecl_rsthead_type * rsthead_data)
     {
@@ -460,7 +425,7 @@ class Summary : private boost::noncopyable
 public:
     Summary(const std::string& outputDir,
             const std::string& baseName,
-            const WriterTimer& timer,
+            const SimulatorTimerInterface& timer,
             int nx,
             int ny,
             int nz)
@@ -497,7 +462,7 @@ public:
     void addAllWells(Opm::EclipseStateConstPtr eclipseState,
                      const PhaseUsage& uses);
     void writeTimeStep(int reportStepIdx,
-                       const WriterTimer& timer,
+                       const SimulatorTimerInterface& timer,
                        const WellState& wellState);
 
     ecl_sum_type *ertHandle() const
@@ -515,7 +480,7 @@ class SummaryTimeStep : private boost::noncopyable
 public:
     SummaryTimeStep(Summary& summaryHandle,
                     int reportStepIdx,
-                    const WriterTimer &timer)
+                    const SimulatorTimerInterface &timer)
     {
         ertHandle_ = ecl_sum_add_tstep(summaryHandle.ertHandle(),
                                        reportStepIdx,
@@ -570,7 +535,7 @@ public:
 
     void writeHeader(int numCells,
                      const int* compressedToCartesianCellIdx,
-                     const WriterTimer& timer,
+                     const SimulatorTimerInterface& timer,
                      Opm::EclipseStateConstPtr eclipseState,
                      const PhaseUsage uses)
     {
@@ -655,7 +620,7 @@ public:
     /// Retrieve the value which the monitor is supposed to write to the summary file
     /// according to the state of the well.
     virtual double retrieveValue(const int reportStepIdx,
-                                 const WriterTimer& timer,
+                                 const SimulatorTimerInterface& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& nameToIdxMap) = 0;
 
@@ -787,7 +752,7 @@ public:
     { }
 
     virtual double retrieveValue(const int reportStepIdx,
-                                 const WriterTimer& timer,
+                                 const SimulatorTimerInterface& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
     {
@@ -798,7 +763,7 @@ public:
             return 0.0;
         }
 
-        if (well_->getStatus(timer.deckReportStep()) == WellCommon::SHUT) {
+        if (well_->getStatus(timer.reportStepNum()) == WellCommon::SHUT) {
             // well is shut in the current time step
             return 0.0;
         }
@@ -833,7 +798,7 @@ public:
     { }
 
     virtual double retrieveValue(const int reportStepIdx,
-                                 const WriterTimer& timer,
+                                 const SimulatorTimerInterface& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
     {
@@ -843,7 +808,7 @@ public:
             return 0.0;
         }
 
-        if (well_->getStatus(timer.deckReportStep()) == WellCommon::SHUT) {
+        if (well_->getStatus(timer.reportStepNum()) == WellCommon::SHUT) {
             // well is shut in the current time step
             return 0.0;
         }
@@ -892,7 +857,7 @@ public:
     { }
 
     virtual double retrieveValue(const int reportStepIdx,
-                                 const WriterTimer& timer,
+                                 const SimulatorTimerInterface& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
     {
@@ -902,7 +867,7 @@ public:
             // well not active in current time step
             return 0.0;
         }
-        if (well_->getStatus(timer.deckReportStep()) == WellCommon::SHUT) {
+        if (well_->getStatus(timer.reportStepNum()) == WellCommon::SHUT) {
             // well is shut in the current time step
             return 0.0;
         }
@@ -914,16 +879,16 @@ public:
 // no inline implementation of this since it depends on the
 // WellReport type being completed first
 void Summary::writeTimeStep(int reportStepIdx,
-                            const WriterTimer& timer,
+                            const SimulatorTimerInterface& timer,
                             const WellState& wellState)
 {
     // create a name -> well index map
     const Opm::ScheduleConstPtr schedule = eclipseState_->getSchedule();
-    const auto& timeStepWells = schedule->getWells(timer.deckReportStep());
+    const auto& timeStepWells = schedule->getWells(timer.reportStepNum());
     std::map<std::string, int> wellNameToIdxMap;
     int openWellIdx = 0;
     for (size_t tsWellIdx = 0; tsWellIdx < timeStepWells.size(); ++tsWellIdx) {
-        if (timeStepWells[tsWellIdx]->getStatus(timer.deckReportStep()) != WellCommon::SHUT ) {
+        if (timeStepWells[tsWellIdx]->getStatus(timer.reportStepNum()) != WellCommon::SHUT ) {
             wellNameToIdxMap[timeStepWells[tsWellIdx]->name()] = openWellIdx;
             openWellIdx++;
         }
@@ -1050,13 +1015,7 @@ int EclipseWriter::eclipseWellStatusMask(WellCommon::StatusEnum wellStatus)
 }
 
 
-void EclipseWriter::writeInit(const SimulatorTimer &timer)
-{
-    EclipseWriterDetails::WriterTimer writerTimer( timer );
-    writeInit( writerTimer );
-}
-
-void EclipseWriter::writeInit(const EclipseWriterDetails::WriterTimer &timer)
+void EclipseWriter::writeInit(const SimulatorTimerInterface &timer)
 {
     // if we don't want to write anything, this method becomes a
     // no-op...
@@ -1101,26 +1060,8 @@ void EclipseWriter::writeInit(const EclipseWriterDetails::WriterTimer &timer)
     summary_->addAllWells(eclipseState_, phaseUsage_);
 }
 
-
-void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
-                                  const SimulatorState& reservoirState,
-                                  const WellState& wellState)
-{
-    EclipseWriterDetails::WriterTimer writerTimer ( timer );
-    writeTimeStep( writerTimer, reservoirState, wellState );
-}
-
-void EclipseWriter::writeTimeStep(const SimulatorTimer& timer,
-                                  const AdaptiveSimulatorTimer& subStepTimer,
-                                  const SimulatorState& reservoirState,
-                                  const WellState& wellState)
-{
-    EclipseWriterDetails::WriterTimer writerTimer ( timer, subStepTimer );
-    writeTimeStep( writerTimer, reservoirState, wellState );
-}
-
 // implementation of the writeTimeStep method
-void EclipseWriter::writeTimeStep(const EclipseWriterDetails::WriterTimer& timer,
+void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
                                   const SimulatorState& reservoirState,
                                   const WellState& wellState)
 {
@@ -1136,7 +1077,7 @@ void EclipseWriter::writeTimeStep(const EclipseWriterDetails::WriterTimer& timer
     }
 
 
-    std::vector<WellConstPtr> wells_ptr = eclipseState_->getSchedule()->getWells(timer.deckReportStep());
+    std::vector<WellConstPtr> wells_ptr = eclipseState_->getSchedule()->getWells(timer.reportStepNum());
     std::vector<int>         iwell_data;
     std::vector<const char*> zwell_data;
     std::vector<int>         icon_data;
@@ -1147,7 +1088,7 @@ void EclipseWriter::writeTimeStep(const EclipseWriterDetails::WriterTimer& timer
     rsthead_data.nx         = cartesianSize_[0];
     rsthead_data.ny         = cartesianSize_[1];
     rsthead_data.nz         = cartesianSize_[2];
-    rsthead_data.nwells     = eclipseState_->getSchedule()->numWells(timer.deckReportStep());
+    rsthead_data.nwells     = eclipseState_->getSchedule()->numWells(timer.reportStepNum());
     rsthead_data.niwelz     = 0;
     rsthead_data.nzwelz     = 0;
     rsthead_data.niconz     = 0;
@@ -1159,10 +1100,10 @@ void EclipseWriter::writeTimeStep(const EclipseWriterDetails::WriterTimer& timer
     for (std::vector<WellConstPtr>::const_iterator c_iter = wells_ptr.begin(); c_iter != wells_ptr.end(); ++c_iter) {
       WellConstPtr well_ptr = *c_iter;
 
-      rsthead_data.ncwmax = eclipseState_->getSchedule()->getMaxNumCompletionsForWells(timer.deckReportStep());
-      restartHandle.addRestartFileIwelData(iwell_data, timer.deckReportStep(), well_ptr);
-      restartHandle.addRestartFileZwelData(zwell_data, timer.deckReportStep(), well_ptr);
-      restartHandle.addRestartFileIconData(icon_data,  timer.deckReportStep(), rsthead_data.ncwmax, well_ptr);
+      rsthead_data.ncwmax = eclipseState_->getSchedule()->getMaxNumCompletionsForWells(timer.reportStepNum());
+      restartHandle.addRestartFileIwelData(iwell_data, timer.reportStepNum(), well_ptr);
+      restartHandle.addRestartFileZwelData(zwell_data, timer.reportStepNum(), well_ptr);
+      restartHandle.addRestartFileIconData(icon_data,  timer.reportStepNum(), rsthead_data.ncwmax, well_ptr);
 
       rsthead_data.niwelz = EclipseWriterDetails::Restart::NIWELZ;
       rsthead_data.nzwelz = EclipseWriterDetails::Restart::NZWELZ;
