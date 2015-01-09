@@ -191,6 +191,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_minpvprocessor.cpp
 	tests/test_gridutilities.cpp
 	tests/test_anisotropiceikonal.cpp
+	tests/test_stoppedwells.cpp
   )
 
 # originally generated with the command:
@@ -219,9 +220,10 @@ list (APPEND TEST_DATA_FILES
 	tests/wells_manager_data.data
 	tests/wells_manager_data_expanded.data
 	tests/wells_manager_data_wellSTOP.data
-	tests/wells_group.data
-	tests/TESTTIMER.DATA
+        tests/wells_group.data
+        tests/TESTTIMER.DATA
         tests/CORNERPOINT_ACTNUM.DATA
+        tests/wells_stopped.data
 	)
 
 # originally generated with the command:

@@ -49,8 +49,8 @@ namespace Opm
                 for (int w = 0; w < nw; ++w) {
                     assert((wells->type[w] == INJECTOR) || (wells->type[w] == PRODUCER));
                     const WellControls* ctrl = wells->ctrls[w];
-                    if (well_controls_well_is_shut(ctrl)) {
-                        // Shut well:
+                    if (well_controls_well_is_stopped(ctrl)) {
+                        // Stopped well:
                         // 1. Assign zero well rates.
                         for (int p = 0; p < np; ++p) {
                             wellrates_[np*w + p] = 0.0;

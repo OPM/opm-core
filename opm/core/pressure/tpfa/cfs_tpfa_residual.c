@@ -869,8 +869,8 @@ assemble_completion_to_well(int i, int w, int c, int nc, int np,
     W    = wells->W;
     ctrl = W->ctrls[ w ];
 
-    if (well_controls_well_is_shut( ctrl )) {
-        /* Interpreting a negative current control index to mean a shut well */
+    if (well_controls_well_is_stopped( ctrl )) {
+        fprintf(stderr, "Stopped well detected: will be treated as completely shut\n");
         welleq_coeff_shut(np, h, &res, &w2c, &w2w);
     }
     else {

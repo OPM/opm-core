@@ -412,8 +412,9 @@ namespace Opm
         for (auto wellIter= wells.begin(); wellIter != wells.end(); ++wellIter) {
             WellConstPtr well = (*wellIter);
 
-            if ( !( well->getStatus( timeStep ) == WellCommon::SHUT || well->getStatus( timeStep ) == WellCommon::OPEN) ) {
-                OPM_THROW(std::runtime_error, "Currently we do not support well status " << WellCommon::Status2String(well->getStatus( timeStep )));
+            if (well->getStatus(timeStep) == WellCommon::STOP) {
+                // STOPed wells are kept in the well list but marked as stopped.
+                well_controls_stop_well(w_->ctrls[well_index]);
             }
 
             if (well->getStatus(timeStep) == WellCommon::SHUT) {

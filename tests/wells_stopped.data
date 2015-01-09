@@ -6,21 +6,26 @@ WATER
 
 
 DIMENS
-   10 10  5  /
+   10 10  1  /
 
 GRID
 
 DXV
-10*1000.0 /
+10*1000.0
+/
 
 DYV
-10*1000.0 /
+10*1000.0
+/
 
-DZV
-10.0 20.0 30.0 10.0 5.0 /
+DZ
+100*20.0 
+/
 
 TOPS
-  100*10  /
+100*10
+/
+
 
 SCHEDULE
 
@@ -31,7 +36,7 @@ WELSPECS
 
 COMPDAT
     'INJ1'   1  1 1  1 'OPEN' 1   10.6092   0.5  /
-    'PROD1'  10 3 3  3 'OPEN' 0   10.6092   0.5  /
+    'PROD1'  10 1 1  1 'OPEN' 0   10.6092   0.5  /
 /
 
 WCONPROD
@@ -43,11 +48,11 @@ WCONINJE
 /
 
 
+TSTEP
+  1 /
+
 WELOPEN
    'INJ1' 'STOP' 5* /
 /
-
-TSTEP
-  10 /
 
 END
