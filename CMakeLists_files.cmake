@@ -83,6 +83,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/BlackoilPropertiesFromDeck.cpp
 	opm/core/props/IncompPropertiesBasic.cpp
 	opm/core/props/IncompPropertiesFromDeck.cpp
+	opm/core/props/IncompPropertiesSinglePhase.cpp
 	opm/core/props/pvt/BlackoilPvtProperties.cpp
 	opm/core/props/pvt/PvtPropertiesBasic.cpp
 	opm/core/props/pvt/PvtPropertiesIncompFromDeck.cpp
@@ -335,6 +336,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/IncompPropertiesInterface.hpp
 	opm/core/props/IncompPropertiesShadow.hpp
 	opm/core/props/IncompPropertiesShadow_impl.hpp
+	opm/core/props/IncompPropertiesSinglePhase.hpp
 	opm/core/props/phaseUsageFromDeck.hpp
 	opm/core/props/pvt/BlackoilPvtProperties.hpp
 	opm/core/props/pvt/PvtPropertiesBasic.hpp
