@@ -235,13 +235,13 @@ public:
     FileName(const std::string& outputDir,
              const std::string& baseName,
              ecl_file_enum type,
-             int reportStepIdx)
+             int writeStepIdx)
     {
         ertHandle_ = ecl_util_alloc_filename(outputDir.c_str(),
                                              baseName.c_str(),
                                              type,
                                              false, // formatted?
-                                             reportStepIdx);
+                                             writeStepIdx);
     }
 
     ~FileName()
@@ -276,15 +276,15 @@ public:
 
     Restart(const std::string& outputDir,
             const std::string& baseName,
-            int reportStepIdx)
+            int writeStepIdx)
     {
         restartFileName_ = ecl_util_alloc_filename(outputDir.c_str(),
                                                    baseName.c_str(),
                                                    /*type=*/ECL_UNIFIED_RESTART_FILE,
                                                    false, // use formatted instead of binary output?
-                                                   reportStepIdx);
+                                                   writeStepIdx);
 
-        if (reportStepIdx == 0) {
+        if (writeStepIdx == 0) {
             restartFileHandle_ = ecl_rst_file_open_write(restartFileName_);
         }
         else {
@@ -371,12 +371,12 @@ public:
     }
 
     void writeHeader(const SimulatorTimerInterface& timer,
-                     int reportStepIdx,
+                     int writeStepIdx,
                      ecl_rsthead_type * rsthead_data)
     {
 
       ecl_rst_file_fwrite_header(restartFileHandle_,
-                                 reportStepIdx,
+                                 writeStepIdx,
                                  rsthead_data);
 
     }
@@ -461,7 +461,7 @@ public:
     // add rate variables for each of the well in the input file
     void addAllWells(Opm::EclipseStateConstPtr eclipseState,
                      const PhaseUsage& uses);
-    void writeTimeStep(int reportStepIdx,
+    void writeTimeStep(int writeStepIdx,
                        const SimulatorTimerInterface& timer,
                        const WellState& wellState);
 
@@ -479,11 +479,11 @@ class SummaryTimeStep : private boost::noncopyable
 {
 public:
     SummaryTimeStep(Summary& summaryHandle,
-                    int reportStepIdx,
+                    int writeStepIdx,
                     const SimulatorTimerInterface &timer)
     {
         ertHandle_ = ecl_sum_add_tstep(summaryHandle.ertHandle(),
-                                       reportStepIdx,
+                                       writeStepIdx,
                                        Opm::unit::convert::to(timer.simulationTimeElapsed(),
                                                               Opm::unit::day));
     }
@@ -508,16 +508,16 @@ class Init : private boost::noncopyable
 public:
     Init(const std::string& outputDir,
          const std::string& baseName,
-         int reportStepIdx)
+         int writeStepIdx)
         : egridFileName_(outputDir,
                          baseName,
                          ECL_EGRID_FILE,
-                         reportStepIdx)
+                         writeStepIdx)
     {
         FileName initFileName(outputDir,
                               baseName,
                               ECL_INIT_FILE,
-                              reportStepIdx);
+                              writeStepIdx);
 
         bool isFormatted;
         if (!ecl_util_fmt_file(initFileName.ertHandle(), &isFormatted)) {
@@ -619,7 +619,7 @@ protected:
 public:
     /// Retrieve the value which the monitor is supposed to write to the summary file
     /// according to the state of the well.
-    virtual double retrieveValue(const int reportStepIdx,
+    virtual double retrieveValue(const int writeStepIdx,
                                  const SimulatorTimerInterface& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& nameToIdxMap) = 0;
@@ -751,7 +751,7 @@ public:
                      "SM3/DAY" /* surf. cub. m. per day */)
     { }
 
-    virtual double retrieveValue(const int reportStepIdx,
+    virtual double retrieveValue(const int writeStepIdx,
                                  const SimulatorTimerInterface& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
@@ -797,12 +797,12 @@ public:
         , total_(0.)
     { }
 
-    virtual double retrieveValue(const int reportStepIdx,
+    virtual double retrieveValue(const int writeStepIdx,
                                  const SimulatorTimerInterface& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
     {
-        if (reportStepIdx == 0) {
+        if (writeStepIdx == 0) {
             // We are at the initial state.
             // No step has been taken yet.
             return 0.0;
@@ -856,7 +856,7 @@ public:
                      "Pascal")
     { }
 
-    virtual double retrieveValue(const int reportStepIdx,
+    virtual double retrieveValue(const int writeStepIdx,
                                  const SimulatorTimerInterface& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
@@ -878,7 +878,7 @@ public:
 
 // no inline implementation of this since it depends on the
 // WellReport type being completed first
-void Summary::writeTimeStep(int reportStepIdx,
+void Summary::writeTimeStep(int writeStepIdx,
                             const SimulatorTimerInterface& timer,
                             const WellState& wellState)
 {
@@ -895,12 +895,12 @@ void Summary::writeTimeStep(int reportStepIdx,
     }
 
     // internal view; do not move this code out of Summary!
-    SummaryTimeStep tstep(*this, reportStepIdx, timer);
+    SummaryTimeStep tstep(*this, writeStepIdx, timer);
     // write all the variables
     for (auto varIt = summaryReportVars_.begin(); varIt != summaryReportVars_.end(); ++varIt) {
         ecl_sum_tstep_iset(tstep.ertHandle(),
                            smspec_node_get_params_index((*varIt)->ertHandle()),
-                           (*varIt)->retrieveValue(reportStepIdx, timer, wellState, wellNameToIdxMap));
+                           (*varIt)->retrieveValue(writeStepIdx, timer, wellState, wellNameToIdxMap));
     }
 
     // write the summary file to disk
@@ -1023,7 +1023,7 @@ void EclipseWriter::writeInit(const SimulatorTimerInterface &timer)
         return;
     }
 
-    reportStepIdx_ = 0;
+    writeStepIdx_ = 0;
 
     EclipseWriterDetails::Init fortio(outputDir_, baseName_, /*stepIdx=*/0);
     fortio.writeHeader(numCells_,
@@ -1072,7 +1072,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
     }
 
     // respected the output_interval parameter
-    if (reportStepIdx_ % outputInterval_ != 0) {
+    if (writeStepIdx_ % outputInterval_ != 0) {
         return;
     }
 
@@ -1095,7 +1095,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
     rsthead_data.ncwmax     = 0;
     rsthead_data.phase_sum  = Opm::EclipseWriterDetails::ertPhaseMask(phaseUsage_);
 
-    EclipseWriterDetails::Restart restartHandle(outputDir_, baseName_, reportStepIdx_);
+    EclipseWriterDetails::Restart restartHandle(outputDir_, baseName_, writeStepIdx_);
 
     for (std::vector<WellConstPtr>::const_iterator c_iter = wells_ptr.begin(); c_iter != wells_ptr.end(); ++c_iter) {
       WellConstPtr well_ptr = *c_iter;
@@ -1113,7 +1113,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
     rsthead_data.sim_days = Opm::unit::convert::to(timer.simulationTimeElapsed(), Opm::unit::day); //data for doubhead
 
     restartHandle.writeHeader(timer,
-                              reportStepIdx_,
+                              writeStepIdx_,
                               &rsthead_data);
 
 
@@ -1165,9 +1165,9 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
     // instead of creating a temporary EclipseWriterDetails::Summary in this function
     // every time it is called.  This has been changed so that the final summary file
     // will contain data from the whole simulation, instead of just the last step.
-    summary_->writeTimeStep(reportStepIdx_, timer, wellState);
+    summary_->writeTimeStep(writeStepIdx_, timer, wellState);
 
-    ++reportStepIdx_;
+    ++writeStepIdx_;
 }
 
 
@@ -1243,7 +1243,7 @@ void EclipseWriter::init(const parameter::ParameterGroup& params)
     outputDir_ = params.getDefault<std::string>("output_dir", ".");
 
     // set the index of the first time step written to 0...
-    reportStepIdx_ = 0;
+    writeStepIdx_ = 0;
 
     if (enableOutput_) {
         // make sure that the output directory exists, if not try to create it

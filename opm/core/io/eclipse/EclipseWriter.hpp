@@ -114,7 +114,7 @@ private:
     double deckToSiPressure_;
     bool enableOutput_;
     int outputInterval_;
-    int reportStepIdx_;
+    int writeStepIdx_;
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage phaseUsage_; // active phases in the input deck
