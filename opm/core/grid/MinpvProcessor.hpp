@@ -53,7 +53,7 @@ namespace Opm
         std::array<int, 3> delta_;
     };
 
-    MinpvProcessor::MinpvProcessor(const int nx, const int ny, const int nz)
+    inline MinpvProcessor::MinpvProcessor(const int nx, const int ny, const int nz)
     {
         // Not doing init-list init since bracket-init not available
         // for all compilers we support (gcc 4.4).
@@ -67,7 +67,7 @@ namespace Opm
 
 
 
-    void MinpvProcessor::process(const std::vector<double>& pv, const double minpv, double* zcorn) const
+    inline void MinpvProcessor::process(const std::vector<double>& pv, const double minpv, double* zcorn) const
     {
         // Algorithm:
         // 1. Process each column of cells (with same i and j
@@ -115,7 +115,7 @@ namespace Opm
 
 
 
-    std::array<int,8> MinpvProcessor::cornerIndices(const int i, const int j, const int k) const
+    inline std::array<int,8> MinpvProcessor::cornerIndices(const int i, const int j, const int k) const
     {
         const int ix = 2*(i*delta_[0] + j*delta_[1] + k*delta_[2]);
         std::array<int, 8> ixs = {{ ix,                         ix + delta_[0],
@@ -132,7 +132,7 @@ namespace Opm
     // The ordering is such that i runs fastest. That is, with
     // L = low and H = high:
     // {LLL, HLL, LHL, HHL, LLH, HLH, LHH, HHH }.
-    std::array<double, 8> MinpvProcessor::getCellZcorn(const int i, const int j, const int k, const double* z) const
+    inline std::array<double, 8> MinpvProcessor::getCellZcorn(const int i, const int j, const int k, const double* z) const
     {
         const std::array<int, 8> ixs = cornerIndices(i, j, k);
         std::array<double, 8> cellz;
@@ -144,7 +144,7 @@ namespace Opm
 
 
 
-    void MinpvProcessor::setCellZcorn(const int i, const int j, const int k, const std::array<double, 8>& cellz, double* z) const
+    inline void MinpvProcessor::setCellZcorn(const int i, const int j, const int k, const std::array<double, 8>& cellz, double* z) const
     {
         const std::array<int, 8> ixs = cornerIndices(i, j, k);
         for (int count = 0; count < 8; ++count) {
