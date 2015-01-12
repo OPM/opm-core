@@ -349,8 +349,8 @@ public:
         icon_data.push_back(completion_ptr->getK() + eclipse_offset);
         icon_data.push_back(0);
 
-        CompletionStateEnum completion_state = completion_ptr->getState();
-        if (completion_state == CompletionStateEnum::OPEN) {
+        WellCompletion::StateEnum completion_state = completion_ptr->getState();
+        if (completion_state == WellCompletion::StateEnum::OPEN) {
           icon_data.push_back(1);
         } else {
           icon_data.push_back(0);
