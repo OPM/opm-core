@@ -23,8 +23,6 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include <opm/core/pressure/FlowBCManager.hpp>
-
 #include <opm/core/grid.h>
 #include <opm/core/grid/GridManager.hpp>
 #include <opm/core/wells.h>
@@ -35,15 +33,11 @@
 #include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
-#include <opm/core/props/IncompPropertiesBasic.hpp>
 #include <opm/core/props/IncompPropertiesSinglePhase.hpp>
 
 #include <opm/core/linalg/LinearSolverFactory.hpp>
 
-#include <opm/core/simulator/TwophaseState.hpp>
-#include <opm/core/simulator/WellState.hpp>
-#include <opm/core/simulator/initState.hpp>
-#include <opm/core/pressure/IncompTpfa.hpp>
+#include <opm/core/pressure/IncompTpfaSinglePhase.hpp>
 #include <opm/core/tof/TofReorder.hpp>
 #include <opm/core/tof/TofDiscGalReorder.hpp>
 
@@ -70,20 +64,17 @@ namespace
         }
     }
 
-    void buildTracerheadsFromWells(const Wells* wells,
+    void buildTracerheadsFromWells(const Wells& wells,
                                    Opm::SparseTable<int>& tracerheads)
     {
-        if (wells == 0) {
-            return;
-        }
         tracerheads.clear();
-        const int num_wells = wells->number_of_wells;
+        const int num_wells = wells.number_of_wells;
         for (int w = 0; w < num_wells; ++w) {
-            if (wells->type[w] != INJECTOR) {
+            if (wells.type[w] != INJECTOR) {
                 continue;
             }
-            tracerheads.appendRow(wells->well_cells + wells->well_connpos[w],
-                                  wells->well_cells + wells->well_connpos[w + 1]);
+            tracerheads.appendRow(wells.well_cells + wells.well_connpos[w],
+                                  wells.well_cells + wells.well_connpos[w + 1]);
         }
     }
 
@@ -102,95 +93,31 @@ try
     parameter::ParameterGroup param(argc, argv, false);
     std::cout << "---------------    Reading parameters     ---------------" << std::endl;
 
-    // If we have a "deck_filename", grid and props will be read from that.
-    bool use_deck = param.has("deck_filename");
-    Opm::DeckConstPtr deck;
-    std::unique_ptr<GridManager> grid;
-    std::unique_ptr<IncompPropertiesInterface> props;
-    std::unique_ptr<Opm::WellsManager> wells;
-    TwophaseState state;
-    // bool check_well_controls = false;
-    // int max_well_control_iterations = 0;
-    double gravity[3] = { 0.0 };
-    if (use_deck) {
-        std::string deck_filename = param.get<std::string>("deck_filename");
-        Opm::ParserPtr parser(new Opm::Parser());
-        deck = parser->parseFile(deck_filename);
-        Opm::EclipseStateConstPtr eclipseState(new Opm::EclipseState(deck));
+    // Read the deck.
+    std::string deck_filename = param.get<std::string>("deck_filename");
+    Parser parser;
+    DeckConstPtr deck = parser.parseFile(deck_filename);
+    EclipseStateConstPtr eclipseState = std::make_shared<EclipseState>(deck);
 
-        // Grid init
-        grid.reset(new GridManager(deck));
-        // Rock and fluid init
-        props.reset(new IncompPropertiesSinglePhase(deck, eclipseState, *grid->c_grid()));
-        // Wells init.
-        wells.reset(new Opm::WellsManager(eclipseState , 0 , *grid->c_grid(), props->permeability()));
-        // Gravity.
-        gravity[2] = deck->hasKeyword("NOGRAV") ? 0.0 : unit::gravity;
-        // Init state variables (saturation and pressure).
-        if (param.has("init_saturation")) {
-            initStateBasic(*grid->c_grid(), *props, param, gravity[2], state);
-        } else {
-            initStateFromDeck(*grid->c_grid(), *props, deck, gravity[2], state);
-        }
-    } else {
-        // Grid init.
-        const int nx = param.getDefault("nx", 100);
-        const int ny = param.getDefault("ny", 100);
-        const int nz = param.getDefault("nz", 1);
-        const double dx = param.getDefault("dx", 1.0);
-        const double dy = param.getDefault("dy", 1.0);
-        const double dz = param.getDefault("dz", 1.0);
-        grid.reset(new GridManager(nx, ny, nz, dx, dy, dz));
-        // Rock and fluid init.
-        props.reset(new IncompPropertiesBasic(param, grid->c_grid()->dimensions, grid->c_grid()->number_of_cells));
-        // Wells init.
-        wells.reset(new Opm::WellsManager());
-        // Gravity.
-        gravity[2] = param.getDefault("gravity", 0.0);
-        // Init state variables (saturation and pressure).
-        initStateBasic(*grid->c_grid(), *props, param, gravity[2], state);
-    }
+    // Grid init
+    GridManager grid_manager(deck);
+    const UnstructuredGrid& grid = *grid_manager.c_grid();
+    // Rock and fluid init
+    IncompPropertiesSinglePhase props(deck, eclipseState, grid);
+    // Wells init.
+    WellsManager wells_manager(eclipseState , 0, grid, props.permeability());
+    const Wells& wells = *wells_manager.c_wells();
 
-    // Warn if gravity but no density difference.
-    bool use_gravity = (gravity[0] != 0.0 || gravity[1] != 0.0 || gravity[2] != 0.0);
-    if (use_gravity) {
-        if (props->density()[0] == props->density()[1]) {
-            std::cout << "**** Warning: nonzero gravity, but zero density difference." << std::endl;
-        }
-    }
-    const double *grav = use_gravity ? &gravity[0] : 0;
-
-    // Initialising src
+    // Pore volume.
     std::vector<double> porevol;
-    computePorevolume(*grid->c_grid(), props->porosity(), porevol);
-    int num_cells = grid->c_grid()->number_of_cells;
-    std::vector<double> src(num_cells, 0.0);
-    if (use_deck) {
-        // Do nothing, wells will be the driving force, not source terms.
-    } else {
-        const double tot_porevol_init = std::accumulate(porevol.begin(), porevol.end(), 0.0);
-        const double default_injection = use_gravity ? 0.0 : 0.1;
-        const double flow_per_sec = param.getDefault<double>("injected_porevolumes_per_day", default_injection)
-            *tot_porevol_init/unit::day;
-        src[0] = flow_per_sec;
-        src[num_cells - 1] = -flow_per_sec;
-    }
-
-    // Boundary conditions.
-    FlowBCManager bcs;
-    if (param.getDefault("use_pside", false)) {
-        int pside = param.get<int>("pside");
-        double pside_pressure = param.get<double>("pside_pressure");
-        bcs.pressureSide(*grid->c_grid(), FlowBCManager::Side(pside), pside_pressure);
-    }
+    computePorevolume(grid, props.porosity(), porevol);
+    int num_cells = grid.number_of_cells;
 
     // Linear solver.
     LinearSolverFactory linsolver(param);
 
     // Pressure solver.
-    Opm::IncompTpfa psolver(*grid->c_grid(), *props, 0, linsolver,
-                            0.0, 0.0, 0,
-                            grav, wells->c_wells(), src, bcs.c_bcs());
+    Opm::IncompTpfaSinglePhase psolver(grid, props, linsolver, wells);
 
     // Choice of tof solver.
     bool use_dg = param.getDefault("use_dg", false);
@@ -198,7 +125,7 @@ try
     // Need to initialize dg solver here, since it uses parameters now.
     std::unique_ptr<Opm::TofDiscGalReorder> dg_solver;
     if (use_dg) {
-        dg_solver.reset(new Opm::TofDiscGalReorder(*grid->c_grid(), param));
+        dg_solver.reset(new Opm::TofDiscGalReorder(grid, param));
     } else {
         use_multidim_upwind = param.getDefault("use_multidim_upwind", false);
     }
@@ -227,10 +154,6 @@ try
         param.writeParam(output_dir + "/simulation.param");
     }
 
-    // Init wells.
-    Opm::WellState well_state;
-    well_state.init(wells->c_wells(), state);
-
     // Check if we have misspelled anything
     warnIfUnusedParams(param);
 
@@ -244,17 +167,22 @@ try
     std::cout << "\n\n================    Starting main solvers     ===============" << std::endl;
 
     // Solve pressure.
+    std::vector<double> press;
+    std::vector<double> flux;
+    std::vector<double> bhp;
+    std::vector<double> wellrates;
     pressure_timer.start();
-    psolver.solve(1.0, state, well_state);
+    psolver.solve(press, flux, bhp, wellrates);
     pressure_timer.stop();
     double pt = pressure_timer.secsSinceStart();
     std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
     ptime += pt;
 
     // Process transport sources (to include bdy terms and well flows).
+    std::vector<double> src(num_cells, 0.0);
     std::vector<double> transport_src;
-    Opm::computeTransportSource(*grid->c_grid(), src, state.faceflux(), 1.0,
-                                wells->c_wells(), well_state.perfRates(), transport_src);
+    Opm::computeTransportSource(grid, src, flux, 1.0,
+                                &wells, wellrates, transport_src);
 
     // Solve time-of-flight.
     transport_timer.start();
@@ -262,20 +190,20 @@ try
     std::vector<double> tracer;
     Opm::SparseTable<int> tracerheads;
     if (compute_tracer) {
-        buildTracerheadsFromWells(wells->c_wells(), tracerheads);
+        buildTracerheadsFromWells(wells, tracerheads);
     }
     if (use_dg) {
         if (compute_tracer) {
-            dg_solver->solveTofTracer(&state.faceflux()[0], &porevol[0], &transport_src[0], tracerheads, tof, tracer);
+            dg_solver->solveTofTracer(flux.data(), porevol.data(), transport_src.data(), tracerheads, tof, tracer);
         } else {
-            dg_solver->solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
+            dg_solver->solveTof(flux.data(), porevol.data(), transport_src.data(), tof);
         }
     } else {
-        Opm::TofReorder tofsolver(*grid->c_grid(), use_multidim_upwind);
+        Opm::TofReorder tofsolver(grid, use_multidim_upwind);
         if (compute_tracer) {
-            tofsolver.solveTofTracer(&state.faceflux()[0], &porevol[0], &transport_src[0], tracerheads, tof, tracer);
+            tofsolver.solveTofTracer(flux.data(), porevol.data(), transport_src.data(), tracerheads, tof, tracer);
         } else {
-            tofsolver.solveTof(&state.faceflux()[0], &porevol[0], &transport_src[0], tof);
+            tofsolver.solveTof(flux.data(), porevol.data(), transport_src.data(), tof);
         }
     }
     transport_timer.stop();

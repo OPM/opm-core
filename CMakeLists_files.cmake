@@ -55,6 +55,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/pressure/CompressibleTpfa.cpp
 	opm/core/pressure/FlowBCManager.cpp
 	opm/core/pressure/IncompTpfa.cpp
+	opm/core/pressure/IncompTpfaSinglePhase.cpp
 	opm/core/pressure/cfsh.c
 	opm/core/pressure/flow_bc.c
 	opm/core/pressure/fsh.c
@@ -303,6 +304,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/pressure/CompressibleTpfa.hpp
 	opm/core/pressure/FlowBCManager.hpp
 	opm/core/pressure/IncompTpfa.hpp
+	opm/core/pressure/IncompTpfaSinglePhase.hpp
 	opm/core/pressure/flow_bc.h
 	opm/core/pressure/fsh.h
 	opm/core/pressure/fsh_common_impl.h
