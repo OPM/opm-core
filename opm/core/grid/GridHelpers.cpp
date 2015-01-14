@@ -66,7 +66,7 @@ double faceArea(const UnstructuredGrid& grid, int face_index)
 int faceTag(const UnstructuredGrid& grid,
             boost::iterator_range<const int*>::const_iterator face)
 {
-    return grid.cell_facetag[&(*face)-&(*(cell2Faces(grid)[0].begin()))];
+    return grid.cell_facetag[face-cell2Faces(grid)[0].begin()];
 }
 
 SparseTableView cell2Faces(const UnstructuredGrid& grid)
