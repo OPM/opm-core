@@ -183,7 +183,6 @@ double faceArea(const UnstructuredGrid& grid, int face_index);
 
 /// \brief Get Eclipse Cartesian tag of a face
 /// \param grid The grid that the face is part of.
-/// \param cell_index The index of the cell that the face is attached to.
 /// \param cell_face The face attached to a cell as obtained from cell2Faces()
 /// \return 0, 1, 2, 3, 4, 5 for I-, I+, J-, J+, K-, K+
 int faceTag(const UnstructuredGrid& grid, boost::iterator_range<const int*>::const_iterator cell_face);
