@@ -41,7 +41,6 @@ namespace Opm {
 // forward declarations
 namespace EclipseWriterDetails {
 class Summary;
-struct WriterTimer;
 }
 
 class SimulatorState;
@@ -121,13 +120,6 @@ private:
     std::shared_ptr<EclipseWriterDetails::Summary> summary_;
 
     void init(const parameter::ParameterGroup& params);
-    // implementation of writeInit
-    void writeInit(const EclipseWriterDetails::WriterTimer &timer);
-    // implementation of writeTimeStep
-    void writeTimeStep(const EclipseWriterDetails::WriterTimer& timer,
-                       const SimulatorState& reservoirState,
-                       const WellState& wellState);
-
 };
 
 typedef std::shared_ptr<EclipseWriter> EclipseWriterPtr;
