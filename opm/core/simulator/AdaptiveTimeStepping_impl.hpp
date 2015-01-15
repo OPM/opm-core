@@ -1,3 +1,21 @@
+/*
+  Copyright 2014 IRIS AS
+
+  This file is part of the Open Porous Media project (OPM).
+
+  OPM is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  OPM is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with OPM.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #ifndef OPM_ADAPTIVETIMESTEPPING_IMPL_HEADER_INCLUDED
 #define OPM_ADAPTIVETIMESTEPPING_IMPL_HEADER_INCLUDED
 
@@ -5,15 +23,16 @@
 #include <string>
 #include <utility>
 
+#include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/simulator/AdaptiveSimulatorTimer.hpp>
 #include <opm/core/simulator/PIDTimeStepControl.hpp>
 
 namespace Opm {
 
-    // AdaptiveTimeStepping 
+    // AdaptiveTimeStepping
     //---------------------
-    
-    AdaptiveTimeStepping::AdaptiveTimeStepping( const parameter::ParameterGroup& param ) 
+
+    AdaptiveTimeStepping::AdaptiveTimeStepping( const parameter::ParameterGroup& param )
         : timeStepControl_()
         , initial_fraction_( param.getDefault("solver.initialfraction", double(0.25) ) )
         , restart_factor_( param.getDefault("solver.restartfactor", double(0.1) ) )
@@ -25,17 +44,17 @@ namespace Opm {
     {
         // valid are "pid" and "pid+iteration"
         std::string control = param.getDefault("timestep.control", std::string("pid") );
-        
+
         const double tol = param.getDefault("timestep.control.tol", double(1e-3) );
         if( control == "pid" ) {
             timeStepControl_ = TimeStepControlType( new PIDTimeStepControl( tol ) );
         }
-        else if ( control == "pid+iteration" ) 
+        else if ( control == "pid+iteration" )
         {
             const int iterations = param.getDefault("timestep.control.targetiteration", int(25) );
             timeStepControl_ = TimeStepControlType( new PIDAndIterationCountTimeStepControl( iterations, tol ) );
         }
-        else 
+        else
             OPM_THROW(std::runtime_error,"Unsupported time step control selected "<< control );
 
         // make sure growth factor is something reasonable
@@ -45,35 +64,54 @@ namespace Opm {
 
     template <class Solver, class State, class WellState>
     void AdaptiveTimeStepping::
-    step( Solver& solver, State& state, WellState& well_state,
-          const double time, const double timestep )
+    step( const SimulatorTimer& simulatorTimer, Solver& solver, State& state, WellState& well_state )
     {
+        stepImpl( simulatorTimer, solver, state, well_state );
+    }
+
+    template <class Solver, class State, class WellState>
+    void AdaptiveTimeStepping::
+    step( const SimulatorTimer& simulatorTimer, Solver& solver, State& state, WellState& well_state,
+          OutputWriter& outputWriter )
+    {
+        stepImpl( simulatorTimer, solver, state, well_state, &outputWriter );
+    }
+
+    // implementation of the step method
+    template <class Solver, class State, class WState>
+    void AdaptiveTimeStepping::
+    stepImpl( const SimulatorTimer& simulatorTimer,
+              Solver& solver, State& state, WState& well_state,
+              OutputWriter* outputWriter )
+    {
+        const double timestep = simulatorTimer.currentStepLength();
+
         // init last time step as a fraction of the given time step
         if( last_timestep_ < 0 ) {
-            last_timestep_ = initial_fraction_ * timestep ;
+            last_timestep_ = initial_fraction_ * timestep;
         }
 
         // create adaptive step timer with previously used sub step size
-        AdaptiveSimulatorTimer timer( time, time+timestep, last_timestep_ );
+        AdaptiveSimulatorTimer substepTimer( simulatorTimer, last_timestep_ );
 
         // copy states in case solver has to be restarted (to be revised)
-        State     last_state( state );
-        WellState last_well_state( well_state );
+        State  last_state( state );
+        WState last_well_state( well_state );
 
         // counter for solver restarts
         int restarts = 0;
 
         // sub step time loop
-        while( ! timer.done() )
+        while( ! substepTimer.done() )
         {
             // get current delta t
-            const double dt = timer.currentStepLength() ;
+            const double dt = substepTimer.currentStepLength() ;
 
             // initialize time step control in case current state is needed later
             timeStepControl_->initialize( state );
 
             int linearIterations = -1;
-            try { 
+            try {
                 // (linearIterations < 0 means on convergence in solver)
                 linearIterations = solver.step( dt, state, well_state);
 
@@ -95,7 +133,7 @@ namespace Opm {
             if( linearIterations >= 0 )
             {
                 // advance by current dt
-                ++timer;
+                ++substepTimer;
 
                 // compute new time step estimate
                 double dtEstimate =
@@ -109,14 +147,25 @@ namespace Opm {
                 }
 
                 if( timestep_verbose_ )
-                    std::cout << "Suggested time step size = " << unit::convert::to(dtEstimate, unit::day) << " (days)" << std::endl;
+                {
+                    std::cout << std::endl
+                              <<"Substep( " << substepTimer.currentStepNum()
+                                            << " ): Current time (days)         "  << unit::convert::to(substepTimer.simulationTimeElapsed(),unit::day) << std::endl
+                                  << "              Current stepsize est (days) " << unit::convert::to(dtEstimate, unit::day) << std::endl;
+                }
+
+                // write data if outputWriter was provided
+                if( outputWriter ) {
+                    outputWriter->writeTimeStep( substepTimer, state, well_state );
+                }
 
                 // set new time step length
-                timer.provideTimeStepEstimate( dtEstimate );
+                substepTimer.provideTimeStepEstimate( dtEstimate );
 
-                // update states 
+                // update states
                 last_state      = state ;
                 last_well_state = well_state;
+
             }
             else // in case of no convergence (linearIterations < 0)
             {
@@ -127,12 +176,12 @@ namespace Opm {
 
                 const double newTimeStep = restart_factor_ * dt;
                 // we need to revise this
-                timer.provideTimeStepEstimate( newTimeStep );
-                if( solver_verbose_ ) 
+                substepTimer.provideTimeStepEstimate( newTimeStep );
+                if( solver_verbose_ )
                     std::cerr << "Solver convergence failed, restarting solver with new time step ("
                               << unit::convert::to( newTimeStep, unit::day ) <<" days)." << std::endl;
 
-                // reset states 
+                // reset states
                 state      = last_state;
                 well_state = last_well_state;
 
@@ -142,10 +191,10 @@ namespace Opm {
 
 
         // store last small time step for next reportStep
-        last_timestep_ = timer.suggestedAverage();
+        last_timestep_ = substepTimer.suggestedAverage();
         if( timestep_verbose_ )
         {
-            timer.report( std::cout );
+            substepTimer.report( std::cout );
             std::cout << "Last suggested step size = " << unit::convert::to( last_timestep_, unit::day ) << " (days)" << std::endl;
         }
 

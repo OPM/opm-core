@@ -1,3 +1,21 @@
+/*
+  Copyright 2014 IRIS AS
+
+  This file is part of the Open Porous Media project (OPM).
+
+  OPM is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  OPM is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with OPM.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #ifndef OPM_SUBSTEPPING_HEADER_INCLUDED
 #define OPM_SUBSTEPPING_HEADER_INCLUDED
 
@@ -6,33 +24,53 @@
 
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/simulator/TimeStepControlInterface.hpp>
 
 namespace Opm {
 
-    // AdaptiveTimeStepping 
+
+    // AdaptiveTimeStepping
     //---------------------
-    
+
     class AdaptiveTimeStepping
     {
-    public:    
+    public:
         //! \brief contructor taking parameter object
         AdaptiveTimeStepping( const parameter::ParameterGroup& param );
 
         /** \brief  step method that acts like the solver::step method
-                    in a sub cycle of time steps 
-            
+                    in a sub cycle of time steps
+
+            \param  timer       simulator timer providing time and timestep
             \param  solver      solver object that must implement a method step( dt, state, well_state )
-            \param  state       current state of the solution variables 
+            \param  state       current state of the solution variables
             \param  well_state  additional well state object
-            \param  time        current simulation time
-            \param  timestep    current time step length that is to be sub cycled 
-        */          
+        */
         template <class Solver, class State, class WellState>
-        void step( Solver& solver, State& state, WellState& well_state,
-                   const double time, const double timestep );
+        void step( const SimulatorTimer& timer,
+                   Solver& solver, State& state, WellState& well_state );
+
+        /** \brief  step method that acts like the solver::step method
+                    in a sub cycle of time steps
+
+            \param  timer        simulator timer providing time and timestep
+            \param  solver       solver object that must implement a method step( dt, state, well_state )
+            \param  state        current state of the solution variables
+            \param  well_state   additional well state object
+            \param  outputWriter writer object to write sub steps
+        */
+        template <class Solver, class State, class WellState>
+        void step( const SimulatorTimer& timer,
+                   Solver& solver, State& state, WellState& well_state,
+                   OutputWriter& outputWriter );
 
     protected:
+        template <class Solver, class State, class WellState>
+        void stepImpl( const SimulatorTimer& timer,
+                       Solver& solver, State& state, WellState& well_state,
+                       OutputWriter* outputWriter);
+
         typedef std::unique_ptr< TimeStepControlInterface > TimeStepControlType;
 
         TimeStepControlType timeStepControl_; //!< time step control object
@@ -40,8 +78,8 @@ namespace Opm {
         const double restart_factor_;         //!< factor to multiply time step with when solver fails to converge
         const double growth_factor_;          //!< factor to multiply time step when solver recovered from failed convergence
         const int solver_restart_max_;        //!< how many restart of solver are allowed
-        const bool solver_verbose_;           //!< solver verbosity 
-        const bool timestep_verbose_;         //!< timestep verbosity 
+        const bool solver_verbose_;           //!< solver verbosity
+        const bool timestep_verbose_;         //!< timestep verbosity
         double last_timestep_;                //!< size of last timestep
     };
 }

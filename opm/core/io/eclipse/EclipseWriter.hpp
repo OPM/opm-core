@@ -1,6 +1,7 @@
 /*
   Copyright (c) 2013 Andreas Lauser
   Copyright (c) 2013 Uni Research AS
+  Copyright (c) 2014 IRIS AS
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -24,6 +25,7 @@
 #include <opm/core/io/OutputWriter.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/wells.h> // WellType
+#include <opm/core/simulator/SimulatorTimerInterface.hpp>
 
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
@@ -42,7 +44,6 @@ class Summary;
 }
 
 class SimulatorState;
-class SimulatorTimer;
 class WellState;
 
 namespace parameter { class ParameterGroup; }
@@ -78,7 +79,7 @@ public:
     /**
      * Write the static eclipse data (grid, PVT curves, etc) to disk.
      */
-    virtual void writeInit(const SimulatorTimer &timer);
+    virtual void writeInit(const SimulatorTimerInterface &timer);
 
     /*!
      * \brief Write a reservoir state and summary information to disk.
@@ -91,12 +92,14 @@ public:
      * ERT or ECLIPSE. Note that calling this method is only
      * meaningful after the first time step has been completed.
      *
+     * \param[in] timer          The timer providing time step and time information
      * \param[in] reservoirState The thermodynamic state of the reservoir
-     * \param[in] wellState The production/injection data for all wells
+     * \param[in] wellState      The production/injection data for all wells
      */
-    virtual void writeTimeStep(const SimulatorTimer& timer,
+    virtual void writeTimeStep(const SimulatorTimerInterface& timer,
                                const SimulatorState& reservoirState,
                                const WellState& wellState);
+
 
     static int eclipseWellTypeMask(WellType wellType, WellInjector::TypeEnum injectorType);
     static int eclipseWellStatusMask(WellCommon::StatusEnum wellStatus);
@@ -110,7 +113,7 @@ private:
     double deckToSiPressure_;
     bool enableOutput_;
     int outputInterval_;
-    int reportStepIdx_;
+    int writeStepIdx_;
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage phaseUsage_; // active phases in the input deck
