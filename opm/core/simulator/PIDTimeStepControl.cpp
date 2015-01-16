@@ -1,5 +1,5 @@
 /*
-  Copyright 2014 IRIS AS 
+  Copyright 2014 IRIS AS
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -24,17 +24,17 @@
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/simulator/PIDTimeStepControl.hpp>
 
-namespace Opm 
+namespace Opm
 {
-    PIDTimeStepControl::PIDTimeStepControl( const double tol, const bool verbose ) 
+    PIDTimeStepControl::PIDTimeStepControl( const double tol, const bool verbose )
         : p0_()
-        , sat0_() 
+        , sat0_()
         , tol_( tol )
         , errors_( 3, tol_ )
         , verbose_( verbose )
     {}
 
-    void PIDTimeStepControl::initialize( const SimulatorState& state ) 
+    void PIDTimeStepControl::initialize( const SimulatorState& state )
     {
         // store current state for later time step computation
         p0_   = state.pressure();
@@ -49,7 +49,7 @@ namespace Opm
         const std::size_t satSize = sat0_.size();
         assert( state.saturation().size() == satSize );
 
-        // compute u^n - u^n+1 
+        // compute u^n - u^n+1
         for( std::size_t i=0; i<pSize; ++i ) {
             p0_[ i ]   -= state.pressure()[ i ];
         }
@@ -58,11 +58,11 @@ namespace Opm
             sat0_[ i ] -= state.saturation()[ i ];
         }
 
-        // compute || u^n - u^n+1 || 
+        // compute || u^n - u^n+1 ||
         const double stateOld  = euclidianNormSquared( p0_.begin(),   p0_.end() ) +
                                  euclidianNormSquared( sat0_.begin(), sat0_.end() );
 
-        // compute || u^n+1 || 
+        // compute || u^n+1 ||
         const double stateNew  = euclidianNormSquared( state.pressure().begin(),   state.pressure().end()   ) +
                                  euclidianNormSquared( state.saturation().begin(), state.saturation().end() );
 
@@ -77,7 +77,7 @@ namespace Opm
 
         if( error > tol_ )
         {
-            // adjust dt by given tolerance 
+            // adjust dt by given tolerance
             const double newDt = dt * tol_ / error;
             if( verbose_ )
                 std::cout << "Computed step size (tol): " << unit::convert::to( newDt, unit::day ) << " (days)" << std::endl;
@@ -101,10 +101,12 @@ namespace Opm
 
     PIDAndIterationCountTimeStepControl::
     PIDAndIterationCountTimeStepControl( const int target_iterations,
-                                         const double tol, 
-                                         const bool verbose) 
+                                         const double tol,
+                                         const double maxgrowth,
+                                         const bool verbose)
         : BaseType( tol, verbose )
         , target_iterations_( target_iterations )
+        , maxgrowth_( maxgrowth )
     {}
 
     double PIDAndIterationCountTimeStepControl::
@@ -113,11 +115,14 @@ namespace Opm
         double dtEstimate = BaseType :: computeTimeStepSize( dt, iterations, state );
 
         // further reduce step size if to many iterations were used
-        if( iterations > target_iterations_ ) 
+        if( iterations > target_iterations_ )
         {
             // if iterations was the same or dts were the same, do some magic
             dtEstimate *= double( target_iterations_ ) / double(iterations);
         }
+
+        // limit the growth of the timestep size by the growth factor
+        dtEstimate = std::max( dtEstimate, double(maxgrowth_ * dt) );
 
         return dtEstimate;
     }
