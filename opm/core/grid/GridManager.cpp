@@ -158,7 +158,7 @@ namespace Opm
 
         if (!poreVolumes.empty() && eclipseGrid->isMinpvActive()) {
             MinpvProcessor mp(g.dims[0], g.dims[1], g.dims[2]);
-            mp.process(poreVolumes, eclipseGrid->getMinpvValue(), zcorn.data());
+            mp.process(poreVolumes, eclipseGrid->getMinpvValue(), actnum, zcorn.data());
         }
 
         const double z_tolerance = eclipseGrid->isPinchActive() ?
