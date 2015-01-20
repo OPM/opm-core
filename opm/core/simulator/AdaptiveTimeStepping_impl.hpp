@@ -51,8 +51,9 @@ namespace Opm {
         }
         else if ( control == "pid+iteration" )
         {
-            const int iterations = param.getDefault("timestep.control.targetiteration", int(25) );
-            timeStepControl_ = TimeStepControlType( new PIDAndIterationCountTimeStepControl( iterations, tol ) );
+            const int iterations   = param.getDefault("timestep.control.targetiteration", int(25) );
+            const double maxgrowth = param.getDefault("timestep.control.maxgrowth", double(3.0) );
+            timeStepControl_ = TimeStepControlType( new PIDAndIterationCountTimeStepControl( iterations, tol, maxgrowth ) );
         }
         else
             OPM_THROW(std::runtime_error,"Unsupported time step control selected "<< control );
@@ -110,6 +111,12 @@ namespace Opm {
             // initialize time step control in case current state is needed later
             timeStepControl_->initialize( state );
 
+            if( timestep_verbose_ )
+            {
+                std::cout <<"Substep( " << substepTimer.currentStepNum() << " ), try with stepsize "
+                          << unit::convert::to(substepTimer.currentStepLength(), unit::day) << " (days)." << std::endl;
+            }
+
             int linearIterations = -1;
             try {
                 // (linearIterations < 0 means on convergence in solver)
@@ -148,10 +155,8 @@ namespace Opm {
 
                 if( timestep_verbose_ )
                 {
-                    std::cout << std::endl
-                              <<"Substep( " << substepTimer.currentStepNum()
-                                            << " ): Current time (days)         "  << unit::convert::to(substepTimer.simulationTimeElapsed(),unit::day) << std::endl
-                                  << "              Current stepsize est (days) " << unit::convert::to(dtEstimate, unit::day) << std::endl;
+                    std::cout << "Substep( " << substepTimer.currentStepNum()-1 // it was already advanced by ++
+                                             << " ) finished at time " << unit::convert::to(substepTimer.simulationTimeElapsed(),unit::day) << " (days)." << std::endl << std::endl;
                 }
 
                 // write data if outputWriter was provided
@@ -190,12 +195,12 @@ namespace Opm {
         }
 
 
-        // store last small time step for next reportStep
-        last_timestep_ = substepTimer.suggestedAverage();
+        // store max of the small time step for next reportStep
+        last_timestep_ = substepTimer.maxStepLength();
         if( timestep_verbose_ )
         {
             substepTimer.report( std::cout );
-            std::cout << "Last suggested step size = " << unit::convert::to( last_timestep_, unit::day ) << " (days)" << std::endl;
+            std::cout << "Suggested next step size = " << unit::convert::to( last_timestep_, unit::day ) << " (days)" << std::endl;
         }
 
         if( ! std::isfinite( last_timestep_ ) ) { // check for NaN

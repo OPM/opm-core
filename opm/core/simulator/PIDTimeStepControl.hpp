@@ -1,5 +1,5 @@
 /*
-  Copyright 2014 IRIS AS 
+  Copyright 2014 IRIS AS
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -23,27 +23,27 @@
 
 #include <opm/core/simulator/TimeStepControlInterface.hpp>
 
-namespace Opm 
+namespace Opm
 {
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///
-    ///  PID controller based adaptive time step control as suggested in: 
-    ///     Turek and Kuzmin. Algebraic Flux Correction III. Incompressible Flow Problems. Uni Dortmund. 
-    /// 
-    ///  See also: 
+    ///  PID controller based adaptive time step control as suggested in:
+    ///     Turek and Kuzmin. Algebraic Flux Correction III. Incompressible Flow Problems. Uni Dortmund.
+    ///
+    ///  See also:
     ///     D. Kuzmin and S.Turek. Numerical simulation of turbulent bubbly flows. Techreport Uni Dortmund. 2004
-    ///  
-    ///  and the original article: 
+    ///
+    ///  and the original article:
     ///     Valli, Coutinho, and Carey. Adaptive Control for Time Step Selection in Finite Element
-    ///     Simulation of Coupled Viscous Flow and Heat Transfer. Proc of the 10th 
+    ///     Simulation of Coupled Viscous Flow and Heat Transfer. Proc of the 10th
     ///     International Conference on Numerical Methods in Fluids. 1998.
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     class PIDTimeStepControl : public TimeStepControlInterface
     {
     public:
-        /// \brief constructor 
-        /// \param tol      tolerance for the relative changes of the numerical solution to be accepted 
+        /// \brief constructor
+        /// \param tol      tolerance for the relative changes of the numerical solution to be accepted
         ///                 in one time step (default is 1e-3)
         /// \param verbose  if true get some output (default = false)
         PIDTimeStepControl( const double tol = 1e-3, const bool verbose = false );
@@ -54,10 +54,10 @@ namespace Opm
         /// \brief \copydoc TimeStepControlInterface::computeTimeStepSize
         double computeTimeStepSize( const double dt, const int /* iterations */, const SimulatorState& state ) const;
 
-    protected:    
+    protected:
         // return inner product for given container, here std::vector
         template <class Iterator>
-        double euclidianNormSquared( Iterator it, const Iterator end ) const 
+        double euclidianNormSquared( Iterator it, const Iterator end ) const
         {
             double product = 0.0 ;
             for( ; it != end; ++it ) {
@@ -66,7 +66,7 @@ namespace Opm
             return product;
         }
 
-    protected:   
+    protected:
         mutable std::vector<double> p0_;
         mutable std::vector<double> sat0_;
 
@@ -78,7 +78,7 @@ namespace Opm
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///
-    ///  PID controller based adaptive time step control as above that also takes 
+    ///  PID controller based adaptive time step control as above that also takes
     ///  an target iteration into account.
     //
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -86,20 +86,23 @@ namespace Opm
     {
         typedef PIDTimeStepControl BaseType;
     public:
-        /// \brief constructor 
+        /// \brief constructor
         /// \param target_iterations  number of desired iterations per time step
-        /// \param tol      tolerance for the relative changes of the numerical solution to be accepted 
-        ///                 in one time step (default is 1e-3)
-        /// \param verbose  if true get some output (default = false)
+        /// \param tol        tolerance for the relative changes of the numerical solution to be accepted
+        ///                   in one time step (default is 1e-3)
+        //  \param maxgrodth  max growth factor for new time step in relation of old time step (default = 3.0)
+        /// \param verbose    if true get some output (default = false)
         PIDAndIterationCountTimeStepControl( const int target_iterations = 20,
-                                             const double tol = 1e-3, 
+                                             const double tol = 1e-3,
+                                             const double maxgrowth = 3.0,
                                              const bool verbose = false);
 
         /// \brief \copydoc TimeStepControlInterface::computeTimeStepSize
         double computeTimeStepSize( const double dt, const int iterations, const SimulatorState& state ) const;
 
-    protected:   
-        const int target_iterations_;
+    protected:
+        const int     target_iterations_;
+        const double  maxgrowth_;
     };
 
 
