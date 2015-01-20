@@ -51,19 +51,20 @@ BOOST_AUTO_TEST_CASE(Processing)
                                         0, 0, 0, 0,
                                         6, 6, 6, 6  };
     std::vector<double> pv = { 1, 2, 3 };
+    std::vector<int> actnum = { 1, 1, 1 };
 
     Opm::MinpvProcessor mp1(1, 1, 3);
     auto z1 = zcorn;
-    mp1.process(pv, 0.5, z1.data());
+    mp1.process(pv, 0.5, actnum, z1.data());
     BOOST_CHECK_EQUAL_COLLECTIONS(z1.begin(), z1.end(), zcorn.begin(), zcorn.end());
 
     Opm::MinpvProcessor mp2(1, 1, 3);
     auto z2 = zcorn;
-    mp2.process(pv, 1.5, z2.data());
+    mp2.process(pv, 1.5, actnum, z2.data());
     BOOST_CHECK_EQUAL_COLLECTIONS(z2.begin(), z2.end(), zcorn2after.begin(), zcorn2after.end());
 
     Opm::MinpvProcessor mp3(1, 1, 3);
     auto z3 = zcorn;
-    mp3.process(pv, 2.5, z3.data());
+    mp3.process(pv, 2.5, actnum, z3.data());
     BOOST_CHECK_EQUAL_COLLECTIONS(z3.begin(), z3.end(), zcorn3after.begin(), zcorn3after.end());
 }
