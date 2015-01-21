@@ -30,6 +30,7 @@
 #include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/SparseTable.hpp>
 #include <opm/core/utility/StopWatch.hpp>
+#include <opm/core/utility/Units.hpp>
 #include <opm/core/utility/miscUtilities.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
@@ -78,6 +79,72 @@ namespace
         }
     }
 
+    void setBhpWells(Wells& wells)
+    {
+        const int num_wells = wells.number_of_wells;
+        for (int w = 0; w < num_wells; ++w) {
+            WellControls* ctrl = wells.ctrls[w];
+            const double target = (wells.type[w] == INJECTOR) ? 200*Opm::unit::barsa : 100*Opm::unit::barsa;
+            const double distr[3] = { 1.0, 0.0, 0.0 }; // Large enough irrespective of #phases.
+            const int new_ctrl_index = well_controls_add_new(BHP, target, distr, ctrl);
+            well_controls_set_current(ctrl, new_ctrl_index);
+        }
+    }
+
+    void computeTransportSourceSinglePhase(const UnstructuredGrid& grid,
+                                           const std::vector<double>& src,
+                                           const std::vector<double>& faceflux,
+                                           const double inflow_frac,
+                                           const Wells* wells,
+                                           const std::vector<double>& well_perfrates,
+                                           std::vector<double>& transport_src)
+    {
+        using namespace Opm;
+        int nc = grid.number_of_cells;
+        transport_src.resize(nc);
+        // Source term and boundary contributions.
+        for (int c = 0; c < nc; ++c) {
+            transport_src[c] = 0.0;
+            transport_src[c] += src[c] > 0.0 ? inflow_frac*src[c] : src[c];
+            for (int hf = grid.cell_facepos[c]; hf < grid.cell_facepos[c + 1]; ++hf) {
+                int f = grid.cell_faces[hf];
+                const int* f2c = &grid.face_cells[2*f];
+                double bdy_influx = 0.0;
+                if (f2c[0] == c && f2c[1] == -1) {
+                    bdy_influx = -faceflux[f];
+                } else if (f2c[0] == -1 && f2c[1] == c) {
+                    bdy_influx = faceflux[f];
+                }
+                if (bdy_influx != 0.0) {
+                    transport_src[c] += bdy_influx > 0.0 ? inflow_frac*bdy_influx : bdy_influx;
+                }
+            }
+        }
+
+        // Well contributions.
+        if (wells) {
+            const int nw = wells->number_of_wells;
+            for (int w = 0; w < nw; ++w) {
+                for (int perf = wells->well_connpos[w]; perf < wells->well_connpos[w + 1]; ++perf) {
+                    const int perf_cell = wells->well_cells[perf];
+                    double perf_rate = well_perfrates[perf];
+                    if (perf_rate > 0.0) {
+                        // perf_rate is a total inflow rate, we want a water rate.
+                        if (wells->type[w] != INJECTOR) {
+                            std::cout << "**** Warning: crossflow in well "
+                                      << w << " perf " << perf - wells->well_connpos[w]
+                                      << " ignored. Rate was "
+                                      << perf_rate/Opm::unit::day << " m^3/day." << std::endl;
+                            perf_rate = 0.0;
+                        } else {
+                            perf_rate *= inflow_frac;
+                        }
+                    }
+                    transport_src[perf_cell] += perf_rate;
+                }
+            }
+        }
+    }
 } // anon namespace
 
 
@@ -106,7 +173,10 @@ try
     IncompPropertiesSinglePhase props(deck, eclipseState, grid);
     // Wells init.
     WellsManager wells_manager(eclipseState , 0, grid, props.permeability());
-    const Wells& wells = *wells_manager.c_wells();
+
+    std::shared_ptr<Wells> my_wells(clone_wells(wells_manager.c_wells()), destroy_wells);
+    setBhpWells(*my_wells);
+    const Wells& wells = *my_wells;
 
     // Pore volume.
     std::vector<double> porevol;
@@ -181,8 +251,9 @@ try
     // Process transport sources (to include bdy terms and well flows).
     std::vector<double> src(num_cells, 0.0);
     std::vector<double> transport_src;
-    Opm::computeTransportSource(grid, src, flux, 1.0,
-                                &wells, wellrates, transport_src);
+    std::cout << wellrates.size() << ' ' << wells.well_connpos[wells.number_of_wells] << std::endl;
+    computeTransportSourceSinglePhase(grid, src, flux, 1.0,
+                                      &wells, wellrates, transport_src);
 
     // Solve time-of-flight.
     transport_timer.start();
