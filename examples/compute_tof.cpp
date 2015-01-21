@@ -202,14 +202,13 @@ try
         use_multidim_upwind = param.getDefault("use_multidim_upwind", false);
     }
     bool compute_tracer = param.getDefault("compute_tracer", false);
-    bool trace_injectors = true;
-    if (compute_tracer) {
-        std::string trace = param.getDefault<std::string>("trace", "Injectors");
-        if (trace == "Producers") {
-            trace_injectors = false;
-        } else if (trace != "Injectors") {
-            OPM_THROW(std::runtime_error, "Unknown trace specification (allowed is Injectors or Producers): " << trace);
-        }
+
+    bool start_from_injectors = true;
+    std::string trace_start = param.getDefault<std::string>("trace_start", "Injectors");
+    if (trace_start == "Producers") {
+        start_from_injectors = false;
+    } else if (trace_start != "Injectors") {
+        OPM_THROW(std::runtime_error, "Unknown trace_start specification (allowed is Injectors or Producers): " << trace_start);
     }
 
     // Write parameters used for later reference.
@@ -253,6 +252,13 @@ try
     std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
     ptime += pt;
 
+    // Turn direction of flux if starting from producers.
+    if (!start_from_injectors) {
+        for (auto it = flux.begin(); it != flux.end(); ++it) {
+            (*it) = -(*it);
+        }
+    }
+
     // Process transport sources (to include bdy terms and well flows).
     std::vector<double> src(num_cells, 0.0);
     std::vector<double> transport_src;
@@ -265,7 +271,7 @@ try
     std::vector<double> tracer;
     Opm::SparseTable<int> tracerheads;
     if (compute_tracer) {
-        buildTracerheadsFromWells(wells, trace_injectors, tracerheads);
+        buildTracerheadsFromWells(wells, start_from_injectors, tracerheads);
     }
     if (use_dg) {
         if (compute_tracer) {
