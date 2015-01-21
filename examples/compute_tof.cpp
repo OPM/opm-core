@@ -88,8 +88,8 @@ namespace
             WellControls* ctrl = wells.ctrls[w];
             const double target = (wells.type[w] == INJECTOR) ? 200*Opm::unit::barsa : 100*Opm::unit::barsa;
             const double distr[3] = { 1.0, 0.0, 0.0 }; // Large enough irrespective of #phases.
-            const int new_ctrl_index = well_controls_add_new(BHP, target, distr, ctrl);
-            well_controls_set_current(ctrl, new_ctrl_index);
+            well_controls_add_new(BHP, target, distr, ctrl);
+            well_controls_set_current(ctrl, well_controls_get_num(ctrl) - 1);
         }
     }
 
