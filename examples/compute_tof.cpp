@@ -66,12 +66,14 @@ namespace
     }
 
     void buildTracerheadsFromWells(const Wells& wells,
+                                   const bool trace_injectors,
                                    Opm::SparseTable<int>& tracerheads)
     {
         tracerheads.clear();
         const int num_wells = wells.number_of_wells;
+        const WellType wanted_type = trace_injectors ? INJECTOR : PRODUCER;
         for (int w = 0; w < num_wells; ++w) {
-            if (wells.type[w] != INJECTOR) {
+            if (wells.type[w] != wanted_type) {
                 continue;
             }
             tracerheads.appendRow(wells.well_cells + wells.well_connpos[w],
@@ -200,6 +202,15 @@ try
         use_multidim_upwind = param.getDefault("use_multidim_upwind", false);
     }
     bool compute_tracer = param.getDefault("compute_tracer", false);
+    bool trace_injectors = true;
+    if (compute_tracer) {
+        std::string trace = param.getDefault<std::string>("trace", "Injectors");
+        if (trace == "Producers") {
+            trace_injectors = false;
+        } else if (trace != "Injectors") {
+            OPM_THROW(std::runtime_error, "Unknown trace specification (allowed is Injectors or Producers): " << trace);
+        }
+    }
 
     // Write parameters used for later reference.
     bool output = param.getDefault("output", true);
@@ -254,7 +265,7 @@ try
     std::vector<double> tracer;
     Opm::SparseTable<int> tracerheads;
     if (compute_tracer) {
-        buildTracerheadsFromWells(wells, tracerheads);
+        buildTracerheadsFromWells(wells, trace_injectors, tracerheads);
     }
     if (use_dg) {
         if (compute_tracer) {
