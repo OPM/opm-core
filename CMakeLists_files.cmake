@@ -112,6 +112,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/simulator/SimulatorTimer.cpp
 	opm/core/tof/AnisotropicEikonal.cpp
 	opm/core/tof/DGBasis.cpp
+	opm/core/tof/FlowDiagnostics.cpp
 	opm/core/tof/TofReorder.cpp
 	opm/core/tof/TofDiscGalReorder.cpp
 	opm/core/transport/TransportSolverTwophaseInterface.cpp
@@ -164,6 +165,7 @@ list (APPEND TEST_SOURCE_FILES
   tests/test_ug.cpp
 	tests/test_cubic.cpp
 	tests/test_event.cpp
+	tests/test_flowdiagnostics.cpp
 	tests/test_nonuniformtablelinear.cpp
 	tests/test_sparsevector.cpp
 	tests/test_sparsetable.cpp
@@ -383,6 +385,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/initStateEquil_impl.hpp
 	opm/core/tof/AnisotropicEikonal.hpp
 	opm/core/tof/DGBasis.hpp
+	opm/core/tof/FlowDiagnostics.hpp
 	opm/core/tof/TofReorder.hpp
 	opm/core/tof/TofDiscGalReorder.hpp
 	opm/core/transport/TransportSolverTwophaseInterface.hpp
