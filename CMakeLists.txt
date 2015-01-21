@@ -80,6 +80,7 @@ macro (sources_hook)
 	if ((NOT MPI_FOUND) OR (NOT DUNE_ISTL_FOUND))
 		list (REMOVE_ITEM tests_SOURCES
 			${PROJECT_SOURCE_DIR}/tests/test_parallel_linearsolver.cpp
+			${PROJECT_SOURCE_DIR}/tests/test_parallelistlinformation.cpp
 			)
 	endif ((NOT MPI_FOUND) OR (NOT DUNE_ISTL_FOUND))
 
