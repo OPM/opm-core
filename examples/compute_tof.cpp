@@ -215,12 +215,6 @@ try
         catch (...) {
             OPM_THROW(std::runtime_error, "Creating directories failed: " << fpath);
         }
-        std::string filename = output_dir + "/epoch_timing.param";
-        epoch_os.open(filename.c_str(), std::fstream::trunc | std::fstream::out);
-        // open file to clean it. The file is appended to in SimulatorTwophase
-        filename = output_dir + "/step_timing.param";
-        std::fstream step_os(filename.c_str(), std::fstream::trunc | std::fstream::out);
-        step_os.close();
         param.writeParam(output_dir + "/simulation.param");
     }
 
@@ -251,7 +245,6 @@ try
     // Process transport sources (to include bdy terms and well flows).
     std::vector<double> src(num_cells, 0.0);
     std::vector<double> transport_src;
-    std::cout << wellrates.size() << ' ' << wells.well_connpos[wells.number_of_wells] << std::endl;
     computeTransportSourceSinglePhase(grid, src, flux, 1.0,
                                       &wells, wellrates, transport_src);
 
