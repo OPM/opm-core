@@ -321,7 +321,7 @@ public:
 
 
 
-    void addRestartFileZwelData(std::vector<const char*>& zwel_data, size_t currentstep, WellConstPtr well_ptr) const {
+    void addRestartFileZwelData(std::vector<const char*>& zwel_data, size_t /* currentstep */, WellConstPtr well_ptr) const {
       zwel_data.reserve(zwel_data.size() + Opm::EclipseWriterDetails::Restart::NZWELZ);
 
       zwel_data.push_back(well_ptr->name().c_str());
@@ -370,7 +370,7 @@ public:
         ecl_rst_file_close(restartFileHandle_);
     }
 
-    void writeHeader(const SimulatorTimerInterface& timer,
+    void writeHeader(const SimulatorTimerInterface& /*timer*/,
                      int writeStepIdx,
                      ecl_rsthead_type * rsthead_data)
     {
@@ -751,7 +751,7 @@ public:
                      "SM3/DAY" /* surf. cub. m. per day */)
     { }
 
-    virtual double retrieveValue(const int writeStepIdx,
+    virtual double retrieveValue(const int /* writeStepIdx */,
                                  const SimulatorTimerInterface& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
@@ -856,7 +856,7 @@ public:
                      "Pascal")
     { }
 
-    virtual double retrieveValue(const int writeStepIdx,
+    virtual double retrieveValue(const int /* writeStepIdx */,
                                  const SimulatorTimerInterface& timer,
                                  const WellState& wellState,
                                  const std::map<std::string, int>& wellNameToIdxMap)
