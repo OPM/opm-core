@@ -55,6 +55,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/pressure/CompressibleTpfa.cpp
 	opm/core/pressure/FlowBCManager.cpp
 	opm/core/pressure/IncompTpfa.cpp
+	opm/core/pressure/IncompTpfaSinglePhase.cpp
 	opm/core/pressure/cfsh.c
 	opm/core/pressure/flow_bc.c
 	opm/core/pressure/fsh.c
@@ -83,6 +84,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/BlackoilPropertiesFromDeck.cpp
 	opm/core/props/IncompPropertiesBasic.cpp
 	opm/core/props/IncompPropertiesFromDeck.cpp
+	opm/core/props/IncompPropertiesSinglePhase.cpp
 	opm/core/props/pvt/BlackoilPvtProperties.cpp
 	opm/core/props/pvt/PvtPropertiesBasic.cpp
 	opm/core/props/pvt/PvtPropertiesIncompFromDeck.cpp
@@ -110,6 +112,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/simulator/SimulatorTimer.cpp
 	opm/core/tof/AnisotropicEikonal.cpp
 	opm/core/tof/DGBasis.cpp
+	opm/core/tof/FlowDiagnostics.cpp
 	opm/core/tof/TofReorder.cpp
 	opm/core/tof/TofDiscGalReorder.cpp
 	opm/core/transport/TransportSolverTwophaseInterface.cpp
@@ -162,6 +165,7 @@ list (APPEND TEST_SOURCE_FILES
   tests/test_ug.cpp
 	tests/test_cubic.cpp
 	tests/test_event.cpp
+	tests/test_flowdiagnostics.cpp
 	tests/test_nonuniformtablelinear.cpp
 	tests/test_sparsevector.cpp
 	tests/test_sparsetable.cpp
@@ -302,6 +306,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/pressure/CompressibleTpfa.hpp
 	opm/core/pressure/FlowBCManager.hpp
 	opm/core/pressure/IncompTpfa.hpp
+	opm/core/pressure/IncompTpfaSinglePhase.hpp
 	opm/core/pressure/flow_bc.h
 	opm/core/pressure/fsh.h
 	opm/core/pressure/fsh_common_impl.h
@@ -335,6 +340,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/IncompPropertiesInterface.hpp
 	opm/core/props/IncompPropertiesShadow.hpp
 	opm/core/props/IncompPropertiesShadow_impl.hpp
+	opm/core/props/IncompPropertiesSinglePhase.hpp
 	opm/core/props/phaseUsageFromDeck.hpp
 	opm/core/props/pvt/BlackoilPvtProperties.hpp
 	opm/core/props/pvt/PvtPropertiesBasic.hpp
@@ -379,6 +385,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/initStateEquil_impl.hpp
 	opm/core/tof/AnisotropicEikonal.hpp
 	opm/core/tof/DGBasis.hpp
+	opm/core/tof/FlowDiagnostics.hpp
 	opm/core/tof/TofReorder.hpp
 	opm/core/tof/TofDiscGalReorder.hpp
 	opm/core/transport/TransportSolverTwophaseInterface.hpp
