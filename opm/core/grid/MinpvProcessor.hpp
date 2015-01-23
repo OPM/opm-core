@@ -38,13 +38,17 @@ namespace Opm
         /// \param[in]   nz   logical cartesian number of cells in K-direction
         MinpvProcessor(const int nx, const int ny, const int nz);
         /// Change zcorn so that it respects the minpv property.
-        /// \param[in]       pv     pore volumes of all logical cartesian cells
-        /// \param[in]       minpv  minimum pore volume to accept a cell
-        /// \param[in, out]  zcorn  ZCORN array to be manipulated
+        /// \param[in]       pv       pore volumes of all logical cartesian cells
+        /// \param[in]       minpv    minimum pore volume to accept a cell
+        /// \param[in]       actnum   active cells, inactive cells are not considered
+        /// \param[in, out]  zcorn    ZCORN array to be manipulated
         /// After processing, all cells that have lower pore volume than minpv
         /// will have the zcorn numbers changed so they are zero-thickness. Any
         /// cell below will be changed to include the deleted volume.
-        void process(const std::vector<double>& pv, const double minpv, double* zcorn) const;
+        void process(const std::vector<double>& pv,
+                     const double minpv,
+                     const std::vector<int>& actnum,
+                     double* zcorn) const;
     private:
         std::array<int,8> cornerIndices(const int i, const int j, const int k) const;
         std::array<double, 8> getCellZcorn(const int i, const int j, const int k, const double* z) const;
@@ -67,7 +71,10 @@ namespace Opm
 
 
 
-    inline void MinpvProcessor::process(const std::vector<double>& pv, const double minpv, double* zcorn) const
+    inline void MinpvProcessor::process(const std::vector<double>& pv,
+                                        const double minpv,
+                                        const std::vector<int>& actnum,
+                                        double* zcorn) const
     {
         // Algorithm:
         // 1. Process each column of cells (with same i and j
@@ -85,13 +92,16 @@ namespace Opm
         if (pv.size() != log_size) {
             OPM_THROW(std::runtime_error, "Wrong size of PORV input, must have one element per logical cartesian cell.");
         }
+        if (actnum.size() != log_size) {
+            OPM_THROW(std::runtime_error, "Wrong size of ACTNUM input, must have one element per logical cartesian cell.");
+        }
 
         // Main loop.
         for (int kk = 0; kk < dims_[2]; ++kk) {
             for (int jj = 0; jj < dims_[1]; ++jj) {
                 for (int ii = 0; ii < dims_[0]; ++ii) {
                     const int c = ii + dims_[0] * (jj + dims_[1] * kk);
-                    if (pv[c] < minpv) {
+                    if (pv[c] < minpv && actnum[c]) {
                         // Move deeper (higher k) coordinates to lower k coordinates.
                         std::array<double, 8> cz = getCellZcorn(ii, jj, kk, zcorn);
                         for (int count = 0; count < 4; ++count) {
