@@ -167,6 +167,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_event.cpp
 	tests/test_flowdiagnostics.cpp
 	tests/test_nonuniformtablelinear.cpp
+	tests/test_parallelistlinformation.cpp
 	tests/test_sparsevector.cpp
 	tests/test_sparsetable.cpp
 	tests/test_velocityinterpolation.cpp
