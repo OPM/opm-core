@@ -44,7 +44,11 @@ namespace Opm
     class PvtDead : public PvtInterface
     {
     public:
-        PvtDead() {};
+        PvtDead()
+        {
+            // by default, specify no temperature dependence of the PVT properties
+            oilvisctTables_ = 0;
+        }
 
         void initFromOil(const std::vector<Opm::PvdoTable>& pvdoTables);
         void initFromGas(const std::vector<Opm::PvdgTable>& pvdgTables);
@@ -150,6 +154,15 @@ namespace Opm
                           const double* z,
                           double* output_R,
                           double* output_dRdp) const;
+
+        /// set the tables which specify the temperature dependence of the oil viscosity
+        void setOilvisctTables(const std::vector<Opm::OilvisctTable>& oilvisctTables,
+                               DeckKeywordConstPtr viscrefKeyword)
+        {
+            oilvisctTables_ = &oilvisctTables;
+            viscrefKeyword_ = viscrefKeyword;
+        }
+
     private:
         int getTableIndex_(const int* pvtTableIdx, int cellIdx) const
         {
@@ -163,6 +176,9 @@ namespace Opm
         std::vector<NonuniformTableLinear<double> > b_;
         std::vector<NonuniformTableLinear<double> > viscosity_;
         std::vector<NonuniformTableLinear<double> > inverseBmu_;
+
+        const std::vector<Opm::OilvisctTable>* oilvisctTables_;
+        DeckKeywordConstPtr viscrefKeyword_;
     };
 }
 
