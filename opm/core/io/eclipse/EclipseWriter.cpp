@@ -259,18 +259,24 @@ class Restart : private boost::noncopyable
 public:
     static const int NIWELZ = 11; //Number of data elements per well in IWEL array in restart file
     static const int NZWELZ = 3;  //Number of 8-character words per well in ZWEL array restart file
-    static const int NICONZ = 14; //Number of data elements per completion in ICON array restart file
+    static const int NICONZ = 15; //Number of data elements per completion in ICON array restart file
 
     /**
-     * The constants NIWELZ and NZWELZ referes to the number of elements per well that we write to
-     * the IWEL and ZWEL eclipse restart file data arrays. The constant NICONZ refers to the number of
-     * elements per completion in the eclipse restart file ICON data array.These numbers are written
-     * to the INTEHEAD header.
-     * The elements are added in the methods addRestartFileIwelData(...), addRestartFileZwelData(...)
-     * and addRestartFileIconData(...), respectively.
-     * We write as many elements that we need to be able to view the restart file in Resinsight.
-     * The restart file will not be possible to open with Eclipse, we write to little information to
-     * be  able to do this.
+     * The constants NIWELZ and NZWELZ referes to the number of elements per
+     * well that we write to the IWEL and ZWEL eclipse restart file data
+     * arrays. The constant NICONZ refers to the number of elements per
+     * completion in the eclipse restart file ICON data array.These numbers are
+     * written to the INTEHEAD header.
+
+     * The elements are added in the method addRestartFileIwelData(...) and and
+     * addRestartFileIconData(...), respectively.  We write as many elements
+     * that we need to be able to view the restart file in Resinsight.  The
+     * restart file will not be possible to restart from with Eclipse, we write
+     * to little information to be able to do this.
+     *
+     * Observe that all of these values are our "current-best-guess" for how
+     * many numbers are needed; there might very well be third party
+     * applications out there which have a hard expectation for these values.
     */
 
 
@@ -297,70 +303,46 @@ public:
     { ecl_rst_file_add_kw(restartFileHandle_, kw.ertHandle()); }
 
 
-    void addRestartFileIwelData(std::vector<int>& iwel_data, size_t currentStep, WellConstPtr well_ptr) const {
-      iwel_data.reserve(iwel_data.size() + Opm::EclipseWriterDetails::Restart::NIWELZ);
+    void addRestartFileIwelData(std::vector<int>& iwel_data, size_t currentStep , WellConstPtr well, size_t offset) const {
+        CompletionSetConstPtr completions = well->getCompletions( currentStep );
 
-      int eclipse_offset = 1;
-      iwel_data.push_back(well_ptr->getHeadI() + eclipse_offset); // item 1 - gridhead I value
-      iwel_data.push_back(well_ptr->getHeadJ() + eclipse_offset); // item 2 - gridhead J value
-      iwel_data.push_back(0);                                     // item 3 - gridhead K value
-      iwel_data.push_back(0);                                     // item 4 - undefined - 0
+        iwel_data[ offset + IWEL_HEADI_ITEM ] = well->getHeadI() + 1;
+        iwel_data[ offset + IWEL_HEADJ_ITEM ] = well->getHeadJ() + 1;
+        iwel_data[ offset + IWEL_CONNECTIONS_ITEM ] = completions->size();
+        iwel_data[ offset + IWEL_GROUP_ITEM ] = 1;
 
-      CompletionSetConstPtr completions_ptr = well_ptr->getCompletions(currentStep);
-      int num_completions = completions_ptr->size();
-      iwel_data.push_back(num_completions);      // item 5 - number of completions
-      iwel_data.push_back(1);                    // item 6 - for now, set all group indexes to 1
-
-      WellType welltype = well_ptr->isProducer(currentStep) ? PRODUCER : INJECTOR;
-      int ert_welltype = EclipseWriter::eclipseWellTypeMask(welltype, well_ptr->getInjectionProperties(currentStep).injectorType);
-      iwel_data.push_back(ert_welltype);  // item 7 - welltype
-
-      iwel_data.insert(iwel_data.end(), 3, 0); //items 8,9,10 - undefined - 0
-      iwel_data.push_back(EclipseWriter::eclipseWellStatusMask(well_ptr->getStatus(currentStep))); // item 11 - well status
-    }
-
-
-
-    void addRestartFileZwelData(std::vector<const char*>& zwel_data, size_t /* currentstep */, WellConstPtr well_ptr) const {
-      zwel_data.reserve(zwel_data.size() + Opm::EclipseWriterDetails::Restart::NZWELZ);
-
-      zwel_data.push_back(well_ptr->name().c_str());
-      zwel_data.push_back("");
-      zwel_data.push_back("");
-    }
-
-
-    void addRestartFileIconData(std::vector<int>& icon_data, size_t currentstep, int ncwmax, WellConstPtr well_ptr) const {
-      icon_data.reserve(icon_data.size() + Opm::EclipseWriterDetails::Restart::NICONZ * ncwmax);
-
-      CompletionSetConstPtr completions_set_ptr = well_ptr->getCompletions(currentstep);
-
-      int zero_pad = ncwmax - completions_set_ptr->size();
-
-      for (size_t i = 0; i < completions_set_ptr->size(); ++i) {
-        CompletionConstPtr completion_ptr = completions_set_ptr->get(i);
-        icon_data.push_back(1);
-
-        int eclipse_offset = 1;
-        icon_data.push_back(completion_ptr->getI() + eclipse_offset);
-        icon_data.push_back(completion_ptr->getJ() + eclipse_offset)  ;
-        icon_data.push_back(completion_ptr->getK() + eclipse_offset);
-        icon_data.push_back(0);
-
-        WellCompletion::StateEnum completion_state = completion_ptr->getState();
-        if (completion_state == WellCompletion::StateEnum::OPEN) {
-          icon_data.push_back(1);
-        } else {
-          icon_data.push_back(0);
+        {
+            WellType welltype = well->isProducer(currentStep) ? PRODUCER : INJECTOR;
+            int ert_welltype = EclipseWriter::eclipseWellTypeMask(welltype, well->getInjectionProperties(currentStep).injectorType);
+            iwel_data[ offset + IWEL_TYPE_ITEM ] = ert_welltype;
         }
 
-        icon_data.insert(icon_data.end(), 7, 0);
-        icon_data.push_back((int)completion_ptr->getDirection());
-      }
+        iwel_data[ offset + IWEL_STATUS_ITEM ] = EclipseWriter::eclipseWellStatusMask(well->getStatus(currentStep));
+    }
 
-      for(int i=0;i<zero_pad;i++){
-        icon_data.insert(icon_data.end(), Restart::NICONZ, 0);
-      }
+
+
+
+    void addRestartFileIconData(std::vector<int>& icon_data, CompletionSetConstPtr completions , size_t wellICONOffset) const {
+        for (size_t i = 0; i < completions->size(); ++i) {
+            CompletionConstPtr completion = completions->get(i);
+            size_t iconOffset = wellICONOffset + i * Opm::EclipseWriterDetails::Restart::NICONZ;
+            icon_data[ iconOffset + ICON_IC_ITEM] = 1;
+
+            icon_data[ iconOffset + ICON_I_ITEM] = completion->getI() + 1;
+            icon_data[ iconOffset + ICON_J_ITEM] = completion->getJ() + 1;
+            icon_data[ iconOffset + ICON_K_ITEM] = completion->getK() + 1;
+
+            {
+                WellCompletion::StateEnum completion_state = completion->getState();
+                if (completion_state == WellCompletion::StateEnum::OPEN) {
+                    icon_data[ iconOffset + ICON_STATUS_ITEM ] = 1;
+                } else {
+                    icon_data[ iconOffset + ICON_STATUS_ITEM ] = 0;
+                }
+            }
+            icon_data[ iconOffset + ICON_DIRECTION_ITEM] = (int)completion->getDirection();
+        }
     }
 
 
@@ -1076,45 +1058,48 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
         return;
     }
 
-
+    const size_t ncwmax                 = eclipseState_->getSchedule()->getMaxNumCompletionsForWells(timer.reportStepNum());
+    const size_t numWells               = eclipseState_->getSchedule()->numWells(timer.reportStepNum());
     std::vector<WellConstPtr> wells_ptr = eclipseState_->getSchedule()->getWells(timer.reportStepNum());
-    std::vector<int>         iwell_data;
-    std::vector<const char*> zwell_data;
-    std::vector<int>         icon_data;
 
-    ecl_rsthead_type rsthead_data = { 0 };
-    rsthead_data.sim_time   = timer.currentPosixTime();
-    rsthead_data.nactive    = numCells_;
-    rsthead_data.nx         = cartesianSize_[0];
-    rsthead_data.ny         = cartesianSize_[1];
-    rsthead_data.nz         = cartesianSize_[2];
-    rsthead_data.nwells     = eclipseState_->getSchedule()->numWells(timer.reportStepNum());
-    rsthead_data.niwelz     = 0;
-    rsthead_data.nzwelz     = 0;
-    rsthead_data.niconz     = 0;
-    rsthead_data.ncwmax     = 0;
-    rsthead_data.phase_sum  = Opm::EclipseWriterDetails::ertPhaseMask(phaseUsage_);
+    std::vector<const char*> zwell_data( numWells * Opm::EclipseWriterDetails::Restart::NZWELZ , "");
+    std::vector<int>         iwell_data( numWells * Opm::EclipseWriterDetails::Restart::NIWELZ , 0 );
+    std::vector<int>         icon_data( numWells * ncwmax * Opm::EclipseWriterDetails::Restart::NICONZ , 0 );
 
     EclipseWriterDetails::Restart restartHandle(outputDir_, baseName_, writeStepIdx_);
 
-    for (std::vector<WellConstPtr>::const_iterator c_iter = wells_ptr.begin(); c_iter != wells_ptr.end(); ++c_iter) {
-      WellConstPtr well_ptr = *c_iter;
-
-      rsthead_data.ncwmax = eclipseState_->getSchedule()->getMaxNumCompletionsForWells(timer.reportStepNum());
-      restartHandle.addRestartFileIwelData(iwell_data, timer.reportStepNum(), well_ptr);
-      restartHandle.addRestartFileZwelData(zwell_data, timer.reportStepNum(), well_ptr);
-      restartHandle.addRestartFileIconData(icon_data,  timer.reportStepNum(), rsthead_data.ncwmax, well_ptr);
-
-      rsthead_data.niwelz = EclipseWriterDetails::Restart::NIWELZ;
-      rsthead_data.nzwelz = EclipseWriterDetails::Restart::NZWELZ;
-      rsthead_data.niconz = EclipseWriterDetails::Restart::NICONZ;
+    for (size_t iwell = 0; iwell < wells_ptr.size(); ++iwell) {
+        WellConstPtr well = wells_ptr[iwell];
+        {
+            size_t wellIwelOffset = Opm::EclipseWriterDetails::Restart::NIWELZ * iwell;
+            restartHandle.addRestartFileIwelData(iwell_data, timer.reportStepNum(), well , wellIwelOffset);
+        }
+        {
+            size_t wellIconOffset = ncwmax * Opm::EclipseWriterDetails::Restart::NICONZ * iwell;
+            restartHandle.addRestartFileIconData(icon_data,  well->getCompletions( timer.reportStepNum() ), wellIconOffset);
+        }
+        zwell_data[ iwell * Opm::EclipseWriterDetails::Restart::NZWELZ ] = well->name().c_str();
     }
 
-    rsthead_data.sim_days = Opm::unit::convert::to(timer.simulationTimeElapsed(), Opm::unit::day); //data for doubhead
+    {
+        ecl_rsthead_type rsthead_data = { 0 };
+        rsthead_data.sim_time   = timer.currentPosixTime();
+        rsthead_data.nactive    = numCells_;
+        rsthead_data.nx         = cartesianSize_[0];
+        rsthead_data.ny         = cartesianSize_[1];
+        rsthead_data.nz         = cartesianSize_[2];
+        rsthead_data.nwells     = numWells;
+        rsthead_data.niwelz     = EclipseWriterDetails::Restart::NIWELZ;
+        rsthead_data.nzwelz     = EclipseWriterDetails::Restart::NZWELZ;
+        rsthead_data.niconz     = EclipseWriterDetails::Restart::NICONZ;
+        rsthead_data.ncwmax     = ncwmax;
+        rsthead_data.phase_sum  = Opm::EclipseWriterDetails::ertPhaseMask(phaseUsage_);
+        rsthead_data.sim_days   = Opm::unit::convert::to(timer.simulationTimeElapsed(), Opm::unit::day); //data for doubhead
 
-    restartHandle.writeHeader(timer,
-                              writeStepIdx_,
-                              &rsthead_data);
+        restartHandle.writeHeader(timer,
+                                  writeStepIdx_,
+                                  &rsthead_data);
+    }
 
 
     restartHandle.add_kw(EclipseWriterDetails::Keyword<int>(IWEL_KW, iwell_data));
