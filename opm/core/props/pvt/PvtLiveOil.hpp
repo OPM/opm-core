@@ -142,6 +142,14 @@ namespace Opm
                           double* output_R,
                           double* output_dRdp) const;
 
+        /// set the tables which specify the temperature dependence of the oil viscosity
+        void setOilvisctTables(const std::vector<Opm::OilvisctTable>& oilvisctTables,
+                               DeckKeywordConstPtr viscrefKeyword)
+        {
+            oilvisctTables_ = &oilvisctTables;
+            viscrefKeyword_ = viscrefKeyword;
+        }
+
     private:
         int getTableIndex_(const int* pvtTableIdx, int cellIdx) const
         {
@@ -179,6 +187,9 @@ namespace Opm
         // store one table per PVT region.
         std::vector<std::vector<std::vector<double> > > saturated_oil_table_;
         std::vector<std::vector<std::vector<std::vector<double> > > > undersat_oil_tables_;
+
+        const std::vector<Opm::OilvisctTable>* oilvisctTables_;
+        DeckKeywordConstPtr viscrefKeyword_;
     };
 
 }

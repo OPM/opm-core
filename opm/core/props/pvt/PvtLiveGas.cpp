@@ -114,6 +114,9 @@ namespace Opm
             double inverseBMu = miscible_gas(p[i], z + num_phases_*i, getTableIndex_(pvtRegionIdx, i), 3, false);
 
             output_mu[i] = inverseB / inverseBMu;
+
+            // temperature dependence: Since E100 does not implement temperature
+            // dependence of gas viscosity, we skip it here as well...
         }
     }
 
@@ -162,6 +165,8 @@ namespace Opm
             output_dmudr[i] = (inverseBMu * dinverseBdr - inverseB * dinverseBmudr)
                               / (inverseBMu * inverseBMu);
 
+            // temperature dependence: Since E100 does not implement temperature
+            // dependence of gas viscosity, we skip it here as well...
         }
 
     }

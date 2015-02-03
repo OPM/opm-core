@@ -23,6 +23,8 @@
 #include <opm/core/props/pvt/PvtInterface.hpp>
 #include <opm/core/utility/ErrorMacros.hpp>
 
+#include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
+
 #include <vector>
 #include <algorithm>
 
@@ -98,7 +100,9 @@ namespace Opm
               ref_B_(1, 1.0),
               comp_(1, 0.0),
               viscosity_(1, visc),
-              visc_comp_(1, 0.0)
+              visc_comp_(1, 0.0),
+              oilvisctTables_(0),
+              watvisctTables_(0)
         {
         }
 
@@ -119,6 +123,13 @@ namespace Opm
                 int tableIdx = getTableIndex_(pvtRegionIdx, i);
                 double x = -visc_comp_[tableIdx]*(p[i] - ref_press_[tableIdx]);
                 output_mu[i] = viscosity_[tableIdx]/(1.0 + x + 0.5*x*x);
+
+                if (oilvisctTables_ != 0 || watvisctTables_ != 0) {
+                    // TODO: temperature dependence
+                    OPM_THROW(std::logic_error,
+                              "temperature dependent viscosity as a function of z "
+                              "is not yet implemented!");
+                }
             }
         }
 
@@ -146,7 +157,7 @@ namespace Opm
         virtual void mu(const int n,
                         const int* pvtRegionIdx,
                         const double* p,
-                        const double* /*T*/,
+                        const double* T,
                         const double* /*r*/,
                         const PhasePresence* /*cond*/,
                         double* output_mu,
@@ -161,6 +172,46 @@ namespace Opm
                 double d = (1.0 + x + 0.5*x*x);
                 output_mu[i] = viscosity_[tableIdx]/d;
                 output_dmudp[i] = (viscosity_[tableIdx]/(d*d))*(1+x) * visc_comp_[tableIdx];
+
+                if (oilvisctTables_ != 0) {
+                    // this object handles _either_ oil _or_ water
+                    assert(watvisctTables_ == 0);
+
+                    // temperature dependence of the oil phase
+                    DeckRecordConstPtr viscrefRecord = viscrefKeyword_->getRecord(tableIdx);
+                    double pRef = viscrefRecord->getItem("REFERENCE_PRESSURE")->getSIDouble(0);
+                    double muRef = -visc_comp_[tableIdx]*(pRef - ref_press_[tableIdx]);
+
+                    double muOilvisct = (*oilvisctTables_)[tableIdx].evaluate("Viscosity", T[i]);
+                    double alpha = muOilvisct/muRef;
+
+                    output_mu[i] *= alpha;
+                    output_dmudp[i] *= alpha;
+                    output_dmudr[i] *= alpha;
+
+                    // TODO (?): derivative of oil viscosity w.r.t. temperature.
+                    // probably requires a healthy portion of if-spaghetti
+                }
+
+                if (watvisctTables_ != 0) {
+                    // this object handles _either_ oil _or_ water
+                    assert(oilvisctTables_ == 0);
+
+                    // temperature dependence of the water phase
+                    DeckRecordConstPtr viscrefRecord = viscrefKeyword_->getRecord(tableIdx);
+                    double pRef = viscrefRecord->getItem("REFERENCE_PRESSURE")->getSIDouble(0);
+                    double muRef = -visc_comp_[tableIdx]*(pRef - ref_press_[tableIdx]);
+
+                    double muWatvisct = (*watvisctTables_)[tableIdx].evaluate("Viscosity", T[i]);
+                    double alpha = muWatvisct/muRef;
+
+                    output_mu[i] *= alpha;
+                    output_dmudp[i] *= alpha;
+                    output_dmudr[i] *= alpha;
+
+                    // TODO (?): derivative of oil viscosity w.r.t. temperature.
+                    // probably requires a healthy portion of if-spaghetti
+                }
             }
             std::fill(output_dmudr, output_dmudr + n, 0.0);
         }
@@ -287,6 +338,22 @@ namespace Opm
             std::fill(output_dRdp, output_dRdp + n, 0.0);
         }
 
+        /// set the tables which specify the temperature dependence of the oil viscosity
+        void setOilvisctTables(const std::vector<Opm::OilvisctTable>& oilvisctTables,
+                               DeckKeywordConstPtr viscrefKeyword)
+        {
+            oilvisctTables_ = &oilvisctTables;
+            viscrefKeyword_ = viscrefKeyword;
+        }
+
+        /// set the tables which specify the temperature dependence of the water viscosity
+        void setWatvisctTables(const std::vector<Opm::WatvisctTable>& watvisctTables,
+                               DeckKeywordConstPtr viscrefKeyword)
+        {
+            watvisctTables_ = &watvisctTables;
+            viscrefKeyword_ = viscrefKeyword;
+        }
+
     private:
         int getTableIndex_(const int* pvtTableIdx, int cellIdx) const
         {
@@ -302,6 +369,10 @@ namespace Opm
         std::vector<double> comp_;
         std::vector<double> viscosity_;
         std::vector<double> visc_comp_;
+
+        const std::vector<Opm::OilvisctTable>* oilvisctTables_;
+        const std::vector<Opm::WatvisctTable>* watvisctTables_;
+        DeckKeywordConstPtr viscrefKeyword_;
     };
 
 }
