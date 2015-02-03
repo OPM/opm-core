@@ -110,11 +110,11 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/simulator/SimulatorReport.cpp
 	opm/core/simulator/SimulatorState.cpp
 	opm/core/simulator/SimulatorTimer.cpp
-	opm/core/tof/AnisotropicEikonal.cpp
-	opm/core/tof/DGBasis.cpp
-	opm/core/tof/FlowDiagnostics.cpp
-	opm/core/tof/TofReorder.cpp
-	opm/core/tof/TofDiscGalReorder.cpp
+	opm/core/flowdiagnostics/AnisotropicEikonal.cpp
+	opm/core/flowdiagnostics/DGBasis.cpp
+	opm/core/flowdiagnostics/FlowDiagnostics.cpp
+	opm/core/flowdiagnostics/TofReorder.cpp
+	opm/core/flowdiagnostics/TofDiscGalReorder.cpp
 	opm/core/transport/TransportSolverTwophaseInterface.cpp
 	opm/core/transport/implicit/TransportSolverTwophaseImplicit.cpp
 	opm/core/transport/implicit/transport_source.c
@@ -384,11 +384,11 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/initState_impl.hpp
 	opm/core/simulator/initStateEquil.hpp
 	opm/core/simulator/initStateEquil_impl.hpp
-	opm/core/tof/AnisotropicEikonal.hpp
-	opm/core/tof/DGBasis.hpp
-	opm/core/tof/FlowDiagnostics.hpp
-	opm/core/tof/TofReorder.hpp
-	opm/core/tof/TofDiscGalReorder.hpp
+	opm/core/flowdiagnostics/AnisotropicEikonal.hpp
+	opm/core/flowdiagnostics/DGBasis.hpp
+	opm/core/flowdiagnostics/FlowDiagnostics.hpp
+	opm/core/flowdiagnostics/TofReorder.hpp
+	opm/core/flowdiagnostics/TofDiscGalReorder.hpp
 	opm/core/transport/TransportSolverTwophaseInterface.hpp
 	opm/core/transport/implicit/CSRMatrixBlockAssembler.hpp
 	opm/core/transport/implicit/CSRMatrixUmfpackSolver.hpp
