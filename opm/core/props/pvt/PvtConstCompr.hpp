@@ -47,6 +47,8 @@ namespace Opm
     {
     public:
         PvtConstCompr()
+            : oilvisctTables_(0),
+              watvisctTables_(0)
         {}
 
         void initFromWater(Opm::DeckKeywordConstPtr pvtwKeyword)
