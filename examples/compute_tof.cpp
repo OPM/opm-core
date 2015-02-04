@@ -39,8 +39,8 @@
 #include <opm/core/linalg/LinearSolverFactory.hpp>
 
 #include <opm/core/pressure/IncompTpfaSinglePhase.hpp>
-#include <opm/core/tof/TofReorder.hpp>
-#include <opm/core/tof/TofDiscGalReorder.hpp>
+#include <opm/core/flowdiagnostics/TofReorder.hpp>
+#include <opm/core/flowdiagnostics/TofDiscGalReorder.hpp>
 
 #include <opm/parser/eclipse/Parser/Parser.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/Schedule.hpp>
