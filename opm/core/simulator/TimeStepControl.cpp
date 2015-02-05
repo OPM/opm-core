@@ -20,12 +20,66 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <stdexcept>
 
+#include <opm/core/utility/ErrorMacros.hpp>
 #include <opm/core/utility/Units.hpp>
-#include <opm/core/simulator/PIDTimeStepControl.hpp>
+#include <opm/core/simulator/TimeStepControl.hpp>
 
 namespace Opm
 {
+    ////////////////////////////////////////////////////////
+    //
+    //  InterationCountTimeStepControl Implementation
+    //
+    ////////////////////////////////////////////////////////
+
+    SimpleIterationCountTimeStepControl::
+    SimpleIterationCountTimeStepControl( const int target_iterations,
+                                         const double decayrate,
+                                         const double growthrate,
+                                         const bool verbose)
+        : target_iterations_( target_iterations )
+        , decayrate_( decayrate )
+        , growthrate_( growthrate )
+        , verbose_( verbose )
+    {
+        if( decayrate_  > 1.0 ) {
+            OPM_THROW(std::runtime_error,"SimpleIterationCountTimeStepControl: decay should be <= 1 " << decayrate_ );
+        }
+        if( growthrate_ < 1.0 ) {
+            OPM_THROW(std::runtime_error,"SimpleIterationCountTimeStepControl: growth should be >= 1 " << growthrate_ );
+        }
+    }
+
+    double SimpleIterationCountTimeStepControl::
+    computeTimeStepSize( const double dt, const int iterations, const SimulatorState& state ) const
+    {
+        double dtEstimate = dt ;
+
+        // reduce the time step size if we exceed the number of target iterations
+        if( iterations > target_iterations_ )
+        {
+            // scale dtEstimate down with a given rate
+            dtEstimate *= decayrate_;
+        }
+        // increase the time step size if we are below the number of target iterations
+        else if ( iterations < target_iterations_-1 )
+        {
+            dtEstimate *= growthrate_;
+        }
+
+        return dtEstimate;
+    }
+
+
+
+    ////////////////////////////////////////////////////////
+    //
+    //  PIDTimeStepControl Implementation
+    //
+    ////////////////////////////////////////////////////////
+
     PIDTimeStepControl::PIDTimeStepControl( const double tol, const bool verbose )
         : p0_()
         , sat0_()
@@ -99,6 +153,13 @@ namespace Opm
     }
 
 
+
+    ////////////////////////////////////////////////////////////
+    //
+    //  PIDAndIterationCountTimeStepControl  Implementation
+    //
+    ////////////////////////////////////////////////////////////
+
     PIDAndIterationCountTimeStepControl::
     PIDAndIterationCountTimeStepControl( const int target_iterations,
                                          const double tol,
@@ -122,7 +183,7 @@ namespace Opm
         }
 
         // limit the growth of the timestep size by the growth factor
-        dtEstimate = std::max( dtEstimate, double(maxgrowth_ * dt) );
+        dtEstimate = std::min( dtEstimate, double(maxgrowth_ * dt) );
 
         return dtEstimate;
     }

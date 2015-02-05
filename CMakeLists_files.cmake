@@ -103,7 +103,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/satfunc/SaturationPropsFromDeck.cpp
 	opm/core/simulator/AdaptiveSimulatorTimer.cpp
 	opm/core/simulator/BlackoilState.cpp
-	opm/core/simulator/PIDTimeStepControl.cpp
+	opm/core/simulator/TimeStepControl.cpp
 	opm/core/simulator/SimulatorCompressibleTwophase.cpp
 	opm/core/simulator/SimulatorIncompTwophase.cpp
 	opm/core/simulator/SimulatorOutput.cpp
@@ -368,7 +368,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/AdaptiveTimeStepping_impl.hpp
 	opm/core/simulator/BlackoilState.hpp
 	opm/core/simulator/EquilibrationHelpers.hpp
-	opm/core/simulator/PIDTimeStepControl.hpp
+	opm/core/simulator/TimeStepControl.hpp
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
 	opm/core/simulator/SimulatorOutput.hpp
