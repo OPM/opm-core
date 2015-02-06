@@ -17,7 +17,7 @@ namespace Opm
 
         virtual void init(const UnstructuredGrid& g, int num_phases);
 
-        virtual void init(int number_of_cells, int number_of_phases, int num_phases);
+        virtual void init(int number_of_cells, int number_of_faces, int num_phases);
         
         enum ExtremalSat { MinSat, MaxSat };
 
@@ -57,10 +57,15 @@ namespace Opm
                             double epsilon = 1e-8) const;
     private:
         int num_phases_;
+        /// \brief pressure per cell.
         std::vector<double> press_ ;
+        /// \brief temperature per cell.
         std::vector<double> temp_  ;
+        /// \brief pressure per face.
         std::vector<double> fpress_;
+        /// \brief The fluxes at the faces.
         std::vector<double> flux_  ;
+        /// \brief The saturation of each phase per cell.
         std::vector<double> sat_   ;
 
     protected:
