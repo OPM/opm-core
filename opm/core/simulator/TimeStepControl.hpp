@@ -16,8 +16,8 @@
   You should have received a copy of the GNU General Public License
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef OPM_PIDTIMESTEPCONTROL_HEADER_INCLUDED
-#define OPM_PIDTIMESTEPCONTROL_HEADER_INCLUDED
+#ifndef OPM_TIMESTEPCONTROL_HEADER_INCLUDED
+#define OPM_TIMESTEPCONTROL_HEADER_INCLUDED
 
 #include <vector>
 
@@ -25,6 +25,34 @@
 
 namespace Opm
 {
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///
+    ///  A simple iteration count based adaptive time step control.
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    class SimpleIterationCountTimeStepControl : public TimeStepControlInterface
+    {
+    public:
+        /// \brief constructor
+        /// \param target_iterations  number of desired iterations (e.g. Newton iterations) per time step in one time step
+        //  \param decayrate          decayrate of time step when target iterations are not met (should be <= 1)
+        //  \param growthrate         growthrate of time step when target iterations are not met (should be >= 1)
+        /// \param verbose            if true get some output (default = false)
+        SimpleIterationCountTimeStepControl( const int target_iterations,
+                                             const double decayrate,
+                                             const double growthrate,
+                                             const bool verbose = false);
+
+        /// \brief \copydoc TimeStepControlInterface::computeTimeStepSize
+        double computeTimeStepSize( const double dt, const int iterations, const SimulatorState& state ) const;
+
+    protected:
+        const int     target_iterations_;
+        const double  decayrate_;
+        const double  growthrate_;
+        const bool    verbose_;
+    };
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///
     ///  PID controller based adaptive time step control as suggested in:
@@ -90,7 +118,7 @@ namespace Opm
         /// \param target_iterations  number of desired iterations per time step
         /// \param tol        tolerance for the relative changes of the numerical solution to be accepted
         ///                   in one time step (default is 1e-3)
-        //  \param maxgrodth  max growth factor for new time step in relation of old time step (default = 3.0)
+        //  \param maxgrowth  max growth factor for new time step in relation of old time step (default = 3.0)
         /// \param verbose    if true get some output (default = false)
         PIDAndIterationCountTimeStepControl( const int target_iterations = 20,
                                              const double tol = 1e-3,
