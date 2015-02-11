@@ -203,14 +203,6 @@ try
     }
     bool compute_tracer = param.getDefault("compute_tracer", false);
 
-    bool start_from_injectors = true;
-    std::string trace_start = param.getDefault<std::string>("trace_start", "Injectors");
-    if (trace_start == "Producers") {
-        start_from_injectors = false;
-    } else if (trace_start != "Injectors") {
-        OPM_THROW(std::runtime_error, "Unknown trace_start specification (allowed is Injectors or Producers): " << trace_start);
-    }
-
     // Write parameters used for later reference.
     bool output = param.getDefault("output", true);
     std::ofstream epoch_os;
@@ -252,68 +244,80 @@ try
     std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
     ptime += pt;
 
-    // Turn direction of flux if starting from producers.
-    if (!start_from_injectors) {
-        for (auto it = flux.begin(); it != flux.end(); ++it) {
-            (*it) = -(*it);
+    std::string tof_filenames[2] = { output_dir + "/ftof.txt", output_dir + "/btof.txt" };
+    std::string tracer_filenames[2] = { output_dir + "/ftracer.txt", output_dir + "/btracer.txt" };
+
+    // We compute tof twice, direction == 0 is from injectors, 1 is from producers.
+    for (int direction = 0; direction < 2; ++direction) {
+        // Turn direction of flux if starting from producers.
+        if (direction == 1) {
+            for (auto it = flux.begin(); it != flux.end(); ++it) {
+                (*it) = -(*it);
+            }
         }
-    }
 
-    // Process transport sources (to include bdy terms and well flows).
-    std::vector<double> src(num_cells, 0.0);
-    std::vector<double> transport_src;
-    computeTransportSourceSinglePhase(grid, src, flux, 1.0,
-                                      &wells, wellrates, transport_src);
+        // Process transport sources (to include bdy terms and well flows).
+        std::vector<double> src(num_cells, 0.0);
+        std::vector<double> transport_src;
+        computeTransportSourceSinglePhase(grid, src, flux, 1.0,
+                                          &wells, wellrates, transport_src);
 
-    // Solve time-of-flight.
-    transport_timer.start();
-    std::vector<double> tof;
-    std::vector<double> tracer;
-    Opm::SparseTable<int> tracerheads;
-    if (compute_tracer) {
-        buildTracerheadsFromWells(wells, start_from_injectors, tracerheads);
-    }
-    if (use_dg) {
+        // Solve time-of-flight.
+        transport_timer.start();
+        std::vector<double> tof;
+        std::vector<double> tracer;
+        Opm::SparseTable<int> tracerheads;
         if (compute_tracer) {
-            dg_solver->solveTofTracer(flux.data(), porevol.data(), transport_src.data(), tracerheads, tof, tracer);
+            buildTracerheadsFromWells(wells, direction == 0, tracerheads);
+        }
+        if (use_dg) {
+            if (compute_tracer) {
+                dg_solver->solveTofTracer(flux.data(), porevol.data(), transport_src.data(), tracerheads, tof, tracer);
+            } else {
+                dg_solver->solveTof(flux.data(), porevol.data(), transport_src.data(), tof);
+            }
         } else {
-            dg_solver->solveTof(flux.data(), porevol.data(), transport_src.data(), tof);
+            Opm::TofReorder tofsolver(grid, use_multidim_upwind);
+            if (compute_tracer) {
+                tofsolver.solveTofTracer(flux.data(), porevol.data(), transport_src.data(), tracerheads, tof, tracer);
+            } else {
+                tofsolver.solveTof(flux.data(), porevol.data(), transport_src.data(), tof);
+            }
         }
-    } else {
-        Opm::TofReorder tofsolver(grid, use_multidim_upwind);
-        if (compute_tracer) {
-            tofsolver.solveTofTracer(flux.data(), porevol.data(), transport_src.data(), tracerheads, tof, tracer);
+        transport_timer.stop();
+        double tt = transport_timer.secsSinceStart();
+        if (direction == 0) {
+            std::cout << "Forward ";
         } else {
-            tofsolver.solveTof(flux.data(), porevol.data(), transport_src.data(), tof);
+            std::cout << "Backward ";
         }
-    }
-    transport_timer.stop();
-    double tt = transport_timer.secsSinceStart();
-    std::cout << "Transport solver took: " << tt << " seconds." << std::endl;
-    ttime += tt;
-    total_timer.stop();
+        std::cout << "time-of-flight/tracer solve took: " << tt << " seconds." << std::endl;
+        ttime += tt;
 
-    // Output.
-    if (output) {
-        std::string tof_filename = output_dir + "/tof.txt";
-        std::ofstream tof_stream(tof_filename.c_str());
-        tof_stream.precision(16);
-        std::copy(tof.begin(), tof.end(), std::ostream_iterator<double>(tof_stream, "\n"));
-        if (compute_tracer) {
-            std::string tracer_filename = output_dir + "/tracer.txt";
-            std::ofstream tracer_stream(tracer_filename.c_str());
-            tracer_stream.precision(16);
-            const int nt = tracer.size()/num_cells;
-            for (int i = 0; i < nt*num_cells; ++i) {
-                tracer_stream << tracer[i] << (((i + 1) % nt == 0) ? '\n' : ' ');
+        // Output.
+        if (output) {
+            std::string tof_filename = tof_filenames[direction];
+            std::ofstream tof_stream(tof_filename.c_str());
+            tof_stream.precision(16);
+            std::copy(tof.begin(), tof.end(), std::ostream_iterator<double>(tof_stream, "\n"));
+            if (compute_tracer) {
+                std::string tracer_filename = tracer_filenames[direction];
+                std::ofstream tracer_stream(tracer_filename.c_str());
+                tracer_stream.precision(16);
+                const int nt = tracer.size()/num_cells;
+                for (int i = 0; i < nt*num_cells; ++i) {
+                    tracer_stream << tracer[i] << (((i + 1) % nt == 0) ? '\n' : ' ');
+                }
             }
         }
     }
 
+    total_timer.stop();
+
     std::cout << "\n\n================    End of simulation     ===============\n"
-              << "Total time taken: " << total_timer.secsSinceStart()
-              << "\n  Pressure time:  " << ptime
-              << "\n  Transport time: " << ttime << std::endl;
+              << "Total time taken:  " << total_timer.secsSinceStart()
+              << "\n  Pressure time:   " << ptime
+              << "\n  Tof/tracer time: " << ttime << std::endl;
 }
 catch (const std::exception &e) {
     std::cerr << "Program threw an exception: " << e.what() << "\n";
