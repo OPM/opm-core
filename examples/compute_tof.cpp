@@ -39,6 +39,7 @@
 #include <opm/core/linalg/LinearSolverFactory.hpp>
 
 #include <opm/core/pressure/IncompTpfaSinglePhase.hpp>
+#include <opm/core/flowdiagnostics/FlowDiagnostics.hpp>
 #include <opm/core/flowdiagnostics/TofReorder.hpp>
 #include <opm/core/flowdiagnostics/TofDiscGalReorder.hpp>
 
@@ -246,6 +247,7 @@ try
 
     std::string tof_filenames[2] = { output_dir + "/ftof.txt", output_dir + "/btof.txt" };
     std::string tracer_filenames[2] = { output_dir + "/ftracer.txt", output_dir + "/btracer.txt" };
+    std::vector<double> tracers[2];
 
     // We compute tof twice, direction == 0 is from injectors, 1 is from producers.
     for (int direction = 0; direction < 2; ++direction) {
@@ -308,7 +310,19 @@ try
                 for (int i = 0; i < nt*num_cells; ++i) {
                     tracer_stream << tracer[i] << (((i + 1) % nt == 0) ? '\n' : ' ');
                 }
+                tracers[direction] = tracer;
             }
+        }
+    }
+
+    // If we have tracers, compute well pairs.
+    if (compute_tracer) {
+        auto wp = Opm::computeWellPairs(wells, porevol, tracers[0], tracers[1]);
+        std::string wellpair_filename = output_dir + "/wellpairs.txt";
+        std::ofstream wellpair_stream(wellpair_filename.c_str());
+        const int nwp = wp.size();
+        for (int ii = 0; ii < nwp; ++ii) {
+            wellpair_stream << std::get<0>(wp[ii]) << ' ' << std::get<1>(wp[ii]) << ' ' << std::get<2>(wp[ii]) << '\n';
         }
     }
 
