@@ -245,24 +245,27 @@ try
     std::cout << "Pressure solver took:  " << pt << " seconds." << std::endl;
     ptime += pt;
 
+    // Process transport sources (to include bdy terms and well flows).
+    std::vector<double> src(num_cells, 0.0);
+    std::vector<double> transport_src;
+    computeTransportSourceSinglePhase(grid, src, flux, 1.0,
+                                      &wells, wellrates, transport_src);
+
     std::string tof_filenames[2] = { output_dir + "/ftof.txt", output_dir + "/btof.txt" };
     std::string tracer_filenames[2] = { output_dir + "/ftracer.txt", output_dir + "/btracer.txt" };
     std::vector<double> tracers[2];
 
     // We compute tof twice, direction == 0 is from injectors, 1 is from producers.
     for (int direction = 0; direction < 2; ++direction) {
-        // Turn direction of flux if starting from producers.
+        // Turn direction of flux and flip source terms if starting from producers.
         if (direction == 1) {
             for (auto it = flux.begin(); it != flux.end(); ++it) {
                 (*it) = -(*it);
             }
+            for (auto it = transport_src.begin(); it != transport_src.end(); ++it) {
+                (*it) = -(*it);
+            }
         }
-
-        // Process transport sources (to include bdy terms and well flows).
-        std::vector<double> src(num_cells, 0.0);
-        std::vector<double> transport_src;
-        computeTransportSourceSinglePhase(grid, src, flux, 1.0,
-                                          &wells, wellrates, transport_src);
 
         // Solve time-of-flight.
         transport_timer.start();
