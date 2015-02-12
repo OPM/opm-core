@@ -298,6 +298,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/linalg/LinearSolverIstl.hpp
 	opm/core/linalg/LinearSolverUmfpack.hpp
 	opm/core/linalg/LinearSolverPetsc.hpp
+	opm/core/linalg/ParallelIstlInformation.hpp
 	opm/core/linalg/blas_lapack.h
 	opm/core/linalg/call_umfpack.h
 	opm/core/linalg/sparse_sys.h
