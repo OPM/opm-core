@@ -119,7 +119,7 @@ namespace Opm
       rst_file = ecl_rst_file_open_write( filename );
 
     {
-      ecl_rsthead_type rsthead_data = { 0 };
+      ecl_rsthead_type rsthead_data = {};
       
       const int num_wells    = 0;
       const int niwelz       = 0;

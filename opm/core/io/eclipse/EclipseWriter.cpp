@@ -1082,7 +1082,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
     }
 
     {
-        ecl_rsthead_type rsthead_data = { 0 };
+        ecl_rsthead_type rsthead_data = {};
         rsthead_data.sim_time   = timer.currentPosixTime();
         rsthead_data.nactive    = numCells_;
         rsthead_data.nx         = cartesianSize_[0];
