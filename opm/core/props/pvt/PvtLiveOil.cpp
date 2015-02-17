@@ -139,7 +139,7 @@ namespace Opm
     void PvtLiveOil::mu(const int n,
                         const int* pvtTableIdx,
                         const double* p,
-                        const double* T,
+                        const double* /*T*/,
                               const double* z,
                               double* output_mu) const
     {
