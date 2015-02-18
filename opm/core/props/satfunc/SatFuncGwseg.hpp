@@ -602,7 +602,7 @@ namespace Opm
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
             double _sw = epst->wat.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
-            pc[pos] = epst->wat.pcFactor*this->pcow_(s[pos]);
+            pc[pos] = epst->wat.pcFactor*this->pcow_(_sw);
             double _dsdsw = epst->wat.scaleSatDerivPc(s[pos], this->smin_[pos], this->smax_[pos]);
             dpcds[np*pos + pos] = epst->wat.pcFactor*_dsdsw*this->pcow_.derivative(_sw);
         }
