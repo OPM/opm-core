@@ -79,7 +79,7 @@ void verifyWellState(const std::string& rst_filename,
     BOOST_CHECK(well_conn_get_j(well_head) == well->getHeadJ());
 
     for (int j = 0; j < well_ts_get_size(well_ts); ++j) {
-      well_state_type * well_state = well_ts_iget_state(well_ts, j);
+      well_state = well_ts_iget_state(well_ts, j);
 
       //Verify welltype
       int ert_well_type = well_state_get_type(well_state);
