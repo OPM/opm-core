@@ -1,6 +1,7 @@
 /*
-  Copyright 2014 Dr. Markus Blatt - HPC-Simulation-Software & Services
+  Copyright 2014, 2015 Dr. Markus Blatt - HPC-Simulation-Software & Services
   Copyright 2014 Statoil AS
+  Copyright 2015
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -202,9 +203,33 @@ struct Cell2FacesTraits<UnstructuredGrid>
     typedef SparseTableView Type;
 };
 
+/// \brief Maps the grid type to the associated type of the face to vertices mapping.
+///
+/// Provides a type named Type.
+/// \tparam T The type of the grid.
+template<class T>
+struct Face2VerticesTraits
+{
+};
+
+template<>
+struct Face2VerticesTraits<UnstructuredGrid>
+{
+    typedef SparseTableView Type;
+};
+
 /// \brief Get the cell to faces mapping of a grid.
 Cell2FacesTraits<UnstructuredGrid>::Type 
 cell2Faces(const UnstructuredGrid& grid);
+
+/// \brief Get the face to vertices mapping of a grid.
+Face2VerticesTraits<UnstructuredGrid>::Type 
+face2Vertices(const UnstructuredGrid& grid);
+
+/// \brief Get the coordinates of a vertex of the grid.
+/// \param grid The grid the vertex is part of.
+/// \param index The index identifying the vertex.
+const double* vertexCoordinates(const UnstructuredGrid& grid, int index);
 
 class FaceCellsProxy
 {
