@@ -145,7 +145,7 @@ struct UnstructuredGrid
     */
     int    *cell_faces;
     /**
-       For a face c, cell_facepos[c] contains the starting index
+       For a cell c, cell_facepos[c] contains the starting index
        for c's faces in the cell_faces array.
        The size of the array is equal to (number_of_cells + 1).
     */
