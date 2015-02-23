@@ -162,12 +162,12 @@ double cellVolume(const UnstructuredGrid& grid, int cell_index);
 /// The value of the mapping is stored in nested type IteratorType
 /// \tparam T The type of the grid.
 template<class T>
-struct ADCellVolumesTraits
+struct CellVolumeIteratorTraits
 {
 };
 
 template<>
-struct ADCellVolumesTraits<UnstructuredGrid>
+struct CellVolumeIteratorTraits<UnstructuredGrid>
 {
     typedef const double* IteratorType;
 };
