@@ -63,6 +63,21 @@ double cellCentroidCoordinate(const UnstructuredGrid& grid, int cell_index,
     return grid.cell_centroids[grid.dimensions*cell_index+coordinate];
 }
 
+const double*
+cellCentroid(const UnstructuredGrid& grid, int cell_index)
+{
+    return grid.cell_centroids+(cell_index*grid.dimensions);
+}
+
+const double* beginCellVolumes(const UnstructuredGrid& grid)
+{
+    return grid.cell_volumes;
+}
+const double* endCellVolumes(const UnstructuredGrid& grid)
+{
+    return grid.cell_volumes+numCells(grid);
+}
+
 const double* beginFaceCentroids(const UnstructuredGrid& grid)
 {
     return grid.face_centroids;

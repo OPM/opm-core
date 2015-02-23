@@ -144,6 +144,46 @@ beginCellCentroids(const UnstructuredGrid& grid);
 double cellCentroidCoordinate(const UnstructuredGrid& grid, int cell_index,
                                  int coordinate);
 
+
+/// \brief Get the centroid of a cell.
+/// \param grid The grid whose cell centroid we query.
+/// \param cell_index The index of the corresponding cell.
+const double* cellCentroid(const UnstructuredGrid& grid, int cell_index);
+
+
+/// \brief Get the volume of a cell.
+/// \param grid The grid the cell belongs to.
+/// \param cell_index The index of the cell.
+double cellVolume(const UnstructuredGrid& grid, int cell_index);
+
+/// \brief The mapping of the grid type to type of the iterator over
+/// the cell volumes.
+///
+/// The value of the mapping is stored in nested type IteratorType
+/// \tparam T The type of the grid.
+template<class T>
+struct ADCellVolumesTraits
+{
+};
+
+template<>
+struct ADCellVolumesTraits<UnstructuredGrid>
+{
+    typedef const double* IteratorType;
+};
+
+/// \brief Get an iterator over the cell volumes of a grid positioned at the first cell.
+const double* beginCellVolumes(const UnstructuredGrid& grid);
+
+/// \brief Get an iterator over the cell volumes of a grid positioned after the last cell.
+const double* endCellVolumes(const UnstructuredGrid& grid);
+
+/// \brief Get the cell centroid of a face.
+/// \param grid The grid whose cell centroid we query.
+/// \param face_index The index of the corresponding face.
+const double* faceCentroid(const UnstructuredGrid& grid, int face_index);
+
+
 /// \brief Traits of the face centroids of a grid.
 ///
 /// This class exports two types: IteratorType, the type of the iterator
