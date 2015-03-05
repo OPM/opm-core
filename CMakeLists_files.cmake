@@ -41,6 +41,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/grid/cpgpreprocess/uniquepoints.c
 	opm/core/io/eclipse/EclipseGridInspector.cpp
 	opm/core/io/eclipse/EclipseWriter.cpp
+	opm/core/io/eclipse/EclipseWriteRFTHandler.cpp
 	opm/core/io/eclipse/writeECLData.cpp
 	opm/core/io/OutputWriter.cpp
 	opm/core/io/vag/vag.cpp
@@ -157,6 +158,7 @@ list (APPEND MAIN_SOURCE_FILES
 list (APPEND TEST_SOURCE_FILES
   tests/test_writenumwells.cpp
 	tests/test_EclipseWriter.cpp
+	tests/test_EclipseWriteRFTHandler.cpp
 	tests/test_compressedpropertyaccess.cpp
 	tests/test_spline.cpp
 	tests/test_propertysystem.cpp
@@ -289,6 +291,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/io/eclipse/EclipseGridInspector.hpp
 	opm/core/io/eclipse/EclipseUnits.hpp
 	opm/core/io/eclipse/EclipseWriter.hpp
+	opm/core/io/eclipse/EclipseWriteRFTHandler.hpp
 	opm/core/io/eclipse/writeECLData.hpp
 	opm/core/io/OutputWriter.hpp
 	opm/core/io/vag/vag.hpp
