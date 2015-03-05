@@ -80,6 +80,9 @@ namespace EclipseWriterDetails {
         if (rft_nodes.size() > 0) {
             ecl_rft_file_update(filename.c_str(), rft_nodes.data(), rft_nodes.size(), ecl_unit);
         }
+
+        //Cleanup: The ecl_rft_file_update method takes care of freeing the ecl_rft_nodes that it receives.
+        //         Each ecl_rft_node is again responsible for freeing it's cells.
     }
 
 
