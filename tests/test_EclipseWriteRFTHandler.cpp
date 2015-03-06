@@ -47,6 +47,7 @@
 
 #include <vector>
 
+namespace {
 
 void verifyRFTFile(const std::string& rft_filename) {
 
@@ -84,7 +85,6 @@ void verifyRFTFile(const std::string& rft_filename) {
     BOOST_CHECK_EQUAL(ecl_rft_cell_get_depth(ecl_rft_cell2), (2*0.250 + (0.250/2)));
     BOOST_CHECK_EQUAL(ecl_rft_cell_get_depth(ecl_rft_cell3), (3*0.250 + (0.250/2)));
 }
-
 
 
 
@@ -144,9 +144,7 @@ std::shared_ptr<Opm::EclipseWriter> createEclipseWriter(std::shared_ptr<const Op
     return eclipseWriter;
 }
 
-
-
-
+}
 
 BOOST_AUTO_TEST_CASE(test_EclipseWriterRFTHandler)
 {
