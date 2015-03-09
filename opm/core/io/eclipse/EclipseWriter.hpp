@@ -115,6 +115,7 @@ private:
     bool enableOutput_;
     int outputInterval_;
     int writeStepIdx_;
+    int reportStepIdx_;
     std::string outputDir_;
     std::string baseName_;
     PhaseUsage phaseUsage_; // active phases in the input deck
