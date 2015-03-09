@@ -1005,22 +1005,17 @@ int EclipseWriter::eclipseWellStatusMask(WellCommon::StatusEnum wellStatus)
  */
 ert_ecl_unit_enum EclipseWriter::convertUnitTypeErtEclUnitEnum(UnitSystem::UnitType unit)
 {
-    ert_ecl_unit_enum ecl_type;
     switch (unit) {
       case(UnitSystem::UNIT_TYPE_METRIC):
-          ecl_type = ERT_ECL_METRIC_UNITS;
-          break;
+          return ERT_ECL_METRIC_UNITS;
       case(UnitSystem::UNIT_TYPE_FIELD)          :
-          ecl_type = ERT_ECL_FIELD_UNITS;
-          break;
+          return ERT_ECL_FIELD_UNITS;
       case(UnitSystem::UNIT_TYPE_LAB):
-          ecl_type = ERT_ECL_LAB_UNITS;
-          break;
+          return ERT_ECL_LAB_UNITS;
       default:
-          break;
-    };
-
-    return ecl_type;
+          OPM_THROW(std::logic_error,"Conversion of unit from OPM to ERT failed!");
+          return ERT_ECL_METRIC_UNITS;
+    }
 }
 
 
