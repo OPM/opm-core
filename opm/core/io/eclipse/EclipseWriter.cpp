@@ -1013,8 +1013,7 @@ ert_ecl_unit_enum EclipseWriter::convertUnitTypeErtEclUnitEnum(UnitSystem::UnitT
       case(UnitSystem::UNIT_TYPE_LAB):
           return ERT_ECL_LAB_UNITS;
       default:
-          OPM_THROW(std::logic_error,"Conversion of unit from OPM to ERT failed!");
-          return ERT_ECL_METRIC_UNITS;
+          throw std::invalid_argument("unhandled enum value");
     }
 }
 
