@@ -1003,18 +1003,21 @@ int EclipseWriter::eclipseWellStatusMask(WellCommon::StatusEnum wellStatus)
 /**
  * Convert opm-core UnitType to eclipse format: ert_ecl_unit_enum
  */
-ert_ecl_unit_enum EclipseWriter::convertUnitTypeErtEclUnitEnum(UnitSystem::UnitType unit)
+ert_ecl_unit_enum
+EclipseWriter::convertUnitTypeErtEclUnitEnum(UnitSystem::UnitType unit)
 {
     switch (unit) {
-      case(UnitSystem::UNIT_TYPE_METRIC):
+      case UnitSystem::UNIT_TYPE_METRIC:
           return ERT_ECL_METRIC_UNITS;
-      case(UnitSystem::UNIT_TYPE_FIELD)          :
+
+      case UnitSystem::UNIT_TYPE_FIELD:
           return ERT_ECL_FIELD_UNITS;
-      case(UnitSystem::UNIT_TYPE_LAB):
+
+      case UnitSystem::UNIT_TYPE_LAB:
           return ERT_ECL_LAB_UNITS;
-      default:
-          throw std::invalid_argument("unhandled enum value");
     }
+
+    throw std::invalid_argument("unhandled enum value");
 }
 
 
