@@ -105,7 +105,7 @@ namespace EclipseWriterDetails {
         ecl_rft_node_type * ecl_rft_node = ecl_rft_node_alloc_new(well_name.c_str(), type.c_str(), recording_date, days);
 
         CompletionSetConstPtr completionsSet = well->getCompletions(timestep);
-        for (int index = 0; index < completionsSet->size(); ++index) {
+        for (size_t index = 0; index < completionsSet->size(); ++index) {
             CompletionConstPtr completion = completionsSet->get(index);
             size_t i = (size_t)completion->getI();
             size_t j = (size_t)completion->getJ();
@@ -131,7 +131,7 @@ namespace EclipseWriterDetails {
 
     void EclipseWriteRFTHandler::initGlobalToActiveIndex(const int * compressedToCartesianCellIdx, size_t numCells, size_t cartesianSize) {
         globalToActiveIndex_.resize(cartesianSize, -1);
-        for (int active_index = 0; active_index < numCells; ++active_index) {
+        for (size_t active_index = 0; active_index < numCells; ++active_index) {
             //If compressedToCartesianCellIdx is NULL, assume no compressed to cartesian mapping, set global equal to active index
             int global_index = (NULL != compressedToCartesianCellIdx) ? compressedToCartesianCellIdx[active_index] : active_index;
             globalToActiveIndex_[global_index] = active_index;
