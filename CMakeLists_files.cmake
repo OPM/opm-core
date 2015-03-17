@@ -358,6 +358,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/pvt/PvtLiveOil.hpp
 	opm/core/props/pvt/ThermalWaterPvtWrapper.hpp
 	opm/core/props/pvt/ThermalOilPvtWrapper.hpp
+	opm/core/props/pvt/ThermalGasPvtWrapper.hpp
 	opm/core/props/rock/RockBasic.hpp
 	opm/core/props/rock/RockCompressibility.hpp
 	opm/core/props/rock/RockFromDeck.hpp
