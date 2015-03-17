@@ -36,10 +36,7 @@ namespace Opm
     //-------------------------------------------------------------------------
 
     PvtDeadSpline::PvtDeadSpline()
-    {
-        // by default, specify no temperature dependence of the PVT properties
-        oilvisctTables_ = 0;
-    }
+    {}
 
     void PvtDeadSpline::initFromOil(const std::vector<Opm::PvdoTable>& pvdoTables,
                                     int numSamples)
@@ -123,7 +120,7 @@ namespace Opm
     void PvtDeadSpline::mu(const int n,
                            const int* pvtTableIdx,
                            const double* p,
-                           const double* T,
+                           const double* /*T*/,
                            const double* /*r*/,
                            double* output_mu,
                            double* output_dmudp,
@@ -134,23 +131,6 @@ namespace Opm
             int regionIdx = getTableIndex_(pvtTableIdx, i);
             output_mu[i] = viscosity_[regionIdx](p[i]);
             output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
-
-            if (oilvisctTables_ != 0) {
-                // temperature dependence of the oil phase
-                DeckRecordConstPtr viscrefRecord = viscrefKeyword_->getRecord(regionIdx);
-                double pRef = viscrefRecord->getItem("REFERENCE_PRESSURE")->getSIDouble(0);
-                double muRef = viscosity_[regionIdx](pRef);
-
-                double muOilvisct = (*oilvisctTables_)[regionIdx].evaluate("Viscosity", T[i]);
-                double alpha = muOilvisct/muRef;
-
-                output_mu[i] *= alpha;
-                output_dmudp[i] *= alpha;
-                output_dmudr[i] *= alpha;
-
-                // TODO (?): derivative of oil viscosity w.r.t. temperature.
-                // probably requires a healthy portion of if-spaghetti
-            }
         }
         std::fill(output_dmudr, output_dmudr + n, 0.0);
     }
@@ -158,7 +138,7 @@ namespace Opm
     void PvtDeadSpline::mu(const int n,
                            const int* pvtTableIdx,
                            const double* p,
-                           const double* T,
+                           const double* /*T*/,
                            const double* /*r*/,
                            const PhasePresence* /*cond*/,
                            double* output_mu,
@@ -171,23 +151,6 @@ namespace Opm
             int regionIdx = getTableIndex_(pvtTableIdx, i);
             output_mu[i] = viscosity_[regionIdx](p[i]);
             output_dmudp[i] = viscosity_[regionIdx].derivative(p[i]);
-
-            if (oilvisctTables_ != 0) {
-                // temperature dependence of the oil phase
-                DeckRecordConstPtr viscrefRecord = viscrefKeyword_->getRecord(regionIdx);
-                double pRef = viscrefRecord->getItem("REFERENCE_PRESSURE")->getSIDouble(0);
-                double muRef = viscosity_[regionIdx](pRef);
-
-                double muOilvisct = (*oilvisctTables_)[regionIdx].evaluate("Viscosity", T[i]);
-                double alpha = muOilvisct/muRef;
-
-                output_mu[i] *= alpha;
-                output_dmudp[i] *= alpha;
-                output_dmudr[i] *= alpha;
-
-                // TODO (?): derivative of oil viscosity w.r.t. temperature.
-                // probably requires a healthy portion of if-spaghetti
-            }
         }
         std::fill(output_dmudr, output_dmudr + n, 0.0);
     }
