@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2013-2014 Andreas Lauser
+  Copyright (c) 2013-2015 Andreas Lauser
   Copyright (c) 2013 SINTEF ICT, Applied Mathematics.
   Copyright (c) 2013 Uni Research AS
   Copyright (c) 2015 IRIS AS
@@ -417,11 +417,17 @@ public:
         boost::filesystem::path casePath(outputDir);
         casePath /= boost::to_upper_copy(baseName);
 
+        // convert the start time to seconds since 1970-1-1@00:00:00
+        boost::posix_time::ptime startTime
+            = timer.startDateTime();
+        tm t = boost::posix_time::to_tm(startTime);
+        double secondsSinceEpochStart = std::mktime(&t);
+
         ertHandle_ = ecl_sum_alloc_writer(casePath.string().c_str(),
                                           false, /* formatted   */
                                           true,  /* unified     */
                                           ":",    /* join string */
-                                          timer.simulationTimeElapsed(),
+                                          secondsSinceEpochStart,
                                           nx,
                                           ny,
                                           nz);
