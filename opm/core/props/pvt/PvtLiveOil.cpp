@@ -36,9 +36,6 @@ namespace Opm
     //-------------------------------------------------------------------------
     PvtLiveOil::PvtLiveOil(const std::vector<Opm::PvtoTable>& pvtoTables)
     {
-        // by default, specify no temperature dependence of the PVT properties
-        oilvisctTables_ = 0;
-
         int numTables = pvtoTables.size();
         saturated_oil_table_.resize(numTables);
         undersat_oil_tables_.resize(numTables);
@@ -152,20 +149,13 @@ namespace Opm
 
             output_mu[i] = inverseB / inverseBMu; 
         }
-
-        if (oilvisctTables_ != 0) {
-            // TODO: temperature dependence
-            OPM_THROW(std::logic_error,
-                      "temperature dependent viscosity as a function of z "
-                      "is not yet implemented!");
-        }
     }
 
     /// Viscosity and its p and r derivatives as a function of p, T and r.
     void PvtLiveOil::mu(const int n,
                         const int* pvtTableIdx,
                         const double* p,
-                        const double* T,
+                        const double* /*T*/,
                                const double* r,
                                double* output_mu,
                                double* output_dmudp,
@@ -193,32 +183,14 @@ namespace Opm
                     output_dmudr[i] = (inverseBMu * dinverseBdr - inverseB * dinverseBmudr)
                                       / (inverseBMu * inverseBMu);
 
-                    if (oilvisctTables_ != 0) {
-                        // temperature dependence
-                        DeckRecordConstPtr viscrefRecord = viscrefKeyword_->getRecord(tableIdx);
-                        double pRef = viscrefRecord->getItem("REFERENCE_PRESSURE")->getSIDouble(0);
-                        double rsRef = viscrefRecord->getItem("REFERENCE_RS")->getSIDouble(0);
-                        double muRef = miscible_oil(pRef, rsRef, tableIdx, 3, 0)/miscible_oil(pRef, rsRef, tableIdx, 1, 0);
-
-                        double muOilvisct = (*oilvisctTables_)[tableIdx].evaluate("Viscosity", T[i]);
-                        double alpha = muOilvisct/muRef;
-
-                        output_mu[i] *= alpha;
-                        output_dmudp[i] *= alpha;
-                        output_dmudr[i] *= alpha;
-
-                        // TODO (?): derivative of oil viscosity w.r.t. temperature.
-                        // probably requires a healthy portion of if-spaghetti
-                    }
                 }
-
     }
 
     /// Viscosity and its p and r derivatives as a function of p, T and r.
     void PvtLiveOil::mu(const int n,
                         const int* pvtTableIdx,
                         const double* p,
-                        const double* T,
+                        const double* /*T*/,
                                const double* r,
                                const PhasePresence* cond,
                                double* output_mu,
@@ -248,24 +220,6 @@ namespace Opm
                     output_dmudr[i] = (inverseBMu * dinverseBdr - inverseB * dinverseBmudr)
                                       / (inverseBMu * inverseBMu);
 
-
-                    if (oilvisctTables_ != 0) {
-                        // temperature dependence
-                        DeckRecordConstPtr viscrefRecord = viscrefKeyword_->getRecord(tableIdx);
-                        double pRef = viscrefRecord->getItem("REFERENCE_PRESSURE")->getSIDouble(0);
-                        double rsRef = viscrefRecord->getItem("REFERENCE_RS")->getSIDouble(0);
-                        double muRef = miscible_oil(pRef, rsRef, tableIdx, 3, 0)/miscible_oil(pRef, rsRef, tableIdx, 1, 0);
-
-                        double muOilvisct = (*oilvisctTables_)[tableIdx].evaluate("Viscosity", T[i]);
-                        double alpha = muOilvisct/muRef;
-
-                        output_mu[i] *= alpha;
-                        output_dmudp[i] *= alpha;
-                        output_dmudr[i] *= alpha;
-
-                        // TODO (?): derivative of oil viscosity w.r.t. temperature.
-                        // probably requires a healthy portion of if-spaghetti
-                    }
                 }
     }
 
@@ -691,4 +645,5 @@ namespace Opm
                 }
             }
         }
+
 } // namespace Opm
