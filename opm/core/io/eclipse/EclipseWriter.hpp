@@ -65,6 +65,7 @@ public:
      *        binary files using ERT.
      */
     EclipseWriter(const parameter::ParameterGroup& params,
+                  Opm::DeckConstPtr deck,
                   Opm::EclipseStateConstPtr eclipseState,
                   const Opm::PhaseUsage &phaseUsage,
                   int numCells,
@@ -106,6 +107,7 @@ public:
     static ert_ecl_unit_enum convertUnitTypeErtEclUnitEnum(UnitSystem::UnitType unit);
 
 private:
+    Opm::DeckConstPtr deck_;
     Opm::EclipseStateConstPtr eclipseState_;
     int numCells_;
     std::array<int, 3> cartesianSize_;

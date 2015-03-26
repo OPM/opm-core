@@ -21,6 +21,7 @@
 #define OPM_OUTPUT_WRITER_HPP
 
 #include <memory>  // unique_ptr, shared_ptr
+#include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/core/simulator/SimulatorTimerInterface.hpp>
 
 struct UnstructuredGrid;
@@ -107,6 +108,7 @@ public:
      */
     static std::unique_ptr <OutputWriter>
     create (const parameter::ParameterGroup& params,
+            std::shared_ptr <const Deck> deck,
             std::shared_ptr <const EclipseState> eclipseState,
             const Opm::PhaseUsage &phaseUsage,
             std::shared_ptr <const UnstructuredGrid> grid);

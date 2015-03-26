@@ -443,7 +443,8 @@ public:
     // on the classes defined in the following.
 
     // add rate variables for each of the well in the input file
-    void addAllWells(Opm::EclipseStateConstPtr eclipseState,
+    void addAllWells(Opm::DeckConstPtr deck,
+                     Opm::EclipseStateConstPtr eclipseState,
                      const PhaseUsage& uses);
     void writeTimeStep(int writeStepIdx,
                        const SimulatorTimerInterface& timer,
@@ -612,6 +613,8 @@ public:
     { return ertHandle_; }
 
 protected:
+
+
     void updateTimeStepWellIndex_(const std::map<std::string, int>& nameToIdxMap)
     {
         const std::string& wellName = well_->name();
@@ -724,7 +727,8 @@ public:
              Opm::WellConstPtr well,
              PhaseUsage uses,
              BlackoilPhases::PhaseIndex phase,
-             WellType type)
+             WellType type,
+             bool useFieldUnits)
         : WellReport(summary,
                      eclipseState,
                      well,
@@ -732,8 +736,9 @@ public:
                      phase,
                      type,
                      'R',
-                     "SM3/DAY" /* surf. cub. m. per day */)
-    { }
+                     handleUnit_(phase, useFieldUnits))
+    {
+    }
 
     virtual double retrieveValue(const int /* writeStepIdx */,
                                  const SimulatorTimerInterface& timer,
@@ -755,8 +760,40 @@ public:
         // TODO: Why only positive rates?
         using namespace Opm::unit;
         return convert::to(std::max(0., rate(wellState)),
-                           cubic(meter)/day);
+                           targetRateToSiConversionFactor_);
     }
+
+private:
+    const std::string handleUnit_(BlackoilPhases::PhaseIndex phase, bool useField) {
+        using namespace Opm::unit;
+        if (phase == BlackoilPhases::Liquid || phase == BlackoilPhases::Aqua) {
+            if (useField) {
+                unitName_ = "STB/DAY";
+                targetRateToSiConversionFactor_ = stb/day; // m^3/s -> STB/day
+            }
+            else {
+                unitName_ = "SM3/DAY";
+                targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
+            }
+        }
+        else if (phase == BlackoilPhases::Vapour) {
+            if (useField) {
+                unitName_ = "MSCF/DAY";
+                targetRateToSiConversionFactor_ = 1000*cubic(feet)/day; // m^3/s -> MSCF^3/day
+            }
+            else {
+                unitName_ = "SM3/DAY";
+                targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
+            }
+        }
+        else
+            OPM_THROW(std::logic_error,
+                      "Unexpected phase " << phase);
+        return unitName_;
+    }
+
+    const char* unitName_;
+    double targetRateToSiConversionFactor_;
 };
 
 /// Monitors the total production in a well.
@@ -768,7 +805,8 @@ public:
               Opm::WellConstPtr well,
               PhaseUsage uses,
               BlackoilPhases::PhaseIndex phase,
-              WellType type)
+              WellType type,
+              bool useFieldUnits)
         : WellReport(summary,
                      eclipseState,
                      well,
@@ -776,7 +814,7 @@ public:
                      phase,
                      type,
                      'T',
-                     "SM3" /* surface cubic meter */ )
+                     handleUnit_(phase, useFieldUnits))
           // nothing produced when the reporting starts
         , total_(0.)
     { }
@@ -812,10 +850,41 @@ public:
         // add this timesteps production to the total
         total_ += intg;
         // report the new production total
-        return total_;
+        return unit::convert::to(total_, targetRateToSiConversionFactor_);
     }
 
 private:
+    const std::string handleUnit_(BlackoilPhases::PhaseIndex phase, bool useField) {
+        using namespace Opm::unit;
+        if (phase == BlackoilPhases::Liquid || phase == BlackoilPhases::Aqua) {
+            if (useField) {
+                unitName_ = "STB/DAY";
+                targetRateToSiConversionFactor_ = stb/day; // m^3/s -> STB/day
+            }
+            else {
+                unitName_ = "SM3/DAY";
+                targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
+            }
+        }
+        else if (phase == BlackoilPhases::Vapour) {
+            if (useField) {
+                unitName_ = "MSCF/DAY";
+                targetRateToSiConversionFactor_ = 1000*cubic(feet)/day; // m^3/s -> MSCF^3/day
+            }
+            else {
+                unitName_ = "SM3/DAY";
+                targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
+            }
+        }
+        else
+            OPM_THROW(std::logic_error,
+                      "Unexpected phase " << phase);
+        return unitName_;
+    }
+
+    const char* unitName_;
+    double targetRateToSiConversionFactor_;
+
     /// Aggregated value of the course of the simulation
     double total_;
 };
@@ -829,7 +898,8 @@ public:
             Opm::WellConstPtr well,
             PhaseUsage uses,
             BlackoilPhases::PhaseIndex phase,
-            WellType type)
+            WellType type,
+            bool useFieldUnits)
         : WellReport(summary,
                      eclipseState,
                      well,
@@ -837,7 +907,7 @@ public:
                      phase,
                      type,
                      'B',
-                     "Pascal")
+                     handleUnit_(phase, useFieldUnits))
     { }
 
     virtual double retrieveValue(const int /* writeStepIdx */,
@@ -856,8 +926,27 @@ public:
             return 0.0;
         }
 
-        return bhp(wellState);
+        return unit::convert::to(bhp(wellState), targetRateToSiConversionFactor_);
     }
+
+private:
+    const std::string handleUnit_(BlackoilPhases::PhaseIndex phase, bool useField) {
+        using namespace Opm::unit;
+
+        if (useField) {
+            unitName_ = "PSIA";
+            targetRateToSiConversionFactor_ = psia; // Pa -> PSI
+        }
+        else {
+            unitName_ = "BARSA";
+            targetRateToSiConversionFactor_ = barsa; // Pa -> bar
+        }
+
+        return unitName_;
+    }
+
+    const char* unitName_;
+    double targetRateToSiConversionFactor_;
 };
 
 // no inline implementation of this since it depends on the
@@ -891,10 +980,13 @@ void Summary::writeTimeStep(int writeStepIdx,
     ecl_sum_fwrite(ertHandle());
 }
 
-void Summary::addAllWells(Opm::EclipseStateConstPtr eclipseState,
+void Summary::addAllWells(Opm::DeckConstPtr deck,
+                          Opm::EclipseStateConstPtr eclipseState,
                           const PhaseUsage& uses)
 {
     eclipseState_ = eclipseState;
+    bool useFieldUnits = !deck->hasKeyword("METRIC");
+
     // TODO: Only create report variables that are requested with keywords
     // (e.g. "WOPR") in the input files, and only for those wells that are
     // mentioned in those keywords
@@ -919,7 +1011,8 @@ void Summary::addAllWells(Opm::EclipseStateConstPtr eclipseState,
                                          wells[wellIdx],
                                          uses,
                                          ertPhaseIdx,
-                                         wellType)));
+                                         wellType,
+                                         useFieldUnits)));
                 // W{O,G,W}{I,P}T
                 addWell(std::unique_ptr <WellReport>(
                             new WellTotal(*this,
@@ -927,7 +1020,8 @@ void Summary::addAllWells(Opm::EclipseStateConstPtr eclipseState,
                                           wells[wellIdx],
                                           uses,
                                           ertPhaseIdx,
-                                          wellType)));
+                                          wellType,
+                                          useFieldUnits)));
             }
         }
     }
@@ -949,7 +1043,8 @@ void Summary::addAllWells(Opm::EclipseStateConstPtr eclipseState,
                                 wells[wellIdx],
                                 uses,
                                 ertPhaseIdx,
-                                WELL_TYPES[0])));
+                                WELL_TYPES[0],
+                                useFieldUnits)));
     }
 }
 } // end namespace EclipseWriterDetails
@@ -1064,7 +1159,7 @@ void EclipseWriter::writeInit(const SimulatorTimerInterface &timer)
                                                      eclGrid->getNX(),
                                                      eclGrid->getNY(),
                                                      eclGrid->getNZ()));
-    summary_->addAllWells(eclipseState_, phaseUsage_);
+    summary_->addAllWells(deck_, eclipseState_, phaseUsage_);
 }
 
 // implementation of the writeTimeStep method
@@ -1231,11 +1326,13 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
 
 
 EclipseWriter::EclipseWriter(const parameter::ParameterGroup& params,
+                             Opm::DeckConstPtr deck,
                              Opm::EclipseStateConstPtr eclipseState,
                              const Opm::PhaseUsage &phaseUsage,
                              int numCells,
                              const int* compressedToCartesianCellIdx)
-    : eclipseState_(eclipseState)
+    : deck_(deck)
+    , eclipseState_(eclipseState)
     , numCells_(numCells)
     , compressedToCartesianCellIdx_(compressedToCartesianCellIdx)
     , gridToEclipseIdx_(numCells, int(-1) )
