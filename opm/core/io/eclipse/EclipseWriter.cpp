@@ -95,10 +95,10 @@ void restrictAndReorderToActiveCells(std::vector<double> &data,
 }
 
 // convert the units of an array
-void convertFromSiTo(std::vector<double> &siValues, double toSiConversionFactor)
+void convertFromSiTo(std::vector<double> &siValues, double toSiConversionFactor, double toSiOffset = 0)
 {
     for (size_t curIdx = 0; curIdx < siValues.size(); ++curIdx) {
-        siValues[curIdx] = unit::convert::to(siValues[curIdx], toSiConversionFactor);
+        siValues[curIdx] = unit::convert::to(siValues[curIdx] - toSiOffset, toSiConversionFactor);
     }
 }
 
@@ -1149,6 +1149,12 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
 
         sol.add(EclipseWriterDetails::Keyword<float>("PRESSURE", pressure));
 
+        // write the cell temperature
+        std::vector<double> temperature = reservoirState.temperature();
+        EclipseWriterDetails::convertFromSiTo(temperature, deckToSiTemperatureFactor_, deckToSiTemperatureOffset_);
+        EclipseWriterDetails::restrictAndReorderToActiveCells(temperature, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
+        sol.add(EclipseWriterDetails::Keyword<float>("TEMP", temperature));
+
         std::vector<double> saturation_water;
         std::vector<double> saturation_gas;
 
@@ -1265,6 +1271,12 @@ EclipseWriter::EclipseWriter(const parameter::ParameterGroup& params,
     // factor from the pressure values given in the deck to Pascals
     deckToSiPressure_ =
         eclipseState->getDeckUnitSystem()->parse("Pressure")->getSIScaling();
+
+    // factor and offset from the temperature values given in the deck to Kelvin
+    deckToSiTemperatureFactor_ =
+        eclipseState->getDeckUnitSystem()->parse("Temperature")->getSIScaling();
+    deckToSiTemperatureOffset_ =
+        eclipseState->getDeckUnitSystem()->parse("Temperature")->getSIOffset();
 
     init(params);
 }

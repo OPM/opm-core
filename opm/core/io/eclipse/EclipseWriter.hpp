@@ -112,6 +112,8 @@ private:
     const int* compressedToCartesianCellIdx_;
     std::vector< int > gridToEclipseIdx_;
     double deckToSiPressure_;
+    double deckToSiTemperatureFactor_;
+    double deckToSiTemperatureOffset_;
     bool enableOutput_;
     int outputInterval_;
     int writeStepIdx_;
