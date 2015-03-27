@@ -913,7 +913,7 @@ public:
                      phase,
                      type,
                      'B',
-                     handleUnit_(phase, useFieldUnits))
+                     handleUnit_(useFieldUnits))
     { }
 
     virtual double retrieveValue(const int /* writeStepIdx */,
@@ -936,7 +936,7 @@ public:
     }
 
 private:
-    const std::string handleUnit_(BlackoilPhases::PhaseIndex phase, bool useField) {
+    const std::string handleUnit_(bool useField) {
         using namespace Opm::unit;
 
         if (useField) {
