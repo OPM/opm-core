@@ -56,7 +56,6 @@ protected:
      * need to pick them up from the object members.
      */
     SimulatorOutputBase (const parameter::ParameterGroup& p,
-                         std::shared_ptr <const Deck> deck,
                          std::shared_ptr <const EclipseState> eclipseState,
                          const Opm::PhaseUsage &phaseUsage,
                          std::shared_ptr <const UnstructuredGrid> grid,
@@ -146,7 +145,6 @@ private:
 template <typename Simulator>
 struct SimulatorOutput : public SimulatorOutputBase {
 	SimulatorOutput (const parameter::ParameterGroup& params,
-                     std::shared_ptr <const Deck> deck,
                      std::shared_ptr <const EclipseState> eclipseState,
                      const Opm::PhaseUsage &phaseUsage,
                      std::shared_ptr <const UnstructuredGrid> grid,
@@ -155,7 +153,7 @@ struct SimulatorOutput : public SimulatorOutputBase {
                      std::shared_ptr <const WellState> wellState,
                      std::shared_ptr <Simulator> sim)
         // send all other parameters to base class
-        : SimulatorOutputBase (params, deck, eclipseState, phaseUsage,
+        : SimulatorOutputBase (params, eclipseState, phaseUsage,
                                grid, timer, state, wellState)
 
         // store reference to simulator in derived class
@@ -171,7 +169,6 @@ struct SimulatorOutput : public SimulatorOutputBase {
      * the arguments passed exceeds the lifetime of this object.
      */
     SimulatorOutput (const parameter::ParameterGroup& params,
-                     const Deck& deck,
                      const EclipseState& eclipseState,
                      const Opm::PhaseUsage &phaseUsage,
                      const UnstructuredGrid& grid,
@@ -181,7 +178,6 @@ struct SimulatorOutput : public SimulatorOutputBase {
                      Simulator& sim)
         // send all other parameters to base class
         : SimulatorOutputBase (params,
-                               share_obj (deck),
                                share_obj (eclipseState),
                                phaseUsage,
                                share_obj (grid),
