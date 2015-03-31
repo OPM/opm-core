@@ -734,7 +734,7 @@ public:
              PhaseUsage uses,
              BlackoilPhases::PhaseIndex phase,
              WellType type,
-             bool useFieldUnits)
+             UnitSystem::UnitType unitType)
         : WellReport(summary,
                      eclipseState,
                      well,
@@ -742,7 +742,7 @@ public:
                      phase,
                      type,
                      'R',
-                     handleUnit_(phase, useFieldUnits))
+                     handleUnit_(phase, unitType))
     {
     }
 
@@ -770,27 +770,31 @@ public:
     }
 
 private:
-    const std::string handleUnit_(BlackoilPhases::PhaseIndex phase, bool useField) {
+    const std::string handleUnit_(BlackoilPhases::PhaseIndex phase, UnitSystem::UnitType unitType) {
         using namespace Opm::unit;
         if (phase == BlackoilPhases::Liquid || phase == BlackoilPhases::Aqua) {
-            if (useField) {
+            if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
                 unitName_ = "STB/DAY";
                 targetRateToSiConversionFactor_ = stb/day; // m^3/s -> STB/day
             }
-            else {
+            else if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
                 unitName_ = "SM3/DAY";
                 targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
             }
+            else
+                OPM_THROW(std::logic_error, "Deck uses unexpected unit system");
         }
         else if (phase == BlackoilPhases::Vapour) {
-            if (useField) {
+            if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
                 unitName_ = "MSCF/DAY";
                 targetRateToSiConversionFactor_ = 1000*cubic(feet)/day; // m^3/s -> MSCF^3/day
             }
-            else {
+            else if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
                 unitName_ = "SM3/DAY";
                 targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
             }
+            else
+                OPM_THROW(std::logic_error, "Deck uses unexpected unit system");
         }
         else
             OPM_THROW(std::logic_error,
@@ -812,7 +816,7 @@ public:
               PhaseUsage uses,
               BlackoilPhases::PhaseIndex phase,
               WellType type,
-              bool useFieldUnits)
+              UnitSystem::UnitType unitType)
         : WellReport(summary,
                      eclipseState,
                      well,
@@ -820,7 +824,7 @@ public:
                      phase,
                      type,
                      'T',
-                     handleUnit_(phase, useFieldUnits))
+                     handleUnit_(phase, unitType))
           // nothing produced when the reporting starts
         , total_(0.)
     { }
@@ -860,27 +864,31 @@ public:
     }
 
 private:
-    const std::string handleUnit_(BlackoilPhases::PhaseIndex phase, bool useField) {
+    const std::string handleUnit_(BlackoilPhases::PhaseIndex phase, UnitSystem::UnitType unitType) {
         using namespace Opm::unit;
         if (phase == BlackoilPhases::Liquid || phase == BlackoilPhases::Aqua) {
-            if (useField) {
+            if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
                 unitName_ = "STB/DAY";
                 targetRateToSiConversionFactor_ = stb/day; // m^3/s -> STB/day
             }
-            else {
+            else if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
                 unitName_ = "SM3/DAY";
                 targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
             }
+            else
+                OPM_THROW(std::logic_error, "Deck uses unexpected unit system");
         }
         else if (phase == BlackoilPhases::Vapour) {
-            if (useField) {
+            if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
                 unitName_ = "MSCF/DAY";
                 targetRateToSiConversionFactor_ = 1000*cubic(feet)/day; // m^3/s -> MSCF^3/day
             }
-            else {
+            else if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
                 unitName_ = "SM3/DAY";
                 targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
             }
+            else
+                OPM_THROW(std::logic_error, "Deck uses unexpected unit system");
         }
         else
             OPM_THROW(std::logic_error,
@@ -991,7 +999,8 @@ void Summary::addAllWells(Opm::DeckConstPtr deck,
                           const PhaseUsage& uses)
 {
     eclipseState_ = eclipseState;
-    bool useFieldUnits = !deck->hasKeyword("METRIC");
+    std::shared_ptr<const UnitSystem> unitsystem = eclipseState_->getDeckUnitSystem();
+    auto deckUnitType = unitsystem->getType();
 
     // TODO: Only create report variables that are requested with keywords
     // (e.g. "WOPR") in the input files, and only for those wells that are
@@ -1018,7 +1027,7 @@ void Summary::addAllWells(Opm::DeckConstPtr deck,
                                          uses,
                                          ertPhaseIdx,
                                          wellType,
-                                         useFieldUnits)));
+                                         deckUnitType)));
                 // W{O,G,W}{I,P}T
                 addWell(std::unique_ptr <WellReport>(
                             new WellTotal(*this,
@@ -1027,7 +1036,7 @@ void Summary::addAllWells(Opm::DeckConstPtr deck,
                                           uses,
                                           ertPhaseIdx,
                                           wellType,
-                                          useFieldUnits)));
+                                          deckUnitType)));
             }
         }
     }
@@ -1050,7 +1059,7 @@ void Summary::addAllWells(Opm::DeckConstPtr deck,
                                 uses,
                                 ertPhaseIdx,
                                 WELL_TYPES[0],
-                                useFieldUnits)));
+                                deckUnitType)));
     }
 }
 } // end namespace EclipseWriterDetails
