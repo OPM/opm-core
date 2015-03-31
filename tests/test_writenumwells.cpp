@@ -151,7 +151,6 @@ Opm::EclipseWriterPtr createEclipseWriter(Opm::DeckConstPtr deck,
   const Opm::PhaseUsage phaseUsage = Opm::phaseUsageFromDeck(deck);
 
   Opm::EclipseWriterPtr eclWriter(new Opm::EclipseWriter(params,
-                                                         deck,
                                                          eclipseState,
                                                          phaseUsage,
                                                          eclipseState->getEclipseGrid()->getCartesianSize(),

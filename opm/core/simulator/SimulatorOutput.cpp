@@ -30,7 +30,6 @@ using namespace Opm;
 
 SimulatorOutputBase::SimulatorOutputBase (
         const parameter::ParameterGroup& params,
-        std::shared_ptr <const Deck> deck,
         std::shared_ptr <const EclipseState> eclipseState,
         const Opm::PhaseUsage &phaseUsage,
         std::shared_ptr <const UnstructuredGrid> grid,
@@ -46,7 +45,7 @@ SimulatorOutputBase::SimulatorOutputBase (
 
     // process parameters into a writer. we don't setup a new chain in
     // every timestep!
-    , writer_ (std::move (OutputWriter::create (params, deck, eclipseState, phaseUsage, grid)))
+    , writer_ (std::move (OutputWriter::create (params, eclipseState, phaseUsage, grid)))
 
     // always start from the first timestep
     , next_ (0) {

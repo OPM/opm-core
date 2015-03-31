@@ -136,7 +136,6 @@ std::shared_ptr<Opm::EclipseWriter> createEclipseWriter(std::shared_ptr<const Op
     const UnstructuredGrid &ourFinerUnstructuredGrid = *ourFineGridManagerPtr->c_grid();
 
     std::shared_ptr<Opm::EclipseWriter> eclipseWriter = std::make_shared<Opm::EclipseWriter>(params,
-                                                                                             deck,
                                                                                              eclipseState,
                                                                                              phaseUsage,
                                                                                              ourFinerUnstructuredGrid.number_of_cells,

@@ -449,8 +449,7 @@ public:
     // on the classes defined in the following.
 
     // add rate variables for each of the well in the input file
-    void addAllWells(Opm::DeckConstPtr deck,
-                     Opm::EclipseStateConstPtr eclipseState,
+    void addAllWells(Opm::EclipseStateConstPtr eclipseState,
                      const PhaseUsage& uses);
     void writeTimeStep(int writeStepIdx,
                        const SimulatorTimerInterface& timer,
@@ -994,8 +993,7 @@ void Summary::writeTimeStep(int writeStepIdx,
     ecl_sum_fwrite(ertHandle());
 }
 
-void Summary::addAllWells(Opm::DeckConstPtr deck,
-                          Opm::EclipseStateConstPtr eclipseState,
+void Summary::addAllWells(Opm::EclipseStateConstPtr eclipseState,
                           const PhaseUsage& uses)
 {
     eclipseState_ = eclipseState;
@@ -1174,7 +1172,7 @@ void EclipseWriter::writeInit(const SimulatorTimerInterface &timer)
                                                      eclGrid->getNX(),
                                                      eclGrid->getNY(),
                                                      eclGrid->getNZ()));
-    summary_->addAllWells(deck_, eclipseState_, phaseUsage_);
+    summary_->addAllWells(eclipseState_, phaseUsage_);
 }
 
 // implementation of the writeTimeStep method
@@ -1341,13 +1339,11 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
 
 
 EclipseWriter::EclipseWriter(const parameter::ParameterGroup& params,
-                             Opm::DeckConstPtr deck,
                              Opm::EclipseStateConstPtr eclipseState,
                              const Opm::PhaseUsage &phaseUsage,
                              int numCells,
                              const int* compressedToCartesianCellIdx)
-    : deck_(deck)
-    , eclipseState_(eclipseState)
+    : eclipseState_(eclipseState)
     , numCells_(numCells)
     , compressedToCartesianCellIdx_(compressedToCartesianCellIdx)
     , gridToEclipseIdx_(numCells, int(-1) )
