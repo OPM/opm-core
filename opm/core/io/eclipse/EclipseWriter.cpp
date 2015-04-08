@@ -772,11 +772,11 @@ private:
     const std::string handleUnit_(BlackoilPhases::PhaseIndex phase, UnitSystem::UnitType unitType) {
         using namespace Opm::unit;
         if (phase == BlackoilPhases::Liquid || phase == BlackoilPhases::Aqua) {
-            if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
+            if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
                 unitName_ = "STB/DAY";
                 targetRateToSiConversionFactor_ = stb/day; // m^3/s -> STB/day
             }
-            else if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
+            else if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
                 unitName_ = "SM3/DAY";
                 targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
             }
@@ -784,11 +784,11 @@ private:
                 OPM_THROW(std::logic_error, "Deck uses unexpected unit system");
         }
         else if (phase == BlackoilPhases::Vapour) {
-            if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
+            if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
                 unitName_ = "MSCF/DAY";
                 targetRateToSiConversionFactor_ = 1000*cubic(feet)/day; // m^3/s -> MSCF^3/day
             }
-            else if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
+            else if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
                 unitName_ = "SM3/DAY";
                 targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
             }
@@ -866,11 +866,11 @@ private:
     const std::string handleUnit_(BlackoilPhases::PhaseIndex phase, UnitSystem::UnitType unitType) {
         using namespace Opm::unit;
         if (phase == BlackoilPhases::Liquid || phase == BlackoilPhases::Aqua) {
-            if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
+            if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
                 unitName_ = "STB/DAY";
                 targetRateToSiConversionFactor_ = stb/day; // m^3/s -> STB/day
             }
-            else if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
+            else if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
                 unitName_ = "SM3/DAY";
                 targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
             }
@@ -878,11 +878,11 @@ private:
                 OPM_THROW(std::logic_error, "Deck uses unexpected unit system");
         }
         else if (phase == BlackoilPhases::Vapour) {
-            if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
+            if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
                 unitName_ = "MSCF/DAY";
                 targetRateToSiConversionFactor_ = 1000*cubic(feet)/day; // m^3/s -> MSCF^3/day
             }
-            else if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
+            else if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
                 unitName_ = "SM3/DAY";
                 targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
             }
@@ -912,7 +912,7 @@ public:
             PhaseUsage uses,
             BlackoilPhases::PhaseIndex phase,
             WellType type,
-            bool useFieldUnits)
+            UnitSystem::UnitType unitType)
         : WellReport(summary,
                      eclipseState,
                      well,
@@ -920,7 +920,7 @@ public:
                      phase,
                      type,
                      'B',
-                     handleUnit_(useFieldUnits))
+                     handleUnit_(unitType))
     { }
 
     virtual double retrieveValue(const int /* writeStepIdx */,
@@ -943,17 +943,20 @@ public:
     }
 
 private:
-    const std::string handleUnit_(bool useField) {
+    const std::string handleUnit_(UnitSystem::UnitType unitType) {
         using namespace Opm::unit;
 
-        if (useField) {
+        if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
             unitName_ = "PSIA";
             targetRateToSiConversionFactor_ = psia; // Pa -> PSI
         }
-        else {
+        else if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
             unitName_ = "BARSA";
             targetRateToSiConversionFactor_ = barsa; // Pa -> bar
         }
+        else
+            OPM_THROW(std::logic_error,
+                      "Unexpected unit type " << unitType);
 
         return unitName_;
     }
