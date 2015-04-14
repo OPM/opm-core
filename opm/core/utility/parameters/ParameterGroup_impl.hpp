@@ -38,11 +38,13 @@
 
 #include <iostream>
 #include <string>
+#include <stdexcept>
 
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/core/utility/parameters/ParameterStrings.hpp>
 #include <opm/core/utility/parameters/ParameterTools.hpp>
 #include <opm/core/utility/parameters/Parameter.hpp>
+#include <opm/core/utility/ErrorMacros.hpp>
 
 namespace Opm {
     namespace parameter {
@@ -115,11 +117,11 @@ namespace Opm {
 			  << "[...]" << std::endl;
 		exit(EXIT_FAILURE);
 	    }
-	    this->parseCommandLineArguments(argc, argv);
+	    this->parseCommandLineArguments(argc, argv, verify_syntax);
 	}
 
         template <typename StringArray>
-	void ParameterGroup::parseCommandLineArguments(int argc, StringArray argv)
+	void ParameterGroup::parseCommandLineArguments(int argc, StringArray argv, bool verify_syntax)
         {
 	    std::vector<std::string> files;
 	    std::vector<std::pair<std::string, std::string> > assignments;
@@ -150,7 +152,13 @@ namespace Opm {
 		} else if (file_type.second == "param") {
 		    this->readParam(files[i]);
 		} else {
-                    unhandled_arguments_.push_back(files[i]);
+                    if (verify_syntax) {
+                        std::cerr << "ERROR: Input '" << files[i] << "' is not a valid name for a parameter file.\n";
+                        std::cerr << "       Valid filename extensions are 'xml' and 'param'.\n";
+                        OPM_THROW(std::runtime_error, "ParameterGroup cannot handle argument: " << files[i]);
+                    } else {
+                        unhandled_arguments_.push_back(files[i]);
+                    }
 		}
 	    }
 	    for (int i = 0; i < int(assignments.size()); ++i) {
