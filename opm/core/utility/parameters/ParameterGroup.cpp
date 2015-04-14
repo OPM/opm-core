@@ -329,5 +329,10 @@ namespace Opm {
 	    }
 	}
 
+        const std::vector<std::string> ParameterGroup::unhandledArguments() const
+        {
+            return unhandled_arguments_;
+        }
+
     } // namespace parameter
 } // namespace Opm

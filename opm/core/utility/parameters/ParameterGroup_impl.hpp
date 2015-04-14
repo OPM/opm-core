@@ -150,9 +150,7 @@ namespace Opm {
 		} else if (file_type.second == "param") {
 		    this->readParam(files[i]);
 		} else {
-		    std::cout << "WARNING: Ignoring file '"
-                              << files[i] << "' with unknown extension.\n"
-			      << "Valid filename extensions are 'xml' and 'param'.\n";
+                    unhandled_arguments_.push_back(files[i]);
 		}
 	    }
 	    for (int i = 0; i < int(assignments.size()); ++i) {
