@@ -73,6 +73,7 @@ BOOST_AUTO_TEST_CASE(commandline_syntax_init)
         "/slashtopitem=anotherstring\n"
         "/topitem=somestring\n";
     BOOST_CHECK(os.str() == correct_answer);
+    BOOST_CHECK(p.unhandledArguments().empty());
 
     // Tests that only run in debug mode.
 #ifndef NDEBUG
@@ -88,7 +89,7 @@ BOOST_AUTO_TEST_CASE(xml_syntax_init)
                   "/group/item=overridingstring",
                   "unhandledargument" };
     const std::size_t argc = sizeof(argv)/sizeof(argv[0]);
-    parameter::ParameterGroup p(argc, argv);
+    parameter::ParameterGroup p(argc, argv, false);
     BOOST_CHECK(p.get<std::string>("topitem") == "somestring");
     std::ostringstream os;
     p.writeParamToStream(os);
@@ -104,4 +105,16 @@ BOOST_AUTO_TEST_CASE(xml_syntax_init)
     // Tests that only run in debug mode.
 #ifndef NDEBUG
 #endif
+}
+
+
+BOOST_AUTO_TEST_CASE(failing_strict_xml_syntax_init)
+{
+    typedef const char* cp;
+    cp argv[] = { "program_command",
+                  "testdata.xml",
+                  "/group/item=overridingstring",
+                  "unhandledargument" };
+    const std::size_t argc = sizeof(argv)/sizeof(argv[0]);
+    BOOST_CHECK_THROW(parameter::ParameterGroup p(argc, argv), std::runtime_error);
 }
