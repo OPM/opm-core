@@ -85,7 +85,8 @@ BOOST_AUTO_TEST_CASE(xml_syntax_init)
     typedef const char* cp;
     cp argv[] = { "program_command",
                   "testdata.xml",
-                  "/group/item=overridingstring" };
+                  "/group/item=overridingstring",
+                  "unhandledargument" };
     const std::size_t argc = sizeof(argv)/sizeof(argv[0]);
     parameter::ParameterGroup p(argc, argv);
     BOOST_CHECK(p.get<std::string>("topitem") == "somestring");
@@ -98,7 +99,8 @@ BOOST_AUTO_TEST_CASE(xml_syntax_init)
         "/slashtopitem=anotherstring\n"
         "/topitem=somestring\n";
     BOOST_CHECK(os.str() == correct_answer);
-
+    BOOST_REQUIRE(p.unhandledArguments().size() == 1);
+    BOOST_CHECK_EQUAL(p.unhandledArguments()[0], "unhandledargument");
     // Tests that only run in debug mode.
 #ifndef NDEBUG
 #endif
