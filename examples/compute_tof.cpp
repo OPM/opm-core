@@ -160,7 +160,7 @@ try
     using namespace Opm;
 
     std::cout << "\n================    Test program for incompressible tof computations     ===============\n\n";
-    parameter::ParameterGroup param(argc, argv, false);
+    parameter::ParameterGroup param(argc, argv);
     std::cout << "---------------    Reading parameters     ---------------" << std::endl;
 
     // Read the deck.

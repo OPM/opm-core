@@ -47,22 +47,24 @@
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <cstddef>
 #include <sstream>
+#include <vector>
 
 using namespace Opm;
 
 BOOST_AUTO_TEST_CASE(commandline_syntax_init)
 {
     typedef const char* cp;
-    cp argv[] = { "program_command",
-                  "topitem=somestring",
-                  "/slashtopitem=anotherstring",
-                  "/group/item=1",
-                  "/group/anotheritem=2",
-                  "/group/subgroup/item=3",
-                  "/group/subgroup/anotheritem=4",
-                  "/group/item=overridingstring" };
-    const std::size_t argc = sizeof(argv)/sizeof(argv[0]);
-    parameter::ParameterGroup p(argc, argv);
+    std::vector<cp> argv = { "program_command",
+                             "topitem=somestring",
+                             "/slashtopitem=anotherstring",
+                             "/group/item=1",
+                             "/group/anotheritem=2",
+                             "/group/subgroup/item=3",
+                             "/group/subgroup/anotheritem=4",
+                             "/group/item=overridingstring",
+                             0 };
+    const std::size_t argc = argv.size() - 1;
+    parameter::ParameterGroup p(argc, argv.data());
     BOOST_CHECK(p.get<std::string>("topitem") == "somestring");
     std::ostringstream os;
     p.writeParamToStream(os);
@@ -73,6 +75,7 @@ BOOST_AUTO_TEST_CASE(commandline_syntax_init)
         "/slashtopitem=anotherstring\n"
         "/topitem=somestring\n";
     BOOST_CHECK(os.str() == correct_answer);
+    BOOST_CHECK(p.unhandledArguments().empty());
 
     // Tests that only run in debug mode.
 #ifndef NDEBUG
@@ -83,11 +86,13 @@ BOOST_AUTO_TEST_CASE(commandline_syntax_init)
 BOOST_AUTO_TEST_CASE(xml_syntax_init)
 {
     typedef const char* cp;
-    cp argv[] = { "program_command",
-                  "testdata.xml",
-                  "/group/item=overridingstring" };
-    const std::size_t argc = sizeof(argv)/sizeof(argv[0]);
-    parameter::ParameterGroup p(argc, argv);
+    std::vector<cp> argv = { "program_command",
+                             "testdata.xml",
+                             "/group/item=overridingstring",
+                             "unhandledargument",
+                             0};
+    const std::size_t argc = argv.size() - 1;
+    parameter::ParameterGroup p(argc, argv.data(), false);
     BOOST_CHECK(p.get<std::string>("topitem") == "somestring");
     std::ostringstream os;
     p.writeParamToStream(os);
@@ -98,8 +103,22 @@ BOOST_AUTO_TEST_CASE(xml_syntax_init)
         "/slashtopitem=anotherstring\n"
         "/topitem=somestring\n";
     BOOST_CHECK(os.str() == correct_answer);
-
+    BOOST_REQUIRE(p.unhandledArguments().size() == 1);
+    BOOST_CHECK_EQUAL(p.unhandledArguments()[0], "unhandledargument");
     // Tests that only run in debug mode.
 #ifndef NDEBUG
 #endif
+}
+
+
+BOOST_AUTO_TEST_CASE(failing_strict_xml_syntax_init)
+{
+    typedef const char* cp;
+    std::vector<cp> argv = { "program_command",
+                             "testdata.xml",
+                             "/group/item=overridingstring",
+                             "unhandledargument",
+                             0 };
+    const std::size_t argc = argv.size() - 1;
+    BOOST_CHECK_THROW(parameter::ParameterGroup p(argc, argv.data()), std::runtime_error);
 }

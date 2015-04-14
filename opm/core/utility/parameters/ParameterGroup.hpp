@@ -127,12 +127,16 @@ namespace Opm {
 	    ///
 	    /// It is required that argv[0] is the program name, while if
 	    /// 0 < i < argc, then argv[i] is either
-	    /// the name of an xml file or parametername=value.
+	    /// the name of an xml file, parameter file or parametername=value.
 	    ///
 	    /// \param argc is the number of command-line arguments,
 	    ///        including the name of the executable.
 	    /// \param argv is an array of char*, each of which is a
-	    /// command line argument.
+	    ///        command line argument.
+	    /// \param verify_syntax  If true (default), then it is an error to
+	    ///        pass arguments that cannot be handled by the ParameterGroup,
+	    ///        or an empty argument list. If false, such arguments are stored
+	    ///        and can be retrieved later with unhandledArguments().
             template <typename StringArray>
 	    ParameterGroup(int argc, StringArray argv, const bool verify_syntax = true);
 
@@ -267,6 +271,9 @@ namespace Opm {
             /// Insert a new parameter item into the group.
 	    void insertParameter(const std::string& name, const std::string& value);
 
+            /// Unhandled arguments from command line parsing.
+            const std::vector<std::string>& unhandledArguments() const;
+
 	private:
 	    typedef std::shared_ptr<ParameterMapItem> data_type;
 	    typedef std::pair<std::string, data_type> pair_type;
@@ -276,11 +283,12 @@ namespace Opm {
 	    map_type map_;
 	    const ParameterGroup* parent_;
 	    bool output_is_enabled_;
+	    std::vector<std::string> unhandled_arguments_;
 
 	    template<typename T, class Requirement>
 	    T translate(const pair_type& data, const Requirement& chk) const;
             template <typename StringArray>
-	    void parseCommandLineArguments(int argc, StringArray argv);
+	    void parseCommandLineArguments(int argc, StringArray argv, bool verify_syntax);
 	    void recursiveSetIsOutputEnabled(bool output_is_enabled);
 
 	    // helper routines to do textual I/O
