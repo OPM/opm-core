@@ -268,7 +268,7 @@ namespace Opm {
 	    void insertParameter(const std::string& name, const std::string& value);
 
             /// Unhandled arguments from command line parsing.
-            const std::vector<std::string> unhandledArguments() const;
+            const std::vector<std::string>& unhandledArguments() const;
 
 	private:
 	    typedef std::shared_ptr<ParameterMapItem> data_type;
@@ -279,7 +279,7 @@ namespace Opm {
 	    map_type map_;
 	    const ParameterGroup* parent_;
 	    bool output_is_enabled_;
-            std::vector<std::string> unhandled_arguments_;
+	    std::vector<std::string> unhandled_arguments_;
 
 	    template<typename T, class Requirement>
 	    T translate(const pair_type& data, const Requirement& chk) const;
