@@ -410,6 +410,7 @@ public:
     Summary(const std::string& outputDir,
             const std::string& baseName,
             const SimulatorTimerInterface& timer,
+            bool time_in_days , 
             int nx,
             int ny,
             int nz)
@@ -428,6 +429,7 @@ public:
                                           true,  /* unified     */
                                           ":",    /* join string */
                                           secondsSinceEpochStart,
+                                          time_in_days,
                                           nx,
                                           ny,
                                           nz);
@@ -1168,14 +1170,24 @@ void EclipseWriter::writeInit(const SimulatorTimerInterface &timer)
 
     /* Create summary object (could not do it at construction time,
        since it requires knowledge of the start time). */
-    auto eclGrid = eclipseState_->getEclipseGrid();
-    summary_.reset(new EclipseWriterDetails::Summary(outputDir_,
-                                                     baseName_,
-                                                     timer,
-                                                     eclGrid->getNX(),
-                                                     eclGrid->getNY(),
-                                                     eclGrid->getNZ()));
-    summary_->addAllWells(eclipseState_, phaseUsage_);
+    {
+      auto eclGrid = eclipseState_->getEclipseGrid();
+      std::shared_ptr<const UnitSystem> unitsystem = eclipseState_->getDeckUnitSystem();
+      auto deckUnitType = unitsystem->getType();
+      bool time_in_days = true;
+
+      if (deckUnitType == UnitSystem::UNIT_TYPE_LAB)
+        time_in_days = false;
+
+      summary_.reset(new EclipseWriterDetails::Summary(outputDir_,
+                                                       baseName_,
+                                                       timer,
+                                                       time_in_days,
+                                                       eclGrid->getNX(),
+                                                       eclGrid->getNY(),
+                                                       eclGrid->getNZ()));
+      summary_->addAllWells(eclipseState_, phaseUsage_);
+    }
 }
 
 // implementation of the writeTimeStep method
