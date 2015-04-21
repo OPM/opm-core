@@ -68,9 +68,11 @@ namespace EclipseWriterDetails {
                                                                  swat,
                                                                  sgas);
 
-                if (well->getPLTActive(simulatorTimer.currentStepNum())) {
-                    std::cerr << "PLT not supported, writing RFT data" << std::endl;
-                }
+                // TODO: replace this silenced warning with an appropriate
+                //       use of the OpmLog facilities.
+                // if (well->getPLTActive(simulatorTimer.currentStepNum())) {
+                //     std::cerr << "PLT not supported, writing RFT data" << std::endl;
+                // }
 
                 rft_nodes.push_back(ecl_node);
             }
