@@ -476,8 +476,7 @@ public:
     {
         ertHandle_ = ecl_sum_add_tstep(summaryHandle.ertHandle(),
                                        writeStepIdx,
-                                       Opm::unit::convert::to(timer.simulationTimeElapsed(),
-                                                              Opm::unit::day));
+                                       timer.simulationTimeElapsed());
     }
 
     // no destructor in this class as ERT takes care of freeing the
