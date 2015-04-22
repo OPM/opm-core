@@ -39,9 +39,9 @@ namespace Opm {
         , growth_factor_( param.getDefault("solver.growthfactor", double(1.25) ) )
           // default is 1 year, convert to seconds
         , max_time_step_( unit::convert::from(param.getDefault("timestep.max_timestep_in_days", 365.0 ), unit::day) )
-        , solver_restart_max_( param.getDefault("solver.restart", int(3) ) )
-        , solver_verbose_( param.getDefault("solver.verbose", bool(false) ) )
-        , timestep_verbose_( param.getDefault("timestep.verbose", bool(false) ) )
+        , solver_restart_max_( param.getDefault("solver.restart", int(10) ) )
+        , solver_verbose_( param.getDefault("solver.verbose", bool(true) ) )
+        , timestep_verbose_( param.getDefault("timestep.verbose", bool(true) ) )
         , last_timestep_( -1.0 )
     {
         // valid are "pid" and "pid+iteration"
