@@ -15,10 +15,9 @@ Source0:        https://github.com/OPM/%{name}/archive/release/%{version}/%{tag}
 BuildRequires:  blas-devel lapack-devel dune-common-devel
 BuildRequires:  git suitesparse-devel cmake28 doxygen bc
 BuildRequires:  tinyxml-devel dune-istl-devel ert.ecl-devel
+BuildRequires:  opm-parser-devel boost148-devel
 %{?el5:BuildRequires: gcc44 gcc44-c++}
 %{!?el5:BuildRequires: gcc gcc-c++}
-%{?el5:BuildRequires: boost141-devel}
-%{!?el5:BuildRequires: boost-devel}
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Requires:       libopm-core1 = %{version}
 
@@ -81,7 +80,7 @@ This package contains the debug symbols for opm-core
 
 # consider using -DUSE_VERSIONED_DIR=ON if backporting
 %build
-cmake28 -DBUILD_SHARED_LIBS=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DSTRIP_DEBUGGING_SYMBOLS=ON -DCMAKE_INSTALL_PREFIX=%{_prefix} -DCMAKE_INSTALL_DOCDIR=share/doc/%{name}-%{version} -DUSE_RUNPATH=OFF %{?el5:-DCMAKE_CXX_COMPILER=g++44 -DCMAKE_C_COMPILER=gcc44 -DBOOST_LIBRARYDIR=%{_libdir}/boost141 -DBOOST_INCLUDEDIR=/usr/include/boost141}
+cmake28 -DBUILD_SHARED_LIBS=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DSTRIP_DEBUGGING_SYMBOLS=ON -DCMAKE_INSTALL_PREFIX=%{_prefix} -DCMAKE_INSTALL_DOCDIR=share/doc/%{name}-%{version} -DUSE_RUNPATH=OFF %{?el5:-DCMAKE_CXX_COMPILER=g++44 -DCMAKE_C_COMPILER=gcc44 -DCMAKE_Fortran_COMPILER=gfortran44} -DBOOST_LIBRARYDIR=%{_libdir}/boost148 -DBOOST_INCLUDEDIR=/usr/include/boost148
 make
 
 %install
