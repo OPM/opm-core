@@ -160,8 +160,6 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_EclipseWriter.cpp
 	tests/test_EclipseWriteRFTHandler.cpp
 	tests/test_compressedpropertyaccess.cpp
-	tests/test_spline.cpp
-	tests/test_propertysystem.cpp
 	tests/test_dgbasis.cpp
 	tests/test_cartgrid.cpp
   tests/test_ug.cpp
@@ -416,7 +414,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/reorder/reordersequence.h
 	opm/core/transport/reorder/tarjan.h
 	opm/core/utility/Average.hpp
-	opm/core/utility/ClassName.hpp
 	opm/core/utility/CompressedPropertyAccess.hpp
 	opm/core/utility/DataMap.hpp
 	opm/core/utility/ErrorMacros.hpp
@@ -427,17 +424,13 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/MonotCubicInterpolator.hpp
 	opm/core/utility/NonuniformTableLinear.hpp
 	opm/core/utility/NullStream.hpp
-	opm/core/utility/PolynomialUtils.hpp
 	opm/core/utility/RegionMapping.hpp
 	opm/core/utility/RootFinders.hpp
 	opm/core/utility/SparseTable.hpp
 	opm/core/utility/SparseVector.hpp
-	opm/core/utility/Spline.hpp
 	opm/core/utility/StopWatch.hpp
-	opm/core/utility/TridiagonalMatrix.hpp
 	opm/core/utility/UniformTableLinear.hpp
 	opm/core/utility/Units.hpp
-	opm/core/utility/Unused.hpp
 	opm/core/utility/VelocityInterpolation.hpp
 	opm/core/utility/WachspressCoord.hpp
 	opm/core/utility/buildUniformMonotoneTable.hpp
@@ -458,7 +451,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/parameters/tinyxml/tinyxml.h
 	opm/core/utility/platform_dependent/disable_warnings.h
 	opm/core/utility/platform_dependent/reenable_warnings.h
-	opm/core/utility/PropertySystem.hpp
 	opm/core/utility/share_obj.hpp
 	opm/core/utility/thresholdPressures.hpp
 	opm/core/wells/InjectionSpecification.hpp

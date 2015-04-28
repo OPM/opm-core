@@ -22,9 +22,7 @@ set (ewoms_DEPS
 	"dune-geometry REQUIRED"
 	"dune-grid REQUIRED"
 	"dune-istl REQUIRED"
-	"opm-core REQUIRED"
 	"opm-material REQUIRED"
-	"opm-parser"
 	"dune-alugrid"
 	"dune-cornerpoint"
 	# valgrind client requests
