@@ -54,14 +54,17 @@ namespace Opm {
 	namespace tinyxml {
 	    std::string getProperty(const std::string& property,
                                     const TiXmlElement* node_ptr);
-	    void read_xml(ParameterGroup& pg, const std::string filename);
+	    void read_xml(ParameterGroup& pg, const std::string filename,
+                          const bool enable_output);
 	    void fill_tree(ParameterGroup& pg,
                            const TiXmlNode* root,
-                           const std::string& xml_file_path);
+                           const std::string& xml_file_path,
+                           const bool enable_output);
 	}
 
-	void fill_xml(ParameterGroup& pg, const std::string filename) {
-	    tinyxml::read_xml(pg, filename);
+	void fill_xml(ParameterGroup& pg, const std::string filename,
+                      const bool enable_output) {
+	    tinyxml::read_xml(pg, filename, enable_output);
 	}
 
 	namespace tinyxml {
@@ -73,7 +76,7 @@ namespace Opm {
 		return property_value;
 	    }
 
-	    void read_xml(ParameterGroup& pg, const std::string filename)
+            void read_xml(ParameterGroup& pg, const std::string filename, const bool enable_output)
             {
                 TiXmlDocument doc(filename);
                 bool ok = doc.LoadFile();
@@ -83,12 +86,13 @@ namespace Opm {
                 }
                 const TiXmlNode* root = doc.RootElement();
 		std::string xml_file_path = boost::filesystem::path(filename).branch_path().string();
-		fill_tree(pg, root, xml_file_path);
+		fill_tree(pg, root, xml_file_path, enable_output);
 	    }
 
 	    void fill_tree(ParameterGroup& pg,
                            const TiXmlNode* root,
-                           const std::string& xml_file_path)
+                           const std::string& xml_file_path,
+                           const bool enable_output)
             {
 		//std::cout << "GROUP '" << value << "' BEGIN\n";
 		for (const TiXmlNode* cur = root->FirstChild(); cur; cur = cur->NextSibling()) {
@@ -98,7 +102,7 @@ namespace Opm {
 			if (tag_name == ID_xmltag__file_params) {
 			    std::string relative_filename = getProperty(ID_xmlatt__value, elem);
 			    std::string filename = (boost::filesystem::path(xml_file_path) / relative_filename).string();
-			    fill_xml(pg, filename);
+			    fill_xml(pg, filename, enable_output);
 			    continue;
 			}
 			std::string name = getProperty(ID_xmlatt__name, elem);
@@ -113,14 +117,15 @@ namespace Opm {
 			    data.reset(new Parameter(value, type));
 			} else if (tag_name == ID_xmltag__param_grp) {
 			    std::string child_path  = pg.path() + ID_delimiter_path + name;
-			    data.reset(new ParameterGroup(child_path, &pg));
-			    fill_tree(dynamic_cast<ParameterGroup&>(*data), elem, xml_file_path);
+			    data.reset(new ParameterGroup(child_path, &pg, enable_output));
+			    fill_tree(dynamic_cast<ParameterGroup&>(*data), elem, xml_file_path,
+                                      enable_output);
 			} else if (tag_name == ID_xmltag__file_param_grp) {
 			    std::string child_path  = pg.path() + ID_delimiter_path + name;
-			    data.reset(new ParameterGroup(child_path, &pg));
+			    data.reset(new ParameterGroup(child_path, &pg, enable_output));
 			    std::string relative_filename = getProperty(ID_xmlatt__value, elem);
 			    std::string filename = (boost::filesystem::path(xml_file_path) / relative_filename).string();
-			    fill_xml(dynamic_cast<ParameterGroup&>(*data), filename);
+			    fill_xml(dynamic_cast<ParameterGroup&>(*data), filename, enable_output);
 			} else {
 			    std::cerr << "ERROR: '" << tag_name << "' is an unknown xml tag.\n";
 			    throw std::exception();

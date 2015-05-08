@@ -116,7 +116,8 @@ namespace Opm {
 	    struct RequirementFailedException : public std::exception {};
 
 	    ParameterGroup();
-	    ParameterGroup(const std::string& path, const ParameterGroup* parent);
+	    ParameterGroup(const std::string& path, const ParameterGroup* parent,
+                           const bool enable_output);
 
 	    // From ParameterMapItem
 	    virtual ~ParameterGroup();
@@ -137,8 +138,10 @@ namespace Opm {
 	    ///        pass arguments that cannot be handled by the ParameterGroup,
 	    ///        or an empty argument list. If false, such arguments are stored
 	    ///        and can be retrieved later with unhandledArguments().
+            /// \param enable_output Whether to enable output or not.
             template <typename StringArray>
-	    ParameterGroup(int argc, StringArray argv, const bool verify_syntax = true);
+	    ParameterGroup(int argc, StringArray argv, const bool verify_syntax = true,
+                           const bool enabled_output=true);
 
 	    /// \brief This method checks if there is something with name
 	    ///        \p name in the parameter gropup.

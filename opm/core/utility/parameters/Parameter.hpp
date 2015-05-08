@@ -90,7 +90,8 @@ namespace Opm {
 	template<>
 	struct ParameterMapItemTrait<int> {
 	    static int convert(const ParameterMapItem& item,
-                               std::string& conversion_error)
+                               std::string& conversion_error,
+                               const bool)
             {
 		conversion_error = correct_parameter_tag(item);
 		if (conversion_error != "") {
@@ -125,7 +126,8 @@ namespace Opm {
 	template<>
 	struct ParameterMapItemTrait<double> {
 	    static double convert(const ParameterMapItem& item,
-                                  std::string& conversion_error)
+                                  std::string& conversion_error,
+                                  const bool)
             {
 		conversion_error = correct_parameter_tag(item);
 		if (conversion_error != "") {
@@ -160,7 +162,8 @@ namespace Opm {
 	template<>
 	struct ParameterMapItemTrait<bool> {
 	    static bool convert(const ParameterMapItem& item,
-                                std::string& conversion_error)
+                                std::string& conversion_error,
+                                const bool)
             {
 		conversion_error = correct_parameter_tag(item);
 		if (conversion_error != "") {
@@ -194,7 +197,8 @@ namespace Opm {
 	template<>
 	struct ParameterMapItemTrait<std::string> {
 	    static std::string convert(const ParameterMapItem& item,
-                                       std::string& conversion_error)
+                                       std::string& conversion_error,
+                                       const bool)
             {
 		conversion_error = correct_parameter_tag(item);
 		if (conversion_error != "") {

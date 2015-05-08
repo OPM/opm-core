@@ -47,7 +47,7 @@ namespace Opm {
 	///
 	/// \retval pg is the ParameterGroup to be filled.
 	/// \param filename is the name of an XML file.
-	void fill_xml(ParameterGroup& pg, const std::string filename);
+        void fill_xml(ParameterGroup& pg, const std::string filename, const bool enable_output);
     } // namespace parameter
 } // namespace Opm
 
