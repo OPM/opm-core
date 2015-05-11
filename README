@@ -67,8 +67,7 @@ sudo apt-get install -y libtinyxml-dev
 # IMPORTANT: if you install this (binary) version of ERT,
 #            you will get the 2015.04 release version. That
 #            is only compatible with the 2015.04 release version
-#            of OPM! If you are building OPM from source you must
-#            either use the 2015.04 release branch from github, or
+#            of OPM! If you are building OPM from source you should
 #            use the latest master branches of both ERT and OPM.
 sudo apt-get install ert.ecl
 
