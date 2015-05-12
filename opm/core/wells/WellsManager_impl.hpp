@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <exception>
 #include <iterator>
+#include <numeric>
 
 namespace WellsManagerDetail
 {
@@ -121,7 +122,9 @@ void WellsManager::createWellsFromSpecs(std::vector<WellConstPtr>& wells, size_t
     }
 
     std::vector<std::vector<PerfData> > wellperf_data;
+    std::vector<int>                    well_on_proc;
     wellperf_data.resize(wells.size());
+    well_on_proc.resize(wells.size(), 1);
 
     int well_index = 0;
     for (auto wellIter= wells.begin(); wellIter != wells.end(); ++wellIter) {
@@ -131,6 +134,88 @@ void WellsManager::createWellsFromSpecs(std::vector<WellConstPtr>& wells, size_t
             continue;
         }
 
+        {   // COMPDAT handling
+            CompletionSetConstPtr completionSet = well->getCompletions(timeStep);
+            std::vector<std::size_t> completion_on_proc(completionSet->size(), 1);
+            for (size_t c=0; c<completionSet->size(); c++) {
+                CompletionConstPtr completion = completionSet->get(c);
+                if (completion->getState() == WellCompletion::OPEN) {
+                    int i = completion->getI();
+                    int j = completion->getJ();
+                    int k = completion->getK();
+
+                    const int* cpgdim = cart_dims;
+                    int cart_grid_indx = i + cpgdim[0]*(j + cpgdim[1]*k);
+                    std::map<int, int>::const_iterator cgit = cartesian_to_compressed.find(cart_grid_indx);
+                    if (cgit == cartesian_to_compressed.end()) {
+                        if ( is_parallel_run_ )
+                        {
+                            // \todo remove hack for parallel runs! HACK!
+                            std::cerr<<" Warning: Cell with i,j,k indices " << i << ' ' << j << ' '
+                                     << k << " not found in grid (well = " << well->name()
+                                     << ") Assuming a parallel run and ignoring it"<<std::endl;
+                            completion_on_proc[c]=0;
+                            continue;
+                        }
+                        else
+                        {
+                            OPM_THROW(std::runtime_error, "Cell with i,j,k indices " << i << ' ' << j << ' '
+                                      << k << " not found in grid (well = " << well->name() << ')');
+                        }
+                    }
+                    else
+                    {
+                        int cell = cgit->second;
+                        PerfData pd;
+                        pd.cell = cell;
+                        {
+                            const Value<double>& transmissibilityFactor = completion->getConnectionTransmissibilityFactorAsValueObject();
+
+                            if (transmissibilityFactor.hasValue()) {
+                                pd.well_index = transmissibilityFactor.getValue();
+                            } else {
+                                double radius = 0.5*completion->getDiameter();
+                                if (radius <= 0.0) {
+                                    radius = 0.5*unit::feet;
+                                    OPM_MESSAGE("**** Warning: Well bore internal radius set to " << radius);
+                                }
+
+                                const std::array<double, 3> cubical =
+                                    WellsManagerDetail::getCubeDim<3>(c2f, begin_face_centroids, cell);
+
+                                const double* cell_perm = &permeability[dimensions*dimensions*cell];
+                                pd.well_index =
+                                    WellsManagerDetail::computeWellIndex(radius, cubical, cell_perm,
+                                                                         completion->getSkinFactor(),
+                                                                         completion->getDirection(),
+                                                                         ntg[cell]);
+                            }
+                        }
+                        wellperf_data[well_index].push_back(pd);
+                    }
+                } else {
+                    if (completion->getState() != WellCompletion::SHUT) {
+                        OPM_THROW(std::runtime_error, "Completion state: " << WellCompletion::StateEnum2String( completion->getState() ) << " not handled");
+                    }
+                }
+            }
+            if ( is_parallel_run_ )
+            {
+                // Set wells that are on other processor to SHUT.
+                std::size_t sum_completions_on_proc = std::accumulate(completion_on_proc.begin(),
+                                                                      completion_on_proc.end(),0);
+                if ( sum_completions_on_proc == 0 )
+                {
+                    const_cast<Well&>(*well).setStatus(timeStep, WellCommon::SHUT);
+                    continue;
+                }
+                // Check that the complete well is on this process
+                if( sum_completions_on_proc < completionSet->size() )
+                {
+                    OPM_THROW(std::runtime_error, "Wells must be completely on processor!");
+                }
+            }
+        }
         {   // WELSPECS handling
             well_names_to_index[well->name()] = well_index;
             well_names.push_back(well->name());
@@ -146,56 +231,6 @@ void WellsManager::createWellsFromSpecs(std::vector<WellConstPtr>& wells, size_t
             }
         }
 
-        {   // COMPDAT handling
-            CompletionSetConstPtr completionSet = well->getCompletions(timeStep);
-            for (size_t c=0; c<completionSet->size(); c++) {
-                CompletionConstPtr completion = completionSet->get(c);
-                if (completion->getState() == WellCompletion::OPEN) {
-                    int i = completion->getI();
-                    int j = completion->getJ();
-                    int k = completion->getK();
-
-                    const int* cpgdim = cart_dims;
-                    int cart_grid_indx = i + cpgdim[0]*(j + cpgdim[1]*k);
-                    std::map<int, int>::const_iterator cgit = cartesian_to_compressed.find(cart_grid_indx);
-                    if (cgit == cartesian_to_compressed.end()) {
-                        OPM_THROW(std::runtime_error, "Cell with i,j,k indices " << i << ' ' << j << ' '
-                                  << k << " not found in grid (well = " << well->name() << ')');
-                    }
-                    int cell = cgit->second;
-                    PerfData pd;
-                    pd.cell = cell;
-                    {
-                        const Value<double>& transmissibilityFactor = completion->getConnectionTransmissibilityFactorAsValueObject();
-
-                        if (transmissibilityFactor.hasValue()) {
-                            pd.well_index = transmissibilityFactor.getValue();
-                        } else {
-                            double radius = 0.5*completion->getDiameter();
-                            if (radius <= 0.0) {
-                                radius = 0.5*unit::feet;
-                                OPM_MESSAGE("**** Warning: Well bore internal radius set to " << radius);
-                            }
-
-                            const std::array<double, 3> cubical =
-                                WellsManagerDetail::getCubeDim<3>(c2f, begin_face_centroids, cell);
-
-                            const double* cell_perm = &permeability[dimensions*dimensions*cell];
-                            pd.well_index =
-                                WellsManagerDetail::computeWellIndex(radius, cubical, cell_perm,
-                                                                     completion->getSkinFactor(),
-                                                                     completion->getDirection(),
-                                                                     ntg[cell]);
-                        }
-                    }
-                    wellperf_data[well_index].push_back(pd);
-                } else {
-                    if (completion->getState() != WellCompletion::SHUT) {
-                        OPM_THROW(std::runtime_error, "Completion state: " << WellCompletion::StateEnum2String( completion->getState() ) << " not handled");
-                    }
-                }
-            }
-        }
         well_index++;
     }
 
@@ -260,8 +295,9 @@ WellsManager(const Opm::EclipseStateConstPtr eclipseState,
              int                             dimensions,
              const C2F&                      cell_to_faces,
              FC                              begin_face_centroids,
-             const double*                   permeability)
-    : w_(0)
+             const double*                   permeability,
+             bool                            is_parallel_run)
+    : w_(0), is_parallel_run_(is_parallel_run)
 {
     init(eclipseState, timeStep, number_of_cells, global_cell,
          cart_dims, dimensions,
