@@ -118,7 +118,10 @@ sudo yum install boost-devel suitesparse-devel blas-devel lapack-devel
 sudo yum install tinyxml-devel
 sudo yum-config-manager --add-repo \
     http://www.opm-project.org/packages/current/redhat/6/opm.repo
-sudo yum install libsuperlu3 ert.ecl-devel dune-istl-devel
+sudo yum install libsuperlu3 ert.ecl-devel
+
+# optional
+sudo yum install dune-istl-devel
 
 
 DEPENDENCIES FOR MACOS X
