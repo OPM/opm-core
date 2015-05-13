@@ -9,13 +9,13 @@ CONTENT
 
 opm-core is the core library within OPM and contains the following 
 
-* Eclipse deck input and preprosessing
 * Fluid properties (basic PVT models and rock properties)
 * Grid handling (cornerpoint grids, unstructured grid interface)
 * Linear Algebra (interface to different linear solvers)
 * Pressure solvers (various discretization schemes, flow models)
 * Simulators (some basic examples of simulators based on sequential splitting schemes)
 * Transport solvers (various discretization schemes, flow models)
+* Flow diagnostics (time-of-flight and tracer solvers, diagnostic functions)
 * Utilities (input and output processing, unit conversion)
 * Wells (basic well handling)
 
@@ -63,7 +63,12 @@ sudo apt-get install libdune-common-dev libdune-istl-dev libdune-grid-dev
 # libraries necessary for OPM
 sudo apt-get install -y libtinyxml-dev
 
-# optional: Ensemble based Reservoir Tool Eclipse utilities module
+# Ensemble based Reservoir Tool Eclipse utilities module
+# IMPORTANT: if you install this (binary) version of ERT,
+#            you will get the 2015.04 release version. That
+#            is only compatible with the 2015.04 release version
+#            of OPM! If you are building OPM from source you should
+#            use the latest master branches of both ERT and OPM.
 sudo apt-get install ert.ecl
 
 Note: You should compile the OPM modules using the same toolchain that
@@ -88,7 +93,7 @@ sudo zypper in gcc gcc-c++ gcc-fortran cmake git doxygen
 # DUNE libraries
 sudo zypper in dune-common-devel dune-istl-devel
 
-# optional: Ensemble-based Reservoir Tools Eclipse utility module
+# Ensemble-based Reservoir Tools Eclipse utility module
 git sudo zypper ar http://www.opm-project.org/packages/current/opensuse/12/opm.repo
 sudo zypper in zlib-devel ert.ecl-devel
 
@@ -111,11 +116,12 @@ sudo yum install boost-devel suitesparse-devel blas-devel lapack-devel
 
 # libraries necessary for OPM
 sudo yum install tinyxml-devel
-
-# optional libraries
 sudo yum-config-manager --add-repo \
     http://www.opm-project.org/packages/current/redhat/6/opm.repo
-sudo yum install libsuperlu3 ert.ecl-devel dune-istl-devel
+sudo yum install libsuperlu3 ert.ecl-devel
+
+# optional
+sudo yum install dune-istl-devel
 
 
 DEPENDENCIES FOR MACOS X
