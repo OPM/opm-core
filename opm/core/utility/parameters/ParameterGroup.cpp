@@ -87,8 +87,9 @@ namespace Opm {
 	}
 
 	ParameterGroup::ParameterGroup(const std::string& patharg,
-				       const ParameterGroup* parent)
-	: path_(patharg), parent_(parent), output_is_enabled_(true)
+	                               const ParameterGroup* parent,
+                                       const bool enable_output)
+	: path_(patharg), parent_(parent), output_is_enabled_(enable_output)
 	{
 	}
 
@@ -100,7 +101,7 @@ namespace Opm {
 
 	void ParameterGroup::readXML(const std::string& xml_filename)
         {
-	    fill_xml(*this, xml_filename);
+	    fill_xml(*this, xml_filename, output_is_enabled_);
 	}
 
 	namespace {
@@ -218,7 +219,8 @@ namespace Opm {
 		    map_[name_path.first] = data;
 		} else {
 		    std::shared_ptr<ParameterMapItem> data(new ParameterGroup(this->path() + ID_delimiter_path + name_path.first,
-										   this));
+                                                                              this,
+                                                                              output_is_enabled_));
 		    ParameterGroup& child = dynamic_cast<ParameterGroup&>(*data);
 		    child.insertParameter(name_path.second, value);
 		    map_[name_path.first] = data;

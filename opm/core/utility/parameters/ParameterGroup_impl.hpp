@@ -53,14 +53,15 @@ namespace Opm {
 	struct ParameterMapItemTrait<ParameterGroup> {
 	    static ParameterGroup
             convert(const ParameterMapItem& item,
-                    std::string& conversion_error)
+                    std::string& conversion_error,
+                    bool enable_output)
             {
 		std::string tag = item.getTag();
 		if (tag != ID_xmltag__param_grp) {
 		    conversion_error = "The XML tag was '" + tag +
                                        "' but should be '" +
                                        ID_xmltag__param_grp + "'.\n";
-		    return ParameterGroup("", 0);
+		    return ParameterGroup("", 0, enable_output);
 		}
 		conversion_error = "";
 		const ParameterGroup& pg = dynamic_cast<const ParameterGroup&>(item);
@@ -105,8 +106,9 @@ namespace Opm {
 	    }
 
         template <typename StringArray>
-	ParameterGroup::ParameterGroup(int argc, StringArray argv, bool verify_syntax)
-            : path_(ID_path_root), parent_(0), output_is_enabled_(true)
+	ParameterGroup::ParameterGroup(int argc, StringArray argv, bool verify_syntax,
+                                       const bool enable_output)
+            : path_(ID_path_root), parent_(0), output_is_enabled_(enable_output)
 	{
 	    if (verify_syntax && (argc < 2)) {
 		std::cerr << "Usage: " << argv[0] << " "
@@ -296,7 +298,8 @@ namespace Opm {
 	    const std::string& name = named_data.first;
 	    const data_type data = named_data.second;
 	    std::string conversion_error;
-	    T value = ParameterMapItemTrait<T>::convert(*data, conversion_error);
+	    T value = ParameterMapItemTrait<T>::convert(*data, conversion_error,
+                                                        output_is_enabled_);
 	    if (conversion_error != "") {
 		std::cerr << "ERROR: Failed to convert the element named '"
 			  << name
