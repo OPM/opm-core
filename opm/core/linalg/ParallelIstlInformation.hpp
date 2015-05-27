@@ -298,9 +298,7 @@ private:
             //auto newVal = container.begin();
             auto mask   = ownerMask_.begin();
             auto& value = std::get<I>(values);
-            value = reduceOperator.maskValue(container[0], *mask);
-            ++mask;
-            //++newVal;
+            value =  reduceOperator.getInitialValue();
 
             for( auto endVal=ownerMask_.end(); mask!=endVal;
                  /*++newVal,*/ ++mask )
@@ -372,6 +370,11 @@ private:
     template<typename BinaryOperator>
     struct MaskIDOperator
     {
+        // This is a real nice one: numeric limits needs a type without const
+        // or reference qualifier. Otherwise we get complete nonesense.
+        typedef typename std::remove_cv<
+            typename std::remove_reference<typename BinaryOperator::result_type>::type
+            >::type Result;
         /// \brief Apply the underlying binary operator according to the mask.
         ///
         /// The BinaryOperator will be called with t1, and mask*t2.
@@ -392,8 +395,43 @@ private:
         {
             return b_;
         }
+        Result getInitialValue()
+        {
+            return Result();
+        }
     private:
         BinaryOperator b_;
+    };
+
+    /// \brief An operator for computing a parallel inner product.
+    template<class T>
+    struct InnerProductFunctor
+    {
+        /// \brief Apply the underlying binary operator according to the mask.
+        ///
+        /// The BinaryOperator will be called with t1, and mask*t2.
+        /// \param t1 first value
+        /// \param t2 second value (might be modified).
+        /// \param mask The mask (0 or 1).
+        template<class T1>
+        T operator()(const T& t1, const T& t2, const T1& mask)
+        {
+            T masked =  maskValue(t2, mask);
+            return t1 + masked * masked;
+        }
+        template<class T1>
+        T maskValue(const T& t, const T1& mask)
+        {
+            return t*mask;
+        }
+        std::plus<T> localOperator()
+        {
+            return std::plus<T>();
+        }
+        T getInitialValue()
+        {
+            return T();
+        }
     };
 
     /// \brief An operator that converts the values where mask is 0 to the minimum value
@@ -404,6 +442,12 @@ private:
     template<typename BinaryOperator>
     struct MaskToMinOperator
     {
+        // This is a real nice one: numeric limits has to a type without const
+        // or reference. Otherwise we get complete nonesense.
+        typedef typename std::remove_reference<
+            typename std::remove_const<typename BinaryOperator::result_type>::type
+            >::type Result;
+
         MaskToMinOperator(BinaryOperator b)
         : b_(b)
         {}
@@ -427,17 +471,21 @@ private:
             }
             else
             {
-                //g++-4.4 does not support std::numeric_limits<T>::lowest();
-                // we rely on IEE 754 for floating point values and use min()
-                // for integral types.
-                if( std::is_integral<T>::value )
-                {
-                    return -std::numeric_limits<float>::min();
-                }
-                else
-                {
-                    return -std::numeric_limits<float>::max();
-                }
+                return getInitialValue();
+            }
+        }
+        Result getInitialValue()
+        {
+            //g++-4.4 does not support std::numeric_limits<T>::lowest();
+            // we rely on IEE 754 for floating point values and use min()
+            // for integral types.
+            if( std::is_integral<Result>::value )
+            {
+                return -std::numeric_limits<Result>::min();
+            }
+            else
+            {
+                return -std::numeric_limits<Result>::max();
             }
         }
         /// \brief Get the underlying binary operator.
@@ -458,6 +506,12 @@ private:
     template<typename BinaryOperator>
     struct MaskToMaxOperator
     {
+        // This is a real nice one: numeric limits has to a type without const
+        // or reference. Otherwise we get complete nonesense.
+        typedef typename std::remove_cv<
+            typename std::remove_reference<typename BinaryOperator::result_type>::type
+            >::type Result;
+
         MaskToMaxOperator(BinaryOperator b)
         : b_(b)
         {}
@@ -487,6 +541,10 @@ private:
         BinaryOperator& localOperator()
         {
             return b_;
+        }
+        Result getInitialValue()
+        {
+            return std::numeric_limits<Result>::max();
         }
     private:
         BinaryOperator b_;
@@ -521,6 +579,12 @@ private:
         return MaskToMaxOperator<std::pointer_to_binary_function<const T&,const T&,const T&> >
             (std::pointer_to_binary_function<const T&,const T&,const T&>
              ((const T&(*)(const T&, const T&))std::min<T>));
+    }
+    template<class T>
+    InnerProductFunctor<T>
+    makeInnerProductFunctor()
+    {
+        return InnerProductFunctor<T>();
     }
     } // end namespace Reduction
 } // end namespace Opm
