@@ -547,8 +547,13 @@ public:
 
         eclGrid->resetACTNUM(&actnumData[0]);
 
+
         // finally, write the grid to disk
-        eclGrid->fwriteEGRID(egridFileName_.ertHandle());
+        if (eclipseState->getDeckUnitSystem()->getType() == UnitSystem::UNIT_TYPE_METRIC){
+            eclGrid->fwriteEGRID(egridFileName_.ertHandle(), true);
+        }else{
+            eclGrid->fwriteEGRID(egridFileName_.ertHandle(), false);
+        }
 
         Keyword<float> poro_kw("PORO", dataField);
         ecl_init_file_fwrite_header(ertHandle(),
