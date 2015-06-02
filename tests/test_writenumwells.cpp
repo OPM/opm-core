@@ -162,7 +162,8 @@ Opm::EclipseWriterPtr createEclipseWriter(Opm::DeckConstPtr deck,
 BOOST_AUTO_TEST_CASE(EclipseWriteRestartWellInfo)
 {
     std::string eclipse_data_filename    = "testBlackoilState3.DATA";
-    std::string eclipse_restart_filename = "TESTBLACKOILSTATE3.UNRST";
+    std::string eclipse_restart_filename = "TESTBLACKOILSTATE3.X0004";
+
 
     test_work_area_type * test_area = test_work_area_alloc("TEST_EclipseWriteNumWells");
     test_work_area_copy_file(test_area, eclipse_data_filename.c_str());
