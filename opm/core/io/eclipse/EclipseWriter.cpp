@@ -237,12 +237,13 @@ public:
     FileName(const std::string& outputDir,
              const std::string& baseName,
              ecl_file_enum type,
-             int writeStepIdx)
+             int writeStepIdx,
+             bool formatted)
     {
         ertHandle_ = ecl_util_alloc_filename(outputDir.c_str(),
                                              baseName.c_str(),
                                              type,
-                                             false, // formatted?
+                                             formatted,
                                              writeStepIdx);
     }
 
@@ -284,19 +285,23 @@ public:
 
     Restart(const std::string& outputDir,
             const std::string& baseName,
-            int writeStepIdx)
+            int writeStepIdx,
+            IOConfigConstPtr ioConfig)
     {
+
+        ecl_file_enum type_of_restart_file = ioConfig->getUNIFOUT() ? ECL_UNIFIED_RESTART_FILE : ECL_RESTART_FILE;
+
         restartFileName_ = ecl_util_alloc_filename(outputDir.c_str(),
                                                    baseName.c_str(),
-                                                   /*type=*/ECL_UNIFIED_RESTART_FILE,
-                                                   false, // use formatted instead of binary output?
+                                                   type_of_restart_file,
+                                                   ioConfig->getFMTOUT(), // use formatted instead of binary output?
                                                    writeStepIdx);
 
-        if (writeStepIdx == 0) {
-            restartFileHandle_ = ecl_rst_file_open_write(restartFileName_);
+        if ((writeStepIdx > 0) && (ECL_UNIFIED_RESTART_FILE == type_of_restart_file)) {
+            restartFileHandle_ = ecl_rst_file_open_append(restartFileName_);
         }
         else {
-            restartFileHandle_ = ecl_rst_file_open_append(restartFileName_);
+            restartFileHandle_ = ecl_rst_file_open_write(restartFileName_);
         }
     }
 
@@ -499,25 +504,23 @@ class Init : private boost::noncopyable
 public:
     Init(const std::string& outputDir,
          const std::string& baseName,
-         int writeStepIdx)
-        : egridFileName_(outputDir,
-                         baseName,
-                         ECL_EGRID_FILE,
-                         writeStepIdx)
+         int writeStepIdx,
+         IOConfigConstPtr ioConfig) : egridFileName_(outputDir,
+                                                     baseName,
+                                                     ECL_EGRID_FILE,
+                                                     writeStepIdx,
+                                                     ioConfig->getFMTOUT())
     {
+        bool formatted = ioConfig->getFMTOUT();
+
         FileName initFileName(outputDir,
                               baseName,
                               ECL_INIT_FILE,
-                              writeStepIdx);
-
-        bool isFormatted;
-        if (!ecl_util_fmt_file(initFileName.ertHandle(), &isFormatted)) {
-            OPM_THROW(std::runtime_error,
-                      "Could not determine formatted/unformatted status of file:" << initFileName.ertHandle() << " non-standard name?" << std::endl);
-        }
+                              writeStepIdx,
+                              formatted);
 
         ertHandle_ = fortio_open_writer(initFileName.ertHandle(),
-                                        isFormatted,
+                                        formatted,
                                         ECL_ENDIAN_FLIP);
     }
 
@@ -549,18 +552,24 @@ public:
 
 
         // finally, write the grid to disk
-        if (eclipseState->getDeckUnitSystem()->getType() == UnitSystem::UNIT_TYPE_METRIC){
-            eclGrid->fwriteEGRID(egridFileName_.ertHandle(), true);
-        }else{
-            eclGrid->fwriteEGRID(egridFileName_.ertHandle(), false);
+        IOConfigConstPtr ioConfig = eclipseState->getIOConfigConst();
+        if (ioConfig->getWriteEGRIDFile()) {
+            if (eclipseState->getDeckUnitSystem()->getType() == UnitSystem::UNIT_TYPE_METRIC){
+                eclGrid->fwriteEGRID(egridFileName_.ertHandle(), true);
+            }else{
+                eclGrid->fwriteEGRID(egridFileName_.ertHandle(), false);
+            }
         }
 
-        Keyword<float> poro_kw("PORO", dataField);
-        ecl_init_file_fwrite_header(ertHandle(),
-                                    eclGrid->c_ptr(),
-                                    poro_kw.ertHandle(),
-                                    ertPhaseMask(uses),
-                                    timer.currentPosixTime());
+
+        if (ioConfig->getWriteINITFile()) {
+            Keyword<float> poro_kw("PORO", dataField);
+            ecl_init_file_fwrite_header(ertHandle(),
+                                        eclGrid->c_ptr(),
+                                        poro_kw.ertHandle(),
+                                        ertPhaseMask(uses),
+                                        timer.currentPosixTime());
+        }
     }
 
     void writeKeyword(const std::string& keywordName, const std::vector<double> &data)
@@ -576,6 +585,9 @@ private:
     fortio_type *ertHandle_;
     FileName egridFileName_;
 };
+
+
+
 
 /**
  * Summary variable that reports a characteristics of a well.
@@ -1149,27 +1161,31 @@ void EclipseWriter::writeInit(const SimulatorTimerInterface &timer)
     writeStepIdx_ = 0;
     reportStepIdx_ = -1;
 
-    EclipseWriterDetails::Init fortio(outputDir_, baseName_, /*stepIdx=*/0);
+    EclipseWriterDetails::Init fortio(outputDir_, baseName_, /*stepIdx=*/0, eclipseState_->getIOConfigConst());
     fortio.writeHeader(numCells_,
                        compressedToCartesianCellIdx_,
                        timer,
                        eclipseState_,
                        phaseUsage_);
 
-    if (eclipseState_->hasDoubleGridProperty("PERMX")) {
-        auto data = eclipseState_->getDoubleGridProperty("PERMX")->getData();
-        EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
-        fortio.writeKeyword("PERMX", data);
-    }
-    if (eclipseState_->hasDoubleGridProperty("PERMY")) {
-        auto data = eclipseState_->getDoubleGridProperty("PERMY")->getData();
-        EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
-        fortio.writeKeyword("PERMY", data);
-    }
-    if (eclipseState_->hasDoubleGridProperty("PERMZ")) {
-        auto data = eclipseState_->getDoubleGridProperty("PERMZ")->getData();
-        EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
-        fortio.writeKeyword("PERMZ", data);
+    IOConfigConstPtr ioConfig = eclipseState_->getIOConfigConst();
+
+    if (ioConfig->getWriteINITFile()) {
+        if (eclipseState_->hasDoubleGridProperty("PERMX")) {
+            auto data = eclipseState_->getDoubleGridProperty("PERMX")->getData();
+            EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
+            fortio.writeKeyword("PERMX", data);
+        }
+        if (eclipseState_->hasDoubleGridProperty("PERMY")) {
+            auto data = eclipseState_->getDoubleGridProperty("PERMY")->getData();
+            EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
+            fortio.writeKeyword("PERMY", data);
+        }
+        if (eclipseState_->hasDoubleGridProperty("PERMZ")) {
+            auto data = eclipseState_->getDoubleGridProperty("PERMZ")->getData();
+            EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
+            fortio.writeKeyword("PERMZ", data);
+        }
     }
 
     /* Create summary object (could not do it at construction time,
@@ -1205,13 +1221,38 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
         return;
     }
 
-    // respected the output_interval parameter
-    if (writeStepIdx_ % outputInterval_ != 0) {
-        return;
+
+    std::vector<double> pressure = reservoirState.pressure();
+    EclipseWriterDetails::convertFromSiTo(pressure, deckToSiPressure_);
+    EclipseWriterDetails::restrictAndReorderToActiveCells(pressure, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
+
+    std::vector<double> saturation_water;
+    std::vector<double> saturation_gas;
+
+    if (phaseUsage_.phase_used[BlackoilPhases::Aqua]) {
+        saturation_water = reservoirState.saturation();
+        EclipseWriterDetails::extractFromStripedData(saturation_water,
+                                                     /*offset=*/phaseUsage_.phase_pos[BlackoilPhases::Aqua],
+                                                     /*stride=*/phaseUsage_.num_phases);
+        EclipseWriterDetails::restrictAndReorderToActiveCells(saturation_water, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
     }
 
-    // only write solution when report step number has changed
-    if( reportStepIdx_ != timer.reportStepNum() )
+
+    if (phaseUsage_.phase_used[BlackoilPhases::Vapour]) {
+        saturation_gas = reservoirState.saturation();
+        EclipseWriterDetails::extractFromStripedData(saturation_gas,
+                                                     /*offset=*/phaseUsage_.phase_pos[BlackoilPhases::Vapour],
+                                                     /*stride=*/phaseUsage_.num_phases);
+        EclipseWriterDetails::restrictAndReorderToActiveCells(saturation_gas, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
+    }
+
+
+
+    IOConfigConstPtr ioConfig = eclipseState_->getIOConfigConst();
+
+
+    // Write restart file
+    if(ioConfig->getWriteRestartFile(timer.reportStepNum()))
     {
         const size_t ncwmax                 = eclipseState_->getSchedule()->getMaxNumCompletionsForWells(timer.reportStepNum());
         const size_t numWells               = eclipseState_->getSchedule()->numWells(timer.reportStepNum());
@@ -1221,7 +1262,8 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
         std::vector<int>         iwell_data( numWells * Opm::EclipseWriterDetails::Restart::NIWELZ , 0 );
         std::vector<int>         icon_data( numWells * ncwmax * Opm::EclipseWriterDetails::Restart::NICONZ , 0 );
 
-        EclipseWriterDetails::Restart restartHandle(outputDir_, baseName_, timer.reportStepNum());
+
+        EclipseWriterDetails::Restart restartHandle(outputDir_, baseName_, timer.reportStepNum(), ioConfig);
 
         for (size_t iwell = 0; iwell < wells_ptr.size(); ++iwell) {
             WellConstPtr well = wells_ptr[iwell];
@@ -1235,6 +1277,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
             }
             zwell_data[ iwell * Opm::EclipseWriterDetails::Restart::NZWELZ ] = well->name().c_str();
         }
+
 
         {
             ecl_rsthead_type rsthead_data = {};
@@ -1261,20 +1304,10 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
         restartHandle.add_kw(EclipseWriterDetails::Keyword<const char *>(ZWEL_KW, zwell_data));
         restartHandle.add_kw(EclipseWriterDetails::Keyword<int>(ICON_KW, icon_data));
 
+
         EclipseWriterDetails::Solution sol(restartHandle);
-
-        // write out the pressure of the reference phase (whatever phase that is...). this is
-        // not the most performant solution thinkable, but this is also not in the most
-        // performance critical code path!
-        //
-        // Also, we want to use the same units as the deck for pressure output, i.e. we have
-        // to mutliate our nice SI pressures by the inverse of the conversion factor of deck
-        // to SI pressure units...
-        std::vector<double> pressure = reservoirState.pressure();
-        EclipseWriterDetails::convertFromSiTo(pressure, deckToSiPressure_);
-        EclipseWriterDetails::restrictAndReorderToActiveCells(pressure, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
-
         sol.add(EclipseWriterDetails::Keyword<float>("PRESSURE", pressure));
+
 
         // write the cell temperature
         std::vector<double> temperature = reservoirState.temperature();
@@ -1282,61 +1315,51 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
         EclipseWriterDetails::restrictAndReorderToActiveCells(temperature, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
         sol.add(EclipseWriterDetails::Keyword<float>("TEMP", temperature));
 
-        std::vector<double> saturation_water;
-        std::vector<double> saturation_gas;
-
 
         if (phaseUsage_.phase_used[BlackoilPhases::Aqua]) {
-            saturation_water = reservoirState.saturation();
-            EclipseWriterDetails::extractFromStripedData(saturation_water,
-                                                         /*offset=*/phaseUsage_.phase_pos[BlackoilPhases::Aqua],
-                                                         /*stride=*/phaseUsage_.num_phases);
-            EclipseWriterDetails::restrictAndReorderToActiveCells(saturation_water, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
             sol.add(EclipseWriterDetails::Keyword<float>(EclipseWriterDetails::saturationKeywordNames[BlackoilPhases::PhaseIndex::Aqua], saturation_water));
         }
 
 
         if (phaseUsage_.phase_used[BlackoilPhases::Vapour]) {
-            saturation_gas = reservoirState.saturation();
-            EclipseWriterDetails::extractFromStripedData(saturation_gas,
-                                                         /*offset=*/phaseUsage_.phase_pos[BlackoilPhases::Vapour],
-                                                         /*stride=*/phaseUsage_.num_phases);
-            EclipseWriterDetails::restrictAndReorderToActiveCells(saturation_gas, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
             sol.add(EclipseWriterDetails::Keyword<float>(EclipseWriterDetails::saturationKeywordNames[BlackoilPhases::PhaseIndex::Vapour], saturation_gas));
         }
 
+    }
 
 
-        //Write RFT data for current timestep to RFT file
-        std::shared_ptr<EclipseWriterDetails::EclipseWriteRFTHandler> eclipseWriteRFTHandler = std::make_shared<EclipseWriterDetails::EclipseWriteRFTHandler>(
-                                                                                                                          compressedToCartesianCellIdx_,
-                                                                                                                          numCells_,
-                                                                                                                          eclipseState_->getEclipseGrid()->getCartesianSize());
+    //Write RFT data for current timestep to RFT file
+    std::shared_ptr<EclipseWriterDetails::EclipseWriteRFTHandler> eclipseWriteRFTHandler = std::make_shared<EclipseWriterDetails::EclipseWriteRFTHandler>(
+                                                                                                                      compressedToCartesianCellIdx_,
+                                                                                                                      numCells_,
+                                                                                                                      eclipseState_->getEclipseGrid()->getCartesianSize());
 
 
-        char * rft_filename = ecl_util_alloc_filename(outputDir_.c_str(),
-                                                      baseName_.c_str(),
-                                                      ECL_RFT_FILE,
-                                                      false,
-                                                      0);
+    char * rft_filename = ecl_util_alloc_filename(outputDir_.c_str(),
+                                                  baseName_.c_str(),
+                                                  ECL_RFT_FILE,
+                                                  ioConfig->getFMTOUT(),
+                                                  0);
 
-        std::shared_ptr<const UnitSystem> unitsystem = eclipseState_->getDeckUnitSystem();
-        ert_ecl_unit_enum ecl_unit = convertUnitTypeErtEclUnitEnum(unitsystem->getType());
+    std::shared_ptr<const UnitSystem> unitsystem = eclipseState_->getDeckUnitSystem();
+    ert_ecl_unit_enum ecl_unit = convertUnitTypeErtEclUnitEnum(unitsystem->getType());
 
-        std::vector<WellConstPtr> wells = eclipseState_->getSchedule()->getWells(timer.currentStepNum());
+    std::vector<WellConstPtr> wells = eclipseState_->getSchedule()->getWells(timer.currentStepNum());
 
 
-        eclipseWriteRFTHandler->writeTimeStep(rft_filename,
-                                              ecl_unit,
-                                              timer,
-                                              wells,
-                                              eclipseState_->getEclipseGrid(),
-                                              pressure,
-                                              saturation_water,
-                                              saturation_gas);
+    eclipseWriteRFTHandler->writeTimeStep(rft_filename,
+                                          ecl_unit,
+                                          timer,
+                                          wells,
+                                          eclipseState_->getEclipseGrid(),
+                                          pressure,
+                                          saturation_water,
+                                          saturation_gas);
 
-        free( rft_filename );
-    } // end if( reportStepIdx_ != timer.reportStepNum() )
+
+
+    free( rft_filename );
+
 
     /* Summary variables (well reporting) */
     // TODO: instead of writing the header (smspec) every time, it should
@@ -1427,10 +1450,6 @@ void EclipseWriter::init(const parameter::ParameterGroup& params)
 
     // retrieve the value of the "output" parameter
     enableOutput_ = params.getDefault<bool>("output", /*defaultValue=*/true);
-
-    // retrieve the interval at which something should get written to
-    // disk (once every N timesteps)
-    outputInterval_ = params.getDefault<int>("output_interval", /*defaultValue=*/1);
 
     // store in current directory if not explicitly set
     outputDir_ = params.getDefault<std::string>("output_dir", ".");
