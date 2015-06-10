@@ -1335,6 +1335,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
                                               saturation_water,
                                               saturation_gas);
 
+        free( rft_filename );
     } // end if( reportStepIdx_ != timer.reportStepNum() )
 
     /* Summary variables (well reporting) */
