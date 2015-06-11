@@ -65,6 +65,7 @@
 #include <ert/ecl/ecl_rst_file.h>
 #include <ert/ecl_well/well_const.h>
 #include <ert/ecl/ecl_rsthead.h>
+#define OPM_XWEL      "OPM_XWEL"
 
 // namespace start here since we don't want the ERT headers in it
 namespace Opm {
@@ -327,8 +328,29 @@ public:
         iwel_data[ offset + IWEL_STATUS_ITEM ] = EclipseWriter::eclipseWellStatusMask(well->getStatus(currentStep));
     }
 
+    void addRestartFileXwelData(std::vector<double>& xwel_data, const WellState& wellState) const {
+        size_t offset = 0;
 
+        for (size_t i = 0; i < wellState.bhp().size(); ++i) {
+            xwel_data[offset++] = wellState.bhp()[i];
+        }
 
+        for (size_t i = 0; i < wellState.perfPress().size(); ++i) {
+            xwel_data[offset++] = wellState.perfPress()[i];
+        }
+
+        for (size_t i = 0; i < wellState.perfRates().size(); ++i) {
+            xwel_data[offset++] = wellState.perfRates()[i];
+        }
+
+        for (size_t i = 0; i < wellState.temperature().size(); ++i) {
+            xwel_data[offset++] = wellState.temperature()[i];
+        }
+
+        for (size_t i = 0; i < wellState.wellRates().size(); ++i) {
+            xwel_data[offset++] = wellState.wellRates()[i];
+        }
+    }
 
     void addRestartFileIconData(std::vector<int>& icon_data, CompletionSetConstPtr completions , size_t wellICONOffset) const {
         for (size_t i = 0; i < completions->size(); ++i) {
@@ -1262,8 +1284,13 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
         std::vector<int>         iwell_data( numWells * Opm::EclipseWriterDetails::Restart::NIWELZ , 0 );
         std::vector<int>         icon_data( numWells * ncwmax * Opm::EclipseWriterDetails::Restart::NICONZ , 0 );
 
-
         EclipseWriterDetails::Restart restartHandle(outputDir_, baseName_, timer.reportStepNum(), ioConfig);
+
+        int sz = wellState.bhp().size() + wellState.perfPress().size() + wellState.perfRates().size() + wellState.temperature().size() + wellState.wellRates().size();
+        std::vector<double>      xwell_data( sz , 0 );
+
+        EclipseWriterDetails::Restart restartHandle(outputDir_, baseName_, timer.reportStepNum());
+        restartHandle.addRestartFileXwelData(xwell_data, wellState);
 
         for (size_t iwell = 0; iwell < wells_ptr.size(); ++iwell) {
             WellConstPtr well = wells_ptr[iwell];
@@ -1302,6 +1329,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
 
         restartHandle.add_kw(EclipseWriterDetails::Keyword<int>(IWEL_KW, iwell_data));
         restartHandle.add_kw(EclipseWriterDetails::Keyword<const char *>(ZWEL_KW, zwell_data));
+        restartHandle.add_kw(EclipseWriterDetails::Keyword<double>(OPM_XWEL, xwell_data));
         restartHandle.add_kw(EclipseWriterDetails::Keyword<int>(ICON_KW, icon_data));
 
 
