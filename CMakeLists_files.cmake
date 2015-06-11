@@ -41,6 +41,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/grid/cpgpreprocess/uniquepoints.c
 	opm/core/io/eclipse/EclipseGridInspector.cpp
 	opm/core/io/eclipse/EclipseWriter.cpp
+        opm/core/io/eclipse/EclipseReader.cpp
 	opm/core/io/eclipse/EclipseWriteRFTHandler.cpp
 	opm/core/io/eclipse/writeECLData.cpp
 	opm/core/io/OutputWriter.cpp
@@ -289,6 +290,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/io/eclipse/EclipseGridInspector.hpp
 	opm/core/io/eclipse/EclipseUnits.hpp
 	opm/core/io/eclipse/EclipseWriter.hpp
+        opm/core/io/eclipse/EclipseReader.hpp
 	opm/core/io/eclipse/EclipseWriteRFTHandler.hpp
 	opm/core/io/eclipse/writeECLData.hpp
 	opm/core/io/OutputWriter.hpp
