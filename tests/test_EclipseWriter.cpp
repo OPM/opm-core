@@ -365,6 +365,8 @@ BOOST_AUTO_TEST_CASE(EclipseWriterIntegration)
 {
     const char *deckString =
         "RUNSPEC\n"
+        "INIT\n"
+        "UNIFOUT\n"
         "OIL\n"
         "GAS\n"
         "WATER\n"
@@ -386,6 +388,9 @@ BOOST_AUTO_TEST_CASE(EclipseWriterIntegration)
         "PERMX\n"
         "27*1 /\n"
         "SCHEDULE\n"
+        "RPTRST\n"
+        "BASIC=1\n"
+        "/\n"
         "TSTEP\n"
         "1.0 2.0 3.0 4.0 /\n"
         "WELSPECS\n"

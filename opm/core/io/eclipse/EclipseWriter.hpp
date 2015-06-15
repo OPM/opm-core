@@ -115,7 +115,6 @@ private:
     double deckToSiTemperatureFactor_;
     double deckToSiTemperatureOffset_;
     bool enableOutput_;
-    int outputInterval_;
     int writeStepIdx_;
     int reportStepIdx_;
     std::string outputDir_;
