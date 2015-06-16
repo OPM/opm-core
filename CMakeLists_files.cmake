@@ -102,7 +102,6 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/satfunc/SatFuncSimple.cpp
 	opm/core/props/satfunc/SatFuncStone2.cpp
 	opm/core/props/satfunc/SaturationPropsBasic.cpp
-	opm/core/props/satfunc/SaturationPropsFromDeck.cpp
 	opm/core/simulator/AdaptiveSimulatorTimer.cpp
 	opm/core/simulator/BlackoilState.cpp
 	opm/core/simulator/TimeStepControl.cpp
