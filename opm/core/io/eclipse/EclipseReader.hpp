@@ -17,7 +17,7 @@ namespace Opm
 /// \param wellstate
 ///     An instance of a WellState object, with correct size for each of the 5 contained std::vector<double> objects.
 ///
-    void restoreOPM_XWELKeyword(const std::string restart_filename, int report_step, WellState& wellState);
+    void restoreOPM_XWELKeyword(const std::string& restart_filename, int report_step, WellState& wellState);
 }
 
 #endif // ECLIPSEREADER_HPP

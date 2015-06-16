@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
 
     const char * test_area_path = test_work_area_get_cwd(test_area);
     std::string slash = "/";
-    std::string restart_filename = test_area_path + slash + eclipse_restart_filename;
+    const std::string restart_filename = test_area_path + slash + eclipse_restart_filename;
     std::shared_ptr<Opm::WellState> wellStateRestored(new Opm::WellState());
     wellStateRestored->init(wells, *blackoilState);
     Opm::restoreOPM_XWELKeyword(restart_filename, 1, *wellStateRestored);

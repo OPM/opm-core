@@ -328,28 +328,12 @@ public:
         iwel_data[ offset + IWEL_STATUS_ITEM ] = EclipseWriter::eclipseWellStatusMask(well->getStatus(currentStep));
     }
 
-    void addRestartFileXwelData(std::vector<double>& xwel_data, const WellState& wellState) const {
-        size_t offset = 0;
-
-        for (size_t i = 0; i < wellState.bhp().size(); ++i) {
-            xwel_data[offset++] = wellState.bhp()[i];
-        }
-
-        for (size_t i = 0; i < wellState.perfPress().size(); ++i) {
-            xwel_data[offset++] = wellState.perfPress()[i];
-        }
-
-        for (size_t i = 0; i < wellState.perfRates().size(); ++i) {
-            xwel_data[offset++] = wellState.perfRates()[i];
-        }
-
-        for (size_t i = 0; i < wellState.temperature().size(); ++i) {
-            xwel_data[offset++] = wellState.temperature()[i];
-        }
-
-        for (size_t i = 0; i < wellState.wellRates().size(); ++i) {
-            xwel_data[offset++] = wellState.wellRates()[i];
-        }
+    void addRestartFileXwelData(const WellState& wellState, std::vector<double>& xwel_data) const {
+        std::copy_n(wellState.bhp().begin(), wellState.bhp().size(), xwel_data.begin() + wellState.getRestartBhpOffset());
+        std::copy_n(wellState.perfPress().begin(), wellState.perfPress().size(), xwel_data.begin() + wellState.getRestartPerfPressOffset());
+        std::copy_n(wellState.perfRates().begin(), wellState.perfRates().size(), xwel_data.begin() + wellState.getRestartPerfRatesOffset());
+        std::copy_n(wellState.temperature().begin(), wellState.temperature().size(), xwel_data.begin() + wellState.getRestartTemperatureOffset());
+        std::copy_n(wellState.wellRates().begin(), wellState.wellRates().size(), xwel_data.begin() + wellState.getRestartWellRatesOffset());
     }
 
     void addRestartFileIconData(std::vector<int>& icon_data, CompletionSetConstPtr completions , size_t wellICONOffset) const {
@@ -1286,11 +1270,10 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
 
         EclipseWriterDetails::Restart restartHandle(outputDir_, baseName_, timer.reportStepNum(), ioConfig);
 
-        int sz = wellState.bhp().size() + wellState.perfPress().size() + wellState.perfRates().size() + wellState.temperature().size() + wellState.wellRates().size();
+        const size_t sz = wellState.bhp().size() + wellState.perfPress().size() + wellState.perfRates().size() + wellState.temperature().size() + wellState.wellRates().size();
         std::vector<double>      xwell_data( sz , 0 );
 
-        EclipseWriterDetails::Restart restartHandle(outputDir_, baseName_, timer.reportStepNum());
-        restartHandle.addRestartFileXwelData(xwell_data, wellState);
+        restartHandle.addRestartFileXwelData(wellState, xwell_data);
 
         for (size_t iwell = 0; iwell < wells_ptr.size(); ++iwell) {
             WellConstPtr well = wells_ptr[iwell];

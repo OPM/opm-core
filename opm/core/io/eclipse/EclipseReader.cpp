@@ -18,45 +18,34 @@
 */
 
 #include "EclipseReader.hpp"
-#include <iostream>
 #include <opm/core/simulator/WellState.hpp>
+#include <algorithm>
 
 #include <ert/ecl/ecl_file.h>
 
 namespace Opm
 {
-    void restoreOPM_XWELKeyword(const std::string restart_filename, int reportstep, WellState& wellstate)
+    void restoreOPM_XWELKeyword(const std::string& restart_filename, int reportstep, WellState& wellstate)
     {
         const char * keyword = "OPM_XWEL";
         const char* filename = restart_filename.c_str();
-
         ecl_file_type* file_type = ecl_file_open(filename, 0);
-        bool block_selected = ecl_file_select_rstblock_report_step(file_type , reportstep);
 
-        if (block_selected) {
-            ecl_kw_type* xwel = ecl_file_iget_named_kw(file_type , keyword, 0);
-            const double* xwel_data = ecl_kw_get_double_ptr(xwel);
-            size_t offset = 0;
+        if (file_type != NULL) {
+            bool block_selected = ecl_file_select_rstblock_report_step(file_type , reportstep);
 
-            for (size_t i = 0; i < wellstate.bhp().size(); ++i) {
-                wellstate.bhp()[i] = xwel_data[offset++];
+            if (block_selected) {
+                ecl_kw_type* xwel = ecl_file_iget_named_kw(file_type , keyword, 0);
+                const double* xwel_data = ecl_kw_get_double_ptr(xwel);
+
+                std::copy_n(xwel_data + wellstate.getRestartTemperatureOffset(), wellstate.temperature().size(), wellstate.temperature().begin());
+                std::copy_n(xwel_data + wellstate.getRestartBhpOffset(), wellstate.bhp().size(), wellstate.bhp().begin());
+                std::copy_n(xwel_data + wellstate.getRestartPerfPressOffset(), wellstate.perfPress().size(), wellstate.perfPress().begin());
+                std::copy_n(xwel_data + wellstate.getRestartPerfRatesOffset(), wellstate.perfRates().size(), wellstate.perfRates().begin());
+                std::copy_n(xwel_data + wellstate.getRestartWellRatesOffset(), wellstate.wellRates().size(), wellstate.wellRates().begin());
             }
 
-            for (size_t i = 0; i < wellstate.perfPress().size(); ++i) {
-                wellstate.perfPress()[i] = xwel_data[offset++];
-            }
-
-            for (size_t i = 0; i < wellstate.perfRates().size(); ++i) {
-                wellstate.perfRates()[i] = xwel_data[offset++];
-            }
-
-            for (size_t i = 0; i < wellstate.temperature().size(); ++i) {
-                wellstate.temperature()[i] = xwel_data[offset++];
-            }
-
-            for (size_t i = 0; i < wellstate.wellRates().size(); ++i) {
-                wellstate.wellRates()[i] = xwel_data[offset++];
-            }
+            ecl_file_close(file_type);
         }
     }
 } // namespace Opm
