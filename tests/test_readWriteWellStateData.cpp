@@ -61,6 +61,7 @@ std::string input =
            "OIL\n"
            "GAS\n"
            "WATER\n"
+           "UNIFOUT\n"
            "DIMENS\n"
            " 10 10 10 /\n"
 
@@ -79,6 +80,9 @@ std::string input =
            "1 NOV 1979 / \n"
 
            "SCHEDULE\n"
+           "RPTRST\n"
+           "BASIC=1\n"
+           "/\n"
            "DATES             -- 1\n"
            " 10  OKT 2008 / \n"
            "/\n"
