@@ -54,6 +54,9 @@
 // "#pragma GCC diagnostic" syntax.
 #if COMPATIBLE_COMPILER
 #pragma GCC diagnostic push
+// Suppress warnings: "unknown option after ‘#pragma GCC diagnostic’ kind [-Wpragmas]".
+// This is necessary because not all the compilers have the same warning options.
+#pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #pragma GCC diagnostic ignored "-Wdeprecated-register"
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
@@ -66,6 +69,7 @@
 #pragma GCC diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
 #pragma GCC diagnostic ignored "-Wunused-private-field"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif // COMPATIBLE_COMPILER
 
 #endif // SILENCE_EXTERNAL_WARNINGS
