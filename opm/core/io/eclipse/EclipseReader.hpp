@@ -1,7 +1,7 @@
 #ifndef ECLIPSEREADER_HPP
 #define ECLIPSEREADER_HPP
 
-#include <iostream>
+#include <string>
 #include <opm/core/simulator/WellState.hpp>
 
 namespace Opm
