@@ -27,22 +27,32 @@ namespace Opm
     class SatFuncStone2 : public SatFuncBase<TableType>
     {
     public:
-        void evalKr(const double* s, double* kr) const;
-        void evalKrDeriv(const double* s, double* kr, double* dkrds) const;
-        void evalPc(const double* s, double* pc) const;
-        void evalPcDeriv(const double* s, double* pc, double* dpcds) const;
+        template <class FluidState>
+        void evalKr(const FluidState& fluidState, double* kr) const;
+        template <class FluidState>
+        void evalKrDeriv(const FluidState& fluidState, double* kr, double* dkrds) const;
+        template <class FluidState>
+        void evalPc(const FluidState& fluidState, double* pc) const;
+        template <class FluidState>
+        void evalPcDeriv(const FluidState& fluidState, double* pc, double* dpcds) const;
 
-        void evalKr(const double* /* s */, double* /* kr */, const EPSTransforms* /* epst */) const
+        template <class FluidState>
+        void evalKr(const FluidState& /* fluidState */, double* /* kr */, const EPSTransforms* /* epst */) const
         {OPM_THROW(std::runtime_error, "SatFuncStone2   --  need to be implemented ...");}
-        void evalKr(const double* /* s */, double* /* kr */, const EPSTransforms* /* epst */, const EPSTransforms* /* epst_hyst */, const SatHyst* /* sat_hyst */) const
+        template <class FluidState>
+        void evalKr(const FluidState& /* fluidState */, double* /* kr */, const EPSTransforms* /* epst */, const EPSTransforms* /* epst_hyst */, const SatHyst* /* sat_hyst */) const
         {OPM_THROW(std::runtime_error, "SatFuncStone2   --  need to be implemented ...");}
-        void evalKrDeriv(const double* /* s */, double* /* kr */, double* /* dkrds */, const EPSTransforms* /* epst */) const
+        template <class FluidState>
+        void evalKrDeriv(const FluidState& /* fluidState */, double* /* kr */, double* /* dkrds */, const EPSTransforms* /* epst */) const
         {OPM_THROW(std::runtime_error, "SatFuncStone2   --  need to be implemented ...");}
-        void evalKrDeriv(const double* /* s */, double* /* kr */, double* /* dkrds */, const EPSTransforms* /* epst */, const EPSTransforms* /* epst_hyst */, const SatHyst* /* sat_hyst */) const 
+        template <class FluidState>
+        void evalKrDeriv(const FluidState& /* fluidState */, double* /* kr */, double* /* dkrds */, const EPSTransforms* /* epst */, const EPSTransforms* /* epst_hyst */, const SatHyst* /* sat_hyst */) const 
         {OPM_THROW(std::runtime_error, "SatFuncStone2   --  need to be implemented ...");}
-        void evalPc(const double* /* s */, double* /* pc */, const EPSTransforms* /* epst */) const
+        template <class FluidState>
+        void evalPc(const FluidState& /* fluidState */, double* /* pc */, const EPSTransforms* /* epst */) const
         {OPM_THROW(std::runtime_error, "SatFuncStone2   --  need to be implemented ...");}
-        void evalPcDeriv(const double* /* s */, double* /* pc */, double* /* dpcds */, const EPSTransforms* /* epst */) const
+        template <class FluidState>
+        void evalPcDeriv(const FluidState& /* fluidState */, double* /* pc */, double* /* dpcds */, const EPSTransforms* /* epst */) const
         {OPM_THROW(std::runtime_error, "SatFuncStone2   --  need to be implemented ...");}
 
     private:
@@ -53,12 +63,13 @@ namespace Opm
     typedef SatFuncStone2<NonuniformTableLinear<double> > SatFuncStone2Nonuniform;
 
     template<class TableType>
-    void SatFuncStone2<TableType>::evalKr(const double* s, double* kr) const
+    template <class FluidState>
+    void SatFuncStone2<TableType>::evalKr(const FluidState& fluidState, double* kr) const
     {
         if (this->phase_usage.num_phases == 3) {
             // Stone-II relative permeability model.
-            double sw = s[BlackoilPhases::Aqua];
-            double sg = s[BlackoilPhases::Vapour];
+            double sw = fluidState.saturation(BlackoilPhases::Aqua);
+            double sg = fluidState.saturation(BlackoilPhases::Vapour);
             double krw = this->krw_(sw);
             double krg = this->krg_(sg);
             double krow = this->krow_(sw + sg); // = 1 - so
@@ -76,7 +87,7 @@ namespace Opm
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sw = s[wpos];
+            double sw = fluidState.saturation(wpos);
             double krw = this->krw_(sw);
             double krow = this->krow_(sw);
             kr[wpos] = krw;
@@ -85,7 +96,7 @@ namespace Opm
             assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
             int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sg = s[gpos];
+            double sg = fluidState.saturation(gpos);
             double krg = this->krg_(sg);
             double krog = this->krog_(sg);
             kr[gpos] = krg;
@@ -94,15 +105,16 @@ namespace Opm
     }
 
     template<class TableType>
-    void SatFuncStone2<TableType>::evalKrDeriv(const double* s, double* kr, double* dkrds) const
+    template <class FluidState>
+    void SatFuncStone2<TableType>::evalKrDeriv(const FluidState& fluidState, double* kr, double* dkrds) const
     {
         const int np = this->phase_usage.num_phases;
         std::fill(dkrds, dkrds + np*np, 0.0);
 
         if (np == 3) {
             // Stone-II relative permeability model.
-            double sw = s[BlackoilPhases::Aqua];
-            double sg = s[BlackoilPhases::Vapour];
+            double sw = fluidState.saturation(BlackoilPhases::Aqua);
+            double sg = fluidState.saturation(BlackoilPhases::Vapour);
             double krw = this->krw_(sw);
             double dkrww = this->krw_.derivative(sw);
             double krg = this->krg_(sg);
@@ -129,7 +141,7 @@ namespace Opm
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sw = s[wpos];
+            double sw = fluidState.saturation(wpos);
             double krw = this->krw_(sw);
             double dkrww = this->krw_.derivative(sw);
             double krow = this->krow_(sw);
@@ -142,7 +154,7 @@ namespace Opm
             assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
             int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sg = s[gpos];
+            double sg = fluidState.saturation(gpos);
             double krg = this->krg_(sg);
             double dkrgg = this->krg_.derivative(sg);
             double krog = this->krog_(sg);
@@ -156,21 +168,23 @@ namespace Opm
     }
 
     template<class TableType>
-    void SatFuncStone2<TableType>::evalPc(const double* s, double* pc) const
+    template <class FluidState>
+    void SatFuncStone2<TableType>::evalPc(const FluidState& fluidState, double* pc) const
     {
         pc[this->phase_usage.phase_pos[BlackoilPhases::Liquid]] = 0.0;
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
-            pc[pos] = this->pcow_(s[pos]);
+            pc[pos] = this->pcow_(fluidState.saturation(pos));
         }
         if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
-            pc[pos] = this->pcog_(s[pos]);
+            pc[pos] = this->pcog_(fluidState.saturation(pos));
         }
     }
 
     template<class TableType>
-    void SatFuncStone2<TableType>::evalPcDeriv(const double* s, double* pc, double* dpcds) const
+    template <class FluidState>
+    void SatFuncStone2<TableType>::evalPcDeriv(const FluidState& fluidState, double* pc, double* dpcds) const
     {
         // The problem of determining three-phase capillary pressures
         // is very hard experimentally, usually one extends two-phase
@@ -183,13 +197,13 @@ namespace Opm
         pc[this->phase_usage.phase_pos[BlackoilPhases::Liquid]] = 0.0;
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
-            pc[pos] = this->pcow_(s[pos]);
-            dpcds[np*pos + pos] = this->pcow_.derivative(s[pos]);
+            pc[pos] = this->pcow_(fluidState.saturation(pos));
+            dpcds[np*pos + pos] = this->pcow_.derivative(fluidState.saturation(pos));
         }
         if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
-            pc[pos] = this->pcog_(s[pos]);
-            dpcds[np*pos + pos] = this->pcog_.derivative(s[pos]);
+            pc[pos] = this->pcog_(fluidState.saturation(pos));
+            dpcds[np*pos + pos] = this->pcog_.derivative(fluidState.saturation(pos));
         }
     }
 
