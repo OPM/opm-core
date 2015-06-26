@@ -27,34 +27,42 @@ namespace Opm
     class SatFuncGwseg : public SatFuncBase<TableType>
     {
     public:
-        void evalKr(const double* s, double* kr) const;
-        void evalKrDeriv(const double* s, double* kr, double* dkrds) const;
-        void evalPc(const double* s, double* pc) const;
-        void evalPcDeriv(const double* s, double* pc, double* dpcds) const;
+        template <class FluidState>
+        void evalKr(const FluidState& fluidState, double* kr) const;
+        template <class FluidState>
+        void evalKrDeriv(const FluidState& fluidState, double* kr, double* dkrds) const;
+        template <class FluidState>
+        void evalPc(const FluidState& fluidState, double* pc) const;
+        template <class FluidState>
+        void evalPcDeriv(const FluidState& fluidState, double* pc, double* dpcds) const;
 
-        void evalKr(const double* s, double* kr, const EPSTransforms* epst) const;
-        void evalKr(const double* s, double* kr, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const;
-        void evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst) const;
-        void evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const;
-        void evalPc(const double* s, double* pc, const EPSTransforms* epst) const;
-        void evalPcDeriv(const double* s, double* pc, double* dpcds, const EPSTransforms* epst) const;
-
-    private:
-
+        template <class FluidState>
+        void evalKr(const FluidState& fluidState, double* kr, const EPSTransforms* epst) const;
+        template <class FluidState>
+        void evalKr(const FluidState& fluidState, double* kr, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const;
+        template <class FluidState>
+        void evalKrDeriv(const FluidState& fluidState, double* kr, double* dkrds, const EPSTransforms* epst) const;
+        template <class FluidState>
+        void evalKrDeriv(const FluidState& fluidState, double* kr, double* dkrds, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const;
+        template <class FluidState>
+        void evalPc(const FluidState& fluidState, double* pc, const EPSTransforms* epst) const;
+        template <class FluidState>
+        void evalPcDeriv(const FluidState& fluidState, double* pc, double* dpcds, const EPSTransforms* epst) const;
     };
     
     typedef SatFuncGwseg<UniformTableLinear<double> > SatFuncGwsegUniform;
     typedef SatFuncGwseg<NonuniformTableLinear<double> > SatFuncGwsegNonuniform;
 
     template<class TableType>
-    void SatFuncGwseg<TableType>::evalKr(const double* s, double* kr) const
+    template <class FluidState>
+    void SatFuncGwseg<TableType>::evalKr(const FluidState& fluidState, double* kr) const
     {
         if (this->phase_usage.num_phases == 3) {
             // Relative permeability model based on segregation of water
             // and gas, with oil present in both water and gas zones.
             double swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
-            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
-            const double sg = s[BlackoilPhases::Vapour];
+            const double sw = std::max(fluidState.saturation(BlackoilPhases::Aqua), swco);
+            const double sg = fluidState.saturation(BlackoilPhases::Vapour);
             const double eps = 1e-5;
             swco = std::min(swco,sw-eps);
 
@@ -77,7 +85,7 @@ namespace Opm
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sw = s[wpos];
+            double sw = fluidState.saturation(wpos);
             double krw = this->krw_(sw);
             double krow = this->krow_(sw);
             kr[wpos] = krw;
@@ -86,7 +94,7 @@ namespace Opm
             assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
             int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sg = s[gpos];
+            double sg = fluidState.saturation(gpos);
             double krg = this->krg_(sg);
             double krog = this->krog_(sg);
             kr[gpos] = krg;
@@ -96,7 +104,8 @@ namespace Opm
 
 
     template<class TableType>
-    void SatFuncGwseg<TableType>::evalKr(const double* s, double* kr, const EPSTransforms* epst) const
+    template <class FluidState>
+    void SatFuncGwseg<TableType>::evalKr(const FluidState& fluidState, double* kr, const EPSTransforms* epst) const
     {
         if (this->phase_usage.num_phases == 3) {     
             int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
@@ -108,8 +117,8 @@ namespace Opm
             // TODO  Also consider connate gas ...
             double _swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
             double swco = epst->wat.smin;
-            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
-            const double sg = s[BlackoilPhases::Vapour];
+            const double sw = std::max(fluidState.saturation(BlackoilPhases::Aqua), swco);
+            const double sg = fluidState.saturation(BlackoilPhases::Vapour);
             const double eps = 1e-6;
             swco = std::min(swco,sw-eps);
             const double ssw = sg + sw;
@@ -141,7 +150,7 @@ namespace Opm
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sw = s[wpos];
+            double sw = fluidState.saturation(wpos);
             double krw = this->krw_(sw);
             double krow = this->krow_(sw);
             kr[wpos] = krw;
@@ -150,7 +159,7 @@ namespace Opm
             assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
             int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sg = s[gpos];
+            double sg = fluidState.saturation(gpos);
             double krg = this->krg_(sg);
             double krog = this->krog_(sg);
             kr[gpos] = krg;
@@ -159,7 +168,8 @@ namespace Opm
     }
 
     template<class TableType>
-    void SatFuncGwseg<TableType>::evalKr(const double* s, double* kr, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const
+    template <class FluidState>
+    void SatFuncGwseg<TableType>::evalKr(const FluidState& fluidState, double* kr, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const
     {
         if (this->phase_usage.num_phases == 3) {
             int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
@@ -171,8 +181,8 @@ namespace Opm
             // TODO  Consider connate gas ...
             double _swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
             double swco = epst->wat.smin;
-            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
-            const double sg = s[BlackoilPhases::Vapour];
+            const double sw = std::max(fluidState.saturation(BlackoilPhases::Aqua), swco);
+            const double sg = fluidState.saturation(BlackoilPhases::Vapour);
             const double eps = 1e-6;
             swco = std::min(swco,sw-eps);
             const double ssw = sg + sw;
@@ -233,7 +243,7 @@ namespace Opm
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sw = s[wpos];
+            double sw = fluidState.saturation(wpos);
             double krw = this->krw_(sw);
             double krow = this->krow_(sw);
             kr[wpos] = krw;
@@ -242,7 +252,7 @@ namespace Opm
             assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
             int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sg = s[gpos];
+            double sg = fluidState.saturation(gpos);
             double krg = this->krg_(sg);
             double krog = this->krog_(sg);
             kr[gpos] = krg;
@@ -251,7 +261,8 @@ namespace Opm
     }
 
     template<class TableType>
-    void SatFuncGwseg<TableType>::evalKrDeriv(const double* s, double* kr, double* dkrds) const
+    template<class FluidState>
+    void SatFuncGwseg<TableType>::evalKrDeriv(const FluidState& fluidState, double* kr, double* dkrds) const
     {
         const int np = this->phase_usage.num_phases;
         std::fill(dkrds, dkrds + np*np, 0.0);
@@ -261,8 +272,8 @@ namespace Opm
             // and gas, with oil present in both water and gas zones.
 
             double swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
-            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
-            const double sg = s[BlackoilPhases::Vapour];
+            const double sw = std::max(fluidState.saturation(BlackoilPhases::Aqua), swco);
+            const double sg = fluidState.saturation(BlackoilPhases::Vapour);
             const double eps = 1e-5;
             swco = std::min(swco,sw-eps);
 
@@ -297,7 +308,7 @@ namespace Opm
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sw = s[wpos];
+            double sw = fluidState.saturation(wpos);
             double krw = this->krw_(sw);
             double dkrww = this->krw_.derivative(sw);
             double krow = this->krow_(sw);
@@ -310,7 +321,7 @@ namespace Opm
             assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
             int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sg = s[gpos];
+            double sg = fluidState.saturation(gpos);
             double krg = this->krg_(sg);
             double dkrgg = this->krg_.derivative(sg);
             double krog = this->krog_(sg);
@@ -324,7 +335,8 @@ namespace Opm
     }
 
     template<class TableType>
-    void SatFuncGwseg<TableType>::evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst) const
+    template<class FluidState>
+    void SatFuncGwseg<TableType>::evalKrDeriv(const FluidState& fluidState, double* kr, double* dkrds, const EPSTransforms* epst) const
     {
         const int np = this->phase_usage.num_phases;
         std::fill(dkrds, dkrds + np*np, 0.0);
@@ -339,8 +351,8 @@ namespace Opm
             // TODO  Also consider connate gas ...
             double _swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
             double swco = epst->wat.smin;
-            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
-            const double sg = s[BlackoilPhases::Vapour];
+            const double sw = std::max(fluidState.saturation(BlackoilPhases::Aqua), swco);
+            const double sg = fluidState.saturation(BlackoilPhases::Vapour);
             const double eps = 1e-6;
             swco = std::min(swco,sw-eps);
             const double ssw = sg + sw;
@@ -386,7 +398,7 @@ namespace Opm
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sw = s[wpos];
+            double sw = fluidState.saturation(wpos);
             double krw = this->krw_(sw);
             double dkrww = this->krw_.derivative(sw);
             double krow = this->krow_(sw);
@@ -399,7 +411,7 @@ namespace Opm
             assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
             int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sg = s[gpos];
+            double sg = fluidState.saturation(gpos);
             double krg = this->krg_(sg);
             double dkrgg = this->krg_.derivative(sg);
             double krog = this->krog_(sg);
@@ -412,7 +424,8 @@ namespace Opm
     }
     
     template<class TableType>
-    void SatFuncGwseg<TableType>::evalKrDeriv(const double* s, double* kr, double* dkrds, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const
+    template<class FluidState>
+    void SatFuncGwseg<TableType>::evalKrDeriv(const FluidState& fluidState, double* kr, double* dkrds, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const
     {
         const int np = this->phase_usage.num_phases;
         std::fill(dkrds, dkrds + np*np, 0.0);
@@ -427,8 +440,8 @@ namespace Opm
             // TODO  Also consider connate gas ...
             double _swco = this->smin_[this->phase_usage.phase_pos[BlackoilPhases::Aqua]];
             double swco = epst->wat.smin;
-            const double sw = std::max(s[BlackoilPhases::Aqua], swco);
-            const double sg = s[BlackoilPhases::Vapour];
+            const double sw = std::max(fluidState.saturation(BlackoilPhases::Aqua), swco);
+            const double sg = fluidState.saturation(BlackoilPhases::Vapour);
             const double eps = 1e-6;
             swco = std::min(swco,sw-eps);
             const double ssw = sg + sw;
@@ -506,7 +519,7 @@ namespace Opm
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int wpos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sw = s[wpos];
+            double sw = fluidState.saturation(wpos);
             double krw = this->krw_(sw);
             double dkrww = this->krw_.derivative(sw);
             double krow = this->krow_(sw);
@@ -519,7 +532,7 @@ namespace Opm
             assert(this->phase_usage.phase_used[BlackoilPhases::Vapour]);
             int gpos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
             int opos = this->phase_usage.phase_pos[BlackoilPhases::Liquid];
-            double sg = s[gpos];
+            double sg = fluidState.saturation(gpos);
             double krg = this->krg_(sg);
             double dkrgg = this->krg_.derivative(sg);
             double krog = this->krog_(sg);
@@ -532,38 +545,41 @@ namespace Opm
     }
 
     template<class TableType>
-    void SatFuncGwseg<TableType>::evalPc(const double* s, double* pc) const
+    template <class FluidState>
+    void SatFuncGwseg<TableType>::evalPc(const FluidState& fluidState, double* pc) const
     {
         pc[this->phase_usage.phase_pos[BlackoilPhases::Liquid]] = 0.0;
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
-            pc[pos] = this->pcow_(s[pos]);
+            pc[pos] = this->pcow_(fluidState.saturation(pos));
         }
         if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
-            pc[pos] = this->pcog_(s[pos]);
+            pc[pos] = this->pcog_(fluidState.saturation(pos));
         }
     }
     
     
     template<class TableType>
-    void SatFuncGwseg<TableType>::evalPc(const double* s, double* pc, const EPSTransforms* epst) const
+    template <class FluidState>
+    void SatFuncGwseg<TableType>::evalPc(const FluidState& fluidState, double* pc, const EPSTransforms* epst) const
     {
         pc[this->phase_usage.phase_pos[BlackoilPhases::Liquid]] = 0.0;
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
-            double _sw = epst->wat.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            double _sw = epst->wat.scaleSatPc(fluidState.saturation(pos), this->smin_[pos], this->smax_[pos]);
             pc[pos] = epst->wat.pcFactor*this->pcow_(_sw);
         }
         if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
-            double _sg = epst->gas.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            double _sg = epst->gas.scaleSatPc(fluidState.saturation(pos), this->smin_[pos], this->smax_[pos]);
             pc[pos] = epst->gas.pcFactor*this->pcog_(_sg);
         }
     }
 
     template<class TableType>
-    void SatFuncGwseg<TableType>::evalPcDeriv(const double* s, double* pc, double* dpcds) const
+    template <class FluidState>
+    void SatFuncGwseg<TableType>::evalPcDeriv(const FluidState& fluidState, double* pc, double* dpcds) const
     {
         // The problem of determining three-phase capillary pressures
         // is very hard experimentally, usually one extends two-phase
@@ -576,19 +592,20 @@ namespace Opm
         pc[this->phase_usage.phase_pos[BlackoilPhases::Liquid]] = 0.0;
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
-            pc[pos] = this->pcow_(s[pos]);
-            dpcds[np*pos + pos] = this->pcow_.derivative(s[pos]);
+            pc[pos] = this->pcow_(fluidState.saturation(pos));
+            dpcds[np*pos + pos] = this->pcow_.derivative(fluidState.saturation(pos));
         }
         if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
-            pc[pos] = this->pcog_(s[pos]);
-            dpcds[np*pos + pos] = this->pcog_.derivative(s[pos]);
+            pc[pos] = this->pcog_(fluidState.saturation(pos));
+            dpcds[np*pos + pos] = this->pcog_.derivative(fluidState.saturation(pos));
         }
     }
 
 
     template<class TableType>
-    void SatFuncGwseg<TableType>::evalPcDeriv(const double* s, double* pc, double* dpcds, const EPSTransforms* epst) const
+    template <class FluidState>
+    void SatFuncGwseg<TableType>::evalPcDeriv(const FluidState& fluidState, double* pc, double* dpcds, const EPSTransforms* epst) const
     {
         // The problem of determining three-phase capillary pressures
         // is very hard experimentally, usually one extends two-phase
@@ -601,16 +618,16 @@ namespace Opm
         pc[this->phase_usage.phase_pos[BlackoilPhases::Liquid]] = 0.0;
         if (this->phase_usage.phase_used[BlackoilPhases::Aqua]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Aqua];
-            double _sw = epst->wat.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            double _sw = epst->wat.scaleSatPc(fluidState.saturation(pos), this->smin_[pos], this->smax_[pos]);
             pc[pos] = epst->wat.pcFactor*this->pcow_(_sw);
-            double _dsdsw = epst->wat.scaleSatDerivPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            double _dsdsw = epst->wat.scaleSatDerivPc(fluidState.saturation(pos), this->smin_[pos], this->smax_[pos]);
             dpcds[np*pos + pos] = epst->wat.pcFactor*_dsdsw*this->pcow_.derivative(_sw);
         }
         if (this->phase_usage.phase_used[BlackoilPhases::Vapour]) {
             int pos = this->phase_usage.phase_pos[BlackoilPhases::Vapour];
-            double _sg = epst->gas.scaleSatPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            double _sg = epst->gas.scaleSatPc(fluidState.saturation(pos), this->smin_[pos], this->smax_[pos]);
             pc[pos] = epst->gas.pcFactor*this->pcog_(_sg);
-            double _dsdsg = epst->gas.scaleSatDerivPc(s[pos], this->smin_[pos], this->smax_[pos]);
+            double _dsdsg = epst->gas.scaleSatDerivPc(fluidState.saturation(pos), this->smin_[pos], this->smax_[pos]);
             dpcds[np*pos + pos] = epst->gas.pcFactor*_dsdsg*this->pcog_.derivative(_sg);
         }
     }
