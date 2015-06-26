@@ -362,6 +362,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/rock/RockFromDeck.hpp
 	opm/core/props/satfunc/SatFuncBase.hpp
 	opm/core/props/satfunc/SatFuncGwseg.hpp
+	opm/core/props/satfunc/SatFuncMultiplexer.hpp
 	opm/core/props/satfunc/SatFuncSimple.hpp
 	opm/core/props/satfunc/SatFuncStone2.hpp
 	opm/core/props/satfunc/SaturationPropsBasic.hpp
