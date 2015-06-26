@@ -372,7 +372,9 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/AdaptiveTimeStepping.hpp
 	opm/core/simulator/AdaptiveTimeStepping_impl.hpp
 	opm/core/simulator/BlackoilState.hpp
+  opm/core/simulator/BlackoilStateToFluidState.hpp
 	opm/core/simulator/EquilibrationHelpers.hpp
+  opm/core/simulator/ExplicitArraysFluidState.hpp
 	opm/core/simulator/TimeStepControl.hpp
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
