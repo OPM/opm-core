@@ -54,11 +54,10 @@ namespace Opm
            rock_.init(eclState, number_of_cells, global_cell, cart_dims);
         }
         pvt_.init(deck, eclState, /*numSamples=*/0);
-        SaturationPropsFromDeck<SatFuncSimpleNonuniform>* ptr
-            = new SaturationPropsFromDeck<SatFuncSimpleNonuniform>();
+        SaturationPropsFromDeck* ptr
+            = new SaturationPropsFromDeck();
         satprops_.reset(ptr);
-        ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids, dimension,
-                  /*numSamples=*/0);
+        ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids, dimension);
 
         if (pvt_.numPhases() != satprops_->numPhases()) {
             OPM_THROW(std::runtime_error, "BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck() - Inconsistent number of phases in pvt data ("
@@ -89,56 +88,15 @@ namespace Opm
         pvt_.init(deck, eclState, pvt_samples);
 
         // Unfortunate lack of pointer smartness here...
-        const int sat_samples = param.getDefault("sat_tab_size", -1);
         std::string threephase_model = param.getDefault<std::string>("threephase_model", "gwseg");
         if (deck->hasKeyword("ENDSCALE") && threephase_model != "gwseg") {
             OPM_THROW(std::runtime_error, "Sorry, end point scaling currently available for the 'gwseg' model only.");
         }
-        if (sat_samples > 1) {
-            if (threephase_model == "stone2") {
-                SaturationPropsFromDeck<SatFuncStone2Uniform>* ptr
-                    = new SaturationPropsFromDeck<SatFuncStone2Uniform>();
-                satprops_.reset(ptr);
-                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
-                          dimension, sat_samples);
-            } else if (threephase_model == "simple") {
-                SaturationPropsFromDeck<SatFuncSimpleUniform>* ptr
-                    = new SaturationPropsFromDeck<SatFuncSimpleUniform>();
-                satprops_.reset(ptr);
-                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
-                          dimension, sat_samples);
-            } else if (threephase_model == "gwseg") {
-                SaturationPropsFromDeck<SatFuncGwsegUniform>* ptr
-                    = new SaturationPropsFromDeck<SatFuncGwsegUniform>();
-                satprops_.reset(ptr);
-                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
-                          dimension, sat_samples);
-            } else {
-                OPM_THROW(std::runtime_error, "Unknown threephase_model: " << threephase_model);
-            }
-        } else {
-            if (threephase_model == "stone2") {
-                SaturationPropsFromDeck<SatFuncStone2Nonuniform>* ptr
-                    = new SaturationPropsFromDeck<SatFuncStone2Nonuniform>();
-                satprops_.reset(ptr);
-                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
-                          dimension, sat_samples);
-            } else if (threephase_model == "simple") {
-                SaturationPropsFromDeck<SatFuncSimpleNonuniform>* ptr
-                    = new SaturationPropsFromDeck<SatFuncSimpleNonuniform>();
-                satprops_.reset(ptr);
-                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
-                          dimension, sat_samples);
-            } else if (threephase_model == "gwseg") {
-                SaturationPropsFromDeck<SatFuncGwsegNonuniform>* ptr
-                    = new SaturationPropsFromDeck<SatFuncGwsegNonuniform>();
-                satprops_.reset(ptr);
-                ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids,
-                          dimension, sat_samples);
-            } else {
-                OPM_THROW(std::runtime_error, "Unknown threephase_model: " << threephase_model);
-            }
-        }
+
+        SaturationPropsFromDeck* ptr
+            = new SaturationPropsFromDeck();
+        satprops_.reset(ptr);
+        ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids, dimension);
 
         if (pvt_.numPhases() != satprops_->numPhases()) {
             OPM_THROW(std::runtime_error, "BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck() - Inconsistent number of phases in pvt data ("
