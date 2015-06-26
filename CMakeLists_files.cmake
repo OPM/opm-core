@@ -98,7 +98,6 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/rock/RockBasic.cpp
 	opm/core/props/rock/RockCompressibility.cpp
 	opm/core/props/rock/RockFromDeck.cpp
-	opm/core/props/satfunc/SatFuncGwseg.cpp
 	opm/core/props/satfunc/SatFuncSimple.cpp
 	opm/core/props/satfunc/SatFuncStone2.cpp
 	opm/core/props/satfunc/SaturationPropsBasic.cpp
