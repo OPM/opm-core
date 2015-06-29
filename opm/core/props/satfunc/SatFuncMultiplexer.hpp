@@ -31,6 +31,8 @@
 
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
+#include <memory>
+
 namespace Opm
 {
 
@@ -50,43 +52,41 @@ public:
     };
 
 // this is a helper macro which helps to save us from RSI in the following
-#define OPM_MULTIPLEXER_SATFUNC_CALL(codeToCall)    \
-    switch (satFuncType_) {                         \
-    case Gwseg: {                                   \
-        typedef SatFuncGwseg<TableType> SatFunc;    \
-        if (false) SatFunc dummyForWarning;         \
-        auto& satFunc = getGwseg();                 \
-        codeToCall;                                 \
-        break;                                      \
-    }                                               \
-    case Stone2: {                                  \
-        typedef SatFuncStone2<TableType> SatFunc;   \
-        if (false) SatFunc dummyForWarning;         \
-        auto& satFunc = getStone2();                \
-        codeToCall;                                 \
-        break;                                      \
-    }                                               \
-    case Simple: {                                  \
-        typedef SatFuncSimple<TableType> SatFunc;   \
-        if (false) SatFunc dummyForWarning;         \
-        auto& satFunc = getSimple();                \
-        codeToCall;                                 \
-        break;                                      \
-    }                                               \
+#define OPM_MULTIPLEXER_CONST const
+#define OPM_MULTIPLEXER_NON_CONST
+#define OPM_MULTIPLEXER_SATFUNC_CALL(codeToCall, CONST)                 \
+    switch (satFuncType_) {                                             \
+    case Gwseg: {                                                       \
+        typedef SatFuncGwseg<TableType> SatFunc;                        \
+        __attribute__((unused)) CONST SatFunc& satFunc =                \
+            *static_cast<SatFunc*>(satFunc_.get());                     \
+        codeToCall;                                                     \
+        break;                                                          \
+    }                                                                   \
+    case Stone2: {                                                      \
+        typedef SatFuncStone2<TableType> SatFunc;                       \
+        __attribute__((unused)) CONST SatFunc& satFunc =                \
+            *static_cast<SatFunc*>(satFunc_.get());                     \
+        codeToCall;                                                     \
+        break;                                                          \
+    }                                                                   \
+    case Simple: {                                                      \
+        typedef SatFuncSimple<TableType> SatFunc;                       \
+        __attribute__((unused)) CONST SatFunc& satFunc =                \
+            *static_cast<SatFunc*>(satFunc_.get());                     \
+        codeToCall;                                                     \
+        break;                                                          \
+    }                                                                   \
     };
 
     SatFuncMultiplexer()
-        : wasInitialized_(false)
+    {}
+
+    SatFuncMultiplexer(const SatFuncMultiplexer&)
     {}
 
     ~SatFuncMultiplexer()
-    {
-        if (!wasInitialized_)
-            return;
-
-        // call the destructor of the selected saturation function
-        OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.~SatFunc());
-    }
+    {}
 
     /*!
      * \brief Pick the correct saturation function type and initialize the object using
@@ -103,7 +103,7 @@ public:
         OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.init(eclState,
                                                   tableIdx,
                                                   phaseUsage,
-                                                  /*samples=*/0));
+                                                  /*samples=*/0), OPM_MULTIPLEXER_NON_CONST);
     }
 
     /*!
@@ -111,14 +111,27 @@ public:
      */
     void setSatFuncType(SatFuncType newSatFuncType)
     {
-        assert(!wasInitialized_);
-
         // set the type of the saturation function
         satFuncType_ = newSatFuncType;
 
         // call the default constructor for the selected saturation function
-        OPM_MULTIPLEXER_SATFUNC_CALL(new(&satFunc) SatFunc());
-        wasInitialized_ = true;
+        switch (satFuncType_) {
+        case Gwseg: {
+            typedef SatFuncGwseg<TableType> SatFunc;
+            satFunc_.reset(new SatFunc);
+            break;
+        }
+        case Stone2: {
+            typedef SatFuncStone2<TableType> SatFunc;
+            satFunc_.reset(new SatFunc);
+            break;
+        }
+        case Simple: {
+            typedef SatFuncSimple<TableType> SatFunc;
+            satFunc_.reset(new SatFunc);
+            break;
+        }
+        }
     }
 
     /*!
@@ -135,27 +148,11 @@ public:
      * parameters).
      */
     const SatFuncBase<TableType>& getSatFuncBase() const
-    {
-        switch (satFuncType()) {
-        case Gwseg:
-            return getGwseg();
-        case Stone2:
-            return getStone2();
-        case Simple:
-            return getSimple();
-        }
-        OPM_THROW(std::logic_error, "Unhandled saturation function type");
-    }
+    { return *satFunc_; }
 
     SatFuncBase<TableType>& getSatFuncBase()
-    {
-        return const_cast<SatFuncBase<TableType>&>(static_cast<const SatFuncMultiplexer*>(this)->getSatFuncBase());
-    }
+    { return *satFunc_; }
 
-// the strict aliasing compiler warnings need to be ignored here. This is safe because we
-// deal with the alignment of the data ourselfs.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
     /*!
      * \brief Return the raw "Gwseg" saturation function object.
      *
@@ -165,13 +162,13 @@ public:
     SatFuncGwseg<TableType>& getGwseg()
     {
         assert(satFuncType_ == Gwseg);
-        return *reinterpret_cast<SatFuncGwseg<TableType>*>(satFuncsData_.gwseg);
+        return *static_cast<SatFuncGwseg<TableType>*>(satFunc_.get());
     }
 
     const SatFuncGwseg<TableType>& getGwseg() const
     {
         assert(satFuncType_ == Gwseg);
-        return *reinterpret_cast<const SatFuncGwseg<TableType>*>(satFuncsData_.gwseg);
+        return *static_cast<const SatFuncGwseg<TableType>*>(satFunc_.get());
     }
 
     /*!
@@ -183,13 +180,13 @@ public:
     SatFuncSimple<TableType>& getSimple()
     {
         assert(satFuncType_ == Simple);
-        return *reinterpret_cast<SatFuncSimple<TableType>*>(satFuncsData_.simple);
+        return *static_cast<SatFuncSimple<TableType>*>(satFunc_.get());
     }
 
     const SatFuncSimple<TableType>& getSimple() const
     {
         assert(satFuncType_ == Simple);
-        return *reinterpret_cast<const SatFuncSimple<TableType>*>(satFuncsData_.simple);
+        return *static_cast<const SatFuncSimple<TableType>*>(satFunc_.get());
     }
 
     /*!
@@ -201,67 +198,63 @@ public:
     SatFuncStone2<TableType>& getStone2()
     {
         assert(satFuncType_ == Stone2);
-        return *reinterpret_cast<SatFuncStone2<TableType>*>(satFuncsData_.stone2);
+        return *static_cast<SatFuncStone2<TableType>*>(satFunc_.get());
     }
 
     const SatFuncStone2<TableType>& getStone2() const
     {
         assert(satFuncType_ == Stone2);
-        return *reinterpret_cast<const SatFuncStone2<TableType>*>(satFuncsData_.stone2);
+        return *static_cast<const SatFuncStone2<TableType>*>(satFunc_.get());
     }
-#pragma GCC diagnostic pop
 
     template <class FluidState>
     void evalKr(const FluidState& fluidState, double* kr) const
-    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKr(fluidState, kr)); }
+    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKr(fluidState, kr), OPM_MULTIPLEXER_CONST); }
 
     template <class FluidState>
     void evalKrDeriv(const FluidState& fluidState, double* kr, double* dkrds) const
-    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKrDeriv(fluidState, kr, dkrds)); }
+    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKrDeriv(fluidState, kr, dkrds), OPM_MULTIPLEXER_CONST); }
 
     template <class FluidState>
     void evalPc(const FluidState& fluidState, double* pc) const
-    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalPc(fluidState, pc)); }
+    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalPc(fluidState, pc), OPM_MULTIPLEXER_CONST); }
 
     template <class FluidState>
     void evalPcDeriv(const FluidState& fluidState, double* pc, double* dpcds) const
-    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalPcDeriv(fluidState, pc, dpcds)); }
+    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalPcDeriv(fluidState, pc, dpcds), OPM_MULTIPLEXER_CONST); }
 
     template <class FluidState>
     void evalKr(const FluidState& fluidState, double* kr, const EPSTransforms* epst) const
-    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKr(fluidState, kr, epst)); }
+    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKr(fluidState, kr, epst), OPM_MULTIPLEXER_CONST); }
 
     template <class FluidState>
     void evalKr(const FluidState& fluidState, double* kr, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const
-    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKr(fluidState, kr, epst, epst_hyst, sat_hyst)); }
+    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKr(fluidState, kr, epst, epst_hyst, sat_hyst), OPM_MULTIPLEXER_CONST); }
 
     template <class FluidState>
     void evalKrDeriv(const FluidState& fluidState, double* kr, double* dkrds, const EPSTransforms* epst) const
-    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKrDeriv(fluidState, kr, dkrds, epst)); }
+    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKrDeriv(fluidState, kr, dkrds, epst), OPM_MULTIPLEXER_CONST); }
 
     template <class FluidState>
     void evalKrDeriv(const FluidState& fluidState, double* kr, double* dkrds, const EPSTransforms* epst, const EPSTransforms* epst_hyst, const SatHyst* sat_hyst) const
-    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKrDeriv(fluidState, kr, dkrds, epst, epst_hyst, sat_hyst)); }
+    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalKrDeriv(fluidState, kr, dkrds, epst, epst_hyst, sat_hyst), OPM_MULTIPLEXER_CONST); }
 
     template <class FluidState>
     void evalPc(const FluidState& fluidState, double* pc, const EPSTransforms* epst) const
-    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalPc(fluidState, pc, epst)); }
+    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalPc(fluidState, pc, epst), OPM_MULTIPLEXER_CONST); }
 
     template <class FluidState>
     void evalPcDeriv(const FluidState& fluidState, double* pc, double* dpcds, const EPSTransforms* epst) const
-    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalPcDeriv(fluidState, pc, dpcds, epst)); }
+    { OPM_MULTIPLEXER_SATFUNC_CALL(satFunc.evalPcDeriv(fluidState, pc, dpcds, epst), OPM_MULTIPLEXER_CONST); }
 
 // undefine the helper macro here because we don't need it anymore
 #undef OPM_MULTIPLEXER_SATFUNC_CALL
+#undef OPM_MULTIPLEXER_NON_CONST
+#undef OPM_MULTIPLEXER_CONST
 
 private:
-    bool wasInitialized_;
     SatFuncType satFuncType_;
-    union {
-        char gwseg[sizeof(SatFuncGwseg<TableType>)];
-        char simple[sizeof(SatFuncSimple<TableType>)];
-        char stone2[sizeof(SatFuncStone2<TableType>)];
-    } satFuncsData_  __attribute__((aligned(sizeof(double))));
+    std::unique_ptr<SatFuncBase<TableType> > satFunc_;
 };
 } // namespace Opm
 
