@@ -77,6 +77,8 @@ namespace Opm
     class SatFuncBase : public BlackoilPhases
     {
     public:
+        virtual ~SatFuncBase() {};
+
         void init(Opm::EclipseStateConstPtr eclipseState,
                   const int table_num,
                   const PhaseUsage phase_usg,

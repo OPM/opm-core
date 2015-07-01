@@ -98,11 +98,8 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/rock/RockBasic.cpp
 	opm/core/props/rock/RockCompressibility.cpp
 	opm/core/props/rock/RockFromDeck.cpp
-	opm/core/props/satfunc/SatFuncGwseg.cpp
 	opm/core/props/satfunc/SatFuncSimple.cpp
-	opm/core/props/satfunc/SatFuncStone2.cpp
 	opm/core/props/satfunc/SaturationPropsBasic.cpp
-	opm/core/props/satfunc/SaturationPropsFromDeck.cpp
 	opm/core/simulator/AdaptiveSimulatorTimer.cpp
 	opm/core/simulator/BlackoilState.cpp
 	opm/core/simulator/TimeStepControl.cpp
@@ -365,6 +362,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/rock/RockFromDeck.hpp
 	opm/core/props/satfunc/SatFuncBase.hpp
 	opm/core/props/satfunc/SatFuncGwseg.hpp
+	opm/core/props/satfunc/SatFuncMultiplexer.hpp
 	opm/core/props/satfunc/SatFuncSimple.hpp
 	opm/core/props/satfunc/SatFuncStone2.hpp
 	opm/core/props/satfunc/SaturationPropsBasic.hpp
@@ -375,7 +373,9 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/simulator/AdaptiveTimeStepping.hpp
 	opm/core/simulator/AdaptiveTimeStepping_impl.hpp
 	opm/core/simulator/BlackoilState.hpp
+  opm/core/simulator/BlackoilStateToFluidState.hpp
 	opm/core/simulator/EquilibrationHelpers.hpp
+  opm/core/simulator/ExplicitArraysFluidState.hpp
 	opm/core/simulator/TimeStepControl.hpp
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
