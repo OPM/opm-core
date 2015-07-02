@@ -82,11 +82,18 @@ public:
     SatFuncMultiplexer()
     {}
 
+    ~SatFuncMultiplexer()
+    {}
+
+    // this constructor not really a copy constructor, but it is
+    // required to make std::unique_ptr happy
     SatFuncMultiplexer(const SatFuncMultiplexer&)
     {}
 
-    ~SatFuncMultiplexer()
-    {}
+    // this operator does not do anything and is thus not a copy operator, but it is
+    // required to make std::unique_ptr happy on old compilers
+    SatFuncMultiplexer& operator=(const SatFuncMultiplexer& other)
+    { return *this; }
 
     /*!
      * \brief Pick the correct saturation function type and initialize the object using
