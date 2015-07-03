@@ -50,8 +50,9 @@ SimulatorState::init(int number_of_cells, int number_of_faces, int num_phases)
 {
     num_phases_ = num_phases;
 
-    cellData_.resize( 3 );
-    faceData_.resize( 2 );
+    // clear memory
+    cellData_ = std::vector< std::vector<double> > ( 3 );
+    faceData_ = std::vector< std::vector<double> > ( 2 );
 
     pressure().resize(number_of_cells, 0.0);
     temperature().resize(number_of_cells, 273.15 + 20);
