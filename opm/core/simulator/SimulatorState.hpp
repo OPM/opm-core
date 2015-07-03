@@ -1,4 +1,5 @@
 // Copyright (C) 2013 Uni Research AS
+// Copyright (C) 2015 IRIS AS
 // This file is licensed under the GNU General Public License v3.0
 
 #ifndef OPM_SIMULATORSTATE_HEADER_INCLUDED
