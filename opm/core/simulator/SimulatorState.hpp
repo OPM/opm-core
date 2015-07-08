@@ -1,10 +1,12 @@
 // Copyright (C) 2013 Uni Research AS
+// Copyright (C) 2015 IRIS AS
 // This file is licensed under the GNU General Public License v3.0
 
 #ifndef OPM_SIMULATORSTATE_HEADER_INCLUDED
 #define OPM_SIMULATORSTATE_HEADER_INCLUDED
 
 #include <vector>
+#include <string>
 
 // forward declaration
 struct UnstructuredGrid;
@@ -18,10 +20,22 @@ namespace Opm
         virtual void init(const UnstructuredGrid& g, int num_phases);
 
         virtual void init(int number_of_cells, int number_of_faces, int num_phases);
-        
+
         enum ExtremalSat { MinSat, MaxSat };
 
     protected:
+        /// \brief pressure per cell.
+        static const int pressureId_ = 0;
+        /// \brief temperature per cell.
+        static const int temperatureId_ = 1;
+        /// \brief The saturation of each phase per cell.
+        static const int saturationId_ = 2;
+
+        /// \brief pressure per face.
+        static const int facePressureId_ = 0;
+        /// \brief The fluxes at the faces.
+        static const int faceFluxId_ = 1;
+
         /**
          * Initialize the first saturation to maximum value. This method
          * should be considered deprecated. Avoid to use it!
@@ -37,17 +51,17 @@ namespace Opm
     public:
         int numPhases() const { return num_phases_; }
 
-        std::vector<double>& pressure    () { return press_ ; }
-        std::vector<double>& temperature () { return temp_  ; }
-        std::vector<double>& facepressure() { return fpress_; }
-        std::vector<double>& faceflux    () { return flux_  ; }
-        std::vector<double>& saturation  () { return sat_   ; }
+        std::vector<double>& pressure    () { return cellData_[ pressureId_ ]; }
+        std::vector<double>& temperature () { return cellData_[ temperatureId_ ]; }
+        std::vector<double>& facepressure() { return faceData_[ facePressureId_]; }
+        std::vector<double>& faceflux    () { return faceData_[ faceFluxId_ ];        }
+        std::vector<double>& saturation  () { return cellData_[ saturationId_ ];  }
 
-        const std::vector<double>& pressure    () const { return press_ ; }
-        const std::vector<double>& temperature () const { return temp_  ; }
-        const std::vector<double>& facepressure() const { return fpress_; }
-        const std::vector<double>& faceflux    () const { return flux_  ; }
-        const std::vector<double>& saturation  () const { return sat_   ; }
+        const std::vector<double>& pressure    () const { return cellData_[ pressureId_ ];    }
+        const std::vector<double>& temperature () const { return cellData_[ temperatureId_ ]; }
+        const std::vector<double>& facepressure() const { return faceData_[ facePressureId_]; }
+        const std::vector<double>& faceflux    () const { return faceData_[ faceFluxId_ ];        }
+        const std::vector<double>& saturation  () const { return cellData_[ saturationId_ ];  }
 
         /**
          * Compare this state with another, to see if they are different
@@ -55,20 +69,32 @@ namespace Opm
          */
         virtual bool equals(const SimulatorState& other,
                             double epsilon = 1e-8) const;
+
+        std::vector< std::vector<double> >& cellData() { return cellData_; }
+        const std::vector< std::vector<double> >& cellData() const { return cellData_; }
+
+        std::vector< std::vector<double> >& faceData() { return faceData_; }
+        const std::vector< std::vector<double> >& faceData() const { return faceData_; }
+
     private:
+        int num_cells_;
+        int num_faces_;
         int num_phases_;
-        /// \brief pressure per cell.
-        std::vector<double> press_ ;
-        /// \brief temperature per cell.
-        std::vector<double> temp_  ;
-        /// \brief pressure per face.
-        std::vector<double> fpress_;
-        /// \brief The fluxes at the faces.
-        std::vector<double> flux_  ;
-        /// \brief The saturation of each phase per cell.
-        std::vector<double> sat_   ;
+
+        /// \brief vector containing all registered cell data
+        std::vector< std::vector< double > > cellData_;
+        /// \brief vector containing all registered face data
+        std::vector< std::vector< double > > faceData_;
+
+        /// \brief names for the cell data
+        std::vector< std::string > cellDataNames_;
+        /// \brief names for the face data
+        std::vector< std::string > faceDataNames_;
 
     protected:
+        size_t registerCellData( const std::string& name, const int components, const double initialValue = 0.0 );
+        size_t registerFaceData( const std::string& name, const int components, const double initialValue = 0.0 );
+
         /**
          * Check if two vectors are equal within a margin.
          *
