@@ -92,7 +92,7 @@ public:
 
     // this operator does not do anything and is thus not a copy operator, but it is
     // required to make std::unique_ptr happy on old compilers
-    SatFuncMultiplexer& operator=(const SatFuncMultiplexer& other)
+    SatFuncMultiplexer& operator=(const SatFuncMultiplexer&)
     { return *this; }
 
     /*!
