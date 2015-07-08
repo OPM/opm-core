@@ -23,6 +23,7 @@ namespace Opm
 
         enum ExtremalSat { MinSat, MaxSat };
 
+    protected:
         /// \brief pressure per cell.
         static const int pressureId_ = 0;
         /// \brief temperature per cell.
@@ -35,7 +36,6 @@ namespace Opm
         /// \brief The fluxes at the faces.
         static const int faceFluxId_ = 1;
 
-    protected:
         /**
          * Initialize the first saturation to maximum value. This method
          * should be considered deprecated. Avoid to use it!
