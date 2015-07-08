@@ -77,6 +77,8 @@ namespace Opm
         const std::vector< std::vector<double> >& faceData() const { return faceData_; }
 
     private:
+        int num_cells_;
+        int num_faces_;
         int num_phases_;
 
         /// \brief vector containing all registered cell data
