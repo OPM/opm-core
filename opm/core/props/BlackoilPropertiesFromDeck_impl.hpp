@@ -13,7 +13,7 @@ namespace Opm
                                                            bool init_rock)
     {
         std::vector<int> compressedToCartesianIdx(number_of_cells);
-        for (unsigned cellIdx = 0; cellIdx < number_of_cells; ++cellIdx) {
+        for (int cellIdx = 0; cellIdx < number_of_cells; ++cellIdx) {
             if (global_cell) {
                 compressedToCartesianIdx[cellIdx] = global_cell[cellIdx];
             }
@@ -40,7 +40,7 @@ namespace Opm
                                                            bool init_rock)
     {
         std::vector<int> compressedToCartesianIdx(number_of_cells);
-        for (unsigned cellIdx = 0; cellIdx < number_of_cells; ++cellIdx) {
+        for (int cellIdx = 0; cellIdx < number_of_cells; ++cellIdx) {
             if (global_cell) {
                 compressedToCartesianIdx[cellIdx] = global_cell[cellIdx];
             }

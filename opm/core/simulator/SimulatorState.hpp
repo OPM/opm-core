@@ -50,6 +50,8 @@ namespace Opm
                          ExtremalSat es);
     public:
         int numPhases() const { return num_phases_; }
+        int numCells () const { return num_cells_; }
+        int numFaces () const { return num_faces_; }
 
         std::vector<double>& pressure    () { return cellData_[ pressureId_ ]; }
         std::vector<double>& temperature () { return cellData_[ temperatureId_ ]; }
@@ -76,6 +78,11 @@ namespace Opm
         std::vector< std::vector<double> >& faceData() { return faceData_; }
         const std::vector< std::vector<double> >& faceData() const { return faceData_; }
 
+        const std::vector< std::string >& cellDataNames() const { return cellDataNames_; }
+        const std::vector< std::string >& faceDataNames() const { return faceDataNames_; }
+
+        size_t registerCellData( const std::string& name, const int components, const double initialValue = 0.0 );
+        size_t registerFaceData( const std::string& name, const int components, const double initialValue = 0.0 );
     private:
         int num_cells_;
         int num_faces_;
@@ -92,9 +99,6 @@ namespace Opm
         std::vector< std::string > faceDataNames_;
 
     protected:
-        size_t registerCellData( const std::string& name, const int components, const double initialValue = 0.0 );
-        size_t registerFaceData( const std::string& name, const int components, const double initialValue = 0.0 );
-
         /**
          * Check if two vectors are equal within a margin.
          *
