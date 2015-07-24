@@ -108,3 +108,55 @@ BOOST_AUTO_TEST_CASE(EqualEclipseGrid) {
     destroy_grid( cgrid2 );
 }
 
+
+BOOST_AUTO_TEST_CASE(TOPS_Fully_Specified) {
+    const char *deck1Data =
+        "RUNSPEC\n"
+        "\n"
+        "DIMENS\n"
+        " 10 10 3 /\n"
+        "GRID\n"
+        "DX\n"
+        "300*1000 /\n"
+        "DY\n"
+        "300*1000 /\n"
+        "DZ\n"
+        "100*20 100*30  100*50 /\n"
+        "TOPS\n"
+        "100*8325 /\n"
+        "EDIT\n"
+        "\n";
+
+
+    const char *deck2Data =
+        "RUNSPEC\n"
+        "\n"
+        "DIMENS\n"
+        " 10 10 3 /\n"
+        "GRID\n"
+        "DX\n"
+        "300*1000 /\n"
+        "DY\n"
+        "300*1000 /\n"
+        "DZ\n"
+        "100*20 100*30  100*50 /\n"
+        "TOPS\n"
+        "100*8325 100*8345  100*8375/\n"
+        "EDIT\n"
+        "\n";
+
+    Opm::ParserPtr parser(new Opm::Parser() );
+    Opm::DeckConstPtr deck1 = parser->parseString( deck1Data );
+    Opm::DeckConstPtr deck2 = parser->parseString( deck2Data );
+
+    std::shared_ptr<const Opm::EclipseGrid> grid1(new Opm::EclipseGrid(deck1));
+    std::shared_ptr<const Opm::EclipseGrid> grid2(new Opm::EclipseGrid(deck2));
+
+    Opm::GridManager gridM1(grid1);
+    Opm::GridManager gridM2(grid2);
+
+    const UnstructuredGrid* cgrid1 = gridM1.c_grid();
+    const UnstructuredGrid* cgrid2 = gridM2.c_grid();
+
+    BOOST_CHECK( grid_equal( cgrid1 , cgrid2 ));
+}
