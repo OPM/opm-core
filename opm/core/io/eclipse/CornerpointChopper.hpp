@@ -22,6 +22,7 @@
 
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 #include <opm/parser/eclipse/Parser/Parser.hpp>
+#include <opm/parser/eclipse/Parser/ParseMode.hpp>
 #include <opm/parser/eclipse/Units/UnitSystem.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/Deck/DeckKeyword.hpp>
@@ -44,8 +45,9 @@ namespace Opm
     public:
         CornerPointChopper(const std::string& file)
         {
+            Opm::ParseMode parseMode;
             Opm::ParserPtr parser(new Opm::Parser());
-            deck_ = parser->parseFile(file);
+            deck_ = parser->parseFile(file , parseMode);
 
             metricUnits_.reset(Opm::UnitSystem::newMETRIC());
 

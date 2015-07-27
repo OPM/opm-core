@@ -12,6 +12,7 @@
 #include <opm/core/utility/ErrorMacros.hpp>
 
 #include <opm/parser/eclipse/Parser/Parser.hpp>
+#include <opm/parser/eclipse/Parser/ParseMode.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
@@ -233,8 +234,9 @@ BOOST_AUTO_TEST_CASE(test_liveoil)
     const std::string filename = "liveoil.DATA";
     cout << "Reading deck: " << filename << endl;
     Opm::ParserPtr parser(new Opm::Parser());
-    Opm::DeckConstPtr deck(parser->parseFile(filename));
-    Opm::EclipseStateConstPtr eclipseState(new EclipseState(deck));
+    Opm::ParseMode parseMode;
+    Opm::DeckConstPtr deck(parser->parseFile(filename , parseMode));
+    Opm::EclipseStateConstPtr eclipseState(new EclipseState(deck, parseMode));
 
     // setup pvt interface
     PhaseUsage phase_usage_ = phaseUsageFromDeck(deck);
@@ -313,8 +315,9 @@ BOOST_AUTO_TEST_CASE(test_wetgas)
     const std::string filename = "wetgas.DATA";
     cout << "Reading deck: " << filename << endl;
     Opm::ParserPtr parser(new Opm::Parser());
-    Opm::DeckConstPtr deck(parser->parseFile(filename));
-    Opm::EclipseStateConstPtr eclipseState(new EclipseState(deck));
+    Opm::ParseMode parseMode;
+    Opm::DeckConstPtr deck(parser->parseFile(filename , parseMode));
+    Opm::EclipseStateConstPtr eclipseState(new EclipseState(deck, parseMode));
 
     // setup pvt interface
     PhaseUsage phase_usage_ = phaseUsageFromDeck(deck);

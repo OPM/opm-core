@@ -55,13 +55,14 @@ std::shared_ptr<Opm::WellState> wellState;
 
 void createEclipseWriter(const char *deckString)
 {
+    Opm::ParseMode parseMode;
     Opm::ParserConstPtr parser(new Opm::Parser());
-    deck = parser->parseString(deckString);
+    deck = parser->parseString(deckString, parseMode);
 
     Opm::parameter::ParameterGroup params;
     params.insertParameter("deck_filename", "foo.data");
 
-    eclipseState.reset(new Opm::EclipseState(deck));
+    eclipseState.reset(new Opm::EclipseState(deck , parseMode));
 
     auto eclGrid = eclipseState->getEclipseGrid();
     BOOST_CHECK(eclGrid->getNX() == 3);
