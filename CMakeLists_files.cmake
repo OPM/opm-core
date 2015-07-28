@@ -379,6 +379,7 @@ list (APPEND PUBLIC_HEADER_FILES
   opm/core/simulator/BlackoilStateToFluidState.hpp
 	opm/core/simulator/EquilibrationHelpers.hpp
   opm/core/simulator/ExplicitArraysFluidState.hpp
+	opm/core/simulator/ExplicitArraysSatDerivativesFluidState.hpp
 	opm/core/simulator/TimeStepControl.hpp
 	opm/core/simulator/SimulatorCompressibleTwophase.hpp
 	opm/core/simulator/SimulatorIncompTwophase.hpp
