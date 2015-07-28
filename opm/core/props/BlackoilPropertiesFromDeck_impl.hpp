@@ -1,3 +1,5 @@
+#include <memory>
+
 namespace Opm
 {
     template<class CentroidIterator>
@@ -10,7 +12,19 @@ namespace Opm
                                                            int dimension,
                                                            bool init_rock)
     {
-        init(deck, eclState, number_of_cells, global_cell, cart_dims, begin_cell_centroids, dimension,
+        std::vector<int> compressedToCartesianIdx(number_of_cells);
+        for (unsigned cellIdx = 0; cellIdx < number_of_cells; ++cellIdx) {
+            if (global_cell) {
+                compressedToCartesianIdx[cellIdx] = global_cell[cellIdx];
+            }
+            else {
+                compressedToCartesianIdx[cellIdx] = cellIdx;
+            }
+        }
+        auto materialLawManager = std::make_shared<MaterialLawManager>();
+        materialLawManager->initFromDeck(deck, eclState, compressedToCartesianIdx);
+
+        init(deck, eclState, materialLawManager, number_of_cells, global_cell, cart_dims, begin_cell_centroids, dimension,
              init_rock);
     }
 
@@ -25,8 +39,45 @@ namespace Opm
                                                            const parameter::ParameterGroup& param,
                                                            bool init_rock)
     {
+        std::vector<int> compressedToCartesianIdx(number_of_cells);
+        for (unsigned cellIdx = 0; cellIdx < number_of_cells; ++cellIdx) {
+            if (global_cell) {
+                compressedToCartesianIdx[cellIdx] = global_cell[cellIdx];
+            }
+            else {
+                compressedToCartesianIdx[cellIdx] = cellIdx;
+            }
+        }
+        auto materialLawManager = std::make_shared<MaterialLawManager>();
+        materialLawManager->initFromDeck(deck, eclState, compressedToCartesianIdx);
+
         init(deck,
              eclState,
+             materialLawManager,
+             number_of_cells,
+             global_cell,
+             cart_dims,
+             begin_cell_centroids,
+             dimension,
+             param,
+             init_rock);
+    }
+
+    template<class CentroidIterator>
+    BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(Opm::DeckConstPtr deck,
+                                                           Opm::EclipseStateConstPtr eclState,
+                                                           std::shared_ptr<MaterialLawManager> materialLawManager,
+                                                           int number_of_cells,
+                                                           const int* global_cell,
+                                                           const int* cart_dims,
+                                                           const CentroidIterator& begin_cell_centroids,
+                                                           int dimension,
+                                                           const parameter::ParameterGroup& param,
+                                                           bool init_rock)
+    {
+        init(deck,
+             eclState,
+             materialLawManager,
              number_of_cells,
              global_cell,
              cart_dims,
@@ -39,6 +90,7 @@ namespace Opm
     template<class CentroidIterator>
     inline void BlackoilPropertiesFromDeck::init(Opm::DeckConstPtr deck,
                                                  Opm::EclipseStateConstPtr eclState,
+                                                 std::shared_ptr<MaterialLawManager> materialLawManager,
                                                  int number_of_cells,
                                                  const int* global_cell,
                                                  const int* cart_dims,
@@ -56,8 +108,8 @@ namespace Opm
         pvt_.init(deck, eclState, /*numSamples=*/0);
         SaturationPropsFromDeck* ptr
             = new SaturationPropsFromDeck();
+        ptr->init(phaseUsageFromDeck(deck), materialLawManager);
         satprops_.reset(ptr);
-        ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids, dimension);
 
         if (pvt_.numPhases() != satprops_->numPhases()) {
             OPM_THROW(std::runtime_error, "BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck() - Inconsistent number of phases in pvt data ("
@@ -68,6 +120,7 @@ namespace Opm
     template<class CentroidIterator>
     inline void BlackoilPropertiesFromDeck::init(Opm::DeckConstPtr deck,
                                                  Opm::EclipseStateConstPtr eclState,
+                                                 std::shared_ptr<MaterialLawManager> materialLawManager,
                                                  int number_of_cells,
                                                  const int* global_cell,
                                                  const int* cart_dims,
@@ -95,8 +148,8 @@ namespace Opm
 
         SaturationPropsFromDeck* ptr
             = new SaturationPropsFromDeck();
+        ptr->init(phaseUsageFromDeck(deck), materialLawManager);
         satprops_.reset(ptr);
-        ptr->init(deck, eclState, number_of_cells, global_cell, begin_cell_centroids, dimension);
 
         if (pvt_.numPhases() != satprops_->numPhases()) {
             OPM_THROW(std::runtime_error, "BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck() - Inconsistent number of phases in pvt data ("
