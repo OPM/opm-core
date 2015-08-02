@@ -88,7 +88,8 @@ public:
      */
     virtual void writeTimeStep(const SimulatorTimerInterface& timer,
                                const SimulatorState& reservoirState,
-                               const WellState& wellState) = 0;
+                               const WellState& wellState,
+                               bool  isSubstep) = 0;
 
     /*!
      * Create a suitable set of output formats based on configuration.

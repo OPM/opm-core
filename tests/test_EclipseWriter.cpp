@@ -408,7 +408,7 @@ BOOST_AUTO_TEST_CASE(EclipseWriterIntegration)
     for (; simTimer->currentStepNum() < simTimer->numSteps(); ++ (*simTimer)) {
         createBlackoilState(simTimer->currentStepNum());
         createWellState(simTimer->currentStepNum());
-        eclWriter->writeTimeStep(*simTimer, *blackoilState, *wellState);
+        eclWriter->writeTimeStep(*simTimer, *blackoilState, *wellState, false);
         checkRestartFile(simTimer->currentStepNum());
         checkSummaryFile(simTimer->currentStepNum());
     }

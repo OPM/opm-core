@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
 
     setValuesInWellState(wellState);
     simTimer->setCurrentStepNum(1);
-    eclipseWriter->writeTimeStep(*simTimer, *blackoilState, *wellState);
+    eclipseWriter->writeTimeStep(*simTimer, *blackoilState, *wellState , false);
 
     const char * test_area_path = test_work_area_get_cwd(test_area);
     std::string slash = "/";

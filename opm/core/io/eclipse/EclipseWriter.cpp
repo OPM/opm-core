@@ -1219,8 +1219,10 @@ void EclipseWriter::writeInit(const SimulatorTimerInterface &timer)
 // implementation of the writeTimeStep method
 void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
                                   const SimulatorState& reservoirState,
-                                  const WellState& wellState)
+                                  const WellState& wellState,
+                                  bool  isSubstep)
 {
+
     // if we don't want to write anything, this method becomes a
     // no-op...
     if (!enableOutput_) {
@@ -1258,7 +1260,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
 
 
     // Write restart file
-    if(ioConfig->getWriteRestartFile(timer.reportStepNum()))
+    if(!isSubstep && ioConfig->getWriteRestartFile(timer.reportStepNum()))
     {
         const size_t ncwmax                 = eclipseState_->getSchedule()->getMaxNumCompletionsForWells(timer.reportStepNum());
         const size_t numWells               = eclipseState_->getSchedule()->numWells(timer.reportStepNum());
