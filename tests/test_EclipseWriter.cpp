@@ -387,10 +387,11 @@ BOOST_AUTO_TEST_CASE(EclipseWriterIntegration)
         "27*0.3 /\n"
         "PERMX\n"
         "27*1 /\n"
-        "SCHEDULE\n"
+        "SOLUTION\n"
         "RPTRST\n"
-        "BASIC=1\n"
+        "BASIC=2\n"
         "/\n"
+        "SCHEDULE\n"
         "TSTEP\n"
         "1.0 2.0 3.0 4.0 /\n"
         "WELSPECS\n"
@@ -408,7 +409,7 @@ BOOST_AUTO_TEST_CASE(EclipseWriterIntegration)
     for (; simTimer->currentStepNum() < simTimer->numSteps(); ++ (*simTimer)) {
         createBlackoilState(simTimer->currentStepNum());
         createWellState(simTimer->currentStepNum());
-        eclWriter->writeTimeStep(*simTimer, *blackoilState, *wellState);
+        eclWriter->writeTimeStep(*simTimer, *blackoilState, *wellState, false);
         checkRestartFile(simTimer->currentStepNum());
         checkSummaryFile(simTimer->currentStepNum());
     }

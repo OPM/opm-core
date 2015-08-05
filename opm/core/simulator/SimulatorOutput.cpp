@@ -88,7 +88,7 @@ SimulatorOutputBase::writeOutput () {
 
             // relay the request to the handlers (setup in the constructor
             // from parameters)
-            writer_->writeTimeStep (*timer_, *reservoirState_, *wellState_);
+            writer_->writeTimeStep (*timer_, *reservoirState_, *wellState_ , false);
 
             // advance to the next reporting time
             ++next_;
