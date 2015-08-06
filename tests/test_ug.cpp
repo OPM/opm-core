@@ -23,6 +23,7 @@
 #include <opm/core/grid/GridManager.hpp>  /* compute_geometry */
 #include <opm/core/grid/cpgpreprocess/preprocess.h>
 #include <opm/parser/eclipse/Parser/Parser.hpp>
+#include <opm/parser/eclipse/Parser/ParseMode.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/Deck/DeckKeyword.hpp>
 
@@ -31,6 +32,7 @@ using namespace std;
 
 
 BOOST_AUTO_TEST_CASE(Equal) {
+    Opm::ParseMode parseMode;
     const std::string filename1 = "CORNERPOINT_ACTNUM.DATA";
     const char *deck2Data =
         "RUNSPEC\n"
@@ -50,8 +52,8 @@ BOOST_AUTO_TEST_CASE(Equal) {
         "\n";
     
     Opm::ParserPtr parser(new Opm::Parser() );
-    Opm::DeckConstPtr deck1 = parser->parseFile( filename1 );
-    Opm::DeckConstPtr deck2 = parser->parseString( deck2Data );
+    Opm::DeckConstPtr deck1 = parser->parseFile( filename1 , parseMode);
+    Opm::DeckConstPtr deck2 = parser->parseString( deck2Data , parseMode);
     
     BOOST_CHECK( deck1->hasKeyword("ZCORN") );
     BOOST_CHECK( deck1->hasKeyword("COORD") );
@@ -74,7 +76,8 @@ BOOST_AUTO_TEST_CASE(Equal) {
 BOOST_AUTO_TEST_CASE(EqualEclipseGrid) {
     const std::string filename = "CORNERPOINT_ACTNUM.DATA";
     Opm::ParserPtr parser(new Opm::Parser() );
-    Opm::DeckConstPtr deck = parser->parseFile( filename );
+    Opm::ParseMode parseMode;
+    Opm::DeckConstPtr deck = parser->parseFile( filename , parseMode);
 
     std::shared_ptr<const Opm::EclipseGrid> grid(new Opm::EclipseGrid(deck));
 
@@ -146,8 +149,9 @@ BOOST_AUTO_TEST_CASE(TOPS_Fully_Specified) {
         "\n";
 
     Opm::ParserPtr parser(new Opm::Parser() );
-    Opm::DeckConstPtr deck1 = parser->parseString( deck1Data );
-    Opm::DeckConstPtr deck2 = parser->parseString( deck2Data );
+    Opm::ParseMode parseMode;
+    Opm::DeckConstPtr deck1 = parser->parseString( deck1Data , parseMode);
+    Opm::DeckConstPtr deck2 = parser->parseString( deck2Data , parseMode);
 
     std::shared_ptr<const Opm::EclipseGrid> grid1(new Opm::EclipseGrid(deck1));
     std::shared_ptr<const Opm::EclipseGrid> grid2(new Opm::EclipseGrid(deck2));

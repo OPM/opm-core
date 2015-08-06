@@ -29,6 +29,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <opm/parser/eclipse/Parser/Parser.hpp>
+#include <opm/parser/eclipse/Parser/ParseMode.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/Deck/DeckDoubleItem.hpp>
 
@@ -40,8 +41,9 @@
 BOOST_AUTO_TEST_CASE(CreateParser)
 {
     const std::string filename1 = "testBlackoilState1.DATA";
+    Opm::ParseMode parseMode;
     Opm::ParserPtr parser(new Opm::Parser() );
-    Opm::DeckConstPtr deck = parser->parseFile( filename1 );
+    Opm::DeckConstPtr deck = parser->parseFile( filename1 , parseMode);
 
     BOOST_CHECK_EQUAL( 6U , deck->size() );
     Opm::DeckItemConstPtr actnum = deck->getKeyword("ACTNUM")->getRecord(0)->getItem(0);

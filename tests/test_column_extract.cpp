@@ -12,6 +12,7 @@
 #include <opm/core/grid/GridManager.hpp>
 
 #include <opm/parser/eclipse/Parser/Parser.hpp>
+#include <opm/parser/eclipse/Parser/ParseMode.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 
 #include <cstddef>
@@ -130,9 +131,9 @@ BOOST_AUTO_TEST_CASE(DisjointColumn)
     correct_answer[4].resize(1);
     correct_answer[9].resize(1);
 
+    Opm::ParseMode parseMode;
     Opm::ParserPtr parser(new Opm::Parser());
-    Opm::DeckConstPtr deck(parser->parseString(grdecl));
-
+    Opm::DeckConstPtr deck(parser->parseString(grdecl , parseMode));
     Opm::GridManager manager(deck);
 
     VVI columns;

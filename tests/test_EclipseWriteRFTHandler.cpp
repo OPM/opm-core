@@ -35,6 +35,7 @@
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
+#include <opm/parser/eclipse/Parser/ParseMode.hpp>
 #include <opm/parser/eclipse/Parser/Parser.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/Schedule.hpp>
@@ -91,7 +92,7 @@ void verifyRFTFile(const std::string& rft_filename) {
 
 Opm::DeckConstPtr createDeck(const std::string& input_str) {
     Opm::ParserPtr parser = std::make_shared<Opm::Parser>();
-    Opm::DeckConstPtr deck = parser->parseString(input_str);
+    Opm::DeckConstPtr deck = parser->parseString(input_str , Opm::ParseMode());
     return deck;
 }
 
@@ -201,7 +202,7 @@ BOOST_AUTO_TEST_CASE(test_EclipseWriterRFTHandler)
     test_area.reset(new_ptr, test_work_area_free);
 
     std::shared_ptr<const Opm::Deck>   deck         = createDeck(deckString);
-    std::shared_ptr<Opm::EclipseState> eclipseState = std::make_shared<Opm::EclipseState>(deck);
+    std::shared_ptr<Opm::EclipseState> eclipseState = std::make_shared<Opm::EclipseState>(deck , Opm::ParseMode());
 
     std::shared_ptr<Opm::SimulatorTimer> simulatorTimer = std::make_shared<Opm::SimulatorTimer>();
     simulatorTimer->init(eclipseState->getSchedule()->getTimeMap());
