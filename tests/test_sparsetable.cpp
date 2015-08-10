@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(construction_and_queries)
     BOOST_CHECK_EQUAL(st2.rowSize(1), 0);
     BOOST_CHECK_EQUAL(st2[3][1], 4);
     BOOST_CHECK_EQUAL(st2[4][2], 9);
-    BOOST_CHECK(st2[4].size() == rowsizes[4]);
+    BOOST_CHECK(int(st2[4].size()) == rowsizes[4]);
     const SparseTable<int> st2_again(elem, elem + num_elem, rowsizes, rowsizes + num_rows);
     BOOST_CHECK(st2 == st2_again);
     SparseTable<int> st2_byassign;
