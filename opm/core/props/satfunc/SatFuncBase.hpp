@@ -65,6 +65,14 @@ namespace Opm
     
     // Hysteresis
     struct SatHyst {
+        SatHyst() {
+            sg_hyst = -1.0;
+            sow_hyst = -1.0;
+
+            sg_shift = 0.0;
+            sow_shift = 0.0;
+        }
+
         double sg_hyst;
         double sg_shift;
         double sow_hyst;
