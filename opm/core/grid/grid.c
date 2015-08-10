@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 
 void
@@ -550,14 +551,15 @@ static int memcmp_double(const double * p1 , const double *p2 , size_t num_eleme
     if (memcmp(p1 , p2 , num_elements * sizeof * p1) == 0)
         return 0;
     else {
-        const double epsilon = 1e-5;
+        const double abs_epsilon = 1e-8;
+        const double rel_epsilon = 1e-5;
 
         for (size_t index = 0; index < num_elements; index++) {
-            double diff = abs(p1[index] - p2[index]);
-            if (diff != 0) {
-                double sum = abs(p1[index]) + abs(p2[index]);
+            double diff = fabs(p1[index] - p2[index]);
+            if (diff > abs_epsilon) {
+                double sum = fabs(p1[index]) + fabs(p2[index]);
                 
-                if (diff > sum * epsilon)
+                if (diff > sum * rel_epsilon)
                     return 1;
             }
         }
