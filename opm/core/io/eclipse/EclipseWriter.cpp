@@ -1293,7 +1293,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
 
         {
             ecl_rsthead_type rsthead_data = {};
-            rsthead_data.sim_time   = timer.startOfCurrentStepPosixTime();
+            rsthead_data.sim_time   = timer.currentPosixTime();
             rsthead_data.nactive    = numCells_;
             rsthead_data.nx         = cartesianSize_[0];
             rsthead_data.ny         = cartesianSize_[1];
@@ -1304,7 +1304,7 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
             rsthead_data.niconz     = EclipseWriterDetails::Restart::NICONZ;
             rsthead_data.ncwmax     = ncwmax;
             rsthead_data.phase_sum  = Opm::EclipseWriterDetails::ertPhaseMask(phaseUsage_);
-            rsthead_data.sim_days   = Opm::unit::convert::to(timer.simulationStartTimeForCurrentReportStep(), Opm::unit::day); //data for doubhead
+            rsthead_data.sim_days   = Opm::unit::convert::to(timer.simulationTimeElapsed(), Opm::unit::day); //data for doubhead
 
             restartHandle.writeHeader(timer,
                                       timer.reportStepNum(),
