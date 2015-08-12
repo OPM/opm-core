@@ -302,7 +302,8 @@ read_grid(const char *fname);
 
 
 
-bool 
+
+bool
 grid_equal(const struct UnstructuredGrid * grid1 , const struct UnstructuredGrid * grid2);
 
 #ifdef __cplusplus
