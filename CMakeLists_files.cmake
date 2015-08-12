@@ -130,6 +130,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/utility/VelocityInterpolation.cpp
 	opm/core/utility/WachspressCoord.cpp
 	opm/core/utility/miscUtilities.cpp
+       opm/core/utility/memcmp_double.c
 	opm/core/utility/miscUtilitiesBlackoil.cpp
 	opm/core/utility/NullStream.cpp
 	opm/core/utility/parameters/Parameter.cpp
@@ -425,6 +426,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/Exceptions.hpp
 	opm/core/utility/Factory.hpp
 	opm/core/utility/MonotCubicInterpolator.hpp
+	opm/core/utility/memcmp_double.h
 	opm/core/utility/NonuniformTableLinear.hpp
 	opm/core/utility/NullStream.hpp
 	opm/core/utility/RegionMapping.hpp
