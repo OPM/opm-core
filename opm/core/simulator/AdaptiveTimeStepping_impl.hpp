@@ -27,6 +27,7 @@
 #include <opm/core/simulator/AdaptiveSimulatorTimer.hpp>
 #include <opm/core/simulator/TimeStepControl.hpp>
 #include <dune/istl/istlexception.hh>
+#include <dune/istl/ilu.hh> // For MatrixBlockException
 
 namespace Opm {
 
@@ -153,6 +154,10 @@ namespace Opm {
             catch (const Dune::ISTLError& e) {
                 std::cerr << e.what() << std::endl;
                 // also catch errors in ISTL AMG that occur when time step is too large
+            }
+            catch (const Dune::MatrixBlockError& e) {
+                std::cerr << e.what() << std::endl;
+                // this can be thrown by ISTL's ILU0 in block mode, yet is not an ISTLError
             }
 
             // (linearIterations < 0 means no convergence in solver)
