@@ -59,7 +59,7 @@
 namespace
 {
     const static double alq_invalid = -std::numeric_limits<double>::max();
-    const static double vfp_invalid = -std::numeric_limits<int>::max();
+    const static int vfp_invalid = -std::numeric_limits<int>::max();
 
     void warnIfUnusedParams(const Opm::parameter::ParameterGroup& param)
     {
