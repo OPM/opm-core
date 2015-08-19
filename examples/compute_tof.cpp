@@ -58,6 +58,9 @@
 
 namespace
 {
+    const static double alq_invalid = -std::numeric_limits<double>::max();
+    const static int vfp_invalid = -std::numeric_limits<int>::max();
+
     void warnIfUnusedParams(const Opm::parameter::ParameterGroup& param)
     {
         if (param.anyUnused()) {
@@ -90,7 +93,9 @@ namespace
             WellControls* ctrl = wells.ctrls[w];
             const double target = (wells.type[w] == INJECTOR) ? 200*Opm::unit::barsa : 100*Opm::unit::barsa;
             const double distr[3] = { 1.0, 0.0, 0.0 }; // Large enough irrespective of #phases.
-            well_controls_add_new(BHP, target, distr, ctrl);
+            well_controls_add_new(BHP, target,
+                    alq_invalid, vfp_invalid,
+                    distr, ctrl);
             well_controls_set_current(ctrl, well_controls_get_num(ctrl) - 1);
         }
     }
