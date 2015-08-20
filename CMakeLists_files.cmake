@@ -286,6 +286,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/grid/cpgpreprocess/preprocess.h
 	opm/core/grid/cpgpreprocess/uniquepoints.h
 	opm/core/io/eclipse/CornerpointChopper.hpp
+	opm/core/io/eclipse/EclipseIOUtil.hpp
 	opm/core/io/eclipse/EclipseGridInspector.hpp
 	opm/core/io/eclipse/EclipseUnits.hpp
 	opm/core/io/eclipse/EclipseWriter.hpp
