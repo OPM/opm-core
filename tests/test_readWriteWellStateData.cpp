@@ -27,8 +27,10 @@
 
 #include <opm/core/io/eclipse/EclipseWriter.hpp>
 #include <opm/core/io/eclipse/EclipseReader.hpp>
+#include <opm/core/io/eclipse/EclipseIOUtil.hpp>
 #include <opm/core/grid/GridManager.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
+#include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/simulator/WellState.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
@@ -251,12 +253,33 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
     simTimer->init(eclipseState->getSchedule()->getTimeMap());
     eclipseWriter->writeInit(*simTimer);
     std::shared_ptr<Opm::WellState> wellState(new Opm::WellState());
+    Opm::PhaseUsage phaseUsage = Opm::phaseUsageFromDeck(deck);
 
     Opm::GridManager gridManager(deck);
     Opm::WellsManager wellsManager(eclipseState, 1, *gridManager.c_grid(), NULL);
     const Wells* wells = wellsManager.c_wells();
     std::shared_ptr<Opm::BlackoilState> blackoilState = createBlackOilState(eclipseState->getEclipseGrid());
     wellState->init(wells, *blackoilState);
+
+    //Set test data for pressure
+    std::vector<double>& pressure = blackoilState->pressure();
+    for (std::vector<double>::iterator iter = pressure.begin(); iter != pressure.end(); ++iter) {
+        *iter = 6.0;
+    }
+
+    //Set test data for temperature
+    std::vector<double>& temperature = blackoilState->temperature();
+    for (std::vector<double>::iterator iter = temperature.begin(); iter != temperature.end(); ++iter) {
+        *iter = 7.0;
+    }
+
+    //Set test data for saturation water
+    std::vector<double> swatdata(1000, 8);
+    Opm::EclipseIOUtil::addToStripedData(swatdata, blackoilState->saturation(), phaseUsage.phase_pos[Opm::BlackoilPhases::Aqua], phaseUsage.num_phases);
+
+    //Set test data for saturation gas
+    std::vector<double> sgasdata(1000, 9);
+    Opm::EclipseIOUtil::addToStripedData(sgasdata, blackoilState->saturation(), phaseUsage.phase_pos[Opm::BlackoilPhases::Vapour], phaseUsage.num_phases);
 
     setValuesInWellState(wellState);
     simTimer->setCurrentStepNum(1);
@@ -267,6 +290,8 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
     const std::string restart_filename = test_area_path + slash + eclipse_restart_filename;
     std::shared_ptr<Opm::WellState> wellStateRestored(new Opm::WellState());
     wellStateRestored->init(wells, *blackoilState);
+
+    //Read and verify OPM XWEL data
     Opm::restoreOPM_XWELKeyword(restart_filename, 1, *wellStateRestored);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->bhp().begin(), wellState->bhp().end(), wellStateRestored->bhp().begin(), wellStateRestored->bhp().end());
@@ -274,6 +299,27 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->wellRates().begin(), wellState->wellRates().end(), wellStateRestored->wellRates().begin(), wellStateRestored->wellRates().end());
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->perfRates().begin(), wellState->perfRates().end(), wellStateRestored->perfRates().begin(), wellStateRestored->perfRates().end());
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->perfPress().begin(), wellState->perfPress().end(), wellStateRestored->perfPress().begin(), wellStateRestored->perfPress().end());
+
+
+    //Read and verify pressure, temperature and saturation data
+    std::shared_ptr<Opm::BlackoilState> blackoilStateRestored = createBlackOilState(eclipseState->getEclipseGrid());
+    Opm::restoreSOLUTIONData(restart_filename, 1, *eclipseState, *gridManager.c_grid(), phaseUsage, *blackoilStateRestored);
+
+    std::vector<double> swat_restored;
+    std::vector<double> swat;
+    std::vector<double> sgas_restored;
+    std::vector<double> sgas;
+    Opm::EclipseIOUtil::extractFromStripedData(blackoilStateRestored->saturation(), swat_restored, phaseUsage.phase_pos[Opm::BlackoilPhases::Aqua], phaseUsage.num_phases);
+    Opm::EclipseIOUtil::extractFromStripedData(blackoilState->saturation(), swat, phaseUsage.phase_pos[Opm::BlackoilPhases::Aqua], phaseUsage.num_phases);
+    Opm::EclipseIOUtil::extractFromStripedData(blackoilStateRestored->saturation(), sgas_restored, phaseUsage.phase_pos[Opm::BlackoilPhases::Vapour], phaseUsage.num_phases);
+    Opm::EclipseIOUtil::extractFromStripedData(blackoilState->saturation(), sgas, phaseUsage.phase_pos[Opm::BlackoilPhases::Vapour], phaseUsage.num_phases);
+
+    for (size_t cellindex = 0; cellindex < 1000; ++cellindex) {
+        BOOST_CHECK_CLOSE(blackoilState->pressure()[cellindex], blackoilStateRestored->pressure()[cellindex], 0.00001);
+        BOOST_CHECK_CLOSE(blackoilState->temperature()[cellindex], blackoilStateRestored->temperature()[cellindex], 0.00001);
+        BOOST_CHECK_CLOSE(swat[cellindex], swat_restored[cellindex], 0.00001);
+        BOOST_CHECK_CLOSE(sgas[cellindex], sgas_restored[cellindex], 0.00001);
+    }
 
     test_work_area_free(test_area);
 }
