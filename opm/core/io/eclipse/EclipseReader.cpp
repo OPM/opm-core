@@ -61,21 +61,24 @@ namespace {
                                 const EclipseState& eclipse_state,
                                 const UnstructuredGrid& grid,
                                 SimulatorState& simulator_state) {
-        const char* temperature_kw_string = "TEMP";
-        ecl_kw_type* temperature_kw       = ecl_file_iget_named_kw(file, temperature_kw_string, 0);
+        const char* temperature_keyword = "TEMP";
 
-        if (ecl_kw_get_size(temperature_kw) != Opm::UgGridHelpers::numCells(grid)) {
-            throw std::runtime_error("Read of restart file: Could not restore temperature data, length of data from file not equal number of cells");
-        }
+        if (ecl_file_has_kw(file , temperature_keyword)) {
+            ecl_kw_type* temperature_kw = ecl_file_iget_named_kw(file, temperature_keyword, 0);
 
-        float* temperature_data = ecl_kw_get_float_ptr(temperature_kw);
+            if (ecl_kw_get_size(temperature_kw) != Opm::UgGridHelpers::numCells(grid)) {
+                throw std::runtime_error("Read of restart file: Could not restore temperature data, length of data from file not equal number of cells");
+            }
 
-        // factor and offset from the temperature values given in the deck to Kelvin
-        double scaling = eclipse_state.getDeckUnitSystem()->parse("Temperature")->getSIScaling();
-        double offset  = eclipse_state.getDeckUnitSystem()->parse("Temperature")->getSIOffset();
+            float* temperature_data = ecl_kw_get_float_ptr(temperature_kw);
 
-        for (size_t index = 0; index < simulator_state.temperature().size(); ++index) {
-            simulator_state.temperature()[index] = unit::convert::from((double)temperature_data[index] - offset, scaling);
+            // factor and offset from the temperature values given in the deck to Kelvin
+            double scaling = eclipse_state.getDeckUnitSystem()->parse("Temperature")->getSIScaling();
+            double offset  = eclipse_state.getDeckUnitSystem()->parse("Temperature")->getSIOffset();
+
+            for (size_t index = 0; index < simulator_state.temperature().size(); ++index) {
+                simulator_state.temperature()[index] = unit::convert::from((double)temperature_data[index] - offset, scaling);
+            }
         }
     }
 
@@ -84,17 +87,21 @@ namespace {
                              const EclipseState& eclipse_state,
                              const UnstructuredGrid& grid,
                              SimulatorState& simulator_state) {
-        const char* pressure_keyword    = "PRESSURE";
-        ecl_kw_type* pressure_kw        = ecl_file_iget_named_kw(file, pressure_keyword, 0);
+        const char* pressure_keyword = "PRESSURE";
 
-        if (ecl_kw_get_size(pressure_kw) != Opm::UgGridHelpers::numCells(grid)) {
-            throw std::runtime_error("Read of restart file: Could not restore pressure data, length of data from file not equal number of cells");
-        }
+        if (ecl_file_has_kw(file , pressure_keyword)) {
 
-        float* pressure_data = ecl_kw_get_float_ptr(pressure_kw);
-        const double deck_pressure_unit = (eclipse_state.getDeckUnitSystem()->getType() == UnitSystem::UNIT_TYPE_METRIC) ? Opm::unit::barsa : Opm::unit::psia;
-        for (size_t index = 0; index < simulator_state.pressure().size(); ++index) {
-            simulator_state.pressure()[index] = unit::convert::from((double)pressure_data[index], deck_pressure_unit);
+            ecl_kw_type* pressure_kw = ecl_file_iget_named_kw(file, pressure_keyword, 0);
+
+            if (ecl_kw_get_size(pressure_kw) != Opm::UgGridHelpers::numCells(grid)) {
+                throw std::runtime_error("Read of restart file: Could not restore pressure data, length of data from file not equal number of cells");
+            }
+
+            float* pressure_data = ecl_kw_get_float_ptr(pressure_kw);
+            const double deck_pressure_unit = (eclipse_state.getDeckUnitSystem()->getType() == UnitSystem::UNIT_TYPE_METRIC) ? Opm::unit::barsa : Opm::unit::psia;
+            for (size_t index = 0; index < simulator_state.pressure().size(); ++index) {
+                simulator_state.pressure()[index] = unit::convert::from((double)pressure_data[index], deck_pressure_unit);
+            }
         }
     }
 }
@@ -136,6 +143,8 @@ namespace {
                     std::vector<double> sgas_datavec(&sgas_data[0], &sgas_data[numcells]);
                     EclipseIOUtil::addToStripedData(sgas_datavec, simulator_state.saturation(), phaseUsage.phase_pos[BlackoilPhases::Vapour], phaseUsage.num_phases);
                 }
+            } else {
+                std::cerr << "Warning: Could not load solution data for report step " << reportstep << ", data for reportstep not found on file " << filename << std::endl;
             }
 
             ecl_file_close(file_type);
