@@ -39,6 +39,11 @@
 #include <utility>
 #include <iostream>
 
+namespace
+{
+    static double invalid_alq = -1e100;
+    static double invalid_vfp = -2147483647;
+} //Namespace
 
 // Helper structs and functions for the implementation.
 namespace WellsManagerDetail
@@ -452,6 +457,8 @@ namespace Opm
 
                     ok = append_well_controls(SURFACE_RATE,
                                               injectionProperties.surfaceInjectionRate, 
+                                              invalid_alq,
+                                              invalid_vfp,
                                               distr,
                                               well_index,
                                               w_);
@@ -472,6 +479,8 @@ namespace Opm
 
                     ok = append_well_controls(RESERVOIR_RATE,
                                               injectionProperties.reservoirInjectionRate, 
+                                              invalid_alq,
+                                              invalid_vfp,
                                               distr,
                                               well_index,
                                               w_);
@@ -479,16 +488,26 @@ namespace Opm
 
                 if (ok && injectionProperties.hasInjectionControl(WellInjector::BHP)) {
                     control_pos[WellsManagerDetail::InjectionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
-                    control_pos[WellsManagerDetail::InjectionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
                     ok = append_well_controls(BHP,
-                                              injectionProperties.BHPLimit, 
+                                              injectionProperties.BHPLimit,
+                                              invalid_alq,
+                                              invalid_vfp,
                                               NULL,
                                               well_index,
                                               w_);
                 }
 
                 if (ok && injectionProperties.hasInjectionControl(WellInjector::THP)) {
-                    OPM_THROW(std::runtime_error, "We cannot handle THP limit for well " << well_names[well_index]);
+                    control_pos[WellsManagerDetail::InjectionControl::THP] = well_controls_get_num(w_->ctrls[well_index]);
+                    const double thp_limit  = injectionProperties.THPLimit;
+                    const int    vfp_number = injectionProperties.VFPTableNumber;
+                    ok = append_well_controls(THP,
+                                              thp_limit,
+                                              invalid_alq,
+                                              vfp_number,
+                                              NULL,
+                                              well_index,
+                                              w_);
                 }
 
                 if (!ok) {
@@ -548,9 +567,11 @@ namespace Opm
                     double distr[3] = { 0.0, 0.0, 0.0 };
                     distr[phaseUsage.phase_pos[BlackoilPhases::Liquid]] = 1.0;
                     ok = append_well_controls(SURFACE_RATE,
-                                              -productionProperties.OilRate, 
+                                              -productionProperties.OilRate,
+                                              invalid_alq,
+                                              invalid_vfp,
                                               distr,
-                                               well_index,
+                                              well_index,
                                               w_);
                 }
 
@@ -563,6 +584,8 @@ namespace Opm
                     distr[phaseUsage.phase_pos[BlackoilPhases::Aqua]] = 1.0;
                     ok = append_well_controls(SURFACE_RATE,
                                               -productionProperties.WaterRate, 
+                                              invalid_alq,
+                                              invalid_vfp,
                                               distr,
                                               well_index,
                                               w_);
@@ -577,6 +600,8 @@ namespace Opm
                     distr[phaseUsage.phase_pos[BlackoilPhases::Vapour]] = 1.0;
                     ok = append_well_controls(SURFACE_RATE,
                                               -productionProperties.GasRate,
+                                              invalid_alq,
+                                              invalid_vfp,
                                               distr,
                                               well_index,
                                               w_);
@@ -594,7 +619,9 @@ namespace Opm
                     distr[phaseUsage.phase_pos[BlackoilPhases::Aqua]] = 1.0;
                     distr[phaseUsage.phase_pos[BlackoilPhases::Liquid]] = 1.0;
                     ok = append_well_controls(SURFACE_RATE,
-                                              -productionProperties.LiquidRate , 
+                                              -productionProperties.LiquidRate,
+                                              invalid_alq,
+                                              invalid_vfp,
                                               distr,
                                               well_index,
                                               w_);
@@ -604,8 +631,24 @@ namespace Opm
                     control_pos[WellsManagerDetail::ProductionControl::RESV] = well_controls_get_num(w_->ctrls[well_index]);
                     double distr[3] = { 1.0, 1.0, 1.0 };
                     ok = append_well_controls(RESERVOIR_RATE,
-                                              -productionProperties.ResVRate , 
+                                              -productionProperties.ResVRate,
+                                              invalid_alq,
+                                              invalid_vfp,
                                               distr,
+                                              well_index,
+                                              w_);
+                }
+
+                if (ok && productionProperties.hasProductionControl(WellProducer::THP)) {
+                    const double thp_limit  = productionProperties.THPLimit;
+                    const double alq_value  = productionProperties.ALQValue;
+                    const int    vfp_number = productionProperties.VFPTableNumber;
+                    control_pos[WellsManagerDetail::ProductionControl::THP] = well_controls_get_num(w_->ctrls[well_index]);
+                    ok = append_well_controls(THP,
+                                              thp_limit,
+                                              alq_value,
+                                              vfp_number,
+                                              NULL,
                                               well_index,
                                               w_);
                 }
@@ -618,13 +661,11 @@ namespace Opm
                     control_pos[WellsManagerDetail::ProductionControl::BHP] = well_controls_get_num(w_->ctrls[well_index]);
                     ok = append_well_controls(BHP,
                                               bhp_limit,
+                                              invalid_alq,
+                                              invalid_vfp,
                                               NULL,
                                               well_index,
                                               w_);
-                }
-
-                if (ok && productionProperties.hasProductionControl(WellProducer::THP)) {
-                    OPM_THROW(std::runtime_error, "We cannot handle THP limit for well " << well_names[well_index]);
                 }
 
                 if (!ok) {
