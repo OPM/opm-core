@@ -170,7 +170,8 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_parallelistlinformation.cpp
 	tests/test_sparsevector.cpp
 	tests/test_sparsetable.cpp
-	tests/test_velocityinterpolation.cpp
+       #tests/test_thresholdpressure.cpp
+       tests/test_velocityinterpolation.cpp
 	tests/test_quadratures.cpp
 	tests/test_uniformtablelinear.cpp
 	tests/test_wells.cpp
