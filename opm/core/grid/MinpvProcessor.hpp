@@ -109,7 +109,7 @@ namespace Opm
                         }
                         setCellZcorn(ii, jj, kk, cz, zcorn);
                         // Check if there is a cell below.
-                        if (kk < dims_[2] - 1) {
+                        if (pv[c] > 0.0 && kk < dims_[2] - 1) {
                             // Set lower k coordinates of cell below to upper cells's coordinates.
                             std::array<double, 8> cz_below = getCellZcorn(ii, jj, kk + 1, zcorn);
                             for (int count = 0; count < 4; ++count) {
