@@ -57,6 +57,17 @@ const double* beginCellCentroids(const UnstructuredGrid& grid)
     return grid.cell_centroids;
 }
 
+double cellCenterDepth(const UnstructuredGrid& grid, int cell_index) 
+{
+    double zz = 0.0;
+    for (int i=grid.cell_facepos[cell_index+1]-2; i<grid.cell_facepos[cell_index+1]; ++i) {
+        for (int j=grid.face_nodepos[grid.cell_faces[i]]; j<grid.face_nodepos[grid.cell_faces[i]+1]; ++j) {
+            zz += (grid.node_coordinates+dimensions(grid)*(grid.face_nodes[j]))[2];
+        }
+    }
+    return zz/8.0;
+}
+
 double cellCentroidCoordinate(const UnstructuredGrid& grid, int cell_index,
                                  int coordinate)
 {

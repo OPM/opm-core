@@ -137,6 +137,13 @@ struct CellCentroidTraits<UnstructuredGrid>
 CellCentroidTraits<UnstructuredGrid>::IteratorType
 beginCellCentroids(const UnstructuredGrid& grid);
 
+
+/// \brief Get vertical position of cell center ("zcorn" average.)
+/// \brief grid The grid.
+/// \brief cell_index The index of the specific cell.
+double cellCenterDepth(const UnstructuredGrid& grid, int cell_index);
+
+
 /// \brief Get a coordinate of a specific cell centroid.
 /// \brief grid The grid.
 /// \brief cell_index The index of the specific cell.
