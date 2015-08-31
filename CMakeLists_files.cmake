@@ -99,6 +99,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/rock/RockCompressibility.cpp
 	opm/core/props/rock/RockFromDeck.cpp
 	opm/core/props/satfunc/SaturationPropsBasic.cpp
+	opm/core/props/satfunc/SaturationPropsFromDeck.cpp
 	opm/core/simulator/AdaptiveSimulatorTimer.cpp
 	opm/core/simulator/BlackoilState.cpp
 	opm/core/simulator/TimeStepControl.cpp
@@ -364,7 +365,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/rock/RockFromDeck.hpp
 	opm/core/props/satfunc/SaturationPropsBasic.hpp
 	opm/core/props/satfunc/SaturationPropsFromDeck.hpp
-	opm/core/props/satfunc/SaturationPropsFromDeck_impl.hpp
 	opm/core/props/satfunc/SaturationPropsInterface.hpp
 	opm/core/simulator/AdaptiveSimulatorTimer.hpp
 	opm/core/simulator/AdaptiveTimeStepping.hpp
