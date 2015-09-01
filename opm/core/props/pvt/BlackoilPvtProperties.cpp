@@ -79,54 +79,58 @@ namespace Opm
 
             props_[phase_usage_.phase_pos[Aqua]] = pvtw;
         }
-        // Oil PVT
-        if (phase_usage_.phase_used[Liquid]) {
-            // for oil, we support the "PVDO", "PVTO" and "PVCDO"
-            // keywords...
-            const auto &pvdoTables = eclipseState->getPvdoTables();
-            const auto &pvtoTables = eclipseState->getPvtoTables();
-            if (pvdoTables.size() > 0) {
-                if (numSamples > 0) {
-                    auto splinePvt = std::shared_ptr<PvtDeadSpline>(new PvtDeadSpline);
-                    splinePvt->initFromOil(pvdoTables, numSamples);
-                    props_[phase_usage_.phase_pos[Liquid]] = splinePvt;
-                } else {
-                    auto deadPvt = std::shared_ptr<PvtDead>(new PvtDead);
-                    deadPvt->initFromOil(pvdoTables);
-                    props_[phase_usage_.phase_pos[Liquid]] = deadPvt;
-                }
-            } else if (pvtoTables.size() > 0) {
-                props_[phase_usage_.phase_pos[Liquid]].reset(new PvtLiveOil(pvtoTables));
-            } else if (deck->hasKeyword("PVCDO")) {
-                std::shared_ptr<PvtConstCompr> pvcdo(new PvtConstCompr);
-                pvcdo->initFromOil(deck->getKeyword("PVCDO"));
 
-                props_[phase_usage_.phase_pos[Liquid]] = pvcdo;
-            } else {
-                OPM_THROW(std::runtime_error, "Input is missing PVDO, PVCDO or PVTO\n");
+        {
+            auto tables = eclipseState->getTableManager();
+            // Oil PVT
+            if (phase_usage_.phase_used[Liquid]) {
+                // for oil, we support the "PVDO", "PVTO" and "PVCDO"
+                // keywords...
+                const auto &pvdoTables = tables->getPvdoTables();
+                const auto &pvtoTables = tables->getPvtoTables();
+                if (pvdoTables.size() > 0) {
+                    if (numSamples > 0) {
+                        auto splinePvt = std::shared_ptr<PvtDeadSpline>(new PvtDeadSpline);
+                        splinePvt->initFromOil(pvdoTables, numSamples);
+                        props_[phase_usage_.phase_pos[Liquid]] = splinePvt;
+                    } else {
+                        auto deadPvt = std::shared_ptr<PvtDead>(new PvtDead);
+                        deadPvt->initFromOil(pvdoTables);
+                        props_[phase_usage_.phase_pos[Liquid]] = deadPvt;
+                    }
+                } else if (pvtoTables.size() > 0) {
+                    props_[phase_usage_.phase_pos[Liquid]].reset(new PvtLiveOil(pvtoTables));
+                } else if (deck->hasKeyword("PVCDO")) {
+                    std::shared_ptr<PvtConstCompr> pvcdo(new PvtConstCompr);
+                    pvcdo->initFromOil(deck->getKeyword("PVCDO"));
+
+                    props_[phase_usage_.phase_pos[Liquid]] = pvcdo;
+                } else {
+                    OPM_THROW(std::runtime_error, "Input is missing PVDO, PVCDO or PVTO\n");
+                }
             }
-        }
-        // Gas PVT
-        if (phase_usage_.phase_used[Vapour]) {
-            // gas can be specified using the "PVDG" or "PVTG" keywords...
-            const auto &pvdgTables = eclipseState->getPvdgTables();
-            const auto &pvtgTables = eclipseState->getPvtgTables();
-            if (pvdgTables.size() > 0) {
-                if (numSamples > 0) {
-                    std::shared_ptr<PvtDeadSpline> splinePvt(new PvtDeadSpline);
-                    splinePvt->initFromGas(pvdgTables, numSamples);
+            // Gas PVT
+            if (phase_usage_.phase_used[Vapour]) {
+                // gas can be specified using the "PVDG" or "PVTG" keywords...
+                const auto &pvdgTables = tables->getPvdgTables();
+                const auto &pvtgTables = tables->getPvtgTables();
+                if (pvdgTables.size() > 0) {
+                    if (numSamples > 0) {
+                        std::shared_ptr<PvtDeadSpline> splinePvt(new PvtDeadSpline);
+                        splinePvt->initFromGas(pvdgTables, numSamples);
 
-                    props_[phase_usage_.phase_pos[Vapour]] = splinePvt;
+                        props_[phase_usage_.phase_pos[Vapour]] = splinePvt;
+                    } else {
+                        std::shared_ptr<PvtDead> deadPvt(new PvtDead);
+                        deadPvt->initFromGas(pvdgTables);
+
+                        props_[phase_usage_.phase_pos[Vapour]] = deadPvt;
+                    }
+                } else if (pvtgTables.size() > 0) {
+                    props_[phase_usage_.phase_pos[Vapour]].reset(new PvtLiveGas(pvtgTables));
                 } else {
-                    std::shared_ptr<PvtDead> deadPvt(new PvtDead);
-                    deadPvt->initFromGas(pvdgTables);
-
-                    props_[phase_usage_.phase_pos[Vapour]] = deadPvt;
+                    OPM_THROW(std::runtime_error, "Input is missing PVDG or PVTG\n");
                 }
-            } else if (pvtgTables.size() > 0) {
-                props_[phase_usage_.phase_pos[Vapour]].reset(new PvtLiveGas(pvtgTables));
-            } else {
-                OPM_THROW(std::runtime_error, "Input is missing PVDG or PVTG\n");
             }
         }
     }
