@@ -54,12 +54,12 @@ namespace Opm
 
             // Copy data
             const std::vector<double> &press = pvdoTable.getPressureColumn();
-            const std::vector<double> &B = pvdoTable.getFormationFactorColumn();
+            const std::vector<double> &B_var = pvdoTable.getFormationFactorColumn();
             const std::vector<double> &visc = pvdoTable.getViscosityColumn();
 
             std::vector<double> B_inv(numRows);
             for (int i = 0; i < numRows; ++i) {
-                B_inv[i] = 1.0 / B[i];
+                B_inv[i] = 1.0 / B_var[i];
             }
 
             buildUniformMonotoneTable(press, B_inv, numSamples, b_[regionIdx]);

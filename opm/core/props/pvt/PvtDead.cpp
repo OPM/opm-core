@@ -48,18 +48,18 @@ namespace Opm
 
             // Copy data
             const std::vector<double>& press = pvdoTable.getPressureColumn();
-            const std::vector<double>& b = pvdoTable.getFormationFactorColumn();
+            const std::vector<double>& b_var = pvdoTable.getFormationFactorColumn();
             const std::vector<double>& visc = pvdoTable.getViscosityColumn();
 
-            const int sz = b.size();
+            const int sz = b_var.size();
             std::vector<double> inverseB(sz);
             for (int i = 0; i < sz; ++i) {
-                inverseB[i] = 1.0 / b[i];
+                inverseB[i] = 1.0 / b_var[i];
             }
 
             std::vector<double> inverseBmu(sz);
             for (int i = 0; i < sz; ++i) {
-                inverseBmu[i] = 1.0 / (b[i] * visc[i]);
+                inverseBmu[i] = 1.0 / (b_var[i] * visc[i]);
             }
 
             b_[regionIdx] = NonuniformTableLinear<double>(press, inverseB);

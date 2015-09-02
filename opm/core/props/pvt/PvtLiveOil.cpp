@@ -110,15 +110,15 @@ namespace Opm
                     undersat_oil_tables_[pvtTableIdx][i][0].push_back(pressure);
                     double compr = (1.0/undersat_oil_tables_[pvtTableIdx][iNext][1][j]-1.0/undersat_oil_tables_[pvtTableIdx][iNext][1][j-1])
                         / (0.5*(1.0/undersat_oil_tables_[pvtTableIdx][iNext][1][j]+1.0/undersat_oil_tables_[pvtTableIdx][iNext][1][j-1]));
-                    double B = (1.0/undersat_oil_tables_[pvtTableIdx][i][1].back())*(1.0+0.5*compr)/(1.0-0.5*compr);
-                    undersat_oil_tables_[pvtTableIdx][i][1].push_back(1.0/B);
+                    double B_var = (1.0/undersat_oil_tables_[pvtTableIdx][i][1].back())*(1.0+0.5*compr)/(1.0-0.5*compr);
+                    undersat_oil_tables_[pvtTableIdx][i][1].push_back(1.0/B_var);
                     double visc = (undersat_oil_tables_[pvtTableIdx][iNext][2][j]-undersat_oil_tables_[pvtTableIdx][iNext][2][j-1])
                         / (0.5*(undersat_oil_tables_[pvtTableIdx][iNext][2][j]+undersat_oil_tables_[pvtTableIdx][iNext][2][j-1]));
-                    double mu = (undersat_oil_tables_[pvtTableIdx][i][2].back())*(1.0+0.5*visc)/(1.0-0.5*visc);
-                    undersat_oil_tables_[pvtTableIdx][i][2].push_back(mu);
+                    double mu_var = (undersat_oil_tables_[pvtTableIdx][i][2].back())*(1.0+0.5*visc)/(1.0-0.5*visc);
+                    undersat_oil_tables_[pvtTableIdx][i][2].push_back(mu_var);
 
                     // A try to expolate the 1/BMu with the expolated mu and B
-                    double inverseBMu = 1.0 / (B*mu);
+                    double inverseBMu = 1.0 / (B_var*mu_var);
                     undersat_oil_tables_[pvtTableIdx][i][3].push_back(inverseBMu);
 
                 }

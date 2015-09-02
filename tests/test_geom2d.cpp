@@ -176,18 +176,18 @@ BOOST_AUTO_TEST_CASE(cellAreas)
 
 BOOST_AUTO_TEST_CASE(cellCenters)
 {
-   double cellCenters[] = {
+   double cellCenters_var[] = {
       -1./3., 0.0,     /* cell 0 */
        1./2., 0.0,     /* cell 1 */
    };
-   BOOST_REQUIRE (sizeof(cellCenters)/sizeof(cellCenters[0]) ==
+   BOOST_REQUIRE (sizeof(cellCenters_var)/sizeof(cellCenters_var[0]) ==
                   g->number_of_cells * g->dimensions);
    for (int cell = 0; cell < g->number_of_cells; ++cell)
    {
       for (int dim = 0; dim < g->dimensions; ++dim)
       {
          BOOST_REQUIRE_CLOSE (g->cell_centroids[cell*g->dimensions+dim],
-               cellCenters[cell*g->dimensions+dim], 0.001);
+               cellCenters_var[cell*g->dimensions+dim], 0.001);
       }
    }
 }
