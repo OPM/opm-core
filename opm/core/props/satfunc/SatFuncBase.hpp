@@ -117,8 +117,7 @@ namespace Opm
         TableType krow_;
         TableType pcow_;
         TableType krg_;
-        TableType krog_;
-        TableType pcog_;
+        TableType krog_;        TableType pcog_;
         double krocw_; // = krow_(s_wc)
 
     private:
@@ -137,11 +136,12 @@ namespace Opm
                                       const PhaseUsage phase_usg,
                                       const int samples)
     {
+        std::shared_ptr<const TableManager> tables = eclipseState->getTableManager();
         phase_usage = phase_usg;
         double swco = 0.0;
         double swmax = 1.0;
         if (phase_usage.phase_used[Aqua]) {
-            const Opm::SwofTable& swof(eclipseState->getSwofTables()[table_num]);
+            const Opm::SwofTable& swof(tables->getSwofTables()[table_num]);
             const std::vector<double>& sw = swof.getSwColumn();
             const std::vector<double>& krw = swof.getKrwColumn();
             const std::vector<double>& krow = swof.getKrowColumn();
@@ -196,7 +196,7 @@ namespace Opm
             pcwmax_ = pcow.front();
         }
         if (phase_usage.phase_used[Vapour]) {
-            const Opm::SgofTable& sgof = eclipseState->getSgofTables()[table_num];
+            const Opm::SgofTable& sgof = tables->getSgofTables()[table_num];
             const std::vector<double>& sg = sgof.getSgColumn();
             const std::vector<double>& krg = sgof.getKrgColumn();
             const std::vector<double>& krog = sgof.getKrogColumn();

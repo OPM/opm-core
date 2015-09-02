@@ -15,6 +15,7 @@
 #include <opm/parser/eclipse/Parser/ParseMode.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
+#include <opm/parser/eclipse/EclipseState/Tables/TableManager.hpp>
 
 #if HAVE_DYNAMIC_BOOST_TEST
 #define BOOST_TEST_DYN_LINK
@@ -36,7 +37,7 @@ using namespace std;
 std::vector<std::shared_ptr<PvtInterface> > getProps(Opm::DeckConstPtr deck, Opm::EclipseStateConstPtr eclipseState, PhaseUsage phase_usage_){
     enum PhaseIndex { Aqua = 0, Liquid = 1, Vapour = 2 };
     int samples = 0;
-
+    std::shared_ptr<const TableManager> tables = eclipseState->getTableManager();
     std::vector<std::shared_ptr<PvtInterface> > props_;
     // Set the properties.
     props_.resize(phase_usage_.num_phases);
@@ -56,8 +57,8 @@ std::vector<std::shared_ptr<PvtInterface> > getProps(Opm::DeckConstPtr deck, Opm
 
     // Oil PVT
     if (phase_usage_.phase_used[Liquid]) {
-        const auto& pvdoTables = eclipseState->getPvdoTables();
-        const auto& pvtoTables = eclipseState->getPvtoTables();
+        const auto& pvdoTables = tables->getPvdoTables();
+        const auto& pvtoTables = tables->getPvtoTables();
         if (!pvdoTables.empty()) {
             if (samples > 0) {
                 std::shared_ptr<PvtDeadSpline> splinePvt(new PvtDeadSpline);
@@ -81,8 +82,8 @@ std::vector<std::shared_ptr<PvtInterface> > getProps(Opm::DeckConstPtr deck, Opm
     }
     // Gas PVT
     if (phase_usage_.phase_used[Vapour]) {
-        const auto& pvdgTables = eclipseState->getPvdgTables();
-        const auto& pvtgTables = eclipseState->getPvtgTables();
+        const auto& pvdgTables = tables->getPvdgTables();
+        const auto& pvtgTables = tables->getPvtgTables();
         if (!pvdgTables.empty()) {
             if (samples > 0) {
                 std::shared_ptr<PvtDeadSpline> splinePvt(new PvtDeadSpline);
