@@ -43,8 +43,8 @@ public:
         typedef BaseRowType::size_type size_type;
         typedef int value_type;
         
-        IntRange(const int* start, const int* end)
-            : BaseRowType(start, end)
+        IntRange(const int* start_arg, const int* end_arg)
+            : BaseRowType(start_arg, end_arg)
         {}
     };
     /// \brief The type of the roww.
@@ -55,8 +55,8 @@ public:
     /// \param offset The offsets of the rows. Row i starts
     ///               at offset[i] and ends a offset[i+1]
     /// \param size   The number of entries/rows of the table
-    SparseTableView(int* data, int *offset, std::size_t size)
-        : data_(data), offset_(offset), size_(size)
+    SparseTableView(int* data, int *offset, std::size_t size_arg)
+        : data_(data), offset_(offset), size_(size_arg)
     {}
 
     /// \brief Get a row of the the table.
