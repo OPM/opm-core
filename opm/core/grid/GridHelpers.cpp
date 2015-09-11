@@ -70,6 +70,7 @@ double cellCenterDepth(const UnstructuredGrid& grid, int cell_index)
     // Traverse the bottom and top cell-face
     for (int i=grid.cell_facepos[cell_index+1]-2; i<grid.cell_facepos[cell_index+1]; ++i) {
         // Traverse the vertices associated with each face
+        assert(grid.face_nodepos[grid.cell_faces[i]+1] - grid.face_nodepos[grid.cell_faces[i]] == nv/2);
         for (int j=grid.face_nodepos[grid.cell_faces[i]]; j<grid.face_nodepos[grid.cell_faces[i]+1]; ++j) {
             zz += (grid.node_coordinates+nd*(grid.face_nodes[j]))[nd-1];
         }
