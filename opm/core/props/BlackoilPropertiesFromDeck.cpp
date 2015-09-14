@@ -19,30 +19,46 @@
 
 #include "config.h"
 #include <opm/core/props/BlackoilPropertiesFromDeck.hpp>
+#include <opm/material/fluidmatrixinteractions/EclMaterialLawManager.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
+#include <vector>
+#include <numeric>
 
 namespace Opm
 {
+
+    namespace
+    {
+        // Construct explicit mapping from active/compressed to logical cartesian
+        // indices, either as given in global_cell or as { 0, 1, 2, ....} if null.
+        std::vector<int> compressedToCartesian(const int num_cells,
+                                               const int* global_cell)
+        {
+            std::vector<int> retval;
+            if (global_cell) {
+                retval.assign(global_cell, global_cell + num_cells);
+            } else {
+                retval.resize(num_cells);
+                std::iota(retval.begin(), retval.end(), 0);
+            }
+            return retval;
+        }
+    } // anonymous namespace
+
+
     BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(Opm::DeckConstPtr deck,
                                                            Opm::EclipseStateConstPtr eclState,
                                                            const UnstructuredGrid& grid,
                                                            bool init_rock)
     {
-        std::vector<int> compressedToCartesianIdx(grid.number_of_cells);
-        for (int cellIdx = 0; cellIdx < grid.number_of_cells; ++cellIdx) {
-            if (grid.global_cell) {
-                compressedToCartesianIdx[cellIdx] = grid.global_cell[cellIdx];
-            }
-            else {
-                compressedToCartesianIdx[cellIdx] = cellIdx;
-            }
-        }
+        std::vector<int> compressedToCartesianIdx
+            = compressedToCartesian(grid.number_of_cells, grid.global_cell);
 
         auto materialLawManager = std::make_shared<MaterialLawManager>();
         materialLawManager->initFromDeck(deck, eclState, compressedToCartesianIdx);
 
         init(deck, eclState, materialLawManager, grid.number_of_cells, grid.global_cell, grid.cartdims,
-             grid.cell_centroids, grid.dimensions, init_rock);
+             init_rock);
     }
 
     BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(Opm::DeckConstPtr deck,
@@ -51,21 +67,137 @@ namespace Opm
                                                            const parameter::ParameterGroup& param,
                                                            bool init_rock)
     {
-        std::vector<int> compressedToCartesianIdx(grid.number_of_cells);
-        for (int cellIdx = 0; cellIdx < grid.number_of_cells; ++cellIdx) {
-            if (grid.global_cell) {
-                compressedToCartesianIdx[cellIdx] = grid.global_cell[cellIdx];
-            }
-            else {
-                compressedToCartesianIdx[cellIdx] = cellIdx;
-            }
-        }
+        std::vector<int> compressedToCartesianIdx
+            = compressedToCartesian(grid.number_of_cells, grid.global_cell);
 
         auto materialLawManager = std::make_shared<MaterialLawManager>();
         materialLawManager->initFromDeck(deck, eclState, compressedToCartesianIdx);
 
-        init(deck, eclState, materialLawManager, grid.number_of_cells, grid.global_cell, grid.cartdims, grid.cell_centroids,
-             grid.dimensions, param, init_rock);
+        init(deck, eclState, materialLawManager, grid.number_of_cells, grid.global_cell, grid.cartdims, param, init_rock);
+    }
+
+    BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(Opm::DeckConstPtr deck,
+                                                           Opm::EclipseStateConstPtr eclState,
+                                                           int number_of_cells,
+                                                           const int* global_cell,
+                                                           const int* cart_dims,
+                                                           bool init_rock)
+    {
+        std::vector<int> compressedToCartesianIdx
+            = compressedToCartesian(number_of_cells, global_cell);
+
+        auto materialLawManager = std::make_shared<MaterialLawManager>();
+        materialLawManager->initFromDeck(deck, eclState, compressedToCartesianIdx);
+
+        init(deck, eclState, materialLawManager, number_of_cells, global_cell, cart_dims,
+             init_rock);
+    }
+
+    BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(Opm::DeckConstPtr deck,
+                                                           Opm::EclipseStateConstPtr eclState,
+                                                           int number_of_cells,
+                                                           const int* global_cell,
+                                                           const int* cart_dims,
+                                                           const parameter::ParameterGroup& param,
+                                                           bool init_rock)
+    {
+        std::vector<int> compressedToCartesianIdx
+            = compressedToCartesian(number_of_cells, global_cell);
+
+        auto materialLawManager = std::make_shared<MaterialLawManager>();
+        materialLawManager->initFromDeck(deck, eclState, compressedToCartesianIdx);
+
+        init(deck,
+             eclState,
+             materialLawManager,
+             number_of_cells,
+             global_cell,
+             cart_dims,
+             param,
+             init_rock);
+    }
+
+    BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck(Opm::DeckConstPtr deck,
+                                                           Opm::EclipseStateConstPtr eclState,
+                                                           std::shared_ptr<MaterialLawManager> materialLawManager,
+                                                           int number_of_cells,
+                                                           const int* global_cell,
+                                                           const int* cart_dims,
+                                                           const parameter::ParameterGroup& param,
+                                                           bool init_rock)
+    {
+        init(deck,
+             eclState,
+             materialLawManager,
+             number_of_cells,
+             global_cell,
+             cart_dims,
+             param,
+             init_rock);
+    }
+
+    inline void BlackoilPropertiesFromDeck::init(Opm::DeckConstPtr deck,
+                                                 Opm::EclipseStateConstPtr eclState,
+                                                 std::shared_ptr<MaterialLawManager> materialLawManager,
+                                                 int number_of_cells,
+                                                 const int* global_cell,
+                                                 const int* cart_dims,
+                                                 bool init_rock)
+    {
+        // retrieve the cell specific PVT table index from the deck
+        // and using the grid...
+        extractPvtTableIndex(cellPvtRegionIdx_, deck, number_of_cells, global_cell);
+
+        if (init_rock){
+           rock_.init(eclState, number_of_cells, global_cell, cart_dims);
+        }
+        pvt_.init(deck, eclState, /*numSamples=*/0);
+        SaturationPropsFromDeck* ptr
+            = new SaturationPropsFromDeck();
+        ptr->init(phaseUsageFromDeck(deck), materialLawManager);
+        satprops_.reset(ptr);
+
+        if (pvt_.numPhases() != satprops_->numPhases()) {
+            OPM_THROW(std::runtime_error, "BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck() - Inconsistent number of phases in pvt data ("
+                  << pvt_.numPhases() << ") and saturation-dependent function data (" << satprops_->numPhases() << ").");
+        }
+    }
+
+    inline void BlackoilPropertiesFromDeck::init(Opm::DeckConstPtr deck,
+                                                 Opm::EclipseStateConstPtr eclState,
+                                                 std::shared_ptr<MaterialLawManager> materialLawManager,
+                                                 int number_of_cells,
+                                                 const int* global_cell,
+                                                 const int* cart_dims,
+                                                 const parameter::ParameterGroup& param,
+                                                 bool init_rock)
+    {
+        // retrieve the cell specific PVT table index from the deck
+        // and using the grid...
+        extractPvtTableIndex(cellPvtRegionIdx_, deck, number_of_cells, global_cell);
+
+        if(init_rock){
+            rock_.init(eclState, number_of_cells, global_cell, cart_dims);
+        }
+
+        const int pvt_samples = param.getDefault("pvt_tab_size", -1);
+        pvt_.init(deck, eclState, pvt_samples);
+
+        // Unfortunate lack of pointer smartness here...
+        std::string threephase_model = param.getDefault<std::string>("threephase_model", "gwseg");
+        if (deck->hasKeyword("ENDSCALE") && threephase_model != "gwseg") {
+            OPM_THROW(std::runtime_error, "Sorry, end point scaling currently available for the 'gwseg' model only.");
+        }
+
+        SaturationPropsFromDeck* ptr
+            = new SaturationPropsFromDeck();
+        ptr->init(phaseUsageFromDeck(deck), materialLawManager);
+        satprops_.reset(ptr);
+
+        if (pvt_.numPhases() != satprops_->numPhases()) {
+            OPM_THROW(std::runtime_error, "BlackoilPropertiesFromDeck::BlackoilPropertiesFromDeck() - Inconsistent number of phases in pvt data ("
+                  << pvt_.numPhases() << ") and saturation-dependent function data (" << satprops_->numPhases() << ").");
+        }
     }
 
     BlackoilPropertiesFromDeck::~BlackoilPropertiesFromDeck()

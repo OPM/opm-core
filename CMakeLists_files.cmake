@@ -339,7 +339,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/BlackoilPhases.hpp
 	opm/core/props/BlackoilPropertiesBasic.hpp
 	opm/core/props/BlackoilPropertiesFromDeck.hpp
-	opm/core/props/BlackoilPropertiesFromDeck_impl.hpp
 	opm/core/props/BlackoilPropertiesInterface.hpp
 	opm/core/props/IncompPropertiesBasic.hpp
 	opm/core/props/IncompPropertiesFromDeck.hpp
