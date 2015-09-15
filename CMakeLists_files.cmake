@@ -124,6 +124,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/transport/reorder/TransportSolverTwophaseReorder.cpp
 	opm/core/transport/reorder/reordersequence.cpp
 	opm/core/transport/reorder/tarjan.c
+	opm/core/utility/compressedToCartesian.cpp
 	opm/core/utility/Event.cpp
 	opm/core/utility/MonotCubicInterpolator.cpp
 	opm/core/utility/StopWatch.cpp
@@ -415,6 +416,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/reorder/tarjan.h
 	opm/core/utility/Average.hpp
 	opm/core/utility/CompressedPropertyAccess.hpp
+	opm/core/utility/compressedToCartesian.hpp
 	opm/core/utility/DataMap.hpp
 	opm/core/utility/ErrorMacros.hpp
 	opm/core/utility/Event.hpp
