@@ -415,6 +415,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/transport/reorder/tarjan.h
 	opm/core/utility/Average.hpp
 	opm/core/utility/CompressedPropertyAccess.hpp
+	opm/core/utility/compressedToCartesian.hpp
 	opm/core/utility/DataMap.hpp
 	opm/core/utility/ErrorMacros.hpp
 	opm/core/utility/Event.hpp
