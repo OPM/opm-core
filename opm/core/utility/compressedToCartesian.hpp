@@ -21,7 +21,6 @@
 #define OPM_COMPRESSEDTOCARTESIAN_HEADER_INCLUDED
 
 #include <vector>
-#include <numeric>
 
 namespace Opm
 {
