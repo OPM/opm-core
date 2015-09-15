@@ -17,10 +17,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_COMPRESSEDTOCARTESIAN_HEADER_INCLUDED
-#define OPM_COMPRESSEDTOCARTESIAN_HEADER_INCLUDED
 
-#include <vector>
+#include <opm/core/utility/compressedToCartesian.hpp>
 #include <numeric>
 
 namespace Opm
@@ -34,8 +32,17 @@ namespace Opm
     //                         or the sequence { 0, 1, ... , num_cells - 1 } if
     //                         global_cell was null.
     std::vector<int> compressedToCartesian(const int num_cells,
-                                           const int* global_cell);
+                                           const int* global_cell)
+    {
+        std::vector<int> retval;
+        if (global_cell) {
+            retval.assign(global_cell, global_cell + num_cells);
+        } else {
+            retval.resize(num_cells);
+            std::iota(retval.begin(), retval.end(), 0);
+        }
+        return retval;
+    }
+
 
 } // namespace Opm
-
-#endif // OPM_COMPRESSEDTOCARTESIAN_HEADER_INCLUDED
