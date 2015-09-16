@@ -22,6 +22,9 @@
 
 #include <opm/core/wells.h>
 #include <opm/core/well_controls.h>
+#include <array>
+#include <map>
+#include <string>
 #include <vector>
 #include <cassert>
 #include <cstddef>
@@ -33,6 +36,9 @@ namespace Opm
     class WellState
     {
     public:
+        typedef std::array< int, 3 >  mapentry_t;
+        typedef std::map< std::string, mapentry_t > WellMapType;
+
         /// Allocate and initialize if wells is non-null.
         /// Also tries to give useful initial values to the bhp() and
         /// wellRates() fields, depending on controls.  The
@@ -41,6 +47,9 @@ namespace Opm
         template <class State>
         void init(const Wells* wells, const State& state)
         {
+            // clear old name mapping
+            wellMap_.clear();
+
             if (wells) {
                 const int nw = wells->number_of_wells;
                 const int np = wells->number_of_phases;
@@ -51,6 +60,20 @@ namespace Opm
                 for (int w = 0; w < nw; ++w) {
                     assert((wells->type[w] == INJECTOR) || (wells->type[w] == PRODUCER));
                     const WellControls* ctrl = wells->ctrls[w];
+
+                    // setup wellname -> well index mapping
+                    {
+                        assert( wells->name[ w ] );
+                        std::string name( wells->name[ w ] );
+                        assert( name.size() > 0 );
+                        mapentry_t& wellMapEntry = wellMap_[name];
+                        wellMapEntry[ 0 ] = w;
+                        wellMapEntry[ 1 ] = wells->well_connpos[w];
+                        // also store the number of perforations in this well
+                        const int num_perf_this_well = wells->well_connpos[w + 1] - wells->well_connpos[w];
+                        wellMapEntry[ 2 ] = num_perf_this_well;
+                    }
+
                     if (well_controls_well_is_stopped(ctrl)) {
                         // Stopped well:
                         // 1. Rates: assign zero well rates.
@@ -170,6 +193,21 @@ namespace Opm
             return getRestartTemperatureOffset() + temperature_.size();
         }
 
+        const WellMapType& wellMap() const { return wellMap_; }
+        WellMapType& wellMap() { return wellMap_; }
+
+        /// The number of wells present.
+        int numWells() const
+        {
+            return bhp().size();
+        }
+
+        /// The number of phases present.
+        int numPhases() const
+        {
+            return wellRates().size() / numWells();
+        }
+
     private:
         std::vector<double> bhp_;
         std::vector<double> thp_;
@@ -177,6 +215,8 @@ namespace Opm
         std::vector<double> wellrates_;
         std::vector<double> perfrates_;
         std::vector<double> perfpress_;
+
+        WellMapType wellMap_;
     };
 
 } // namespace Opm
