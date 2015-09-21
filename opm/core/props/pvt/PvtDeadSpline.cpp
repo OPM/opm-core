@@ -38,7 +38,7 @@ namespace Opm
     PvtDeadSpline::PvtDeadSpline()
     {}
 
-    void PvtDeadSpline::initFromOil(const std::vector<Opm::PvdoTable>& pvdoTables,
+    void PvtDeadSpline::initFromOil(const TableContainer& pvdoTables,
                                     int numSamples)
     {
         int numRegions = pvdoTables.size();
@@ -48,7 +48,7 @@ namespace Opm
         viscosity_.resize(numRegions);
 
         for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
-            const Opm::PvdoTable& pvdoTable = pvdoTables[regionIdx];
+            const Opm::PvdoTable& pvdoTable = pvdoTables.getTable<PvdoTable>(regionIdx);
 
             int numRows = pvdoTable.numRows();
 
@@ -67,7 +67,7 @@ namespace Opm
         }
     }
 
-    void PvtDeadSpline::initFromGas(const std::vector<Opm::PvdgTable>& pvdgTables,
+    void PvtDeadSpline::initFromGas(const TableContainer& pvdgTables,
                                     int numSamples)
     {
         int numRegions = pvdgTables.size();
@@ -77,7 +77,7 @@ namespace Opm
         viscosity_.resize(numRegions);
 
         for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
-            const Opm::PvdgTable& pvdgTable = pvdgTables[regionIdx];
+            const Opm::PvdgTable& pvdgTable = pvdgTables.getTable<PvdgTable>(regionIdx);
 
             int numRows = pvdgTable.numRows();
 

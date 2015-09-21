@@ -24,6 +24,7 @@
 #include <opm/core/utility/NonuniformTableLinear.hpp>
 
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
+#include <opm/parser/eclipse/EclipseState/Tables/TableContainer.hpp>
 
 #include <vector>
 
@@ -46,8 +47,8 @@ namespace Opm
     public:
         PvtDead() {};
 
-        void initFromOil(const std::vector<Opm::PvdoTable>& pvdoTables);
-        void initFromGas(const std::vector<Opm::PvdgTable>& pvdgTables);
+        void initFromOil(const TableContainer& pvdoTables);
+        void initFromGas(const TableContainer& pvdgTables);
         virtual ~PvtDead();
 
         /// Viscosity as a function of p, T and z.
