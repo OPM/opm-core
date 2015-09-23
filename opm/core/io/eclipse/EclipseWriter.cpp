@@ -891,24 +891,24 @@ private:
         using namespace Opm::unit;
         if (phase == BlackoilPhases::Liquid || phase == BlackoilPhases::Aqua) {
             if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
-                unitName_ = "STB/DAY";
-                targetRateToSiConversionFactor_ = stb/day; // m^3/s -> STB/day
+                unitName_ = "STB";
+                targetRateToSiConversionFactor_ = stb; // m^3 -> STB
             }
             else if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
-                unitName_ = "SM3/DAY";
-                targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
+                unitName_ = "SM3";
+                targetRateToSiConversionFactor_ = cubic(meter); // m^3 -> m^3
             }
             else
                 OPM_THROW(std::logic_error, "Deck uses unexpected unit system");
         }
         else if (phase == BlackoilPhases::Vapour) {
             if (unitType == UnitSystem::UNIT_TYPE_FIELD) {
-                unitName_ = "MSCF/DAY";
-                targetRateToSiConversionFactor_ = 1000*cubic(feet)/day; // m^3/s -> MSCF^3/day
+                unitName_ = "MSCF";
+                targetRateToSiConversionFactor_ = 1000*cubic(feet); // m^3 -> MSCF^3
             }
             else if (unitType == UnitSystem::UNIT_TYPE_METRIC) {
-                unitName_ = "SM3/DAY";
-                targetRateToSiConversionFactor_ = cubic(meter)/day; // m^3/s -> m^3/day
+                unitName_ = "SM3";
+                targetRateToSiConversionFactor_ = cubic(meter); // m^3 -> m^3
             }
             else
                 OPM_THROW(std::logic_error, "Deck uses unexpected unit system");
