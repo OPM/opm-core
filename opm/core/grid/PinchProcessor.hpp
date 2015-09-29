@@ -29,6 +29,7 @@
 #include <iostream>
 #include <algorithm>
 #include <unordered_map>
+#include <limits>
 
 namespace Opm
 {
@@ -476,7 +477,7 @@ namespace Opm
                 //find the right face.
                 auto faceIdx = std::distance(std::begin(pinCells), std::find(pinCells.begin(), pinCells.end(), seg.front()));
                 //find the min multz in seg cells.
-                auto multzValue = 1e20;
+                auto multzValue = std::numeric_limits<double>::max();
                 for (auto& cellIdx : seg) {
                     auto activeIdx = getActiveCellIdx_(grid, cellIdx);
                     if (activeIdx != -1) {
