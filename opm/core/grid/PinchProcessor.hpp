@@ -298,7 +298,6 @@ namespace Opm
                                                                    const std::vector<int>& pinFaces,
                                                                    const std::vector<double>& multz)       
     {
-        const int* dims = cartDims(grid);       
         const int nc = numCells(grid);
         const int nf = numFaces(grid);
         std::vector<double> trans(nf, 0);
@@ -443,7 +442,6 @@ namespace Opm
                                                                                     const std::vector<double>& multz,
                                                                                     const std::vector<std::vector<int> >& segs)
     {
-        const int nc = numCells(grid);
         int cellFaceIdx = 0;
         auto cell2Faces = Opm::UgGridHelpers::cell2Faces(grid); 
         std::unordered_multimap<int, double> multzmap;
