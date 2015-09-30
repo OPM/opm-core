@@ -281,6 +281,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/grid/GridManager.hpp
 	opm/core/grid/GridUtilities.hpp
 	opm/core/grid/MinpvProcessor.hpp
+	opm/core/grid/PinchProcessor.hpp
 	opm/core/grid/cart_grid.h
 	opm/core/grid/cornerpoint_grid.h
 	opm/core/grid/cpgpreprocess/facetopology.h
