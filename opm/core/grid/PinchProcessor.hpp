@@ -113,10 +113,6 @@ namespace Opm
 
         /// Get map between half-trans index and the pair of face index and cell index.
         std::vector<int> getHfIdxMap_(const Grid& grid);
-
-        /// Get the value index in vector.
-        int getValueIndex_(const std::vector<int>& vec,
-                           const int value);
         
         /// Get active cell index.
         int getActiveCellIdx_(const Grid& grid,
@@ -277,22 +273,6 @@ namespace Opm
     }
 
 
-    template<class Grid>
-    inline int PinchProcessor<Grid>::getValueIndex_(const std::vector<int>& vec,
-                                                    const int value)
-    {
-        int idx = -1;
-        for (size_t i = 0; i < vec.size(); ++i) {
-            if (vec[i] == value) {
-                idx = static_cast<int>(i);
-                return idx;
-            }
-        }
-        if (idx < 0) {
-            OPM_THROW(std::logic_error, "could not find " << value);
-        }
-        return idx;
-    }
 
     template<class Grid>
     inline int PinchProcessor<Grid>::getActiveCellIdx_(const Grid& grid,
@@ -333,7 +313,7 @@ namespace Opm
                 if (std::find(pinFaces.begin(), pinFaces.end(), faceIdx) == pinFaces.end()) {
                     trans[faceIdx] += 1. / htrans[cellFaceIdx];
                 } else {
-                    const int idx1 = getValueIndex_(pinFaces, faceIdx);
+                    const int idx1 = std::distance(std::begin(pinFaces), std::find(pinFaces.begin(), pinFaces.end(), faceIdx));
                     int idx2;
                     if (idx1 % 2 == 0) {
                         idx2 = idx1 + 1;
@@ -475,7 +455,7 @@ namespace Opm
         } else if (multzMode_ == "ALL") {
             for (auto& seg : segs) {
                 //find the right face.
-                auto faceIdx = std::distance(std::begin(pinCells), std::find(pinCells.begin(), pinCells.end(), seg.front()));
+                auto index = std::distance(std::begin(pinCells), std::find(pinCells.begin(), pinCells.end(), seg.front()));
                 //find the min multz in seg cells.
                 auto multzValue = std::numeric_limits<double>::max();
                 for (auto& cellIdx : seg) {
@@ -484,8 +464,8 @@ namespace Opm
                         multzValue = std::min(multzValue, multz[activeIdx]);
                     }
                 }
-                multzmap.insert(std::make_pair(pinFaces[faceIdx], multzValue));
-                multzmap.insert(std::make_pair(pinFaces[faceIdx+1], multzValue));
+                multzmap.insert(std::make_pair(pinFaces[index], multzValue));
+                multzmap.insert(std::make_pair(pinFaces[index+1], multzValue));
             }
         }
 
