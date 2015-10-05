@@ -24,6 +24,7 @@
 #include <opm/core/utility/UniformTableLinear.hpp>
 
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
+#include <opm/parser/eclipse/EclipseState/Tables/TableContainer.hpp>
 
 #include <vector>
 
@@ -42,9 +43,9 @@ namespace Opm
     public:
         PvtDeadSpline();
 
-        void initFromOil(const std::vector<Opm::PvdoTable>& pvdoTables,
+        void initFromOil(const TableContainer& pvdoTables,
                          int numSamples);
-        void initFromGas(const std::vector<Opm::PvdgTable>& pvdgTables,
+        void initFromGas(const TableContainer& pvdgTables,
                          int numSamples);
 
         virtual ~PvtDeadSpline();

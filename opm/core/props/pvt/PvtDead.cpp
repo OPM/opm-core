@@ -34,7 +34,7 @@ namespace Opm
     // Member functions
     //-------------------------------------------------------------------------
     /// Constructor
-    void PvtDead::initFromOil(const std::vector<Opm::PvdoTable>& pvdoTables)
+    void PvtDead::initFromOil(const TableContainer& pvdoTables)
     {
         int numRegions = pvdoTables.size();
 
@@ -44,7 +44,7 @@ namespace Opm
         inverseBmu_.resize(numRegions);
 
         for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
-            const Opm::PvdoTable& pvdoTable = pvdoTables[regionIdx];
+            const Opm::PvdoTable& pvdoTable = pvdoTables.getTable<PvdoTable>(regionIdx);
 
             // Copy data
             const std::vector<double>& press = pvdoTable.getPressureColumn();
@@ -69,7 +69,7 @@ namespace Opm
     }
 
 
-    void PvtDead::initFromGas(const std::vector<Opm::PvdgTable>& pvdgTables)
+    void PvtDead::initFromGas(const TableContainer& pvdgTables)
     {
         int numRegions = pvdgTables.size();
 
@@ -79,7 +79,7 @@ namespace Opm
         inverseBmu_.resize(numRegions);
 
         for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
-            const Opm::PvdgTable& pvdgTable = pvdgTables[regionIdx];
+            const Opm::PvdgTable& pvdgTable = pvdgTables.getTable<PvdgTable>(regionIdx);
 
             // Copy data
             const std::vector<double>& press = pvdgTable.getPressureColumn();
