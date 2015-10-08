@@ -418,10 +418,8 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/CompressedPropertyAccess.hpp
 	opm/core/utility/compressedToCartesian.hpp
 	opm/core/utility/DataMap.hpp
-	opm/core/utility/ErrorMacros.hpp
 	opm/core/utility/Event.hpp
 	opm/core/utility/Event_impl.hpp
-	opm/core/utility/Exceptions.hpp
 	opm/core/utility/Factory.hpp
 	opm/core/utility/MonotCubicInterpolator.hpp
 	opm/core/utility/memcmp_double.h
