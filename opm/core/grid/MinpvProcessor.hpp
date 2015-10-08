@@ -21,7 +21,7 @@
 #define OPM_MINPVPROCESSOR_HEADER_INCLUDED
 
 
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 #include <array>
 
 

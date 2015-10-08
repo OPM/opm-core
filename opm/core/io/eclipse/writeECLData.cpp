@@ -25,7 +25,7 @@
 #include <opm/core/grid.h>
 #include <opm/core/io/eclipse/writeECLData.hpp>
 #include <opm/core/utility/Units.hpp>
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 
 #include <vector>
 

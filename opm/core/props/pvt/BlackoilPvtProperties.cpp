@@ -28,7 +28,7 @@
 #include <opm/core/props/pvt/PvtConstCompr.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/utility/Units.hpp>
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 #include <opm/core/utility/linearInterpolation.hpp>
 
 #include <opm/parser/eclipse/Deck/Deck.hpp>

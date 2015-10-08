@@ -21,7 +21,7 @@
 #define OPM_PVTCONSTCOMPR_HEADER_INCLUDED
 
 #include <opm/core/props/pvt/PvtInterface.hpp>
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 
 #include <vector>
 #include <algorithm>

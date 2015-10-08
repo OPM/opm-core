@@ -30,7 +30,7 @@
 
 #include <opm/core/transport/implicit/SimpleFluid2pWrappingProps.hpp>
 #include <cassert>
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 namespace Opm{
 
     inline SimpleFluid2pWrappingProps::SimpleFluid2pWrappingProps(const Opm::IncompPropertiesInterface& props)

@@ -1,4 +1,4 @@
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 #include <opm/core/simulator/SimulatorState.hpp>
 #include <opm/core/grid.h>
 

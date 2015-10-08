@@ -44,7 +44,7 @@
 #include <opm/core/utility/parameters/ParameterStrings.hpp>
 #include <opm/core/utility/parameters/ParameterTools.hpp>
 #include <opm/core/utility/parameters/Parameter.hpp>
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 
 namespace Opm {
     namespace parameter {
