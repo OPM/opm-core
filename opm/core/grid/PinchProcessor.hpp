@@ -24,6 +24,7 @@
 #include <opm/core/grid/GridHelpers.hpp>
 #include <opm/parser/eclipse/EclipseState/Grid/NNC.hpp>
 #include <opm/parser/eclipse/EclipseState/Grid/FaceDir.hpp>
+#include <opm/parser/eclipse/EclipseState/Grid/PinchMode.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <array>
 #include <iostream>
@@ -47,8 +48,8 @@ namespace Opm
         /// \param[in]    multzMode    item 5 in PINCH keyword
         PinchProcessor(const double minpvValue,
                        const double thickness,
-                       const std::string transMode,
-                       const std::string multzMode);
+                       const PinchMode::ModeEnum transMode,
+                       const PinchMode::ModeEnum multzMode);
         /// Generate NNCs for cells which pv is less than MINPV.
         /// \param[in]    Grid    cpgrid or unstructured grid
         /// \param[in]    htrans  half cell transmissibility
@@ -72,8 +73,8 @@ namespace Opm
     private:
         double minpvValue_;
         double thickness_;
-        std::string transMode_;
-        std::string multzMode_;
+        PinchMode::ModeEnum transMode_;
+        PinchMode::ModeEnum multzMode_;
         
         /// Mark minpved cells.
         std::vector<int> getMinpvCells_(const Grid& grid,
@@ -144,8 +145,8 @@ namespace Opm
     template <class Grid>
     inline PinchProcessor<Grid>::PinchProcessor(const double minpv,
                                                 const double thickness,
-                                                std::string transMode,
-                                                std::string multzMode)
+                                                const PinchMode::ModeEnum transMode,
+                                                const PinchMode::ModeEnum multzMode)
     {
         minpvValue_ = minpv;
         thickness_  = thickness;
@@ -445,12 +446,12 @@ namespace Opm
         int cellFaceIdx = 0;
         auto cell2Faces = Opm::UgGridHelpers::cell2Faces(grid); 
         std::unordered_multimap<int, double> multzmap;
-        if (multzMode_ == "TOP") {
+        if (multzMode_ == PinchMode::ModeEnum::TOP) {
             for (int i = 0; i < pinFaces.size()/2; ++i) {
                 multzmap.insert(std::make_pair(pinFaces[2*i], multz[getActiveCellIdx_(grid, pinCells[2*i])]));
                 multzmap.insert(std::make_pair(pinFaces[2*i+1],multz[getActiveCellIdx_(grid, pinCells[2*i])]));
             }
-        } else if (multzMode_ == "ALL") {
+        } else if (multzMode_ == PinchMode::ModeEnum::ALL) {
             for (auto& seg : segs) {
                 //find the right face.
                 auto index = std::distance(std::begin(pinCells), std::find(pinCells.begin(), pinCells.end(), seg.front()));
