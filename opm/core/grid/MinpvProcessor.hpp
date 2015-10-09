@@ -92,7 +92,7 @@ namespace Opm
         if (pv.size() != log_size) {
             OPM_THROW(std::runtime_error, "Wrong size of PORV input, must have one element per logical cartesian cell.");
         }
-        if (actnum.size() != log_size) {
+        if (!actnum.empty() && actnum.size() != log_size) {
             OPM_THROW(std::runtime_error, "Wrong size of ACTNUM input, must have one element per logical cartesian cell.");
         }
 
@@ -101,7 +101,7 @@ namespace Opm
             for (int jj = 0; jj < dims_[1]; ++jj) {
                 for (int ii = 0; ii < dims_[0]; ++ii) {
                     const int c = ii + dims_[0] * (jj + dims_[1] * kk);
-                    if (pv[c] < minpv && actnum[c]) {
+                    if (pv[c] < minpv && (actnum.empty() || actnum[c])) {
                         // Move deeper (higher k) coordinates to lower k coordinates.
                         std::array<double, 8> cz = getCellZcorn(ii, jj, kk, zcorn);
                         for (int count = 0; count < 4; ++count) {
