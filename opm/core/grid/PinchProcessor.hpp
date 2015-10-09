@@ -248,7 +248,7 @@ namespace Opm
         for (int cellIdx = 0; cellIdx < nc; ++cellIdx) {
             const int idx = global_cell[cellIdx];
             if (actnum[idx]) {
-                if (pv[idx] < minpvValue_ && dz[idx] < thickness_) {
+                if (pv[idx] < minpvValue_) {
                     minpvCells[idx] = 1;
                 }
             }
