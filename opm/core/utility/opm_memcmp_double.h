@@ -4,15 +4,15 @@
   otherwise it will return 1.
 */
 
-#ifndef MEMCMP_DOUBLE_H
-#define MEMCMP_DOUBLE_H
+#ifndef OPM_MEMCMP_DOUBLE_H
+#define OPM_MEMCMP_DOUBLE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-int memcmp_double(const double * p1 , const double *p2 , size_t num_elements);
+int opm_memcmp_double(const double * p1 , const double *p2 , size_t num_elements);
 
 
 #ifdef __cplusplus

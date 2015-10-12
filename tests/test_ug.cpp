@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <vector>
 #include <opm/core/grid.h>
-#include <opm/core/utility/memcmp_double.h>
+#include <opm/core/utility/opm_memcmp_double.h>
 #include <opm/core/grid/cornerpoint_grid.h>  /* compute_geometry */
 #include <opm/core/grid/GridManager.hpp>  /* compute_geometry */
 #include <opm/core/grid/cpgpreprocess/preprocess.h>
@@ -177,54 +177,54 @@ BOOST_AUTO_TEST_CASE(compare_double) {
     {
         v1 = 0.0;
         v2 = 0.0;
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 0 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 0 );
 
         v1 = 1e-12;
         v2 = v1 + 0.5*abs_epsilon;
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 0 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 0 );
 
         v1 = 7.0;
         v2 = 7.0;
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 0 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 0 );
 
         v1 = -7.0;
         v2 = -7.0;
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 0 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 0 );
 
         v1 = 0;
         v2 = 0.5 * abs_epsilon;
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 0 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 0 );
 
 
         v1 = 1e7;
         v2 = 1e7 + 2*abs_epsilon;
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 0 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 0 );
 
         v1 = 1e7;
         v2 = 1e7*(1 + 2*rel_epsilon);
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 0 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 0 );
     }
 
     /* Should be different: */
     {
         v1 = 0;
         v2 = 1.5 * abs_epsilon;
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 1 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 1 );
 
         v1 = 1e-8;
         v2 = v1 + 1.5*abs_epsilon;
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 1 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 1 );
 
         v1 = 1;
         v2 = v1*(1 + 2*rel_epsilon + abs_epsilon);
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 1 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 1 );
 
         v1 = 10;
         v2 = v1*(1 + 2*rel_epsilon + abs_epsilon);
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 1 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 1 );
 
         v1 = 1e7;
         v2 = 1e7*(1 + 2*rel_epsilon + abs_epsilon);
-        BOOST_CHECK_EQUAL( memcmp_double( &v1 , &v2 , 1 ) , 1 );
+        BOOST_CHECK_EQUAL( opm_memcmp_double( &v1 , &v2 , 1 ) , 1 );
     }
 }
