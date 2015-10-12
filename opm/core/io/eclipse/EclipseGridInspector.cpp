@@ -38,7 +38,7 @@
 #include "config.h"
 #endif
 #include <opm/core/io/eclipse/EclipseGridInspector.hpp>
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 #include <opm/parser/eclipse/Parser/Parser.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <stdexcept>

@@ -36,7 +36,7 @@
 #ifndef OPM_ROOTFINDERS_HEADER
 #define OPM_ROOTFINDERS_HEADER
 
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 
 #include <algorithm>
 #include <limits>

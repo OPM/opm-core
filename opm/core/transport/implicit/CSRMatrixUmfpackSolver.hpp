@@ -37,7 +37,7 @@
 #define OPM_CSRMATRIXUMFPACKSOLVER_HPP_HEADER
 
 #include <opm/core/linalg/call_umfpack.h>
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 
 namespace Opm
 {

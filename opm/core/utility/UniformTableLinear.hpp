@@ -26,7 +26,7 @@
 #include <utility>
 #include <iostream>
 
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 
 namespace Opm {
 

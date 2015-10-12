@@ -26,7 +26,7 @@
 #include <vector>
 #include <utility>
 
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 #include <opm/core/utility/linearInterpolation.hpp>
 
 namespace Opm

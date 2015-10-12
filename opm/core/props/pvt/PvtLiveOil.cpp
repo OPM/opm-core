@@ -19,7 +19,7 @@
 
 #include "config.h"
 #include <opm/core/props/pvt/PvtLiveOil.hpp>
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 #include <opm/core/utility/linearInterpolation.hpp>
 
 #include <algorithm>

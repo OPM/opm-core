@@ -35,7 +35,7 @@
 #ifndef OPM_FACTORY_HEADER
 #define OPM_FACTORY_HEADER
 
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 
 #include <map>
 #include <memory>

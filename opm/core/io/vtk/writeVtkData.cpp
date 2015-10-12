@@ -21,7 +21,7 @@
 #include <opm/core/io/vtk/writeVtkData.hpp>
 #include <opm/core/utility/DataMap.hpp>
 #include <opm/core/grid.h>
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 #include <boost/lexical_cast.hpp>
 #include <set>
 #include <cmath>
