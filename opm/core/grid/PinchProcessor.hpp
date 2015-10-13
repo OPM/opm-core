@@ -20,7 +20,7 @@
 #ifndef OPM_PINCHPROCESSOR_HEADER_INCLUDED
 #define OPM_PINCHPROCESSOR_HEADER_INCLUDED
 
-#include <opm/core/utility/ErrorMacros.hpp>
+#include <opm/common/ErrorMacros.hpp>
 #include <opm/core/grid/GridHelpers.hpp>
 #include <opm/parser/eclipse/EclipseState/Grid/NNC.hpp>
 #include <opm/parser/eclipse/EclipseState/Grid/FaceDir.hpp>
