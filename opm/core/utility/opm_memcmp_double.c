@@ -8,7 +8,7 @@
    http://www.cygnus-software.com/papers/comparingfloats/comparingfloats.htm
 */
 
-int memcmp_double(const double * p1 , const double *p2 , size_t num_elements) {
+int opm_memcmp_double(const double * p1 , const double *p2 , size_t num_elements) {
     if (memcmp(p1 , p2 , num_elements * sizeof * p1) == 0)
         return 0;
     else {

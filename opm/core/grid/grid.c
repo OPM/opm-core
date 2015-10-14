@@ -19,7 +19,7 @@
 
 #include "config.h"
 #include <opm/core/grid.h>
-#include <opm/core/utility/memcmp_double.h>
+#include <opm/core/utility/opm_memcmp_double.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -585,22 +585,22 @@ grid_equal(const struct UnstructuredGrid * grid1 , const struct UnstructuredGrid
         
         // Floating point comparisons.
         {
-            if (memcmp_double( grid1->node_coordinates , grid2->node_coordinates , grid1->dimensions * grid1->number_of_nodes) != 0)
+            if (opm_memcmp_double( grid1->node_coordinates , grid2->node_coordinates , grid1->dimensions * grid1->number_of_nodes) != 0)
                 return false;
             
-            if (memcmp_double( grid1->face_centroids , grid2->face_centroids , grid1->dimensions * grid1->number_of_faces) != 0)
+            if (opm_memcmp_double( grid1->face_centroids , grid2->face_centroids , grid1->dimensions * grid1->number_of_faces) != 0)
                 return false;
             
-            if (memcmp_double( grid1->face_areas , grid2->face_areas , grid1->number_of_faces) != 0)
+            if (opm_memcmp_double( grid1->face_areas , grid2->face_areas , grid1->number_of_faces) != 0)
                 return false;
             
-            if (memcmp_double( grid1->face_normals , grid2->face_normals , grid1->dimensions * grid1->number_of_faces) != 0)
+            if (opm_memcmp_double( grid1->face_normals , grid2->face_normals , grid1->dimensions * grid1->number_of_faces) != 0)
                 return false;
             
-            if (memcmp_double( grid1->cell_centroids , grid2->cell_centroids , grid1->dimensions * grid1->number_of_cells) != 0)
+            if (opm_memcmp_double( grid1->cell_centroids , grid2->cell_centroids , grid1->dimensions * grid1->number_of_cells) != 0)
                 return false;
             
-            if (memcmp_double( grid1->cell_volumes , grid2->cell_volumes , grid1->number_of_cells) != 0)
+            if (opm_memcmp_double( grid1->cell_volumes , grid2->cell_volumes , grid1->number_of_cells) != 0)
                 return false;
         }
         return true;
