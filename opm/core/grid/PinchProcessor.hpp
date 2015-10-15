@@ -189,10 +189,10 @@ namespace Opm
         auto actCellIdx2 = getActiveCellIdx_(grid, cellIdx2);
         const auto cellFacesRange1 = cell_faces[actCellIdx1];
         const auto cellFacesRange2 = cell_faces[actCellIdx2];
-        for (auto cellFaceIter1 = cellFacesRange1.begin(); cellFaceIter1 != cellFacesRange1.end(); ++cellFaceIter1) {
-            for (auto cellFaceIter2 = cellFacesRange2.begin(); cellFaceIter2 != cellFacesRange2.end(); ++cellFaceIter2) {
-                if (*cellFaceIter1 == *cellFaceIter2) {
-                    commonFace = *cellFaceIter1;
+        for (const auto& f1 : cellFacesRange1) {
+            for (const auto& f2 : cellFacesRange2) {
+                if (f1 == f2) {
+                    commonFace = f1;
                     break;
                 }
             }
@@ -245,7 +245,7 @@ namespace Opm
                                                                  const std::vector<double>& dz)
     {
         std::vector<int> minpvCells(pv.size(), 0);
-        for (int idx = 0; idx < pv.size(); ++idx) {
+        for (int idx = 0; idx < static_cast<int>(pv.size()); ++idx) {
             if (actnum[idx]) {
                 if (pv[idx] < minpvValue_) {
                     minpvCells[idx] = 1;
