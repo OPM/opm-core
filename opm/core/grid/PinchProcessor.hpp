@@ -51,9 +51,9 @@ namespace Opm
         /// Generate NNCs for cells which pv is less than MINPV.
         /// \param[in]    Grid    cpgrid or unstructured grid
         /// \param[in]    htrans  half cell transmissibility
-        /// \param[in]    multz   Z+ transmissibility multiplier
-        /// \param[in]    pv      pore volume for all the cells
-        /// \param[in]    dz      dz for all the cells
+        /// \param[in]    multz   Z+ transmissibility multiplier for all active cells
+        /// \param[in]    pv      pore volume for all the cartesian cells
+        /// \param[in]    dz      dz for all the cartesian cells
         /// \param[in]    nnc     non-neighbor connection class
         /// Algorithm:
         /// 1. Mark all the cells which pv and dz less than minpvValue and thickness.
@@ -94,7 +94,8 @@ namespace Opm
         std::vector<std::vector<int> >
         getPinchoutsColumn_(const Grid& grid,
                             const std::vector<int>& actnum,
-                            std::vector<int>& minpvCells);
+                            const std::vector<double>& pv,
+                            const std::vector<double>& dz);
         
         /// Get global cell index.
         int getGlobalIndex_(const int i, const int j, const int k, const int* dims);
@@ -115,7 +116,7 @@ namespace Opm
         
         /// Get active cell index.
         int getActiveCellIdx_(const Grid& grid,
-                              const int cellIdx);
+                              const int globalIdx);
 
         /// Item 4 in PINCH keyword. 
         void transTopbot_(const Grid& grid,
@@ -140,6 +141,7 @@ namespace Opm
     };
 
 
+
     template <class Grid>
     inline PinchProcessor<Grid>::PinchProcessor(const double minpv,
                                                 const double thickness,
@@ -153,11 +155,14 @@ namespace Opm
     }
 
     
+
     template <class Grid>
     inline int PinchProcessor<Grid>::getGlobalIndex_(const int i, const int j, const int k, const int* dims)
     {
         return i + dims[0] * (j + dims[1] * k);
     }
+
+
 
     template <class Grid>
     inline std::array<int, 3> PinchProcessor<Grid>::getCartIndex_(const int idx,
@@ -170,6 +175,8 @@ namespace Opm
 
         return ijk;
     }
+
+
 
     template<class Grid>
     inline int PinchProcessor<Grid>::interface_(const Grid& grid,
@@ -191,16 +198,20 @@ namespace Opm
             }
         }
 
-        const auto dims = Opm::UgGridHelpers::cartDims(grid);
-        auto ijk1 = getCartIndex_(cellIdx1, dims);
-        auto ijk2 = getCartIndex_(cellIdx2, dims);
-
         if (commonFace == -1) {
-            OPM_THROW(std::logic_error, "Couldn't find the common face for cell " << cellIdx1<< "("<<ijk1[0]<<","<<ijk1[1]<<","<<ijk1[2]<<")"<< " and " << cellIdx2<<"("<<ijk2[0]<<","<<ijk2[1]<<","<<ijk2[2]<<")");
+            const auto dims = Opm::UgGridHelpers::cartDims(grid);
+            auto ijk1 = getCartIndex_(cellIdx1, dims);
+            auto ijk2 = getCartIndex_(cellIdx2, dims);
+
+            OPM_THROW(std::logic_error, "Couldn't find the common face for cell " 
+                      << cellIdx1<< "("<<ijk1[0]<<","<<ijk1[1]<<","<<ijk1[2]<<")"
+                      << " and " << cellIdx2<<"("<<ijk2[0]<<","<<ijk2[1]<<","<<ijk2[2]<<")");
         }
 
         return commonFace;
     }
+
+
 
     template<class Grid>
     inline int PinchProcessor<Grid>::interface_(const Grid& grid,
@@ -226,17 +237,15 @@ namespace Opm
     }
 
 
+
     template<class Grid>
     inline std::vector<int> PinchProcessor<Grid>::getMinpvCells_(const Grid& grid,
                                                                  const std::vector<int>& actnum,
                                                                  const std::vector<double>& pv,
                                                                  const std::vector<double>& dz)
     {
-        const int nc = Opm::UgGridHelpers::numCells(grid);
         std::vector<int> minpvCells(pv.size(), 0);
-        const int* global_cell = Opm::UgGridHelpers::globalCell(grid);
-        for (int cellIdx = 0; cellIdx < nc; ++cellIdx) {
-            const int idx = global_cell[cellIdx];
+        for (int idx = 0; idx < pv.size(); ++idx) {
             if (actnum[idx]) {
                 if (pv[idx] < minpvValue_) {
                     minpvCells[idx] = 1;
@@ -266,13 +275,13 @@ namespace Opm
 
     template<class Grid>
     inline int PinchProcessor<Grid>::getActiveCellIdx_(const Grid& grid,
-                                                       const int cellIdx)
+                                                       const int globalIdx)
     {
         const int nc = Opm::UgGridHelpers::numCells(grid);
         const int* global_cell = Opm::UgGridHelpers::globalCell(grid);
         int idx = -1;
         for (int i = 0; i < nc; ++i) {
-            if (global_cell[i] == cellIdx) {
+            if (global_cell[i] == globalIdx) {
                 idx = i;
                 break;
             }
@@ -298,11 +307,12 @@ namespace Opm
         for (int cellIdx = 0; cellIdx < nc; ++cellIdx) {
             auto cellFacesRange = cell_faces[cellIdx];
             for (auto cellFaceIter = cellFacesRange.begin(); cellFaceIter != cellFacesRange.end(); ++cellFaceIter, ++cellFaceIdx) {
-                const int faceIdx = *cellFaceIter;                
-                if (std::find(pinFaces.begin(), pinFaces.end(), faceIdx) == pinFaces.end()) {
+                const int faceIdx = *cellFaceIter;
+                const auto pos = std::find(pinFaces.begin(), pinFaces.end(), faceIdx);
+                if (pos == pinFaces.end()) {
                     trans[faceIdx] += 1. / htrans[cellFaceIdx];
                 } else {
-                    const int idx1 = std::distance(std::begin(pinFaces), std::find(pinFaces.begin(), pinFaces.end(), faceIdx));
+                    const int idx1 = std::distance(std::begin(pinFaces), pos);
                     int idx2;
                     if (idx1 % 2 == 0) {
                         idx2 = idx1 + 1;
@@ -326,10 +336,12 @@ namespace Opm
 
     template<class Grid>
     inline std::vector<std::vector<int>> PinchProcessor<Grid>::getPinchoutsColumn_(const Grid& grid,
-                                                                           const std::vector<int>& actnum,
-                                                                           std::vector<int>& minpvCells)
+                                                                                   const std::vector<int>& actnum,
+                                                                                   const std::vector<double>& pv,
+                                                                                   const std::vector<double>& dz)
     {
         const int* dims = Opm::UgGridHelpers::cartDims(grid);
+        std::vector<int> minpvCells = getMinpvCells_(grid, actnum, pv, dz);
         std::vector<std::vector<int>> segment;
         for (int z = 0; z < dims[2]; ++z) {
             for (int y = 0; y < dims[1]; ++y) {
@@ -371,8 +383,7 @@ namespace Opm
         std::vector<int> pinFaces;
         std::vector<int> pinCells;
         std::vector<std::vector<int> > newSeg;
-        std::vector<int> minpvCells = getMinpvCells_(grid, actnum, pv, dz);
-        auto minpvSeg = getPinchoutsColumn_(grid, actnum, minpvCells);
+        auto minpvSeg = getPinchoutsColumn_(grid, actnum, pv, dz);
         for (auto& seg : minpvSeg) {
             std::array<int, 3> ijk1 = getCartIndex_(seg.front(), dims);
             std::array<int, 3> ijk2 = getCartIndex_(seg.back(), dims);
@@ -380,8 +391,12 @@ namespace Opm
             if ((ijk1[2]-1) >= 0 && (ijk2[2]+1) < dims[2]) {
                 int topCell = getGlobalIndex_(ijk1[0], ijk1[1], ijk1[2]-1, dims);
                 int botCell = getGlobalIndex_(ijk2[0], ijk2[1], ijk2[2]+1, dims);
+                /// for any segments, we need to find the active top and bottom cells.
+                /// if the original segment's top and bottom is inactive, we need to lookup
+                /// the column until they're found otherwise just ignore this segment.
                 if (!actnum[topCell]) {
-                    for (auto topk = ijk1[2]-2; topk > 0; --topk) {
+                    seg.insert(seg.begin(), topCell);
+                    for (int topk = ijk1[2]-2; topk > 0; --topk) {
                         topCell = getGlobalIndex_(ijk1[0], ijk1[1], topk, dims);
                         if (actnum[topCell]) {
                             break;
@@ -398,7 +413,8 @@ namespace Opm
                 newSeg.push_back(tmp);
                 pinCells.push_back(topCell);
                 if (!actnum[botCell]) {
-                    for (auto botk = ijk2[2]+2; botk < dims[2]; ++botk) {
+                    seg.push_back(botCell);
+                    for (int botk = ijk2[2]+2; botk < dims[2]; ++botk) {
                         botCell = getGlobalIndex_(ijk2[0], ijk2[1], botk, dims);
                         if (actnum[botCell]) {
                             break;
@@ -417,7 +433,7 @@ namespace Opm
         auto faceTrans = transCompute_(grid, htrans, pinCells, pinFaces, multz);
         auto multzmap = multzOptions_(grid, pinCells, pinFaces, multz, newSeg);
         applyMultz_(faceTrans, multzmap);
-        for (int i = 0; i < pinCells.size()/2; ++i) {
+        for (int i = 0; i < static_cast<int>(pinCells.size())/2; ++i) {
             nnc.addNNC(static_cast<int>(pinCells[2*i]), static_cast<int>(pinCells[2*i+1]), faceTrans[pinFaces[2*i]]);
         }
     }
@@ -434,14 +450,12 @@ namespace Opm
     {
         std::unordered_multimap<int, double> multzmap;
         if (multzMode_ == PinchMode::ModeEnum::TOP) {
-            for (int i = 0; i < pinFaces.size()/2; ++i) {
+            for (int i = 0; i < static_cast<int>(pinFaces.size())/2; ++i) {
                 multzmap.insert(std::make_pair(pinFaces[2*i], multz[getActiveCellIdx_(grid, pinCells[2*i])]));
                 multzmap.insert(std::make_pair(pinFaces[2*i+1],multz[getActiveCellIdx_(grid, pinCells[2*i])]));
             }
         } else if (multzMode_ == PinchMode::ModeEnum::ALL) {
             for (auto& seg : segs) {
-                //find the right face.
-                auto index = std::distance(std::begin(pinCells), std::find(pinCells.begin(), pinCells.end(), seg.front()));
                 //find the min multz in seg cells.
                 auto multzValue = std::numeric_limits<double>::max();
                 for (auto& cellIdx : seg) {
@@ -450,6 +464,8 @@ namespace Opm
                         multzValue = std::min(multzValue, multz[activeIdx]);
                     }
                 }
+                //find the right face.
+                auto index = std::distance(std::begin(pinCells), std::find(pinCells.begin(), pinCells.end(), seg.front()));
                 multzmap.insert(std::make_pair(pinFaces[index], multzValue));
                 multzmap.insert(std::make_pair(pinFaces[index+1], multzValue));
             }
