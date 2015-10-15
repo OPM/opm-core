@@ -35,8 +35,6 @@
 namespace Opm
 {
 
-    using namespace Opm::UgGridHelpers;
-
     template <class Grid>
     class PinchProcessor
     {
@@ -175,10 +173,10 @@ namespace Opm
 
     template<class Grid>
     inline int PinchProcessor<Grid>::interface_(const Grid& grid,
-                                                    const int cellIdx1,
-                                                    const int cellIdx2)
+                                                const int cellIdx1,
+                                                const int cellIdx2)
     {
-        auto cell_faces = cell2Faces(grid);
+        auto cell_faces = Opm::UgGridHelpers::cell2Faces(grid);
         std::vector<int> cellFaces1;
         std::vector<int> cellFaces2;
         int commonFace = -1;
@@ -203,8 +201,9 @@ namespace Opm
             }
         }
 
-        auto ijk1 = getCartIndex_(cellIdx1, cartDims(grid));
-        auto ijk2 = getCartIndex_(cellIdx2, cartDims(grid));
+        const auto dims = Opm::UgGridHelpers::cartDims(grid);
+        auto ijk1 = getCartIndex_(cellIdx1, dims);
+        auto ijk2 = getCartIndex_(cellIdx2, dims);
 
         if (commonFace == -1) {
             OPM_THROW(std::logic_error, "Couldn't find the common face for cell " << cellIdx1<< "("<<ijk1[0]<<","<<ijk1[1]<<","<<ijk1[2]<<")"<< " and " << cellIdx2<<"("<<ijk2[0]<<","<<ijk2[1]<<","<<ijk2[2]<<")");
@@ -215,15 +214,15 @@ namespace Opm
 
     template<class Grid>
     inline int PinchProcessor<Grid>::interface_(const Grid& grid,
-                                                    const int cellIdx,
-                                                    const Opm::FaceDir::DirEnum& faceDir)
+                                                const int cellIdx,
+                                                const Opm::FaceDir::DirEnum& faceDir)
     {
         auto actCellIdx = getActiveCellIdx_(grid, cellIdx);
-        auto cell_faces = cell2Faces(grid);
+        auto cell_faces = Opm::UgGridHelpers::cell2Faces(grid);
         auto cellFacesRange = cell_faces[actCellIdx];
         int faceIdx = -1;
         for (auto cellFaceIter = cellFacesRange.begin(); cellFaceIter != cellFacesRange.end(); ++cellFaceIter) {
-            int tag = faceTag(grid, cellFaceIter);
+            int tag = Opm::UgGridHelpers::faceTag(grid, cellFaceIter);
             if ( (faceDir == Opm::FaceDir::ZMinus && tag == 4) || (faceDir == Opm::FaceDir::ZPlus && tag == 5) ) {
                 faceIdx = *cellFaceIter;
             }
@@ -243,9 +242,9 @@ namespace Opm
                                                                  const std::vector<double>& pv,
                                                                  const std::vector<double>& dz)
     {
-        const int nc = numCells(grid);
+        const int nc = Opm::UgGridHelpers::numCells(grid);
         std::vector<int> minpvCells(pv.size(), 0);
-        const int* global_cell = globalCell(grid);
+        const int* global_cell = Opm::UgGridHelpers::globalCell(grid);
         for (int cellIdx = 0; cellIdx < nc; ++cellIdx) {
             const int idx = global_cell[cellIdx];
             if (actnum[idx]) {
@@ -260,11 +259,11 @@ namespace Opm
     template<class Grid>
     inline std::vector<int> PinchProcessor<Grid>::getHfIdxMap_(const Grid& grid)
     {
-        std::vector<int> hf_ix(2*numFaces(grid), -1);
-        const auto& f2c = faceCells(grid);
-        const auto& cf = cell2Faces(grid);
+        std::vector<int> hf_ix(2*Opm::UgGridHelpers::numFaces(grid), -1);
+        const auto& f2c = Opm::UgGridHelpers::faceCells(grid);
+        const auto& cf = Opm::UgGridHelpers::cell2Faces(grid);
         
-        for (int c = 0, i = 0; c < numCells(grid); ++c) {
+        for (int c = 0, i = 0; c < Opm::UgGridHelpers::numCells(grid); ++c) {
             for (const auto& f: cf[c]) {
                 const auto off = 0 + (f2c(f, 0) != c);
                 hf_ix[2*f + off] = i++;
@@ -279,8 +278,8 @@ namespace Opm
     inline int PinchProcessor<Grid>::getActiveCellIdx_(const Grid& grid,
                                                        const int cellIdx)
     {
-        const int nc = numCells(grid);
-        const int* global_cell = globalCell(grid);
+        const int nc = Opm::UgGridHelpers::numCells(grid);
+        const int* global_cell = Opm::UgGridHelpers::globalCell(grid);
         int idx = -1;
         for (int i = 0; i < nc; ++i) {
             if (global_cell[i] == cellIdx) {
@@ -299,15 +298,15 @@ namespace Opm
                                                                    const std::vector<int>& pinFaces,
                                                                    const std::vector<double>& multz)       
     {
-        const int nc = numCells(grid);
-        const int nf = numFaces(grid);
+        const int nc = Opm::UgGridHelpers::numCells(grid);
+        const int nf = Opm::UgGridHelpers::numFaces(grid);
         std::vector<double> trans(nf, 0);
         int cellFaceIdx = 0;
-        auto cell2Faces = Opm::UgGridHelpers::cell2Faces(grid);
+        auto cell_faces = Opm::UgGridHelpers::cell2Faces(grid);
         const auto& hfmap = getHfIdxMap_(grid); 
-        const auto& f2c = faceCells(grid);
+        const auto& f2c = Opm::UgGridHelpers::faceCells(grid);
         for (int cellIdx = 0; cellIdx < nc; ++cellIdx) {
-            auto cellFacesRange = cell2Faces[cellIdx];
+            auto cellFacesRange = cell_faces[cellIdx];
             for (auto cellFaceIter = cellFacesRange.begin(); cellFaceIter != cellFacesRange.end(); ++cellFaceIter, ++cellFaceIdx) {
                 const int faceIdx = *cellFaceIter;                
                 if (std::find(pinFaces.begin(), pinFaces.end(), faceIdx) == pinFaces.end()) {
@@ -340,7 +339,7 @@ namespace Opm
                                                                            const std::vector<int>& actnum,
                                                                            std::vector<int>& minpvCells)
     {
-        const int* dims = cartDims(grid);
+        const int* dims = Opm::UgGridHelpers::cartDims(grid);
         std::vector<std::vector<int>> segment;
         for (int z = 0; z < dims[2]; ++z) {
             for (int y = 0; y < dims[1]; ++y) {
@@ -378,7 +377,7 @@ namespace Opm
                                                    const std::vector<double>& dz,
                                                    NNC& nnc)
     {
-        const int* dims = cartDims(grid);
+        const int* dims = Opm::UgGridHelpers::cartDims(grid);
         std::vector<int> pinFaces;
         std::vector<int> pinCells;
         std::vector<std::vector<int> > newSeg;
@@ -443,8 +442,6 @@ namespace Opm
                                                                                     const std::vector<double>& multz,
                                                                                     const std::vector<std::vector<int> >& segs)
     {
-        int cellFaceIdx = 0;
-        auto cell2Faces = Opm::UgGridHelpers::cell2Faces(grid); 
         std::unordered_multimap<int, double> multzmap;
         if (multzMode_ == PinchMode::ModeEnum::TOP) {
             for (int i = 0; i < pinFaces.size()/2; ++i) {
