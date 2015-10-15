@@ -177,25 +177,15 @@ namespace Opm
                                                 const int cellIdx2)
     {
         auto cell_faces = Opm::UgGridHelpers::cell2Faces(grid);
-        std::vector<int> cellFaces1;
-        std::vector<int> cellFaces2;
         int commonFace = -1;
         auto actCellIdx1 = getActiveCellIdx_(grid, cellIdx1);
         auto actCellIdx2 = getActiveCellIdx_(grid, cellIdx2);
-        auto cellFacesRange1 = cell_faces[actCellIdx1];
+        const auto cellFacesRange1 = cell_faces[actCellIdx1];
+        const auto cellFacesRange2 = cell_faces[actCellIdx2];
         for (auto cellFaceIter1 = cellFacesRange1.begin(); cellFaceIter1 != cellFacesRange1.end(); ++cellFaceIter1) {
-            cellFaces1.push_back(*cellFaceIter1);
-        }
-
-        auto cellFacesRange2 = cell_faces[actCellIdx2];
-        for (auto cellFaceIter2 = cellFacesRange2.begin(); cellFaceIter2 != cellFacesRange2.end(); ++cellFaceIter2) {
-            cellFaces2.push_back(*cellFaceIter2);
-        }
-
-        for (auto& f1 : cellFaces1) {
-            for (auto& f2 : cellFaces2) {
-                if (f1 == f2) {
-                    commonFace = f1;
+            for (auto cellFaceIter2 = cellFacesRange2.begin(); cellFaceIter2 != cellFacesRange2.end(); ++cellFaceIter2) {
+                if (*cellFaceIter1 == *cellFaceIter2) {
+                    commonFace = *cellFaceIter1;
                     break;
                 }
             }
