@@ -50,21 +50,45 @@ BOOST_AUTO_TEST_CASE(Processing)
                                         0, 0, 0, 0,
                                         0, 0, 0, 0,
                                         6, 6, 6, 6  };
+    std::vector<double> zcorn4after = { 0, 0, 0, 0,
+                                        0, 0, 0, 0,
+                                        1, 1, 1, 1,
+                                        3, 3, 3, 3,
+                                        3, 3, 3, 3,
+                                        6, 6, 6, 6 };
+    std::vector<double> zcorn5after = { 0, 0, 0, 0,
+                                        0, 0, 0, 0,
+                                        1, 1, 1, 1,
+                                        1, 1, 1, 1,
+                                        3, 3, 3, 3,
+                                        6, 6, 6, 6 };
+
     std::vector<double> pv = { 1, 2, 3 };
     std::vector<int> actnum = { 1, 1, 1 };
 
     Opm::MinpvProcessor mp1(1, 1, 3);
     auto z1 = zcorn;
-    mp1.process(pv, 0.5, actnum, z1.data());
+    bool fill_removed_cells = true;
+    mp1.process(pv, 0.5, actnum, fill_removed_cells, z1.data());
     BOOST_CHECK_EQUAL_COLLECTIONS(z1.begin(), z1.end(), zcorn.begin(), zcorn.end());
 
     Opm::MinpvProcessor mp2(1, 1, 3);
     auto z2 = zcorn;
-    mp2.process(pv, 1.5, actnum, z2.data());
+    mp2.process(pv, 1.5, actnum, fill_removed_cells, z2.data());
     BOOST_CHECK_EQUAL_COLLECTIONS(z2.begin(), z2.end(), zcorn2after.begin(), zcorn2after.end());
 
     Opm::MinpvProcessor mp3(1, 1, 3);
     auto z3 = zcorn;
-    mp3.process(pv, 2.5, actnum, z3.data());
+    mp3.process(pv, 2.5, actnum, fill_removed_cells, z3.data());
     BOOST_CHECK_EQUAL_COLLECTIONS(z3.begin(), z3.end(), zcorn3after.begin(), zcorn3after.end());
+
+    Opm::MinpvProcessor mp4(1, 1, 3);
+    auto z4 = zcorn;
+    mp4.process(pv, 1.5, actnum, !fill_removed_cells, z4.data());
+    BOOST_CHECK_EQUAL_COLLECTIONS(z4.begin(), z4.end(), zcorn4after.begin(), zcorn4after.end());
+
+    Opm::MinpvProcessor mp5(1, 1, 3);
+    auto z5 = zcorn;
+    mp5.process(pv, 2.5, actnum, !fill_removed_cells, z5.data());
+    BOOST_CHECK_EQUAL_COLLECTIONS(z5.begin(), z5.end(), zcorn5after.begin(), zcorn5after.end());
 }

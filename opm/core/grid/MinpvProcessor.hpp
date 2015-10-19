@@ -41,13 +41,17 @@ namespace Opm
         /// \param[in]       pv       pore volumes of all logical cartesian cells
         /// \param[in]       minpv    minimum pore volume to accept a cell
         /// \param[in]       actnum   active cells, inactive cells are not considered
+        /// \param[in]       mergeMinPVCells flag to determine whether cells below minpv
+        /// should be included in the cell below
         /// \param[in, out]  zcorn    ZCORN array to be manipulated
         /// After processing, all cells that have lower pore volume than minpv
         /// will have the zcorn numbers changed so they are zero-thickness. Any
-        /// cell below will be changed to include the deleted volume.
+        /// cell below will be changed to include the deleted volume if mergeMinPCCells is true
+        /// els the volume will be lost
         void process(const std::vector<double>& pv,
                      const double minpv,
                      const std::vector<int>& actnum,
+                     const bool mergeMinPVCells,
                      double* zcorn) const;
     private:
         std::array<int,8> cornerIndices(const int i, const int j, const int k) const;
@@ -74,6 +78,7 @@ namespace Opm
     inline void MinpvProcessor::process(const std::vector<double>& pv,
                                         const double minpv,
                                         const std::vector<int>& actnum,
+                                        const bool mergeMinPVCells,
                                         double* zcorn) const
     {
         // Algorithm:
@@ -83,9 +88,9 @@ namespace Opm
         //    pv[c] is less than minpv.
         // 3. If below the minpv threshold, move the lower four
         //    zcorn associated with the cell c to coincide with
-        //    the upper four (so it becomes degenerate). Also move
-        //    the higher four zcorn associated with the cell below
-        //    to these values (so it gains the deleted volume).
+        //    the upper four (so it becomes degenerate). If mergeMinPVcells
+        //    is true, the higher four zcorn associated with the cell below
+        //    is moved to these values (so it gains the deleted volume).
 
         // Check for sane input sizes.
         const size_t log_size = dims_[0] * dims_[1] * dims_[2];
@@ -108,14 +113,18 @@ namespace Opm
                             cz[count + 4] = cz[count];
                         }
                         setCellZcorn(ii, jj, kk, cz, zcorn);
-                        // Check if there is a cell below.
-                        if (pv[c] > 0.0 && kk < dims_[2] - 1) {
-                            // Set lower k coordinates of cell below to upper cells's coordinates.
-                            std::array<double, 8> cz_below = getCellZcorn(ii, jj, kk + 1, zcorn);
-                            for (int count = 0; count < 4; ++count) {
-                                cz_below[count] = cz[count];
+
+                        // optionally add removed volume to the cell below.
+                        if (mergeMinPVCells) {
+                            // Check if there is a cell below.
+                            if (pv[c] > 0.0 && kk < dims_[2] - 1) {
+                                // Set lower k coordinates of cell below to upper cells's coordinates.
+                                std::array<double, 8> cz_below = getCellZcorn(ii, jj, kk + 1, zcorn);
+                                for (int count = 0; count < 4; ++count) {
+                                    cz_below[count] = cz[count];
+                                }
+                                setCellZcorn(ii, jj, kk + 1, cz_below, zcorn);
                             }
-                            setCellZcorn(ii, jj, kk + 1, cz_below, zcorn);
                         }
                     }
                 }
