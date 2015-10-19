@@ -389,37 +389,27 @@ namespace Opm
                 /// if the original segment's top and bottom is inactive, we need to lookup
                 /// the column until they're found otherwise just ignore this segment.
                 if (!actnum[topCell]) {
-                    seg.insert(seg.begin(), topCell);
                     for (int topk = ijk1[2]-2; topk > 0; --topk) {
                         topCell = getGlobalIndex_(ijk1[0], ijk1[1], topk, dims);
                         if (actnum[topCell]) {
                             break;
-                        } else {
-                            auto it = seg.begin();
-                            seg.insert(it, topCell);
                         }
                     }
-                    pinFaces.push_back(interface_(grid, topCell, Opm::FaceDir::ZPlus));
-                } else {
-                    pinFaces.push_back(interface_(grid, topCell, seg.front()));
                 }
+                pinFaces.push_back(interface_(grid, topCell, Opm::FaceDir::ZPlus));
+                pinCells.push_back(topCell);
+
                 tmp.insert(tmp.begin(), topCell);
                 newSeg.push_back(tmp);
-                pinCells.push_back(topCell);
                 if (!actnum[botCell]) {
-                    seg.push_back(botCell);
                     for (int botk = ijk2[2]+2; botk < dims[2]; ++botk) {
                         botCell = getGlobalIndex_(ijk2[0], ijk2[1], botk, dims);
                         if (actnum[botCell]) {
                             break;
-                        } else {
-                            seg.push_back(botCell);
                         }
                     }
-                    pinFaces.push_back(interface_(grid, botCell, Opm::FaceDir::ZMinus));
-                } else {
-                    pinFaces.push_back(interface_(grid, seg.back(), botCell));
                 }
+                pinFaces.push_back(interface_(grid, botCell, Opm::FaceDir::ZMinus));
                 pinCells.push_back(botCell);
             }
         }
