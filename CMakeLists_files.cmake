@@ -196,6 +196,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_wellcollection.cpp
 	tests/test_timer.cpp
 	tests/test_minpvprocessor.cpp
+	tests/test_pinchprocessor.cpp
 	tests/test_gridutilities.cpp
 	tests/test_anisotropiceikonal.cpp
 	tests/test_stoppedwells.cpp
@@ -224,6 +225,7 @@ list (APPEND TEST_DATA_FILES
 	tests/testBlackoilState1.DATA
 	tests/testBlackoilState2.DATA
   tests/testBlackoilState3.DATA
+  tests/testPinch1.DATA
 	tests/wells_manager_data.data
 	tests/wells_manager_data_expanded.data
 	tests/wells_manager_data_wellSTOP.data
@@ -281,6 +283,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/grid/GridManager.hpp
 	opm/core/grid/GridUtilities.hpp
 	opm/core/grid/MinpvProcessor.hpp
+	opm/core/grid/PinchProcessor.hpp
 	opm/core/grid/cart_grid.h
 	opm/core/grid/cornerpoint_grid.h
 	opm/core/grid/cpgpreprocess/facetopology.h
