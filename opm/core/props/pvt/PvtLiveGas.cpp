@@ -11,6 +11,7 @@
 //===========================================================================
 /*
   Copyright 2010 SINTEF ICT, Applied Mathematics.
+  Copyright 2015 IRIS AS
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -92,6 +93,44 @@ namespace Opm
                     undersat_gas_tables_[pvtTableIdx][i][1][j] = 1.0 / undersat_gas_tables_[pvtTableIdx][i][1][j];
                 }
             }
+
+             // Complete undersaturated tables by extrapolating from existing data
+            int iNext = -1;
+            for (int i=0; i<sz; ++i) {
+                // Skip records already containing undersaturated data
+                if (undersat_gas_tables_[pvtTableIdx][i][0].size() > 1) {
+                    continue;
+                }
+                // Look ahead for next record containing undersaturated data
+                if (iNext < i) {
+                    iNext = i+1;
+                    while (iNext < sz && undersat_gas_tables_[pvtTableIdx][iNext][0].size() < 2) {
+                        ++iNext;
+                    }
+                    if (iNext == sz) OPM_THROW(std::runtime_error,"Unable to complete undersaturated table.");
+                }
+                // Add undersaturated data to current record while maintaining compressibility and viscosibility
+                // TODO: How to add 1/(B*mu) in this way?
+                typedef std::vector<std::vector<std::vector<double> > >::size_type sz_t;
+                for (sz_t j=1; j<undersat_gas_tables_[pvtTableIdx][iNext][0].size(); ++j) {
+                    double diffSolubility = undersat_gas_tables_[pvtTableIdx][iNext][0][j] - undersat_gas_tables_[pvtTableIdx][iNext][0][j-1];
+                    double solubility = undersat_gas_tables_[pvtTableIdx][i][0].back() + diffSolubility;
+                    undersat_gas_tables_[pvtTableIdx][i][0].push_back(solubility);
+                    double compr = (1.0/undersat_gas_tables_[pvtTableIdx][iNext][1][j]-1.0/undersat_gas_tables_[pvtTableIdx][iNext][1][j-1])
+                        / (0.5*(1.0/undersat_gas_tables_[pvtTableIdx][iNext][1][j]+1.0/undersat_gas_tables_[pvtTableIdx][iNext][1][j-1]));
+                    double B_var = (1.0/undersat_gas_tables_[pvtTableIdx][i][1].back())*(1.0+0.5*compr)/(1.0-0.5*compr);
+                    undersat_gas_tables_[pvtTableIdx][i][1].push_back(1.0/B_var);
+                    double visc = (undersat_gas_tables_[pvtTableIdx][iNext][2][j]-undersat_gas_tables_[pvtTableIdx][iNext][2][j-1])
+                        / (0.5*(undersat_gas_tables_[pvtTableIdx][iNext][2][j]+undersat_gas_tables_[pvtTableIdx][iNext][2][j-1]));
+                    double mu_var = (undersat_gas_tables_[pvtTableIdx][i][2].back())*(1.0+0.5*visc)/(1.0-0.5*visc);
+                    undersat_gas_tables_[pvtTableIdx][i][2].push_back(mu_var);
+
+                    // A try to expolate the 1/BMu with the expolated mu and B
+                    double inverseBMu = 1.0 / (B_var*mu_var);
+                    undersat_gas_tables_[pvtTableIdx][i][3].push_back(inverseBMu);
+                }
+            }
+
         }
     }
 
