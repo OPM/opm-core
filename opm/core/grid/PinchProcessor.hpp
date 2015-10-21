@@ -53,10 +53,9 @@ namespace Opm
         /// \param[in]    htrans  half cell transmissibility, size is number of cellfaces.
         /// \param[in]    multz   Z+ transmissibility multiplier for all active cells
         /// \param[in]    pv      pore volume for all the cartesian cells
-        /// \param[in]    dz      dz for all the cartesian cells
         /// \param[in]    nnc     non-neighbor connection class
         /// Algorithm:
-        /// 1. Mark all the cells which pv and dz less than minpvValue and thickness.
+        /// 1. Mark all the cells which pv less than minpvValue.
         /// 2. Find out proper pinchouts column and associate top and bottom cells.
         /// 3. Compute transmissibility for nncs.
         /// 4. Apply multz due to different multz options.
@@ -65,7 +64,6 @@ namespace Opm
                      const std::vector<int>& actnum,
                      const std::vector<double>& multz,
                      const std::vector<double>& pv,
-                     const std::vector<double>& dz,
                      NNC& nnc);
 
     private:
@@ -75,10 +73,8 @@ namespace Opm
         PinchMode::ModeEnum multzMode_;
         
         /// Mark minpved cells.
-        std::vector<int> getMinpvCells_(const Grid& grid,
-                                        const std::vector<int>& actnum,
-                                        const std::vector<double>& pv,
-                                        const std::vector<double>& dz);
+        std::vector<int> getMinpvCells_(const std::vector<int>& actnum,
+                                        const std::vector<double>& pv);
 
         /// Get the interface for two cells.
         int interface_(const Grid& grid,
@@ -94,8 +90,7 @@ namespace Opm
         std::vector<std::vector<int> >
         getPinchoutsColumn_(const Grid& grid,
                             const std::vector<int>& actnum,
-                            const std::vector<double>& pv,
-                            const std::vector<double>& dz);
+                            const std::vector<double>& pv);
         
         /// Get global cell index.
         int getGlobalIndex_(const int i, const int j, const int k, const int* dims);
@@ -108,8 +103,7 @@ namespace Opm
         std::vector<double> transCompute_(const Grid& grid,
                                           const std::vector<double>& htrans,
                                           const std::vector<int>& pinCells,
-                                          const std::vector<int>& pinFaces,
-                                          const std::vector<double>& multz);
+                                          const std::vector<int>& pinFaces);
 
         /// Get map between half-trans index and the pair of face index and cell index.
         std::vector<int> getHfIdxMap_(const Grid& grid);
@@ -124,7 +118,6 @@ namespace Opm
                           const std::vector<int>& actnum,
                           const std::vector<double>& multz,
                           const std::vector<double>& pv,
-                          const std::vector<double>& dz,
                           NNC& nnc);
         
         /// Item 5 in PINCH keyword.
@@ -239,10 +232,8 @@ namespace Opm
 
 
     template<class Grid>
-    inline std::vector<int> PinchProcessor<Grid>::getMinpvCells_(const Grid& grid,
-                                                                 const std::vector<int>& actnum,
-                                                                 const std::vector<double>& pv,
-                                                                 const std::vector<double>& dz)
+    inline std::vector<int> PinchProcessor<Grid>::getMinpvCells_(const std::vector<int>& actnum,
+                                                                 const std::vector<double>& pv)
     {
         std::vector<int> minpvCells(pv.size(), 0);
         for (int idx = 0; idx < static_cast<int>(pv.size()); ++idx) {
@@ -297,8 +288,7 @@ namespace Opm
     inline std::vector<double> PinchProcessor<Grid>::transCompute_(const Grid& grid,
                                                                    const std::vector<double>& htrans,
                                                                    const std::vector<int>& pinCells,
-                                                                   const std::vector<int>& pinFaces,
-                                                                   const std::vector<double>& multz)       
+                                                                   const std::vector<int>& pinFaces)
     {
         const int nc = Opm::UgGridHelpers::numCells(grid);
         const int nf = Opm::UgGridHelpers::numFaces(grid);
@@ -342,11 +332,10 @@ namespace Opm
     template<class Grid>
     inline std::vector<std::vector<int>> PinchProcessor<Grid>::getPinchoutsColumn_(const Grid& grid,
                                                                                    const std::vector<int>& actnum,
-                                                                                   const std::vector<double>& pv,
-                                                                                   const std::vector<double>& dz)
+                                                                                   const std::vector<double>& pv)
     {
         const int* dims = Opm::UgGridHelpers::cartDims(grid);
-        std::vector<int> minpvCells = getMinpvCells_(grid, actnum, pv, dz);
+        std::vector<int> minpvCells = getMinpvCells_(actnum, pv);
         std::vector<std::vector<int>> segment;
         for (int z = 0; z < dims[2]; ++z) {
             for (int y = 0; y < dims[1]; ++y) {
@@ -382,14 +371,13 @@ namespace Opm
                                                    const std::vector<int>& actnum,
                                                    const std::vector<double>& multz,
                                                    const std::vector<double>& pv,
-                                                   const std::vector<double>& dz,
                                                    NNC& nnc)
     {
         const int* dims = Opm::UgGridHelpers::cartDims(grid);
         std::vector<int> pinFaces;
         std::vector<int> pinCells;
         std::vector<std::vector<int> > newSeg;
-        auto minpvSeg = getPinchoutsColumn_(grid, actnum, pv, dz);
+        auto minpvSeg = getPinchoutsColumn_(grid, actnum, pv);
         for (auto& seg : minpvSeg) {
             std::array<int, 3> ijk1 = getCartIndex_(seg.front(), dims);
             std::array<int, 3> ijk2 = getCartIndex_(seg.back(), dims);
@@ -436,7 +424,7 @@ namespace Opm
             }
         }
 
-        auto faceTrans = transCompute_(grid, htrans, pinCells, pinFaces, multz);
+        auto faceTrans = transCompute_(grid, htrans, pinCells, pinFaces);
         auto multzmap = multzOptions_(grid, pinCells, pinFaces, multz, newSeg);
         applyMultz_(faceTrans, multzmap);
         for (int i = 0; i < static_cast<int>(pinCells.size())/2; ++i) {
@@ -499,10 +487,9 @@ namespace Opm
                                               const std::vector<int>& actnum,
                                               const std::vector<double>& multz,
                                               const std::vector<double>& pv,
-                                              const std::vector<double>& dz,
                                               NNC& nnc)
     {
-        transTopbot_(grid, htrans, actnum, multz, pv, dz, nnc);
+        transTopbot_(grid, htrans, actnum, multz, pv, nnc);
     }
 
 } // namespace Opm
