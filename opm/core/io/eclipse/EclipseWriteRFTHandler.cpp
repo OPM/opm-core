@@ -60,7 +60,7 @@ namespace EclipseWriterDetails {
         std::vector<ecl_rft_node_type *> rft_nodes;
         for (std::vector<WellConstPtr>::const_iterator ci = wells.begin(); ci != wells.end(); ++ci) {
             WellConstPtr well = *ci;
-            if ((well->getRFTActive(simulatorTimer.currentStepNum())) || (well->getPLTActive(simulatorTimer.currentStepNum()))) {
+            if ((well->getRFTActive(simulatorTimer.reportStepNum())) || (well->getPLTActive(simulatorTimer.reportStepNum()))) {
                 ecl_rft_node_type * ecl_node = createEclRFTNode(well,
                                                                  simulatorTimer,
                                                                  eclipseGrid,
@@ -70,7 +70,7 @@ namespace EclipseWriterDetails {
 
                 // TODO: replace this silenced warning with an appropriate
                 //       use of the OpmLog facilities.
-                // if (well->getPLTActive(simulatorTimer.currentStepNum())) {
+                // if (well->getPLTActive(simulatorTimer.reportStepNum())) {
                 //     std::cerr << "PLT not supported, writing RFT data" << std::endl;
                 // }
 
@@ -99,7 +99,7 @@ namespace EclipseWriterDetails {
 
 
         const std::string& well_name      = well->name();
-        size_t             timestep       = (size_t)simulatorTimer.currentStepNum();
+        size_t             timestep       = (size_t)simulatorTimer.reportStepNum();
         time_t             recording_date = simulatorTimer.currentPosixTime();
         double             days           = Opm::unit::convert::to(simulatorTimer.simulationTimeElapsed(), Opm::unit::day);
 

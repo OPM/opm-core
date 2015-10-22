@@ -1347,32 +1347,26 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
                                                                                                                       numCells_,
                                                                                                                       eclipseState_->getEclipseGrid()->getCartesianSize());
 
-
-    char * rft_filename = ecl_util_alloc_filename(outputDir_.c_str(),
-                                                  baseName_.c_str(),
-                                                  ECL_RFT_FILE,
-                                                  ioConfig->getFMTOUT(),
-                                                  0);
-
-    std::shared_ptr<const UnitSystem> unitsystem = eclipseState_->getDeckUnitSystem();
-    ert_ecl_unit_enum ecl_unit = convertUnitTypeErtEclUnitEnum(unitsystem->getType());
-
-    std::vector<WellConstPtr> wells = eclipseState_->getSchedule()->getWells(timer.currentStepNum());
-
-
-    eclipseWriteRFTHandler->writeTimeStep(rft_filename,
-                                          ecl_unit,
-                                          timer,
-                                          wells,
-                                          eclipseState_->getEclipseGrid(),
-                                          pressure,
-                                          saturation_water,
-                                          saturation_gas);
-
-
-
-    free( rft_filename );
-
+    // Write RFT file.
+    {
+        char * rft_filename = ecl_util_alloc_filename(outputDir_.c_str(),
+                                                      baseName_.c_str(),
+                                                      ECL_RFT_FILE,
+                                                      ioConfig->getFMTOUT(),
+                                                      0);
+        std::shared_ptr<const UnitSystem> unitsystem = eclipseState_->getDeckUnitSystem();
+        ert_ecl_unit_enum ecl_unit = convertUnitTypeErtEclUnitEnum(unitsystem->getType());
+        std::vector<WellConstPtr> wells = eclipseState_->getSchedule()->getWells(timer.reportStepNum());
+        eclipseWriteRFTHandler->writeTimeStep(rft_filename,
+                                              ecl_unit,
+                                              timer,
+                                              wells,
+                                              eclipseState_->getEclipseGrid(),
+                                              pressure,
+                                              saturation_water,
+                                              saturation_gas);
+        free( rft_filename );
+    }
 
     /* Summary variables (well reporting) */
     // TODO: instead of writing the header (smspec) every time, it should
