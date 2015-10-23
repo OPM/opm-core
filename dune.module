@@ -1,7 +1,13 @@
+####################################################################
+# Dune module information file: This file gets parsed by dunecontrol
+# and by the CMake build scripts.
+####################################################################
+
 Module: opm-core
 Description: Open Porous Media Initiative Core Library
-# if you change this, make sure to also change opm/core/version.h
 Version: 2015.10
 Label: 2015.10
 Maintainer: atgeirr@sintef.no
+MaintainerName: Atgeirr F. Rasmussen
+Url: http://opm-project.org
 Depends: dune-common (>= 2.2) dune-istl (>= 2.2) opm-common opm-parser opm-material
