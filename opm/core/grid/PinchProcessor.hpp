@@ -395,6 +395,7 @@ namespace Opm
                             break;
                         }
                     }
+                    break;
                 }
                 pinFaces.push_back(interface_(grid, topCell, Opm::FaceDir::ZPlus));
                 pinCells.push_back(topCell);
@@ -406,11 +407,14 @@ namespace Opm
                         botCell = getGlobalIndex_(ijk2[0], ijk2[1], botk, dims);
                         if (actnum[botCell]) {
                             break;
+
                         }
                     }
+                    break;
                 }
                 pinFaces.push_back(interface_(grid, botCell, Opm::FaceDir::ZMinus));
                 pinCells.push_back(botCell);
+
             }
         }
 
