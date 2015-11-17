@@ -117,6 +117,12 @@ namespace Opm
                   double* output_R,
                   double* output_dRdp) const;
 
+        // return a reference to the "raw" PVT fluid object for a phase.
+        const PvtInterface& pvt(int phaseIdx) const
+        {
+            return *props_[phaseIdx];
+        }
+
     private:
         // Disabling copying (just to avoid surprises, since we use shared_ptr).
         BlackoilPvtProperties(const BlackoilPvtProperties&);
