@@ -245,6 +245,7 @@ list (APPEND EXAMPLE_SOURCE_FILES
 	examples/sim_2p_comp_reorder.cpp
 	examples/sim_2p_incomp.cpp
 	examples/wells_example.cpp
+	examples/diagnose_relperm.cpp
 	tutorials/tutorial1.cpp
 	tutorials/tutorial2.cpp
 	tutorials/tutorial3.cpp
@@ -367,6 +368,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/satfunc/SaturationPropsBasic.hpp
 	opm/core/props/satfunc/SaturationPropsFromDeck.hpp
 	opm/core/props/satfunc/SaturationPropsInterface.hpp
+	opm/core/props/satfunc/RelpermDiagnostics.hpp
 	opm/core/simulator/AdaptiveSimulatorTimer.hpp
 	opm/core/simulator/AdaptiveTimeStepping.hpp
 	opm/core/simulator/AdaptiveTimeStepping_impl.hpp
