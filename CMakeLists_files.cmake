@@ -100,6 +100,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/rock/RockFromDeck.cpp
 	opm/core/props/satfunc/SaturationPropsBasic.cpp
 	opm/core/props/satfunc/SaturationPropsFromDeck.cpp
+	opm/core/props/satfunc/RelpermDiagnostics.cpp
 	opm/core/simulator/AdaptiveSimulatorTimer.cpp
 	opm/core/simulator/BlackoilState.cpp
 	opm/core/simulator/TimeStepControl.cpp
