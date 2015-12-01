@@ -199,6 +199,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_gridutilities.cpp
 	tests/test_anisotropiceikonal.cpp
 	tests/test_stoppedwells.cpp
+        tests/test_norne_pvt.cpp
   )
 
 # originally generated with the command:
@@ -232,7 +233,8 @@ list (APPEND TEST_DATA_FILES
         tests/TESTTIMER.DATA
         tests/CORNERPOINT_ACTNUM.DATA
         tests/wells_stopped.data
-	)
+        tests/norne_pvt.data
+        )
 
 # originally generated with the command:
 # find tutorials examples -name '*.c*' -printf '\t%p\n' | sort
