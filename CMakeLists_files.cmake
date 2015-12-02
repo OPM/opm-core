@@ -200,6 +200,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_gridutilities.cpp
 	tests/test_anisotropiceikonal.cpp
 	tests/test_stoppedwells.cpp
+	tests/test_relpermdiagnostics.cpp
   )
 
 # originally generated with the command:
@@ -233,6 +234,7 @@ list (APPEND TEST_DATA_FILES
         tests/TESTTIMER.DATA
         tests/CORNERPOINT_ACTNUM.DATA
         tests/wells_stopped.data
+				tests/relpermDiagnostics.DATA
 	)
 
 # originally generated with the command:
