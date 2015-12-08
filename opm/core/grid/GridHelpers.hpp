@@ -20,8 +20,13 @@
 */
 #ifndef OPM_CORE_GRIDHELPERS_HEADER_INCLUDED
 #define OPM_CORE_GRIDHELPERS_HEADER_INCLUDED
+
 #include <opm/core/grid.h>
+
+#include <opm/common/utility/platform_dependent/disable_warnings.h>
 #include <boost/range/iterator_range.hpp>
+#include <opm/common/utility/platform_dependent/reenable_warnings.h>
+
 
 namespace Opm
 {
