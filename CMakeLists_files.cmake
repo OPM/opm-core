@@ -100,6 +100,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/props/rock/RockFromDeck.cpp
 	opm/core/props/satfunc/SaturationPropsBasic.cpp
 	opm/core/props/satfunc/SaturationPropsFromDeck.cpp
+	opm/core/props/satfunc/RelpermDiagnostics.cpp
 	opm/core/simulator/AdaptiveSimulatorTimer.cpp
 	opm/core/simulator/BlackoilState.cpp
 	opm/core/simulator/TimeStepControl.cpp
@@ -199,6 +200,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_gridutilities.cpp
 	tests/test_anisotropiceikonal.cpp
 	tests/test_stoppedwells.cpp
+	tests/test_relpermdiagnostics.cpp
         tests/test_norne_pvt.cpp
   )
 
@@ -233,6 +235,7 @@ list (APPEND TEST_DATA_FILES
         tests/TESTTIMER.DATA
         tests/CORNERPOINT_ACTNUM.DATA
         tests/wells_stopped.data
+				tests/relpermDiagnostics.DATA
         tests/norne_pvt.data
         )
 
@@ -247,6 +250,7 @@ list (APPEND EXAMPLE_SOURCE_FILES
 	examples/sim_2p_comp_reorder.cpp
 	examples/sim_2p_incomp.cpp
 	examples/wells_example.cpp
+	examples/diagnose_relperm.cpp
 	tutorials/tutorial1.cpp
 	tutorials/tutorial2.cpp
 	tutorials/tutorial3.cpp
@@ -369,6 +373,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/satfunc/SaturationPropsBasic.hpp
 	opm/core/props/satfunc/SaturationPropsFromDeck.hpp
 	opm/core/props/satfunc/SaturationPropsInterface.hpp
+	opm/core/props/satfunc/RelpermDiagnostics.hpp
 	opm/core/simulator/AdaptiveSimulatorTimer.hpp
 	opm/core/simulator/AdaptiveTimeStepping.hpp
 	opm/core/simulator/AdaptiveTimeStepping_impl.hpp
