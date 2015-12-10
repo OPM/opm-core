@@ -98,7 +98,8 @@ public:
      */
     virtual void writeTimeStep(const SimulatorTimerInterface& timer,
                                const SimulatorState& reservoirState,
-                               const WellState& wellState, bool isSubstep );
+                               const WellState& wellState,
+                               bool isSubstep);
 
 
     static int eclipseWellTypeMask(WellType wellType, WellInjector::TypeEnum injectorType);

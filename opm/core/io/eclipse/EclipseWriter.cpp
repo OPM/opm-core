@@ -370,6 +370,8 @@ public:
                      ecl_rsthead_type * rsthead_data)
     {
 
+      ecl_util_set_date_values( rsthead_data->sim_time , &rsthead_data->day , &rsthead_data->month , &rsthead_data->year );
+
       ecl_rst_file_fwrite_header(restartFileHandle_,
                                  writeStepIdx,
                                  rsthead_data);
@@ -1338,6 +1340,17 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
             sol.add(EclipseWriterDetails::Keyword<float>(EclipseWriterDetails::saturationKeywordNames[BlackoilPhases::PhaseIndex::Vapour], saturation_gas));
         }
 
+
+        const BlackoilState* blackoilState = dynamic_cast<const BlackoilState*>(&reservoirState);
+        if (blackoilState) {
+            // Write RS - Dissolved GOR
+            const std::vector<double>& rs = blackoilState->gasoilratio();
+            sol.add(EclipseWriterDetails::Keyword<float>("RS", rs));
+
+            // Write RV - Volatilized oil/gas ratio
+            const std::vector<double>& rv = blackoilState->rv();
+            sol.add(EclipseWriterDetails::Keyword<float>("RV", rv));
+        }
     }
 
 
