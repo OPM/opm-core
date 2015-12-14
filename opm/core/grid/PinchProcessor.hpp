@@ -396,7 +396,7 @@ namespace Opm
                         }
                     }
                 }
-                pinFaces.push_back(interface_(grid, topCell, Opm::FaceDir::ZMinus));
+                pinFaces.push_back(interface_(grid, topCell, Opm::FaceDir::ZPlus));
                 pinCells.push_back(topCell);
 
                 tmp.insert(tmp.begin(), topCell);
@@ -410,7 +410,7 @@ namespace Opm
                         }
                     }
                 }
-                pinFaces.push_back(interface_(grid, botCell, Opm::FaceDir::ZPlus));
+                pinFaces.push_back(interface_(grid, botCell, Opm::FaceDir::ZMinus));
                 pinCells.push_back(botCell);
 
             }
