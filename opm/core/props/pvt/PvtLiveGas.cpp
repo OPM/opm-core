@@ -55,31 +55,39 @@ namespace Opm
 
         for (int pvtTableIdx = 0; pvtTableIdx < numTables; ++pvtTableIdx) {
             const Opm::PvtgTable& pvtgTable = pvtgTables[pvtTableIdx];
-
-            // GAS, PVTG
+            const auto& saturatedPvtg = pvtgTable.getSaturatedTable( );
+            // GAS, P
             // saturated_gas_table_[pvtTableIdx].resize(4);
             // Adding one extra line to PVTG to store 1./(Bg*mu_g)
             saturated_gas_table_[pvtTableIdx].resize(5);
-            saturated_gas_table_[pvtTableIdx][0] = pvtgTable.getOuterTable()->getPressureColumn(); // Pressure
-            saturated_gas_table_[pvtTableIdx][1] = pvtgTable.getOuterTable()->getGasFormationFactorColumn(); // Bg
-            saturated_gas_table_[pvtTableIdx][2] = pvtgTable.getOuterTable()->getGasViscosityColumn(); // mu_g
-            // The number of the columns
-            int nRows = saturated_gas_table_[pvtTableIdx][2].size();
-            saturated_gas_table_[pvtTableIdx][3].resize(nRows); // allocate memory for 1/(Bg*mu_g)
-            saturated_gas_table_[pvtTableIdx][4] = pvtgTable.getOuterTable()->getOilSolubilityColumn(); // Rv
+            for (int k=0; k<5; ++k) {
+                saturated_gas_table_[pvtTableIdx][k].resize(saturatedPvtg.numRows());
+            }
 
-            int sz = pvtgTable.getOuterTable()->numRows();
+            for (size_t row=0; row < saturatedPvtg.numRows(); row++) {
+                saturated_gas_table_[pvtTableIdx][0][row] = saturatedPvtg.get("PG" , row);   // Pressure
+                saturated_gas_table_[pvtTableIdx][1][row] = saturatedPvtg.get("BG" , row);  // Bg
+                saturated_gas_table_[pvtTableIdx][2][row] = saturatedPvtg.get("MUG" , row); // mu_g
+                // 1/Bg will go in [3]
+                saturated_gas_table_[pvtTableIdx][4][row] = saturatedPvtg.get("RV" , row);      // Rv
+            }
+
+
+            int sz = saturatedPvtg.numRows();
             undersat_gas_tables_[pvtTableIdx].resize(sz);
             for (int i=0; i<sz; ++i) {
-                const auto &undersatTable = *pvtgTable.getInnerTable(i);
+                const auto &undersatTable = pvtgTable.getUnderSaturatedTable(i);
 
-                // undersat_gas_tables_[pvtTableIdx][i].resize(3);
                 undersat_gas_tables_[pvtTableIdx][i].resize(4);
-                undersat_gas_tables_[pvtTableIdx][i][0] = undersatTable.getOilSolubilityColumn(); // Rv
-                undersat_gas_tables_[pvtTableIdx][i][1] = undersatTable.getGasFormationFactorColumn(); // Bg
-                undersat_gas_tables_[pvtTableIdx][i][2] = undersatTable.getGasViscosityColumn();  // mu_g
-                int nUndersatRows = undersat_gas_tables_[pvtTableIdx][i][2].size();
-                undersat_gas_tables_[pvtTableIdx][i][3].resize(nUndersatRows); // allocate memory for 1/(Bg*mu_g)
+                for (size_t j=0; j < 4; j++) {
+                    undersat_gas_tables_[pvtTableIdx][i][j].resize( undersatTable.numRows() );
+                }
+
+                for (size_t row=0; row < undersatTable.numRows(); row++) {
+                    undersat_gas_tables_[pvtTableIdx][i][0][row] = undersatTable.get("RV" , row);   // Rv
+                    undersat_gas_tables_[pvtTableIdx][i][1][row] = undersatTable.get("BG" , row);   // Bg
+                    undersat_gas_tables_[pvtTableIdx][i][2][row] = undersatTable.get("MUG" , row);  // mu_g
+                }
             }
 
             // Bg -> 1/Bg

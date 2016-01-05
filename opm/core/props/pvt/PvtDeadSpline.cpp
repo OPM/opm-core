@@ -53,9 +53,9 @@ namespace Opm
             int numRows = pvdoTable.numRows();
 
             // Copy data
-            const std::vector<double> &press = pvdoTable.getPressureColumn();
-            const std::vector<double> &B_var = pvdoTable.getFormationFactorColumn();
-            const std::vector<double> &visc = pvdoTable.getViscosityColumn();
+            std::vector<double> press = pvdoTable.getColumn("P").vectorCopy();
+            std::vector<double> B_var = pvdoTable.getColumn("BO").vectorCopy();
+            std::vector<double> visc  = pvdoTable.getColumn("MUO").vectorCopy();
 
             std::vector<double> B_inv(numRows);
             for (int i = 0; i < numRows; ++i) {
@@ -82,9 +82,9 @@ namespace Opm
             int numRows = pvdgTable.numRows();
 
             // Copy data
-            const std::vector<double> &press = pvdgTable.getPressureColumn();
-            const std::vector<double> &B = pvdgTable.getFormationFactorColumn();
-            const std::vector<double> &visc = pvdgTable.getViscosityColumn();
+            std::vector<double> press = pvdgTable.getColumn("P").vectorCopy();
+            std::vector<double> B     = pvdgTable.getColumn("BG").vectorCopy();
+            std::vector<double> visc  = pvdgTable.getColumn("MUG").vectorCopy();
 
             std::vector<double> B_inv(numRows);
             for (int i = 0; i < numRows; ++i) {
