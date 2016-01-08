@@ -46,33 +46,20 @@ namespace Opm
     }
 
     void extractPvtTableIndex(std::vector<int> &pvtTableIdx,
-                              Opm::DeckConstPtr deck,
+                              Opm::EclipseStateConstPtr eclState,
                               size_t numCompressed,
                               const int *compressedToCartesianCellIdx)
     {
-        if (deck->hasKeyword("PVTNUM")) {
-            // we have a "real" multi-pvt deck.
-
-            // get the PVT number from the deck
-            Opm::DeckKeywordConstPtr pvtnumKeyword = deck->getKeyword("PVTNUM");
-            const std::vector<int> &pvtnumData = pvtnumKeyword->getIntData();
-
-            // convert this into an array of compressed cells. since
-            // Eclipse uses Fortran-style indices which start at 1
-            // instead of 0, we subtract 1.
-            pvtTableIdx.resize(numCompressed);
-            for (size_t cellIdx = 0; cellIdx < numCompressed; ++ cellIdx) {
-                size_t cartesianCellIdx = compressedToCartesianCellIdx?compressedToCartesianCellIdx[cellIdx]:cellIdx;
-                assert(cartesianCellIdx < pvtnumData.size());
-
-                pvtTableIdx[cellIdx] = pvtnumData[cartesianCellIdx] - 1;
-            }
-        }
-        else {
-            // create the pvtIdxArray: all cells use the one and only
-            // PVT table...
-            pvtTableIdx.resize(numCompressed);
-            std::fill(pvtTableIdx.begin(), pvtTableIdx.end(), 0);
+        //Get the PVTNUM data
+        const std::vector<int>& pvtnumData = eclState->getIntGridProperty("PVTNUM")->getData();
+        // Convert this into an array of compressed cells
+        // Eclipse uses Fortran-style indices which start at 1
+        // instead of 0, we subtract 1.
+        pvtTableIdx.resize(numCompressed);
+        for (size_t cellIdx = 0; cellIdx < numCompressed; ++ cellIdx) {
+            size_t cartesianCellIdx = compressedToCartesianCellIdx ? compressedToCartesianCellIdx[cellIdx]:cellIdx;
+            assert(cartesianCellIdx < pvtnumData.size());
+            pvtTableIdx[cellIdx] = pvtnumData[cartesianCellIdx] - 1;
         }
     }
 

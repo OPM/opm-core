@@ -21,7 +21,7 @@
 #define OPM_PVTINTERFACE_HEADER_INCLUDED
 
 #include <opm/core/props/BlackoilPhases.hpp>
-#include <opm/parser/eclipse/Deck/Deck.hpp>
+#include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 
 
 namespace Opm
@@ -175,7 +175,7 @@ namespace Opm
      * implementations usually use compressed cells.
      */
     void extractPvtTableIndex(std::vector<int>& pvtTableIdx,
-                              Opm::DeckConstPtr deck,
+                              Opm::EclipseStateConstPtr eclState,
                               size_t numCompressed,
                               const int* compressedToCartesianIdx);
 
