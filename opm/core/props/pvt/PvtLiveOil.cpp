@@ -41,46 +41,46 @@ namespace Opm
         undersat_oil_tables_.resize(numTables);
 
         for (int pvtTableIdx = 0; pvtTableIdx < numTables; ++pvtTableIdx) {
-            Opm::PvtoTable pvtoTable = pvtoTables[pvtTableIdx];
+            const Opm::PvtoTable& pvtoTable = pvtoTables[pvtTableIdx];
 
-            const auto saturatedPvto = pvtoTable.getOuterTable();
+            const auto& saturatedPvto = pvtoTable.getSaturatedTable();
 
             // OIL, PVTO
             // saturated_oil_table_[pvtTableIdx].resize(4);
             // adding a extra colummn to the PVTO to store 1/(B*mu)
             saturated_oil_table_[pvtTableIdx].resize(5);
-            const int sz = saturatedPvto->numRows();
+            const int sz = saturatedPvto.numRows();
             // for (int k=0; k<4; ++k) {
             for (int k=0; k<5; ++k) {
                 saturated_oil_table_[pvtTableIdx][k].resize(sz);
             }
             for (int i=0; i<sz; ++i) {
-                saturated_oil_table_[pvtTableIdx][0][i] = saturatedPvto->getPressureColumn()[i]; // p
-                saturated_oil_table_[pvtTableIdx][1][i] = 1.0/saturatedPvto->getOilFormationFactorColumn()[i]; // 1/Bo
-                saturated_oil_table_[pvtTableIdx][2][i] = saturatedPvto->getOilViscosityColumn()[i]; // mu_o
-                saturated_oil_table_[pvtTableIdx][3][i] = 1.0 / (saturatedPvto->getOilFormationFactorColumn()[i]
-                                                               * saturatedPvto->getOilViscosityColumn()[i]); // 1/(Bo*mu_o)
-                saturated_oil_table_[pvtTableIdx][4][i] = saturatedPvto->getGasSolubilityColumn()[i]; // Rs
+                saturated_oil_table_[pvtTableIdx][0][i] = saturatedPvto.get("P" , i);                 // P
+                saturated_oil_table_[pvtTableIdx][1][i] = 1.0/saturatedPvto.get("BO" , i);            // BO
+                saturated_oil_table_[pvtTableIdx][2][i] = saturatedPvto.get("MU" , i);                // MU
+                saturated_oil_table_[pvtTableIdx][3][i] = 1.0 / (saturatedPvto.get("BO" , i)
+                                                                 * saturatedPvto.get("MU" , i));;    // 1/(Bo*mu_o)
+                saturated_oil_table_[pvtTableIdx][4][i] = saturatedPvto.get("RS" , i);               // RS
             }
 
             undersat_oil_tables_[pvtTableIdx].resize(sz);
             for (int i=0; i<sz; ++i) {
-                const auto undersaturatedPvto = pvtoTable.getInnerTable(i);
+                const auto& undersaturatedPvto = pvtoTable.getUnderSaturatedTable( i );
 
                 // undersat_oil_tables_[pvtTableIdx][i].resize(3);
                 // adding a extra colummn to the PVTO to store 1/(B*mu)
                 undersat_oil_tables_[pvtTableIdx][i].resize(4);
-                int tsize = undersaturatedPvto->numRows();
+                int tsize = undersaturatedPvto.numRows();
                 undersat_oil_tables_[pvtTableIdx][i][0].resize(tsize);
                 undersat_oil_tables_[pvtTableIdx][i][1].resize(tsize);
                 undersat_oil_tables_[pvtTableIdx][i][2].resize(tsize);
                 undersat_oil_tables_[pvtTableIdx][i][3].resize(tsize);
                 for (int j=0; j<tsize; ++j) {
-                    undersat_oil_tables_[pvtTableIdx][i][0][j] = undersaturatedPvto->getPressureColumn()[j];  // p
-                    undersat_oil_tables_[pvtTableIdx][i][1][j] = 1.0/undersaturatedPvto->getOilFormationFactorColumn()[j];  // 1/Bo
-                    undersat_oil_tables_[pvtTableIdx][i][2][j] = undersaturatedPvto->getOilViscosityColumn()[j];  // mu_o
-                    undersat_oil_tables_[pvtTableIdx][i][3][j] = 1.0 / (undersaturatedPvto->getOilFormationFactorColumn()[j] *
-                                                                        undersaturatedPvto->getOilViscosityColumn()[j]);  // 1/(Bo*mu_o)
+                    undersat_oil_tables_[pvtTableIdx][i][0][j] = undersaturatedPvto.get("P" , j);         // P
+                    undersat_oil_tables_[pvtTableIdx][i][1][j] = 1.0/undersaturatedPvto.get("BO" , j);    // BO
+                    undersat_oil_tables_[pvtTableIdx][i][2][j] = undersaturatedPvto.get("MU" , j);        // MU
+                    undersat_oil_tables_[pvtTableIdx][i][3][j] = 1.0 / (undersaturatedPvto.get("BO", j)*
+                                                                        undersaturatedPvto.get("MU", j));  // 1/(Bo*mu_o)
                 }
             }
 
@@ -125,10 +125,12 @@ namespace Opm
             }
         }
     }
+    
 
     /// Destructor.
     PvtLiveOil::~PvtLiveOil()
     {
+
     }
 
 
@@ -137,8 +139,8 @@ namespace Opm
                         const int* pvtTableIdx,
                         const double* p,
                         const double* /*T*/,
-                              const double* z,
-                              double* output_mu) const
+                        const double* z,
+                        double* output_mu) const
     {
 // #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
@@ -147,7 +149,7 @@ namespace Opm
             double inverseB = miscible_oil(p[i], z + num_phases_*i, tableIdx, 1, false);
             double inverseBMu = miscible_oil(p[i], z + num_phases_*i, tableIdx, 3, false);
 
-            output_mu[i] = inverseB / inverseBMu; 
+            output_mu[i] = inverseB / inverseBMu;
         }
     }
 

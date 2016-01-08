@@ -47,9 +47,9 @@ namespace Opm
             const Opm::PvdoTable& pvdoTable = pvdoTables.getTable<PvdoTable>(regionIdx);
 
             // Copy data
-            const std::vector<double>& press = pvdoTable.getPressureColumn();
-            const std::vector<double>& b_var = pvdoTable.getFormationFactorColumn();
-            const std::vector<double>& visc = pvdoTable.getViscosityColumn();
+            const auto&  press = pvdoTable.getColumn("P");
+            const auto&  b_var = pvdoTable.getColumn("BO");
+            const auto&  visc =  pvdoTable.getColumn("MUO");
 
             const int sz = b_var.size();
             std::vector<double> inverseB(sz);
@@ -82,9 +82,9 @@ namespace Opm
             const Opm::PvdgTable& pvdgTable = pvdgTables.getTable<PvdgTable>(regionIdx);
 
             // Copy data
-            const std::vector<double>& press = pvdgTable.getPressureColumn();
-            const std::vector<double>& b = pvdgTable.getFormationFactorColumn();
-            const std::vector<double>& visc = pvdgTable.getViscosityColumn();
+            const auto&  press = pvdgTable.getColumn("P");
+            const auto&  b     = pvdgTable.getColumn("BG");
+            const auto&  visc  = pvdgTable.getColumn("MUG");
 
             const int sz = b.size();
             std::vector<double> inverseB(sz);
