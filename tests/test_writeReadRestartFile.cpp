@@ -58,13 +58,16 @@
 
 #include <string.h>
 
-//
+
 std::string input =
            "RUNSPEC\n"
            "OIL\n"
            "GAS\n"
            "WATER\n"
+           "DISGAS\n"
+           "VAPOIL\n"
            "UNIFOUT\n"
+           "UNIFIN\n"
            "DIMENS\n"
            " 10 10 10 /\n"
 
@@ -79,10 +82,16 @@ std::string input =
            "100*0.25 /\n"
            "\n"
 
+           "SOLUTION\n"
+           "RESTART\n"
+           "TESTWELLSTATE 1/\n"
+           "\n"
+
            "START             -- 0 \n"
            "1 NOV 1979 / \n"
 
            "SCHEDULE\n"
+           "SKIPREST\n"
            "RPTRST\n"
            "BASIC=1\n"
            "/\n"
@@ -240,7 +249,6 @@ void setValuesInWellState(std::shared_ptr<Opm::WellState> wellState){
 BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
 {
     std::string eclipse_data_filename    = "TestWellState.DATA";
-    std::string eclipse_restart_filename = "TESTWELLSTATE.UNRST";
     test_work_area_type * test_area = test_work_area_alloc("EclipseReadWriteWellStateData");
 
     Opm::Parser parser;
@@ -281,29 +289,38 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
     std::vector<double> sgasdata(1000, 9);
     Opm::EclipseIOUtil::addToStripedData(sgasdata, blackoilState->saturation(), phaseUsage.phase_pos[Opm::BlackoilPhases::Vapour], phaseUsage.num_phases);
 
+    // Set test data for rs
+    double rs = 300.0;
+    std::vector<double>& rs_vec = blackoilState->gasoilratio();
+    for (std::vector<double>::iterator rs_iter = rs_vec.begin(); rs_iter != rs_vec.end(); ++ rs_iter) {
+        *rs_iter = rs;
+        rs = rs + 1.0;
+    }
+
+    // Set testdata for rv
+    double rv = 400.0;
+    std::vector<double>& rv_vec = blackoilState->rv();
+    for (std::vector<double>::iterator rv_iter = rv_vec.begin(); rv_iter != rv_vec.end(); ++rv_iter) {
+        *rv_iter = rv;
+        rv = rv + 1.0;
+    }
+
     setValuesInWellState(wellState);
     simTimer->setCurrentStepNum(1);
     eclipseWriter->writeTimeStep(*simTimer, *blackoilState, *wellState , false);
 
-    const char * test_area_path = test_work_area_get_cwd(test_area);
-    std::string slash = "/";
-    const std::string restart_filename = test_area_path + slash + eclipse_restart_filename;
     std::shared_ptr<Opm::WellState> wellStateRestored(new Opm::WellState());
     wellStateRestored->init(wells, *blackoilState);
 
-    //Read and verify OPM XWEL data
-    Opm::restoreOPM_XWELKeyword(restart_filename, 1, *wellStateRestored);
+    //Read and verify OPM XWEL data, and solution data: pressure, temperature, saturation data, rs and rv
+    std::shared_ptr<Opm::BlackoilState> blackoilStateRestored = createBlackOilState(eclipseState->getEclipseGrid());
+    Opm::init_from_restart_file(eclipseState, Opm::UgGridHelpers::numCells(*gridManager.c_grid()), phaseUsage, *blackoilStateRestored, *wellStateRestored);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->bhp().begin(), wellState->bhp().end(), wellStateRestored->bhp().begin(), wellStateRestored->bhp().end());
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->temperature().begin(), wellState->temperature().end(), wellStateRestored->temperature().begin(), wellStateRestored->temperature().end());
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->wellRates().begin(), wellState->wellRates().end(), wellStateRestored->wellRates().begin(), wellStateRestored->wellRates().end());
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->perfRates().begin(), wellState->perfRates().end(), wellStateRestored->perfRates().begin(), wellStateRestored->perfRates().end());
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->perfPress().begin(), wellState->perfPress().end(), wellStateRestored->perfPress().begin(), wellStateRestored->perfPress().end());
-
-
-    //Read and verify pressure, temperature and saturation data
-    std::shared_ptr<Opm::BlackoilState> blackoilStateRestored = createBlackOilState(eclipseState->getEclipseGrid());
-    Opm::restoreSOLUTIONData(restart_filename, 1, *eclipseState, *gridManager.c_grid(), phaseUsage, *blackoilStateRestored);
 
     std::vector<double> swat_restored;
     std::vector<double> swat;
@@ -319,6 +336,12 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
         BOOST_CHECK_CLOSE(blackoilState->temperature()[cellindex], blackoilStateRestored->temperature()[cellindex], 0.00001);
         BOOST_CHECK_CLOSE(swat[cellindex], swat_restored[cellindex], 0.00001);
         BOOST_CHECK_CLOSE(sgas[cellindex], sgas_restored[cellindex], 0.00001);
+    }
+
+
+    for (size_t cellindex = 0; cellindex < 1000; ++cellindex) {
+        BOOST_CHECK_CLOSE(blackoilState->gasoilratio()[cellindex], blackoilStateRestored->gasoilratio()[cellindex], 0.0000001);
+        BOOST_CHECK_CLOSE(blackoilState->rv()[cellindex], blackoilStateRestored->rv()[cellindex], 0.0000001);
     }
 
     test_work_area_free(test_area);

@@ -10,23 +10,24 @@
 namespace Opm
 {
 ///
-/// \brief restoreOPM_XWELKeyword
-///     Reading from the restart file, information stored under the OPM_XWEL keyword is in this method filled into
-///     an instance of a wellstate object.
-/// \param restart_filename
-///     The filename of the restart file.
-/// \param reportstep
-///     The report step to restart from.
+/// \brief init_from_restart_file
+///     Reading from the restart file, information stored under the OPM_XWEL keyword and SOLUTION data is in this method filled into
+///     an instance of a wellstate object and a SimulatorState object.
+/// \param grid
+///     UnstructuredGrid reference
+/// \param pu
+///     PhaseUsage reference
+/// \param simulator_state
+///     An instance of a SimulatorState object
 /// \param wellstate
-///     An instance of a WellState object, with correct size for each of the 5 contained std::vector<double> objects.
+///     An instance of a WellState object, with correct size for each of the 5 contained std::vector<double> objects
 ///
-    void restoreOPM_XWELKeyword(const std::string& restart_filename, int report_step, WellState& wellState);
-    void restoreSOLUTIONData(const std::string& restart_filename,
-                             int report_step,
-                             const EclipseState &eclipseState,
-                             const UnstructuredGrid& grid,
-                             const PhaseUsage& phaseUsage,
-                             SimulatorState& simulator_state);
+
+    void init_from_restart_file(EclipseStateConstPtr eclipse_state,
+                                int numcells,
+                                const PhaseUsage& pu,
+                                SimulatorState& simulator_state,
+                                WellState& wellstate);
 
 
 }

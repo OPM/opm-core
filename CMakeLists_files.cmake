@@ -157,7 +157,7 @@ list (APPEND MAIN_SOURCE_FILES
 # find tests -name '*.cpp' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
 list (APPEND TEST_SOURCE_FILES
   tests/test_writenumwells.cpp
-	tests/test_readWriteWellStateData.cpp
+	tests/test_writeReadRestartFile.cpp
 	tests/test_EclipseWriter.cpp
 	tests/test_EclipseWriteRFTHandler.cpp
 	tests/test_compressedpropertyaccess.cpp
