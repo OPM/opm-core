@@ -25,6 +25,11 @@
 #include <opm/core/grid/GridHelpers.hpp>
 #include <opm/core/io/eclipse/EclipseIOUtil.hpp>
 
+#include <opm/parser/eclipse/EclipseState/IOConfig/IOConfig.hpp>
+#include <opm/parser/eclipse/EclipseState/InitConfig/InitConfig.hpp>
+#include <opm/parser/eclipse/EclipseState/SimulationConfig/SimulationConfig.hpp>
+#include <opm/parser/eclipse/Units/UnitSystem.hpp>
+
 #include <algorithm>
 
 #include <ert/ecl/ecl_file.h>

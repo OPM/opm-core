@@ -20,6 +20,8 @@
 #include "config.h"
 #include <opm/core/props/pvt/PvtDeadSpline.hpp>
 #include <opm/core/utility/buildUniformMonotoneTable.hpp>
+#include <opm/parser/eclipse/EclipseState/Tables/PvdoTable.hpp>
+#include <opm/parser/eclipse/EclipseState/Tables/PvdgTable.hpp>
 
 
 #include <algorithm>

@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include <opm/core/props/pvt/PvtInterface.hpp>
+#include <opm/parser/eclipse/EclipseState/Grid/GridProperty.hpp>
 
 #include <cassert>
 

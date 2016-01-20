@@ -40,9 +40,13 @@
 #include <opm/parser/eclipse/Deck/DeckKeyword.hpp>
 #include <opm/parser/eclipse/Utility/SpecgridWrapper.hpp>
 #include <opm/parser/eclipse/Utility/WelspecsWrapper.hpp>
+#include <opm/parser/eclipse/Units/UnitSystem.hpp>
+#include <opm/parser/eclipse/EclipseState/Grid/EclipseGrid.hpp>
+#include <opm/parser/eclipse/EclipseState/Grid/GridProperty.hpp>
+#include <opm/parser/eclipse/EclipseState/IOConfig/IOConfig.hpp>
+#include <opm/parser/eclipse/EclipseState/Schedule/CompletionSet.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/Schedule.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/Well.hpp>
-#include <opm/parser/eclipse/EclipseState/Grid/EclipseGrid.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp> // to_upper_copy
 #include <boost/date_time/posix_time/posix_time.hpp>

@@ -28,6 +28,7 @@
 #include <opm/core/utility/miscUtilities.hpp>
 
 
+#include <opm/parser/eclipse/EclipseState/Schedule/CompletionSet.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/Schedule.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/WellSet.hpp>
 
