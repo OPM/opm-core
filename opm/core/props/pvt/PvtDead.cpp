@@ -20,6 +20,8 @@
 
 #include "config.h"
 #include <opm/core/props/pvt/PvtDead.hpp>
+#include <opm/parser/eclipse/EclipseState/Tables/PvdoTable.hpp>
+#include <opm/parser/eclipse/EclipseState/Tables/PvdgTable.hpp>
 #include <algorithm>
 
 // Extra includes for debug dumping of tables.
