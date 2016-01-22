@@ -33,6 +33,8 @@
 #include <opm/core/props/pvt/PvtLiveGas.hpp>
 #include <opm/common/ErrorMacros.hpp>
 #include <opm/core/utility/linearInterpolation.hpp>
+#include <opm/parser/eclipse/EclipseState/Tables/PvtgTable.hpp>
+#include <opm/parser/eclipse/EclipseState/Tables/SimpleTable.hpp>
 
 #include <algorithm>
 #include <iostream>

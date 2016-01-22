@@ -29,6 +29,9 @@
 
 namespace Opm
 {
+
+    class PvtoTable;
+
     /// Class for miscible live oil (with dissolved gas in liquid phase).
     /// The PVT properties can either be given as a function of pressure (p), temperature (T) and surface volume (z)
     /// or pressure (p), temperature (T) and gas resolution factor (r).

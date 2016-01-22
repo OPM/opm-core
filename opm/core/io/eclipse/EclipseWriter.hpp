@@ -28,6 +28,10 @@
 #include <opm/core/simulator/SimulatorTimerInterface.hpp>
 
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
+#include <opm/parser/eclipse/EclipseState/Schedule/Well.hpp>
+#include <opm/parser/eclipse/Units/UnitSystem.hpp>
+
+#include <ert/ecl/ecl_util.h>
 
 #include <string>
 #include <vector>
@@ -98,7 +102,8 @@ public:
      */
     virtual void writeTimeStep(const SimulatorTimerInterface& timer,
                                const SimulatorState& reservoirState,
-                               const WellState& wellState, bool isSubstep );
+                               const WellState& wellState,
+                               bool isSubstep);
 
 
     static int eclipseWellTypeMask(WellType wellType, WellInjector::TypeEnum injectorType);

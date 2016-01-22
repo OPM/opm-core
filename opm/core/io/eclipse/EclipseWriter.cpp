@@ -40,9 +40,13 @@
 #include <opm/parser/eclipse/Deck/DeckKeyword.hpp>
 #include <opm/parser/eclipse/Utility/SpecgridWrapper.hpp>
 #include <opm/parser/eclipse/Utility/WelspecsWrapper.hpp>
+#include <opm/parser/eclipse/Units/UnitSystem.hpp>
+#include <opm/parser/eclipse/EclipseState/Grid/EclipseGrid.hpp>
+#include <opm/parser/eclipse/EclipseState/Grid/GridProperty.hpp>
+#include <opm/parser/eclipse/EclipseState/IOConfig/IOConfig.hpp>
+#include <opm/parser/eclipse/EclipseState/Schedule/CompletionSet.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/Schedule.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/Well.hpp>
-#include <opm/parser/eclipse/EclipseState/Grid/EclipseGrid.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp> // to_upper_copy
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -369,6 +373,8 @@ public:
                      int writeStepIdx,
                      ecl_rsthead_type * rsthead_data)
     {
+
+      ecl_util_set_date_values( rsthead_data->sim_time , &rsthead_data->day , &rsthead_data->month , &rsthead_data->year );
 
       ecl_rst_file_fwrite_header(restartFileHandle_,
                                  writeStepIdx,
@@ -1338,6 +1344,17 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
             sol.add(EclipseWriterDetails::Keyword<float>(EclipseWriterDetails::saturationKeywordNames[BlackoilPhases::PhaseIndex::Vapour], saturation_gas));
         }
 
+
+        const BlackoilState* blackoilState = dynamic_cast<const BlackoilState*>(&reservoirState);
+        if (blackoilState) {
+            // Write RS - Dissolved GOR
+            const std::vector<double>& rs = blackoilState->gasoilratio();
+            sol.add(EclipseWriterDetails::Keyword<float>("RS", rs));
+
+            // Write RV - Volatilized oil/gas ratio
+            const std::vector<double>& rv = blackoilState->rv();
+            sol.add(EclipseWriterDetails::Keyword<float>("RV", rv));
+        }
     }
 
 

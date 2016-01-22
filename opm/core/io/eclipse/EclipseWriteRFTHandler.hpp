@@ -31,6 +31,9 @@
 
 
 namespace Opm {
+    class EclipseGrid;
+    class Well;
+
 namespace EclipseWriterDetails {
 
 
@@ -43,8 +46,8 @@ namespace EclipseWriterDetails {
     void writeTimeStep(const std::string& filename,
                        const ert_ecl_unit_enum ecl_unit,
                        const SimulatorTimerInterface& simulatorTimer,
-                       std::vector<WellConstPtr>& wells,
-                       EclipseGridConstPtr eclipseGrid,
+                       std::vector<std::shared_ptr< const Well >>& wells,
+                       std::shared_ptr< const EclipseGrid > eclipseGrid,
                        std::vector<double>& pressure,
                        std::vector<double>& swat,
                        std::vector<double>& sgas);
@@ -53,9 +56,9 @@ namespace EclipseWriterDetails {
 
     private:
 
-    ecl_rft_node_type * createEclRFTNode(WellConstPtr well,
+    ecl_rft_node_type * createEclRFTNode(std::shared_ptr< const Well > well,
                                          const SimulatorTimerInterface& simulatorTimer,
-                                         EclipseGridConstPtr eclipseGrid,
+                                         std::shared_ptr< const EclipseGrid > eclipseGrid,
                                          const std::vector<double>& pressure,
                                          const std::vector<double>& swat,
                                          const std::vector<double>& sgas);
