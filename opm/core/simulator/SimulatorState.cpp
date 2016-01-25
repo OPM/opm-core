@@ -1,6 +1,5 @@
 #include <opm/common/ErrorMacros.hpp>
 #include <opm/core/simulator/SimulatorState.hpp>
-#include <opm/core/grid.h>
 
 #include <cmath>
 #include <cassert>
@@ -41,11 +40,7 @@ SimulatorState::vectorApproxEqual(const std::vector<double>& v1,
     return true;
 }
 
-void
-SimulatorState::init(const UnstructuredGrid& g, int num_phases)
-{
-    init(g.number_of_cells, g.number_of_faces, num_phases);
-}
+
 void
 SimulatorState::init(int number_of_cells, int number_of_faces, int num_phases)
 {
