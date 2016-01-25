@@ -8,16 +8,12 @@
 #include <vector>
 #include <string>
 
-// forward declaration
-struct UnstructuredGrid;
 
 namespace Opm
 {
     class SimulatorState
     {
     public:
-
-        virtual void init(const UnstructuredGrid& g, int num_phases);
 
         virtual void init(int number_of_cells, int number_of_faces, int num_phases);
 
