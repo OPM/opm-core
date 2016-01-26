@@ -20,6 +20,8 @@
 #ifndef OPM_PVTINTERFACE_HEADER_INCLUDED
 #define OPM_PVTINTERFACE_HEADER_INCLUDED
 
+#include <vector>
+
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 

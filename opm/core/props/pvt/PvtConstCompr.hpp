@@ -22,6 +22,8 @@
 
 #include <opm/core/props/pvt/PvtInterface.hpp>
 #include <opm/common/ErrorMacros.hpp>
+#include <opm/parser/eclipse/Deck/DeckItem.hpp>
+#include <opm/parser/eclipse/Deck/DeckKeyword.hpp>
 #include <opm/parser/eclipse/Deck/DeckRecord.hpp>
 
 #include <vector>
