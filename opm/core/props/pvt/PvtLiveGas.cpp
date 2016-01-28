@@ -574,12 +574,6 @@ namespace Opm
                                                  press);
             } else {  // Undersaturated case
                 int is = tableIndex(saturatedGasTable[0], press);
-                // Extrapolate from first table section
-                if (is == 0 && press < saturatedGasTable[0][0]) {
-                    return linearInterpolation(undersatGasTables[0][0],
-                                                     undersatGasTables[0][item],
-                                                     r);
-                }
 
                 // Extrapolate from last table section
                 //int ltp = saturatedGasTable[0].size() - 1;
