@@ -6,40 +6,6 @@
 
 using namespace Opm;
 
-bool
-SimulatorState::equals (const SimulatorState& other,
-                        double epsilon) const {
-    bool equal = (num_phases_ == other.num_phases_);
-
-    // if we use &=, then all the tests will be run regardless
-    equal = equal && vectorApproxEqual( pressure() , other.pressure() , epsilon);
-    equal = equal && vectorApproxEqual( temperature() , other.temperature() , epsilon);
-    equal = equal && vectorApproxEqual( facepressure() , other.facepressure() , epsilon);
-    equal = equal && vectorApproxEqual( faceflux() , other.faceflux() , epsilon);
-    equal = equal && vectorApproxEqual( saturation() , other.saturation() , epsilon);
-
-    return equal;
-}
-
-bool
-SimulatorState::vectorApproxEqual(const std::vector<double>& v1,
-                                  const std::vector<double>& v2,
-                                  double epsilon) {
-    if (v1.size() != v2.size()) {
-        return false;
-    }
-
-    for (size_t i = 0; i < v1.size(); i++) {
-        const double diff = std::abs(v1[i] - v2[i]);
-        const double scale = std::abs(v1[i]) + std::abs(v2[i]);
-        if (diff > epsilon * scale) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 
 void
 SimulatorState::init(int number_of_cells, int number_of_faces, int num_phases)
