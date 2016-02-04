@@ -63,3 +63,42 @@ SimulatorState::registerFaceData( const std::string& name, const int components,
     return pos ;
 }
 
+template <typename Props> void
+SimulatorState::setFirstSat(const std::vector<int>& cells,
+                            const Props& props,
+                            ExtremalSat es)
+{
+    if (cells.empty()) {
+        return;
+    }
+    int n = cells.size();
+    std::vector<double> smin(num_phases_*n);
+    std::vector<double> smax(num_phases_*n);
+    props.satRange(n, &cells[0], &smin[0], &smax[0]);
+    std::vector< double >& sat = saturation();
+    const double* svals = (es == MinSat) ? &smin[0] : &smax[0];
+    for (int ci = 0; ci < n; ++ci) {
+        const int cell = cells[ci];
+        sat[num_phases_*cell] = svals[num_phases_*ci];
+        sat[num_phases_*cell + 1] = 1.0 - sat[num_phases_*cell];
+    }
+}
+
+// template instantiations for all known (to this library) subclasses
+// of SimulatorState that will call this method. notice that there are
+// no empty angle brackets after "template" -- that would have been
+// specialization instead
+#include <opm/core/props/BlackoilPropertiesInterface.hpp>
+#include <opm/core/props/IncompPropertiesInterface.hpp>
+
+template void
+SimulatorState::setFirstSat <IncompPropertiesInterface> (
+        const std::vector<int> &cells,
+        const IncompPropertiesInterface &props,
+        ExtremalSat es);
+
+template void
+SimulatorState::setFirstSat <BlackoilPropertiesInterface> (
+        const std::vector<int> &cells,
+        const BlackoilPropertiesInterface &props,
+        ExtremalSat es);
