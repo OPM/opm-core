@@ -33,6 +33,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/grid/GridManager.cpp
 	opm/core/grid/GridUtilities.cpp
 	opm/core/grid/grid.c
+        opm/core/grid/grid_equal.cpp
 	opm/core/grid/cart_grid.c
 	opm/core/grid/cornerpoint_grid.c
 	opm/core/grid/cpgpreprocess/facetopology.c
@@ -132,7 +133,6 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/core/utility/VelocityInterpolation.cpp
 	opm/core/utility/WachspressCoord.cpp
 	opm/core/utility/miscUtilities.cpp
-       opm/core/utility/opm_memcmp_double.c
 	opm/core/utility/miscUtilitiesBlackoil.cpp
 	opm/core/utility/NullStream.cpp
 	opm/core/utility/parameters/Parameter.cpp
@@ -430,7 +430,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/utility/Event_impl.hpp
 	opm/core/utility/Factory.hpp
 	opm/core/utility/MonotCubicInterpolator.hpp
-	opm/core/utility/opm_memcmp_double.h
 	opm/core/utility/NonuniformTableLinear.hpp
 	opm/core/utility/NullStream.hpp
 	opm/core/utility/RegionMapping.hpp

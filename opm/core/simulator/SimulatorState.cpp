@@ -1,4 +1,5 @@
 #include <opm/common/ErrorMacros.hpp>
+#include <opm/common/util/numeric/cmp.hpp>
 #include <opm/core/simulator/SimulatorState.hpp>
 
 #include <cmath>
@@ -12,33 +13,15 @@ SimulatorState::equals (const SimulatorState& other,
     bool equal = (num_phases_ == other.num_phases_);
 
     // if we use &=, then all the tests will be run regardless
-    equal = equal && vectorApproxEqual( pressure() , other.pressure() , epsilon);
-    equal = equal && vectorApproxEqual( temperature() , other.temperature() , epsilon);
-    equal = equal && vectorApproxEqual( facepressure() , other.facepressure() , epsilon);
-    equal = equal && vectorApproxEqual( faceflux() , other.faceflux() , epsilon);
-    equal = equal && vectorApproxEqual( saturation() , other.saturation() , epsilon);
+    equal = equal && cmp::double_vector_equal( pressure() , other.pressure() , cmp::default_abs_epsilon , epsilon);
+    equal = equal && cmp::double_vector_equal( temperature() , other.temperature() , cmp::default_abs_epsilon , epsilon);
+    equal = equal && cmp::double_vector_equal( facepressure() , other.facepressure() , cmp::default_abs_epsilon , epsilon);
+    equal = equal && cmp::double_vector_equal( faceflux() , other.faceflux() , cmp::default_abs_epsilon , epsilon);
+    equal = equal && cmp::double_vector_equal( saturation() , other.saturation() , cmp::default_abs_epsilon , epsilon);
 
     return equal;
 }
 
-bool
-SimulatorState::vectorApproxEqual(const std::vector<double>& v1,
-                                  const std::vector<double>& v2,
-                                  double epsilon) {
-    if (v1.size() != v2.size()) {
-        return false;
-    }
-
-    for (size_t i = 0; i < v1.size(); i++) {
-        const double diff = std::abs(v1[i] - v2[i]);
-        const double scale = std::abs(v1[i]) + std::abs(v2[i]);
-        if (diff > epsilon * scale) {
-            return false;
-        }
-    }
-
-    return true;
-}
 
 
 void
