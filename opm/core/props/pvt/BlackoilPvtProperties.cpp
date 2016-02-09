@@ -49,22 +49,22 @@ namespace Opm
         phase_usage_ = phaseUsageFromDeck(deck);
 
         // Surface densities. Accounting for different orders in eclipse and our code.
-        Opm::DeckKeywordConstPtr densityKeyword = deck->getKeyword("DENSITY");
-        int numRegions = densityKeyword->size();
+        const auto& densityKeyword = deck->getKeyword("DENSITY");
+        int numRegions = densityKeyword.size();
 
         densities_.resize(numRegions);
         for (int regionIdx = 0; regionIdx < numRegions; ++regionIdx) {
             if (phase_usage_.phase_used[Liquid]) {
                 densities_[regionIdx][phase_usage_.phase_pos[Liquid]]
-                    = densityKeyword->getRecord(regionIdx)->getItem("OIL")->getSIDouble(0);
+                    = densityKeyword.getRecord(regionIdx).getItem("OIL").getSIDouble(0);
             }
             if (phase_usage_.phase_used[Aqua]) {
                 densities_[regionIdx][phase_usage_.phase_pos[Aqua]]
-                    = densityKeyword->getRecord(regionIdx)->getItem("WATER")->getSIDouble(0);
+                    = densityKeyword.getRecord(regionIdx).getItem("WATER").getSIDouble(0);
             }
             if (phase_usage_.phase_used[Vapour]) {
                 densities_[regionIdx][phase_usage_.phase_pos[Vapour]]
-                    = densityKeyword->getRecord(regionIdx)->getItem("GAS")->getSIDouble(0);
+                    = densityKeyword.getRecord(regionIdx).getItem("GAS").getSIDouble(0);
             }
         }
 

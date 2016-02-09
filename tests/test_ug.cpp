@@ -88,18 +88,18 @@ BOOST_AUTO_TEST_CASE(EqualEclipseGrid) {
     struct UnstructuredGrid * cgrid2;
     {
         struct grdecl g;
-        Opm::DeckKeywordConstPtr dimens = deck->getKeyword("DIMENS");
-        Opm::DeckKeywordConstPtr coord = deck->getKeyword("COORD");
-        Opm::DeckKeywordConstPtr zcorn = deck->getKeyword("ZCORN");
-        Opm::DeckKeywordConstPtr actnum = deck->getKeyword("ACTNUM");
+        const auto& dimens = deck->getKeyword("DIMENS");
+        const auto& coord = deck->getKeyword("COORD");
+        const auto& zcorn = deck->getKeyword("ZCORN");
+        const auto& actnum = deck->getKeyword("ACTNUM");
         
-        g.dims[0] = dimens->getRecord(0)->getItem("NX")->getInt(0);
-        g.dims[1] = dimens->getRecord(0)->getItem("NY")->getInt(0);
-        g.dims[2] = dimens->getRecord(0)->getItem("NZ")->getInt(0);
+        g.dims[0] = dimens.getRecord(0).getItem("NX").get< int >(0);
+        g.dims[1] = dimens.getRecord(0).getItem("NY").get< int >(0);
+        g.dims[2] = dimens.getRecord(0).getItem("NZ").get< int >(0);
 
-        g.coord  = coord->getSIDoubleData().data();
-        g.zcorn  = zcorn->getSIDoubleData().data();
-        g.actnum = actnum->getIntData().data();
+        g.coord  = coord.getSIDoubleData().data();
+        g.zcorn  = zcorn.getSIDoubleData().data();
+        g.actnum = actnum.getIntData().data();
         g.mapaxes = NULL;
     
         

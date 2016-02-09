@@ -27,9 +27,7 @@
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/Deck/DeckKeyword.hpp>
 #include <opm/parser/eclipse/Deck/DeckRecord.hpp>
-#include <opm/parser/eclipse/Deck/DeckDoubleItem.hpp>
-#include <opm/parser/eclipse/Deck/DeckIntItem.hpp>
-#include <opm/parser/eclipse/Deck/DeckStringItem.hpp>
+#include <opm/parser/eclipse/Deck/DeckItem.hpp>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -51,13 +49,13 @@ namespace Opm
 
             metricUnits_.reset(Opm::UnitSystem::newMETRIC());
 
-            Opm::DeckRecordConstPtr specgridRecord = deck_->getKeyword("SPECGRID")->getRecord(0);
-            dims_[0] = specgridRecord->getItem("NX")->getInt(0);
-            dims_[1] = specgridRecord->getItem("NY")->getInt(0);
-            dims_[2] = specgridRecord->getItem("NZ")->getInt(0);
+            const auto& specgridRecord = deck_->getKeyword("SPECGRID").getRecord(0);
+            dims_[0] = specgridRecord.getItem("NX").get< int >(0);
+            dims_[1] = specgridRecord.getItem("NY").get< int >(0);
+            dims_[2] = specgridRecord.getItem("NZ").get< int >(0);
 
             int layersz = 8*dims_[0]*dims_[1];
-            const std::vector<double>& ZCORN = deck_->getKeyword("ZCORN")->getRawDoubleData();
+            const std::vector<double>& ZCORN = deck_->getKeyword("ZCORN").getRawDoubleData();
             botmax_ = *std::max_element(ZCORN.begin(), ZCORN.begin() + layersz/2);
             topmin_ = *std::min_element(ZCORN.begin() + dims_[2]*layersz - layersz/2,
                                         ZCORN.begin() + dims_[2]*layersz);
@@ -147,7 +145,7 @@ namespace Opm
             new_dims_[1] = jmax - jmin;
 
             // Filter the coord field
-            const std::vector<double>& COORD = deck_->getKeyword("COORD")->getRawDoubleData();
+            const std::vector<double>& COORD = deck_->getKeyword("COORD").getRawDoubleData();
             int num_coord = COORD.size();
             if (num_coord != 6*(dims_[0] + 1)*(dims_[1] + 1)) {
                 std::cerr << "Error! COORD size (" << COORD.size() << ") not consistent with SPECGRID\n";
@@ -180,7 +178,7 @@ namespace Opm
             // coordinate of the bottom surface, while zmax must be less than or
             // equal to the lowest coordinate of the top surface.
             int layersz = 8*dims_[0]*dims_[1];
-            const std::vector<double>& ZCORN = deck_->getKeyword("ZCORN")->getRawDoubleData();
+            const std::vector<double>& ZCORN = deck_->getKeyword("ZCORN").getRawDoubleData();
             int num_zcorn = ZCORN.size();
             if (num_zcorn != layersz*dims_[2]) {
                 std::cerr << "Error! ZCORN size (" << ZCORN.size() << ") not consistent with SPECGRID\n";
@@ -263,30 +261,30 @@ namespace Opm
         {
             Opm::DeckPtr subDeck(new Opm::Deck);
 
-            Opm::DeckKeywordPtr specGridKw(new Opm::DeckKeyword("SPECGRID"));
-            Opm::DeckRecordPtr specGridRecord(new Opm::DeckRecord());
+            Opm::DeckKeyword specGridKw("SPECGRID");
+            Opm::DeckRecord specGridRecord;
 
-            Opm::DeckIntItemPtr nxItem(new Opm::DeckIntItem("NX"));
-            Opm::DeckIntItemPtr nyItem(new Opm::DeckIntItem("NY"));
-            Opm::DeckIntItemPtr nzItem(new Opm::DeckIntItem("NZ"));
-            Opm::DeckIntItemPtr numresItem(new Opm::DeckIntItem("NUMRES"));
-            Opm::DeckStringItemPtr coordTypeItem(new Opm::DeckStringItem("COORD_TYPE"));
+            auto nxItem = Opm::DeckItem::make< int >("NX");
+            auto nyItem = Opm::DeckItem::make< int >("NY");
+            auto nzItem = Opm::DeckItem::make< int >("NZ");
+            auto numresItem = Opm::DeckItem::make< int >("NUMRES");
+            auto coordTypeItem = Opm::DeckItem::make< std::string >("COORD_TYPE");
 
-            nxItem->push_back(new_dims_[0]);
-            nyItem->push_back(new_dims_[1]);
-            nzItem->push_back(new_dims_[2]);
-            numresItem->push_back(1);
-            coordTypeItem->push_back("F");
+            nxItem.push_back(new_dims_[0]);
+            nyItem.push_back(new_dims_[1]);
+            nzItem.push_back(new_dims_[2]);
+            numresItem.push_back(1);
+            coordTypeItem.push_back("F");
 
-            specGridRecord->addItem(nxItem);
-            specGridRecord->addItem(nyItem);
-            specGridRecord->addItem(nzItem);
-            specGridRecord->addItem(numresItem);
-            specGridRecord->addItem(coordTypeItem);
+            specGridRecord.addItem(std::move(nxItem));
+            specGridRecord.addItem(std::move(nyItem));
+            specGridRecord.addItem(std::move(nzItem));
+            specGridRecord.addItem(std::move(numresItem));
+            specGridRecord.addItem(std::move(coordTypeItem));
 
-            specGridKw->addRecord(specGridRecord);
+            specGridKw.addRecord(std::move(specGridRecord));
 
-            subDeck->addKeyword(specGridKw);
+            subDeck->addKeyword(std::move(specGridKw));
             addDoubleKeyword_(subDeck, "COORD", /*dimension=*/"Length", new_COORD_);
             addDoubleKeyword_(subDeck, "ZCORN", /*dimension=*/"Length", new_ZCORN_);
             addIntKeyword_(subDeck, "ACTNUM", new_ACTNUM_);
@@ -361,20 +359,20 @@ namespace Opm
             if (data.empty())
                 return;
 
-            Opm::DeckKeywordPtr dataKw(new Opm::DeckKeyword(keywordName));
-            Opm::DeckRecordPtr dataRecord(new Opm::DeckRecord());
-            Opm::DeckDoubleItemPtr dataItem(new Opm::DeckDoubleItem("DATA"));
+            Opm::DeckKeyword dataKw(keywordName);
+            Opm::DeckRecord dataRecord;
+            auto dataItem = Opm::DeckItem::make< double >("DATA");
 
             for (size_t i = 0; i < data.size(); ++i) {
-                dataItem->push_back(data[i]);
+                dataItem.push_back(data[i]);
             }
 
             std::shared_ptr<const Dimension> dimension = metricUnits_->parse(dimensionString);
-            dataItem->push_backDimension(/*active=*/dimension, /*default=*/dimension);
+            dataItem.push_backDimension(/*active=*/dimension, /*default=*/dimension);
 
-            dataRecord->addItem(dataItem);
-            dataKw->addRecord(dataRecord);
-            subDeck->addKeyword(dataKw);
+            dataRecord.addItem(std::move(dataItem));
+            dataKw.addRecord(std::move(dataRecord));
+            subDeck->addKeyword(std::move(dataKw));
         }
 
         void addIntKeyword_(Opm::DeckPtr subDeck,
@@ -384,17 +382,17 @@ namespace Opm
             if (data.empty())
                 return;
 
-            Opm::DeckKeywordPtr dataKw(new Opm::DeckKeyword(keywordName));
-            Opm::DeckRecordPtr dataRecord(new Opm::DeckRecord());
-            Opm::DeckIntItemPtr dataItem(new Opm::DeckIntItem("DATA"));
+            Opm::DeckKeyword dataKw(keywordName);
+            Opm::DeckRecord dataRecord;
+            auto dataItem = Opm::DeckItem::make< int >("DATA");
 
             for (size_t i = 0; i < data.size(); ++i) {
-                dataItem->push_back(data[i]);
+                dataItem.push_back(data[i]);
             }
 
-            dataRecord->addItem(dataItem);
-            dataKw->addRecord(dataRecord);
-            subDeck->addKeyword(dataKw);
+            dataRecord.addItem(std::move(dataItem));
+            dataKw.addRecord(std::move(dataRecord));
+            subDeck->addKeyword(std::move(dataKw));
         }
 
         template <typename T>
@@ -436,7 +434,7 @@ namespace Opm
         void filterDoubleField(const std::string& keyword, std::vector<double>& output_field)
         {
             if (deck_->hasKeyword(keyword)) {
-                const std::vector<double>& field = deck_->getKeyword(keyword)->getRawDoubleData();
+                const std::vector<double>& field = deck_->getKeyword(keyword).getRawDoubleData();
                 filterField(field, output_field);
             }
         }
@@ -444,7 +442,7 @@ namespace Opm
         void filterIntegerField(const std::string& keyword, std::vector<int>& output_field)
         {
             if (deck_->hasKeyword(keyword)) {
-                const std::vector<int>& field = deck_->getKeyword(keyword)->getIntData();
+                const std::vector<int>& field = deck_->getKeyword(keyword).getIntData();
                 filterField(field, output_field);
             }
         }

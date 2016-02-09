@@ -89,7 +89,7 @@ void printKeywordValues(std::ofstream& out, std::string keyword, std::vector<T> 
 std::vector<double> getMapaxesValues(Opm::DeckConstPtr deck);
 
 /// Mirror keyword MAPAXES in deck
-void mirror_mapaxes(Opm::DeckConstPtr deck, std::string direction, std::ofstream& out) {
+void mirror_mapaxes( std::shared_ptr< const Opm::Deck > deck, std::string direction, std::ofstream& out) {
     // Assumes axis aligned with x/y-direction
     std::cout << "Warning: Keyword MAPAXES not fully understood. Result should be verified manually." << std::endl;
     if (deck->hasKeyword("MAPAXES")) {
@@ -107,31 +107,31 @@ void mirror_mapaxes(Opm::DeckConstPtr deck, std::string direction, std::ofstream
 }
 
 /// Mirror keyword SPECGRID in deck
-void mirror_specgrid(Opm::DeckConstPtr deck, std::string direction, std::ofstream& out) {
+void mirror_specgrid(std::shared_ptr< const Opm::Deck > deck, std::string direction, std::ofstream& out) {
     // We only need to multiply the dimension by 2 in the correct direction.
-    Opm::DeckRecordConstPtr specgridRecord = deck->getKeyword("SPECGRID")->getRecord(0);
+    const auto& specgridRecord = deck->getKeyword("SPECGRID").getRecord(0);
     std::vector<int> dimensions(3);
-    dimensions[0] = specgridRecord->getItem("NX")->getInt(0);
-    dimensions[1] = specgridRecord->getItem("NY")->getInt(0);
-    dimensions[2] = specgridRecord->getItem("NZ")->getInt(0);
+    dimensions[0] = specgridRecord.getItem("NX").get< int >(0);
+    dimensions[1] = specgridRecord.getItem("NY").get< int >(0);
+    dimensions[2] = specgridRecord.getItem("NZ").get< int >(0);
     if (direction == "x")      {dimensions[0] *= 2;}
     else if (direction == "y") {dimensions[1] *= 2;}
     else                       {std::cerr << "Direction should be either x or y" << std::endl; exit(1);}
     out << "SPECGRID" << std::endl << dimensions[0] << " " << dimensions[1] << " " << dimensions[2] << " "
-        << specgridRecord->getItem("NUMRES")->getInt(0) << " "
-        << specgridRecord->getItem("COORD_TYPE")->getString(0) << " "
+        << specgridRecord.getItem("NUMRES").get< int >(0) << " "
+        << specgridRecord.getItem("COORD_TYPE").get< std::string >(0) << " "
         << std::endl << "/" << std::endl << std::endl;
 }
 
 /// Mirror keyword COORD in deck
-void mirror_coord(Opm::DeckConstPtr deck, std::string direction, std::ofstream& out) {
+void mirror_coord(std::shared_ptr< const Opm::Deck > deck, std::string direction, std::ofstream& out) {
     // We assume uniform spacing in x and y directions and parallel top and bottom faces
-    Opm::DeckRecordConstPtr specgridRecord = deck->getKeyword("SPECGRID")->getRecord(0);
+    const auto& specgridRecord = deck->getKeyword("SPECGRID").getRecord(0);
     std::vector<int> dimensions(3);
-    dimensions[0] = specgridRecord->getItem("NX")->getInt(0);
-    dimensions[1] = specgridRecord->getItem("NY")->getInt(0);
-    dimensions[2] = specgridRecord->getItem("NZ")->getInt(0);
-    std::vector<double> coord = deck->getKeyword("COORD")->getRawDoubleData();
+    dimensions[0] = specgridRecord.getItem("NX").get< int >(0);
+    dimensions[1] = specgridRecord.getItem("NY").get< int >(0);
+    dimensions[2] = specgridRecord.getItem("NZ").get< int >(0);
+    std::vector<double> coord = deck->getKeyword("COORD").getRawDoubleData();
     const int entries_per_pillar = 6;
     std::vector<double> coord_mirrored;
     // Handle the two directions differently due to ordering of the pillars.
@@ -190,13 +190,13 @@ void mirror_coord(Opm::DeckConstPtr deck, std::string direction, std::ofstream& 
 }
 
 /// Mirror keyword ZCORN in deck
-void mirror_zcorn(Opm::DeckConstPtr deck, std::string direction, std::ofstream& out) {
-    Opm::DeckRecordConstPtr specgridRecord = deck->getKeyword("SPECGRID")->getRecord(0);
+void mirror_zcorn(std::shared_ptr< const Opm::Deck > deck, std::string direction, std::ofstream& out) {
+    const auto& specgridRecord = deck->getKeyword("SPECGRID").getRecord(0);
     std::vector<int> dimensions(3);
-    dimensions[0] = specgridRecord->getItem("NX")->getInt(0);
-    dimensions[1] = specgridRecord->getItem("NY")->getInt(0);
-    dimensions[2] = specgridRecord->getItem("NZ")->getInt(0);
-    std::vector<double> zcorn = deck->getKeyword("ZCORN")->getRawDoubleData();
+    dimensions[0] = specgridRecord.getItem("NX").get< int >(0);
+    dimensions[1] = specgridRecord.getItem("NY").get< int >(0);
+    dimensions[2] = specgridRecord.getItem("NZ").get< int >(0);
+    std::vector<double> zcorn = deck->getKeyword("ZCORN").getRawDoubleData();
     std::vector<double> zcorn_mirrored;
     // Handle the two directions differently due to ordering of the pillars.
     if (direction == "x") {
@@ -257,23 +257,23 @@ void mirror_zcorn(Opm::DeckConstPtr deck, std::string direction, std::ofstream& 
     printKeywordValues(out, "ZCORN", zcorn_mirrored, 8);
 }
 
-std::vector<int> getKeywordValues(std::string keyword, Opm::DeckConstPtr deck, int /*dummy*/) {
-    return deck->getKeyword(keyword)->getIntData();
+std::vector<int> getKeywordValues(std::string keyword, std::shared_ptr< const Opm::Deck > deck, int /*dummy*/) {
+    return deck->getKeyword(keyword).getIntData();
 }
 
-std::vector<double> getKeywordValues(std::string keyword, Opm::DeckConstPtr deck, double /*dummy*/) {
-    return deck->getKeyword(keyword)->getRawDoubleData();
+std::vector<double> getKeywordValues(std::string keyword, std::shared_ptr< const Opm::Deck > deck, double /*dummy*/) {
+    return deck->getKeyword(keyword).getRawDoubleData();
 }
 
 std::vector<double> getMapaxesValues(Opm::DeckConstPtr deck)
 {
-    Opm::DeckRecordConstPtr mapaxesRecord = deck->getKeyword("MAPAXES")->getRecord(0);
+    const auto& mapaxesRecord = deck->getKeyword("MAPAXES").getRecord(0);
     std::vector<double> result;
-    for (size_t itemIdx = 0; itemIdx < mapaxesRecord->size(); ++itemIdx) {
-        Opm::DeckItemConstPtr curItem = mapaxesRecord->getItem(itemIdx);
+    for (size_t itemIdx = 0; itemIdx < mapaxesRecord.size(); ++itemIdx) {
+        const auto& curItem = mapaxesRecord.getItem(itemIdx);
 
-        for (size_t dataItemIdx = 0; dataItemIdx < curItem->size(); ++dataItemIdx) {
-            result.push_back(curItem->getRawDouble(dataItemIdx));
+        for (size_t dataItemIdx = 0; dataItemIdx < curItem.size(); ++dataItemIdx) {
+            result.push_back(curItem.get< double >(dataItemIdx));
         }
     }
     return result;
@@ -287,11 +287,11 @@ void mirror_celldata(std::string keyword, Opm::DeckConstPtr deck, std::string di
         return;
     }
     // Get data from eclipse deck
-    Opm::DeckRecordConstPtr specgridRecord = deck->getKeyword("SPECGRID")->getRecord(0);
+    const auto& specgridRecord = deck->getKeyword("SPECGRID").getRecord(0);
     std::vector<int> dimensions(3);
-    dimensions[0] = specgridRecord->getItem("NX")->getInt(0);
-    dimensions[1] = specgridRecord->getItem("NY")->getInt(0);
-    dimensions[2] = specgridRecord->getItem("NZ")->getInt(0);
+    dimensions[0] = specgridRecord.getItem("NX").get< int >(0);
+    dimensions[1] = specgridRecord.getItem("NY").get< int >(0);
+    dimensions[2] = specgridRecord.getItem("NZ").get< int >(0);
     std::vector<T> values = getKeywordValues(keyword, deck, T(0.0));
     std::vector<T> values_mirrored(2*dimensions[0]*dimensions[1]*dimensions[2], 0.0);
     // Handle the two directions differently due to ordering of the pillars.

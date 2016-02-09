@@ -50,9 +50,9 @@ namespace Opm
         PvtConstCompr()
         {}
 
-        void initFromWater(Opm::DeckKeywordConstPtr pvtwKeyword)
+        void initFromWater(const Opm::DeckKeyword& pvtwKeyword)
         {
-            int numRegions = pvtwKeyword->size();
+            int numRegions = pvtwKeyword.size();
 
             ref_press_.resize(numRegions);
             ref_B_.resize(numRegions);
@@ -61,19 +61,19 @@ namespace Opm
             visc_comp_.resize(numRegions);
 
             for (int regionIdx = 0; regionIdx < numRegions; ++ regionIdx) {
-                Opm::DeckRecordConstPtr pvtwRecord = pvtwKeyword->getRecord(regionIdx);
+                const auto& pvtwRecord = pvtwKeyword.getRecord(regionIdx);
 
-                ref_press_[regionIdx] = pvtwRecord->getItem("P_REF")->getSIDouble(0);
-                ref_B_[regionIdx]     = pvtwRecord->getItem("WATER_VOL_FACTOR")->getSIDouble(0);
-                comp_[regionIdx]      = pvtwRecord->getItem("WATER_COMPRESSIBILITY")->getSIDouble(0);
-                viscosity_[regionIdx] = pvtwRecord->getItem("WATER_VISCOSITY")->getSIDouble(0);
-                visc_comp_[regionIdx] = pvtwRecord->getItem("WATER_VISCOSIBILITY")->getSIDouble(0);
+                ref_press_[regionIdx] = pvtwRecord.getItem("P_REF").getSIDouble(0);
+                ref_B_[regionIdx]     = pvtwRecord.getItem("WATER_VOL_FACTOR").getSIDouble(0);
+                comp_[regionIdx]      = pvtwRecord.getItem("WATER_COMPRESSIBILITY").getSIDouble(0);
+                viscosity_[regionIdx] = pvtwRecord.getItem("WATER_VISCOSITY").getSIDouble(0);
+                visc_comp_[regionIdx] = pvtwRecord.getItem("WATER_VISCOSIBILITY").getSIDouble(0);
             }
         }
 
-        void initFromOil(Opm::DeckKeywordConstPtr pvcdoKeyword)
+        void initFromOil(const DeckKeyword& pvcdoKeyword)
         {
-            int numRegions = pvcdoKeyword->size();
+            int numRegions = pvcdoKeyword.size();
 
             ref_press_.resize(numRegions);
             ref_B_.resize(numRegions);
@@ -82,13 +82,13 @@ namespace Opm
             visc_comp_.resize(numRegions);
 
             for (int regionIdx = 0; regionIdx < numRegions; ++ regionIdx) {
-                Opm::DeckRecordConstPtr pvcdoRecord = pvcdoKeyword->getRecord(regionIdx);
+                const auto& pvcdoRecord = pvcdoKeyword.getRecord(regionIdx);
 
-                ref_press_[regionIdx] = pvcdoRecord->getItem("P_REF")->getSIDouble(0);
-                ref_B_[regionIdx]     = pvcdoRecord->getItem("OIL_VOL_FACTOR")->getSIDouble(0);
-                comp_[regionIdx]      = pvcdoRecord->getItem("OIL_COMPRESSIBILITY")->getSIDouble(0);
-                viscosity_[regionIdx] = pvcdoRecord->getItem("OIL_VISCOSITY")->getSIDouble(0);
-                visc_comp_[regionIdx] = pvcdoRecord->getItem("OIL_VISCOSIBILITY")->getSIDouble(0);
+                ref_press_[regionIdx] = pvcdoRecord.getItem("P_REF").getSIDouble(0);
+                ref_B_[regionIdx]     = pvcdoRecord.getItem("OIL_VOL_FACTOR").getSIDouble(0);
+                comp_[regionIdx]      = pvcdoRecord.getItem("OIL_COMPRESSIBILITY").getSIDouble(0);
+                viscosity_[regionIdx] = pvcdoRecord.getItem("OIL_VISCOSITY").getSIDouble(0);
+                visc_comp_[regionIdx] = pvcdoRecord.getItem("OIL_VISCOSIBILITY").getSIDouble(0);
             }
         }
 

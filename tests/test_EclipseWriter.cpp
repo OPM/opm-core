@@ -260,7 +260,7 @@ void checkInitFile()
         std::string keywordName(ecl_kw_get_header(eclKeyword));
 
         if (keywordName == "PORO") {
-            const std::vector<double> &sourceData = deck->getKeyword("PORO")->getSIDoubleData();
+            const std::vector<double> &sourceData = deck->getKeyword("PORO").getSIDoubleData();
             std::vector<double> resultData;
             getErtData(eclKeyword, resultData);
 
@@ -268,7 +268,7 @@ void checkInitFile()
         }
 
         if (keywordName == "PERMX") {
-            std::vector<double> sourceData = deck->getKeyword("PERMX")->getSIDoubleData();
+            std::vector<double> sourceData = deck->getKeyword("PERMX").getSIDoubleData();
             std::vector<double> resultData;
             getErtData(eclKeyword, resultData);
 
