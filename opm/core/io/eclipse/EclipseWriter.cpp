@@ -38,8 +38,6 @@
 #include <opm/core/wells.h> // WellType
 
 #include <opm/parser/eclipse/Deck/DeckKeyword.hpp>
-#include <opm/parser/eclipse/Utility/SpecgridWrapper.hpp>
-#include <opm/parser/eclipse/Utility/WelspecsWrapper.hpp>
 #include <opm/parser/eclipse/Units/Dimension.hpp>
 #include <opm/parser/eclipse/Units/UnitSystem.hpp>
 #include <opm/parser/eclipse/EclipseState/Grid/EclipseGrid.hpp>
