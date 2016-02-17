@@ -52,22 +52,22 @@ grid_equal(const struct UnstructuredGrid * grid1 , const struct UnstructuredGrid
 
         // Floating point comparisons.
         {
-            if (!Opm::cmp::double_ptr_equal( grid1->node_coordinates , grid2->node_coordinates , grid1->dimensions * grid1->number_of_nodes))
+	    if (!Opm::cmp::array_equal<double>( grid1->node_coordinates , grid2->node_coordinates , static_cast<size_t>(grid1->dimensions * grid1->number_of_nodes)))
                 return false;
 
-            if (!Opm::cmp::double_ptr_equal( grid1->face_centroids , grid2->face_centroids , grid1->dimensions * grid1->number_of_faces))
+  	    if (!Opm::cmp::array_equal<double>( grid1->face_centroids , grid2->face_centroids , static_cast<size_t>(grid1->dimensions * grid1->number_of_faces)))
                 return false;
 
-            if (!Opm::cmp::double_ptr_equal( grid1->face_areas , grid2->face_areas , grid1->number_of_faces))
+            if (!Opm::cmp::array_equal<double>( grid1->face_areas , grid2->face_areas , static_cast<size_t>(grid1->number_of_faces)))
                 return false;
 
-            if (!Opm::cmp::double_ptr_equal( grid1->face_normals , grid2->face_normals , grid1->dimensions * grid1->number_of_faces))
+            if (!Opm::cmp::array_equal<double>( grid1->face_normals , grid2->face_normals , static_cast<size_t>(grid1->dimensions * grid1->number_of_faces)))
                 return false;
 
-            if (!Opm::cmp::double_ptr_equal( grid1->cell_centroids , grid2->cell_centroids , grid1->dimensions * grid1->number_of_cells))
+            if (!Opm::cmp::array_equal<double>( grid1->cell_centroids , grid2->cell_centroids , static_cast<size_t>(grid1->dimensions * grid1->number_of_cells)))
                 return false;
 
-            if (!Opm::cmp::double_ptr_equal( grid1->cell_volumes , grid2->cell_volumes , grid1->number_of_cells))
+            if (!Opm::cmp::array_equal<double>( grid1->cell_volumes , grid2->cell_volumes , static_cast<size_t>(grid1->number_of_cells)))
                 return false;
         }
         return true;

@@ -13,11 +13,11 @@ SimulatorState::equals (const SimulatorState& other,
     bool equal = (num_phases_ == other.num_phases_);
 
     // if we use &=, then all the tests will be run regardless
-    equal = equal && cmp::double_vector_equal( pressure() , other.pressure() , cmp::default_abs_epsilon , epsilon);
-    equal = equal && cmp::double_vector_equal( temperature() , other.temperature() , cmp::default_abs_epsilon , epsilon);
-    equal = equal && cmp::double_vector_equal( facepressure() , other.facepressure() , cmp::default_abs_epsilon , epsilon);
-    equal = equal && cmp::double_vector_equal( faceflux() , other.faceflux() , cmp::default_abs_epsilon , epsilon);
-    equal = equal && cmp::double_vector_equal( saturation() , other.saturation() , cmp::default_abs_epsilon , epsilon);
+    equal = equal && cmp::vector_equal( pressure() , other.pressure() , cmp::default_abs_epsilon , epsilon);
+    equal = equal && cmp::vector_equal( temperature() , other.temperature() , cmp::default_abs_epsilon , epsilon);
+    equal = equal && cmp::vector_equal( facepressure() , other.facepressure() , cmp::default_abs_epsilon , epsilon);
+    equal = equal && cmp::vector_equal( faceflux() , other.faceflux() , cmp::default_abs_epsilon , epsilon);
+    equal = equal && cmp::vector_equal( saturation() , other.saturation() , cmp::default_abs_epsilon , epsilon);
 
     return equal;
 }
