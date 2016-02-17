@@ -2,6 +2,7 @@
 #include <opm/common/util/numeric/cmp.hpp>
 #include <opm/core/simulator/SimulatorState.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <cassert>
 
@@ -80,42 +81,35 @@ SimulatorState::registerFaceData( const std::string& name, const int components,
     return pos ;
 }
 
-template <typename Props> void
-SimulatorState::setFirstSat(const std::vector<int>& cells,
-                            const Props& props,
-                            ExtremalSat es)
-{
-    if (cells.empty()) {
-        return;
+void SimulatorState::setCellDataComponent( const std::string& name , size_t component , const std::vector<int>& cells , const std::vector<double>& values) {
+  const auto iter = std::find( cellDataNames_.begin() , cellDataNames_.end() , name);
+  int id = iter - cellDataNames_.begin();
+  auto& data = cellData_[id];
+  if (component >= num_phases_)
+    throw std::invalid_argument("Invalid component");
+  
+  if (cells.size() != values.size())
+    throw std::invalid_argument("size mismatch between cells and values");
+  
+  /* This is currently quite broken; the setCellDataComponent
+     method assumes that the number of components in the field
+     we are currently focusing on has num_phases components in
+     total. This restriction should be lifted by allowing a per
+     field number of components.
+  */
+  if (data.size() != num_phases_ * num_cells_)
+    throw std::invalid_argument("Can currently only be used on fields with num_components == num_phases (i.e. saturation...) ");
+  
+  for (size_t i = 0; i < cells.size(); i++) {
+    if (cells[i] < num_cells_) {
+      auto field_index = cells[i] * num_phases_ + component;
+      auto value = values[i];
+      
+      data[field_index] = value;
+    } else {
+      throw std::invalid_argument("Invalid cell number");
     }
-    int n = cells.size();
-    std::vector<double> smin(num_phases_*n);
-    std::vector<double> smax(num_phases_*n);
-    props.satRange(n, &cells[0], &smin[0], &smax[0]);
-    std::vector< double >& sat = saturation();
-    const double* svals = (es == MinSat) ? &smin[0] : &smax[0];
-    for (int ci = 0; ci < n; ++ci) {
-        const int cell = cells[ci];
-        sat[num_phases_*cell] = svals[num_phases_*ci];
-        sat[num_phases_*cell + 1] = 1.0 - sat[num_phases_*cell];
-    }
+  }
 }
 
-// template instantiations for all known (to this library) subclasses
-// of SimulatorState that will call this method. notice that there are
-// no empty angle brackets after "template" -- that would have been
-// specialization instead
-#include <opm/core/props/BlackoilPropertiesInterface.hpp>
-#include <opm/core/props/IncompPropertiesInterface.hpp>
 
-template void
-SimulatorState::setFirstSat <IncompPropertiesInterface> (
-        const std::vector<int> &cells,
-        const IncompPropertiesInterface &props,
-        ExtremalSat es);
-
-template void
-SimulatorState::setFirstSat <BlackoilPropertiesInterface> (
-        const std::vector<int> &cells,
-        const BlackoilPropertiesInterface &props,
-        ExtremalSat es);

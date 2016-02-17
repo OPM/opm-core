@@ -17,8 +17,6 @@ namespace Opm
 
         virtual void init(int number_of_cells, int number_of_faces, int num_phases);
 
-        enum ExtremalSat { MinSat, MaxSat };
-
     protected:
         /// \brief pressure per cell.
         static const int pressureId_ = 0;
@@ -32,19 +30,12 @@ namespace Opm
         /// \brief The fluxes at the faces.
         static const int faceFluxId_ = 1;
 
-        /**
-         * Initialize the first saturation to maximum value. This method
-         * should be considered deprecated. Avoid to use it!
-         *
-         * \tparam Props Fluid and rock properties that pertain to this
-         *               kind of simulation. Currently, only Blackoil-
-         *               and IncompPropertiesInterface are supported.
-         */
-        template <typename Props>
-        void setFirstSat(const std::vector<int>& cells,
-                         const Props& props,
-                         ExtremalSat es);
     public:
+        /// Will set the values of component nr @component in the
+        /// field @key. All the cells in @cells will be set to the
+        /// values in @values.
+        void setCellDataComponent( const std::string& key , size_t component , const std::vector<int>& cells , const std::vector<double>& values);
+
         int numPhases() const { return num_phases_; }
         int numCells () const { return num_cells_; }
         int numFaces () const { return num_faces_; }
