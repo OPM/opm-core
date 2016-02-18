@@ -33,7 +33,6 @@
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/Deck/DeckKeyword.hpp>
 #include <opm/parser/eclipse/Deck/DeckRecord.hpp>
-#include <opm/parser/eclipse/Deck/DeckDoubleItem.hpp>
 
 #include <string>
 #include <iostream>
@@ -48,10 +47,10 @@ BOOST_AUTO_TEST_CASE(CreateParser)
     Opm::DeckConstPtr deck = parser->parseFile( filename1 , parseMode);
 
     BOOST_CHECK_EQUAL( 6U , deck->size() );
-    Opm::DeckItemConstPtr actnum = deck->getKeyword("ACTNUM")->getRecord(0)->getItem(0);
-    const std::vector<int>& actnum_data = actnum->getIntData();
+    const auto& actnum = deck->getKeyword("ACTNUM").getRecord(0).getItem(0);
+    const std::vector<int>& actnum_data = actnum.getData< int >();
 
-    BOOST_CHECK_EQUAL( 1000U , actnum->size() );
+    BOOST_CHECK_EQUAL( 1000U , actnum.size() );
     BOOST_CHECK_EQUAL( 1, actnum_data[0] );
     BOOST_CHECK_EQUAL( 2, actnum_data[400] );
     BOOST_CHECK_EQUAL( 3, actnum_data[999] );

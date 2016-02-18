@@ -54,8 +54,8 @@ namespace Opm
             float* temperature_data = ecl_kw_get_float_ptr(temperature_kw);
 
             // factor and offset from the temperature values given in the deck to Kelvin
-            double scaling = eclipse_state->getDeckUnitSystem()->parse("Temperature")->getSIScaling();
-            double offset  = eclipse_state->getDeckUnitSystem()->parse("Temperature")->getSIOffset();
+            double scaling = eclipse_state->getDeckUnitSystem().parse("Temperature")->getSIScaling();
+            double offset  = eclipse_state->getDeckUnitSystem().parse("Temperature")->getSIOffset();
 
             for (size_t index = 0; index < simulator_state.temperature().size(); ++index) {
                 simulator_state.temperature()[index] = unit::convert::from((double)temperature_data[index] - offset, scaling);
@@ -81,7 +81,7 @@ namespace Opm
             }
 
             float* pressure_data = ecl_kw_get_float_ptr(pressure_kw);
-            const double deck_pressure_unit = (eclipse_state->getDeckUnitSystem()->getType() == UnitSystem::UNIT_TYPE_METRIC) ? Opm::unit::barsa : Opm::unit::psia;
+            const double deck_pressure_unit = (eclipse_state->getDeckUnitSystem().getType() == UnitSystem::UNIT_TYPE_METRIC) ? Opm::unit::barsa : Opm::unit::psia;
             for (size_t index = 0; index < simulator_state.pressure().size(); ++index) {
                 simulator_state.pressure()[index] = unit::convert::from((double)pressure_data[index], deck_pressure_unit);
             }

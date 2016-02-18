@@ -565,7 +565,7 @@ public:
         // finally, write the grid to disk
         IOConfigConstPtr ioConfig = eclipseState->getIOConfigConst();
         if (ioConfig->getWriteEGRIDFile()) {
-            if (eclipseState->getDeckUnitSystem()->getType() == UnitSystem::UNIT_TYPE_METRIC){
+            if (eclipseState->getDeckUnitSystem().getType() == UnitSystem::UNIT_TYPE_METRIC){
                 eclGrid->fwriteEGRID(egridFileName_.ertHandle(), true);
             }else{
                 eclGrid->fwriteEGRID(egridFileName_.ertHandle(), false);
@@ -1029,8 +1029,7 @@ void Summary::addAllWells(Opm::EclipseStateConstPtr eclipseState,
                           const PhaseUsage& uses)
 {
     eclipseState_ = eclipseState;
-    std::shared_ptr<const UnitSystem> unitsystem = eclipseState_->getDeckUnitSystem();
-    auto deckUnitType = unitsystem->getType();
+    auto deckUnitType = eclipseState_->getDeckUnitSystem().getType();
 
     // TODO: Only create report variables that are requested with keywords
     // (e.g. "WOPR") in the input files, and only for those wells that are
@@ -1203,8 +1202,7 @@ void EclipseWriter::writeInit(const SimulatorTimerInterface &timer)
        since it requires knowledge of the start time). */
     {
       auto eclGrid = eclipseState_->getEclipseGrid();
-      std::shared_ptr<const UnitSystem> unitsystem = eclipseState_->getDeckUnitSystem();
-      auto deckUnitType = unitsystem->getType();
+      auto deckUnitType = eclipseState_->getDeckUnitSystem().getType();
       bool time_in_days = true;
 
       if (deckUnitType == UnitSystem::UNIT_TYPE_LAB)
@@ -1370,8 +1368,8 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
                                                       ECL_RFT_FILE,
                                                       ioConfig->getFMTOUT(),
                                                       0);
-        std::shared_ptr<const UnitSystem> unitsystem = eclipseState_->getDeckUnitSystem();
-        ert_ecl_unit_enum ecl_unit = convertUnitTypeErtEclUnitEnum(unitsystem->getType());
+        auto unit_type = eclipseState_->getDeckUnitSystem().getType();
+        ert_ecl_unit_enum ecl_unit = convertUnitTypeErtEclUnitEnum(unit_type);
         std::vector<WellConstPtr> wells = eclipseState_->getSchedule()->getWells(timer.reportStepNum());
         eclipseWriteRFTHandler->writeTimeStep(rft_filename,
                                               ecl_unit,
@@ -1444,13 +1442,13 @@ EclipseWriter::EclipseWriter(const parameter::ParameterGroup& params,
 
     // factor from the pressure values given in the deck to Pascals
     deckToSiPressure_ =
-        eclipseState->getDeckUnitSystem()->parse("Pressure")->getSIScaling();
+        eclipseState->getDeckUnitSystem().parse("Pressure")->getSIScaling();
 
     // factor and offset from the temperature values given in the deck to Kelvin
     deckToSiTemperatureFactor_ =
-        eclipseState->getDeckUnitSystem()->parse("Temperature")->getSIScaling();
+        eclipseState->getDeckUnitSystem().parse("Temperature")->getSIScaling();
     deckToSiTemperatureOffset_ =
-        eclipseState->getDeckUnitSystem()->parse("Temperature")->getSIOffset();
+        eclipseState->getDeckUnitSystem().parse("Temperature")->getSIOffset();
 
     init(params);
 }
