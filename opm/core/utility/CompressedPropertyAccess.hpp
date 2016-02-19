@@ -205,13 +205,13 @@ namespace Opm {
                      * \return Data values for property \c kw.
                      */
                     template <class PropertyContainer>
-                    static std::shared_ptr< GridProperty<double> >
+                    static std::shared_ptr<const GridProperty<double> >
                     value(PropertyContainer& ecl,
                           const std::string& kw);
                 };
 
                 template <class PropertyContainer>
-                std::shared_ptr< GridProperty<double> >
+                std::shared_ptr<const GridProperty<double> >
                 GetProperty<double>::value(PropertyContainer& ecl,
                                            const std::string& kw)
                 {
@@ -245,18 +245,18 @@ namespace Opm {
                  * an empty \code shared_ptr<> \endcode if not.
                  */
                 template <class PropertyContainer>
-                static std::shared_ptr< GridProperty<T> >
+                static std::shared_ptr<const GridProperty<T> >
                 value(PropertyContainer& ecl,
                       const std::string& kw);
             };
 
             template <typename T>
             template <class PropertyContainer>
-            std::shared_ptr< GridProperty<T> >
+            std::shared_ptr<const GridProperty<T> >
             EclipsePropertyArray<T>::value(PropertyContainer& ecl,
                                            const std::string& kw)
             {
-                std::shared_ptr< GridProperty<T> > x;
+                std::shared_ptr<const GridProperty<T> > x;
 
                 if (EclPropImpl::HasProperty<T>::p(ecl, kw)) {
                     x = EclPropImpl::GetProperty<T>::value(ecl, kw);
@@ -349,7 +349,7 @@ namespace Opm {
                  *
                  * Null if data not defined.
                  */
-                std::shared_ptr< GridProperty<T> > x_;
+                std::shared_ptr<const GridProperty<T> > x_;
 
                 /**
                  * Fall-back data element value if data not defined.
