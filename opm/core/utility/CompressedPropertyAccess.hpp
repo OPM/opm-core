@@ -90,7 +90,7 @@ namespace Opm {
                      * \tparam PropertyContainer Pointer type
                      * representing collection of (global) grid
                      * properties.  Must implement method \c
-                     * hasIntGridProperty.
+                     * hasDeckIntGridProperty.
                      *
                      * \param[in] ecl Property container.
                      *
@@ -110,7 +110,7 @@ namespace Opm {
                 HasProperty<int>::p(PropertyContainer& ecl,
                                     const std::string& kw)
                 {
-                    return ecl->hasIntGridProperty(kw);
+                    return ecl->hasDeckIntGridProperty(kw);
                 }
 
                 /**
@@ -125,7 +125,7 @@ namespace Opm {
                      * \tparam PropertyContainer Pointer type
                      * representing collection of (global) grid
                      * properties.  Must implement method \c
-                     * hasDoubleGridProperty.
+                     * hasDeckDoubleGridProperty.
                      *
                      * \param[in] ecl Property container.
                      *
@@ -145,7 +145,7 @@ namespace Opm {
                 HasProperty<double>::p(PropertyContainer& ecl,
                                        const std::string& kw)
                 {
-                    return ecl->hasDoubleGridProperty(kw);
+                    return ecl->hasDeckDoubleGridProperty(kw);
                 }
 
                 /**
@@ -169,13 +169,13 @@ namespace Opm {
                      * \return Data values for property \c kw.
                      */
                     template <class PropertyContainer>
-                    static std::shared_ptr< GridProperty<int> >
+                    static std::shared_ptr<const GridProperty<int> >
                     value(PropertyContainer& ecl,
                           const std::string& kw);
                 };
 
                 template <class PropertyContainer>
-                std::shared_ptr< GridProperty<int> >
+                std::shared_ptr<const GridProperty<int> >
                 GetProperty<int>::value(PropertyContainer& ecl,
                                         const std::string& kw)
                 {
@@ -291,9 +291,9 @@ namespace Opm {
                  * \tparam PropertyContainer Pointer type representing
                  * collection of (global) grid properties.  Typically
                  * \c EclipseStatePtr or \c EclipseStateConstPtr.
-                 * Must implement methods \c hasIntGridProperty and \c
+                 * Must implement methods \c hasDeckIntGridProperty and \c
                  * getIntGridProperty if \c T is \c int, or \c
-                 * hasDoubleGridProperty and \c getDoubleGridProperty
+                 * hasDeckDoubleGridProperty and \c getDoubleGridProperty
                  * if \c T is \c double.
                  *
                  * \param[in] ecl Property container.

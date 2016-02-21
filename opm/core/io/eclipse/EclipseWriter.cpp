@@ -1181,17 +1181,17 @@ void EclipseWriter::writeInit(const SimulatorTimerInterface &timer)
     IOConfigConstPtr ioConfig = eclipseState_->getIOConfigConst();
 
     if (ioConfig->getWriteINITFile()) {
-        if (eclipseState_->hasDoubleGridProperty("PERMX")) {
+        if (eclipseState_->hasDeckDoubleGridProperty("PERMX")) {
             auto data = eclipseState_->getDoubleGridProperty("PERMX")->getData();
             EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
             fortio.writeKeyword("PERMX", data);
         }
-        if (eclipseState_->hasDoubleGridProperty("PERMY")) {
+        if (eclipseState_->hasDeckDoubleGridProperty("PERMY")) {
             auto data = eclipseState_->getDoubleGridProperty("PERMY")->getData();
             EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
             fortio.writeKeyword("PERMY", data);
         }
-        if (eclipseState_->hasDoubleGridProperty("PERMZ")) {
+        if (eclipseState_->hasDeckDoubleGridProperty("PERMZ")) {
             auto data = eclipseState_->getDoubleGridProperty("PERMZ")->getData();
             EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
             fortio.writeKeyword("PERMZ", data);
