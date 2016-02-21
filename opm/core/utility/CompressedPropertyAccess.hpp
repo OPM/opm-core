@@ -169,13 +169,13 @@ namespace Opm {
                      * \return Data values for property \c kw.
                      */
                     template <class PropertyContainer>
-                    static std::shared_ptr< GridProperty<int> >
+                    static std::shared_ptr<const GridProperty<int> >
                     value(PropertyContainer& ecl,
                           const std::string& kw);
                 };
 
                 template <class PropertyContainer>
-                std::shared_ptr< GridProperty<int> >
+                std::shared_ptr<const GridProperty<int> >
                 GetProperty<int>::value(PropertyContainer& ecl,
                                         const std::string& kw)
                 {
