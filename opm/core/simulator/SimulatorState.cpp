@@ -87,10 +87,10 @@ void SimulatorState::setCellDataComponent( const std::string& name , size_t comp
   auto& data = cellData_[id];
   if (component >= num_phases_)
     throw std::invalid_argument("Invalid component");
-  
+
   if (cells.size() != values.size())
     throw std::invalid_argument("size mismatch between cells and values");
-  
+
   /* This is currently quite broken; the setCellDataComponent
      method assumes that the number of components in the field
      we are currently focusing on has num_phases components in
@@ -99,12 +99,12 @@ void SimulatorState::setCellDataComponent( const std::string& name , size_t comp
   */
   if (data.size() != num_phases_ * num_cells_)
     throw std::invalid_argument("Can currently only be used on fields with num_components == num_phases (i.e. saturation...) ");
-  
+
   for (size_t i = 0; i < cells.size(); i++) {
     if (cells[i] < num_cells_) {
       auto field_index = cells[i] * num_phases_ + component;
       auto value = values[i];
-      
+
       data[field_index] = value;
     } else {
       throw std::invalid_argument("Invalid cell number");
@@ -112,4 +112,19 @@ void SimulatorState::setCellDataComponent( const std::string& name , size_t comp
   }
 }
 
+
+std::vector<double>& SimulatorState::getCellData( const std::string& name )  {
+    const auto iter = std::find( cellDataNames_.begin() , cellDataNames_.end() , name);
+    int id = iter - cellDataNames_.begin();
+    auto& data = cellData_[id];
+    return data;
+}
+
+
+const std::vector<double>& SimulatorState::getCellData( const std::string& name )  const {
+    const auto iter = std::find( cellDataNames_.begin() , cellDataNames_.end() , name);
+    int id = iter - cellDataNames_.begin();
+    const auto& data = cellData_[id];
+    return data;
+}
 

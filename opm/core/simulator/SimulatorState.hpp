@@ -70,6 +70,9 @@ namespace Opm
 
         size_t registerCellData( const std::string& name, const int components, const double initialValue = 0.0 );
         size_t registerFaceData( const std::string& name, const int components, const double initialValue = 0.0 );
+
+        std::vector<double>& getCellData( const std::string& name );
+        const std::vector<double>& getCellData( const std::string& name ) const;
     private:
         int num_cells_;
         int num_faces_;
