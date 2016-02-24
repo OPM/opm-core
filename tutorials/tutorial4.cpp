@@ -37,6 +37,7 @@
 
 #include <opm/core/transport/reorder/TransportSolverTwophaseReorder.hpp>
 
+#include <opm/core/simulator/initState.hpp>
 #include <opm/core/simulator/TwophaseState.hpp>
 #include <opm/core/simulator/WellState.hpp>
 
@@ -214,7 +215,9 @@ try
     /// \internal[two-phase state]
     TwophaseState state;
     state.init(grid.number_of_cells , grid.number_of_faces, 2);
-    state.setFirstSat(allcells, props, TwophaseState::MinSat);
+    initSaturation( allcells , props , state , MinSat );
+
+
     /// \internal[two-phase state]
     /// \endinternal
 

@@ -40,6 +40,38 @@
 namespace Opm
 {
 
+
+    template <class Props>
+    static void initSaturation(const std::vector<int>& cells , const Props& props , SimulatorState& state , ExtremalSat satType) {
+        const int num_phases = state.numPhases();
+        std::vector<double> min_sat(num_phases * cells.size());
+        std::vector<double> max_sat(num_phases * cells.size());
+        props.satRange(cells.size() ,cells.data() , min_sat.data() , max_sat.data());
+
+        {
+            std::vector<double> second_sat(cells.size());
+            std::vector<double> first_sat(cells.size());
+
+            for (size_t index = 0; index < cells.size(); index++) {
+                if (satType == MinSat) {
+                    first_sat[index] = min_sat[ num_phases * index];
+                    second_sat[index] = 1 - min_sat[ num_phases * index];
+                } else {
+                    first_sat[index] = max_sat[ num_phases * index];
+                    second_sat[index] = 1 - max_sat[ num_phases * index];
+                }
+            }
+
+            state.setCellDataComponent( "SATURATION" , 0 , cells , first_sat );
+            state.setCellDataComponent( "SATURATION" , 1 , cells , second_sat );
+        }
+    }
+
+
+        // Initialize saturations so that there is water below woc,
+        // and oil above.
+
+
     namespace
     {
 #ifdef __clang__
@@ -75,7 +107,40 @@ namespace Opm
 #pragma clang diagnostic pop
 #endif /* __clang__ */
 
+
         enum WaterInit { WaterBelow, WaterAbove };
+
+        /// Will initialize the first and second component of the
+        /// SATURATION field in all the cells in the set @cells. The
+        /// @props object will be queried, and depending on the value
+        /// @satType either the minimum or the maximum saturation is
+        /// applied to thee first component in the SATURATION field.
+        /// For the second component (1 - first_sat) is used.
+
+        template <class Props, class State>
+        static void initSaturation(const std::vector<int>& cells , const Props& props , State& state , ExtremalSat satType) {
+	    std::vector<double> min_sat(state.numPhases() * cells.size());
+	    std::vector<double> max_sat(state.numPhases() * cells.size());
+            props.satRange(cells.size() ,cells.data() , min_sat.data() , max_sat.data());
+
+            {
+                std::vector<double> first_sat(cells.size());
+                std::vector<double> second_sat(cells.size());
+
+                for (size_t index=0; index < cells.size(); index++) {
+                    if (satType == MinSat) {
+                        first_sat[index]  =     min_sat[index * state.numPhases()];
+                        second_sat[index] = 1 - min_sat[index * state.numPhases()];
+                    } else {
+                        first_sat[index]  =     max_sat[index * state.numPhases()];
+                        second_sat[index] = 1 - max_sat[index * state.numPhases()];
+                    }
+                }
+                state.setCellDataComponent( "SATURATION" , 0 , cells , first_sat );
+                state.setCellDataComponent( "SATURATION" , 1 , cells , second_sat );
+            }
+	}
+
 
         // Initialize saturations so that there is water below woc,
         // and oil above.
@@ -106,9 +171,9 @@ namespace Opm
                 cellsBelowAbove(number_of_cells, begin_cell_centroids, dimensions,
                                 woc, oil, water);
             }
-            // Set saturations.
-            state.setFirstSat(oil, props, State::MinSat);
-            state.setFirstSat(water, props, State::MaxSat);
+
+	    initSaturation( oil , props , state , MinSat );
+	    initSaturation( water , props , state , MaxSat );
         }
 
 
@@ -380,7 +445,10 @@ namespace Opm
         for (int i = 0; i < num_cells; ++i) {
             all_cells[i] = i;
         }
-        state.setFirstSat(all_cells, props, State::MinSat);
+
+	initSaturation( all_cells , props , state , MinSat );
+
+
         const bool convection_testcase = param.getDefault("convection_testcase", false);
         const bool segregation_testcase = param.getDefault("segregation_testcase", false);
         if (convection_testcase) {
@@ -394,7 +462,8 @@ namespace Opm
                     left_cells.push_back(cell);
                 }
             }
-            state.setFirstSat(left_cells, props, State::MaxSat);
+
+	    initSaturation( left_cells , props , state , MaxSat );
             const double init_p = param.getDefault("ref_pressure", 100.0)*unit::barsa;
             std::fill(state.pressure().begin(), state.pressure().end(), init_p);
         } else if (segregation_testcase) {
@@ -501,7 +570,7 @@ namespace Opm
         for (int i = 0; i < num_cells; ++i) {
             all_cells[i] = i;
         }
-        state.setFirstSat(all_cells, props, State::MinSat);
+	initSaturation(all_cells , props , state , MinSat);
         const bool convection_testcase = param.getDefault("convection_testcase", false);
         if (convection_testcase) {
             // Initialise water saturation to max in the 'left' part.
@@ -514,7 +583,7 @@ namespace Opm
                     left_cells.push_back(cell);
                 }
             }
-            state.setFirstSat(left_cells, props, State::MaxSat);
+	    initSaturation(left_cells , props , state , MaxSat );
             const double init_p = param.getDefault("ref_pressure", 100.0)*unit::barsa;
             std::fill(state.pressure().begin(), state.pressure().end(), init_p);
         } else if (param.has("water_oil_contact")) {
