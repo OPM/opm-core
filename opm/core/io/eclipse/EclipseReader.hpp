@@ -2,10 +2,12 @@
 #define ECLIPSEREADER_HPP
 
 #include <string>
+
 #include <opm/core/simulator/WellState.hpp>
-#include <opm/core/simulator/SimulatorState.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
+
+
 
 namespace Opm
 {
@@ -23,10 +25,12 @@ namespace Opm
 ///     An instance of a WellState object, with correct size for each of the 5 contained std::vector<double> objects
 ///
 
+    class SimulationDataContainer;
+
     void init_from_restart_file(EclipseStateConstPtr eclipse_state,
                                 int numcells,
                                 const PhaseUsage& pu,
-                                SimulatorState& simulator_state,
+                                SimulationDataContainer& simulator_state,
                                 WellState& wellstate);
 
 

@@ -21,8 +21,6 @@
 #define OPM_ECLIPSE_WRITE_RFT_HANDLER_HPP
 
 #include <opm/core/simulator/SimulatorTimer.hpp>
-#include <opm/core/simulator/BlackoilState.hpp>
-#include <opm/core/simulator/SimulatorState.hpp>
 
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 

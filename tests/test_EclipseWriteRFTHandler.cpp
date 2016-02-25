@@ -108,12 +108,10 @@ std::shared_ptr<Opm::WellState> createWellState(std::shared_ptr<Opm::BlackoilSta
 
 std::shared_ptr<Opm::BlackoilState> createBlackoilState(int timeStepIdx, std::shared_ptr<Opm::GridManager> ourFineGridManagerPtr)
 {
-    const UnstructuredGrid &ourFinerUnstructuredGrid = *ourFineGridManagerPtr->c_grid();
+    const UnstructuredGrid &ug_grid = *ourFineGridManagerPtr->c_grid();
 
-    std::shared_ptr<Opm::BlackoilState> blackoilState = std::make_shared<Opm::BlackoilState>();
-    blackoilState->init(ourFinerUnstructuredGrid, 3);
-
-    size_t numCells = ourFinerUnstructuredGrid.number_of_cells;
+    std::shared_ptr<Opm::BlackoilState> blackoilState = std::make_shared<Opm::BlackoilState>(Opm::UgGridHelpers::numCells( ug_grid ) , Opm::UgGridHelpers::numFaces( ug_grid ), 3);
+    size_t numCells = Opm::UgGridHelpers::numCells( ug_grid );
 
     auto &pressure = blackoilState->pressure();
     for (size_t cellIdx = 0; cellIdx < numCells; ++cellIdx) {

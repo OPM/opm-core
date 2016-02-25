@@ -27,6 +27,7 @@
 
 #include <opm/core/io/eclipse/EclipseWriter.hpp>
 #include <opm/core/grid/GridManager.hpp>
+#include <opm/core/grid/GridHelpers.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/simulator/WellState.hpp>
@@ -127,9 +128,9 @@ void verifyWellState(const std::string& rst_filename,
 
 std::shared_ptr<Opm::BlackoilState> createBlackOilState(Opm::EclipseGridConstPtr eclGrid) {
 
-  std::shared_ptr<Opm::GridManager> ourFineGridManagerPtr(new Opm::GridManager(eclGrid));
-  std::shared_ptr<Opm::BlackoilState> blackoilState(new Opm::BlackoilState);
-  blackoilState->init(*ourFineGridManagerPtr->c_grid(), 3);
+  std::shared_ptr<Opm::GridManager> grid(new Opm::GridManager(eclGrid));
+  const UnstructuredGrid& ug_grid = *(grid->c_grid());
+  std::shared_ptr<Opm::BlackoilState> blackoilState(new Opm::BlackoilState( Opm::UgGridHelpers::numCells(ug_grid) , Opm::UgGridHelpers::numFaces(ug_grid) , 3 ));
 
   return blackoilState;
 }

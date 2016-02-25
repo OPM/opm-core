@@ -47,7 +47,7 @@ namespace EclipseWriterDetails {
 class Summary;
 }
 
-class SimulatorState;
+class SimulationDataContainer;
 class WellState;
 
 namespace parameter { class ParameterGroup; }
@@ -101,7 +101,7 @@ public:
      * \param[in] wellState      The production/injection data for all wells
      */
     virtual void writeTimeStep(const SimulatorTimerInterface& timer,
-                               const SimulatorState& reservoirState,
+                               const SimulationDataContainer& reservoirState,
                                const WellState& wellState,
                                bool isSubstep);
 

@@ -29,6 +29,7 @@
 #include <opm/core/io/eclipse/EclipseReader.hpp>
 #include <opm/core/io/eclipse/EclipseIOUtil.hpp>
 #include <opm/core/grid/GridManager.hpp>
+#include <opm/core/grid/GridHelpers.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/simulator/BlackoilState.hpp>
@@ -185,11 +186,12 @@ std::string input =
            "10 /"
            "/\n";
 
-std::shared_ptr<Opm::BlackoilState> createBlackOilState(Opm::EclipseGridConstPtr eclGrid) {
 
-  std::shared_ptr<Opm::GridManager> ourFineGridManagerPtr(new Opm::GridManager(eclGrid));
-  std::shared_ptr<Opm::BlackoilState> blackoilState(new Opm::BlackoilState);
-  blackoilState->init(*ourFineGridManagerPtr->c_grid(), 3);
+std::shared_ptr<Opm::BlackoilState> createBlackOilState(Opm::EclipseGridConstPtr eclGrid , const Opm::PhaseUsage& phaseUsage) {
+
+  std::shared_ptr<Opm::GridManager> grid(new Opm::GridManager(eclGrid));
+  const UnstructuredGrid& ug_grid = *(grid->c_grid());
+  std::shared_ptr<Opm::BlackoilState> blackoilState(new Opm::BlackoilState( Opm::UgGridHelpers::numCells(ug_grid) , Opm::UgGridHelpers::numFaces(ug_grid) , phaseUsage.num_phases) );
 
   return blackoilState;
 }
@@ -266,7 +268,7 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
     Opm::GridManager gridManager(deck);
     Opm::WellsManager wellsManager(eclipseState, 1, *gridManager.c_grid(), NULL);
     const Wells* wells = wellsManager.c_wells();
-    std::shared_ptr<Opm::BlackoilState> blackoilState = createBlackOilState(eclipseState->getEclipseGrid());
+    std::shared_ptr<Opm::BlackoilState> blackoilState = createBlackOilState(eclipseState->getEclipseGrid(), phaseUsage);
     wellState->init(wells, *blackoilState);
 
     //Set test data for pressure
@@ -313,9 +315,9 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
     wellStateRestored->init(wells, *blackoilState);
 
     //Read and verify OPM XWEL data, and solution data: pressure, temperature, saturation data, rs and rv
-    std::shared_ptr<Opm::BlackoilState> blackoilStateRestored = createBlackOilState(eclipseState->getEclipseGrid());
+    std::shared_ptr<Opm::BlackoilState> blackoilStateRestored = createBlackOilState(eclipseState->getEclipseGrid(), phaseUsage);
     Opm::init_from_restart_file(eclipseState, Opm::UgGridHelpers::numCells(*gridManager.c_grid()), phaseUsage, *blackoilStateRestored, *wellStateRestored);
-
+    
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->bhp().begin(), wellState->bhp().end(), wellStateRestored->bhp().begin(), wellStateRestored->bhp().end());
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->temperature().begin(), wellState->temperature().end(), wellStateRestored->temperature().begin(), wellStateRestored->temperature().end());
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->wellRates().begin(), wellState->wellRates().end(), wellStateRestored->wellRates().begin(), wellStateRestored->wellRates().end());
@@ -331,7 +333,7 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
     Opm::EclipseIOUtil::extractFromStripedData(blackoilStateRestored->saturation(), sgas_restored, phaseUsage.phase_pos[Opm::BlackoilPhases::Vapour], phaseUsage.num_phases);
     Opm::EclipseIOUtil::extractFromStripedData(blackoilState->saturation(), sgas, phaseUsage.phase_pos[Opm::BlackoilPhases::Vapour], phaseUsage.num_phases);
 
-    for (size_t cellindex = 0; cellindex < 1000; ++cellindex) {
+    for (size_t cellindex = 0; cellindex < 10; ++cellindex) {
         BOOST_CHECK_CLOSE(blackoilState->pressure()[cellindex], blackoilStateRestored->pressure()[cellindex], 0.00001);
         BOOST_CHECK_CLOSE(blackoilState->temperature()[cellindex], blackoilStateRestored->temperature()[cellindex], 0.00001);
         BOOST_CHECK_CLOSE(swat[cellindex], swat_restored[cellindex], 0.00001);
@@ -339,7 +341,7 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
     }
 
 
-    for (size_t cellindex = 0; cellindex < 1000; ++cellindex) {
+    for (size_t cellindex = 0; cellindex < 10; ++cellindex) {
         BOOST_CHECK_CLOSE(blackoilState->gasoilratio()[cellindex], blackoilStateRestored->gasoilratio()[cellindex], 0.0000001);
         BOOST_CHECK_CLOSE(blackoilState->rv()[cellindex], blackoilStateRestored->rv()[cellindex], 0.0000001);
     }

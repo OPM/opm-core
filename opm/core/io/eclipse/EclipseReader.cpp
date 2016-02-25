@@ -19,7 +19,6 @@
 
 #include "EclipseReader.hpp"
 #include <opm/core/simulator/WellState.hpp>
-#include <opm/core/simulator/SimulatorState.hpp>
 #include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/utility/Units.hpp>
 #include <opm/core/grid/GridHelpers.hpp>
@@ -38,10 +37,10 @@
 namespace Opm
 {
 
-    void restoreTemperatureData(const ecl_file_type* file,
-                              EclipseStateConstPtr eclipse_state,
-                              int numcells,
-                              SimulatorState& simulator_state) {
+    static void restoreTemperatureData(const ecl_file_type* file,
+                                       EclipseStateConstPtr eclipse_state,
+                                       int numcells,
+                                       SimulationDataContainer& simulator_state) {
         const char* temperature = "TEMP";
 
         if (ecl_file_has_kw(file , temperature)) {
@@ -69,7 +68,7 @@ namespace Opm
     void restorePressureData(const ecl_file_type* file,
                              EclipseStateConstPtr eclipse_state,
                              int numcells,
-                             SimulatorState& simulator_state) {
+                             SimulationDataContainer& simulator_state) {
         const char* pressure = "PRESSURE";
 
         if (ecl_file_has_kw(file , pressure)) {
@@ -91,10 +90,10 @@ namespace Opm
     }
 
 
-    void restoreSaturation(const ecl_file_type* file_type,
-                           const PhaseUsage& phaseUsage,
-                           int numcells,
-                           SimulatorState& simulator_state) {
+    static void restoreSaturation(const ecl_file_type* file_type,
+                                  const PhaseUsage& phaseUsage,
+                                  int numcells,
+                                  SimulationDataContainer& simulator_state) {
 
         float* sgas_data = NULL;
         float* swat_data = NULL;
@@ -127,19 +126,20 @@ namespace Opm
     }
 
 
-    void restoreRSandRV(const ecl_file_type* file_type,
-                        SimulationConfigConstPtr sim_config,
-                        int numcells,
-                        BlackoilState* blackoil_state) {
+    static void restoreRSandRV(const ecl_file_type* file_type,
+                               SimulationConfigConstPtr sim_config,
+                               int numcells,
+                               SimulationDataContainer& simulator_state) {
 
         if (sim_config->hasDISGAS()) {
             const char* RS = "RS";
             if (ecl_file_has_kw(file_type, RS)) {
                 ecl_kw_type* rs_kw = ecl_file_iget_named_kw(file_type, RS, 0);
                 float* rs_data = ecl_kw_get_float_ptr(rs_kw);
-                std::vector<double> rs_datavec(&rs_data[0], &rs_data[numcells]);
-                blackoil_state->gasoilratio().clear();
-                blackoil_state->gasoilratio().insert(blackoil_state->gasoilratio().begin(), rs_datavec.begin(), rs_datavec.end());
+                auto& rs = simulator_state.getCellData( BlackoilState::GASOILRATIO );
+                for (int i = 0; i < ecl_kw_get_size( rs_kw ); i++) {
+                    rs[i] = rs_data[i];
+                }
             } else {
                 throw std::runtime_error("Restart file is missing RS data!\n");
             }
@@ -150,9 +150,10 @@ namespace Opm
             if (ecl_file_has_kw(file_type, RV)) {
                 ecl_kw_type* rv_kw = ecl_file_iget_named_kw(file_type, RV, 0);
                 float* rv_data = ecl_kw_get_float_ptr(rv_kw);
-                std::vector<double> rv_datavec(&rv_data[0], &rv_data[numcells]);
-                blackoil_state->rv().clear();
-                blackoil_state->rv().insert(blackoil_state->rv().begin(), rv_datavec.begin(), rv_datavec.end());
+                auto& rv = simulator_state.getCellData( BlackoilState::RV );
+                for (int i = 0; i < ecl_kw_get_size( rv_kw ); i++) {
+                    rv[i] = rv_data[i];
+                }
             } else {
                 throw std::runtime_error("Restart file is missing RV data!\n");
             }
@@ -160,13 +161,13 @@ namespace Opm
     }
 
 
-    void restoreSOLUTION(const std::string& restart_filename,
-                         int reportstep,
-                         bool unified,
-                         EclipseStateConstPtr eclipseState,
-                         int numcells,
-                         const PhaseUsage& phaseUsage,
-                         SimulatorState& simulator_state)
+    static void restoreSOLUTION(const std::string& restart_filename,
+                                int reportstep,
+                                bool unified,
+                                EclipseStateConstPtr eclipseState,
+                                int numcells,
+                                const PhaseUsage& phaseUsage,
+                                SimulationDataContainer& simulator_state)
     {
         const char* filename = restart_filename.c_str();
         ecl_file_type* file_type = ecl_file_open(filename, 0);
@@ -178,11 +179,10 @@ namespace Opm
                 restorePressureData(file_type, eclipseState, numcells, simulator_state);
                 restoreTemperatureData(file_type, eclipseState, numcells, simulator_state);
                 restoreSaturation(file_type, phaseUsage, numcells, simulator_state);
-                BlackoilState* blackoilState = dynamic_cast<BlackoilState*>(&simulator_state);
-                if (blackoilState) {
+                if (simulator_state.hasCellData( BlackoilState::RV )) {
                     SimulationConfigConstPtr sim_config = eclipseState->getSimulationConfig();
-                    restoreRSandRV(file_type, sim_config, numcells, blackoilState);
-                }
+                    restoreRSandRV(file_type, sim_config, numcells, simulator_state );
+                } 
             } else {
                 std::string error_str = "Restart file " +  restart_filename + " does not contain data for report step " + std::to_string(reportstep) + "!\n";
                 throw std::runtime_error(error_str);
@@ -195,7 +195,7 @@ namespace Opm
     }
 
 
-    void restoreOPM_XWELKeyword(const std::string& restart_filename, int reportstep, bool unified, WellState& wellstate)
+    static void restoreOPM_XWELKeyword(const std::string& restart_filename, int reportstep, bool unified, WellState& wellstate)
     {
         const char * keyword = "OPM_XWEL";
         const char* filename = restart_filename.c_str();
@@ -229,7 +229,7 @@ namespace Opm
     void init_from_restart_file(EclipseStateConstPtr eclipse_state,
                                 int numcells,
                                 const PhaseUsage& phase_usage,
-                                SimulatorState& simulator_state,
+                                SimulationDataContainer& simulator_state,
                                 WellState& wellstate) {
 
         InitConfigConstPtr initConfig        = eclipse_state->getInitConfig();

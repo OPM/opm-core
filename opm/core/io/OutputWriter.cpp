@@ -33,7 +33,7 @@ struct MultiWriter : public OutputWriter {
     }
 
     virtual void writeTimeStep(const SimulatorTimerInterface& timer,
-                               const SimulatorState& reservoirState,
+                               const SimulationDataContainer& reservoirState,
                                const WellState& wellState,
                                bool  isSubstep) {
         for (it_t it = writers_->begin (); it != writers_->end(); ++it) {
