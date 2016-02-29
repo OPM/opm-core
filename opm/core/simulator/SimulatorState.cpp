@@ -85,7 +85,7 @@ void SimulatorState::setCellDataComponent( const std::string& name , size_t comp
   const auto iter = std::find( cellDataNames_.begin() , cellDataNames_.end() , name);
   int id = iter - cellDataNames_.begin();
   auto& data = cellData_[id];
-  if (component >= num_phases_)
+  if (component >= size_t(num_phases_))
     throw std::invalid_argument("Invalid component");
 
   if (cells.size() != values.size())
@@ -97,7 +97,7 @@ void SimulatorState::setCellDataComponent( const std::string& name , size_t comp
      total. This restriction should be lifted by allowing a per
      field number of components.
   */
-  if (data.size() != num_phases_ * num_cells_)
+  if (data.size() != size_t(num_phases_ * num_cells_))
     throw std::invalid_argument("Can currently only be used on fields with num_components == num_phases (i.e. saturation...) ");
 
   for (size_t i = 0; i < cells.size(); i++) {
