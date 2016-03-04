@@ -374,6 +374,7 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/core/props/satfunc/SaturationPropsFromDeck.hpp
 	opm/core/props/satfunc/SaturationPropsInterface.hpp
 	opm/core/props/satfunc/RelpermDiagnostics.hpp
+	opm/core/props/satfunc/RelpermDiagnostics_impl.hpp
 	opm/core/simulator/AdaptiveSimulatorTimer.hpp
 	opm/core/simulator/AdaptiveTimeStepping.hpp
 	opm/core/simulator/AdaptiveTimeStepping_impl.hpp
