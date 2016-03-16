@@ -66,30 +66,37 @@ namespace Opm{
         bool hasWater = deck->hasKeyword("WATER");
         bool hasGas = deck->hasKeyword("GAS");
         bool hasOil = deck->hasKeyword("OIL");
-
-        if (hasWater && hasGas && !hasOil) {
+        bool hasSolvent = deck->hasKeyword("SOLVENT");
+            
+        if (hasWater && hasGas && !hasOil && !hasSolvent) {
             const std::string msg = "System:  Water-Gas system.";
             std::cout << msg << std::endl;
             streamLog_->addMessage(Log::MessageType::Info, msg);
             fluidSystem_ = FluidSystem::WaterGas;
         }
-        if (hasWater && hasOil && !hasGas) { 
+        if (hasWater && hasOil && !hasGas && !hasSolvent) { 
             const std::string msg = "System:  Oil-Water system.";
             std::cout << msg << std::endl;
             streamLog_->addMessage(Log::MessageType::Info, msg);
             fluidSystem_ = FluidSystem::OilWater; 
         }
-        if (hasOil && hasGas && !hasWater) { 
+        if (hasOil && hasGas && !hasWater && !hasSolvent) { 
             const std::string msg = "System:  Oil-Gas system.";
             std::cout << msg << std::endl;
             streamLog_->addMessage(Log::MessageType::Info, msg);
             fluidSystem_ = FluidSystem::OilGas; 
         }
-        if (hasOil && hasWater && hasGas) {
+        if (hasOil && hasWater && hasGas && !hasSolvent) {
             const std::string msg = "System:  Black-oil system.";
             std::cout << msg << std::endl;
             streamLog_->addMessage(Log::MessageType::Info, msg);
             fluidSystem_ = FluidSystem::BlackOil;
+        }
+        if (hasSolvent) {
+            const std::string msg = "System:  Solvent model.";
+            std::cout << msg << std::endl;
+            streamLog_->addMessage(Log::MessageType::Info, msg);
+            fluidSystem_ = FluidSystem::Solvent;
         }
     }
 
@@ -109,8 +116,9 @@ namespace Opm{
         const TableContainer& sof2Tables = tableManager->getSof2Tables();
         const TableContainer& sgwfnTables= tableManager->getSgwfnTables();
 
+        
         bool family1 = (!sgofTables.empty() || !slgofTables.empty()) && !swofTables.empty();
-        bool family2 = !swfnTables.empty() && !sgfnTables.empty() && (!sof3Tables.empty() || !sof2Tables.empty()) && !sgwfnTables.empty();
+        bool family2 = ((!swfnTables.empty() && !sgfnTables.empty()) || !sgwfnTables.empty()) && (!sof3Tables.empty() || !sof2Tables.empty());
 
         if (family1 && family2) {
             const std::string msg = "-- Error:   Saturation families should not be mixed.\n Use either SGOF and SWOF or SGFN, SWFN and SOF3.";
@@ -161,7 +169,12 @@ namespace Opm{
         const TableContainer& sof3Tables = tableManager->getSof3Tables();
         const TableContainer& sof2Tables = tableManager->getSof2Tables();
         const TableContainer& sgwfnTables= tableManager->getSgwfnTables();
-
+        const TableContainer& sgcwmisTables = tableManager->getSgcwmisTables();
+        const TableContainer& sorwmisTables = tableManager->getSorwmisTables();
+        const TableContainer& ssfnTables = tableManager->getSsfnTables();
+        const TableContainer& miscTables = tableManager->getMiscTables();
+        const TableContainer& msfnTables = tableManager->getMsfnTables();
+        
         for (int satnumIdx = 0; satnumIdx < numSatRegions; ++satnumIdx) {
             if (deck->hasKeyword("SWOF")) {
                 swofTableCheck_(swofTables.getTable<SwofTable>(satnumIdx), satnumIdx+1);
@@ -187,6 +200,21 @@ namespace Opm{
             if (deck->hasKeyword("SGWFN")) {
                 sgwfnTableCheck_(sgwfnTables.getTable<SgwfnTable>(satnumIdx), satnumIdx+1);
             }
+            if (deck->hasKeyword("SGCWMIS")) {
+                sgcwmisTableCheck_(sgcwmisTables.getTable<SgcwmisTable>(satnumIdx), satnumIdx+1);
+            }
+            if (deck->hasKeyword("SORWMIS")) {
+                sorwmisTableCheck_(sorwmisTables.getTable<SorwmisTable>(satnumIdx), satnumIdx+1);
+            }
+            if (deck->hasKeyword("SSFN")) {
+                ssfnTableCheck_(ssfnTables.getTable<SsfnTable>(satnumIdx), satnumIdx+1);
+            }
+            if (deck->hasKeyword("MISC")) {
+                miscTableCheck_(miscTables.getTable<MiscTable>(satnumIdx), satnumIdx+1);
+            }
+            if (deck->hasKeyword("MSFN")) {
+                msfnTableCheck_(msfnTables.getTable<MsfnTable>(satnumIdx), satnumIdx+1);
+            }
         }
     }
 
@@ -201,15 +229,15 @@ namespace Opm{
         const auto& krw = swofTables.getKrwColumn();
         const auto& krow = swofTables.getKrowColumn();
         const std::string regionIdx = std::to_string(satnumIdx);
-        ///Check sw column.
+        //Check sw column.
         if (sw.front() < 0.0 || sw.back() > 1.0) {
             const std::string msg = "-- Error:   In SWOF table SATNUM = "+ regionIdx + ", saturation should be in range [0,1].";
             messages_.push_back(msg);
             streamLog_->addMessage(Log::MessageType::Error, msg);
             counter_.error += 1;
         }
-        ///TODO check endpoint sw.back() == 1. - Sor.
-        ///Check krw column.
+        //TODO check endpoint sw.back() == 1. - Sor.
+        //Check krw column.
         if (krw.front() != 0.0) {
             const std::string msg = "-- Error:   In SWOF table SATNUM = " + regionIdx + ", first value of krw should be 0.";
             messages_.push_back(msg);
@@ -244,7 +272,7 @@ namespace Opm{
         const auto& krg = sgofTables.getKrgColumn();
         const auto& krog = sgofTables.getKrogColumn();
         const std::string regionIdx = std::to_string(satnumIdx);
-        ///Check sw column.
+        //Check sw column.
         if (sg.front() < 0.0 || sg.back() > 1.0) {
             const std::string msg = "-- Error:   In SGOF table SATNUM = " + regionIdx + ", saturation should be in range [0,1].";
             messages_.push_back(msg);
@@ -257,8 +285,8 @@ namespace Opm{
             streamLog_->addMessage(Log::MessageType::Error, msg);
             counter_.error += 1;
         }
-        ///TODO check endpoint sw.back() == 1. - Sor.
-        ///Check krw column.
+        //TODO check endpoint sw.back() == 1. - Sor.
+        //Check krw column.
         if (krg.front() != 0.0) {
             const std::string msg = "-- Error:   In SGOF table SATNUM = " + regionIdx + ", first value of krg should be 0.";
             messages_.push_back(msg);
@@ -272,14 +300,14 @@ namespace Opm{
             counter_.error += 1;
         }
 
-        ///Check krow column.
+        //Check krow column.
         if (krog.front() > 1.0 || krog.back() < 0.0) {
             const std::string msg = "-- Error:   In SGOF table SATNUM = " + regionIdx + ", krog should be in range [0, 1].";
             messages_.push_back(msg);
             streamLog_->addMessage(Log::MessageType::Error, msg);
             counter_.error += 1;
         }
-        ///TODO check if run with water.
+        //TODO check if run with water.
     }
 
     void RelpermDiagnostics::slgofTableCheck_(const Opm::SlgofTable& slgofTables,
@@ -289,8 +317,8 @@ namespace Opm{
         const auto& krg = slgofTables.getKrgColumn();
         const auto& krog = slgofTables.getKrogColumn();
         const std::string regionIdx = std::to_string(satnumIdx);
-        ///Check sl column.
-        ///TODO first value means sl = swco + sor
+        //Check sl column.
+        //TODO first value means sl = swco + sor
         if (sl.front() < 0.0 || sl.back() > 1.0) {
             const std::string msg = "-- Error:   In SLGOF table SATNUM = " + regionIdx + ", saturation should be in range [0,1].";
             messages_.push_back(msg);
@@ -335,7 +363,7 @@ namespace Opm{
         const auto& sw = swfnTables.getSwColumn();
         const auto& krw = swfnTables.getKrwColumn();
         const std::string regionIdx = std::to_string(satnumIdx);
-        ///Check sw column.
+        //Check sw column.
         if (sw.front() < 0.0 || sw.back() > 1.0) {
             const std::string msg = "-- Error:   In SWFN table SATNUM = " + regionIdx + ", saturation should be in range [0,1].";
             messages_.push_back(msg);
@@ -343,7 +371,7 @@ namespace Opm{
             counter_.error += 1;
         }
         
-        ///Check krw column.
+        //Check krw column.
         if (krw.front() < 0.0 || krw.back() > 1.0) {
             const std::string msg = "-- Error:   In SWFN table SATNUM = " + regionIdx + ", krw should be in range [0,1].";
             messages_.push_back(msg);
@@ -369,7 +397,7 @@ namespace Opm{
         const auto& sg = sgfnTables.getSgColumn();
         const auto& krg = sgfnTables.getKrgColumn();
         const std::string regionIdx = std::to_string(satnumIdx);
-        ///Check sg column.
+        //Check sg column.
         if (sg.front() < 0.0 || sg.back() > 1.0) {
             const std::string msg = "-- Error:   In SGFN table SATNUM = " + regionIdx + ", saturation should be in range [0,1].";
             messages_.push_back(msg);
@@ -377,7 +405,7 @@ namespace Opm{
             counter_.error += 1;
         }
         
-        ///Check krg column.
+        //Check krg column.
         if (krg.front() < 0.0 || krg.back() > 1.0) {
             const std::string msg = "-- Error:   In SGFN table SATNUM = " + regionIdx + ", krg should be in range [0,1].";
             messages_.push_back(msg);
@@ -403,8 +431,8 @@ namespace Opm{
         const auto& krow = sof3Tables.getKrowColumn();
         const auto& krog = sof3Tables.getKrogColumn();
         const std::string regionIdx = std::to_string(satnumIdx);
-        ///Check so column.
-        ///TODO: The max so = 1 - Swco
+        //Check so column.
+        //TODO: The max so = 1 - Swco
         if (so.front() < 0.0 || so.back() > 1.0) {
             const std::string msg = "-- Error:   In SOF3 table SATNUM = " + regionIdx + ", saturation should be in range [0,1].";
             messages_.push_back(msg);
@@ -412,7 +440,7 @@ namespace Opm{
             counter_.error += 1;
         }
 
-        ///Check krow column.
+        //Check krow column.
         if (krow.front() < 0.0 || krow.back() > 1.0) {
             const std::string msg = "-- Error:   In SOF3 table SATNUM = " + regionIdx + ", krow should be in range [0,1].";
             messages_.push_back(msg);
@@ -426,7 +454,7 @@ namespace Opm{
             counter_.error += 1;
         }
 
-        ///Check krog column.
+        //Check krog column.
         if (krog.front() < 0.0 || krog.back() > 1.0) {
             const std::string msg = "-- Error:   In SOF3 table SATNUM = " + regionIdx + ", krog should be in range [0,1].";
             messages_.push_back(msg);
@@ -459,8 +487,8 @@ namespace Opm{
         const auto& so = sof2Tables.getSoColumn();
         const auto& kro = sof2Tables.getKroColumn();
         const std::string regionIdx = std::to_string(satnumIdx);
-        ///Check so column.
-        ///TODO: The max so = 1 - Swco
+        //Check so column.
+        //TODO: The max so = 1 - Swco
         if (so.front() < 0.0 || so.back() > 1.0) {
             const std::string msg = "-- Error:   In SOF2 table SATNUM = " + regionIdx + ", saturation should be in range [0,1].";
             messages_.push_back(msg);
@@ -468,7 +496,7 @@ namespace Opm{
             counter_.error += 1;
         }
 
-        ///Check krow column.
+        //Check krow column.
         if (kro.front() < 0.0 || kro.back() > 1.0) {
             const std::string msg = "-- Error:   In SOF2 table SATNUM = " + regionIdx + ", krow should be in range [0,1].";
             messages_.push_back(msg);
@@ -494,7 +522,7 @@ namespace Opm{
         const auto& krg = sgwfnTables.getKrgColumn();
         const auto& krgw = sgwfnTables.getKrgwColumn();
         const std::string regionIdx = std::to_string(satnumIdx);
-        ///Check sg column.
+        //Check sg column.
         if (sg.front() < 0.0 || sg.back() > 1.0) {
             const std::string msg = "-- Error:   In SGWFN table SATNUM = " + regionIdx + ", saturation should be in range [0,1].";
             messages_.push_back(msg);
@@ -502,7 +530,7 @@ namespace Opm{
             counter_.error += 1;
         }
 
-        ///Check krg column.
+        //Check krg column.
         if (krg.front() < 0.0 || krg.back() > 1.0) {
             const std::string msg = "-- Error:   In SGWFN table SATNUM = " + regionIdx + ", krg should be in range [0,1].";
             messages_.push_back(msg);
@@ -516,8 +544,8 @@ namespace Opm{
             counter_.error += 1;
         }
 
-        ///Check krgw column.
-        ///TODO check saturation sw = 1. - sg
+        //Check krgw column.
+        //TODO check saturation sw = 1. - sg
         if (krgw.front() > 1.0 || krgw.back() < 0.0) {
             const std::string msg = "-- Error:   In SGWFN table SATNUM = " + regionIdx + ", krgw should be in range [0,1].";
             messages_.push_back(msg);
@@ -531,6 +559,160 @@ namespace Opm{
             counter_.error += 1;
         }
     }
+
+
+
+    void RelpermDiagnostics::sgcwmisTableCheck_(const Opm::SgcwmisTable& sgcwmisTables,
+                                                const int satnumIdx)
+    {
+        const auto& sw = sgcwmisTables.getWaterSaturationColumn();
+        const auto& sgc = sgcwmisTables.getMiscibleResidualGasColumn();
+        const std::string regionIdx = std::to_string(satnumIdx);
+        //Check sw column.
+        if (sw.front() < 0.0 || sw.back() > 1.0) {
+            const std::string msg = "-- Error:   In SGCWMIS table SATNUM = " + regionIdx + ", saturation should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+
+        //Check critical gas column.
+        if (sgc.front() < 0.0 || sgc.back() > 1.0) {
+            const std::string msg = "-- Error:   In SGCWMIS table SATNUM = " + regionIdx + ", critical gas saturation should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+    }
+
+
+
+
+
+    void RelpermDiagnostics::sorwmisTableCheck_(const Opm::SorwmisTable& sorwmisTables,
+                                                const int satnumIdx)
+    {
+        const auto& sw = sorwmisTables.getWaterSaturationColumn();
+        const auto& sor = sorwmisTables.getMiscibleResidualOilColumn();
+        const std::string regionIdx = std::to_string(satnumIdx);
+        //Check sw column.
+        if (sw.front() < 0.0 || sw.back() > 1.0) {
+            const std::string msg = "-- Error:   In SORWMIS table SATNUM = " + regionIdx + ", saturation should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+
+        //Check critical oil column.
+        if (sor.front() < 0.0 || sor.back() > 1.0) {
+            const std::string msg = "-- Error:   In SORWMIS table SATNUM = " + regionIdx + ", critical oil saturation should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+    }
+
+
+
+
+    void RelpermDiagnostics::ssfnTableCheck_(const Opm::SsfnTable& ssfnTables,
+                                             const int satnumIdx)
+    {
+        const auto& frac = ssfnTables.getSolventFractionColumn();
+        const auto& krgm = ssfnTables.getGasRelPermMultiplierColumn();
+        const auto& krsm = ssfnTables.getSolventRelPermMultiplierColumn();
+        const std::string regionIdx = std::to_string(satnumIdx);
+        //Check phase fraction column.
+        if (frac.front() < 0.0 || frac.back() > 1.0) {
+            const std::string msg = "-- Error:   In SSFN table SATNUM = " + regionIdx + ", phase fraction should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+
+        //Check gas relperm multiplier column.
+        if (krgm.front() < 0.0 || krgm.back() > 1.0) {
+            const std::string msg = "-- Error:   In SSFN table SATNUM = " + regionIdx + ", gas relative permeability multiplier should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+
+        //Check solvent relperm multiplier column.
+        if (krsm.front() < 0.0 || krsm.back() > 1.0) {
+            const std::string msg = "-- Error:   In SSFN table SATNUM = " + regionIdx + ", solvent relative permeability multiplier should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+    }
+
+
+
+
+
+
+    void RelpermDiagnostics::miscTableCheck_(const Opm::MiscTable& miscTables,
+                                             const int satnumIdx)
+    {
+        const auto& frac = miscTables.getSolventFractionColumn();
+        const auto& misc = miscTables.getMiscibilityColumn();
+
+        const std::string regionIdx = std::to_string(satnumIdx);
+        //Check phase fraction column.
+        if (frac.front() < 0.0 || frac.back() > 1.0) {
+            const std::string msg = "-- Error:   In MISC table SATNUM = " + regionIdx + ", phase fraction should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+
+        //Check miscibility column.
+        if (misc.front() < 0.0 || misc.back() > 1.0) {
+            const std::string msg = "-- Error:   In MISC table SATNUM = " + regionIdx + ", miscibility should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+    }
+
+
+
+
+
+    void RelpermDiagnostics::msfnTableCheck_(const Opm::MsfnTable& msfnTables,
+                                             const int satnumIdx)
+    {
+        const auto& frac = msfnTables.getGasPhaseFractionColumn();
+        const auto& krgsm = msfnTables.getGasSolventRelpermMultiplierColumn();
+        const auto& krom = msfnTables.getOilRelpermMultiplierColumn();
+
+        const std::string regionIdx = std::to_string(satnumIdx);
+        //Check phase fraction column.
+        if (frac.front() < 0.0 || frac.back() > 1.0) {
+            const std::string msg = "-- Error:   In MSFN table SATNUM = " + regionIdx + ", total gas fraction should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+
+        //Check gas_solvent relperm multiplier column.
+        if (krgsm.front() < 0.0 || krgsm.back() > 1.0) {
+            const std::string msg = "-- Error:   In MSFN table SATNUM = " + regionIdx + ", gas+solvent relative permeability multiplier should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+
+        //Check oil relperm multiplier column.
+        if (krom.front() > 1.0 || krom.back() < 0.0) {
+            const std::string msg = "-- Error:   In MSFN table SATNUM = " + regionIdx + ", oil relative permeability multiplier should be in range [0,1].";
+            messages_.push_back(msg);
+            streamLog_->addMessage(Log::MessageType::Error, msg);
+            counter_.error += 1;
+        }
+    }
+
 
 
 
@@ -566,8 +748,8 @@ namespace Opm{
                 counter_.warning += 1;
              }
 
-             ///Krow(Sou) == Krog(Sou) for three-phase
-             /// means Krow(Swco) == Krog(Sgco)
+             //Krow(Sou) == Krog(Sou) for three-phase
+             // means Krow(Swco) == Krog(Sgco)
              double krow_value = 1e20;
              double krog_value = 1e-20;
              if (fluidSystem_ == FluidSystem::BlackOil) {
@@ -600,8 +782,8 @@ namespace Opm{
                      counter_.warning += 1;
                  }
              }
-             ///Krw(Sw=0)=Krg(Sg=0)=Krow(So=0)=Krog(So=0)=0.
-             ///Mobile fluid requirements
+             //Krw(Sw=0)=Krg(Sg=0)=Krow(So=0)=Krog(So=0)=0.
+             //Mobile fluid requirements
             if (((unscaledEpsInfo_[satnumIdx].Sowcr + unscaledEpsInfo_[satnumIdx].Swcr)-1) >= 0) {
                 const std::string msg = "-- Warning: In saturation table SATNUM = " + regionIdx + ", Sowcr + Swcr should be less than 1.";
                 messages_.push_back(msg);
