@@ -1184,16 +1184,19 @@ void EclipseWriter::writeInit(const SimulatorTimerInterface &timer)
         if (eclipseState_->hasDeckDoubleGridProperty("PERMX")) {
             auto data = eclipseState_->getDoubleGridProperty("PERMX")->getData();
             EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
+            EclipseWriterDetails::restrictAndReorderToActiveCells(data, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
             fortio.writeKeyword("PERMX", data);
         }
         if (eclipseState_->hasDeckDoubleGridProperty("PERMY")) {
             auto data = eclipseState_->getDoubleGridProperty("PERMY")->getData();
             EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
+            EclipseWriterDetails::restrictAndReorderToActiveCells(data, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
             fortio.writeKeyword("PERMY", data);
         }
         if (eclipseState_->hasDeckDoubleGridProperty("PERMZ")) {
             auto data = eclipseState_->getDoubleGridProperty("PERMZ")->getData();
             EclipseWriterDetails::convertFromSiTo(data, Opm::prefix::milli * Opm::unit::darcy);
+            EclipseWriterDetails::restrictAndReorderToActiveCells(data, gridToEclipseIdx_.size(), gridToEclipseIdx_.data());
             fortio.writeKeyword("PERMZ", data);
         }
     }
