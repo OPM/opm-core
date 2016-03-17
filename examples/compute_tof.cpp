@@ -44,7 +44,7 @@
 #include <opm/core/flowdiagnostics/TofDiscGalReorder.hpp>
 
 #include <opm/parser/eclipse/Parser/Parser.hpp>
-#include <opm/parser/eclipse/Parser/ParseMode.hpp>
+#include <opm/parser/eclipse/Parser/ParseContext.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/Schedule.hpp>
 
 #include <memory>
@@ -172,9 +172,9 @@ try
     // Read the deck.
     std::string deck_filename = param.get<std::string>("deck_filename");
     Parser parser;
-    ParseMode parseMode;
-    DeckConstPtr deck = parser.parseFile(deck_filename , parseMode);
-    EclipseStateConstPtr eclipseState = std::make_shared<EclipseState>(deck , parseMode);
+    ParseContext parseContext;
+    DeckConstPtr deck = parser.parseFile(deck_filename , parseContext);
+    EclipseStateConstPtr eclipseState = std::make_shared<EclipseState>(deck , parseContext);
 
     // Grid init
     GridManager grid_manager(deck);

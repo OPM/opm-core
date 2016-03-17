@@ -35,7 +35,7 @@
 #include <opm/core/wells.h>
 
 #include <opm/parser/eclipse/Parser/Parser.hpp>
-#include <opm/parser/eclipse/Parser/ParseMode.hpp>
+#include <opm/parser/eclipse/Parser/ParseContext.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/CompletionSet.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/Schedule.hpp>
@@ -137,7 +137,7 @@ std::shared_ptr<Opm::BlackoilState> createBlackOilState(Opm::EclipseGridConstPtr
 
 Opm::DeckConstPtr createDeck(const std::string& eclipse_data_filename) {
   Opm::ParserPtr parser(new Opm::Parser());
-  Opm::DeckConstPtr deck = parser->parseFile(eclipse_data_filename , Opm::ParseMode());
+  Opm::DeckConstPtr deck = parser->parseFile(eclipse_data_filename , Opm::ParseContext());
 
   return deck;
 }
@@ -170,9 +170,9 @@ BOOST_AUTO_TEST_CASE(EclipseWriteRestartWellInfo)
     test_work_area_type * test_area = test_work_area_alloc("TEST_EclipseWriteNumWells");
     test_work_area_copy_file(test_area, eclipse_data_filename.c_str());
 
-    Opm::ParseMode parseMode;
+    Opm::ParseContext parseContext;
     Opm::DeckConstPtr     deck = createDeck(eclipse_data_filename);
-    Opm::EclipseStatePtr  eclipseState(new Opm::EclipseState(deck , parseMode));
+    Opm::EclipseStatePtr  eclipseState(new Opm::EclipseState(deck , parseContext));
     Opm::EclipseWriterPtr eclipseWriter = createEclipseWriter(deck, eclipseState, eclipse_data_filename);
 
     std::shared_ptr<Opm::SimulatorTimer> simTimer( new Opm::SimulatorTimer() );

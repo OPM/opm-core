@@ -38,7 +38,7 @@
 #include <opm/core/wells.h>
 
 #include <opm/parser/eclipse/Parser/Parser.hpp>
-#include <opm/parser/eclipse/Parser/ParseMode.hpp>
+#include <opm/parser/eclipse/Parser/ParseContext.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/Schedule.hpp>
 #include <opm/parser/eclipse/EclipseState/Schedule/Well.hpp>
@@ -252,9 +252,9 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
     test_work_area_type * test_area = test_work_area_alloc("EclipseReadWriteWellStateData");
 
     Opm::Parser parser;
-    Opm::ParseMode parseMode;
-    Opm::DeckConstPtr deck = parser.parseString(input, parseMode);
-    Opm::EclipseStatePtr  eclipseState(new Opm::EclipseState(deck , parseMode));
+    Opm::ParseContext parseContext;
+    Opm::DeckConstPtr deck = parser.parseString(input, parseContext);
+    Opm::EclipseStatePtr  eclipseState(new Opm::EclipseState(deck , parseContext));
     Opm::EclipseWriterPtr eclipseWriter = createEclipseWriter(deck, eclipseState, eclipse_data_filename);
 
     std::shared_ptr<Opm::SimulatorTimer> simTimer( new Opm::SimulatorTimer() );
