@@ -21,7 +21,8 @@
 
 // we need complete definitions for these types
 #include <opm/parser/eclipse/EclipseState/Schedule/TimeMap.hpp>
-#include <opm/core/io/OutputWriter.hpp>
+// 17.03.2016 Temporarily removed while moving functionality to opm-output
+// #include <opm/core/io/OutputWriter.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 
 #include <numeric> // partial_sum
@@ -45,13 +46,15 @@ SimulatorOutputBase::SimulatorOutputBase (
 
     // process parameters into a writer. we don't setup a new chain in
     // every timestep!
-    , writer_ (std::move (OutputWriter::create (params, eclipseState, phaseUsage, grid)))
+// 17.03.2016 Temporarily removed while moving functionality to opm-output
+//    , writer_ (std::move (OutputWriter::create (params, eclipseState, phaseUsage, grid)))
 
     // always start from the first timestep
     , next_ (0) {
 
     // write the static initialization files, even before simulation starts
-    writer_->writeInit (*timer);
+// 17.03.2016 Temporarily removed while moving functionality to opm-output
+//    writer_->writeInit (*timer);
 }
 
 // default destructor is OK, just need to be defined
@@ -88,7 +91,8 @@ SimulatorOutputBase::writeOutput () {
 
             // relay the request to the handlers (setup in the constructor
             // from parameters)
-            writer_->writeTimeStep (*timer_, *reservoirState_, *wellState_ , false);
+// 17.03.2016 Temporarily removed while moving functionality to opm-output
+//            writer_->writeTimeStep (*timer_, *reservoirState_, *wellState_ , false);
 
             // advance to the next reporting time
             ++next_;
