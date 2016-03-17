@@ -21,7 +21,7 @@
 #include "config.h"
 
 #include <opm/parser/eclipse/Parser/Parser.hpp>
-#include <opm/parser/eclipse/Parser/ParseMode.hpp>
+#include <opm/parser/eclipse/Parser/ParseContext.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/Deck/DeckItem.hpp>
 #include <opm/parser/eclipse/Deck/DeckKeyword.hpp>
@@ -366,8 +366,8 @@ int main(int argc, char** argv)
     // Parse grdecl file
     std::cout << "Parsing grid file '" << eclipsefilename << "' ..." << std::endl;
     Opm::ParserPtr parser(new Opm::Parser);
-    Opm::ParseMode parseMode;
-    Opm::DeckConstPtr deck(parser->parseFile(eclipsefilename , parseMode));
+    Opm::ParseContext parseContext;
+    Opm::DeckConstPtr deck(parser->parseFile(eclipsefilename , parseContext));
     if ( ! (deck->hasKeyword("SPECGRID") && deck->hasKeyword("COORD") && deck->hasKeyword("ZCORN")) ) {
         std::cerr << "Grid file " << eclipsefilename << "are missing keywords SPECGRID, COORD or ZCORN!" << std::endl;
         exit(1);
