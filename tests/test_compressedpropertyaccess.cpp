@@ -34,7 +34,7 @@
 #include <opm/core/utility/CompressedPropertyAccess.hpp>
 
 #include <opm/parser/eclipse/Parser/Parser.hpp>
-#include <opm/parser/eclipse/Parser/ParseMode.hpp>
+#include <opm/parser/eclipse/Parser/ParseContext.hpp>
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 
@@ -44,10 +44,10 @@
 struct SetupSimple {
     SetupSimple()
     {
-        Opm::ParseMode parseMode;
+        Opm::ParseContext parseContext;
         Opm::ParserPtr parser(new Opm::Parser());
-        deck = parser->parseFile("compressed_gridproperty.data" , parseMode);
-        ecl.reset(new Opm::EclipseState(deck , parseMode));
+        deck = parser->parseFile("compressed_gridproperty.data" , parseContext);
+        ecl.reset(new Opm::EclipseState(deck , parseContext));
     }
 
     Opm::DeckConstPtr         deck;

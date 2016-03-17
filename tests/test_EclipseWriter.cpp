@@ -34,7 +34,7 @@
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/utility/parameters/ParameterGroup.hpp>
 
-#include <opm/parser/eclipse/Parser/ParseMode.hpp>
+#include <opm/parser/eclipse/Parser/ParseContext.hpp>
 #include <opm/parser/eclipse/Parser/Parser.hpp>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/Deck/DeckKeyword.hpp>
@@ -59,14 +59,14 @@ std::shared_ptr<Opm::WellState> wellState;
 
 void createEclipseWriter(const char *deckString)
 {
-    Opm::ParseMode parseMode;
+    Opm::ParseContext parseContext;
     Opm::ParserConstPtr parser(new Opm::Parser());
-    deck = parser->parseString(deckString, parseMode);
+    deck = parser->parseString(deckString, parseContext);
 
     Opm::parameter::ParameterGroup params;
     params.insertParameter("deck_filename", "foo.data");
 
-    eclipseState.reset(new Opm::EclipseState(deck , parseMode));
+    eclipseState.reset(new Opm::EclipseState(deck , parseContext));
 
     auto eclGrid = eclipseState->getEclipseGrid();
     BOOST_CHECK(eclGrid->getNX() == 3);
