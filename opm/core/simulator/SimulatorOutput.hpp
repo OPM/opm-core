@@ -35,7 +35,9 @@ namespace Opm {
 class Deck;
 class EclipseState;
 // 17.03.2016 Temporarily removed while moving functionality to opm-output
-//class OutputWriter;
+#ifdef DISABLE_OUTPUT
+class OutputWriter;
+#endif
 namespace parameter { class ParameterGroup; }
 class SimulationDataContainer;
 class SimulatorTimer;
@@ -85,8 +87,9 @@ protected:
     std::shared_ptr <const WellState> wellState_;
 
     /// Created locally and destructed together with us
-// 17.03.2016 Temporarily removed while moving functionality to opm-output
-//    std::unique_ptr <OutputWriter> writer_;
+#ifdef DISABLE_OUTPUT
+    std::unique_ptr <OutputWriter> writer_;
+#endif
 
     /// Call the writers that were created based on the parameters
     virtual void writeOutput ();

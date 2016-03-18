@@ -22,7 +22,9 @@
 // we need complete definitions for these types
 #include <opm/parser/eclipse/EclipseState/Schedule/TimeMap.hpp>
 // 17.03.2016 Temporarily removed while moving functionality to opm-output
-// #include <opm/core/io/OutputWriter.hpp>
+#ifdef DISABLE_OUTPUT
+#include <opm/core/io/OutputWriter.hpp>
+#endif
 #include <opm/core/simulator/SimulatorTimer.hpp>
 
 #include <numeric> // partial_sum
@@ -47,14 +49,17 @@ SimulatorOutputBase::SimulatorOutputBase (
     // process parameters into a writer. we don't setup a new chain in
     // every timestep!
 // 17.03.2016 Temporarily removed while moving functionality to opm-output
-//    , writer_ (std::move (OutputWriter::create (params, eclipseState, phaseUsage, grid)))
-
+#ifdef DISABLE_OUTPUT
+    , writer_ (std::move (OutputWriter::create (params, eclipseState, phaseUsage, grid)))
+#endif
     // always start from the first timestep
     , next_ (0) {
 
     // write the static initialization files, even before simulation starts
 // 17.03.2016 Temporarily removed while moving functionality to opm-output
-//    writer_->writeInit (*timer);
+#ifdef DISABLE_OUTPUT
+    writer_->writeInit (*timer);
+#endif
 }
 
 // default destructor is OK, just need to be defined
@@ -92,7 +97,9 @@ SimulatorOutputBase::writeOutput () {
             // relay the request to the handlers (setup in the constructor
             // from parameters)
 // 17.03.2016 Temporarily removed while moving functionality to opm-output
-//            writer_->writeTimeStep (*timer_, *reservoirState_, *wellState_ , false);
+#ifdef DISABLE_OUTPUT
+            writer_->writeTimeStep (*timer_, *reservoirState_, *wellState_ , false);
+#endif
 
             // advance to the next reporting time
             ++next_;
