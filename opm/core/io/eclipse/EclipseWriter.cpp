@@ -23,13 +23,16 @@
 
 #include "EclipseWriter.hpp"
 
+#include <opm/common/data/SimulationDataContainer.hpp>
+
+
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/grid.h>
 #include <opm/core/grid/cpgpreprocess/preprocess.h>
-#include <opm/core/simulator/SimulatorState.hpp>
 #include <opm/core/simulator/SimulatorTimerInterface.hpp>
 #include <opm/core/simulator/WellState.hpp>
+#include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/io/eclipse/EclipseWriteRFTHandler.hpp>
 #include <opm/common/ErrorMacros.hpp>
 #include <opm/core/utility/parameters/Parameter.hpp>
@@ -1224,7 +1227,7 @@ void EclipseWriter::writeInit(const SimulatorTimerInterface &timer)
 
 // implementation of the writeTimeStep method
 void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
-                                  const SimulatorState& reservoirState,
+                                  const SimulationDataContainer& reservoirState,
                                   const WellState& wellState,
                                   bool  isSubstep)
 {
@@ -1345,14 +1348,15 @@ void EclipseWriter::writeTimeStep(const SimulatorTimerInterface& timer,
         }
 
 
-        const BlackoilState* blackoilState = dynamic_cast<const BlackoilState*>(&reservoirState);
-        if (blackoilState) {
-            // Write RS - Dissolved GOR
-            const std::vector<double>& rs = blackoilState->gasoilratio();
+        // Write RS - Dissolved GOR
+        if (reservoirState.hasCellData( BlackoilState::GASOILRATIO )) {
+            const std::vector<double>& rs = reservoirState.getCellData( BlackoilState::GASOILRATIO );
             sol.add(EclipseWriterDetails::Keyword<float>("RS", rs));
+        }
 
-            // Write RV - Volatilized oil/gas ratio
-            const std::vector<double>& rv = blackoilState->rv();
+        // Write RV - Volatilized oil/gas ratio
+        if (reservoirState.hasCellData( BlackoilState::RV )) {
+            const std::vector<double>& rv = reservoirState.getCellData( BlackoilState::RV );
             sol.add(EclipseWriterDetails::Keyword<float>("RV", rv));
         }
     }

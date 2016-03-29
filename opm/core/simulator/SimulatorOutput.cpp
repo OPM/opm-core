@@ -34,7 +34,7 @@ SimulatorOutputBase::SimulatorOutputBase (
         const Opm::PhaseUsage &phaseUsage,
         std::shared_ptr <const UnstructuredGrid> grid,
         std::shared_ptr <const SimulatorTimer> timer,
-        std::shared_ptr <const SimulatorState> state,
+        std::shared_ptr <const SimulationDataContainer> state,
         std::shared_ptr <const WellState> wellState)
 
     // store all parameters passed into the object, making them curried

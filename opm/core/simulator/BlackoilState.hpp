@@ -21,43 +21,59 @@
 #ifndef OPM_BLACKOILSTATE_HEADER_INCLUDED
 #define OPM_BLACKOILSTATE_HEADER_INCLUDED
 
+#include <opm/common/data/SimulationDataContainer.hpp>
+
 #include <opm/core/grid.h>
 #include <opm/core/props/BlackoilPropertiesInterface.hpp>
-#include <opm/core/simulator/SimulatorState.hpp>
 #include <vector>
 
 namespace Opm
 {
 
     /// Simulator state for a blackoil simulator.
-    class BlackoilState : public SimulatorState
+    class BlackoilState : public SimulationDataContainer
     {
     public:
-        using SimulatorState :: cellData ;
+        static const std::string GASOILRATIO;
+        static const std::string RV;
+        static const std::string SURFACEVOL;
 
-        virtual void init(const UnstructuredGrid& grid, int num_phases);
+        /// Main constructor setting the sizes for the contained data
+        /// types.
+        /// \param num_cells   number of elements in cell data vectors
+        /// \param num_faces   number of elements in face data vectors
+        /// \param num_phases  number of phases, the number of components
+        ///                    in any data vector must equal 1 or this
+        ///                    number (this behaviour and argument is deprecated).
+        BlackoilState(size_t num_cells, size_t num_faces, size_t num_phases);
 
-        virtual void init(int number_of_cells, int number_of_faces, int num_phases);
+        /// Copy constructor.
+        /// Must be defined explicitly because class contains non-value objects
+        /// (the reference pointers rv_ref_ etc.) that should not simply
+        /// be copied.
+        BlackoilState(const BlackoilState& other);
 
-        virtual bool equals(const SimulatorState& other,
-                            double epsilon = 1e-8) const;
+        /// Copy assignment operator.
+        /// Must be defined explicitly because class contains non-value objects
+        /// (the reference pointers rv_ref_ etc.) that should not simply
+        /// be copied.
+        BlackoilState& operator=(const BlackoilState& other);
 
-        std::vector<double>& surfacevol  () { return cellData()[ surfaceVolId_ ]; }
-        std::vector<double>& gasoilratio () { return cellData()[ gorId_ ] ; }
-        std::vector<double>& rv () {return cellData()[ rvId_ ] ; }
+        std::vector<double>& surfacevol  () { return *surfacevol_ref_;  }
+        std::vector<double>& gasoilratio () { return *gasoilratio_ref_; }
+        std::vector<double>& rv ()          { return *rv_ref_;          }
 
-        const std::vector<double>& surfacevol  () const { return cellData()[ surfaceVolId_ ]; }
-        const std::vector<double>& gasoilratio () const { return cellData()[ gorId_ ] ; }
-        const std::vector<double>& rv () const { return cellData()[ rvId_ ] ; }
+        const std::vector<double>& surfacevol  () const { return *surfacevol_ref_;  }
+        const std::vector<double>& gasoilratio () const { return *gasoilratio_ref_; }
+        const std::vector<double>& rv ()          const { return *rv_ref_;          }
 
     private:
-        int gorId_ ;   // no entries = no cells (gas oil ratio id)
-        int rvId_ ;    // no entries = no cells ( rv id )
-        int surfaceVolId_ ; // no entries = no cells * no phases (surfaceVol id )
+        void setBlackoilStateReferencePointers();
+        std::vector<double>* surfacevol_ref_;
+        std::vector<double>* gasoilratio_ref_;
+        std::vector<double>* rv_ref_;
 
-        //std::vector<double> surfvol_; // no entries = no cells * no phases
-        //std::vector<double> gor_   ;  // no entries = no cells
-        //std::vector<double> rv_ ;     // no entries = no cells
+
     };
 } // namespace Opm
 

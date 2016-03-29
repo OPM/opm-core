@@ -28,6 +28,7 @@
 #include <opm/core/io/eclipse/EclipseWriter.hpp>
 #include <opm/core/io/eclipse/EclipseWriter.hpp>
 #include <opm/core/grid/GridManager.hpp>
+#include <opm/core/grid/GridHelpers.hpp>
 #include <opm/core/props/phaseUsageFromDeck.hpp>
 #include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/simulator/WellState.hpp>
@@ -109,8 +110,7 @@ void createBlackoilState(int timeStepIdx)
 {
     // allocate a new BlackoilState object
     const UnstructuredGrid &ourFinerUnstructuredGrid = *ourFineGridManagerPtr->c_grid();
-    blackoilState.reset(new Opm::BlackoilState);
-    blackoilState->init(ourFinerUnstructuredGrid, 3);
+    blackoilState.reset(new Opm::BlackoilState( Opm::UgGridHelpers::numCells( ourFinerUnstructuredGrid ) , Opm::UgGridHelpers::numFaces( ourFinerUnstructuredGrid ), 3));
 
     size_t numCells = ourFinerUnstructuredGrid.number_of_cells;
     size_t numFaces = ourFinerUnstructuredGrid.number_of_faces;

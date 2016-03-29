@@ -20,8 +20,6 @@
 #include <vector>
 
 #include <opm/core/io/eclipse/EclipseWriteRFTHandler.hpp>
-#include <opm/core/simulator/SimulatorState.hpp>
-#include <opm/core/simulator/BlackoilState.hpp>
 #include <opm/core/simulator/SimulatorTimer.hpp>
 #include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/utility/Units.hpp>

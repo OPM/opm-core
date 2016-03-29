@@ -103,11 +103,11 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/props/satfunc/SaturationPropsFromDeck.cpp
         opm/core/simulator/AdaptiveSimulatorTimer.cpp
         opm/core/simulator/BlackoilState.cpp
+        opm/core/simulator/TwophaseState.cpp
         opm/core/simulator/SimulatorCompressibleTwophase.cpp
         opm/core/simulator/SimulatorIncompTwophase.cpp
         opm/core/simulator/SimulatorOutput.cpp
         opm/core/simulator/SimulatorReport.cpp
-        opm/core/simulator/SimulatorState.cpp
         opm/core/simulator/SimulatorTimer.cpp
         opm/core/simulator/TimeStepControl.cpp
         opm/core/transport/TransportSolverTwophaseInterface.cpp
@@ -377,13 +377,11 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/simulator/SimulatorIncompTwophase.hpp
         opm/core/simulator/SimulatorOutput.hpp
         opm/core/simulator/SimulatorReport.hpp
-        opm/core/simulator/SimulatorState.hpp
         opm/core/simulator/SimulatorTimer.hpp
         opm/core/simulator/SimulatorTimerInterface.hpp
         opm/core/simulator/TimeStepControl.hpp
         opm/core/simulator/TimeStepControlInterface.hpp
         opm/core/simulator/TwophaseState.hpp
-        opm/core/simulator/TwophaseState_impl.hpp
         opm/core/simulator/WellState.hpp
         opm/core/simulator/initState.hpp
         opm/core/simulator/initStateEquil.hpp

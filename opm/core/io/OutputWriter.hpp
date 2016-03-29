@@ -30,7 +30,7 @@ namespace Opm {
 // forward declaration
 class EclipseState;
 namespace parameter { class ParameterGroup; }
-class SimulatorState;
+class SimulationDataContainer;
 class WellState;
 struct PhaseUsage;
 
@@ -87,7 +87,7 @@ public:
      * i.e. timer.currentStepNum () > 0.
      */
     virtual void writeTimeStep(const SimulatorTimerInterface& timer,
-                               const SimulatorState& reservoirState,
+                               const SimulationDataContainer& reservoirState,
                                const WellState& wellState,
                                bool  isSubstep) = 0;
 
