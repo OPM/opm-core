@@ -20,6 +20,8 @@
 #ifndef OPM_SIMULATORTIMERINTERFACE_HEADER_INCLUDED
 #define OPM_SIMULATORTIMERINTERFACE_HEADER_INCLUDED
 
+#include <memory>
+
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/date_time/posix_time/conversion.hpp>
@@ -98,6 +100,9 @@ namespace Opm
             tm t = boost::posix_time::to_tm(currentDateTime());
             return std::mktime(&t);
         }
+
+        /// return copy of current timer instance
+        virtual std::unique_ptr< SimulatorTimerInterface > clone () const = 0;
     };
 
 
