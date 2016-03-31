@@ -34,7 +34,10 @@
 
 #include <opm/core/grid.h>
 #include <opm/core/grid/GridManager.hpp>
+// 17.03.2016 Temporarily removed while moving functionality to opm-output
+#ifdef DISABLE_OUTPUT
 #include <opm/core/io/vtk/writeVtkData.hpp>
+#endif
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -186,6 +189,8 @@ try
     /// (pressure) or a vector per cell (cell_velocity).
     /// \snippet tutorial2.cpp write output
     /// \internal [write output]
+// 17.03.2016 Temporarily removed while moving functionality to opm-output
+#ifdef DISABLE_OUTPUT
     std::ofstream vtkfile("tutorial2.vtu");
     Opm::DataMap dm;
     dm["pressure"] = &state.pressure();
@@ -193,6 +198,7 @@ try
     Opm::estimateCellVelocity(*grid.c_grid(), state.faceflux(), cell_velocity);
     dm["velocity"] = &cell_velocity;
     Opm::writeVtkData(*grid.c_grid(), dm, vtkfile);
+#endif
     /// \internal [write output]
     /// \endinternal
 }

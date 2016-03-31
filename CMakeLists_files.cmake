@@ -45,14 +45,6 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/grid/cpgpreprocess/uniquepoints.c
         opm/core/grid/grid.c
         opm/core/grid/grid_equal.cpp
-        opm/core/io/OutputWriter.cpp
-        opm/core/io/eclipse/EclipseGridInspector.cpp
-        opm/core/io/eclipse/EclipseReader.cpp
-        opm/core/io/eclipse/EclipseWriteRFTHandler.cpp
-        opm/core/io/eclipse/EclipseWriter.cpp
-        opm/core/io/eclipse/writeECLData.cpp
-        opm/core/io/vag/vag.cpp
-        opm/core/io/vtk/writeVtkData.cpp
         opm/core/linalg/LinearSolverFactory.cpp
         opm/core/linalg/LinearSolverInterface.cpp
         opm/core/linalg/LinearSolverIstl.cpp
@@ -151,10 +143,6 @@ list (APPEND MAIN_SOURCE_FILES
 # originally generated with the command:
 # find tests -name '*.cpp' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
 list (APPEND TEST_SOURCE_FILES
-  tests/test_writenumwells.cpp
-	tests/test_writeReadRestartFile.cpp
-	tests/test_EclipseWriter.cpp
-	tests/test_EclipseWriteRFTHandler.cpp
 	tests/test_compressedpropertyaccess.cpp
 	tests/test_dgbasis.cpp
 	tests/test_cartgrid.cpp
@@ -220,7 +208,6 @@ list (APPEND TEST_DATA_FILES
 	tests/satfuncEPS_D.DATA
 	tests/testBlackoilState1.DATA
 	tests/testBlackoilState2.DATA
-  tests/testBlackoilState3.DATA
   tests/testPinch1.DATA
 	tests/wells_manager_data.data
 	tests/wells_manager_data_expanded.data
@@ -294,17 +281,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/grid/cpgpreprocess/geometry.h
         opm/core/grid/cpgpreprocess/preprocess.h
         opm/core/grid/cpgpreprocess/uniquepoints.h
-        opm/core/io/OutputWriter.hpp
-        opm/core/io/eclipse/CornerpointChopper.hpp
-        opm/core/io/eclipse/EclipseGridInspector.hpp
-        opm/core/io/eclipse/EclipseIOUtil.hpp
-        opm/core/io/eclipse/EclipseReader.hpp
-        opm/core/io/eclipse/EclipseUnits.hpp
-        opm/core/io/eclipse/EclipseWriteRFTHandler.hpp
-        opm/core/io/eclipse/EclipseWriter.hpp
-        opm/core/io/eclipse/writeECLData.hpp
-        opm/core/io/vag/vag.hpp
-        opm/core/io/vtk/writeVtkData.hpp
         opm/core/linalg/LinearSolverFactory.hpp
         opm/core/linalg/LinearSolverInterface.hpp
         opm/core/linalg/LinearSolverIstl.hpp
