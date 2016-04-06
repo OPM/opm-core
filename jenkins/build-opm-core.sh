@@ -7,7 +7,7 @@ function build_opm_core {
   cd $WORKSPACE/deps/ert
   git init .
   git remote add origin https://github.com/Ensembles/ert
-  git fetch origin $ERT_REVISION:branch_to_build
+  git fetch --depth 1 origin $ERT_REVISION:branch_to_build
   test $? -eq 0 || exit 1
   git checkout branch_to_build
   popd
@@ -26,7 +26,7 @@ function build_opm_core {
   cd $WORKSPACE/deps/opm-common
   git init .
   git remote add origin https://github.com/OPM/opm-common
-  git fetch origin $OPM_COMMON_REVISION:branch_to_build
+  git fetch --depth 1 origin $OPM_COMMON_REVISION:branch_to_build
   test $? -eq 0 || exit 1
   git checkout branch_to_build
   popd
