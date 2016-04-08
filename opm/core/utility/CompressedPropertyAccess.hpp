@@ -110,7 +110,7 @@ namespace Opm {
                 HasProperty<int>::p(PropertyContainer& ecl,
                                     const std::string& kw)
                 {
-                    return ecl->hasDeckIntGridProperty(kw);
+                    return ecl->getEclipseProperties().hasDeckIntGridProperty(kw);
                 }
 
                 /**
@@ -145,7 +145,7 @@ namespace Opm {
                 HasProperty<double>::p(PropertyContainer& ecl,
                                        const std::string& kw)
                 {
-                    return ecl->hasDeckDoubleGridProperty(kw);
+                    return ecl->getEclipseProperties().hasDeckDoubleGridProperty(kw);
                 }
 
                 /**
