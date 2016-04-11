@@ -55,7 +55,7 @@ void computeMaxDp(std::map<std::pair<int, int>, double>& maxDp,
 
     const PhaseUsage& pu = props.phaseUsage();
 
-    const auto& eqlnum = eclipseState->getEclipseProperties().getIntGridProperty("EQLNUM");
+    const auto& eqlnum = eclipseState->get3DProperties().getIntGridProperty("EQLNUM");
     const auto& eqlnumData = eqlnum.getData();
 
     const int numPhases = initialState.numPhases();
@@ -100,7 +100,7 @@ void computeMaxDp(std::map<std::pair<int, int>, double>& maxDp,
     // Fortran indices.
     const int* gc = UgGridHelpers::globalCell(grid);
     std::vector<int> pvtRegion(numCells);
-    const auto& cartPvtRegion = eclipseState->getEclipseProperties().getIntGridProperty("PVTNUM").getData();
+    const auto& cartPvtRegion = eclipseState->get3DProperties().getIntGridProperty("PVTNUM").getData();
     for (int cellIdx = 0; cellIdx < numCells; ++cellIdx) {
         const int cartCellIdx = gc ? gc[cellIdx] : cellIdx;
         pvtRegion[cellIdx] = std::max(0, cartPvtRegion[cartCellIdx] - 1);
@@ -323,7 +323,7 @@ void computeMaxDp(std::map<std::pair<int, int>, double>& maxDp,
         std::vector<double> thpres_vals;
         if (simulationConfig->hasThresholdPressure()) {
             std::shared_ptr<const ThresholdPressure> thresholdPressure = simulationConfig->getThresholdPressure();
-            const auto& eqlnum = eclipseState->getEclipseProperties().getIntGridProperty("EQLNUM");
+            const auto& eqlnum = eclipseState->get3DProperties().getIntGridProperty("EQLNUM");
             const auto& eqlnumData = eqlnum.getData();
 
             // Set threshold pressure values for each cell face.
@@ -381,7 +381,7 @@ void computeMaxDp(std::map<std::pair<int, int>, double>& maxDp,
         std::vector<double> thpres_vals;
         if (simulationConfig->hasThresholdPressure()) {
             std::shared_ptr<const ThresholdPressure> thresholdPressure = simulationConfig->getThresholdPressure();
-            const auto& eqlnum = eclipseState->getEclipseProperties().getIntGridProperty("EQLNUM");
+            const auto& eqlnum = eclipseState->get3DProperties().getIntGridProperty("EQLNUM");
             const auto& eqlnumData = eqlnum.getData();
 
             // Set values for each NNC
