@@ -110,7 +110,7 @@ namespace Opm {
                 HasProperty<int>::p(PropertyContainer& ecl,
                                     const std::string& kw)
                 {
-                    return ecl->getEclipseProperties().hasDeckIntGridProperty(kw);
+                    return ecl->get3DProperties().hasDeckIntGridProperty(kw);
                 }
 
                 /**
@@ -145,7 +145,7 @@ namespace Opm {
                 HasProperty<double>::p(PropertyContainer& ecl,
                                        const std::string& kw)
                 {
-                    return ecl->getEclipseProperties().hasDeckDoubleGridProperty(kw);
+                    return ecl->get3DProperties().hasDeckDoubleGridProperty(kw);
                 }
 
                 /**
@@ -181,7 +181,7 @@ namespace Opm {
                 {
                     assert (HasProperty<int>::p(ecl, kw));
 
-                    return &ecl->getEclipseProperties().getIntGridProperty(kw);
+                    return &ecl->get3DProperties().getIntGridProperty(kw);
                 }
 
                 /**
@@ -217,7 +217,7 @@ namespace Opm {
                 {
                     assert (HasProperty<double>::p(ecl, kw));
 
-                    return &ecl->getEclipseProperties().getDoubleGridProperty(kw);
+                    return &ecl->get3DProperties().getDoubleGridProperty(kw);
                 }
             } // namespace EclPropImpl
 
