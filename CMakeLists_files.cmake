@@ -96,8 +96,6 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/simulator/AdaptiveSimulatorTimer.cpp
         opm/core/simulator/BlackoilState.cpp
         opm/core/simulator/TwophaseState.cpp
-        opm/core/simulator/SimulatorCompressibleTwophase.cpp
-        opm/core/simulator/SimulatorIncompTwophase.cpp
         opm/core/simulator/SimulatorReport.cpp
         opm/core/simulator/SimulatorTimer.cpp
         opm/core/simulator/TimeStepControl.cpp
@@ -153,7 +151,6 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_parallelistlinformation.cpp
 	tests/test_sparsevector.cpp
 	tests/test_sparsetable.cpp
-       #tests/test_thresholdpressure.cpp
        tests/test_velocityinterpolation.cpp
 	tests/test_quadratures.cpp
 	tests/test_uniformtablelinear.cpp
@@ -227,8 +224,6 @@ list (APPEND EXAMPLE_SOURCE_FILES
 	examples/compute_tof.cpp
 	examples/compute_tof_from_files.cpp
   examples/mirror_grid.cpp
-	examples/sim_2p_comp_reorder.cpp
-	examples/sim_2p_incomp.cpp
 	examples/wells_example.cpp
 	examples/diagnose_relperm.cpp
 	tutorials/tutorial1.cpp
@@ -252,8 +247,6 @@ list (APPEND ATTIC_FILES
 # installation
 list (APPEND PROGRAM_SOURCE_FILES
   examples/mirror_grid.cpp
-	examples/sim_2p_comp_reorder.cpp
-	examples/sim_2p_incomp.cpp
 	)
 
 # originally generated with the command:
@@ -348,8 +341,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/simulator/EquilibrationHelpers.hpp
         opm/core/simulator/ExplicitArraysFluidState.hpp
         opm/core/simulator/ExplicitArraysSatDerivativesFluidState.hpp
-        opm/core/simulator/SimulatorCompressibleTwophase.hpp
-        opm/core/simulator/SimulatorIncompTwophase.hpp
         opm/core/simulator/SimulatorReport.hpp
         opm/core/simulator/SimulatorTimer.hpp
         opm/core/simulator/SimulatorTimerInterface.hpp
@@ -417,7 +408,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/utility/parameters/tinyxml/tinystr.h
         opm/core/utility/parameters/tinyxml/tinyxml.h
         opm/core/utility/share_obj.hpp
-        opm/core/utility/thresholdPressures.hpp
         opm/core/well_controls.h
         opm/core/wells.h
         opm/core/wells/InjectionSpecification.hpp
