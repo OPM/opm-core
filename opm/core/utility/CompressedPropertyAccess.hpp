@@ -110,7 +110,7 @@ namespace Opm {
                 HasProperty<int>::p(PropertyContainer& ecl,
                                     const std::string& kw)
                 {
-                    return ecl->hasDeckIntGridProperty(kw);
+                    return ecl->get3DProperties().hasDeckIntGridProperty(kw);
                 }
 
                 /**
@@ -145,7 +145,7 @@ namespace Opm {
                 HasProperty<double>::p(PropertyContainer& ecl,
                                        const std::string& kw)
                 {
-                    return ecl->hasDeckDoubleGridProperty(kw);
+                    return ecl->get3DProperties().hasDeckDoubleGridProperty(kw);
                 }
 
                 /**
@@ -169,19 +169,19 @@ namespace Opm {
                      * \return Data values for property \c kw.
                      */
                     template <class PropertyContainer>
-                    static std::shared_ptr<const GridProperty<int> >
+                    static const GridProperty<int>*
                     value(PropertyContainer& ecl,
                           const std::string& kw);
                 };
 
                 template <class PropertyContainer>
-                std::shared_ptr<const GridProperty<int> >
+                const GridProperty<int>*
                 GetProperty<int>::value(PropertyContainer& ecl,
                                         const std::string& kw)
                 {
                     assert (HasProperty<int>::p(ecl, kw));
 
-                    return ecl->getIntGridProperty(kw);
+                    return &ecl->get3DProperties().getIntGridProperty(kw);
                 }
 
                 /**
@@ -205,19 +205,19 @@ namespace Opm {
                      * \return Data values for property \c kw.
                      */
                     template <class PropertyContainer>
-                    static std::shared_ptr<const GridProperty<double> >
+                    static const GridProperty<double>*
                     value(PropertyContainer& ecl,
                           const std::string& kw);
                 };
 
                 template <class PropertyContainer>
-                std::shared_ptr<const GridProperty<double> >
+                const GridProperty<double>*
                 GetProperty<double>::value(PropertyContainer& ecl,
                                            const std::string& kw)
                 {
                     assert (HasProperty<double>::p(ecl, kw));
 
-                    return ecl->getDoubleGridProperty(kw);
+                    return &ecl->get3DProperties().getDoubleGridProperty(kw);
                 }
             } // namespace EclPropImpl
 
@@ -245,24 +245,21 @@ namespace Opm {
                  * an empty \code shared_ptr<> \endcode if not.
                  */
                 template <class PropertyContainer>
-                static std::shared_ptr<const GridProperty<T> >
+                static const GridProperty<T>*
                 value(PropertyContainer& ecl,
                       const std::string& kw);
             };
 
             template <typename T>
             template <class PropertyContainer>
-            std::shared_ptr<const GridProperty<T> >
+            const GridProperty<T>*
             EclipsePropertyArray<T>::value(PropertyContainer& ecl,
                                            const std::string& kw)
             {
-                std::shared_ptr<const GridProperty<T> > x;
-
-                if (EclPropImpl::HasProperty<T>::p(ecl, kw)) {
-                    x = EclPropImpl::GetProperty<T>::value(ecl, kw);
+                if (! EclPropImpl::HasProperty<T>::p(ecl, kw)) {
+                    return nullptr;
                 }
-
-                return x;
+                return EclPropImpl::GetProperty<T>::value(ecl, kw);
             }
         } // namespace Details
 
@@ -349,7 +346,7 @@ namespace Opm {
                  *
                  * Null if data not defined.
                  */
-                std::shared_ptr<const GridProperty<T> > x_;
+                const GridProperty<T>* x_ = nullptr;
 
                 /**
                  * Fall-back data element value if data not defined.
