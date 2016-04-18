@@ -15,9 +15,9 @@ Source0:        https://github.com/OPM/%{name}/archive/release/%{version}/%{tag}
 BuildRequires:  blas-devel lapack-devel dune-common-devel
 BuildRequires:  git suitesparse-devel doxygen bc opm-material-devel
 BuildRequires:  tinyxml-devel dune-istl-devel ert.ecl-devel opm-common-devel
-BuildRequires:  opm-parser-devel opm-material-devel boost148-devel
-%{?el6:BuildRequires:  cmake28 devtoolset-2}
-%{?!el6:BuildRequires:  cmake gcc gcc-gfortran gcc-c++}
+BuildRequires:  opm-parser-devel opm-material-devel
+%{?el6:BuildRequires:  cmake28 devtoolset-2 boost148-devel}
+%{?!el6:BuildRequires:  cmake gcc gcc-gfortran gcc-c++ boost-devel}
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Requires:       libopm-core1 = %{version}
 
@@ -66,7 +66,7 @@ This package contains the applications for opm-core
 # consider using -DUSE_VERSIONED_DIR=ON if backporting
 %build
 %{?el6:scl enable devtoolset-2 bash}
-%{?el6:cmake28} %{!?el6:cmake} -DBUILD_SHARED_LIBS=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DSTRIP_DEBUGGING_SYMBOLS=ON -DCMAKE_INSTALL_PREFIX=%{_prefix} -DCMAKE_INSTALL_DOCDIR=share/doc/%{name}-%{version} -DUSE_RUNPATH=OFF %{?el6:-DCMAKE_CXX_COMPILER=/opt/rh/devtoolset-2/root/usr/bin/g++ -DCMAKE_C_COMPILER=/opt/rh/devtoolset-2/root/usr/bin/gcc -DCMAKE_Fortran_COMPILER=/opt/rh/devtoolset-2/root/usr/bin/gfortran} -DBOOST_LIBRARYDIR=%{_libdir}/boost148 -DBOOST_INCLUDEDIR=/usr/include/boost148
+%{?el6:cmake28} %{!?el6:cmake} -DBUILD_SHARED_LIBS=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DSTRIP_DEBUGGING_SYMBOLS=ON -DCMAKE_INSTALL_PREFIX=%{_prefix} -DCMAKE_INSTALL_DOCDIR=share/doc/%{name}-%{version} -DUSE_RUNPATH=OFF %{?el6:-DCMAKE_CXX_COMPILER=/opt/rh/devtoolset-2/root/usr/bin/g++ -DCMAKE_C_COMPILER=/opt/rh/devtoolset-2/root/usr/bin/gcc -DCMAKE_Fortran_COMPILER=/opt/rh/devtoolset-2/root/usr/bin/gfortran -DBOOST_LIBRARYDIR=%{_libdir}/boost148 -DBOOST_INCLUDEDIR=%{_includedir}/boost148}
 make
 
 %install
@@ -81,7 +81,7 @@ rm -rf %{buildroot}
 %postun -n libopm-core1 -p /sbin/ldconfig
 
 %files
-%doc COPYING README
+%doc COPYING README.md
 
 %files doc
 %{_docdir}/*
