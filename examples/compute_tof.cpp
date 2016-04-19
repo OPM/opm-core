@@ -177,7 +177,7 @@ try
     EclipseStateConstPtr eclipseState = std::make_shared<EclipseState>(deck , parseContext);
 
     // Grid init
-    GridManager grid_manager(deck);
+    GridManager grid_manager(eclipseState->getInputGrid());
     const UnstructuredGrid& grid = *grid_manager.c_grid();
     // Rock and fluid init
     IncompPropertiesSinglePhase props(deck, eclipseState, grid);

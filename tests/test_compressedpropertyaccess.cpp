@@ -60,7 +60,7 @@ struct TestFixture : public Setup
 {
     TestFixture()
         : Setup ()
-        , grid  (deck)
+        , grid  (ecl->getInputGrid())
         , reltol(1.0e-10)
     {
     }
