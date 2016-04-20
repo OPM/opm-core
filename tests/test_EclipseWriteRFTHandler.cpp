@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(test_EclipseWriterRFTHandler)
     std::shared_ptr<Opm::SimulatorTimer> simulatorTimer = std::make_shared<Opm::SimulatorTimer>();
     simulatorTimer->init(eclipseState->getSchedule()->getTimeMap());
 
-    std::shared_ptr<Opm::GridManager>  ourFineGridManagerPtr = std::make_shared<Opm::GridManager>(eclipseState->getEclipseGrid());
+    std::shared_ptr<Opm::GridManager>  ourFineGridManagerPtr = std::make_shared<Opm::GridManager>(eclipseState->getInputGrid());
     const UnstructuredGrid &ourFinerUnstructuredGrid = *ourFineGridManagerPtr->c_grid();
     const int* compressedToCartesianCellIdx = Opm::UgGridHelpers::globalCell(ourFinerUnstructuredGrid);
 

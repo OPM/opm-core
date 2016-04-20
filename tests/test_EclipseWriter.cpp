@@ -69,7 +69,7 @@ void createEclipseWriter(const char *deckString)
 
     eclipseState.reset(new Opm::EclipseState(deck , parseContext));
 
-    auto eclGrid = eclipseState->getEclipseGrid();
+    auto eclGrid = eclipseState->getInputGrid();
     BOOST_CHECK(eclGrid->getNX() == 3);
     BOOST_CHECK(eclGrid->getNY() == 3);
     BOOST_CHECK(eclGrid->getNZ() == 3);
@@ -212,7 +212,7 @@ void checkEgridFile()
     // use ERT directly to inspect the EGRID file produced by EclipseWriter
     auto egridFile = fortio_open_reader("FOO.EGRID", /*isFormated=*/0, ECL_ENDIAN_FLIP);
 
-    auto eclGrid = eclipseState->getEclipseGrid();
+    auto eclGrid = eclipseState->getInputGrid();
 
     ecl_kw_type *eclKeyword;
     // yes, that's an assignment!

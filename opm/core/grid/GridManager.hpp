@@ -41,9 +41,6 @@ namespace Opm
     class GridManager
     {
     public:
-        /// Construct a 3d corner-point grid or tensor grid from a deck.
-        explicit GridManager(Opm::DeckConstPtr deck);
-
         /// Construct a grid from an EclipseState::EclipseGrid instance.
         explicit GridManager(Opm::EclipseGridConstPtr eclipseGrid);
 

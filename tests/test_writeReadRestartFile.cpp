@@ -208,7 +208,7 @@ Opm::EclipseWriterPtr createEclipseWriter(Opm::DeckConstPtr deck,
   Opm::EclipseWriterPtr eclWriter(new Opm::EclipseWriter(params,
                                                          eclipseState,
                                                          phaseUsage,
-                                                         eclipseState->getEclipseGrid()->getCartesianSize(),
+                                                         eclipseState->getInputGrid()->getCartesianSize(),
                                                          0));
   return eclWriter;
 }
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
     Opm::GridManager gridManager(deck);
     Opm::WellsManager wellsManager(eclipseState, 1, *gridManager.c_grid(), NULL);
     const Wells* wells = wellsManager.c_wells();
-    std::shared_ptr<Opm::BlackoilState> blackoilState = createBlackOilState(eclipseState->getEclipseGrid(), phaseUsage);
+    std::shared_ptr<Opm::BlackoilState> blackoilState = createBlackOilState(eclipseState->getInputGrid(), phaseUsage);
     wellState->init(wells, *blackoilState);
 
     //Set test data for pressure
@@ -315,7 +315,7 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
     wellStateRestored->init(wells, *blackoilState);
 
     //Read and verify OPM XWEL data, and solution data: pressure, temperature, saturation data, rs and rv
-    std::shared_ptr<Opm::BlackoilState> blackoilStateRestored = createBlackOilState(eclipseState->getEclipseGrid(), phaseUsage);
+    std::shared_ptr<Opm::BlackoilState> blackoilStateRestored = createBlackOilState(eclipseState->getInputGrid(), phaseUsage);
     Opm::init_from_restart_file(eclipseState, Opm::UgGridHelpers::numCells(*gridManager.c_grid()), phaseUsage, *blackoilStateRestored, *wellStateRestored);
     
     BOOST_CHECK_EQUAL_COLLECTIONS(wellState->bhp().begin(), wellState->bhp().end(), wellStateRestored->bhp().begin(), wellStateRestored->bhp().end());

@@ -156,7 +156,7 @@ Opm::EclipseWriterPtr createEclipseWriter(Opm::DeckConstPtr deck,
   Opm::EclipseWriterPtr eclWriter(new Opm::EclipseWriter(params,
                                                          eclipseState,
                                                          phaseUsage,
-                                                         eclipseState->getEclipseGrid()->getCartesianSize(),
+                                                         eclipseState->getInputGrid()->getCartesianSize(),
                                                          0));
   return eclWriter;
 }
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(EclipseWriteRestartWellInfo)
     eclipseWriter->writeInit(*simTimer);
 
     std::shared_ptr<Opm::WellState> wellState(new Opm::WellState());
-    std::shared_ptr<Opm::BlackoilState> blackoilState = createBlackOilState(eclipseState->getEclipseGrid());
+    std::shared_ptr<Opm::BlackoilState> blackoilState = createBlackOilState(eclipseState->getInputGrid());
     wellState->init(0, *blackoilState);
 
     int countTimeStep = eclipseState->getSchedule()->getTimeMap()->numTimesteps();
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(EclipseWriteRestartWellInfo)
       eclipseWriter->writeTimeStep(*simTimer, *blackoilState, *wellState, false);
     }
 
-    verifyWellState(eclipse_restart_filename, eclipseState->getEclipseGrid(), eclipseState->getSchedule());
+    verifyWellState(eclipse_restart_filename, eclipseState->getInputGrid(), eclipseState->getSchedule());
 
     test_work_area_free(test_area);
 }
