@@ -38,17 +38,13 @@ function build_opm_core {
   build_module "-DCMAKE_INSTALL_PREFIX=$WORKSPACE/serial/install" 0 $WORKSPACE/deps/opm-common
   popd
 
-  # Build opm-parser
-  clone_and_build_module opm-parser "-DCMAKE_PREFIX_PATH=$WORKSPACE/serial/install -DCMAKE_INSTALL_PREFIX=$WORKSPACE/serial/install" $OPM_PARSER_REVISION $WORKSPACE/serial
-
-  # Build opm-material
-  clone_and_build_module opm-material "-DCMAKE_PREFIX_PATH=$WORKSPACE/serial/install -DCMAKE_INSTALL_PREFIX=$WORKSPACE/serial/install" $OPM_MATERIAL_REVISION $WORKSPACE/serial
+  build_upstreams
 
   # Build opm-core
   pushd .
   mkdir serial/build-opm-core
   cd serial/build-opm-core
-  build_module "-DCMAKE_PREFIX_PATH=$WORKSPACE/serial/install" 1 $WORKSPACE
+  build_module "-DCMAKE_INSTALL_PREFIX=$WORKSPACE/serial/install -DCMAKE_PREFIX_PATH=$WORKSPACE/serial/install" 1 $WORKSPACE
   test $? -eq 0 || exit 1
   popd
 }
