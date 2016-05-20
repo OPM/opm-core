@@ -45,6 +45,7 @@
 #include <opm/core/utility/parameters/ParameterTools.hpp>
 #include <opm/core/utility/parameters/Parameter.hpp>
 #include <opm/common/ErrorMacros.hpp>
+#include <opm/common/OpmLog/OpmLog.hpp>
 
 namespace Opm {
     namespace parameter {
@@ -143,9 +144,9 @@ namespace Opm {
 		    assignments.push_back(std::make_pair(name, value));
 		    continue;
 		}
-		std::cout << "WARNING: Too many assignements  (' "
-                          << ID_delimiter_assignment
-                          << "') detected in argument " << i << ".\n";
+		OpmLog::warning("WARNING: Too many assignements  (' "
+                        + ID_delimiter_assignment
+                        + "') detected in argument " + to_string(i) +);
 	    }
 	    for (int i = 0; i < int(files.size()); ++i) {
 		std::pair<std::string, std::string> file_type = filename_split(files[i]);
@@ -186,12 +187,7 @@ namespace Opm {
 		if (parent_ != 0) {
 		    // If we have a parent, ask it instead.
 		    if (output_is_enabled_) {
-			//TermColors::Red();
-			std::cout << name;
-			//TermColors::Normal();
-			std::cout << " not found at "
-                                  << (path() + ID_delimiter_path)
-                                  << ", asking parent." << std::endl;
+                OpmLog::error(name + path() + ID_delimiter_path + ", asking parent.");
 		    }
 		    return parent_->get<T>(name, r);
 		} else {
@@ -208,11 +204,7 @@ namespace Opm {
 		T val = this->translate<T>(*it, r);
 		it->second->setUsed();
 		if (output_is_enabled_) {
-		    //TermColors::Green();
-		    std::cout << name;
-		    //TermColors::Normal();
-		    std::cout << " found at " << (path() + ID_delimiter_path)
-			      << ", value is " << to_string(val) << std::endl;
+            OpmLog::info(name + " found at " + path() + ID_delimiter_path + ", value is " + to_string(val));
 		}
 		return val;
 	    } else {
@@ -241,11 +233,7 @@ namespace Opm {
 		if (parent_ != 0) {
 		    // If we have a parent, ask it instead.
 		    if (output_is_enabled_) {
-			//TermColors::Red();
-			std::cout << name;
-			//TermColors::Normal();
-			std::cout <<  " not found at " << (path() + ID_delimiter_path)
-				  << ", asking parent." << std::endl;
+                OpmLog::error(name + " not found at " + path() + ID_delimiter_path + ", asking parent.");
 		    }
 		    return parent_->getDefault<T>(name, default_value, r);
 		} else {
@@ -265,11 +253,7 @@ namespace Opm {
 		    }
 		}
 		if (output_is_enabled_) {
-		    //TermColors::Blue();
-		    std::cout << name;
-		    //TermColors::Normal();
-		    std::cout << " not found. Using default value '"
-                              << to_string(default_value) << "'." << std::endl;
+            OpmLog::info(name + " not found. Using default value '" + to_string(default_value) + ".");
 		}
 		return default_value;
 	    }
@@ -277,11 +261,8 @@ namespace Opm {
 		T val = this->translate<T>(*it, r);
 		it->second->setUsed();
 		if (output_is_enabled_) {
-		    //TermColors::Green();
-		    std::cout << name;
-		    //TermColors::Normal();
-		    std::cout << " found at " << (path() + ID_delimiter_path)
-			      << ", value is '" << to_string(val) << "'." << std::endl;
+            OpmLog::info(name + " found at " + path() + ID_delimiter_path 
+                         + ", value is '" + to_string(val) + "'.");
 		}
 		return val;
 	    } else {
