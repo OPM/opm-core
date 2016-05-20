@@ -146,7 +146,7 @@ namespace Opm {
 		}
 		OpmLog::warning("WARNING: Too many assignements  (' "
                         + ID_delimiter_assignment
-                        + "') detected in argument " + to_string(i) +);
+                        + "') detected in argument " + to_string(i));
 	    }
 	    for (int i = 0; i < int(files.size()); ++i) {
 		std::pair<std::string, std::string> file_type = filename_split(files[i]);
