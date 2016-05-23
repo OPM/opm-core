@@ -144,7 +144,7 @@ namespace Opm {
 		    assignments.push_back(std::make_pair(name, value));
 		    continue;
 		}
-		OpmLog::warning("WARNING: Too many assignements  (' "
+        OpmLog::warning("Too many assignements  (' "
                         + ID_delimiter_assignment
                         + "') detected in argument " + to_string(i));
 	    }
@@ -187,7 +187,7 @@ namespace Opm {
 		if (parent_ != 0) {
 		    // If we have a parent, ask it instead.
 		    if (output_is_enabled_) {
-                OpmLog::error(name + path() + ID_delimiter_path + ", asking parent.");
+                OpmLog::warning(name + "not found at " + path() + ID_delimiter_path + ", asking parent.");
 		    }
 		    return parent_->get<T>(name, r);
 		} else {
@@ -233,7 +233,7 @@ namespace Opm {
 		if (parent_ != 0) {
 		    // If we have a parent, ask it instead.
 		    if (output_is_enabled_) {
-                OpmLog::error(name + " not found at " + path() + ID_delimiter_path + ", asking parent.");
+                OpmLog::warning(name + " not found at " + path() + ID_delimiter_path + ", asking parent.");
 		    }
 		    return parent_->getDefault<T>(name, default_value, r);
 		} else {
@@ -253,7 +253,7 @@ namespace Opm {
 		    }
 		}
 		if (output_is_enabled_) {
-            OpmLog::info(name + " not found. Using default value '" + to_string(default_value) + ".");
+            OpmLog::info(name + " not found. Using default value '" + to_string(default_value) + "'.");
 		}
 		return default_value;
 	    }
