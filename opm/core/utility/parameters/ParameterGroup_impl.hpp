@@ -144,9 +144,9 @@ namespace Opm {
 		    assignments.push_back(std::make_pair(name, value));
 		    continue;
 		}
-        OpmLog::warning("Too many assignements  (' "
-                        + ID_delimiter_assignment
-                        + "') detected in argument " + to_string(i));
+        	OpmLog::warning("Too many assignements  (' "
+                	        + ID_delimiter_assignment
+	                        + "') detected in argument " + to_string(i));
 	    }
 	    for (int i = 0; i < int(files.size()); ++i) {
 		std::pair<std::string, std::string> file_type = filename_split(files[i]);
@@ -187,7 +187,7 @@ namespace Opm {
 		if (parent_ != 0) {
 		    // If we have a parent, ask it instead.
 		    if (output_is_enabled_) {
-                OpmLog::warning(name + "not found at " + path() + ID_delimiter_path + ", asking parent.");
+                	OpmLog::warning(name + "not found at " + path() + ID_delimiter_path + ", asking parent.");
 		    }
 		    return parent_->get<T>(name, r);
 		} else {
@@ -204,7 +204,7 @@ namespace Opm {
 		T val = this->translate<T>(*it, r);
 		it->second->setUsed();
 		if (output_is_enabled_) {
-            OpmLog::info(name + " found at " + path() + ID_delimiter_path + ", value is " + to_string(val));
+		    OpmLog::info(name + " found at " + path() + ID_delimiter_path + ", value is " + to_string(val));
 		}
 		return val;
 	    } else {
@@ -233,7 +233,7 @@ namespace Opm {
 		if (parent_ != 0) {
 		    // If we have a parent, ask it instead.
 		    if (output_is_enabled_) {
-                OpmLog::warning(name + " not found at " + path() + ID_delimiter_path + ", asking parent.");
+                	OpmLog::warning(name + " not found at " + path() + ID_delimiter_path + ", asking parent.");
 		    }
 		    return parent_->getDefault<T>(name, default_value, r);
 		} else {
@@ -253,7 +253,7 @@ namespace Opm {
 		    }
 		}
 		if (output_is_enabled_) {
-            OpmLog::info(name + " not found. Using default value '" + to_string(default_value) + "'.");
+            	    OpmLog::info(name + " not found. Using default value '" + to_string(default_value) + "'.");
 		}
 		return default_value;
 	    }
@@ -261,7 +261,7 @@ namespace Opm {
 		T val = this->translate<T>(*it, r);
 		it->second->setUsed();
 		if (output_is_enabled_) {
-            OpmLog::info(name + " found at " + path() + ID_delimiter_path 
+            	    OpmLog::info(name + " found at " + path() + ID_delimiter_path 
                          + ", value is '" + to_string(val) + "'.");
 		}
 		return val;
