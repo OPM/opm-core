@@ -5,11 +5,13 @@ source `dirname $0`/build-opm-core.sh
 # Upstream revisions
 declare -a upstreams
 upstreams=(opm-parser
-           opm-material)
+           opm-material
+           opm-output)
 
 declare -A upstreamRev
 upstreamRev[opm-parser]=master
 upstreamRev[opm-material]=master
+upstreamRev[opm-output]=master
 
 ERT_REVISION=master
 OPM_COMMON_REVISION=master
@@ -32,7 +34,7 @@ do
   fi
 done
 
-echo "Building with ert=$ERT_REVISION opm-common=$OPM_COMMON_REVISION opm-parser=${upstreamRev[opm-parser]} opm-material=${upstreamRev[opm-material]} opm-core=$sha1"
+echo "Building with ert=$ERT_REVISION opm-common=$OPM_COMMON_REVISION opm-parser=${upstreamRev[opm-parser]} opm-material=${upstreamRev[opm-material]} opm-output=${upstreamRev[opm-output]} opm-core=$sha1"
 
 build_opm_core
 test $? -eq 0 || exit 1
@@ -40,7 +42,7 @@ test $? -eq 0 || exit 1
 # If no downstream builds we are done
 if ! grep -q "with downstreams" <<< $ghprbCommentBody
 then
-  cp serial/build-opm-material/testoutput.xml .
+  cp serial/build-opm-core/testoutput.xml .
   exit 0
 fi
 
@@ -50,14 +52,12 @@ source $WORKSPACE/deps/opm-common/jenkins/build-opm-module.sh
 # Downstream revisions
 declare -a downstreams
 downstreams=(opm-grid
-             opm-output
              opm-simulators
              opm-upscaling
              ewoms)
 
 declare -A downstreamRev
 downstreamRev[opm-grid]=master
-downstreamRev[opm-output]=master
 downstreamRev[opm-simulators]=master
 downstreamRev[opm-upscaling]=master
 downstreamRev[ewoms]=master
