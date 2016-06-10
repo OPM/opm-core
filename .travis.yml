@@ -25,6 +25,7 @@ install:
     - git clone https://github.com/OPM/opm-common.git
     - git clone https://github.com/OPM/opm-parser.git
     - git clone https://github.com/OPM/opm-material.git
+    - git clone https://github.com/OPM/opm-output.git
     - git clone https://github.com/OPM/opm-data.git
 
     - opm-parser/travis/clone-and-build-ert.sh
@@ -34,6 +35,7 @@ install:
 
     - opm-common/travis/build-opm-common.sh
     - opm-parser/travis/build-opm-parser.sh
+    - opm-parser/travis/build-opm-output.sh
     - opm-material/travis/build-opm-material.sh
 
 script: opm-core/travis/build-and-test-opm-core.sh
