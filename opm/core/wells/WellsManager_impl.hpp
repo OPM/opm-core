@@ -120,7 +120,8 @@ void WellsManager::createWellsFromSpecs(std::vector<const Well*>& wells, size_t 
                                         const std::map<int,int>& cartesian_to_compressed,
                                         const double* permeability,
                                         const NTG& ntg,
-                                        std::vector<int>& wells_on_proc)
+                                        std::vector<int>& wells_on_proc,
+                                        const DynamicListEconLimited& list_econ_limited)
 {
     if (dimensions != 3) {
         OPM_THROW(std::domain_error,
@@ -142,6 +143,15 @@ void WellsManager::createWellsFromSpecs(std::vector<const Well*>& wells, size_t 
 
         if (well->getStatus(timeStep) == WellCommon::SHUT) {
             continue;
+        }
+
+        if (list_econ_limited.wellShutEconLimited(well->name())) {
+            continue;
+        }
+
+        std::vector<int> cells_connection_closed;
+        if (list_econ_limited.anyConnectionClosedForWell(well->name())) {
+            cells_connection_closed = list_econ_limited.getClosedConnectionsForWell(well->name());
         }
 
         {   // COMPDAT handling
@@ -175,6 +185,16 @@ void WellsManager::createWellsFromSpecs(std::vector<const Well*>& wells, size_t 
                     else
                     {
                         int cell = cgit->second;
+                        // check if the connection is closed due to economic limits
+                        if (!cells_connection_closed.empty()) {
+                            const bool connection_found = std::find(cells_connection_closed.begin(),
+                                                                    cells_connection_closed.end(), cell)
+                                                          != cells_connection_closed.end();
+                            if (connection_found) {
+                                continue;
+                            }
+                        }
+
                         PerfData pd;
                         pd.cell = cell;
                         {
@@ -327,13 +347,14 @@ WellsManager(const Opm::EclipseStateConstPtr eclipseState,
              const C2F&                      cell_to_faces,
              FC                              begin_face_centroids,
              const double*                   permeability,
+             const DynamicListEconLimited&   list_econ_limited,
              bool                            is_parallel_run,
              const std::vector<double>&      well_potentials)
     : w_(0), is_parallel_run_(is_parallel_run)
 {
     init(eclipseState, timeStep, number_of_cells, global_cell,
          cart_dims, dimensions,
-         cell_to_faces, begin_face_centroids, permeability, well_potentials);
+         cell_to_faces, begin_face_centroids, permeability, list_econ_limited, well_potentials);
 }
 
 /// Construct wells from deck.
@@ -348,6 +369,7 @@ WellsManager::init(const Opm::EclipseStateConstPtr eclipseState,
                    const C2F&                      cell_to_faces,
                    FC                              begin_face_centroids,
                    const double*                   permeability,
+                   const DynamicListEconLimited&   list_econ_limited,
                    const std::vector<double>&      well_potentials)
 {
     if (dimensions != 3) {
@@ -410,9 +432,9 @@ WellsManager::init(const Opm::EclipseStateConstPtr eclipseState,
                          dz,
                          well_names, well_data, well_names_to_index,
                          pu, cartesian_to_compressed, permeability, ntg,
-                         wells_on_proc);
+                         wells_on_proc, list_econ_limited);
 
-    setupWellControls(wells, timeStep, well_names, pu, wells_on_proc);
+    setupWellControls(wells, timeStep, well_names, pu, wells_on_proc, list_econ_limited);
 
     {
         GroupTreeNodeConstPtr fieldNode =
