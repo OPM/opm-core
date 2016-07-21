@@ -216,10 +216,10 @@ namespace Opm {
                 if( timestep_verbose_ )
                 {
                     std::ostringstream ss;
-                    if (solver.wellIterations() != std::numeric_limits<int>::min()) {
+                    if (solver.wellIterations() != 0) {
                         ss << "well iterations = " << solver.wellIterations() << ", ";
                     }
-		    ss << "non-linear iterations = " << solver.nonlinearIterations()
+                    ss << "non-linear iterations = " << solver.nonlinearIterations()
 		       << ", total linear iterations = " << solver.linearIterations();
                     OpmLog::info(ss.str());
                 }
