@@ -47,7 +47,7 @@ struct SetupSimple {
         Opm::ParseContext parseContext;
         Opm::ParserPtr parser(new Opm::Parser());
         deck = parser->parseFile("compressed_gridproperty.data" , parseContext);
-        ecl.reset(new Opm::EclipseState(deck , parseContext));
+        ecl.reset(new Opm::EclipseState(*deck , parseContext));
     }
 
     Opm::DeckConstPtr         deck;
