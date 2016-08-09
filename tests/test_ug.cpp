@@ -57,10 +57,10 @@ BOOST_AUTO_TEST_CASE(Equal) {
     Opm::ParserPtr parser(new Opm::Parser() );
 
     Opm::DeckConstPtr deck1 = parser->parseFile( filename1 , parseContext);
-    Opm::EclipseState es1(deck1, parseContext);
+    Opm::EclipseState es1(*deck1, parseContext);
 
     Opm::DeckConstPtr deck2 = parser->parseString( deck2Data , parseContext);
-    Opm::EclipseState es2(deck2, parseContext);
+    Opm::EclipseState es2(*deck2, parseContext);
     
     BOOST_CHECK( deck1->hasKeyword("ZCORN") );
     BOOST_CHECK( deck1->hasKeyword("COORD") );
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(EqualEclipseGrid) {
     Opm::ParserPtr parser(new Opm::Parser() );
     Opm::ParseContext parseContext;
     Opm::DeckConstPtr deck = parser->parseFile( filename , parseContext);
-    Opm::EclipseState es(deck, parseContext);
+    Opm::EclipseState es(*deck, parseContext);
     auto grid = es.getInputGrid();
 
     Opm::GridManager gridM(es.getInputGrid());
@@ -161,8 +161,8 @@ BOOST_AUTO_TEST_CASE(TOPS_Fully_Specified) {
     Opm::DeckConstPtr deck1 = parser->parseString(deck1Data, parseContext);
     Opm::DeckConstPtr deck2 = parser->parseString(deck2Data, parseContext);
 
-    Opm::EclipseState es1(deck1, parseContext);
-    Opm::EclipseState es2(deck2, parseContext);
+    Opm::EclipseState es1(*deck1, parseContext);
+    Opm::EclipseState es2(*deck2, parseContext);
 
     Opm::GridManager gridM1(es1.getInputGrid());
     Opm::GridManager gridM2(es2.getInputGrid());
