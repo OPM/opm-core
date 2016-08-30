@@ -45,14 +45,6 @@ namespace Opm
     }
 
 
-    GridManager::GridManager(Opm::DeckConstPtr deck)
-        : ug_(0)
-    {
-        auto eclipseGrid = std::make_shared<const Opm::EclipseGrid>(deck);
-        initFromEclipseGrid(eclipseGrid, std::vector<double>());
-    }
-
-
     GridManager::GridManager(Opm::EclipseGridConstPtr eclipseGrid,
                              const std::vector<double>& poreVolumes)
         : ug_(0)

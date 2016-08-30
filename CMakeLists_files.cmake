@@ -372,11 +372,13 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/transport/reorder/reordersequence.h
         opm/core/transport/reorder/tarjan.h
         opm/core/utility/Average.hpp
+        opm/core/utility/Compat.hpp
         opm/core/utility/CompressedPropertyAccess.hpp
         opm/core/utility/DataMap.hpp
         opm/core/utility/Event.hpp
         opm/core/utility/Event_impl.hpp
         opm/core/utility/Factory.hpp
+        opm/core/utility/initHydroCarbonState.hpp
         opm/core/utility/MonotCubicInterpolator.hpp
         opm/core/utility/NonuniformTableLinear.hpp
         opm/core/utility/NullStream.hpp
@@ -415,5 +417,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/wells/WellCollection.hpp
         opm/core/wells/WellsGroup.hpp
         opm/core/wells/WellsManager.hpp
+        opm/core/wells/DynamicListEconLimited.hpp
         opm/core/wells/WellsManager_impl.hpp
 	)

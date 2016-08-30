@@ -63,6 +63,12 @@ namespace Opm
         start_date_ = start_time.date();
     }
 
+    /// Whether the current step is the first step.
+    bool SimulatorTimer::initialStep() const
+    {
+        return (current_step_ == 0);
+    }
+
     /// Total number of steps.
     int SimulatorTimer::numSteps() const
     {
@@ -107,6 +113,11 @@ namespace Opm
         return boost::posix_time::ptime(start_date_);
     }
 
+
+    boost::posix_time::ptime SimulatorTimer::currentDateTime() const
+    {
+        return startDateTime() + boost::posix_time::seconds( (int) simulationTimeElapsed());
+    }
 
     /// Total time.
     double SimulatorTimer::totalTime() const

@@ -49,6 +49,9 @@ namespace Opm
         /// Use the SimulatorTimer as a shim around opm-parser's Opm::TimeMap
         void init(TimeMapConstPtr timeMap, size_t report_step = 0);
 
+        /// Whether the current step is the first step.
+        bool initialStep() const;
+
         /// Total number of steps.
         int numSteps() const;
 
@@ -84,6 +87,9 @@ namespace Opm
 
         /// Return start date of simulation
         boost::posix_time::ptime startDateTime() const;
+
+        /// Return current date.
+        boost::posix_time::ptime currentDateTime() const;
 
         /// Set total time.
         /// This is primarily intended for multi-epoch schedules,

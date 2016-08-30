@@ -54,7 +54,7 @@
 #include <iostream>
 #include <vector>
 #include <numeric>
-
+#include <fstream>
 
 namespace
 {
@@ -174,10 +174,10 @@ try
     Parser parser;
     ParseContext parseContext;
     DeckConstPtr deck = parser.parseFile(deck_filename , parseContext);
-    EclipseStateConstPtr eclipseState = std::make_shared<EclipseState>(deck , parseContext);
+    EclipseStateConstPtr eclipseState = std::make_shared<EclipseState>(*deck , parseContext);
 
     // Grid init
-    GridManager grid_manager(deck);
+    GridManager grid_manager(eclipseState->getInputGrid());
     const UnstructuredGrid& grid = *grid_manager.c_grid();
     // Rock and fluid init
     IncompPropertiesSinglePhase props(deck, eclipseState, grid);
