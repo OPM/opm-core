@@ -21,6 +21,7 @@
 #include <opm/core/grid.h>
 #include <opm/core/grid/cornerpoint_grid.h>  /* compute_geometry */
 #include <opm/core/grid/GridManager.hpp>  /* compute_geometry */
+#include <opm/core/grid/GridHelpers.hpp>
 #include <opm/core/grid/cpgpreprocess/preprocess.h>
 #include <opm/parser/eclipse/Deck/Deck.hpp>
 #include <opm/parser/eclipse/Deck/DeckItem.hpp>
@@ -172,5 +173,5 @@ BOOST_AUTO_TEST_CASE(TOPS_Fully_Specified) {
 
     BOOST_CHECK(grid_equal(cgrid1, cgrid2));
 
-    Opm::EclipseGrid grid = gridM1.createEclipseGrid( *es1.getInputGrid( ) );
+    Opm::EclipseGrid grid = Opm::UgGridHelpers::createEclipseGrid( *cgrid1 , *es1.getInputGrid( ) );
 }

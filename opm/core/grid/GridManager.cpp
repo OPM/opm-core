@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include <opm/core/grid/GridHelpers.hpp>
 #include <opm/core/grid/GridManager.hpp>
 #include <opm/core/grid.h>
 #include <opm/core/grid/cart_grid.h>
@@ -132,6 +133,7 @@ namespace Opm
                                           const std::vector<double>& poreVolumes)
     {
         struct grdecl g;
+        int cells_modified = 0;
         std::vector<int> actnum;
         std::vector<double> coord;
         std::vector<double> zcorn;
@@ -157,7 +159,7 @@ namespace Opm
             // Currently the pinchProcessor is not used and only opmfil is supported
             //bool opmfil = inputGrid.getMinpvMode() == MinpvMode::OpmFIL;
             bool opmfil = true;
-            mp.process(poreVolumes, minpv_value, actnum, opmfil, zcorn.data());
+            cells_modified = mp.process(poreVolumes, minpv_value, actnum, opmfil, zcorn.data());
         }
 
         const double z_tolerance = inputGrid.isPinchActive() ? inputGrid.getPinchThresholdThickness() : 0.0;
@@ -165,9 +167,11 @@ namespace Opm
         if (!ug_) {
             OPM_THROW(std::runtime_error, "Failed to construct grid.");
         }
+
+        if (cells_modified > 0) {
+            attach_zcorn_copy( ug_ , zcorn.data() );
+        }
     }
-
-
 
 
     void GridManager::createGrdecl(Opm::DeckConstPtr deck, struct grdecl &grdecl)

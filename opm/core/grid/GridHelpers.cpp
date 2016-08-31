@@ -149,5 +149,29 @@ FaceCellTraits<UnstructuredGrid>::Type faceCells(const UnstructuredGrid& grid)
 {
     return FaceCellsProxy(grid);
 }
+
+
+Opm::EclipseGrid createEclipseGrid(const UnstructuredGrid& grid, const Opm::EclipseGrid& inputGrid ) {
+    const int * dims = UgGridHelpers::cartDims( grid );
+
+    if ((inputGrid.getNX( ) == static_cast<size_t>(dims[0])) &&
+        (inputGrid.getNY( ) == static_cast<size_t>(dims[1])) &&
+        (inputGrid.getNZ( ) == static_cast<size_t>(dims[2]))) {
+        std::vector<int> updatedACTNUM;
+        const int* global_cell = UgGridHelpers::globalCell( grid );
+
+        if (global_cell) {
+            updatedACTNUM.assign( inputGrid.getCartesianSize( ) , 0 );
+            for (int c = 0; c < numCells( grid ); c++) {
+                updatedACTNUM[global_cell[c]] = 1;
+            }
+        }
+
+        return Opm::EclipseGrid( inputGrid, grid.zcorn, updatedACTNUM );
+    } else {
+        throw std::invalid_argument("Size mismatch - dimensions of inputGrid argument and current UnstructuredGrid instance disagree");
+    }
+}
+
 }
 }
