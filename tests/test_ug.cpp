@@ -65,8 +65,8 @@ BOOST_AUTO_TEST_CASE(Equal) {
     BOOST_CHECK( deck1->hasKeyword("ZCORN") );
     BOOST_CHECK( deck1->hasKeyword("COORD") );
     
-    Opm::GridManager grid1(es1.getInputGrid());
-    Opm::GridManager grid2(es2.getInputGrid());
+    Opm::GridManager grid1(*es1.getInputGrid());
+    Opm::GridManager grid2(*es2.getInputGrid());
     
     const UnstructuredGrid* cgrid1 = grid1.c_grid();
     const UnstructuredGrid* cgrid2 = grid2.c_grid();
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(EqualEclipseGrid) {
     Opm::EclipseState es(*deck, parseContext);
     auto grid = es.getInputGrid();
 
-    Opm::GridManager gridM(es.getInputGrid());
+    Opm::GridManager gridM(*es.getInputGrid());
     const UnstructuredGrid* cgrid1 = gridM.c_grid();
     struct UnstructuredGrid * cgrid2;
     {
@@ -164,11 +164,13 @@ BOOST_AUTO_TEST_CASE(TOPS_Fully_Specified) {
     Opm::EclipseState es1(*deck1, parseContext);
     Opm::EclipseState es2(*deck2, parseContext);
 
-    Opm::GridManager gridM1(es1.getInputGrid());
-    Opm::GridManager gridM2(es2.getInputGrid());
+    Opm::GridManager gridM1(*es1.getInputGrid());
+    Opm::GridManager gridM2(*es2.getInputGrid());
 
     const UnstructuredGrid* cgrid1 = gridM1.c_grid();
     const UnstructuredGrid* cgrid2 = gridM2.c_grid();
 
     BOOST_CHECK(grid_equal(cgrid1, cgrid2));
+
+    Opm::EclipseGrid grid = gridM1.createEclipseGrid( *es1.getInputGrid( ) );
 }

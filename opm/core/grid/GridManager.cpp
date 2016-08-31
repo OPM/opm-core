@@ -38,18 +38,18 @@ namespace Opm
 {
 
     /// Construct a 3d corner-point grid from a deck.
-    GridManager::GridManager(Opm::EclipseGridConstPtr eclipseGrid)
+    GridManager::GridManager(const Opm::EclipseGrid& inputGrid)
         : ug_(0)
     {
-        initFromEclipseGrid(eclipseGrid, std::vector<double>());
+        initFromEclipseGrid(inputGrid, std::vector<double>());
     }
 
 
-    GridManager::GridManager(Opm::EclipseGridConstPtr eclipseGrid,
+    GridManager::GridManager(const Opm::EclipseGrid& inputGrid,
                              const std::vector<double>& poreVolumes)
         : ug_(0)
     {
-        initFromEclipseGrid(eclipseGrid, poreVolumes);
+        initFromEclipseGrid(inputGrid, poreVolumes);
     }
 
 
@@ -128,7 +128,7 @@ namespace Opm
 
 
     // Construct corner-point grid from EclipseGrid.
-    void GridManager::initFromEclipseGrid(Opm::EclipseGridConstPtr eclipseGrid,
+    void GridManager::initFromEclipseGrid(const Opm::EclipseGrid& inputGrid,
                                           const std::vector<double>& poreVolumes)
     {
         struct grdecl g;
@@ -137,31 +137,30 @@ namespace Opm
         std::vector<double> zcorn;
         std::vector<double> mapaxes;
 
-        g.dims[0] = eclipseGrid->getNX();
-        g.dims[1] = eclipseGrid->getNY();
-        g.dims[2] = eclipseGrid->getNZ();
+        g.dims[0] = inputGrid.getNX();
+        g.dims[1] = inputGrid.getNY();
+        g.dims[2] = inputGrid.getNZ();
 
-        eclipseGrid->exportMAPAXES( mapaxes );
-        eclipseGrid->exportCOORD( coord );
-        eclipseGrid->exportZCORN( zcorn );
-        eclipseGrid->exportACTNUM( actnum );
+        inputGrid.exportMAPAXES( mapaxes );
+        inputGrid.exportCOORD( coord );
+        inputGrid.exportZCORN( zcorn );
+        inputGrid.exportACTNUM( actnum );
 
         g.coord = coord.data();
         g.zcorn = zcorn.data();
         g.actnum = actnum.data();
         g.mapaxes = mapaxes.data();
 
-        if (!poreVolumes.empty() && (eclipseGrid->getMinpvMode() != MinpvMode::ModeEnum::Inactive)) {
+        if (!poreVolumes.empty() && (inputGrid.getMinpvMode() != MinpvMode::ModeEnum::Inactive)) {
             MinpvProcessor mp(g.dims[0], g.dims[1], g.dims[2]);
-            const double minpv_value  = eclipseGrid->getMinpvValue();
+            const double minpv_value  = inputGrid.getMinpvValue();
             // Currently the pinchProcessor is not used and only opmfil is supported
-            //bool opmfil = eclipseGrid->getMinpvMode() == MinpvMode::OpmFIL;
+            //bool opmfil = inputGrid.getMinpvMode() == MinpvMode::OpmFIL;
             bool opmfil = true;
             mp.process(poreVolumes, minpv_value, actnum, opmfil, zcorn.data());
         }
 
-        const double z_tolerance = eclipseGrid->isPinchActive() ?
-            eclipseGrid->getPinchThresholdThickness() : 0.0;
+        const double z_tolerance = inputGrid.isPinchActive() ? inputGrid.getPinchThresholdThickness() : 0.0;
         ug_ = create_grid_cornerpoint(&g, z_tolerance);
         if (!ug_) {
             OPM_THROW(std::runtime_error, "Failed to construct grid.");
