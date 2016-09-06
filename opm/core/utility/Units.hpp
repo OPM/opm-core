@@ -35,6 +35,8 @@
 #ifndef OPM_UNITS_HEADER
 #define OPM_UNITS_HEADER
 
+
+
 /**
  * \file
  * Constants and routines to assist in handling units of measurement.  These are
@@ -216,6 +218,16 @@ namespace Opm
                 return q / unit;
             }
         } // namespace convert
+
+
+#ifndef HAS_ATTRIBUTE_UNUSED
+        namespace detail {
+            // Some units are sometimes unused, and generate a (potentially) large number of warnings
+            // Adding them here silences these warnings, and should have no side-effects
+            double __attribute__((unused)) unused_units = stb + liter + barsa + psia + darcy;
+        } // namespace detail
+#endif
+
     } // namespace unit
 } // namespace Opm
 #endif // OPM_UNITS_HEADER

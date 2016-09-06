@@ -190,10 +190,6 @@ const double* beginCellVolumes(const UnstructuredGrid& grid);
 /// \brief Get an iterator over the cell volumes of a grid positioned after the last cell.
 const double* endCellVolumes(const UnstructuredGrid& grid);
 
-/// \brief Get the cell centroid of a face.
-/// \param grid The grid whose cell centroid we query.
-/// \param face_index The index of the corresponding face.
-const double* faceCentroid(const UnstructuredGrid& grid, int face_index);
 
 
 /// \brief Traits of the face centroids of a grid.
@@ -220,7 +216,6 @@ beginFaceCentroids(const UnstructuredGrid& grid);
 /// \brief Get a coordinate of a specific face centroid.
 /// \param grid The grid.
 /// \param face_index The index of the specific face.
-/// \param coordinate The coordinate index.
 FaceCentroidTraits<UnstructuredGrid>::ValueType
 faceCentroid(const UnstructuredGrid& grid, int face_index);
 
