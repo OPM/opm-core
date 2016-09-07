@@ -48,6 +48,8 @@ destroy_grid(struct UnstructuredGrid *g)
 
         free(g->global_cell);
         free(g->cell_facetag);
+
+        free(g->zcorn);
     }
 
     free(g);
@@ -69,6 +71,18 @@ create_grid_empty(void)
 }
 
 
+void
+attach_zcorn_copy(struct UnstructuredGrid* G , const double * zcorn)
+{
+    size_t zcorn_elements = G->cartdims[0] * G->cartdims[1] * G->cartdims[2] * 8;
+    double * new_zcorn = realloc(G->zcorn , zcorn_elements * sizeof * G->zcorn );
+    if (new_zcorn) {
+        G->zcorn = new_zcorn;
+        memcpy(G->zcorn , zcorn , zcorn_elements * sizeof * G->zcorn );
+    }
+}
+
+
 struct UnstructuredGrid *
 allocate_grid(size_t ndims     ,
               size_t ncells    ,
@@ -83,6 +97,9 @@ allocate_grid(size_t ndims     ,
     G = create_grid_empty();
 
     if (G != NULL) {
+        /* zcorn cache - only for output. */
+        G->zcorn = NULL;
+
         /* Grid fields ---------------------------------------- */
         G->dimensions       = ndims;
         G->number_of_cells  = ncells;

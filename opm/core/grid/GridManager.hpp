@@ -42,14 +42,14 @@ namespace Opm
     {
     public:
         /// Construct a grid from an EclipseState::EclipseGrid instance.
-        explicit GridManager(Opm::EclipseGridConstPtr eclipseGrid);
+        explicit GridManager(const Opm::EclipseGrid& inputGrid);
 
         /// Construct a grid from an EclipseState::EclipseGrid instance,
         /// giving an explicit set of pore volumes to be used for MINPV
         /// considerations.
         /// \input[in] eclipseGrid    encapsulates a corner-point grid given from a deck
         /// \input[in] poreVolumes    one element per logical cartesian grid element
-        GridManager(Opm::EclipseGridConstPtr eclipseGrid,
+        GridManager(const Opm::EclipseGrid& inputGrid,
                     const std::vector<double>& poreVolumes);
 
         /// Construct a 2d cartesian grid with cells of unit size.
@@ -86,7 +86,7 @@ namespace Opm
         GridManager& operator=(const GridManager& other);
 
         // Construct corner-point grid from EclipseGrid.
-        void initFromEclipseGrid(Opm::EclipseGridConstPtr eclipseGrid,
+        void initFromEclipseGrid(const Opm::EclipseGrid& inputGrid,
                                  const std::vector<double>& poreVolumes);
 
         // The managed UnstructuredGrid.

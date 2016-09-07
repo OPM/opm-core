@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(DisjointColumn)
     for (size_t i = 1; i <= (3 * 3 * 3); i++)
         actnum.push_back(i != 14); // ACTNUM 13*1 0 13* 1
     ep->resetACTNUM(actnum.data());
-    Opm::GridManager manager(ep);
+    Opm::GridManager manager(*ep);
 
     VVI columns;
     Opm::extractColumn(*manager.c_grid(), columns);

@@ -22,6 +22,7 @@
 #define OPM_CORE_GRIDHELPERS_HEADER_INCLUDED
 
 #include <opm/core/grid.h>
+#include <opm/parser/eclipse/EclipseState/Grid/EclipseGrid.hpp>
 
 #include <opm/common/utility/platform_dependent/disable_warnings.h>
 #include <boost/range/iterator_range.hpp>
@@ -33,7 +34,7 @@ namespace Opm
 namespace UgGridHelpers
 {
 
-/// \brief Allows viewing a sparse table consisting out of C-array 
+/// \brief Allows viewing a sparse table consisting out of C-array
 ///
 /// This class can be used to convert two int array (like they are
 /// in UnstructuredGrid for representing the cell to faces mapping
@@ -47,7 +48,7 @@ public:
         typedef boost::iterator_range<const int*> BaseRowType;
         typedef BaseRowType::size_type size_type;
         typedef int value_type;
-        
+
         IntRange(const int* start_arg, const int* end_arg)
             : BaseRowType(start_arg, end_arg)
         {}
@@ -183,6 +184,31 @@ struct CellVolumeIteratorTraits<UnstructuredGrid>
 {
     typedef const double* IteratorType;
 };
+
+    /**
+       Will create an EclipseGrid representation (i.e. based on
+       ZCORN and COORD) of the current UnstructuredGrid
+       instance. When creating the UnstructuredGrid the detailed
+       cornerpoint information is discarded, and it is difficult
+       to go backwards to recreated ZCORN and COORD.
+
+       The current implementation is based on retaining a copy of the
+       zcorn keyword after the Minpvprocessor has modified it.
+
+       We then create a new EclipseGrid instance based on the original
+       input grid, but we "replace" the ZCORN and ACTNUM keywords with
+       the updated versions.
+
+       If the tolerance in the call to create_grid_cornerpoint( ) is
+       finite the grid processing code might collapse cells, the z
+       coordinate transformations from this process will *not* be
+       correctly represented in the EclipseGrid created by this
+       method.
+    */
+
+/// \brief Construct an EclipseGrid instance based on the inputGrid, with modifications to
+/// zcorn and actnum from the dune UnstructuredGrid.
+Opm::EclipseGrid createEclipseGrid(const UnstructuredGrid& grid, const Opm::EclipseGrid& inputGrid );
 
 /// \brief Get an iterator over the cell volumes of a grid positioned at the first cell.
 const double* beginCellVolumes(const UnstructuredGrid& grid);

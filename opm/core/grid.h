@@ -242,6 +242,16 @@ struct UnstructuredGrid
        cornerpoint grids.
     */
     int    *cell_facetag;
+
+
+    /*
+       This vector is retained to be able to construct an
+       EclipseGrid representation of the Grid. If the grid
+       processor actually modifies the elements of the zcorn
+       vector from the input the modified version is stored here;
+       otherwise we just use the default.
+    */
+    double * zcorn;
 };
 
 /**
@@ -288,6 +298,15 @@ allocate_grid(size_t ndims     ,
               size_t nfacenodes,
               size_t ncellfaces,
               size_t nnodes    );
+
+
+/**
+   Will allocate storage internally in the grid object to hold a copy
+   of the zcorn data supplied in the second argument.
+*/
+void
+attach_zcorn_copy(struct UnstructuredGrid* G ,
+                  const double * zcorn);
 
 
 /**

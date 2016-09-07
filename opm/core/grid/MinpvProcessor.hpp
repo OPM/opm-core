@@ -48,11 +48,11 @@ namespace Opm
         /// will have the zcorn numbers changed so they are zero-thickness. Any
         /// cell below will be changed to include the deleted volume if mergeMinPCCells is true
         /// els the volume will be lost
-        void process(const std::vector<double>& pv,
-                     const double minpv,
-                     const std::vector<int>& actnum,
-                     const bool mergeMinPVCells,
-                     double* zcorn) const;
+        int process(const std::vector<double>& pv,
+                    const double minpv,
+                    const std::vector<int>& actnum,
+                    const bool mergeMinPVCells,
+                    double* zcorn) const;
     private:
         std::array<int,8> cornerIndices(const int i, const int j, const int k) const;
         std::array<double, 8> getCellZcorn(const int i, const int j, const int k, const double* z) const;
@@ -61,21 +61,14 @@ namespace Opm
         std::array<int, 3> delta_;
     };
 
-    inline MinpvProcessor::MinpvProcessor(const int nx, const int ny, const int nz)
-    {
-        // Not doing init-list init since bracket-init not available
-        // for all compilers we support (gcc 4.4).
-        dims_[0] = nx;
-        dims_[1] = ny;
-        dims_[2] = nz;
-        delta_[0] = 1;
-        delta_[1] = 2*nx;
-        delta_[2] = 4*nx*ny;
-    }
+    inline MinpvProcessor::MinpvProcessor(const int nx, const int ny, const int nz) :
+        dims_( {nx,ny,nz} ),
+        delta_( {1 , 2*nx , 4*nx*ny} )
+    { }
 
 
 
-    inline void MinpvProcessor::process(const std::vector<double>& pv,
+    inline int MinpvProcessor::process(const std::vector<double>& pv,
                                         const double minpv,
                                         const std::vector<int>& actnum,
                                         const bool mergeMinPVCells,
@@ -91,6 +84,8 @@ namespace Opm
         //    the upper four (so it becomes degenerate). If mergeMinPVcells
         //    is true, the higher four zcorn associated with the cell below
         //    is moved to these values (so it gains the deleted volume).
+
+        int cells_modified = 0;
 
         // Check for sane input sizes.
         const size_t log_size = dims_[0] * dims_[1] * dims_[2];
@@ -114,6 +109,7 @@ namespace Opm
                         }
                         setCellZcorn(ii, jj, kk, cz, zcorn);
 
+
                         // optionally add removed volume to the cell below.
                         if (mergeMinPVCells) {
                             // Check if there is a cell below.
@@ -126,10 +122,12 @@ namespace Opm
                                 setCellZcorn(ii, jj, kk + 1, cz_below, zcorn);
                             }
                         }
+                        ++cells_modified;
                     }
                 }
             }
         }
+        return cells_modified;
     }
 
 
