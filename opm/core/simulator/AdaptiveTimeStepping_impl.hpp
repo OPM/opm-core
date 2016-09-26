@@ -95,6 +95,10 @@ namespace Opm {
             const double decayrate  = param.getDefault("timestep.control.decayrate",  double(0.75) );
             const double growthrate = param.getDefault("timestep.control.growthrate", double(1.25) );
             timeStepControl_ = TimeStepControlType( new SimpleIterationCountTimeStepControl( iterations, decayrate, growthrate ) );
+        } else if ( control == "hardcoded") {
+            const std::string filename    = param.getDefault("timestep.control.filename", std::string("timesteps"));
+            timeStepControl_ = TimeStepControlType( new HardcodedTimeStepControl( filename ) );
+
         }
         else
             OPM_THROW(std::runtime_error,"Unsupported time step control selected "<< control );
@@ -202,7 +206,7 @@ namespace Opm {
 
                 // compute new time step estimate
                 double dtEstimate =
-                    timeStepControl_->computeTimeStepSize( dt, linearIterations, relativeChange );
+                    timeStepControl_->computeTimeStepSize( dt, linearIterations, relativeChange, substepTimer.simulationTimeElapsed());
 
                 // limit the growth of the timestep size by the growth factor
                 dtEstimate = std::min( dtEstimate, double(max_growth_ * dt) );

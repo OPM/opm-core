@@ -23,6 +23,9 @@
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
+#include <string>
+#include <fstream>
+#include <iostream>
 
 #include <opm/common/ErrorMacros.hpp>
 #include <opm/core/utility/Units.hpp>
@@ -55,7 +58,7 @@ namespace Opm
     }
 
     double SimpleIterationCountTimeStepControl::
-    computeTimeStepSize( const double dt, const int iterations, const RelativeChangeInterface& /* relativeChange */ ) const
+    computeTimeStepSize( const double dt, const int iterations, const RelativeChangeInterface& /* relativeChange */, const double /*simulationTimeElapsed */) const
     {
         double dtEstimate = dt ;
 
@@ -74,6 +77,37 @@ namespace Opm
         return dtEstimate;
     }
 
+    ////////////////////////////////////////////////////////
+    //
+    //  HardcodedTimeStepControl Implementation
+    //
+    ////////////////////////////////////////////////////////
+
+    HardcodedTimeStepControl::
+    HardcodedTimeStepControl( const std::string& filename)
+    {
+        std::ifstream infile (filename);
+        if (!infile.is_open()) {
+            OPM_THROW(std::runtime_error,"Incorrect or no filename is provided to the hardcodedTimeStep. Use timestep.control.filename=your_file_name");
+        }
+        std::string::size_type sz;
+        std::string line;
+        while ( std::getline(infile, line)) {
+            if( line[0] != '-') { // ignore lines starting with '-'
+                const double time = std::stod(line,&sz); // read the first number i.e. the actual substep time
+                subStepTime_.push_back( time * unit::day );
+            }
+
+        }
+    }
+
+    double HardcodedTimeStepControl::
+    computeTimeStepSize( const double /*dt */, const int /*iterations */, const RelativeChangeInterface& /* relativeChange */ , const double simulationTimeElapsed) const
+    {
+        auto nextTime = std::upper_bound(subStepTime_.begin(), subStepTime_.end(), simulationTimeElapsed);
+        return (*nextTime - simulationTimeElapsed);
+    }
+
 
 
     ////////////////////////////////////////////////////////
@@ -90,7 +124,7 @@ namespace Opm
     {}
 
     double PIDTimeStepControl::
-    computeTimeStepSize( const double dt, const int /* iterations */, const RelativeChangeInterface& relChange ) const
+    computeTimeStepSize( const double dt, const int /* iterations */, const RelativeChangeInterface& relChange, const double /*simulationTimeElapsed */) const
     {
         // shift errors
         for( int i=0; i<2; ++i ) {
@@ -141,9 +175,9 @@ namespace Opm
     {}
 
     double PIDAndIterationCountTimeStepControl::
-    computeTimeStepSize( const double dt, const int iterations, const RelativeChangeInterface& relChange ) const
+    computeTimeStepSize( const double dt, const int iterations, const RelativeChangeInterface& relChange,  const double simulationTimeElapsed ) const
     {
-        double dtEstimate = BaseType :: computeTimeStepSize( dt, iterations, relChange );
+        double dtEstimate = BaseType :: computeTimeStepSize( dt, iterations, relChange, simulationTimeElapsed);
 
         // further reduce step size if to many iterations were used
         if( iterations > target_iterations_ )
