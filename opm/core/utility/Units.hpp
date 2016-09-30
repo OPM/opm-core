@@ -48,13 +48,13 @@ namespace Opm
     namespace prefix
     /// Conversion prefix for units.
     {
-        const double micro = 1.0e-6;  /**< Unit prefix [\f$\mu\f$] */
-        const double milli = 1.0e-3;  /**< Unit prefix [m] */
-        const double centi = 1.0e-2;  /**< Non-standard unit prefix [c] */
-        const double deci  = 1.0e-1;  /**< Non-standard unit prefix [d] */
-        const double kilo  = 1.0e3;   /**< Unit prefix [k] */
-        const double mega  = 1.0e6;   /**< Unit prefix [M] */
-        const double giga  = 1.0e9;   /**< Unit prefix [G] */
+        constexpr const double micro = 1.0e-6;  /**< Unit prefix [\f$\mu\f$] */
+        constexpr const double milli = 1.0e-3;  /**< Unit prefix [m] */
+        constexpr const double centi = 1.0e-2;  /**< Non-standard unit prefix [c] */
+        constexpr const double deci  = 1.0e-1;  /**< Non-standard unit prefix [d] */
+        constexpr const double kilo  = 1.0e3;   /**< Unit prefix [k] */
+        constexpr const double mega  = 1.0e6;   /**< Unit prefix [M] */
+        constexpr const double giga  = 1.0e9;   /**< Unit prefix [G] */
     } // namespace prefix
 
     namespace unit
@@ -75,8 +75,8 @@ namespace Opm
     {
         ///\name Common powers
         /// @{
-        inline double square(double v) { return v * v;     }
-        inline double cubic (double v) { return v * v * v; }
+        constexpr double square(double v) { return v * v;     }
+        constexpr double cubic (double v) { return v * v * v; }
         /// @}
 
         // --------------------------------------------------------------
@@ -85,32 +85,32 @@ namespace Opm
 
         /// \name Length
         /// @{
-        const double meter =  1;
-        const double inch  =  2.54 * prefix::centi*meter;
-        const double feet  = 12    * inch;
+        constexpr const double meter =  1;
+        constexpr const double inch  =  2.54 * prefix::centi*meter;
+        constexpr const double feet  = 12    * inch;
         /// @}
 
         /// \name Time
         /// @{
-        const double second =   1;
-        const double minute =  60 * second;
-        const double hour   =  60 * minute;
-        const double day    =  24 * hour;
-        const double year   = 365 * day;
+        constexpr const double second =   1;
+        constexpr const double minute =  60 * second;
+        constexpr const double hour   =  60 * minute;
+        constexpr const double day    =  24 * hour;
+        constexpr const double year   = 365 * day;
         /// @}
 
         /// \name Volume
         /// @{
-        const double gallon = 231 * cubic(inch);
-        const double stb    =  42 * gallon;
-        const double liter  =   1 * cubic(prefix::deci*meter);
+        constexpr const double gallon = 231 * cubic(inch);
+        constexpr const double stb    =  42 * gallon;
+        constexpr const double liter  =   1 * cubic(prefix::deci*meter);
         /// @}
 
         /// \name Mass
         /// @{
-        const double kilogram = 1;
+        constexpr const double kilogram = 1;
         // http://en.wikipedia.org/wiki/Pound_(mass)#Avoirdupois_pound
-        const double pound    = 0.45359237 * kilogram;
+        constexpr const double pound    = 0.45359237 * kilogram;
         /// @}
 
         // --------------------------------------------------------------
@@ -119,7 +119,7 @@ namespace Opm
 
         /// \name Standardised constant
         /// @{
-        const double gravity = 9.80665 * meter/square(second);
+        constexpr const double gravity = 9.80665 * meter/square(second);
         /// @}
 
         // --------------------------------------------------------------
@@ -128,31 +128,31 @@ namespace Opm
 
         /// \name Force
         /// @{
-        const double Newton = kilogram*meter / square(second); // == 1
-        const double lbf    = pound * gravity; // Pound-force
+        constexpr const double Newton = kilogram*meter / square(second); // == 1
+        constexpr const double lbf    = pound * gravity; // Pound-force
         /// @}
 
         /// \name Pressure
         /// @{
-        const double Pascal = Newton / square(meter); // == 1
-        const double barsa  = 100000 * Pascal;
-        const double atm    = 101325 * Pascal;
-        const double psia   = lbf / square(inch);
+        constexpr const double Pascal = Newton / square(meter); // == 1
+        constexpr const double barsa  = 100000 * Pascal;
+        constexpr const double atm    = 101325 * Pascal;
+        constexpr const double psia   = lbf / square(inch);
         /// @}
 
         /// \name Viscosity
         /// @{
-        const double Pas   = Pascal * second; // == 1
-        const double Poise = prefix::deci*Pas;
+        constexpr const double Pas   = Pascal * second; // == 1
+        constexpr const double Poise = prefix::deci*Pas;
         /// @}
 
         namespace perm_details {
-            const double p_grad   = atm / (prefix::centi*meter);
-            const double area     = square(prefix::centi*meter);
-            const double flux     = cubic (prefix::centi*meter) / second;
-            const double velocity = flux / area;
-            const double visc     = prefix::centi*Poise;
-            const double darcy    = (velocity * visc) / p_grad;
+            constexpr const double p_grad   = atm / (prefix::centi*meter);
+            constexpr const double area     = square(prefix::centi*meter);
+            constexpr const double flux     = cubic (prefix::centi*meter) / second;
+            constexpr const double velocity = flux / area;
+            constexpr const double visc     = prefix::centi*Poise;
+            constexpr const double darcy    = (velocity * visc) / p_grad;
             //                    == 1e-7 [m^2] / 101325
             //                    == 9.869232667160130e-13 [m^2]
         }
@@ -165,7 +165,7 @@ namespace Opm
         /// of \f$1\,\mathit{atm}/\mathit{cm}\f$ acting across an area of
         /// \f$1\,\mathit{cm}^2\f$.
         ///
-        const double darcy = perm_details::darcy;
+        constexpr const double darcy = perm_details::darcy;
         /// @}
 
         /**
@@ -190,7 +190,7 @@ namespace Opm
              * @param[in] unit Physical unit of measurement.
              * @return Value of @c q in equivalent SI units of measurements.
              */
-            inline double from(const double q, const double unit)
+            constexpr double from(const double q, const double unit)
             {
                 return q * unit;
             }
@@ -213,7 +213,7 @@ namespace Opm
              * @param[in] unit Physical unit of measurement.
              * @return Value of @c q in unit <CODE>unit</CODE>.
              */
-            inline double to(const double q, const double unit)
+            constexpr double to(const double q, const double unit)
             {
                 return q / unit;
             }
@@ -224,7 +224,7 @@ namespace Opm
         namespace detail {
             // Some units are sometimes unused, and generate a (potentially) large number of warnings
             // Adding them here silences these warnings, and should have no side-effects
-            double __attribute__((unused)) unused_units = stb + liter + barsa + psia + darcy;
+            constexpr double __attribute__((unused)) unused_units = stb + liter + barsa + psia + darcy;
         } // namespace detail
 #endif
 
