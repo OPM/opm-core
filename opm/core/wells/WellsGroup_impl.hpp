@@ -67,22 +67,30 @@ namespace Opm
                 const double oil_rate = well_state.wellRates()[np * well_index + 1];
                 const double water_rate = well_state.wellRates()[np * well_index];
                 std::cout << " oil_rate is " << oil_rate << " water_rate is " << water_rate << " liquid rate is " << oil_rate + water_rate << std::endl;
-                rate_individual_control -= std::abs(oil_rate + water_rate);
+                rate_individual_control += std::abs(oil_rate + water_rate);
             }
         }
 
         const double rate_for_group_control = target_rate - rate_individual_control;
+        std::cout << " rate_for_group_control " << rate_for_group_control << std::endl;
 
         const double my_guide_rate = productionGuideRate(true);
+        std::cout << " my_guide_rate is " << my_guide_rate << " when updateWellTargets " << std::endl;
         if (my_guide_rate == 0) {
             std::cout << " something wrong with the my_guide_rate, need to check, it should have come here " << std::endl;
             std::cin.ignore();
         }
 
         for (size_t i = 0; i < children_.size(); ++i) {
-            const double children_guide_rate = children_[i]->productionGuideRate(true);
-            children_[i]->applyProdGroupControl(control_mode, (children_guide_rate/my_guide_rate) * rate_for_group_control, false);
-            children_[i]->setShouldUpdateWellTargets(false);
+            // if (children_[i]->shouldUpdateWellTargets() && !children_[i]->individualControl()) {
+            if (!children_[i]->individualControl()) {
+                const double children_guide_rate = children_[i]->productionGuideRate(true);
+                std::cout << " well_name " << children_[i]->name() << " children_guide_rate " << children_guide_rate << " my_guide_rate " << my_guide_rate << std::endl;
+                std::cout << " new target rate is " << (children_guide_rate/my_guide_rate) * rate_for_group_control * 86400/0.1590 << std::endl;
+                // children_[i]->applyProdGroupControl(control_mode, (children_guide_rate/my_guide_rate) * rate_for_group_control, false);
+                children_[i]->applyProdGroupControl(control_mode, (children_guide_rate/my_guide_rate) * rate_for_group_control, false);
+                children_[i]->setShouldUpdateWellTargets(false);
+            }
         }
         std::cin.ignore();
         // liquid_max_rate

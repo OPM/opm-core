@@ -32,14 +32,17 @@ namespace Opm
         // We believe the relations between groups are similar to the relations between different wells inside the same group.
         // While there will be somre more complication invloved for sure.
         for (size_t i = 0; i < leaf_nodes_.size(); ++i) {
-            // find a node needs to update targets, then update targets inside the group.
-            if (leaf_nodes_[i]->shouldUpdateWellTargets() && !leaf_nodes_[i]->individualControl()) {
+            // find a node needs to update targets, then update targets for all the wellls inside the group.
+            // if (leaf_nodes_[i]->shouldUpdateWellTargets() && !leaf_nodes_[i]->individualControl()) {
+            if (!leaf_nodes_[i]->individualControl()) {
                 // TODO: will remove dynamic_cast with interface revision.
                 WellsGroup* parent_node = dynamic_cast<Opm::WellsGroup *>(leaf_nodes_[i]->getParent());
                 // update the target within this group.
                 parent_node->updateWellTargets(well_state);
             }
         }
+
+        setJustUpdateWellTargets(true);
     }
 
 }
