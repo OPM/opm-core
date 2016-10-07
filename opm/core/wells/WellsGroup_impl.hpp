@@ -88,7 +88,7 @@ namespace Opm
                 std::cout << " well_name " << children_[i]->name() << " children_guide_rate " << children_guide_rate << " my_guide_rate " << my_guide_rate << std::endl;
                 std::cout << " new target rate is " << (children_guide_rate/my_guide_rate) * rate_for_group_control * 86400/0.1590 << std::endl;
                 // children_[i]->applyProdGroupControl(control_mode, (children_guide_rate/my_guide_rate) * rate_for_group_control, false);
-                children_[i]->applyProdGroupControl(control_mode, (children_guide_rate/my_guide_rate) * rate_for_group_control, false);
+                children_[i]->applyProdGroupControl(control_mode, (children_guide_rate/my_guide_rate) * rate_for_group_control, true);
                 children_[i]->setShouldUpdateWellTargets(false);
             }
         }
