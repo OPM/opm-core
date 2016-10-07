@@ -38,7 +38,13 @@ namespace Opm
                 // TODO: will remove dynamic_cast with interface revision.
                 WellsGroup* parent_node = dynamic_cast<Opm::WellsGroup *>(leaf_nodes_[i]->getParent());
                 // update the target within this group.
-                parent_node->updateWellTargets(well_state);
+                if (leaf_nodes_[i]->isProducer()) {
+                    parent_node->updateWellProductionTargets(well_state);
+                }
+
+                if (leaf_nodes_[i]->isInjector()) {
+                    parent_node->updateWellInjectionTargets(well_state);
+                }
             }
         }
 
