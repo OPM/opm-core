@@ -15,7 +15,7 @@ Source0:        https://github.com/OPM/%{name}/archive/release/%{version}/%{tag}
 BuildRequires:  blas-devel lapack-devel dune-common-devel
 BuildRequires:  git suitesparse-devel doxygen bc opm-material-devel
 BuildRequires:  tinyxml-devel dune-istl-devel ert.ecl-devel opm-common-devel
-BuildRequires:  opm-parser-devel opm-material-devel
+BuildRequires:  opm-parser-devel opm-material-devel opm-output-devel
 %{?el6:BuildRequires:  cmake28 devtoolset-2 boost148-devel}
 %{?!el6:BuildRequires:  cmake gcc gcc-gfortran gcc-c++ boost-devel}
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
