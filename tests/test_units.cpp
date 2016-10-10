@@ -53,7 +53,7 @@
 
 #include <boost/bind.hpp>
 
-#include <opm/core/utility/Units.hpp>
+#include <opm/parser/eclipse/Units/Units.hpp>
 
 using namespace Opm::prefix;
 using namespace Opm::unit;
