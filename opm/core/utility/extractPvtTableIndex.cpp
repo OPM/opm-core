@@ -27,12 +27,12 @@
 namespace Opm {
 
 void extractPvtTableIndex(std::vector<int> &pvtTableIdx,
-                          Opm::EclipseStateConstPtr eclState,
+                          const Opm::EclipseState& eclState,
                           size_t numCompressed,
                           const int *compressedToCartesianCellIdx)
 {
     //Get the PVTNUM data
-    const std::vector<int>& pvtnumData = eclState->get3DProperties().getIntGridProperty("PVTNUM").getData();
+    const std::vector<int>& pvtnumData = eclState.get3DProperties().getIntGridProperty("PVTNUM").getData();
     // Convert this into an array of compressed cells
     // Eclipse uses Fortran-style indices which start at 1
     // instead of 0, we subtract 1.

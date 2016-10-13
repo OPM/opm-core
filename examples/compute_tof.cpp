@@ -173,11 +173,11 @@ try
     std::string deck_filename = param.get<std::string>("deck_filename");
     Parser parser;
     ParseContext parseContext;
-    DeckConstPtr deck = parser.parseFile(deck_filename , parseContext);
-    EclipseStateConstPtr eclipseState = std::make_shared<EclipseState>(*deck , parseContext);
+    const Deck& deck = parser.parseFile(deck_filename , parseContext);
+    EclipseState eclipseState(deck , parseContext);
 
     // Grid init
-    GridManager grid_manager(*eclipseState->getInputGrid());
+    GridManager grid_manager(eclipseState.getInputGrid());
     const UnstructuredGrid& grid = *grid_manager.c_grid();
     // Rock and fluid init
     IncompPropertiesSinglePhase props(deck, eclipseState, grid);

@@ -43,11 +43,11 @@ BOOST_AUTO_TEST_CASE(CreateParser)
 {
     const std::string filename1 = "testBlackoilState1.DATA";
     Opm::ParseContext parseContext;
-    Opm::ParserPtr parser(new Opm::Parser() );
-    Opm::DeckConstPtr deck = parser->parseFile( filename1 , parseContext);
+    Opm::Parser parser;
+    Opm::Deck deck = parser.parseFile( filename1 , parseContext);
 
-    BOOST_CHECK_EQUAL( 6U , deck->size() );
-    const auto& actnum = deck->getKeyword("ACTNUM").getRecord(0).getItem(0);
+    BOOST_CHECK_EQUAL( 6U , deck.size() );
+    const auto& actnum = deck.getKeyword("ACTNUM").getRecord(0).getItem(0);
     const std::vector<int>& actnum_data = actnum.getData< int >();
 
     BOOST_CHECK_EQUAL( 1000U , actnum.size() );

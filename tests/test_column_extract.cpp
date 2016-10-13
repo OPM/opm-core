@@ -132,14 +132,14 @@ BOOST_AUTO_TEST_CASE(DisjointColumn)
     correct_answer[9].resize(1);
 
     Opm::ParseContext parseContext;
-    Opm::ParserPtr parser(new Opm::Parser());
-    Opm::DeckConstPtr deck(parser->parseString(grdecl , parseContext));
-    Opm::EclipseGridPtr ep = std::make_shared<Opm::EclipseGrid>(deck);
+    Opm::Parser parser;
+    Opm::Deck deck = parser.parseString(grdecl , parseContext);
+    Opm::EclipseGrid ep = Opm::EclipseGrid(deck);
     std::vector<int> actnum;
     for (size_t i = 1; i <= (3 * 3 * 3); i++)
         actnum.push_back(i != 14); // ACTNUM 13*1 0 13* 1
-    ep->resetACTNUM(actnum.data());
-    Opm::GridManager manager(*ep);
+    ep.resetACTNUM(actnum.data());
+    Opm::GridManager manager(ep);
 
     VVI columns;
     Opm::extractColumn(*manager.c_grid(), columns);

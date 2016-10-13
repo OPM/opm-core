@@ -48,7 +48,7 @@ creation and destruction of an UnstructuredGrid. The method
 Opm::GridManager::c_grid() provides access to the underlying
 UnstructuredGrid structure. This class also provides an easy way
 to initialize a grid from an ECLIPSE-format input deck, via the
-constructor taking an Opm::DeckConstPtr.
+constructor taking an const Opm::Deck.
 
 
 <h3>Well handling</h3>
