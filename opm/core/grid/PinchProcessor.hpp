@@ -25,7 +25,7 @@
 #include <opm/parser/eclipse/EclipseState/Grid/NNC.hpp>
 #include <opm/parser/eclipse/EclipseState/Grid/FaceDir.hpp>
 #include <opm/parser/eclipse/EclipseState/Grid/PinchMode.hpp>
-#include <opm/core/utility/Units.hpp>
+#include <opm/parser/eclipse/Units/Units.hpp>
 #include <array>
 #include <iostream>
 #include <algorithm>
