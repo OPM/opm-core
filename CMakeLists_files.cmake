@@ -387,7 +387,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/utility/SparseVector.hpp
         opm/core/utility/StopWatch.hpp
         opm/core/utility/UniformTableLinear.hpp
-        opm/core/utility/Units.hpp
         opm/core/utility/VelocityInterpolation.hpp
         opm/core/utility/WachspressCoord.hpp
         opm/core/utility/buildUniformMonotoneTable.hpp
