@@ -90,9 +90,9 @@ void verifyRFTFile(const std::string& rft_filename) {
 
 
 
-Opm::DeckConstPtr createDeck(const std::string& input_str) {
+const Opm::Deck createDeck(const std::string& input_str) {
     Opm::ParserPtr parser = std::make_shared<Opm::Parser>();
-    Opm::DeckConstPtr deck = parser->parseString(input_str , Opm::ParseContext());
+    const Opm::Deck& deck = parser->parseString(input_str , Opm::ParseContext());
     return deck;
 }
 

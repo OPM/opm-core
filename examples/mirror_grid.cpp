@@ -86,13 +86,13 @@ void printKeywordValues(std::ofstream& out, std::string keyword, std::vector<T> 
 }
 
 // forward declaration
-std::vector<double> getMapaxesValues(Opm::DeckConstPtr deck);
+std::vector<double> getMapaxesValues(const Opm::Deck& deck);
 
 /// Mirror keyword MAPAXES in deck
-void mirror_mapaxes( std::shared_ptr< const Opm::Deck > deck, std::string direction, std::ofstream& out) {
+void mirror_mapaxes( const Opm::Deck& deck, std::string direction, std::ofstream& out) {
     // Assumes axis aligned with x/y-direction
     std::cout << "Warning: Keyword MAPAXES not fully understood. Result should be verified manually." << std::endl;
-    if (deck->hasKeyword("MAPAXES")) {
+    if (deck.hasKeyword("MAPAXES")) {
         std::vector<double> mapaxes = getMapaxesValues(deck);
         std::vector<double> mapaxes_mirrored = mapaxes;
         // Double the length of the coordinate axis
@@ -107,9 +107,9 @@ void mirror_mapaxes( std::shared_ptr< const Opm::Deck > deck, std::string direct
 }
 
 /// Mirror keyword SPECGRID in deck
-void mirror_specgrid(std::shared_ptr< const Opm::Deck > deck, std::string direction, std::ofstream& out) {
+void mirror_specgrid( const Opm::Deck& deck, std::string direction, std::ofstream& out) {
     // We only need to multiply the dimension by 2 in the correct direction.
-    const auto& specgridRecord = deck->getKeyword("SPECGRID").getRecord(0);
+    const auto& specgridRecord = deck.getKeyword("SPECGRID").getRecord(0);
     std::vector<int> dimensions(3);
     dimensions[0] = specgridRecord.getItem("NX").get< int >(0);
     dimensions[1] = specgridRecord.getItem("NY").get< int >(0);
@@ -124,14 +124,14 @@ void mirror_specgrid(std::shared_ptr< const Opm::Deck > deck, std::string direct
 }
 
 /// Mirror keyword COORD in deck
-void mirror_coord(std::shared_ptr< const Opm::Deck > deck, std::string direction, std::ofstream& out) {
+void mirror_coord(const Opm::Deck& deck, std::string direction, std::ofstream& out) {
     // We assume uniform spacing in x and y directions and parallel top and bottom faces
-    const auto& specgridRecord = deck->getKeyword("SPECGRID").getRecord(0);
+    const auto& specgridRecord = deck.getKeyword("SPECGRID").getRecord(0);
     std::vector<int> dimensions(3);
     dimensions[0] = specgridRecord.getItem("NX").get< int >(0);
     dimensions[1] = specgridRecord.getItem("NY").get< int >(0);
     dimensions[2] = specgridRecord.getItem("NZ").get< int >(0);
-    std::vector<double> coord = deck->getKeyword("COORD").getRawDoubleData();
+    std::vector<double> coord = deck.getKeyword("COORD").getRawDoubleData();
     const int entries_per_pillar = 6;
     std::vector<double> coord_mirrored;
     // Handle the two directions differently due to ordering of the pillars.
@@ -190,13 +190,13 @@ void mirror_coord(std::shared_ptr< const Opm::Deck > deck, std::string direction
 }
 
 /// Mirror keyword ZCORN in deck
-void mirror_zcorn(std::shared_ptr< const Opm::Deck > deck, std::string direction, std::ofstream& out) {
-    const auto& specgridRecord = deck->getKeyword("SPECGRID").getRecord(0);
+void mirror_zcorn(const Opm::Deck& deck, std::string direction, std::ofstream& out) {
+    const auto& specgridRecord = deck.getKeyword("SPECGRID").getRecord(0);
     std::vector<int> dimensions(3);
     dimensions[0] = specgridRecord.getItem("NX").get< int >(0);
     dimensions[1] = specgridRecord.getItem("NY").get< int >(0);
     dimensions[2] = specgridRecord.getItem("NZ").get< int >(0);
-    std::vector<double> zcorn = deck->getKeyword("ZCORN").getRawDoubleData();
+    std::vector<double> zcorn = deck.getKeyword("ZCORN").getRawDoubleData();
     std::vector<double> zcorn_mirrored;
     // Handle the two directions differently due to ordering of the pillars.
     if (direction == "x") {
@@ -257,17 +257,17 @@ void mirror_zcorn(std::shared_ptr< const Opm::Deck > deck, std::string direction
     printKeywordValues(out, "ZCORN", zcorn_mirrored, 8);
 }
 
-std::vector<int> getKeywordValues(std::string keyword, std::shared_ptr< const Opm::Deck > deck, int /*dummy*/) {
-    return deck->getKeyword(keyword).getIntData();
+std::vector<int> getKeywordValues(std::string keyword, const Opm::Deck& deck, int /*dummy*/) {
+    return deck.getKeyword(keyword).getIntData();
 }
 
-std::vector<double> getKeywordValues(std::string keyword, std::shared_ptr< const Opm::Deck > deck, double /*dummy*/) {
-    return deck->getKeyword(keyword).getRawDoubleData();
+std::vector<double> getKeywordValues(std::string keyword, const Opm::Deck& deck, double /*dummy*/) {
+    return deck.getKeyword(keyword).getRawDoubleData();
 }
 
-std::vector<double> getMapaxesValues(Opm::DeckConstPtr deck)
+std::vector<double> getMapaxesValues(const Opm::Deck& deck)
 {
-    const auto& mapaxesRecord = deck->getKeyword("MAPAXES").getRecord(0);
+    const auto& mapaxesRecord = deck.getKeyword("MAPAXES").getRecord(0);
     std::vector<double> result;
     for (size_t itemIdx = 0; itemIdx < mapaxesRecord.size(); ++itemIdx) {
         const auto& curItem = mapaxesRecord.getItem(itemIdx);
@@ -281,13 +281,13 @@ std::vector<double> getMapaxesValues(Opm::DeckConstPtr deck)
 
 /// Mirror keywords that have one value for each cell
 template <class T>
-void mirror_celldata(std::string keyword, Opm::DeckConstPtr deck, std::string direction, std::ofstream& out) {
-    if ( ! deck->hasKeyword(keyword)) {
+void mirror_celldata(std::string keyword, const Opm::Deck& deck, std::string direction, std::ofstream& out) {
+    if ( ! deck.hasKeyword(keyword)) {
         std::cout << "Ignoring keyword " << keyword << " as it was not found." << std::endl;
         return;
     }
     // Get data from eclipse deck
-    const auto& specgridRecord = deck->getKeyword("SPECGRID").getRecord(0);
+    const auto& specgridRecord = deck.getKeyword("SPECGRID").getRecord(0);
     std::vector<int> dimensions(3);
     dimensions[0] = specgridRecord.getItem("NX").get< int >(0);
     dimensions[1] = specgridRecord.getItem("NY").get< int >(0);
@@ -365,10 +365,10 @@ int main(int argc, char** argv)
 
     // Parse grdecl file
     std::cout << "Parsing grid file '" << eclipsefilename << "' ..." << std::endl;
-    Opm::ParserPtr parser(new Opm::Parser);
+    Opm::Parser parser;
     Opm::ParseContext parseContext;
-    Opm::DeckConstPtr deck(parser->parseFile(eclipsefilename , parseContext));
-    if ( ! (deck->hasKeyword("SPECGRID") && deck->hasKeyword("COORD") && deck->hasKeyword("ZCORN")) ) {
+    const Opm::Deck deck(parser.parseFile(eclipsefilename , parseContext));
+    if ( ! (deck.hasKeyword("SPECGRID") && deck.hasKeyword("COORD") && deck.hasKeyword("ZCORN")) ) {
         std::cerr << "Grid file " << eclipsefilename << "are missing keywords SPECGRID, COORD or ZCORN!" << std::endl;
         exit(1);
     }

@@ -174,24 +174,24 @@ namespace Opm
     }
 
 
-    void GridManager::createGrdecl(Opm::DeckConstPtr deck, struct grdecl &grdecl)
+    void GridManager::createGrdecl(const Opm::Deck& deck, struct grdecl &grdecl)
     {
         // Extract data from deck.
-        const std::vector<double>& zcorn = deck->getKeyword("ZCORN").getSIDoubleData();
-        const std::vector<double>& coord = deck->getKeyword("COORD").getSIDoubleData();
+        const std::vector<double>& zcorn = deck.getKeyword("ZCORN").getSIDoubleData();
+        const std::vector<double>& coord = deck.getKeyword("COORD").getSIDoubleData();
         const int* actnum = NULL;
-        if (deck->hasKeyword("ACTNUM")) {
-            actnum = &(deck->getKeyword("ACTNUM").getIntData()[0]);
+        if (deck.hasKeyword("ACTNUM")) {
+            actnum = &(deck.getKeyword("ACTNUM").getIntData()[0]);
         }
 
         std::array<int, 3> dims;
-        if (deck->hasKeyword("DIMENS")) {
-            const auto& dimensKeyword = deck->getKeyword("DIMENS");
+        if (deck.hasKeyword("DIMENS")) {
+            const auto& dimensKeyword = deck.getKeyword("DIMENS");
             dims[0] = dimensKeyword.getRecord(0).getItem(0).get< int >(0);
             dims[1] = dimensKeyword.getRecord(0).getItem(1).get< int >(0);
             dims[2] = dimensKeyword.getRecord(0).getItem(2).get< int >(0);
-        } else if (deck->hasKeyword("SPECGRID")) {
-            const auto& specgridKeyword = deck->getKeyword("SPECGRID");
+        } else if (deck.hasKeyword("SPECGRID")) {
+            const auto& specgridKeyword = deck.getKeyword("SPECGRID");
             dims[0] = specgridKeyword.getRecord(0).getItem(0).get< int >(0);
             dims[1] = specgridKeyword.getRecord(0).getItem(1).get< int >(0);
             dims[2] = specgridKeyword.getRecord(0).getItem(2).get< int >(0);
@@ -208,8 +208,8 @@ namespace Opm
         grdecl.dims[1] = dims[1];
         grdecl.dims[2] = dims[2];
 
-        if (deck->hasKeyword("MAPAXES")) {
-            const auto& mapaxesKeyword = deck->getKeyword("MAPAXES");
+        if (deck.hasKeyword("MAPAXES")) {
+            const auto& mapaxesKeyword = deck.getKeyword("MAPAXES");
             const auto& mapaxesRecord = mapaxesKeyword.getRecord(0);
 
             // memleak alert: here we need to make sure that C code

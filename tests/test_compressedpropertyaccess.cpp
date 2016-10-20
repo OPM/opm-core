@@ -42,16 +42,13 @@
 #include <opm/core/grid.h>
 
 struct SetupSimple {
-    SetupSimple()
-    {
-        Opm::ParseContext parseContext;
-        Opm::ParserPtr parser(new Opm::Parser());
-        deck = parser->parseFile("compressed_gridproperty.data" , parseContext);
-        ecl.reset(new Opm::EclipseState(*deck , parseContext));
-    }
+    SetupSimple() :
+        deck( Opm::Parser{}.parseFile( "compressed_gridproperty.data", Opm::ParseContext{} ) ),
+        ecl( deck )
+    {}
 
-    Opm::DeckConstPtr         deck;
-    Opm::EclipseStateConstPtr ecl;
+    Opm::Deck         deck;
+    Opm::EclipseState ecl;
 };
 
 
@@ -60,7 +57,7 @@ struct TestFixture : public Setup
 {
     TestFixture()
         : Setup ()
-        , grid  (*ecl->getInputGrid())
+        , grid  (ecl.getInputGrid())
         , reltol(1.0e-10)
     {
     }
