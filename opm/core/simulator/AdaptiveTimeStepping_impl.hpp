@@ -291,7 +291,12 @@ namespace Opm {
             {
                 // increase restart counter
                 if( restarts >= solver_restart_max_ ) {
-                    OPM_THROW(Opm::NumericalProblem,"Solver failed to converge after " << restarts << " restarts.");
+                    const auto msg = std::string("Solver failed to converge after ")
+                        + std::to_string(restarts) + " restarts.";
+                    if (solver_verbose_) {
+                        OpmLog::error(msg);
+                    }
+                    OPM_THROW_NOLOG(Opm::NumericalProblem, msg);
                 }
 
                 const double newTimeStep = restart_factor_ * dt;
@@ -301,7 +306,7 @@ namespace Opm {
                     std::string msg;
                     msg = "Solver convergence failed, restarting solver with new time step ("
                         + std::to_string(unit::convert::to( newTimeStep, unit::day )) + " days).\n";
-                    OpmLog::error(msg);
+                    OpmLog::problem(msg);
 		}
                 // reset states
                 state      = last_state;

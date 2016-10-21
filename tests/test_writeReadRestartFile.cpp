@@ -196,7 +196,7 @@ std::shared_ptr<Opm::BlackoilState> createBlackOilState(Opm::EclipseGridConstPtr
   return blackoilState;
 }
 
-Opm::EclipseWriterPtr createEclipseWriter(Opm::DeckConstPtr deck,
+Opm::EclipseWriterPtr createEclipseWriter(const Opm::Deck& deck,
                                           Opm::EclipseStatePtr eclipseState,
                                           std::string& eclipse_data_filename) {
 
@@ -255,7 +255,7 @@ BOOST_AUTO_TEST_CASE(EclipseReadWriteWellStateData)
 
     Opm::Parser parser;
     Opm::ParseContext parseContext;
-    Opm::DeckConstPtr deck = parser.parseString(input, parseContext);
+    const Opm::Deck& deck = parser.parseString(input, parseContext);
     Opm::EclipseStatePtr  eclipseState(new Opm::EclipseState(deck , parseContext));
     Opm::EclipseWriterPtr eclipseWriter = createEclipseWriter(deck, eclipseState, eclipse_data_filename);
 

@@ -24,7 +24,7 @@
 namespace Opm {
 
 void extractPvtTableIndex(std::vector<int> &pvtTableIdx,
-                          Opm::EclipseStateConstPtr eclState,
+                          const Opm::EclipseState& eclState,
                           size_t numCompressed,
                           const int *compressedToCartesianCellIdx);
 
