@@ -1,3 +1,9 @@
+opm-core (2016.10-rc1-1~xenial) xenial; urgency=medium
+
+  * New release
+
+ -- Arne Morten Kvarving <arne.morten.kvarving@sintef.no>  Wed, 26 Oct 2016 11:29:46 +0200
+
 opm-core (2013.10-2~precise) precise; urgency=low
 
   * New release
