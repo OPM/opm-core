@@ -2,7 +2,7 @@
 # spec file for package opm-core
 #
 
-%define tag rc2
+%define tag final
 
 Name:           opm-core
 Version:        2016.10
