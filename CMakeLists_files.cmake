@@ -34,17 +34,6 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/flowdiagnostics/FlowDiagnostics.cpp
         opm/core/flowdiagnostics/TofDiscGalReorder.cpp
         opm/core/flowdiagnostics/TofReorder.cpp
-        opm/core/grid/GridHelpers.cpp
-        opm/core/grid/GridManager.cpp
-        opm/core/grid/GridUtilities.cpp
-        opm/core/grid/cart_grid.c
-        opm/core/grid/cornerpoint_grid.c
-        opm/core/grid/cpgpreprocess/facetopology.c
-        opm/core/grid/cpgpreprocess/geometry.c
-        opm/core/grid/cpgpreprocess/preprocess.c
-        opm/core/grid/cpgpreprocess/uniquepoints.c
-        opm/core/grid/grid.c
-        opm/core/grid/grid_equal.cpp
         opm/core/linalg/LinearSolverFactory.cpp
         opm/core/linalg/LinearSolverInterface.cpp
         opm/core/linalg/LinearSolverIstl.cpp
@@ -112,7 +101,6 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/utility/Event.cpp
         opm/core/utility/MonotCubicInterpolator.cpp
         opm/core/utility/NullStream.cpp
-        opm/core/utility/StopWatch.cpp
         opm/core/utility/VelocityInterpolation.cpp
         opm/core/utility/WachspressCoord.cpp
         opm/core/utility/compressedToCartesian.cpp
@@ -150,7 +138,6 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_nonuniformtablelinear.cpp
 	tests/test_parallelistlinformation.cpp
 	tests/test_sparsevector.cpp
-	tests/test_sparsetable.cpp
        tests/test_velocityinterpolation.cpp
 	tests/test_quadratures.cpp
 	tests/test_uniformtablelinear.cpp
@@ -258,21 +245,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/flowdiagnostics/FlowDiagnostics.hpp
         opm/core/flowdiagnostics/TofDiscGalReorder.hpp
         opm/core/flowdiagnostics/TofReorder.hpp
-        opm/core/grid.h
-        opm/core/grid/CellQuadrature.hpp
-        opm/core/grid/ColumnExtract.hpp
-        opm/core/grid/FaceQuadrature.hpp
-        opm/core/grid/GridHelpers.hpp
-        opm/core/grid/GridManager.hpp
-        opm/core/grid/GridUtilities.hpp
-        opm/core/grid/MinpvProcessor.hpp
-        opm/core/grid/PinchProcessor.hpp
-        opm/core/grid/cart_grid.h
-        opm/core/grid/cornerpoint_grid.h
-        opm/core/grid/cpgpreprocess/facetopology.h
-        opm/core/grid/cpgpreprocess/geometry.h
-        opm/core/grid/cpgpreprocess/preprocess.h
-        opm/core/grid/cpgpreprocess/uniquepoints.h
         opm/core/linalg/LinearSolverFactory.hpp
         opm/core/linalg/LinearSolverInterface.hpp
         opm/core/linalg/LinearSolverIstl.hpp
@@ -383,9 +355,7 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/utility/NullStream.hpp
         opm/core/utility/RegionMapping.hpp
         opm/core/utility/RootFinders.hpp
-        opm/core/utility/SparseTable.hpp
         opm/core/utility/SparseVector.hpp
-        opm/core/utility/StopWatch.hpp
         opm/core/utility/UniformTableLinear.hpp
         opm/core/utility/VelocityInterpolation.hpp
         opm/core/utility/WachspressCoord.hpp
