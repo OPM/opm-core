@@ -130,8 +130,6 @@ list (APPEND MAIN_SOURCE_FILES
 list (APPEND TEST_SOURCE_FILES
 	tests/test_compressedpropertyaccess.cpp
 	tests/test_dgbasis.cpp
-	tests/test_cartgrid.cpp
-  tests/test_ug.cpp
 	tests/test_cubic.cpp
 	tests/test_event.cpp
 	tests/test_flowdiagnostics.cpp
@@ -139,12 +137,9 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_parallelistlinformation.cpp
 	tests/test_sparsevector.cpp
        tests/test_velocityinterpolation.cpp
-	tests/test_quadratures.cpp
 	tests/test_uniformtablelinear.cpp
 	tests/test_wells.cpp
 	tests/test_wachspresscoord.cpp
-	tests/test_column_extract.cpp
-	tests/test_geom2d.cpp
 	tests/test_linearsolver.cpp
 	tests/test_parallel_linearsolver.cpp
 	tests/test_param.cpp
@@ -160,9 +155,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_wellsgroup.cpp
 	tests/test_wellcollection.cpp
 	tests/test_timer.cpp
-	tests/test_minpvprocessor.cpp
 	tests/test_pinchprocessor.cpp
-	tests/test_gridutilities.cpp
 	tests/test_anisotropiceikonal.cpp
 	tests/test_stoppedwells.cpp
 	tests/test_relpermdiagnostics.cpp
@@ -197,7 +190,6 @@ list (APPEND TEST_DATA_FILES
 	tests/wells_manager_data_wellSTOP.data
         tests/wells_group.data
         tests/TESTTIMER.DATA
-        tests/CORNERPOINT_ACTNUM.DATA
         tests/wells_stopped.data
 				tests/relpermDiagnostics.DATA
         tests/norne_pvt.data
@@ -210,7 +202,6 @@ list (APPEND EXAMPLE_SOURCE_FILES
 	examples/compute_initial_state.cpp
 	examples/compute_tof.cpp
 	examples/compute_tof_from_files.cpp
-  examples/mirror_grid.cpp
 	examples/wells_example.cpp
 	examples/diagnose_relperm.cpp
 	tutorials/tutorial1.cpp
@@ -233,7 +224,6 @@ list (APPEND ATTIC_FILES
 # programs listed here will not only be compiled, but also marked for
 # installation
 list (APPEND PROGRAM_SOURCE_FILES
-  examples/mirror_grid.cpp
 	)
 
 # originally generated with the command:
