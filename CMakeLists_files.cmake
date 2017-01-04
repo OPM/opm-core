@@ -168,6 +168,7 @@ list (APPEND TEST_DATA_FILES
 	tests/liveoil.DATA
 	tests/capillary.DATA
 	tests/capillary_overlap.DATA
+        tests/capillarySwatinit.DATA
 	tests/compressed_gridproperty.data
 	tests/deadfluids.DATA
 	tests/equil_livegas.DATA
