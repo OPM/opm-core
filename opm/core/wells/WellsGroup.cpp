@@ -186,7 +186,7 @@ namespace Opm
         return tot_rate;
     }
 
-    double WellsGroupInterface::getTarget(ProductionSpecification::ControlMode mode)
+    double WellsGroupInterface::getTarget(ProductionSpecification::ControlMode mode) const
     {
         double target = -1.0;
         switch (mode) {
@@ -216,7 +216,7 @@ namespace Opm
         return target;
     }
 
-    double WellsGroupInterface::getTarget(InjectionSpecification::ControlMode mode)
+    double WellsGroupInterface::getTarget(InjectionSpecification::ControlMode mode) const
     {
         double target = -1.0;
         switch (mode) {
@@ -793,6 +793,18 @@ namespace Opm
                 const double children_guide_rate = children_[i]->productionGuideRate(true);
                 children_[i]->applyProdGroupControl(prod_mode, (children_guide_rate / my_guide_rate) * rate_for_group_control, true);
                 children_[i]->setTargetUpdated(true);
+            } else {
+                // for the well not under group control, we need to update their group control limit
+                // to provide a mechanism for the well to return to group control
+                // putting its own rate back to the rate_for_group_control for redistribution
+                const double rate = std::abs(children_[i]->getProductionRate(well_rates, prod_mode) * children_[i]->efficiencyFactor());
+                const double temp_rate_for_group_control = rate_for_group_control + rate;
+
+                // TODO: the following might not be the correct thing to do for mutliple-layer group
+                const double children_guide_rate = children_[i]->productionGuideRate(false);
+                const double temp_my_guide_rate = my_guide_rate + children_guide_rate;
+                children_[i]->applyProdGroupControl(prod_mode, (children_guide_rate / temp_my_guide_rate) * temp_rate_for_group_control, false);
+                children_[i]->setTargetUpdated(true);
             }
         }
     }
@@ -808,12 +820,76 @@ namespace Opm
         // do nothing
     }
 
+
+    bool WellsGroup::canProduceMore() const
+    {
+        for (const std::shared_ptr<const WellsGroupInterface>& child_node : children_) {
+            if (child_node->canProduceMore()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    bool WellsGroup::groupProdTargetConverged(const std::vector<double>& well_rates) const
+    {
+        // TODO: should consider the efficiency factor in getProductionRate()
+        for (const std::shared_ptr<const WellsGroupInterface>& child_node : children_) {
+            if ( ! child_node->groupProdTargetConverged(well_rates) ) {
+                return false;
+            }
+        }
+
+        // We need to check whether the current group target is satisfied
+        // we need to decide the modes we want to support here.
+        const ProductionSpecification::ControlMode prod_mode = prodSpec().control_mode_;
+        switch(prod_mode) {
+            case ProductionSpecification::LRAT :
+            case ProductionSpecification::ORAT :
+            case ProductionSpecification::WRAT :
+            case ProductionSpecification::GRAT :
+            {
+                const double production_rate = std::abs(getProductionRate(well_rates, prod_mode));
+                const double production_target = std::abs(getTarget(prod_mode));
+
+                // 0.01 is a hard-coded relative tolerance
+                const double relative_tolerance = 0.01;
+                // the bigger one of the two values
+                const double bigger_of_two = std::max(production_rate, production_target);
+
+                if (std::abs(production_target - production_rate) > relative_tolerance * bigger_of_two) {
+                    // underproducing the target while potentially can produce more
+                    // then we should not consider the effort to match the group target is done yet
+                    if (canProduceMore()) {
+                        return false;
+                    } else {
+                        // can not produce more to meet the target
+                        OpmLog::info("group " + name() + " can not meet its target!");
+                    }
+                }
+            }
+            case ProductionSpecification::FLD :
+            case ProductionSpecification::NONE :
+            case ProductionSpecification::GRUP :
+                break;
+            default:
+            {
+                const std::string msg = "Not handling target checking for control type " + ProductionSpecification::toString(prod_mode);
+                OPM_THROW(std::runtime_error, msg);
+            }
+        }
+
+        return true;
+    }
+
+
     double WellsGroup::getProductionRate(const std::vector<double>& well_rates,
                                          const ProductionSpecification::ControlMode prod_mode) const
     {
         double total_production_rate = 0.0;
         for (const std::shared_ptr<const WellsGroupInterface>& child_node : children_) {
-            total_production_rate += child_node->getProductionRate(well_rates, prod_mode);
+            total_production_rate += child_node->getProductionRate(well_rates, prod_mode) * child_node->efficiencyFactor();
         }
         return total_production_rate;
     }
@@ -1214,6 +1290,7 @@ namespace Opm
             if (!phase_used[BlackoilPhases::Aqua]) {
                 OPM_THROW(std::runtime_error, "Water phase not active and LRAT control specified.");
             }
+
             distr[phase_pos[BlackoilPhases::Liquid]] = 1.0;
             distr[phase_pos[BlackoilPhases::Aqua]] = 1.0;
             break;
@@ -1492,7 +1569,8 @@ namespace Opm
 
 
 
-    double WellNode::getAccumulativeEfficiencyFactor() const {
+    double WellNode::getAccumulativeEfficiencyFactor() const
+    {
         // TODO: not sure whether a well can be exempted from repsponding to the efficiency factor
         // for the parent group.
         double efficiency_factor = efficiencyFactor();
@@ -1506,18 +1584,33 @@ namespace Opm
     }
 
 
-    int WellNode::selfIndex() const {
+    int WellNode::selfIndex() const
+    {
         return self_index_;
     }
 
 
-    bool WellNode::targetUpdated() const {
+    bool WellNode::targetUpdated() const
+    {
         return target_updated_;
     }
 
 
-    void WellNode::setTargetUpdated(const bool flag) {
+    void WellNode::setTargetUpdated(const bool flag)
+    {
         target_updated_ = flag;
+    }
+
+
+    bool WellNode::canProduceMore() const
+    {
+        return (isProducer() && !individualControl());
+    }
+
+
+    bool WellNode::groupProdTargetConverged(const std::vector<double>& /* well_rates */) const
+    {
+        return true;
     }
 
 }
