@@ -182,7 +182,7 @@ try
     // Rock and fluid init
     IncompPropertiesSinglePhase props(deck, eclipseState, grid);
     // Wells init.
-    WellsManager wells_manager(eclipseState , 0, grid, props.permeability());
+    WellsManager wells_manager(eclipseState , 0, grid);
 
     std::shared_ptr<Wells> my_wells(clone_wells(wells_manager.c_wells()), destroy_wells);
     setBhpWells(*my_wells);
