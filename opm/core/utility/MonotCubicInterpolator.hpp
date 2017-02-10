@@ -71,7 +71,7 @@ class MonotCubicInterpolator {
 
       Ignores all lines not conforming to \<whitespace\>\<float\>\<whitespace\>\<float\>\<whatever\>\<newline\>
    */
-  MonotCubicInterpolator(const std::string & datafilename) throw (const char*)
+  MonotCubicInterpolator(const std::string & datafilename)
   {
     if (!read(datafilename)) {
       throw("Unable to constuct MonotCubicInterpolator from file.") ;
@@ -92,7 +92,7 @@ class MonotCubicInterpolator {
 
    */
 
- MonotCubicInterpolator(const char* datafilename) throw (const char*)
+ MonotCubicInterpolator(const char* datafilename)
   {
     if (!read(std::string(datafilename))) {
       throw("Unable to constuct MonotCubicInterpolator from file.") ;
@@ -108,7 +108,7 @@ class MonotCubicInterpolator {
        Accepts a filename as input, and parses the chosen columns in
        that file.
    */
-   MonotCubicInterpolator(const char* datafilename, int xColumn, int fColumn) throw (const char*)
+   MonotCubicInterpolator(const char* datafilename, int xColumn, int fColumn)
   {
     if (!read(std::string(datafilename),xColumn,fColumn)) {
       throw("Unable to constuct MonotCubicInterpolator from file.") ;
@@ -123,7 +123,7 @@ class MonotCubicInterpolator {
        Accepts a filename as input, and parses the chosen columns in
        that file.
    */
-   MonotCubicInterpolator(const std::string & datafilename, int xColumn, int fColumn) throw (const char*)
+   MonotCubicInterpolator(const std::string & datafilename, int xColumn, int fColumn)
   {
     if (!read(datafilename,xColumn,fColumn)) {
       throw("Unable to constuct MonotCubicInterpolator from file.") ;
@@ -204,7 +204,7 @@ class MonotCubicInterpolator {
 
       @return f(x) for a given x
    */
-   double evaluate(double x) const throw(const char*);
+   double evaluate(double x) const;
 
    /**
       @param x x value
@@ -255,7 +255,7 @@ class MonotCubicInterpolator {
       @return x value corresponding to maximum f value
       @return maximum f value
    */
-   std::pair<double,double> getMaximumF() const throw(const char*) ;
+   std::pair<double,double> getMaximumF() const ;
 
    /**
       Minimum f-value, returns both x and f in a pair
@@ -263,7 +263,7 @@ class MonotCubicInterpolator {
       @return x value corresponding to minimal f value
       @return minimum f value
    */
-   std::pair<double,double> getMinimumF() const throw(const char*)  ;
+   std::pair<double,double> getMinimumF() const  ;
 
 
    /**
@@ -407,7 +407,7 @@ class MonotCubicInterpolator {
       must be exploited.
 
    */
-   void addPair(double newx, double newf) throw(const char*);
+   void addPair(double newx, double newf);
 
    /**
       Returns an x-value that is believed to yield the best
@@ -421,7 +421,7 @@ class MonotCubicInterpolator {
       @return New x value beleived to yield the best improvement in global accuracy
       @return Maximal difference
    */
-   std::pair<double,double> getMissingX() const throw(const char*) ;
+   std::pair<double,double> getMissingX() const;
 
    /**
       Constructs a string containing the data in a table
