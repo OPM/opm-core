@@ -82,12 +82,9 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/props/satfunc/RelpermDiagnostics.cpp
         opm/core/props/satfunc/SaturationPropsBasic.cpp
         opm/core/props/satfunc/SaturationPropsFromDeck.cpp
-        opm/core/simulator/AdaptiveSimulatorTimer.cpp
         opm/core/simulator/BlackoilState.cpp
         opm/core/simulator/TwophaseState.cpp
         opm/core/simulator/SimulatorReport.cpp
-        opm/core/simulator/SimulatorTimer.cpp
-        opm/core/simulator/TimeStepControl.cpp
         opm/core/transport/TransportSolverTwophaseInterface.cpp
         opm/core/transport/implicit/TransportSolverTwophaseImplicit.cpp
         opm/core/transport/implicit/transport_source.c
@@ -152,7 +149,6 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_wellcontrols.cpp
 	tests/test_wellsgroup.cpp
 	tests/test_wellcollection.cpp
-	tests/test_timer.cpp
 	tests/test_pinchprocessor.cpp
 	tests/test_anisotropiceikonal.cpp
 	tests/test_stoppedwells.cpp
@@ -188,7 +184,6 @@ list (APPEND TEST_DATA_FILES
 	tests/wells_manager_data_expanded.data
 	tests/wells_manager_data_wellSTOP.data
         tests/wells_group.data
-        tests/TESTTIMER.DATA
         tests/wells_stopped.data
 				tests/relpermDiagnostics.DATA
         tests/norne_pvt.data
@@ -201,7 +196,6 @@ list (APPEND EXAMPLE_SOURCE_FILES
 	examples/compute_initial_state.cpp
 	examples/compute_tof.cpp
 	examples/compute_tof_from_files.cpp
-	examples/wells_example.cpp
 	examples/diagnose_relperm.cpp
 	tutorials/tutorial1.cpp
 	tutorials/tutorial2.cpp
@@ -294,19 +288,12 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/props/satfunc/SaturationPropsFromDeck.hpp
         opm/core/props/satfunc/SaturationPropsInterface.hpp
 	opm/core/props/satfunc/RelpermDiagnostics_impl.hpp
-        opm/core/simulator/AdaptiveSimulatorTimer.hpp
-        opm/core/simulator/AdaptiveTimeStepping.hpp
-        opm/core/simulator/AdaptiveTimeStepping_impl.hpp
         opm/core/simulator/BlackoilState.hpp
         opm/core/simulator/BlackoilStateToFluidState.hpp
         opm/core/simulator/EquilibrationHelpers.hpp
         opm/core/simulator/ExplicitArraysFluidState.hpp
         opm/core/simulator/ExplicitArraysSatDerivativesFluidState.hpp
         opm/core/simulator/SimulatorReport.hpp
-        opm/core/simulator/SimulatorTimer.hpp
-        opm/core/simulator/SimulatorTimerInterface.hpp
-        opm/core/simulator/TimeStepControl.hpp
-        opm/core/simulator/TimeStepControlInterface.hpp
         opm/core/simulator/TwophaseState.hpp
         opm/core/simulator/WellState.hpp
         opm/core/simulator/initState.hpp
