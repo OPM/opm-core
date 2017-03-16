@@ -70,6 +70,22 @@ namespace Opm
 	return  (yv[ix2] - yv[ix1])/(xv[ix2] - xv[ix1])*(x - xv[ix1]) + yv[ix1];
     }
 
+    inline double linearInterpolationNoExtrapolation(const std::vector<double>& xv,
+                                                     const std::vector<double>& yv, double x)
+    {
+        // Return end values if x is outside xv
+        if (x < xv.front()) {
+            return yv.front();
+        }
+        if (x > xv.back()) {
+            return yv.back();
+        }
+
+        int ix1 = tableIndex(xv, x);
+        int ix2 = ix1 + 1;
+        return  (yv[ix2] - yv[ix1])/(xv[ix2] - xv[ix1])*(x - xv[ix1]) + yv[ix1];
+    }
+
     inline double linearInterpolation(const std::vector<double>& xv,
                                       const std::vector<double>& yv,
                                       double x, int& ix1)
