@@ -139,12 +139,24 @@ namespace Opm
         /// Whether we have active group control
         bool groupControlActive() const;
 
+        /// Whether we have applied the group control
+        bool groupControlApplied() const;
+
         /// Whether the group target is converged
         // It is considered converged if eitehr the group targets are matched or the group targets are not matched while the wells are
         // running under their own limits so that they can not produce more
         // It is considered not converged if the group targets are not matched while some of the wells are still running under group control
         // The strategy may need to be adjusted when more complicated multi-layered group control situation applied, not sure about thatyet.
         bool groupTargetConverged(const std::vector<double>& well_rates) const;
+
+
+        /// Setting the guide rates with well potentials
+        void setGuideRatesWithPotentials(const Wells* wells,
+                                         const PhaseUsage& phase_usage,
+                                         const std::vector<double>& well_potentials) const;
+
+
+        bool requireWellPotentials() const;
 
     private:
         // To account for the possibility of a forest
@@ -157,7 +169,8 @@ namespace Opm
 
         bool group_control_active_ = false;
 
-
+        // This is used to mark whether apply or update the group control
+        bool group_control_applied_ = false;
     };
 
 } // namespace Opm
