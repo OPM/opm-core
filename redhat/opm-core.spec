@@ -51,15 +51,6 @@ BuildArch:	noarch
 %description doc
 This package contains the documentation files for opm-core
 
-%package bin
-Summary:        Applications in opm-core
-Group:          Scientific
-Requires:       %{name} = %{version}
-Requires:       libopm-core1 = %{version}
-
-%description bin
-This package contains the applications for opm-core
-
 %prep
 %setup -q -n %{name}-release-%{version}-%{tag}
 
@@ -97,6 +88,3 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/*
 %{_includedir}/*
 %{_datadir}/cmake/*
-
-%files bin
-%{_bindir}/*
