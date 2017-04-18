@@ -2,10 +2,10 @@
 # spec file for package opm-core
 #
 
-%define tag rc3
+%define tag rc1
 
 Name:           opm-core
-Version:        2013.10
+Version:        2017.04
 Release:        0
 Summary:        Open Porous Media - core library
 License:        GPL-3.0
