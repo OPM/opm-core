@@ -5,8 +5,8 @@
 
 Module: opm-core
 Description: Open Porous Media Initiative Core Library
-Version: 2017.04-rc2
-Label: 2017.04-rc2
+Version: 2017.04
+Label: 2017.04
 Maintainer: atgeirr@sintef.no
 MaintainerName: Atgeirr F. Rasmussen
 Url: http://opm-project.org
