@@ -40,8 +40,7 @@
 #include <opm/core/utility/parameters/ParameterStrings.hpp>
 
 namespace Opm {
-    namespace parameter {
-	std::pair<std::string, std::string> split(const std::string& name)
+	std::pair<std::string, std::string> splitParam(const std::string& name)
         {
 	    int pos = name.find(ID_delimiter_path);
 	    if (pos == int(std::string::npos)) {
@@ -51,5 +50,4 @@ namespace Opm {
                                       name.substr(pos + ID_delimiter_path.size()));
 	    }
 	}
-    } // namespace parameter
 } // namespace Opm

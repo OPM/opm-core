@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(commandline_syntax_init)
                              "/group/item=overridingstring",
                              0 };
     const std::size_t argc = argv.size() - 1;
-    parameter::ParameterGroup p(argc, argv.data());
+    ParameterGroup p(argc, argv.data());
     BOOST_CHECK(p.get<std::string>("topitem") == "somestring");
     std::ostringstream os;
     p.writeParamToStream(os);
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(xml_syntax_init)
                              "unhandledargument",
                              0};
     const std::size_t argc = argv.size() - 1;
-    parameter::ParameterGroup p(argc, argv.data(), false);
+    ParameterGroup p(argc, argv.data(), false);
     BOOST_CHECK(p.get<std::string>("topitem") == "somestring");
     std::ostringstream os;
     p.writeParamToStream(os);
@@ -120,5 +120,5 @@ BOOST_AUTO_TEST_CASE(failing_strict_xml_syntax_init)
                              "unhandledargument",
                              0 };
     const std::size_t argc = argv.size() - 1;
-    BOOST_CHECK_THROW(parameter::ParameterGroup p(argc, argv.data()), std::runtime_error);
+    BOOST_CHECK_THROW(ParameterGroup p(argc, argv.data()), std::runtime_error);
 }

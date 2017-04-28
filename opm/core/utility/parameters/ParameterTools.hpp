@@ -40,9 +40,7 @@
 #include <utility>
 
 namespace Opm {
-    namespace parameter {
-	std::pair<std::string, std::string> split(const std::string& name);
-    } // namespace parameter
+	std::pair<std::string, std::string> splitParam(const std::string& name);
 } // namespace Opm
 
 #endif // OPM_PARAMETERTOOLS_HEADER

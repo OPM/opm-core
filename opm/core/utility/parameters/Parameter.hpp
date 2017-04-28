@@ -43,8 +43,6 @@
 #include <opm/core/utility/parameters/ParameterStrings.hpp>
 
 namespace Opm {
-    /// See ParameterGroup.hpp for how to use the parameter system
-    namespace parameter {
 	/// @brief
 	/// @todo Doc me!
 	class Parameter : public ParameterMapItem {
@@ -213,6 +211,5 @@ namespace Opm {
 	    }
 	    static std::string type() {return ID_param_type__string;}
 	};
-    } // namespace parameter
 } // namespace Opm
 #endif  // OPM_PARAMETER_HPP

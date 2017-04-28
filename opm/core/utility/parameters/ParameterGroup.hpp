@@ -45,7 +45,6 @@
 #include <opm/core/utility/parameters/ParameterRequirement.hpp>
 
 namespace Opm {
-    namespace parameter {
 	/// ParameterGroup is a class that is used to provide run-time parameters.
 	/// The standard use of the class is to call create it with the
 	/// (int argc, char** argv) constructor (where the arguments are those
@@ -266,7 +265,6 @@ namespace Opm {
 	    static std::pair<std::string, std::string>
 	    filename_split(const std::string& filename);
 	};
-    } // namespace parameter
 } // namespace Opm
 
 #include <opm/core/utility/parameters/ParameterGroup_impl.hpp>

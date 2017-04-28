@@ -48,8 +48,6 @@
 #include <opm/common/OpmLog/OpmLog.hpp>
 
 namespace Opm {
-    namespace parameter {
-
 	template<>
 	struct ParameterMapItemTrait<ParameterGroup> {
 	    static ParameterGroup
@@ -179,7 +177,7 @@ namespace Opm {
 				     const Requirement& r) const
         {
 	    setUsed();
-	    std::pair<std::string, std::string> name_path = split(name);
+	    std::pair<std::string, std::string> name_path = splitParam(name);
 	    map_type::const_iterator it = map_.find(name_path.first);
 	    if (it == map_.end()) {
 		if (parent_ != 0) {
@@ -225,7 +223,7 @@ namespace Opm {
 					    const Requirement& r) const
         {
 	    setUsed();
-	    std::pair<std::string, std::string> name_path = split(name);
+	    std::pair<std::string, std::string> name_path = splitParam(name);
 	    map_type::const_iterator it = map_.find(name_path.first);
 	    if (it == map_.end()) {
 		if (parent_ != 0) {
@@ -308,7 +306,6 @@ namespace Opm {
 	    }
 	    return value;
 	}
-    } // namespace parameter
 } // namespace Opm
 
 #endif // OPM_PARAMETERGROUP_IMPL_HEADER

@@ -61,7 +61,7 @@ namespace Opm
                                         const std::vector<double>& porevol,
                                         const double* gravity,
                                         const std::vector<double>& half_trans,
-                                        const parameter::ParameterGroup& param);
+                                        const ParameterGroup& param);
 
         virtual ~TransportSolverTwophaseImplicit();
 
