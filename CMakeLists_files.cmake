@@ -107,12 +107,6 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/utility/parameters/Parameter.cpp
         opm/core/utility/parameters/ParameterGroup.cpp
         opm/core/utility/parameters/ParameterTools.cpp
-        opm/core/utility/parameters/ParameterXML.cpp
-        opm/core/utility/parameters/tinyxml/tinystr.cpp
-        opm/core/utility/parameters/tinyxml/tinyxml.cpp
-        opm/core/utility/parameters/tinyxml/tinyxmlerror.cpp
-        opm/core/utility/parameters/tinyxml/tinyxmlparser.cpp
-        opm/core/utility/parameters/tinyxml/xmltest.cpp
         opm/core/wells/InjectionSpecification.cpp
         opm/core/wells/ProductionSpecification.cpp
         opm/core/wells/WellCollection.cpp
@@ -157,10 +151,9 @@ list (APPEND TEST_SOURCE_FILES
   )
 
 # originally generated with the command:
-# find tests -name '*.xml' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
+# find tests -name '*.param' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
 list (APPEND TEST_DATA_FILES
-	tests/extratestdata.xml
-	tests/testdata.xml
+	tests/testdata.param
 	tests/liveoil.DATA
 	tests/capillary.DATA
 	tests/capillary_overlap.DATA
@@ -350,9 +343,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/utility/parameters/ParameterRequirement.hpp
         opm/core/utility/parameters/ParameterStrings.hpp
         opm/core/utility/parameters/ParameterTools.hpp
-        opm/core/utility/parameters/ParameterXML.hpp
-        opm/core/utility/parameters/tinyxml/tinystr.h
-        opm/core/utility/parameters/tinyxml/tinyxml.h
         opm/core/utility/share_obj.hpp
         opm/core/well_controls.h
         opm/core/wells.h

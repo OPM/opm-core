@@ -52,8 +52,7 @@ namespace Opm {
 	/// given by main). This parses the command line, where each token
 	/// either
 	/// A) specifies a parameter (by a "param=value" token).
-	/// B) specifies a xml file to be read (by a "filename.xml" token).
-	/// C) specifies a param file to be read (by a "filename.param" token).
+	/// B) specifies a param file to be read (by a "filename.param" token).
 	/// After the tokens are parsed they are stored in a tree structure
 	/// in the ParameterGroup object; it is worth mentioning that parameters
 	/// are inherited in this tree structure. Thus, if ``grid\_prefix'' is
@@ -76,36 +75,10 @@ namespace Opm {
 	///         simulator param=value1 param=value2
 	/// will use value2 as the value of ``param''.
 	///
-	/// XML parameters
-	///
-	/// In the introduction to this section it was mentioned that the parameters for
-	/// the simulator are organized in a tree structure. This is mirrored in the XML
-	/// file by the use of groups; a group is a collection of parameters and subgroups
-	/// enclosed by a \fixed{<ParameterGroup>}-\fixed{</ParameterGroup>} pair. The only
-	/// attribute of relevance in a \fixed{ParameterGroup} tag is that of \fixed{name},
-	/// which is used to navigate in the tree.
-	/// The actual parameters are specified by the \fixed{<Parameter />} tag. Each
-	/// parameter has three attributes: \fixed{name}, \fixed{type}, and \fixed{value}.
-	/// Both name and value should be evident. Type is one of \fixed{bool} (for things
-	/// that are either true or false), \fixed{int} (for integers), \fixed{double} (for
-	/// floating point numbers with double precision), \fixed{string} (for text
-	/// strings), or \fixed{file} (for files and directories relative to the location
-	/// of the XML file).
-	///
 	/// param files
 	///
 	/// A param file consists of multiple lienes, where each line consists of "param=value".
-	/// This syntax is identical to the one for paramters specified on the command line.
-	///
-	///
-	/// If one combines both XML files and parameters, one should note that that if a parameter
-	/// is specified on the command line is also found in a XML file, the parameter
-	/// specified on the command line is the one used.  Thus, if ``parameters.xml''
-	/// specifies that ``stepsize'' is 2.71828 while, the command used to run the
-	/// application ``simulator'' is
-	///         simulator stepsize=3.14159 parameters.xml
-	/// the simulator will run with ``stepsize'' equal to 3.14159.
-	///
+	/// This syntax is identical to the one for parameters specified on the command line.
 	class ParameterGroup : public ParameterMapItem {
 	public:
 	    struct NotFoundException          : public std::exception {};
@@ -128,7 +101,7 @@ namespace Opm {
 	    ///
 	    /// It is required that argv[0] is the program name, while if
 	    /// 0 < i < argc, then argv[i] is either
-	    /// the name of an xml file, parameter file or parametername=value.
+	    /// the name of a parameter file or parametername=value.
 	    ///
 	    /// \param argc is the number of command-line arguments,
 	    ///        including the name of the executable.
@@ -211,13 +184,6 @@ namespace Opm {
 	    /// \return true if and only if output from get, getDefault and
 	    ///         getGroup is enabled.
 	    bool isOutputEnabled() const;
-
-
-	    /// \brief Reads the contents of the  xml file specified by
-	    ///        xml_filename into this ParameterGroup.
-	    ///
-	    /// \param xml_filename is the name of a xml file.
-	    void readXML(const std::string& xml_filename);
 
 	    /// \brief Reads the contents of the param file specified by
 	    ///        param_filename into this ParameterGroup.

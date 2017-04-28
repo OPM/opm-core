@@ -47,7 +47,6 @@
 #include <opm/core/utility/parameters/Parameter.hpp>
 #include <opm/core/utility/parameters/ParameterStrings.hpp>
 #include <opm/core/utility/parameters/ParameterTools.hpp>
-#include <opm/core/utility/parameters/ParameterXML.hpp>
 
 namespace Opm {
     namespace parameter {
@@ -97,11 +96,6 @@ namespace Opm {
 	ParameterGroup::getGroup(const std::string& name) const
         {
 	    return get<ParameterGroup>(name);
-	}
-
-	void ParameterGroup::readXML(const std::string& xml_filename)
-        {
-	    fill_xml(*this, xml_filename, output_is_enabled_);
 	}
 
 	namespace {

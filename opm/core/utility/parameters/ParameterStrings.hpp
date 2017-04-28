@@ -45,12 +45,6 @@ namespace Opm {
 
 	const std::string ID_xmltag__param_grp      = "ParameterGroup";
 	const std::string ID_xmltag__param          = "Parameter";
-	const std::string ID_xmltag__file_param_grp = "ParameterGroupFromFile";
-	const std::string ID_xmltag__file_params    = "MergeWithFile";
-
-	const std::string ID_xmlatt__value          = "value";
-	const std::string ID_xmlatt__name           = "name";
-	const std::string ID_xmlatt__type           = "type";
 
 	const std::string ID_param_type__bool       = "bool";
 	const std::string ID_param_type__int        = "int";
