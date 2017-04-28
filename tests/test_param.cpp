@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(xml_syntax_init)
 {
     typedef const char* cp;
     std::vector<cp> argv = { "program_command",
-                             "testdata.xml",
+                             "testdata.param",
                              "/group/item=overridingstring",
                              "unhandledargument",
                              0};
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(failing_strict_xml_syntax_init)
 {
     typedef const char* cp;
     std::vector<cp> argv = { "program_command",
-                             "testdata.xml",
+                             "testdata.param",
                              "/group/item=overridingstring",
                              "unhandledargument",
                              0 };

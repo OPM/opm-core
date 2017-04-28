@@ -113,8 +113,8 @@ namespace Opm {
 	{
 	    if (verify_syntax && (argc < 2)) {
 		std::cerr << "Usage: " << argv[0] << " "
-			  << "[paramfilename1.{xml,param}] "
-			  << "[paramfilename2.{xml,param}] "
+			  << "[paramfilename1.param] "
+			  << "[paramfilename2.param] "
 			  << "[overridden_arg1=value1] "
 			  << "[overridden_arg2=value2] "
 			  << "[...]" << std::endl;
@@ -150,14 +150,12 @@ namespace Opm {
 	    }
 	    for (int i = 0; i < int(files.size()); ++i) {
 		std::pair<std::string, std::string> file_type = filename_split(files[i]);
-		if (file_type.second == "xml") {
-		    this->readXML(files[i]);
-		} else if (file_type.second == "param") {
+		if (file_type.second == "param") {
 		    this->readParam(files[i]);
 		} else {
                     if (verify_syntax) {
                         std::cerr << "ERROR: Input '" << files[i] << "' is not a valid name for a parameter file.\n";
-                        std::cerr << "       Valid filename extensions are 'xml' and 'param'.\n";
+                        std::cerr << "       Valid filename extensions are 'param'.\n";
                         OPM_THROW(std::runtime_error, "ParameterGroup cannot handle argument: " << files[i]);
                     } else {
                         unhandled_arguments_.push_back(files[i]);
