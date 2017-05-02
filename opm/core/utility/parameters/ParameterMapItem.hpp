@@ -39,7 +39,6 @@
 #include <string>
 
 namespace Opm {
-    namespace parameter {
 	/// The parameter handlig system is structured as a tree,
 	/// where each node inhertis from ParameterMapItem.
 	///
@@ -67,7 +66,6 @@ namespace Opm {
                              std::string& conversion_error);
 	    static std::string type();
 	};
-    } // namespace parameter
 } // namespace Opm
 
 #endif // OPM_PARAMETERMAPITEM_HEADER

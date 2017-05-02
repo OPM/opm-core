@@ -49,8 +49,6 @@
 #include <opm/core/utility/parameters/ParameterTools.hpp>
 
 namespace Opm {
-    namespace parameter {
-
 	ParameterGroup::ParameterGroup()
 	: path_(ID_path_root), parent_(0), output_is_enabled_(true)
 	{
@@ -69,7 +67,7 @@ namespace Opm {
 
 	bool ParameterGroup::has(const std::string& name) const
         {
-	    std::pair<std::string, std::string> name_path = split(name);
+	    std::pair<std::string, std::string> name_path = splitParam(name);
 	    map_type::const_iterator it = map_.find(name_path.first);
 	    if (it == map_.end()) {
 		return false;
@@ -170,7 +168,7 @@ namespace Opm {
 	void ParameterGroup::insert(const std::string& name,
 				    const std::shared_ptr<ParameterMapItem>& data)
         {
-	    std::pair<std::string, std::string> name_path = split(name);
+	    std::pair<std::string, std::string> name_path = splitParam(name);
 	    map_type::const_iterator it = map_.find(name_path.first);
 	    assert(name_path.second == "");
 	    if (it == map_.end()) {
@@ -202,9 +200,9 @@ namespace Opm {
 	void ParameterGroup::insertParameter(const std::string& name,
                                              const std::string& value)
         {
-	    std::pair<std::string, std::string> name_path = split(name);
+	    std::pair<std::string, std::string> name_path = splitParam(name);
 	    while (name_path.first == "") {
-		name_path = split(name_path.second);
+		name_path = splitParam(name_path.second);
 	    }
 	    map_type::const_iterator it = map_.find(name_path.first);
 	    if (it == map_.end()) {
@@ -330,5 +328,4 @@ namespace Opm {
             return unhandled_arguments_;
         }
 
-    } // namespace parameter
 } // namespace Opm

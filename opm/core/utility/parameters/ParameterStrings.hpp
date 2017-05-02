@@ -39,7 +39,6 @@
 #include <string>
 
 namespace Opm {
-    namespace parameter {
 	const std::string ID_true                   = "true";
 	const std::string ID_false                  = "false";
 
@@ -59,7 +58,6 @@ namespace Opm {
 	const std::string ID_delimiter_path       = "/";
 	const std::string ID_comment              = "//";
 	const std::string ID_delimiter_assignment = "=";
-    } // namespace parameter
 } // namespace Opm
 
 #endif // OPM_PARAMETERSTRINGS_HEADER

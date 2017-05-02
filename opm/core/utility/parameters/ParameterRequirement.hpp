@@ -43,7 +43,6 @@
 #include <vector>
 
 namespace Opm {
-    namespace parameter {
 	/// @brief
 	/// @todo Doc me!
 	/// @tparam
@@ -237,7 +236,6 @@ namespace Opm {
 	private:
 	    const std::vector<std::string> elements_;
 	};
-    } // namespace parameter
 } // namespace Opm
 
 #endif // OPM_PARAMETERREQUIREMENT_HEADER

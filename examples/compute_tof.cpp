@@ -61,7 +61,7 @@ namespace
     const static double alq_invalid = -std::numeric_limits<double>::max();
     const static int vfp_invalid = -std::numeric_limits<int>::max();
 
-    void warnIfUnusedParams(const Opm::parameter::ParameterGroup& param)
+    void warnIfUnusedParams(const Opm::ParameterGroup& param)
     {
         if (param.anyUnused()) {
             std::cout << "--------------------   Unused parameters:   --------------------\n";
@@ -166,7 +166,7 @@ try
     using namespace Opm;
 
     std::cout << "\n================    Test program for incompressible tof computations     ===============\n\n";
-    parameter::ParameterGroup param(argc, argv);
+    ParameterGroup param(argc, argv);
     std::cout << "---------------    Reading parameters     ---------------" << std::endl;
 
     // Read the deck.

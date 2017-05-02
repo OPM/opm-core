@@ -40,7 +40,6 @@
 #include <opm/core/utility/parameters/Parameter.hpp>
 
 namespace Opm {
-    namespace parameter {
 	std::string
         correct_parameter_tag(const ParameterMapItem& item)
         {
@@ -70,5 +69,4 @@ namespace Opm {
 		return "";
 	    }
 	}
-    } // namespace parameter
 } // namespace Opm

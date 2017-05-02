@@ -45,7 +45,7 @@ namespace Opm
             const std::vector<double>& porevol,
             const double* gravity,
             const std::vector<double>& half_trans,
-            const parameter::ParameterGroup& param)
+            const ParameterGroup& param)
         : fluid_(props),
           model_(fluid_, grid, porevol, gravity, param.getDefault("guess_old_solution", false)),
           tsolver_(model_),
