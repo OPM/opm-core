@@ -1243,7 +1243,7 @@ cfs_tpfa_impes_maxtime_cell(int                      c,
     enum { Water = 0, Oil = 1, Gas = 2 };
     enum { num_phases = 3 };
     double rho[num_phases];
-    double pot[num_phases];
+    double pot[num_phases] = { 0.0, 0.0, 0.0 };
     /* Notation: dpmob[Oil][Water] is d/ds_w(lambda_o) */
     double dpmob[num_phases][num_phases]
         = { {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0} };
