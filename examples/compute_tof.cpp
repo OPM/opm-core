@@ -181,8 +181,14 @@ try
     const UnstructuredGrid& grid = *grid_manager.c_grid();
     // Rock and fluid init
     IncompPropertiesSinglePhase props(deck, eclipseState, grid);
-    // Wells init.
-    WellsManager wells_manager(eclipseState , 0, grid);
+    // Wells init.i
+    const auto& ecl_grid = eclipseState.getInputGrid();
+    const TableManager table ( deck );
+    const Eclipse3DProperties eclipseProperties ( deck , table, ecl_grid);
+    const Schedule sched(deck, ecl_grid, eclipseProperties, Phases(true, true, true), parseContext );
+
+
+    WellsManager wells_manager(eclipseState , sched, 0, grid);
 
     std::shared_ptr<Wells> my_wells(clone_wells(wells_manager.c_wells()), destroy_wells);
     setBhpWells(*my_wells);
