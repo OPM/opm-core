@@ -45,28 +45,13 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/pressure/FlowBCManager.cpp
         opm/core/pressure/IncompTpfa.cpp
         opm/core/pressure/IncompTpfaSinglePhase.cpp
-        opm/core/pressure/cfsh.c
         opm/core/pressure/flow_bc.c
-        opm/core/pressure/fsh.c
-        opm/core/pressure/fsh_common_impl.c
-        opm/core/pressure/ifsh.c
-        opm/core/pressure/legacy_well.c
-        opm/core/pressure/mimetic/hybsys.c
-        opm/core/pressure/mimetic/hybsys_global.c
         opm/core/pressure/mimetic/mimetic.c
-        opm/core/pressure/msmfem/coarse_conn.c
-        opm/core/pressure/msmfem/coarse_sys.c
         opm/core/pressure/msmfem/dfs.c
-        opm/core/pressure/msmfem/hash_set.c
-        opm/core/pressure/msmfem/ifsh_ms.c
         opm/core/pressure/msmfem/partition.c
-        opm/core/pressure/tpfa/TransTpfa.cpp
         opm/core/pressure/tpfa/cfs_tpfa.c
         opm/core/pressure/tpfa/cfs_tpfa_residual.c
-        opm/core/pressure/tpfa/compr_bc.c
         opm/core/pressure/tpfa/compr_quant.c
-        opm/core/pressure/tpfa/compr_quant_general.c
-        opm/core/pressure/tpfa/compr_source.c
         opm/core/pressure/tpfa/ifs_tpfa.c
         opm/core/pressure/tpfa/trans_tpfa.c
         opm/core/props/BlackoilPropertiesBasic.cpp
@@ -88,8 +73,6 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/transport/TransportSolverTwophaseInterface.cpp
         opm/core/transport/implicit/TransportSolverTwophaseImplicit.cpp
         opm/core/transport/implicit/transport_source.c
-        opm/core/transport/minimal/spu_explicit.c
-        opm/core/transport/minimal/spu_implicit.c
         opm/core/transport/reorder/ReorderSolverInterface.cpp
         opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.cpp
         opm/core/transport/reorder/TransportSolverTwophaseReorder.cpp
@@ -233,25 +216,15 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/pressure/CompressibleTpfa.hpp
         opm/core/pressure/FlowBCManager.hpp
         opm/core/pressure/IncompTpfa.hpp
-        opm/core/pressure/IncompTpfaSinglePhase.hpp
         opm/core/pressure/flow_bc.h
-        opm/core/pressure/fsh.h
-        opm/core/pressure/fsh_common_impl.h
         opm/core/pressure/legacy_well.h
-        opm/core/pressure/mimetic/hybsys.h
-        opm/core/pressure/mimetic/hybsys_global.h
         opm/core/pressure/mimetic/mimetic.h
-        opm/core/pressure/msmfem/coarse_conn.h
-        opm/core/pressure/msmfem/coarse_sys.h
         opm/core/pressure/msmfem/dfs.h
-        opm/core/pressure/msmfem/hash_set.h
-        opm/core/pressure/msmfem/ifsh_ms.h
         opm/core/pressure/msmfem/partition.h
         opm/core/pressure/tpfa/TransTpfa.hpp
         opm/core/pressure/tpfa/TransTpfa_impl.hpp
         opm/core/pressure/tpfa/cfs_tpfa.h
         opm/core/pressure/tpfa/cfs_tpfa_residual.h
-        opm/core/pressure/tpfa/compr_bc.h
         opm/core/pressure/tpfa/compr_quant.h
         opm/core/pressure/tpfa/compr_quant_general.h
         opm/core/pressure/tpfa/compr_source.h
@@ -305,8 +278,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/transport/implicit/SinglePointUpwindTwoPhase.hpp
         opm/core/transport/implicit/TransportSolverTwophaseImplicit.hpp
         opm/core/transport/implicit/transport_source.h
-        opm/core/transport/minimal/spu_explicit.h
-        opm/core/transport/minimal/spu_implicit.h
         opm/core/transport/reorder/ReorderSolverInterface.hpp
         opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.hpp
         opm/core/transport/reorder/TransportSolverTwophaseReorder.hpp
