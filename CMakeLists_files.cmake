@@ -49,9 +49,7 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/pressure/mimetic/mimetic.c
         opm/core/pressure/msmfem/dfs.c
         opm/core/pressure/msmfem/partition.c
-        opm/core/pressure/tpfa/cfs_tpfa.c
         opm/core/pressure/tpfa/cfs_tpfa_residual.c
-        opm/core/pressure/tpfa/compr_quant.c
         opm/core/pressure/tpfa/ifs_tpfa.c
         opm/core/pressure/tpfa/trans_tpfa.c
         opm/core/props/BlackoilPropertiesBasic.cpp
@@ -223,9 +221,7 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/pressure/msmfem/partition.h
         opm/core/pressure/tpfa/TransTpfa.hpp
         opm/core/pressure/tpfa/TransTpfa_impl.hpp
-        opm/core/pressure/tpfa/cfs_tpfa.h
         opm/core/pressure/tpfa/cfs_tpfa_residual.h
-        opm/core/pressure/tpfa/compr_quant.h
         opm/core/pressure/tpfa/compr_quant_general.h
         opm/core/pressure/tpfa/compr_source.h
         opm/core/pressure/tpfa/ifs_tpfa.h
