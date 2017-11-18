@@ -85,9 +85,6 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/utility/extractPvtTableIndex.cpp
         opm/core/utility/miscUtilities.cpp
         opm/core/utility/miscUtilitiesBlackoil.cpp
-        opm/core/utility/parameters/Parameter.cpp
-        opm/core/utility/parameters/ParameterGroup.cpp
-        opm/core/utility/parameters/ParameterTools.cpp
         opm/core/wells/InjectionSpecification.cpp
         opm/core/wells/ProductionSpecification.cpp
         opm/core/wells/WellCollection.cpp
@@ -114,7 +111,6 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_wachspresscoord.cpp
 	tests/test_linearsolver.cpp
 	tests/test_parallel_linearsolver.cpp
-	tests/test_param.cpp
 	tests/test_satfunc.cpp
 	tests/test_shadow.cpp
 	tests/test_equil.cpp
@@ -134,7 +130,6 @@ list (APPEND TEST_SOURCE_FILES
 # originally generated with the command:
 # find tests -name '*.param' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
 list (APPEND TEST_DATA_FILES
-	tests/testdata.param
 	tests/liveoil.DATA
 	tests/capillary.DATA
 	tests/capillary_overlap.DATA
@@ -303,13 +298,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/utility/miscUtilities.hpp
         opm/core/utility/miscUtilitiesBlackoil.hpp
         opm/core/utility/miscUtilities_impl.hpp
-        opm/core/utility/parameters/Parameter.hpp
-        opm/core/utility/parameters/ParameterGroup.hpp
-        opm/core/utility/parameters/ParameterGroup_impl.hpp
-        opm/core/utility/parameters/ParameterMapItem.hpp
-        opm/core/utility/parameters/ParameterRequirement.hpp
-        opm/core/utility/parameters/ParameterStrings.hpp
-        opm/core/utility/parameters/ParameterTools.hpp
         opm/core/utility/share_obj.hpp
         opm/core/well_controls.h
         opm/core/wells.h
