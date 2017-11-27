@@ -2,6 +2,7 @@
   Copyright 2014 SINTEF ICT, Applied Mathematics.
   Copyright 2015 Dr. Blatt - HPC-Simulation-Software & Services
   Copyright 2015 NTNU
+  Copyright 2017 IRIS
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -24,8 +25,8 @@
 
 #include <opm/core/grid.h>
 #include <opm/core/grid/GridHelpers.hpp>
-#include <opm/core/props/BlackoilPhases.hpp>
-#include <opm/core/simulator/initState.hpp>
+
+#include <opm/material/fluidsystems/BlackOilFluidSystem.hpp>
 
 #include <cassert>
 #include <cmath>
@@ -106,21 +107,16 @@ namespace Opm
         };
 
         namespace PhasePressODE {
-            template <class Density>
+            template <class FluidSystem>
             class Water {
             public:
                 Water(const double   temp,
-                      const Density& rho,
-                      const int      np,
-                      const int      ix,
+                      const int      pvtRegionIdx,
                       const double   norm_grav)
                     : temp_(temp)
-                    , rho_(rho)
-                    , svol_(np, 0)
-                    , ix_(ix)
+                    , pvtRegionIdx_(pvtRegionIdx)
                     , g_(norm_grav)
                 {
-                    svol_[ix_] = 1.0;
                 }
 
                 double
@@ -132,39 +128,30 @@ namespace Opm
 
             private:
                 const double        temp_;
-                const Density&      rho_;
-                std::vector<double> svol_;
-                const int           ix_;
+                const int           pvtRegionIdx_;
                 const double        g_;
 
                 double
                 density(const double press) const
                 {
-                    const std::vector<double>& rho = rho_(press, temp_, svol_);
-
-                    return rho[ix_];
+                    double rho = FluidSystem::waterPvt().inverseFormationVolumeFactor(pvtRegionIdx_, temp_, press);
+                    rho *= FluidSystem::referenceDensity(FluidSystem::waterPhaseIdx, pvtRegionIdx_);
+                    return rho;
                 }
             };
 
-            template <class Density, class RS>
+            template <class FluidSystem, class RS>
             class Oil {
             public:
                 Oil(const double   temp,
-                    const Density& rho,
                     const RS&      rs,
-                    const int      np,
-                    const int      oix,
-                    const int      gix,
+                    const int      pvtRegionIdx,
                     const double   norm_grav)
                     : temp_(temp)
-                    , rho_(rho)
                     , rs_(rs)
-                    , svol_(np, 0)
-                    , oix_(oix)
-                    , gix_(gix)
+                    , pvtRegionIdx_(pvtRegionIdx)
                     , g_(norm_grav)
                 {
-                    svol_[oix_] = 1.0;
                 }
 
                 double
@@ -176,45 +163,42 @@ namespace Opm
 
             private:
                 const double                temp_;
-                const Density&              rho_;
                 const RS&                   rs_;
-                mutable std::vector<double> svol_;
-                const int                   oix_;
-                const int                   gix_;
+                const int                   pvtRegionIdx_;
                 const double                g_;
 
                 double
                 density(const double depth,
                         const double press) const
                 {
-                    if (gix_ >= 0) {
-                        svol_[gix_] = rs_(depth, press, temp_);
+                    double rs = rs_(depth, press, temp_);
+                    double bOil = 0.0;
+                    if ( !FluidSystem::enableDissolvedGas() || rs >= FluidSystem::oilPvt().saturatedGasDissolutionFactor(pvtRegionIdx_, temp_, press) ) {
+                        bOil = FluidSystem::oilPvt().saturatedInverseFormationVolumeFactor(pvtRegionIdx_, temp_, press);
+                    } else {
+                        bOil = FluidSystem::oilPvt().inverseFormationVolumeFactor(pvtRegionIdx_, temp_, press, rs);
+                    }
+                    double rho = bOil * FluidSystem::referenceDensity(FluidSystem::oilPhaseIdx, pvtRegionIdx_);
+                    if (FluidSystem::enableDissolvedGas()) {
+                        rho += rs * bOil * FluidSystem::referenceDensity(FluidSystem::gasPhaseIdx, pvtRegionIdx_);
                     }
 
-                    const std::vector<double>& rho = rho_(press, temp_, svol_);
-                    return rho[oix_];
+                    return rho;
                 }
             };
 
-            template <class Density, class RV>
+            template <class FluidSystem, class RV>
             class Gas {
             public:
                 Gas(const double   temp,
-                    const Density& rho,
                     const RV&      rv,
-                    const int      np,
-                    const int      gix,
-                    const int      oix,
+                    const int      pvtRegionIdx,
                     const double   norm_grav)
                     : temp_(temp)
-                    , rho_(rho)
                     , rv_(rv)
-                    , svol_(np, 0)
-                    , gix_(gix)
-                    , oix_(oix)
+                    , pvtRegionIdx_(pvtRegionIdx)
                     , g_(norm_grav)
                 {
-                    svol_[gix_] = 1.0;
                 }
 
                 double
@@ -226,81 +210,31 @@ namespace Opm
 
             private:
                 const double                temp_;
-                const Density&              rho_;
                 const RV&                   rv_;
-                mutable std::vector<double> svol_;
-                const int                   gix_;
-                const int                   oix_;
+                const int                   pvtRegionIdx_;
                 const double                g_;
 
                 double
                 density(const double depth,
                         const double press) const
                 {
-                    if (oix_ >= 0) {
-                        svol_[oix_] = rv_(depth, press, temp_);
+                    double rv = rv_(depth, press, temp_);
+                    double bGas = 0.0;
+                    if ( !FluidSystem::enableVaporizedOil() || rv >= FluidSystem::gasPvt().saturatedOilVaporizationFactor(pvtRegionIdx_, temp_, press) ) {
+                        bGas = FluidSystem::gasPvt().saturatedInverseFormationVolumeFactor(pvtRegionIdx_, temp_, press);
+                    } else {
+                        bGas = FluidSystem::gasPvt().inverseFormationVolumeFactor(pvtRegionIdx_, temp_, press, rv);
+                    }
+                    double rho = bGas * FluidSystem::referenceDensity(FluidSystem::gasPhaseIdx, pvtRegionIdx_);
+                    if (FluidSystem::enableVaporizedOil()) {
+                        rho += rv * bGas * FluidSystem::referenceDensity(FluidSystem::oilPhaseIdx, pvtRegionIdx_);
                     }
 
-                    const std::vector<double>& rho = rho_(press, temp_, svol_);
-                    return rho[gix_];
+                    return rho;
                 }
             };
         } // namespace PhasePressODE
 
-        namespace PhaseUsed {
-            inline bool
-            water(const PhaseUsage& pu)
-            {
-                return bool(pu.phase_used[ Opm::BlackoilPhases::Aqua ]);
-            }
-
-            inline bool
-            oil(const PhaseUsage& pu)
-            {
-                return bool(pu.phase_used[ Opm::BlackoilPhases::Liquid ]);
-            }
-
-            inline bool
-            gas(const PhaseUsage& pu)
-            {
-                return bool(pu.phase_used[ Opm::BlackoilPhases::Vapour ]);
-            }
-        } // namespace PhaseUsed
-
-        namespace PhaseIndex {
-            inline int
-            water(const PhaseUsage& pu)
-            {
-                int i = -1;
-                if (PhaseUsed::water(pu)) {
-                    i = pu.phase_pos[ Opm::BlackoilPhases::Aqua ];
-                }
-
-                return i;
-            }
-
-            inline int
-            oil(const PhaseUsage& pu)
-            {
-                int i = -1;
-                if (PhaseUsed::oil(pu)) {
-                    i = pu.phase_pos[ Opm::BlackoilPhases::Liquid ];
-                }
-
-                return i;
-            }
-
-            inline int
-            gas(const PhaseUsage& pu)
-            {
-                int i = -1;
-                if (PhaseUsed::gas(pu)) {
-                    i = pu.phase_pos[ Opm::BlackoilPhases::Vapour ];
-                }
-
-                return i;
-            }
-        } // namespace PhaseIndex
 
         namespace PhasePressure {
             template <class Grid,
@@ -328,9 +262,10 @@ namespace Opm
                 }
             }
 
-            template <class Grid,
-                      class Region,
-                      class CellRange>
+            template <                     class FluidSystem,
+                                           class Grid,
+                                           class Region,
+                                           class CellRange>
             void
             water(const Grid&                 G     ,
                   const Region&               reg   ,
@@ -341,13 +276,10 @@ namespace Opm
                   std::vector<double>&        press )
             {
                 using PhasePressODE::Water;
-                typedef Water<typename Region::CalcDensity> ODE;
+                typedef Water<FluidSystem> ODE;
 
-                const PhaseUsage& pu = reg.phaseUsage();
-
-                const int wix = PhaseIndex::water(pu);
                 const double T = 273.15 + 20; // standard temperature for now
-                ODE drho(T, reg.densityCalculator(), pu.num_phases, wix, grav);
+                ODE drho(T, reg.pvtIdx() , grav);
 
                 double z0;
                 double p0;
@@ -379,7 +311,8 @@ namespace Opm
                 }
             }
 
-            template <class Grid,
+            template <class FluidSystem,
+                      class Grid,
                       class Region,
                       class CellRange>
             void
@@ -393,18 +326,11 @@ namespace Opm
                 double&                     po_goc)
             {
                 using PhasePressODE::Oil;
-                typedef Oil<typename Region::CalcDensity,
-                            typename Region::CalcDissolution> ODE;
+                typedef Oil<FluidSystem, typename Region::CalcDissolution> ODE;
 
-                const PhaseUsage& pu = reg.phaseUsage();
-
-                const int oix = PhaseIndex::oil(pu);
-                const int gix = PhaseIndex::gas(pu);
                 const double T = 273.15 + 20; // standard temperature for now
-                ODE drho(T,
-                         reg.densityCalculator(),
-                         reg.dissolutionCalculator(),
-                         pu.num_phases, oix, gix, grav);
+                ODE drho(T, reg.dissolutionCalculator(),
+                         reg.pvtIdx(), grav);
 
                 double z0;
                 double p0;
@@ -444,7 +370,8 @@ namespace Opm
                 else               { po_goc = p0;             } // GOC *at*  datum
             }
 
-            template <class Grid,
+            template <class FluidSystem,
+                      class Grid,
                       class Region,
                       class CellRange>
             void
@@ -457,19 +384,11 @@ namespace Opm
                 std::vector<double>&        press )
             {
                 using PhasePressODE::Gas;
-                typedef Gas<typename Region::CalcDensity,
-                            typename Region::CalcEvaporation> ODE;
-
-                const PhaseUsage& pu = reg.phaseUsage();
-
-                const int gix = PhaseIndex::gas(pu);
-                const int oix = PhaseIndex::oil(pu);
+                typedef Gas<FluidSystem, typename Region::CalcEvaporation> ODE;
 
                 const double T = 273.15 + 20; // standard temperature for now
-                ODE drho(T,
-                         reg.densityCalculator(),
-                         reg.evaporationCalculator(),
-                         pu.num_phases, gix, oix, grav);
+                ODE drho(T, reg.evaporationCalculator(),
+                         reg.pvtIdx(), grav);
 
                 double z0;
                 double p0;
@@ -502,7 +421,8 @@ namespace Opm
             }
         } // namespace PhasePressure
 
-        template <class Grid,
+        template <class FluidSystem,
+                  class Grid,
                   class Region,
                   class CellRange>
         void
@@ -513,70 +433,66 @@ namespace Opm
                        const CellRange&                    cells,
                        std::vector< std::vector<double> >& press)
         {
-            const PhaseUsage& pu = reg.phaseUsage();
+            const bool water = FluidSystem::phaseIsActive(FluidSystem::waterPhaseIdx);
+            const bool oil = FluidSystem::phaseIsActive(FluidSystem::oilPhaseIdx);
+            const bool gas = FluidSystem::phaseIsActive(FluidSystem::gasPhaseIdx);
+            const int oilpos = FluidSystem::oilPhaseIdx;
+            const int waterpos = FluidSystem::waterPhaseIdx;
+            const int gaspos = FluidSystem::gasPhaseIdx;
 
             if (reg.datum() > reg.zwoc()) { // Datum in water zone
                 double po_woc = -1;
                 double po_goc = -1;
 
-                if (PhaseUsed::water(pu)) {
-                    const int wix = PhaseIndex::water(pu);
-                    PhasePressure::water(G, reg, span, grav, po_woc,
-                                         cells, press[ wix ]);
+                if (water) {
+                    PhasePressure::water<FluidSystem>(G, reg, span, grav, po_woc,
+                                         cells, press[ waterpos ]);
                 }
 
-                if (PhaseUsed::oil(pu)) {
-                    const int oix = PhaseIndex::oil(pu);
-                    PhasePressure::oil(G, reg, span, grav, cells,
-                                       press[ oix ], po_woc, po_goc);
+                if (oil) {
+                    PhasePressure::oil<FluidSystem>(G, reg, span, grav, cells,
+                                       press[ oilpos ], po_woc, po_goc);
                 }
 
-                if (PhaseUsed::gas(pu)) {
-                    const int gix = PhaseIndex::gas(pu);
-                    PhasePressure::gas(G, reg, span, grav, po_goc,
-                                       cells, press[ gix ]);
+                if (gas) {
+                    PhasePressure::gas<FluidSystem>(G, reg, span, grav, po_goc,
+                                       cells, press[ gaspos ]);
                 }
             } else if (reg.datum() < reg.zgoc()) { // Datum in gas zone
                 double po_woc = -1;
                 double po_goc = -1;
 
-                if (PhaseUsed::gas(pu)) {
-                    const int gix = PhaseIndex::gas(pu);
-                    PhasePressure::gas(G, reg, span, grav, po_goc,
-                                       cells, press[ gix ]);
+                if (gas) {
+                    PhasePressure::gas<FluidSystem>(G, reg, span, grav, po_goc,
+                                       cells, press[ gaspos ]);
                 }
 
-                if (PhaseUsed::oil(pu)) {
-                    const int oix = PhaseIndex::oil(pu);
-                    PhasePressure::oil(G, reg, span, grav, cells,
-                                       press[ oix ], po_woc, po_goc);
+                if (oil) {
+                    PhasePressure::oil<FluidSystem>(G, reg, span, grav, cells,
+                                       press[ oilpos ], po_woc, po_goc);
                 }
 
-                if (PhaseUsed::water(pu)) {
-                    const int wix = PhaseIndex::water(pu);
-                    PhasePressure::water(G, reg, span, grav, po_woc,
-                                         cells, press[ wix ]);
+                if (water) {
+                    PhasePressure::water<FluidSystem>(G, reg, span, grav, po_woc,
+                                         cells, press[ waterpos ]);
                 }
             } else { // Datum in oil zone
                 double po_woc = -1;
                 double po_goc = -1;
 
-                if (PhaseUsed::oil(pu)) {
-                    const int oix = PhaseIndex::oil(pu);
-                    PhasePressure::oil(G, reg, span, grav, cells,
-                                       press[ oix ], po_woc, po_goc);
+                if (oil) {
+                    PhasePressure::oil<FluidSystem>(G, reg, span, grav, cells,
+                                                    press[ oilpos ], po_woc, po_goc);
                 }
 
-                if (PhaseUsed::water(pu)) {
-                    const int wix = PhaseIndex::water(pu);
-                    PhasePressure::water(G, reg, span, grav, po_woc,
-                                         cells, press[ wix ]);
+                if (water) {
+                    PhasePressure::water<FluidSystem>(G, reg, span, grav, po_woc,
+                                         cells, press[ waterpos ]);
                 }
 
-                if (PhaseUsed::gas(pu)) {
-                    const int gix = PhaseIndex::gas(pu);
-                    PhasePressure::gas(G, reg, span, grav, po_goc,
-                                       cells, press[ gix ]);
+                if (gas) {
+                    PhasePressure::gas<FluidSystem>(G, reg, span, grav, po_goc,
+                                       cells, press[ gaspos ]);
                 }
             }
         }
@@ -586,7 +502,8 @@ namespace Opm
     namespace EQUIL {
 
 
-        template <class Grid,
+        template <class FluidSystem,
+                  class Grid,
                   class Region,
                   class CellRange>
         std::vector< std::vector<double> >
@@ -642,7 +559,7 @@ namespace Opm
                     }
                 }
             }
-            const int np = reg.phaseUsage().num_phases;
+            const int np = FluidSystem::numPhases;  //reg.phaseUsage().num_phases;
 
             typedef std::vector<double> pval;
             std::vector<pval> press(np, pval(ncell, 0.0));
@@ -654,7 +571,7 @@ namespace Opm
             span[0] = std::min(span[0],zgoc);
             span[1] = std::max(span[1],zwoc);
 
-            Details::equilibrateOWG(G, reg, grav, span, cells, press);
+            Details::equilibrateOWG<FluidSystem>(G, reg, grav, span, cells, press);
 
             return press;
         }
@@ -671,67 +588,85 @@ namespace Opm
             return std::vector<double>(cells.size(), 273.15 + 20.0);
         }
 
-        template <class Grid, class Region, class CellRange>
+        template <class FluidSystem, class Grid, class Region, class CellRange, class MaterialLawManager>
         std::vector< std::vector<double> >
         phaseSaturations(const Grid&             G,
                          const Region&           reg,
                          const CellRange&        cells,
-                         BlackoilPropertiesInterface& props,
+                         MaterialLawManager& materialLawManager,
                          const std::vector<double> swat_init,
                          std::vector< std::vector<double> >& phase_pressures)
         {
-            if (!reg.phaseUsage().phase_used[BlackoilPhases::Liquid]) {
+            if (!FluidSystem::phaseIsActive(FluidSystem::oilPhaseIdx)) {
                 OPM_THROW(std::runtime_error, "Cannot initialise: not handling water-gas cases.");
             }
 
             std::vector< std::vector<double> > phase_saturations = phase_pressures; // Just to get the right size.
-            double smin[BlackoilPhases::MaxNumPhases] = { 0.0 };
-            double smax[BlackoilPhases::MaxNumPhases] = { 0.0 };
 
-            const bool water = reg.phaseUsage().phase_used[BlackoilPhases::Aqua];
-            const bool gas = reg.phaseUsage().phase_used[BlackoilPhases::Vapour];
-            const int oilpos = reg.phaseUsage().phase_pos[BlackoilPhases::Liquid];
-            const int waterpos = reg.phaseUsage().phase_pos[BlackoilPhases::Aqua];
-            const int gaspos = reg.phaseUsage().phase_pos[BlackoilPhases::Vapour];
+            // Adjust oil pressure according to gas saturation and cap pressure
+            typedef Opm::SimpleModularFluidState<double,
+                    /*numPhases=*/3,
+                    /*numComponents=*/3,
+                    FluidSystem,
+                    /*storePressure=*/false,
+                    /*storeTemperature=*/false,
+                    /*storeComposition=*/false,
+                    /*storeFugacity=*/false,
+                    /*storeSaturation=*/true,
+                    /*storeDensity=*/false,
+                    /*storeViscosity=*/false,
+                    /*storeEnthalpy=*/false> SatOnlyFluidState;
+
+            SatOnlyFluidState fluidState;
+            typedef typename MaterialLawManager::MaterialLaw MaterialLaw;
+
+            const bool water = FluidSystem::phaseIsActive(FluidSystem::waterPhaseIdx);
+            const bool gas = FluidSystem::phaseIsActive(FluidSystem::gasPhaseIdx);
+            const int oilpos = FluidSystem::oilPhaseIdx;
+            const int waterpos = FluidSystem::waterPhaseIdx;
+            const int gaspos = FluidSystem::gasPhaseIdx;
             std::vector<double>::size_type local_index = 0;
             for (typename CellRange::const_iterator ci = cells.begin(); ci != cells.end(); ++ci, ++local_index) {
                 const int cell = *ci;
-                props.satRange(1, &cell, smin, smax);
+                const auto& scaledDrainageInfo =
+                    materialLawManager.oilWaterScaledEpsInfoDrainage(cell);
+                const auto& matParams = materialLawManager.materialLawParams(cell);
+
                 // Find saturations from pressure differences by
                 // inverting capillary pressure functions.
                 double sw = 0.0;
                 if (water) {
-                    if (isConstPc(props,waterpos,cell)){
+                    if (isConstPc<FluidSystem, MaterialLaw, MaterialLawManager>(materialLawManager,FluidSystem::waterPhaseIdx, cell)){
                         const double cellDepth  =  UgGridHelpers::cellCenterDepth(G,
                                                                             cell);
-                        sw = satFromDepth(props,cellDepth,reg.zwoc(),waterpos,cell,false);
+                        sw = satFromDepth<FluidSystem, MaterialLaw, MaterialLawManager>(materialLawManager,cellDepth,reg.zwoc(),waterpos,cell,false);
                         phase_saturations[waterpos][local_index] = sw;
                     }
                     else{
                         const double pcov = phase_pressures[oilpos][local_index] - phase_pressures[waterpos][local_index];
                         if (swat_init.empty()) { // Invert Pc to find sw
-                            sw = satFromPc(props, waterpos, cell, pcov);
+                            sw = satFromPc<FluidSystem, MaterialLaw, MaterialLawManager>(materialLawManager, waterpos, cell, pcov);
                             phase_saturations[waterpos][local_index] = sw;
                         } else { // Scale Pc to reflect imposed sw
                             sw = swat_init[cell];
-                            props.swatInitScaling(cell, pcov, sw);
+                            sw = materialLawManager.applySwatinit(cell, pcov, sw);
                             phase_saturations[waterpos][local_index] = sw;
                         }
                     }
                 }
                 double sg = 0.0;
                 if (gas) {
-                    if (isConstPc(props,gaspos,cell)){
+                    if (isConstPc<FluidSystem, MaterialLaw, MaterialLawManager>(materialLawManager,FluidSystem::gasPhaseIdx,cell)){
                         const double cellDepth  = UgGridHelpers::cellCenterDepth(G,
                                                                                         cell);
-                        sg = satFromDepth(props,cellDepth,reg.zgoc(),gaspos,cell,true);
+                        sg = satFromDepth<FluidSystem, MaterialLaw, MaterialLawManager>(materialLawManager,cellDepth,reg.zgoc(),gaspos,cell,true);
                         phase_saturations[gaspos][local_index] = sg;
                     }
                     else{
                         // Note that pcog is defined to be (pg - po), not (po - pg).
                         const double pcog = phase_pressures[gaspos][local_index] - phase_pressures[oilpos][local_index];
                         const double increasing = true; // pcog(sg) expected to be increasing function
-                        sg = satFromPc(props, gaspos, cell, pcog, increasing);
+                        sg = satFromPc<FluidSystem, MaterialLaw, MaterialLawManager>(materialLawManager, gaspos, cell, pcog, increasing);
                         phase_saturations[gaspos][local_index] = sg;
                     }
                 }
@@ -745,56 +680,68 @@ namespace Opm
                         // Re-scale Pc to reflect imposed sw for vanishing oil phase.
                         // This seems consistent with ecl, and fails to honour 
                         // swat_init in case of non-trivial gas-oil cap pressure.
-                        props.swatInitScaling(cell, pcgw, sw);
+                        sw = materialLawManager.applySwatinit(cell, pcgw, sw);
                     }
-                    sw = satFromSumOfPcs(props, waterpos, gaspos, cell, pcgw);
+                    sw = satFromSumOfPcs<FluidSystem, MaterialLaw, MaterialLawManager>(materialLawManager, waterpos, gaspos, cell, pcgw);
                     sg = 1.0 - sw;
                     phase_saturations[waterpos][local_index] = sw;
                     phase_saturations[gaspos][local_index] = sg;
-                    // Adjust oil pressure according to gas saturation and cap pressure
-                    double pc[BlackoilPhases::MaxNumPhases];
-                    double sat[BlackoilPhases::MaxNumPhases];
-                    sat[waterpos] = sw;
-                    sat[gaspos] = sg;
-                    sat[oilpos] = 1.0 - sat[waterpos] - sat[gaspos];
-                    props.capPress(1, sat, &cell, pc, 0);                   
-                    phase_pressures[oilpos][local_index] = phase_pressures[gaspos][local_index] - pc[gaspos];
+                    if ( water ) {
+                        fluidState.setSaturation(FluidSystem::waterPhaseIdx, sw);
+                    }
+                    else {
+                        fluidState.setSaturation(FluidSystem::waterPhaseIdx, 0.0);
+                    }
+                    fluidState.setSaturation(FluidSystem::oilPhaseIdx, 1.0 - sw - sg);
+                    fluidState.setSaturation(FluidSystem::gasPhaseIdx, sg);
+
+                    double pC[/*numPhases=*/3] = { 0.0, 0.0, 0.0 };
+                    MaterialLaw::capillaryPressures(pC, matParams, fluidState);
+                    double pcGas = pC[FluidSystem::oilPhaseIdx] + pC[FluidSystem::gasPhaseIdx];
+                    phase_pressures[oilpos][local_index] = phase_pressures[gaspos][local_index] - pcGas;
                 }
                 phase_saturations[oilpos][local_index] = 1.0 - sw - sg;
                 
                 // Adjust phase pressures for max and min saturation ...
-                double pc[BlackoilPhases::MaxNumPhases];
-                double sat[BlackoilPhases::MaxNumPhases];
                 double threshold_sat = 1.0e-6;
 
-                sat[oilpos] = 1.0;
-                  if (water) {
-                      sat[waterpos] = smax[waterpos];
-                      sat[oilpos] -= sat[waterpos];
-                  }
-                  if (gas) {
-                      sat[gaspos] = smax[gaspos];
-                      sat[oilpos] -= sat[gaspos];
-                  }
-                  if (water && sw > smax[waterpos]-threshold_sat ) {
-                      sat[waterpos] = smax[waterpos];
-                      props.capPress(1, sat, &cell, pc, 0);
-                      phase_pressures[oilpos][local_index] = phase_pressures[waterpos][local_index] + pc[waterpos];
-                  } else if (gas && sg > smax[gaspos]-threshold_sat) {
-                      sat[gaspos] = smax[gaspos];
-                      props.capPress(1, sat, &cell, pc, 0);
-                      phase_pressures[oilpos][local_index] = phase_pressures[gaspos][local_index] - pc[gaspos];
-                  }
-                  if (gas && sg < smin[gaspos]+threshold_sat) {
-                      sat[gaspos] = smin[gaspos];
-                      props.capPress(1, sat, &cell, pc, 0);
-                      phase_pressures[gaspos][local_index] = phase_pressures[oilpos][local_index] + pc[gaspos];
-                  }
-                  if (water && sw < smin[waterpos]+threshold_sat) {
-                      sat[waterpos] = smin[waterpos];
-                      props.capPress(1, sat, &cell, pc, 0);
-                      phase_pressures[waterpos][local_index] = phase_pressures[oilpos][local_index] - pc[waterpos];
-                  }
+                double so = 1.0;
+                double pC[FluidSystem::numPhases] = { 0.0, 0.0, 0.0 };
+                if (water) {
+                    double swu = scaledDrainageInfo.Swu;
+                    fluidState.setSaturation(FluidSystem::waterPhaseIdx, swu);
+                    so -= swu;
+                }
+                if (gas) {
+                    double sgu = scaledDrainageInfo.Sgu;
+                    fluidState.setSaturation(FluidSystem::gasPhaseIdx, sgu);
+                    so-= sgu;
+                }
+                fluidState.setSaturation(FluidSystem::oilPhaseIdx, so);
+
+                if (water && sw > scaledDrainageInfo.Swu-threshold_sat ) {
+                    fluidState.setSaturation(FluidSystem::waterPhaseIdx, scaledDrainageInfo.Swu);
+                    MaterialLaw::capillaryPressures(pC, matParams, fluidState);
+                    double pcWat = pC[FluidSystem::oilPhaseIdx] - pC[FluidSystem::waterPhaseIdx];
+                    phase_pressures[oilpos][local_index] = phase_pressures[waterpos][local_index] + pcWat;
+                } else if (gas && sg > scaledDrainageInfo.Sgu-threshold_sat) {
+                    fluidState.setSaturation(FluidSystem::gasPhaseIdx, scaledDrainageInfo.Sgu);
+                    MaterialLaw::capillaryPressures(pC, matParams, fluidState);
+                    double pcGas = pC[FluidSystem::oilPhaseIdx] + pC[FluidSystem::gasPhaseIdx];
+                    phase_pressures[oilpos][local_index] = phase_pressures[gaspos][local_index] - pcGas;
+                }
+                if (gas && sg < scaledDrainageInfo.Sgl+threshold_sat) {
+                    fluidState.setSaturation(FluidSystem::gasPhaseIdx, scaledDrainageInfo.Sgl);
+                    MaterialLaw::capillaryPressures(pC, matParams, fluidState);
+                    double pcGas = pC[FluidSystem::oilPhaseIdx] + pC[FluidSystem::gasPhaseIdx];
+                    phase_pressures[gaspos][local_index] = phase_pressures[oilpos][local_index] + pcGas;
+                }
+                if (water && sw < scaledDrainageInfo.Swl+threshold_sat) {
+                    fluidState.setSaturation(FluidSystem::waterPhaseIdx, scaledDrainageInfo.Swl);
+                    MaterialLaw::capillaryPressures(pC, matParams, fluidState);
+                    double pcWat = pC[FluidSystem::oilPhaseIdx] - pC[FluidSystem::waterPhaseIdx];
+                    phase_pressures[waterpos][local_index] = phase_pressures[oilpos][local_index] - pcWat;
+                }
             }
             return phase_saturations;
         }
@@ -837,92 +784,6 @@ namespace Opm
         }
 
     } // namespace Equil
-
-
-    namespace Details
-    {
-        /// Convert saturations from a vector of individual phase saturation vectors
-        /// to an interleaved format where all values for a given cell come before all
-        /// values for the next cell, all in a single vector.
-        inline std::vector<double>
-        convertSats(const std::vector< std::vector<double> >& sat)
-        {
-            const auto np = sat.size();
-            const auto nc = sat[0].size();
-
-            std::vector<double> s(np * nc);
-
-            for (decltype(sat.size()) p = 0; p < np; ++p) {
-                const auto& sat_p = sat[p];
-                double*     sp    = & s[0*nc + p];
-
-                for (decltype(sat[0].size()) c = 0;
-                     c < nc; ++c, sp += np)
-                {
-                    *sp = sat_p[c];
-                }
-            }
-
-            return s;
-        }
-    } // namespace Details
-
-
-    /**
-     * Compute initial state by an equilibration procedure.
-     *
-     * The following state fields are modified:
-     *   pressure(),
-     *   saturation(),
-     *   surfacevol(),
-     *   gasoilratio(),
-     *   rv().
-     *
-     * \param[in] grid     Grid.
-     * \param[in] props    Property object, pvt and capillary properties are used.
-     * \param[in] deck     Simulation deck, used to obtain EQUIL and related data.
-     * \param[in] gravity  Acceleration of gravity, assumed to be in Z direction.
-     * \param[in] applySwatInit     Make it possible to not apply SWATINIT even if it
-     *                              is present in the deck
-     */
-    template<class Grid>
-    void initStateEquil(const Grid& grid,
-                        BlackoilPropertiesFromDeck& props,
-                        const Opm::Deck& deck,
-                        const Opm::EclipseState& eclipseState,
-                        const double gravity,
-                        BlackoilState& state,
-                        bool applySwatinit = true)
-    {
-
-        typedef EQUIL::DeckDependent::InitialStateComputer ISC;
-        //Check for presence of kw SWATINIT
-        std::vector<double> swat_init = {};
-        if (eclipseState.get3DProperties().hasDeckDoubleGridProperty("SWATINIT") && applySwatinit) {
-            const std::vector<double>& swat_init_ecl = eclipseState.
-                    get3DProperties().getDoubleGridProperty("SWATINIT").getData();
-            const int nc = UgGridHelpers::numCells(grid);
-            swat_init.resize(nc);
-            const int* gc = UgGridHelpers::globalCell(grid);
-            for (int c = 0; c < nc; ++c) {
-                const int deck_pos = (gc == NULL) ? c : gc[c];
-                swat_init[c] = swat_init_ecl[deck_pos];
-            }
-        }
-
-        ISC isc(props, deck, eclipseState, grid, gravity, swat_init);
-        const auto pu = props.phaseUsage();
-        const int ref_phase = pu.phase_used[BlackoilPhases::Liquid]
-            ? pu.phase_pos[BlackoilPhases::Liquid]
-            : pu.phase_pos[BlackoilPhases::Aqua];
-        state.pressure() = isc.press()[ref_phase];
-        state.saturation() = Details::convertSats(isc.saturation());
-        state.gasoilratio() = isc.rs();
-        state.rv() = isc.rv();
-
-        initBlackoilSurfvolUsingRSorRV(UgGridHelpers::numCells(grid), props, state);
-    }
-
 
 
 } // namespace Opm

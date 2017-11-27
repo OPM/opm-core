@@ -2,6 +2,7 @@
   Copyright 2014 SINTEF ICT, Applied Mathematics.
   Copyright 2015 Dr. Blatt - HPC-Simulation-Software & Services
   Copyright 2015 NTNU
+  Copyright 2017 IRIS
 
   This file is part of the Open Porous Media project (OPM).
 
@@ -24,10 +25,9 @@
 
 #include <opm/core/grid/GridHelpers.hpp>
 #include <opm/core/simulator/EquilibrationHelpers.hpp>
-#include <opm/core/simulator/BlackoilState.hpp>
-#include <opm/core/props/BlackoilPropertiesFromDeck.hpp>
-#include <opm/core/props/BlackoilPhases.hpp>
 #include <opm/core/utility/RegionMapping.hpp>
+#include <opm/core/utility/extractPvtTableIndex.hpp>
+
 #include <opm/parser/eclipse/Units/Units.hpp>
 #include <opm/parser/eclipse/EclipseState/EclipseState.hpp>
 #include <opm/parser/eclipse/EclipseState/Grid/GridProperty.hpp>
@@ -38,6 +38,11 @@
 #include <opm/parser/eclipse/EclipseState/Tables/RsvdTable.hpp>
 #include <opm/parser/eclipse/EclipseState/Tables/RvvdTable.hpp>
 #include <opm/common/OpmLog/OpmLog.hpp>
+#include <opm/common/data/SimulationDataContainer.hpp>
+
+#include <opm/material/fluidsystems/BlackOilFluidSystem.hpp>
+#include <opm/material/fluidstates/SimpleModularFluidState.hpp>
+#include <opm/material/fluidmatrixinteractions/EclMaterialLawManager.hpp>
 
 #include <array>
 #include <cassert>
@@ -53,32 +58,6 @@ struct UnstructuredGrid;
 
 namespace Opm
 {
-
-    /**
-     * Compute initial state by an equilibration procedure.
-     *
-     * The following state fields are modified:
-     *   pressure(),
-     *   saturation(),
-     *   surfacevol(),
-     *   gasoilratio(),
-     *   rv().
-     *
-     * \param[in] grid     Grid.
-     * \param[in] props    Property object, pvt and capillary properties are used.
-     * \param[in] deck     Simulation deck, used to obtain EQUIL and related data.
-     * \param[in] gravity  Acceleration of gravity, assumed to be in Z direction.
-     * \param[in] applySwatInit     Make it possible to not apply SWATINIT even if it
-     *                              is present in the deck
-     */
-    template<class Grid>
-    void initStateEquil(const Grid& grid,
-                        const BlackoilPropertiesInterface& props,
-                        const Opm::Deck& deck,
-                        const Opm::EclipseState& eclipseState,
-                        const double gravity,
-                        BlackoilState& state,
-                        bool applySwatInit = true);
 
 
     /**
@@ -128,7 +107,7 @@ namespace Opm
          * of pressure values in each cell in the current
          * equilibration region.
          */
-        template <class Grid, class Region, class CellRange>
+        template <class Grid, class Region, class CellRange, class FluidSystem>
         std::vector< std::vector<double> >
         phasePressures(const Grid&             G,
                        const Region&           reg,
@@ -139,6 +118,11 @@ namespace Opm
 
         /**
          * Compute initial phase saturations by means of equilibration.
+         *
+         * \tparam FluidSystem  The FluidSystem from opm-material
+         *                      Must be initialized before used.
+         *
+         * \tparam Grid   Type of the grid
          *
          * \tparam Region Type of an equilibration region information
          *                base.  Typically an instance of the EquilReg
@@ -151,22 +135,27 @@ namespace Opm
          *                as well as provide an inner type,
          *                const_iterator, to traverse the range.
          *
+         * \tparam MaterialLawManager The MaterialLawManager from opm-material
+         *
+         * \param[in] G               Grid.
          * \param[in] reg             Current equilibration region.
          * \param[in] cells           Range that spans the cells of the current
          *                            equilibration region.
-         * \param[in] props           Property object, needed for capillary functions.
+         * \param[in] materialLawManager   The MaterialLawManager from opm-material
+         * \param[in] swat_init       A vector of initial water saturations.
+         *                            The capillary pressure is scaled to fit these values
          * \param[in] phase_pressures Phase pressures, one vector for each active phase,
          *                            of pressure values in each cell in the current
          *                            equilibration region.
          * \return                    Phase saturations, one vector for each phase, each containing
          *                            one saturation value per cell in the region.
          */
-        template <class Grid, class Region, class CellRange>
+        template <class FluidSystem, class Grid, class Region, class CellRange, class MaterialLawManager>
         std::vector< std::vector<double> >
         phaseSaturations(const Grid&             grid,
                          const Region&           reg,
                          const CellRange&        cells,
-                         BlackoilPropertiesFromDeck& props,
+                         MaterialLawManager& materialLawManager,
                          const std::vector<double> swat_init,
                          std::vector< std::vector<double> >& phase_pressures);
 
@@ -216,12 +205,11 @@ namespace Opm
             template<class Grid>
             inline
             std::vector<int>
-            equilnum(const Opm::Deck& deck,
-                     const Opm::EclipseState& eclipseState,
+            equilnum(const Opm::EclipseState& eclipseState,
                      const Grid&  G   )
             {
                 std::vector<int> eqlnum;
-                if (deck.hasKeyword("EQLNUM")) {
+                if (eclipseState.get3DProperties().hasDeckIntGridProperty("EQLNUM")) {
                     const int nc = UgGridHelpers::numCells(G);
                     eqlnum.resize(nc);
                     const std::vector<int>& e = 
@@ -241,43 +229,53 @@ namespace Opm
                 return eqlnum;
             }
 
-
+            template<class FluidSystem>
             class InitialStateComputer {
             public:
-                template<class Grid>
-                InitialStateComputer(BlackoilPropertiesInterface& props,
-                                     const Opm::Deck&             deck,
+                template<class MaterialLawManager, class Grid>
+                InitialStateComputer(MaterialLawManager& materialLawManager,
                                      const Opm::EclipseState& eclipseState,
                                      const Grid&                        G    ,
                                      const double grav = unit::gravity,
-                                     const std::vector<double>&  swat_init = {}
+                                     const bool applySwatInit = true
                                      )
-                    : pp_(props.numPhases(),
+                    : pp_(FluidSystem::numPhases,
                           std::vector<double>(UgGridHelpers::numCells(G))),
-                      sat_(props.numPhases(),
+                      sat_(FluidSystem::numPhases,
                           std::vector<double>(UgGridHelpers::numCells(G))),
                       rs_(UgGridHelpers::numCells(G)),
-                      rv_(UgGridHelpers::numCells(G)),
-                      swat_init_(swat_init)
-
+                      rv_(UgGridHelpers::numCells(G))
                 {
+                    //Check for presence of kw SWATINIT
+                    if (eclipseState.get3DProperties().hasDeckDoubleGridProperty("SWATINIT") && applySwatInit) {
+                        const std::vector<double>& swat_init_ecl = eclipseState.
+                                get3DProperties().getDoubleGridProperty("SWATINIT").getData();
+                        const int nc = UgGridHelpers::numCells(G);
+                        swat_init_.resize(nc);
+                        const int* gc = UgGridHelpers::globalCell(G);
+                        for (int c = 0; c < nc; ++c) {
+                            const int deck_pos = (gc == NULL) ? c : gc[c];
+                            swat_init_[c] = swat_init_ecl[deck_pos];
+                        }
+                    }
                     // Get the equilibration records.
                     const std::vector<EquilRecord> rec = getEquil(eclipseState);
                     const auto& tables = eclipseState.getTableManager();
                     // Create (inverse) region mapping.
-                    const RegionMapping<> eqlmap(equilnum(deck, eclipseState, G)); 
+                    const RegionMapping<> eqlmap(equilnum(eclipseState, G));
+                    setRegionPvtIdx(G, eclipseState, eqlmap);
 
                     // Create Rs functions.
                     rs_func_.reserve(rec.size());
-                    if (deck.hasKeyword("DISGAS")) {
+                    if (FluidSystem::enableDissolvedGas()) {
                         const TableContainer& rsvdTables = tables.getRsvdTables();
                         for (size_t i = 0; i < rec.size(); ++i) {
                             if (eqlmap.cells(i).empty())
                             {
-                                rs_func_.push_back(std::shared_ptr<Miscibility::RsVD>());
+                                rs_func_.push_back(std::shared_ptr<Miscibility::RsVD<FluidSystem>>());
                                 continue;
                             }
-                            const int cell = *(eqlmap.cells(i).begin());                   
+                            const int pvtIdx = regionPvtIdx_[i];
                             if (!rec[i].liveOilInitConstantRs()) {
                                 if (rsvdTables.size() <= 0 ) {
                                     OPM_THROW(std::runtime_error, "Cannot initialise: RSVD table not available.");
@@ -285,8 +283,7 @@ namespace Opm
                                 const RsvdTable& rsvdTable = rsvdTables.getTable<RsvdTable>(i);
                                 std::vector<double> depthColumn = rsvdTable.getColumn("DEPTH").vectorCopy();
                                 std::vector<double> rsColumn = rsvdTable.getColumn("RS").vectorCopy();
-                                rs_func_.push_back(std::make_shared<Miscibility::RsVD>(props,
-                                                                                        cell,
+                                rs_func_.push_back(std::make_shared<Miscibility::RsVD<FluidSystem>>(pvtIdx,
                                                                                         depthColumn , rsColumn));
                             } else {
                                 if (rec[i].gasOilContactDepth() != rec[i].datumDepth()) {
@@ -297,7 +294,7 @@ namespace Opm
                                 }
                                 const double p_contact = rec[i].datumDepthPressure();
                                 const double T_contact = 273.15 + 20; // standard temperature for now
-                                rs_func_.push_back(std::make_shared<Miscibility::RsSatAtContact>(props, cell, p_contact, T_contact));
+                                rs_func_.push_back(std::make_shared<Miscibility::RsSatAtContact<FluidSystem>>(pvtIdx, p_contact, T_contact));
                             }
                         }
                     } else {
@@ -307,15 +304,15 @@ namespace Opm
                     }                    
 
                     rv_func_.reserve(rec.size());
-                    if (deck.hasKeyword("VAPOIL")) {
+                    if (FluidSystem::enableVaporizedOil()) {
                         const TableContainer& rvvdTables = tables.getRvvdTables();
                         for (size_t i = 0; i < rec.size(); ++i) {
                             if (eqlmap.cells(i).empty())
                             {
-                                rv_func_.push_back(std::shared_ptr<Miscibility::RvVD>());
+                                rv_func_.push_back(std::shared_ptr<Miscibility::RvVD<FluidSystem>>());
                                 continue;
                             }
-                            const int cell = *(eqlmap.cells(i).begin());                   
+                            const int pvtIdx = regionPvtIdx_[i];
                             if (!rec[i].wetGasInitConstantRv()) {
                                 if (rvvdTables.size() <= 0) { 
                                     OPM_THROW(std::runtime_error, "Cannot initialise: RVVD table not available.");
@@ -324,9 +321,7 @@ namespace Opm
                                 const RvvdTable& rvvdTable = rvvdTables.getTable<RvvdTable>(i);
                                 std::vector<double> depthColumn = rvvdTable.getColumn("DEPTH").vectorCopy();
                                 std::vector<double> rvColumn = rvvdTable.getColumn("RV").vectorCopy();
-
-                                rv_func_.push_back(std::make_shared<Miscibility::RvVD>(props,
-                                                                                        cell,
+                                rv_func_.push_back(std::make_shared<Miscibility::RvVD<FluidSystem>>(pvtIdx,
                                                                                         depthColumn , rvColumn));
 
                             } else {
@@ -338,7 +333,7 @@ namespace Opm
                                 }
                                 const double p_contact = rec[i].datumDepthPressure() + rec[i].gasOilContactCapillaryPressure();
                                 const double T_contact = 273.15 + 20; // standard temperature for now
-                                rv_func_.push_back(std::make_shared<Miscibility::RvSatAtContact>(props, cell, p_contact, T_contact));
+                                rv_func_.push_back(std::make_shared<Miscibility::RvSatAtContact<FluidSystem>>(pvtIdx ,p_contact, T_contact));
                             }
                         }
                     } else {
@@ -348,7 +343,7 @@ namespace Opm
                     }
                     
                     // Compute pressures, saturations, rs and rv factors.
-                    calcPressSatRsRv(eqlmap, rec, props, G, grav);
+                    calcPressSatRsRv(eqlmap, rec, materialLawManager, G, grav);
 
                     // Modify oil pressure in no-oil regions so that the pressures of present phases can
                     // be recovered from the oil pressure and capillary relations.
@@ -363,23 +358,34 @@ namespace Opm
                 const Vec& rv() const { return rv_; }
 
             private:
-                typedef DensityCalculator<BlackoilPropertiesInterface> RhoCalc;
-                typedef EquilReg<RhoCalc> EqReg;
-
+                typedef EquilReg EqReg;
                 std::vector< std::shared_ptr<Miscibility::RsFunction> > rs_func_;
                 std::vector< std::shared_ptr<Miscibility::RsFunction> > rv_func_;
-
+                std::vector<int> regionPvtIdx_;
                 PVec pp_;
                 PVec sat_;
                 Vec rs_;
                 Vec rv_;
                 Vec swat_init_;
 
-                template <class RMap, class Grid>
+                template<class Grid, class RMap>
+                void setRegionPvtIdx(const Grid& G, const Opm::EclipseState& eclipseState, const RMap& reg) {
+
+                    regionPvtIdx_.reserve(reg.activeRegions().size());
+                    std::vector<int> cellPvtRegionIdx;
+                    extractPvtTableIndex(cellPvtRegionIdx, eclipseState, UgGridHelpers::numCells(G), UgGridHelpers::globalCell(G));
+                    for (const auto& r : reg.activeRegions()) {
+                        const auto& cells = reg.cells(r);
+                        const int cell = *(cells.begin());
+                        regionPvtIdx_[r] = cellPvtRegionIdx[cell];
+                    }
+                }
+
+                template <class RMap, class MaterialLawManager, class Grid>
                 void
                 calcPressSatRsRv(const RMap&                       reg  ,
                                  const std::vector< EquilRecord >& rec  ,
-                                 Opm::BlackoilPropertiesInterface& props,
+                                 MaterialLawManager& materialLawManager,
                                  const Grid&                       G    ,
                                  const double grav)
                 {
@@ -391,27 +397,23 @@ namespace Opm
                                             + " has no active cells");
                             continue;
                         }
-                        const int repcell = *cells.begin();
 
-                        const RhoCalc calc(props, repcell);
-                        const EqReg eqreg(rec[r], calc,
-                                          rs_func_[r], rv_func_[r],
-                                          props.phaseUsage());
+                        const EqReg eqreg(rec[r], rs_func_[r], rv_func_[r], regionPvtIdx_[r]);
                    
-                        PVec pressures = phasePressures(G, eqreg, cells, grav);
+                        PVec pressures = phasePressures<FluidSystem>(G, eqreg, cells, grav);
                         const std::vector<double>& temp = temperature(G, eqreg, cells);
+                        const PVec sat = phaseSaturations<FluidSystem>(G, eqreg, cells, materialLawManager, swat_init_, pressures);
 
-                        const PVec sat = phaseSaturations(G, eqreg, cells, props, swat_init_, pressures);
-
-                        const int np = props.numPhases();
+                        const int np = FluidSystem::numPhases;
                         for (int p = 0; p < np; ++p) {
                             copyFromRegion(pressures[p], cells, pp_[p]);
                             copyFromRegion(sat[p], cells, sat_[p]);
                         }
-                        if (props.phaseUsage().phase_used[BlackoilPhases::Liquid]
-                            && props.phaseUsage().phase_used[BlackoilPhases::Vapour]) {
-                            const int oilpos = props.phaseUsage().phase_pos[BlackoilPhases::Liquid];
-                            const int gaspos = props.phaseUsage().phase_pos[BlackoilPhases::Vapour];
+                        const bool oil = FluidSystem::phaseIsActive(FluidSystem::oilPhaseIdx);
+                        const bool gas = FluidSystem::phaseIsActive(FluidSystem::gasPhaseIdx);
+                        if (oil && gas) {
+                            const int oilpos = FluidSystem::oilPhaseIdx;
+                            const int gaspos = FluidSystem::gasPhaseIdx;
                             const Vec rs_vals = computeRs(G, cells, pressures[oilpos], temp, *(rs_func_[r]), sat[gaspos]);
                             const Vec rv_vals = computeRs(G, cells, pressures[gaspos], temp, *(rv_func_[r]), sat[oilpos]);
                             copyFromRegion(rs_vals, cells, rs_);
