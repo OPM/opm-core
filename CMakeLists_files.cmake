@@ -76,9 +76,7 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/transport/reorder/TransportSolverTwophaseReorder.cpp
         opm/core/transport/reorder/reordersequence.cpp
         opm/core/transport/reorder/tarjan.c
-        opm/core/utility/Event.cpp
         opm/core/utility/MonotCubicInterpolator.cpp
-        opm/core/utility/NullStream.cpp
         opm/core/utility/VelocityInterpolation.cpp
         opm/core/utility/WachspressCoord.cpp
         opm/core/utility/compressedToCartesian.cpp
@@ -100,7 +98,6 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_compressedpropertyaccess.cpp
 	tests/test_dgbasis.cpp
 	tests/test_cubic.cpp
-	tests/test_event.cpp
 	tests/test_flowdiagnostics.cpp
 	tests/test_nonuniformtablelinear.cpp
 	tests/test_parallelistlinformation.cpp
@@ -276,14 +273,10 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/transport/reorder/tarjan.h
         opm/core/utility/Average.hpp
         opm/core/utility/CompressedPropertyAccess.hpp
-        opm/core/utility/DataMap.hpp
-        opm/core/utility/Event.hpp
-        opm/core/utility/Event_impl.hpp
         opm/core/utility/Factory.hpp
         opm/core/utility/initHydroCarbonState.hpp
         opm/core/utility/MonotCubicInterpolator.hpp
         opm/core/utility/NonuniformTableLinear.hpp
-        opm/core/utility/NullStream.hpp
         opm/core/utility/RegionMapping.hpp
         opm/core/utility/RootFinders.hpp
         opm/core/utility/SparseVector.hpp
@@ -298,7 +291,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/utility/miscUtilities.hpp
         opm/core/utility/miscUtilitiesBlackoil.hpp
         opm/core/utility/miscUtilities_impl.hpp
-        opm/core/utility/share_obj.hpp
         opm/core/well_controls.h
         opm/core/wells.h
         opm/core/wells/InjectionSpecification.hpp
