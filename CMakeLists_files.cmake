@@ -273,7 +273,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/transport/reorder/tarjan.h
         opm/core/utility/Average.hpp
         opm/core/utility/CompressedPropertyAccess.hpp
-        opm/core/utility/Factory.hpp
         opm/core/utility/initHydroCarbonState.hpp
         opm/core/utility/MonotCubicInterpolator.hpp
         opm/core/utility/NonuniformTableLinear.hpp
@@ -286,7 +285,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/utility/buildUniformMonotoneTable.hpp
         opm/core/utility/compressedToCartesian.hpp
         opm/core/utility/extractPvtTableIndex.hpp
-        opm/core/utility/have_boost_redef.hpp
         opm/core/utility/linearInterpolation.hpp
         opm/core/utility/miscUtilities.hpp
         opm/core/utility/miscUtilitiesBlackoil.hpp
