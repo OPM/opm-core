@@ -1388,7 +1388,7 @@ namespace Opm
         // 1. preventing the well from group control with keyword WGRUPCON
         // 2. the well violating some limits and working under limits.
         if ( (!only_group || !individualControl()) && isProducer() ) {
-            return prodSpec().guide_rate_;
+            return prodSpec().guide_rate_ * efficiencyFactor();
         } else {
             return 0.0;
         }
@@ -1400,7 +1400,7 @@ namespace Opm
     double WellNode::injectionGuideRate(bool only_group)
     {
         if ( (!only_group || !individualControl()) && isInjector() ) {
-            return injSpec().guide_rate_;
+            return injSpec().guide_rate_ * efficiencyFactor();
         } else {
             return 0.0;
         }
@@ -1612,8 +1612,8 @@ namespace Opm
                 production_specification.control_mode_ = toProductionControlMode(WellProducer::ControlMode2String(properties.controlMode));
             }
         }
-        // TODO: should be specified with WEFAC, while we do not have this keyword support yet.
-        const double efficiency_factor = 1.0;
+        // Efficiency factor given specified with WEFAC
+        const double efficiency_factor = well->getEfficiencyFactor(timeStep);
         std::shared_ptr<WellsGroupInterface> wells_group(new WellNode(well->name(), efficiency_factor, production_specification, injection_specification, phase_usage));
         return wells_group;
     }
