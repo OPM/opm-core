@@ -86,11 +86,6 @@ macro (sources_hook)
 			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/call_umfpack.c
 			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverUmfpack.cpp
 			)
-		list (REMOVE_ITEM examples_SOURCES
-			${PROJECT_SOURCE_DIR}/tutorials/tutorial2.cpp
-			${PROJECT_SOURCE_DIR}/tutorials/tutorial3.cpp
-			${PROJECT_SOURCE_DIR}/tutorials/tutorial4.cpp
-			)
 	endif (NOT SuiteSparse_FOUND)
 
 	if (NOT PETSC_FOUND)
