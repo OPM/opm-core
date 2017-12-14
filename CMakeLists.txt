@@ -81,19 +81,7 @@ macro (sources_hook)
 			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverIstl.cpp
 			)
 	endif (NOT dune-istl_FOUND)
-	if (NOT SuiteSparse_FOUND)
-		list (REMOVE_ITEM opm-core_SOURCES
-			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/call_umfpack.c
-			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverUmfpack.cpp
-			)
-	endif (NOT SuiteSparse_FOUND)
 
-	if (NOT PETSC_FOUND)
-		list (REMOVE_ITEM opm-core_SOURCES
-			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/call_petsc.c
-			${PROJECT_SOURCE_DIR}/${opm-core_DIR}/core/linalg/LinearSolverPetsc.cpp
-			)
-	endif (NOT PETSC_FOUND)
 	if ((NOT MPI_FOUND) OR (NOT DUNE_ISTL_FOUND))
 		list (REMOVE_ITEM tests_SOURCES
 			${PROJECT_SOURCE_DIR}/tests/test_parallel_linearsolver.cpp
