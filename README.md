@@ -1,4 +1,4 @@
-# Open Porous Media Core Library [![Build Status](https://travis-ci.org/OPM/opm-core.svg?branch=master)](https://travis-ci.org/OPM/opm-core)
+# Open Porous Media Core Library
 
 These are release notes for opm-core.
 
