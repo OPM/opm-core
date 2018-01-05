@@ -89,3 +89,4 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/*
 %{_includedir}/*
 %{_datadir}/cmake/*
+%{_datadir}/opm/cmake/Modules/*
