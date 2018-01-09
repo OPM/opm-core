@@ -69,8 +69,6 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/simulator/TwophaseState.cpp
         opm/core/simulator/SimulatorReport.cpp
         opm/core/transport/TransportSolverTwophaseInterface.cpp
-        opm/core/transport/implicit/TransportSolverTwophaseImplicit.cpp
-        opm/core/transport/implicit/transport_source.c
         opm/core/transport/reorder/ReorderSolverInterface.cpp
         opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.cpp
         opm/core/transport/reorder/TransportSolverTwophaseReorder.cpp
@@ -251,17 +249,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/simulator/initStateEquil_impl.hpp
         opm/core/simulator/initState_impl.hpp
         opm/core/transport/TransportSolverTwophaseInterface.hpp
-        opm/core/transport/implicit/CSRMatrixBlockAssembler.hpp
-        opm/core/transport/implicit/CSRMatrixUmfpackSolver.hpp
-        opm/core/transport/implicit/ImplicitAssembly.hpp
-        opm/core/transport/implicit/ImplicitTransport.hpp
-        opm/core/transport/implicit/JacobianSystem.hpp
-        opm/core/transport/implicit/NormSupport.hpp
-        opm/core/transport/implicit/SimpleFluid2pWrappingProps.hpp
-        opm/core/transport/implicit/SimpleFluid2pWrappingProps_impl.hpp
-        opm/core/transport/implicit/SinglePointUpwindTwoPhase.hpp
-        opm/core/transport/implicit/TransportSolverTwophaseImplicit.hpp
-        opm/core/transport/implicit/transport_source.h
         opm/core/transport/reorder/ReorderSolverInterface.hpp
         opm/core/transport/reorder/TransportSolverCompressibleTwophaseReorder.hpp
         opm/core/transport/reorder/TransportSolverTwophaseReorder.hpp
