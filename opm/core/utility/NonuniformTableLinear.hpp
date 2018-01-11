@@ -27,7 +27,6 @@
 #include <utility>
 
 #include <opm/common/ErrorMacros.hpp>
-#include <opm/parser/eclipse/EclipseState/Tables/TableColumn.hpp>
 #include <opm/core/utility/linearInterpolation.hpp>
 
 
@@ -50,14 +49,9 @@ namespace Opm
         /// @brief Construct from vectors of x and y values.
         /// @param x_values vector of domain values
         /// @param y_values vector of corresponding range values.
-        NonuniformTableLinear(const std::vector<double>& x_values,
-                              const std::vector<T>& y_values);
-
-        NonuniformTableLinear(const TableColumn& x_column,
-                              const std::vector<T>& y_values);
-
-        NonuniformTableLinear(const TableColumn& x_column,
-                              const TableColumn& y_column);
+        template<class XContainer, class YContainer>
+        NonuniformTableLinear(const XContainer& x_values,
+                              const YContainer& y_values);
 
         /// @brief Get the domain.
         /// @return the domain as a pair of doubles.
@@ -130,39 +124,17 @@ namespace Opm
 
 
     template<typename T>
+    template<class XContainer, class YContainer>
     inline
     NonuniformTableLinear<T>
-    ::NonuniformTableLinear(const TableColumn& x_column,
-                            const TableColumn& y_column)
+    ::NonuniformTableLinear(const XContainer& x_column,
+                            const YContainer& y_column)
         : x_values_( x_column.begin() , x_column.end()),
           y_values_( y_column.begin() , y_column.end())
     {
         assert(isNondecreasing(x_values_.begin(), x_values_.end()));
     }
 
-
-    template<typename T>
-    inline
-    NonuniformTableLinear<T>
-    ::NonuniformTableLinear(const TableColumn& x_column,
-                            const std::vector<T>& y_values)
-        : x_values_( x_column.begin() , x_column.end()),
-          y_values_(y_values)
-    {
-        assert(isNondecreasing(x_values_.begin(), x_values_.end()));
-    }
-
-
-
-    template<typename T>
-    inline
-    NonuniformTableLinear<T>
-    ::NonuniformTableLinear(const std::vector<double>& x_values,
-                            const std::vector<T>& y_values)
-        : x_values_(x_values), y_values_(y_values)
-    {
-        assert(isNondecreasing(x_values.begin(), x_values.end()));
-    }
 
     template<typename T>
     inline std::pair<double, double>
