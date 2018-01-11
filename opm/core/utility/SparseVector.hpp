@@ -40,7 +40,6 @@
 #include <vector>
 #include <numeric>
 #include <algorithm>
-#include <boost/range/iterator_range.hpp>
 #include <opm/common/ErrorMacros.hpp>
 
 namespace Opm
