@@ -158,7 +158,6 @@ list (APPEND TEST_DATA_FILES
 list (APPEND EXAMPLE_SOURCE_FILES
 	examples/compute_eikonal_from_files.cpp
 	examples/compute_initial_state.cpp
-	examples/compute_tof.cpp
 	examples/compute_tof_from_files.cpp
 	examples/diagnose_relperm.cpp
 	)
