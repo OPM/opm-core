@@ -74,7 +74,6 @@ list (APPEND MAIN_SOURCE_FILES
         opm/core/transport/reorder/TransportSolverTwophaseReorder.cpp
         opm/core/transport/reorder/reordersequence.cpp
         opm/core/transport/reorder/tarjan.c
-        opm/core/utility/MonotCubicInterpolator.cpp
         opm/core/utility/VelocityInterpolation.cpp
         opm/core/utility/WachspressCoord.cpp
         opm/core/utility/compressedToCartesian.cpp
@@ -97,7 +96,6 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_dgbasis.cpp
 	tests/test_cubic.cpp
 	tests/test_flowdiagnostics.cpp
-	tests/test_nonuniformtablelinear.cpp
 	tests/test_parallelistlinformation.cpp
 	tests/test_sparsevector.cpp
        tests/test_velocityinterpolation.cpp
@@ -255,18 +253,13 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/transport/reorder/tarjan.h
         opm/core/utility/CompressedPropertyAccess.hpp
         opm/core/utility/initHydroCarbonState.hpp
-        opm/core/utility/MonotCubicInterpolator.hpp
-        opm/core/utility/NonuniformTableLinear.hpp
         opm/core/utility/RegionMapping.hpp
-        opm/core/utility/RootFinders.hpp
-        opm/core/utility/SparseVector.hpp
         opm/core/utility/UniformTableLinear.hpp
         opm/core/utility/VelocityInterpolation.hpp
         opm/core/utility/WachspressCoord.hpp
         opm/core/utility/buildUniformMonotoneTable.hpp
         opm/core/utility/compressedToCartesian.hpp
         opm/core/utility/extractPvtTableIndex.hpp
-        opm/core/utility/linearInterpolation.hpp
         opm/core/utility/miscUtilities.hpp
         opm/core/utility/miscUtilitiesBlackoil.hpp
         opm/core/utility/miscUtilities_impl.hpp
