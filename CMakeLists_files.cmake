@@ -94,12 +94,9 @@ list (APPEND MAIN_SOURCE_FILES
 list (APPEND TEST_SOURCE_FILES
 	tests/test_compressedpropertyaccess.cpp
 	tests/test_dgbasis.cpp
-	tests/test_cubic.cpp
 	tests/test_flowdiagnostics.cpp
 	tests/test_parallelistlinformation.cpp
-	tests/test_sparsevector.cpp
        tests/test_velocityinterpolation.cpp
-	tests/test_uniformtablelinear.cpp
 	tests/test_wells.cpp
 	tests/test_wachspresscoord.cpp
 	tests/test_linearsolver.cpp
@@ -191,7 +188,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/linalg/LinearSolverPetsc.hpp
         opm/core/linalg/LinearSolverUmfpack.hpp
         opm/core/linalg/ParallelIstlInformation.hpp
-        opm/core/linalg/blas_lapack.h
         opm/core/linalg/call_umfpack.h
         opm/core/linalg/sparse_sys.h
         opm/core/pressure/CompressibleTpfa.hpp
@@ -254,10 +250,8 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/core/utility/CompressedPropertyAccess.hpp
         opm/core/utility/initHydroCarbonState.hpp
         opm/core/utility/RegionMapping.hpp
-        opm/core/utility/UniformTableLinear.hpp
         opm/core/utility/VelocityInterpolation.hpp
         opm/core/utility/WachspressCoord.hpp
-        opm/core/utility/buildUniformMonotoneTable.hpp
         opm/core/utility/compressedToCartesian.hpp
         opm/core/utility/extractPvtTableIndex.hpp
         opm/core/utility/miscUtilities.hpp
