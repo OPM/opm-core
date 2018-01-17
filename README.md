@@ -1,5 +1,8 @@
 # Open Porous Media Core Library
 
+THIS MODULE IS DEPRECATED.
+The code is now integrated in the other modules.
+
 These are release notes for opm-core.
 
 
